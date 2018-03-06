@@ -1,0 +1,39 @@
+{
+  "name": "polymath-core_v2",
+  "version": "0.1.0",
+  "description": "Polymath Network Core Smart Contracts v2",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "testrpc && truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PolymathNetwork/polymath-core_v2.git"
+  },
+  "keywords": [
+    "smart",
+    "contracts",
+    "solidity",
+    "token",
+    "securityToken",
+    "ERC20",
+    "ST20"
+  ],
+  "author": "Polymath Inc",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/PolymathNetwork/polymath-core_v2/issues"
+  },
+  "homepage": "https://github.com/PolymathNetwork/polymath-core_v2#readme",
+  "dependencies": {
+    "babel-polyfill": "6.26.0",
+    "babel-preset-es2015": "6.24.1",
+    "babel-preset-stage-2": "6.24.1",
+    "babel-preset-stage-3": "6.24.1",
+    "babel-register": "6.26.0",
+    "zeppelin-solidity": "1.7.0"
+  }
+}

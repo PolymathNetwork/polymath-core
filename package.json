@@ -7,7 +7,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "testrpc && truffle test"
+    "test": "testrpc && truffle test",
+    "flatten": "sol-merger './contracts/*.sol' ./flat"
   },
   "repository": {
     "type": "git",
@@ -35,5 +36,8 @@
     "babel-preset-stage-3": "6.24.1",
     "babel-register": "6.26.0",
     "zeppelin-solidity": "1.7.0"
+  },
+  "devDependencies": {
+    "sol-merger": "^0.1.2"
   }
 }

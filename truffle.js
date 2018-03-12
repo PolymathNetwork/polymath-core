@@ -1,37 +1,27 @@
-require('babel-register');
-require('babel-polyfill');
-
-const config = {
+module.exports = {
   networks: {
     development: {
       host: 'localhost',
       port: 8545,
-      gas: 15e6,
-      gasPrice: 0x01,
-      network_id: '*',
+      network_id: '*', // Match any network id
+      gas: 4500000,
     },
-    ropsten: {
-      // provider: new WalletProvider(wallet, "https://ropsten.infura.io/"),
+    mainnet: {
       host: 'localhost',
       port: 8545,
-      network_id: 3,
-      gas: 4700036,
-      gasPrice: 130000000000,
+      network_id: '1', // Match any network id
+      gas: 4500000,
+      gasPrice: 10000000000
     },
-    coverage: {
+    ropsten: {
+      //provider: new WalletProvider(privKey, "https://ropsten.infura.io/"+ apiKey),
       host: 'localhost',
-      network_id: '*',
-      port: 8555,
-      gas: 0xfffffffffff,
-      gasPrice: 0x01,
-    },
+      port: 8545,
+      network_id: '3', // Match any network id
+      gas: 4500000,
+      gasPrice: 10000000000
+    }
   },
-  mocha: {
-    useColors: true,
-    slow: 30000,
-    bail: true,
-  },
-  dependencies: {},
   solc: {
     optimizer: {
       enabled: true,
@@ -39,6 +29,3 @@ const config = {
     },
   },
 };
-
-module.exports = config;
-

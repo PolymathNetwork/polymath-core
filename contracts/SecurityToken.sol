@@ -10,6 +10,7 @@ import './interfaces/IModuleRegistry.sol';
 import './interfaces/IST20.sol';
 
 contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
+    using SafeMath for uint256;
 
     // Owner of the ST
     address public owner;
@@ -21,15 +22,21 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
 
     address public moduleRegistry;
 
-    // Transfer Manager has a key of 0
+    // TransferManager has a key of 1
+    // STO has a key of 2
     // Other modules TBD
     mapping (uint8 => ModuleData) modules;
 
     event LogModuleAdded(uint8 _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost);
+    event Mint(address indexed to, uint256 amount);
 
     modifier onlyOwner {
         require(msg.sender == owner);
         _;
+    }
+
+    modifier onlyModule(i) {
+      require(msg.sender == modules[i].moduleAddress);
     }
 
     function SecurityToken(address _owner, uint256 _totalSupply, string _name, string _symbol, uint8 _decimals, bytes32 _securityDetails, address _moduleRegistry) public
@@ -95,9 +102,19 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
         return super.transferFrom(_from, _to, _value);
     }
 
-    // Delegates this to a TransferManager module, which has a key of 0
+    // Delegates this to a TransferManager module, which has a key of 1
+    // Will throw if no TransferManager module set
     function verifyTransfer(address _from, address _to) public returns (bool success) {
-        return ITransferManager(modules[0].moduleAddress).verifyTransfer(_from, _to);
+        return ITransferManager(modules[1].moduleAddress).verifyTransfer(_from, _to);
+    }
+
+    // Only STO module can call this, has a key of 2
+    function mint(address _investor, uint256 _amount) public onlyModule(2) returns (bool success) {
+        totalSupply_ = totalSupply_.add(_amount);
+        balances[_investor] = balances[_investor].add(_amount);
+        Mint(_investor, _amount);
+        Transfer(address(0), _investor, _amount);
+        return true;
     }
 
     function investorStatus(address _investor) public returns (uint8 _status) {

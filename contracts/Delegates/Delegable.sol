@@ -30,6 +30,9 @@ contract Delegable is AclHelpers {
         authority = msg.sender;
     }
 
+    // _entity will be the address of the module as per the Adam's branch
+    // _delegate address of the delegate whom permission will be provided
+    // _permission permission granted the delegate 
     function grantPermission(uint256[] _permission, address _entity, address _delegate) onlyAuthority {
         require(delegatesAcl[permissionHash(_delegate, _entity)] == bytes32(0));
         bytes32 paramsHash = _permission.length > 0 ? _savePermissions(_permission) : EMPTY_PARAM_HASH;
@@ -37,6 +40,7 @@ contract Delegable is AclHelpers {
         LogGrantPermissions(_delegate, _entity, paramsHash != bytes32(0));
     }
 
+    // _entity will be the address of the module as per the Adam's branch
     function _checkPermissions(address _entity, bytes32 _permission) {
         ///  WIP
     }

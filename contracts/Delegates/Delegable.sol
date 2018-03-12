@@ -8,8 +8,10 @@ contract Delegable is AclHelpers {
     bytes32 constant public EMPTY_PARAM_HASH = keccak256(uint256(0));
 
     mapping(bytes32 => bytes32) public delegatesAcl;
+    mapping(address => bytes32) public modulePerm;
 
-    event LogGrantPermissions(address _delegate, address _entity, bool _permission);
+    event LogGrantPermissions(address _delegate, address _module, uint256 _timestamp);
+    event LogAddPermForModule(address indexed _module, bool _permission);
 
     enum Op { NONE, EQ, NEQ, GT, LT, GTE, LTE, NOT, AND, OR, XOR, IF_ELSE, RET } // op types
 
@@ -27,21 +29,27 @@ contract Delegable is AclHelpers {
     }
 
     function Delegable() {
-        authority = msg.sender;
     }
 
-    // _entity will be the address of the module as per the Adam's branch
-    // _delegate address of the delegate whom permission will be provided
-    // _permission permission granted the delegate 
-    function grantPermission(uint256[] _permission, address _entity, address _delegate) onlyAuthority {
-        require(delegatesAcl[permissionHash(_delegate, _entity)] == bytes32(0));
+    // Here this function is restricted and only be called by the securityToken
+    function addModulePerm(uint256[] _permission, address _module) internal {
+        require(_module != address(0));
         bytes32 paramsHash = _permission.length > 0 ? _savePermissions(_permission) : EMPTY_PARAM_HASH;
-        delegatesAcl[permissionHash(_delegate, _entity)] = paramsHash;
-        LogGrantPermissions(_delegate, _entity, paramsHash != bytes32(0));
+        modulePerm[_module] = paramsHash;
+        LogAddPermForModule(_module, paramsHash != bytes32(0));
     }
 
-    // _entity will be the address of the module as per the Adam's branch
-    function _checkPermissions(address _entity, bytes32 _permission) {
+    // _delegate address of the delegate whom permission will be provided
+    function grantPermission(address _delegate, address _module) public {
+        require(modulePerm[_module] != bytes32(0));
+        require(delegatesAcl[permissionHash(_delegate, _module)] == bytes32(0));
+        delegatesAcl[permissionHash(_delegate, _module)] = modulePerm[_module];
+        LogGrantPermissions(_delegate, _module, now);
+    }
+
+    // _module will be the address of the module as per the Adam's branch
+    // TODO:  Verify the permission granted to the delegates as per the module
+    function checkPermissions(address _module, address _delegate) public {
         ///  WIP
     }
 

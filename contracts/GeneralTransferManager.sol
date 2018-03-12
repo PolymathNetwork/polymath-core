@@ -1,11 +1,9 @@
 pragma solidity ^0.4.18;
 
 import './interfaces/ITransferManager.sol';
+import './delegates/DelegablePorting.sol';
 
-contract GeneralTransferManager is ITransferManager {
-
-    //Only owner can remove all restrictions (modify restrictTransfers)
-    address public owner;
+contract GeneralTransferManager is ITransferManager, DelegablePorting {
 
     //Address from which issuances come
     address public issuanceAddress;
@@ -27,20 +25,12 @@ contract GeneralTransferManager is ITransferManager {
     event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
 
-    modifier onlyOwnerOrDelegates {
-        require((msg.sender == owner) || (delegates[msg.sender] != 0x0));
-        _;
-    }
-
-    modifier onlyOwner {
-        require(msg.sender == owner);
-        _;
-    }
-
     //TODO: Pull in delegates here
-    function GeneralTransferManager(address _owner, bytes _data) public {
+    function GeneralTransferManager(address _owner, bytes _data, address _securityToken)
+    DelegablePorting(_owner, _securityToken)
+    public 
+    {
         //TODO: Could insist this is only called by the GeneralTransferManagerFactory
-        owner = _owner;
         issuanceAddress = bytesToAddr(_data);
     }
 

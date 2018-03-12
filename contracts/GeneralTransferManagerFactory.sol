@@ -6,7 +6,7 @@ import './interfaces/IModuleFactory.sol';
 contract GeneralTransferManagerFactory is IModuleFactory {
 
   function deploy(address _owner, bytes _data) external returns(address) {
-    return address(new GeneralTransferManager(_owner, _data));
+    return address(new GeneralTransferManager(_owner, _data, msg.sender));
   }
 
   function getCost() external returns(uint256) {

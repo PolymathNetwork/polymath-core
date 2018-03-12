@@ -1,13 +1,14 @@
 pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
+import './delegates/Delegable.sol';
 import './interfaces/ITransferManager.sol';
 import './interfaces/IModule.sol';
 import './interfaces/IModuleFactory.sol';
 import './interfaces/IModuleRegistry.sol';
 import './interfaces/IST20.sol';
 
-contract SecurityToken is StandardToken, IST20 {
+contract SecurityToken is StandardToken, IST20, Delegable {
 
     // Owner of the ST
     address public owner;
@@ -46,7 +47,7 @@ contract SecurityToken is StandardToken, IST20 {
     //TODO: should you be able to replace these? My feeling is no - if that flexibility is needed, the module itself should allow it via delegation
     //TODO cont.: this would give more clarity to users of the ST as they would know what can and can't be changed down the line.
     //TODO cont.: e.g. for an STO module, we could delegate it rights to freely transfer / mint tokens, but users would know that this couldn't be reused in future after the STO finishes.
-    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost) public onlyOwner {
+    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm) public onlyOwner {
         //Check that module exists in registry
         require(IModuleRegistry(moduleRegistry).checkModule(_moduleFactory));
         uint256 moduleCost = IModuleRegistry(moduleRegistry).getCost(_moduleFactory);
@@ -57,6 +58,10 @@ contract SecurityToken is StandardToken, IST20 {
         //TODO: Integrate delegates into this from Satyam's branch
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         IModule module = IModule(moduleFactory.deploy(owner, _data));
+
+        // One way of adding the permission to delegates corresponds to the module
+        addModulePerm(_perm, module);
+
         //Check that this module has not already been set
         require(modules[moduleFactory.getType()].moduleAddress == address(0));
         //Add to SecurityToken module map

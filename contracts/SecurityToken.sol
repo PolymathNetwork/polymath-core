@@ -97,14 +97,10 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
 
     // Delegates this to a TransferManager module, which has a key of 0
     function verifyTransfer(address _from, address _to) public returns (bool success) {
-        //TODO: Do we want this logic? No registered TokenManager module means all transfers allowed
-        if (modules[1].moduleAddress == address(0)) {
-          return true;
-        }
-        return ITransferManager(modules[1].moduleAddress).verifyTransfer(_from, _to);
+        return ITransferManager(modules[0].moduleAddress).verifyTransfer(_from, _to);
     }
 
-    function investorStatus(address _investor) public returns (uint8 _status){
+    function investorStatus(address _investor) public returns (uint8 _status) {
       // TODO
       return 0;
     }

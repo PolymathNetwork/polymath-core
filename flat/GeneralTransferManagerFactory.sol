@@ -1,7 +1,66 @@
 pragma solidity ^0.4.18;
 
-import './interfaces/ITransferManager.sol';
-import './delegates/DelegablePorting.sol';
+//Simple interface that any module contracts should implement
+contract IModule {
+
+}
+
+contract ITransferManager is IModule {
+
+    function verifyTransfer(address _to, address _from) external returns(bool);
+
+}
+
+interface IDelegable {
+
+    function grantPermission(address _delegate, address _module) public;
+
+    /// WIP
+    function checkPermissions(address _module, address _delegate) public;
+
+}
+
+contract DelegablePorting {
+
+    IDelegable delegable;
+
+    address public owner;
+
+    modifier onlyOwner() {
+        require(msg.sender == owner);
+        _;
+    }
+
+    modifier onlyOwnerOrDelegates {
+        require((msg.sender == owner) || validateDelegate(msg.sender));
+        _;
+    }
+
+    function DelegablePorting(address _owner, address _delegable) public {
+        owner = _owner;
+        delegable = IDelegable(_delegable);
+    }
+
+    function grantPermToDelegate(address _delegate) onlyOwner public {
+        require(_delegate != address(0));
+        delegable.grantPermission(_delegate, this);
+    }
+
+    function grantPermToDelegatesMulti(address[] _delegates) onlyOwner public {
+        for (uint i = 0; i < _delegates.length; i++) {
+            grantPermToDelegate(_delegates[i]);
+        }
+    }
+
+    // TODO : to check according to the permission 
+    function validateDelegate(address _delegate) public returns(bool) {
+        // TODO: not decided yet the return value of the checkPermissions 
+        delegable.checkPermissions(this, _delegate);
+        return true;
+    }
+
+
+}
 
 contract GeneralTransferManager is ITransferManager, DelegablePorting {
 
@@ -86,4 +145,41 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
           modifyWhitelist(_investors[i], _times[i]);
         }
     }
+}
+
+//Simple interface that any module contracts should implement
+interface IModuleFactory {
+
+    //TODO: Add delegates to this
+    //Should create an instance of the Module, or throw
+    function deploy(address _owner, bytes _data) external returns(address);
+
+    function getType() external returns(uint8);
+
+    function getName() external returns(bytes32);
+
+    //Return the cost (in POLY) to use this factory
+    function getCost() external returns(uint256);
+
+}
+
+contract GeneralTransferManagerFactory is IModuleFactory {
+
+  function deploy(address _owner, bytes _data) external returns(address) {
+    return address(new GeneralTransferManager(_owner, _data, msg.sender));
+  }
+
+  function getCost() external returns(uint256) {
+    return 0;
+  }
+
+  function getType() external returns(uint8) {
+      return 1;
+  }
+
+  function getName() external returns(bytes32) {
+    return "GeneralTransferManager";
+  }
+
+
 }

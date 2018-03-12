@@ -28,7 +28,8 @@ contract Delegable is AclHelpers {
         _;
     }
 
-    function Delegable() {
+    function Delegable() public {
+        // TODO: If any global variable required to set
     }
 
     // Here this function is restricted and only be called by the securityToken

@@ -7,7 +7,8 @@ const zero = "0x0000000000000000000000000000000000000000";
 const totalSupply = 100000;
 const name = "TEST POLY";
 const symbol = "TPOLY";
-const securityDetails = "This is a legit issuance..."
+const securityDetails = "This is a legit issuance...";
+const perm = [1,2,3];
 
 module.exports = async (deployer, network) => {
   await deployer.deploy(ModuleRegistry);
@@ -16,5 +17,5 @@ module.exports = async (deployer, network) => {
   await moduleRegistry.registerModule(GeneralTransferManagerFactory.address);
   await deployer.deploy(SecurityToken, owner, totalSupply, name, symbol, 18, securityDetails, ModuleRegistry.address);
   let securityToken = await SecurityToken.deployed();
-  await securityToken.addModule(GeneralTransferManagerFactory.address, zero, 0, {from: owner});
+  await securityToken.addModule(GeneralTransferManagerFactory.address, zero, 0, perm, {from: owner});
 };

@@ -1,6 +1,7 @@
 pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
+import 'zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
 import './delegates/Delegable.sol';
 import './interfaces/ITransferManager.sol';
 import './interfaces/IModule.sol';
@@ -8,7 +9,7 @@ import './interfaces/IModuleFactory.sol';
 import './interfaces/IModuleRegistry.sol';
 import './interfaces/IST20.sol';
 
-contract SecurityToken is StandardToken, IST20, Delegable {
+contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
 
     // Owner of the ST
     address public owner;
@@ -32,7 +33,7 @@ contract SecurityToken is StandardToken, IST20, Delegable {
     }
 
     function SecurityToken(address _owner, uint256 _totalSupply, string _name, string _symbol, uint8 _decimals, bytes32 _securityDetails, address _moduleRegistry) public
-        DetailedERC20(_name, _symbol, _decimals)
+    DetailedERC20(_name, _symbol, _decimals)
     {
         require(_owner != address(0));
         require(_totalSupply > 0);
@@ -101,6 +102,11 @@ contract SecurityToken is StandardToken, IST20, Delegable {
           return true;
         }
         return ITransferManager(modules[1].moduleAddress).verifyTransfer(_from, _to);
+    }
+
+    function investorStatus(address _investor) public returns (uint8 _status){
+      // TODO
+      return 0;
     }
 
 }

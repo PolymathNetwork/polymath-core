@@ -7,8 +7,9 @@
     "test": "test"
   },
   "scripts": {
-    "test": "testrpc && truffle test",
-    "flatten": "sol-merger './contracts/*.sol' ./flat"
+    "test": "scripts/test.sh",
+    "flatten": "sol-merger './contracts/*.sol' ./flat",
+    "coverage": "./node_modules/.bin/solidity-coverage"
   },
   "repository": {
     "type": "git",
@@ -35,9 +36,13 @@
     "babel-preset-stage-2": "6.24.1",
     "babel-preset-stage-3": "6.24.1",
     "babel-register": "6.26.0",
+    "bignumber.js": "^6.0.0",
+    "web3": "^1.0.0-beta.30",
     "zeppelin-solidity": "1.7.0"
   },
   "devDependencies": {
-    "sol-merger": "^0.1.2"
+    "ganache-cli": "^6.1.0",
+    "sol-merger": "^0.1.2",
+    "truffle": "^4.1.3"
   }
 }

@@ -1,10 +1,11 @@
 pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
+import 'zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
 import './interfaces/ITransferManager.sol';
 import './interfaces/IST20.sol';
 
-contract SecurityToken is StandardToken, IST20 {
+contract SecurityToken is StandardToken, IST20, DetailedERC20 {
 
     // Owner of the ST
     address public owner;
@@ -17,7 +18,7 @@ contract SecurityToken is StandardToken, IST20 {
     }
 
     function SecurityToken(address _owner, uint256 _totalSupply, string _name, string _symbol, uint8 _decimals) public
-     DetailedERC20(_name, _symbol, _decimals)
+    DetailedERC20(_name, _symbol, _decimals)
     {
         require(_owner != address(0));
         require(_totalSupply > 0);
@@ -58,6 +59,11 @@ contract SecurityToken is StandardToken, IST20 {
     // Delegates this to TransferManager - if no transfer manager set, this will throw
     function verifyTransfer(address _from, address _to) public returns (bool success) {
         return TransferManager.verifyTransfer(_from, _to);
+    }
+
+    function investorStatus(address _investor) public returns (uint8 _status){
+      // TODO
+      return 0;
     }
 
 }

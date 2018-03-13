@@ -35,8 +35,9 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
         _;
     }
 
-    modifier onlyModule(i) {
+    modifier onlyModule(uint8 i) {
       require(msg.sender == modules[i].moduleAddress);
+      _;
     }
 
     function SecurityToken(address _owner, uint256 _totalSupply, string _name, string _symbol, uint8 _decimals, bytes32 _securityDetails, address _moduleRegistry) public

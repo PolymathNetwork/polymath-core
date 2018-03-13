@@ -1,5 +1,7 @@
 
+const ModuleRegistry = artifacts.require('./contracts/ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./contracts/SecurityToken.sol');
+const GeneralTransferManagerFactory = artifacts.require('./contracts/GeneralTransferManagerFactory.sol');
 
 const Web3 = require('web3')
 
@@ -73,6 +75,8 @@ contract('SecurityToken', function(accounts) {
   ////
 
   //let C_PolyToken;
+  let C_ModuleRegistry;
+  let C_GeneralTransferManagerFactory;
   let C_SecurityToken;
   let C_CSTOCrowdsale;
 
@@ -92,10 +96,51 @@ contract('SecurityToken', function(accounts) {
 
     token_owner = account_issuer;
 
-    //C_PolyToken = await PolyToken.new({from:account_polymath});
+  });
 
-    // Deploy Token
-    C_SecurityToken = await SecurityToken.new(token_owner,token_totalSupply,token_name, token_symbol,token_decimals,{from:account_issuer});
+  // POLYMATH SETUP step 1: Deploy Module Registry contract
+
+  describe("Deploy Module Registry contract", async function () {
+
+    it("Should have deployed contract", async function () {
+      C_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
+
+      console.log(`\nPolymath Network Smart Contracts Deployed:\n
+        ModuleRegistry: ${C_ModuleRegistry.address}\n
+      `);
+
+      assert.notEqual(C_ModuleRegistry.address.valueOf(), "0x0000000000000000000000000000000000000000", "ModuleRegistry contract was not deployed");
+
+    });
+  });
+
+  // POLYMATH SETUP step 2: Deploy GeneralTransferManagerFactory contract
+
+  describe("Deploy GeneralTransferManagerFactory contract", async function () {
+
+    it("Should have deployed contract", async function () {
+      C_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new({from:account_polymath});
+
+      console.log(`\nPolymath Network Smart Contracts Deployed:\n
+        GeneralTransferManagerFactory: ${C_GeneralTransferManagerFactory.address}\n
+      `);
+
+      assert.notEqual(C_GeneralTransferManagerFactory.address.valueOf(), "0x0000000000000000000000000000000000000000", "GeneralTransferManagerFactory contract was not deployed");
+
+    });
+  });
+
+  // POLYMATH SETUP step 3: Add GeneralTransferManagerFactory to ModuleRegistry
+
+  describe("Add GeneralTransferManagerFactory to ModuleRegistry", async function () {
+
+    it("Should have added GeneralTransferManager module to registry", async function () {
+      await C_ModuleRegistry.registerModule(C_GeneralTransferManagerFactory.address,{from:account_polymath});
+      let module_ = await C_ModuleRegistry.registry(C_GeneralTransferManagerFactory.address);
+
+      assert.equal(web3.utils.toAscii(module_[1]).replace(/\u0000/g, ''), "GeneralTransferManager", "GeneralTransferManager module was not added");
+
+    });
   });
 
   // Step 1: Deploy SecurityToken contract
@@ -103,6 +148,8 @@ contract('SecurityToken', function(accounts) {
   describe("Deploy Example Token contract", async function () {
 
     it("Should have deployed all contracts", async function () {
+      C_SecurityToken = await SecurityToken.new(token_owner,token_totalSupply,token_name, token_symbol,token_decimals,web3.utils.fromAscii("DATA"),C_ModuleRegistry.address,{from:account_issuer});
+
       console.log(`\nPolymath Network Smart Contracts Deployed:\n
         SecurityToken: ${C_SecurityToken.address}\n
       `);

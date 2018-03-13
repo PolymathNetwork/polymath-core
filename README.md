@@ -30,6 +30,17 @@ To test the code simply run:
 $ npm run test
 ```
 
+# Setting up Polymath Network
+
+1. Deploy ModuleRegistry. ModuleRegistry keeps track of all available modules that add new functionalities to
+Polymath-based security tokens. * MANDATORY STEP *
+
+2. Deploy GeneralTransferManagerFactory. This module allows the use of a general TransferManager for newly issued security tokens. The General Transfer Manager gives STs the ability to have their transfers restricted by using an on-chain whitelist.
+
+3. Add the GeneralTransferManagerFactory module to ModuleRegistry by calling `ModuleRegistry.registerModule()`. * MANDATORY STEP *
+
+
+
 ### Styleguide
 
 The polymath-core repo follows the style guide overviewed here:

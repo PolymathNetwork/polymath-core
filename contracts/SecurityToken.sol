@@ -18,6 +18,7 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
     struct ModuleData {
       bytes32 name;
       address moduleAddress;
+      bool replaceable;
     }
 
     address public moduleRegistry;
@@ -40,23 +41,20 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
       _;
     }
 
-    function SecurityToken(address _owner, uint256 _totalSupply, string _name, string _symbol, uint8 _decimals, bytes32 _securityDetails, address _moduleRegistry) public
+    function SecurityToken(address _owner, string _name, string _symbol, uint8 _decimals, bytes32 _securityDetails, address _moduleRegistry) public
     DetailedERC20(_name, _symbol, _decimals)
     {
         require(_owner != address(0));
-        require(_totalSupply > 0);
         owner = _owner;
-        totalSupply_ = _totalSupply;
         moduleRegistry = _moduleRegistry;
         securityDetails = _securityDetails;
-        allocateSecurities();
     }
 
     //You are only ever allowed one instance, for a given module type
     //TODO: should you be able to replace these? My feeling is no - if that flexibility is needed, the module itself should allow it via delegation
     //TODO cont.: this would give more clarity to users of the ST as they would know what can and can't be changed down the line.
     //TODO cont.: e.g. for an STO module, we could delegate it rights to freely transfer / mint tokens, but users would know that this couldn't be reused in future after the STO finishes.
-    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm) public onlyOwner {
+    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable) public onlyOwner {
         //Check that module exists in registry
         require(IModuleRegistry(moduleRegistry).checkModule(_moduleFactory));
         uint256 moduleCost = IModuleRegistry(moduleRegistry).getCost(_moduleFactory);
@@ -64,27 +62,18 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
         require(moduleCost <= _maxCost);
         //TODO: Approve moduleCost from POLY wallet to _moduleFactory
         //Creates instance of module from factory
-        //TODO: Integrate delegates into this from Satyam's branch
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         IModule module = IModule(moduleFactory.deploy(owner, _data));
-
         // One way of adding the permission to delegates corresponds to the module
         addModulePerm(_perm, module);
-
-        //Check that this module has not already been set
-        require(modules[moduleFactory.getType()].moduleAddress == address(0));
+        //Check that this module has not already been set as non-replaceable
+        if (modules[moduleFactory.getType()].moduleAddress != address(0)) {
+          require(modules[moduleFactory.getType()].replaceable);
+        }
         //Add to SecurityToken module map
-        modules[moduleFactory.getType()] = ModuleData(moduleFactory.getName(), address(module));
+        modules[moduleFactory.getType()] = ModuleData(moduleFactory.getName(), address(module), _replaceable);
         //Emit log event
         LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, address(module), moduleCost);
-    }
-
-    /**
-     * @dev Allocate all the pre-mint supply of securities token to owner
-     */
-    function allocateSecurities() internal {
-        balances[owner] = totalSupply_;
-        Transfer(address(0), owner, totalSupply_);
     }
 
     /**

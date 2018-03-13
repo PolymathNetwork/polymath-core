@@ -4,7 +4,7 @@ import '../../interfaces/ISTO.sol';
 import '../../interfaces/IST20.sol';
 import '../../delegates/DelegablePorting.sol';
 
-contract NoOpSTO is ISTO {
+contract DummySTO is ISTO {
 
   address public securityToken;
   address public owner;
@@ -19,7 +19,7 @@ contract NoOpSTO is ISTO {
     _;
   }
 
-  function NoOpSTO(address _owner, address _securityToken) public {
+  function DummySTO(address _owner, address _securityToken) public {
     owner = _owner;
     securityToken = _securityToken;
   }

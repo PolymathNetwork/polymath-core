@@ -1,12 +1,12 @@
 pragma solidity ^0.4.18;
 
-import './NoOpSTO.sol';
+import './DummySTO.sol';
 import '../../interfaces/IModuleFactory.sol';
 
-contract NoOpSTOFactory is IModuleFactory {
+contract DummySTOFactory is IModuleFactory {
 
   function deploy(address _owner, bytes _data) external returns(address) {
-    return address(new NoOpSTO(_owner, msg.sender));
+    return address(new DummySTO(_owner, msg.sender));
   }
 
   function getCost() external returns(uint256) {
@@ -18,7 +18,7 @@ contract NoOpSTOFactory is IModuleFactory {
   }
 
   function getName() external returns(bytes32) {
-    return "NoOpSTO";
+    return "DummySTO";
   }
 
 

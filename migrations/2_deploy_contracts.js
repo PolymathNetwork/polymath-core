@@ -12,7 +12,7 @@ const totalSupply = 100000;
 const name = "TEST POLY";
 const symbol = "TPOLY";
 const securityDetails = "This is a legit issuance...";
-const perm = [1,2,3];
+const perm = [];
 
 module.exports = async (deployer, network) => {
   await deployer.deploy(ModuleRegistry);
@@ -31,9 +31,11 @@ module.exports = async (deployer, network) => {
   await tickerRegistrar.registerTicker(symbol, "poly@polymath.network", { from: owner });
 
   let STRegistrar = await SecurityTokenRegistrar.deployed();
-  await STRegistrar.generateSecurityToken(owner, name, symbol, 18, securityDetails);
+  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(owner, name, symbol, 18, securityDetails);
+  let newSecurityTokenAddress = r_generateSecurityToken.logs[0].args._securityTokenAddress;
 
-  let securityToken = await SecurityToken.deployed();
+  let securityToken = await SecurityToken.at(newSecurityTokenAddress);
+  //console.log(securityToken);
   await securityToken.addModule(GeneralTransferManagerFactory.address, zero, 0, perm, true, {from: owner});
   await securityToken.addModule(DummySTOFactory.address, zero, 0, perm, false, {from: owner});
 };

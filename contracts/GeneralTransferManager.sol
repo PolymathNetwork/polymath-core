@@ -24,11 +24,12 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
     event LogAllowAllTransfers(bool _allowAllTransfers);
     event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
+    event LogModifyWhitelist(address _investor, uint256 _time);
 
     //TODO: Pull in delegates here
     function GeneralTransferManager(address _owner, bytes _data, address _securityToken)
     DelegablePorting(_owner, _securityToken)
-    public 
+    public
     {
         //TODO: Could insist this is only called by the GeneralTransferManagerFactory
         issuanceAddress = bytesToAddr(_data);
@@ -78,6 +79,7 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
     function modifyWhitelist(address _investor, uint256 _time) public onlyOwnerOrDelegates {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = _time;
+        LogModifyWhitelist(_investor, _time);
     }
 
     function modifyWhitelistMulti(address[] _investors, uint256[] _times) public onlyOwnerOrDelegates {

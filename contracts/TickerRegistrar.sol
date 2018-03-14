@@ -8,12 +8,12 @@ pragma solidity ^0.4.18;
 */
 
 import './SafeMath.sol';
-
+import './interfaces/ITickerRegistrar.sol';
 /**
  * @title TickerRegistrar
  * @dev Contract use to register the security token symbols
  */
-contract TickerRegistrar {
+contract TickerRegistrar is ITickerRegistrar {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
@@ -38,10 +38,10 @@ contract TickerRegistrar {
     mapping(string => SymbolDetails) registeredSymbols;
 
     // Emit after the symbol registration
-    event LogRegisterTicker(address _owner, string indexed _symbol, uint256 _timestamp);
+    event LogRegisterTicker(address _owner, string _symbol, uint256 _timestamp);
     // Emit when the token symbol expired and now it not more reserved for its owner
     // Cont.:: After this emission of the event the token symbol will be available to sale
-    event LogExpiredSymbol(string indexed _symbol, uint256 _timestamp);
+    event LogExpiredSymbol(string _symbol, uint256 _timestamp);
 
     function TickerRegistrar() public {
         admin = msg.sender;

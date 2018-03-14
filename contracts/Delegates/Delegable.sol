@@ -56,13 +56,13 @@ contract Delegable is AclHelpers {
 
     function _savePermissions(uint256[] _encodedParams) internal returns (bytes32) {
         bytes32 paramHash = keccak256(_encodedParams);
-        Permission[] storage params;
+        Permission[] memory params;
 
         if (params.length == 0) { // params not saved before
             for (uint256 i = 0; i < _encodedParams.length; i++) {
                 uint256 encodedParam = _encodedParams[i];
                 Permission memory param = Permission(decodeParamId(encodedParam), decodeParamOp(encodedParam), uint240(encodedParam));
-                params.push(param);
+                params[i] = param;
             }
         }
 

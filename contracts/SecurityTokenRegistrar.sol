@@ -1,12 +1,13 @@
 pragma solidity ^0.4.18;
 
+import './interfaces/ITickerRegistrar.sol';
 import './SecurityToken.sol';
-import './interfaces/ITokenRegistrar';
 
 contract SecurityTokenRegistrar {
 
     address public moduleRegistry;
     address public tickerRegistrar;
+    address public transferManagerFactory;
 
     struct SecurityTokenData {
       string symbol;
@@ -15,7 +16,7 @@ contract SecurityTokenRegistrar {
     }
 
     mapping(address => SecurityTokenData) public securityTokens;
-    mapping(string => address) tickers;
+    mapping(string => address) symbols;
 
     event LogNewSecurityToken(string _ticker, address _securityTokenAddress, address _owner);
 
@@ -23,9 +24,10 @@ contract SecurityTokenRegistrar {
      * @dev Constructor use to set the essentials addresses to facilitate
      * the creation of the security token
      */
-    function SecurityTokenRegistrar(address _moduleRegistry, address _tickerRegistrar) public {
+    function SecurityTokenRegistrar(address _moduleRegistry, address _tickerRegistrar, address _transferManagerFactory) public {
         moduleRegistry = _moduleRegistry;
         tickerRegistrar = _tickerRegistrar;
+        transferManagerFactory = _transferManagerFactory;
     }
 
     /**
@@ -39,15 +41,19 @@ contract SecurityTokenRegistrar {
     function generateSecurityToken(address _owner, string _name, string _symbol, uint8 _decimals, bytes32 _securityDetails) public {
         require(_owner != address(0));
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0);
-        ITokenRegistrar(tickerRegistrar).checkValidity(_symbol,_owner);
-        address newSecurityTokenAddress = new SecurityToken(_owner, _name, _symbol, _decimals, _securityDetails, _moduleRegistry);
+        ITickerRegistrar(tickerRegistrar).checkValidity(_symbol, _owner);
+        address newSecurityTokenAddress = new SecurityToken(
+          _owner,
+          _name,
+          _symbol,
+          _decimals,
+          _securityDetails,
+          moduleRegistry,
+          transferManagerFactory
+          );
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(_symbol, _owner, _securityDetails);
-        tickers[_symbol] = newSecurityTokenAddress;
-        LogNewSecurityToken(_nameSpaceName, _ticker, newSecurityTokenAddress, _owner, _type);
-    }
-
-    function attachTokenTransferModule() internal {
-        // TODO : Yet decided
+        symbols[_symbol] = newSecurityTokenAddress;
+        LogNewSecurityToken(_symbol, newSecurityTokenAddress, _owner);
     }
 
     //////////////////////////////
@@ -55,11 +61,11 @@ contract SecurityTokenRegistrar {
     //////////////////////////////
     /**
      * @dev Get security token address by ticker name
-     * @param _ticker Symbol of the Scurity token
-     * @return address _ticker
+     * @param _symbol Symbol of the Scurity token
+     * @return address _symbol
      */
-    function getSecurityTokenAddress(string _ticker) public view returns (address) {
-      return tickers[_ticker];
+    function getSecurityTokenAddress(string _symbol) public view returns (address) {
+      return symbols[_symbol];
     }
 
     /**
@@ -72,7 +78,7 @@ contract SecurityTokenRegistrar {
       bytes32
     ) {
       return (
-        securityTokens[_STAddress].ticker,
+        securityTokens[_STAddress].symbol,
         securityTokens[_STAddress].owner,
         securityTokens[_STAddress].securityDetails
       );

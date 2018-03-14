@@ -22,12 +22,12 @@ contract ModuleRegistry is IModuleRegistry {
     mapping (address => ModuleReputation) public reputation;
 
     //Checks that module is correctly configured in registry
-    function checkModule(address _moduleFactory) external returns(bool) {
+    function checkModule(address _moduleFactory) external view returns(bool) {
         return (registry[_moduleFactory].moduleType != 0);
     }
 
     //Return the cost (in POLY) to use this factory
-    function getCost(address _moduleFactory) external returns(uint256) {
+    function getCost(address _moduleFactory) external view returns(uint256) {
         return registry[_moduleFactory].cost;
     }
 

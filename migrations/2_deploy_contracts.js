@@ -1,12 +1,15 @@
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
+const GeneralTransferManager = artifacts.require('./GeneralTransferManager.sol');
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
+const DummySTO= artifacts.require('./DummySTO.sol');
 const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
 const TickerRegistrar = artifacts.require('./TickerRegistrar.sol');
 
 const owner = web3.eth.accounts[1];
 const admin = web3.eth.accounts[2];
+const investor1 = web3.eth.accounts[3];
 const zero = "0x0000000000000000000000000000000000000000";
 const totalSupply = 100000;
 const name = "TEST POLY";
@@ -50,6 +53,28 @@ module.exports = async (deployer, network) => {
   //console.log(securityToken);
 
   // 3. Add Transfer and STO modules (Should be removed in next iteration)
-  await securityToken.addModule(GeneralTransferManagerFactory.address, zero, 0, perm, true, {from: owner});
-  await securityToken.addModule(DummySTOFactory.address, zero, 0, perm, false, {from: owner});
+  let r_GeneralTransferManagerFactory = await securityToken.addModule(GeneralTransferManagerFactory.address, zero, 0, perm, true, {from: owner});
+  let generalTransferManagerAddress =  r_GeneralTransferManagerFactory.logs[1].args._module;
+  let generalTransferManager = await GeneralTransferManager.at(generalTransferManagerAddress);
+
+  let r_DummySTOFactory = await securityToken.addModule(DummySTOFactory.address, zero, 0, perm, false, {from: owner});
+  let dummySTOAddress =  r_DummySTOFactory.logs[1].args._module;
+  let dummySTO = await DummySTO.at(dummySTOAddress);
+
+  // 4. Add investor to whitelist
+  await generalTransferManager.modifyWhitelist(investor1, Date.now()/1000, {from:owner});
+
+  // 5. INVEST
+  let r = await dummySTO.generateTokens(investor1, 1000, {from: owner});
+  let investorCount = await dummySTO.investorCount();
+
+  console.log(`
+    ---------------------------------------------------------------
+    --------- INVESTED IN STO ---------
+    ---------------------------------------------------------------
+    - ${r.logs[0].args._investor} purchased ${r.logs[0].args._amount} tokens!
+    - Investor count: ${investorCount}
+    ---------------------------------------------------------------
+  `);
+
 };

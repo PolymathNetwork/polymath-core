@@ -78,11 +78,7 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
     }
 
     //You are only ever allowed one instance, for a given module type
-    //TODO: should you be able to replace these? My feeling is no - if that flexibility is needed, the module itself should allow it via delegation
-    //TODO cont.: this would give more clarity to users of the ST as they would know what can and can't be changed down the line.
-    //TODO cont.: e.g. for an STO module, we could delegate it rights to freely transfer / mint tokens, but users would know that this couldn't be reused in future after the STO finishes.
     function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable) internal {
-
         //Check that module exists in registry
         require(IModuleRegistry(moduleRegistry).checkModule(_moduleFactory));
         uint256 moduleCost = IModuleRegistry(moduleRegistry).getCost(_moduleFactory);

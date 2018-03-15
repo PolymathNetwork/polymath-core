@@ -84,7 +84,7 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
         }
         //Anyone on the whitelist can transfer provided the blocknumber is large enough
         if(_from == address(0)) // Issuance is whitelisted by default
-          return (whitelist[_to].toTime <= now);
+          return onWhitelist(_to);
         else
           return ((whitelist[_from].fromTime <= now) && (whitelist[_to].toTime <= now));
     }

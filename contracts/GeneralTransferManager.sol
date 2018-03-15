@@ -8,8 +8,14 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
     //Address from which issuances come
     address public issuanceAddress;
 
+    //from and to timestamps that an investor can send / receive tokens respectively
+    struct TimeRestriction {
+      uint256 fromTime;
+      uint256 toTime;
+    }
+
     //An address can only send / receive tokens once their corresponding uint256 > block.number (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
-    mapping (address => uint256) public whitelist;
+    mapping (address => TimeRestriction) public whitelist;
 
     //If true, there are no transfer restrictions, for any addresses
     bool public allowAllTransfers = false;
@@ -24,7 +30,7 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
     event LogAllowAllTransfers(bool _allowAllTransfers);
     event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
-    event LogModifyWhitelist(address _investor, uint256 _time);
+    event LogModifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime);
 
     //TODO: Pull in delegates here
     function GeneralTransferManager(address _owner, bytes _data, address _securityToken)
@@ -60,32 +66,37 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
         LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
-    function verifyTransfer(address _to, address _from) view external returns(bool) {
+    function onWhitelist(address _investor) internal returns(bool) {
+      return ((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0));
+    }
+
+    function verifyTransfer(address _from, address _to, uint256 _amount) view external returns(bool) {
         if (allowAllTransfers) {
           //All transfers allowed, regardless of whitelist
           return true;
         }
         if (allowAllWhitelistTransfers) {
           //Anyone on the whitelist can transfer, regardless of block number
-          return ((whitelist[_to] != 0) && (whitelist[_from] != 0));
+          return (onWhitelist(_to) && onWhitelist(_from));
         }
         if (allowAllWhitelistIssuances) {
-            return ((_from == issuanceAddress) && (whitelist[_to] != 0));
+            return ((_from == issuanceAddress) && onWhitelist(_to));
         }
         //Anyone on the whitelist can transfer provided the blocknumber is large enough
-        return ((whitelist[_to] >= now) && (whitelist[_from] >= now));
+        return ((whitelist[_from].fromTime >= now) && (whitelist[_to].toTime >= now));
     }
 
-    function modifyWhitelist(address _investor, uint256 _time) public onlyOwnerOrDelegates {
+    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public onlyOwnerOrDelegates {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
-        whitelist[_investor] = _time;
-        LogModifyWhitelist(_investor, _time);
+        whitelist[_investor] = TimeRestriction(_fromTime, _toTime);
+        LogModifyWhitelist(_investor, _fromTime, _toTime);
     }
 
-    function modifyWhitelistMulti(address[] _investors, uint256[] _times) public onlyOwnerOrDelegates {
-        require(_investors.length == _times.length);
+    function modifyWhitelistMulti(address[] _investors, uint256[] _fromTimes, uint256[] _toTimes) public onlyOwnerOrDelegates {
+        require(_investors.length == _fromTimes.length);
+        require(_fromTimes.length == _toTimes.length);
         for (uint256 i = 0; i < _investors.length; i++) {
-          modifyWhitelist(_investors[i], _times[i]);
+          modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i]);
         }
     }
 }

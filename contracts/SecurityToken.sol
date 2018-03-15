@@ -103,7 +103,7 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
      * @dev Overladed version of the transfer function
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
-        require(verifyTransfer(msg.sender, _to));
+        require(verifyTransfer(msg.sender, _to, _value));
         return super.transfer(_to, _value);
     }
 
@@ -111,18 +111,19 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
      * @dev Overladed version of the transferFrom function
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-        require(verifyTransfer(_from, _to));
+        require(verifyTransfer(_from, _to, _value));
         return super.transferFrom(_from, _to, _value);
     }
 
     // Delegates this to a TransferManager module, which has a key of 1
     // Will throw if no TransferManager module set
-    function verifyTransfer(address _from, address _to) public returns (bool success) {
-        return ITransferManager(modules[1].moduleAddress).verifyTransfer(_from, _to);
+    function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool success) {
+        return ITransferManager(modules[1].moduleAddress).verifyTransfer(_from, _to, _amount);
     }
 
     // Only STO module can call this, has a key of 2
     function mint(address _investor, uint256 _amount) public onlyModule(2) returns (bool success) {
+        require(verifyTransfer(address(0), _investor, _amount));
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);
         Mint(_investor, _amount);

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
 import './GeneralTransferManager.sol';
-import './interfaces/IModuleFactory.sol';
+import '../../interfaces/IModuleFactory.sol';
 
 contract GeneralTransferManagerFactory is IModuleFactory {
 

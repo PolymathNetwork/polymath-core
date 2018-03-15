@@ -36,8 +36,13 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
         _;
     }
 
-    modifier onlyModule(uint8 i) {
-      require(msg.sender == modules[i].moduleAddress);
+    //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
+    modifier onlyModule(uint8 _i, bool _fallback) {
+      if (_fallback && (address(0) == modules[_i].moduleAddress)) {
+          require(msg.sender == owner);
+      } else {
+          require(msg.sender == modules[_i].moduleAddress);
+      }
       _;
     }
 
@@ -73,11 +78,7 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
     }
 
     //You are only ever allowed one instance, for a given module type
-    //TODO: should you be able to replace these? My feeling is no - if that flexibility is needed, the module itself should allow it via delegation
-    //TODO cont.: this would give more clarity to users of the ST as they would know what can and can't be changed down the line.
-    //TODO cont.: e.g. for an STO module, we could delegate it rights to freely transfer / mint tokens, but users would know that this couldn't be reused in future after the STO finishes.
     function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable) internal {
-
         //Check that module exists in registry
         require(IModuleRegistry(moduleRegistry).checkModule(_moduleFactory));
         uint256 moduleCost = IModuleRegistry(moduleRegistry).getCost(_moduleFactory);
@@ -103,7 +104,7 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
      * @dev Overladed version of the transfer function
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
-        require(verifyTransfer(msg.sender, _to));
+        require(verifyTransfer(msg.sender, _to, _value));
         return super.transfer(_to, _value);
     }
 
@@ -111,18 +112,22 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
      * @dev Overladed version of the transferFrom function
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-        require(verifyTransfer(_from, _to));
+        require(verifyTransfer(_from, _to, _value));
         return super.transferFrom(_from, _to, _value);
     }
 
     // Delegates this to a TransferManager module, which has a key of 1
     // Will throw if no TransferManager module set
-    function verifyTransfer(address _from, address _to) public returns (bool success) {
-        return ITransferManager(modules[1].moduleAddress).verifyTransfer(_from, _to);
+    function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool success) {
+        if (modules[1].moduleAddress == address(0)) {
+          return true;
+        }
+        return ITransferManager(modules[1].moduleAddress).verifyTransfer(_from, _to, _amount);
     }
 
     // Only STO module can call this, has a key of 2
-    function mint(address _investor, uint256 _amount) public onlyModule(2) returns (bool success) {
+    function mint(address _investor, uint256 _amount) public onlyModule(2, true) returns (bool success) {
+        require(verifyTransfer(address(0), _investor, _amount));
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);
         Mint(_investor, _amount);

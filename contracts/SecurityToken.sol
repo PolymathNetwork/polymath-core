@@ -36,8 +36,13 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
         _;
     }
 
-    modifier onlyModule(uint8 i) {
-      require(msg.sender == modules[i].moduleAddress);
+    //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
+    modifier onlyModule(uint8 _i, bool _fallback) {
+      if (_fallback && (address(0) == modules[_i].moduleAddress)) {
+          require(msg.sender == owner);
+      } else {
+          require(msg.sender == modules[_i].moduleAddress);
+      }
       _;
     }
 
@@ -118,11 +123,14 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
     // Delegates this to a TransferManager module, which has a key of 1
     // Will throw if no TransferManager module set
     function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool success) {
+        if (modules[1].moduleAddress == address(0)) {
+          return true;
+        }
         return ITransferManager(modules[1].moduleAddress).verifyTransfer(_from, _to, _amount);
     }
 
     // Only STO module can call this, has a key of 2
-    function mint(address _investor, uint256 _amount) public onlyModule(2) returns (bool success) {
+    function mint(address _investor, uint256 _amount) public onlyModule(2, true) returns (bool success) {
         require(verifyTransfer(address(0), _investor, _amount));
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);

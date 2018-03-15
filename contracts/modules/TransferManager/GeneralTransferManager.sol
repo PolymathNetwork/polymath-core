@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
-import './interfaces/ITransferManager.sol';
-import './delegates/DelegablePorting.sol';
+import '../../interfaces/ITransferManager.sol';
+import '../../delegates/DelegablePorting.sol';
 
 contract GeneralTransferManager is ITransferManager, DelegablePorting {
 

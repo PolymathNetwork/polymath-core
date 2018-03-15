@@ -35,15 +35,15 @@ contract DummySTO is ISTO {
     LogGenerateTokens(_investor, _amount);
   }
 
-  function getRaiseEther() public returns (uint256) {
+  function getRaiseEther() view public returns (uint256) {
     return 0;
   }
 
-  function getRaisePOLY() public returns (uint256) {
+  function getRaisePOLY() view public returns (uint256) {
     return 0;
   }
 
-  function getNumberInvestors() public returns (uint256) {
+  function getNumberInvestors() view public returns (uint256) {
     return investorCount;
   }
 

@@ -60,7 +60,7 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
         LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
-    function verifyTransfer(address _to, address _from) external returns(bool) {
+    function verifyTransfer(address _to, address _from) view external returns(bool) {
         if (allowAllTransfers) {
           //All transfers allowed, regardless of whitelist
           return true;

@@ -4,6 +4,6 @@ import './IModule.sol';
 
 contract ITransferManager is IModule {
 
-    function verifyTransfer(address _to, address _from) external returns(bool);
+    function verifyTransfer(address _to, address _from) view external returns(bool);
 
 }

@@ -9,15 +9,15 @@ contract GeneralTransferManagerFactory is IModuleFactory {
     return address(new GeneralTransferManager(_owner, _data, msg.sender));
   }
 
-  function getCost() external returns(uint256) {
+  function getCost() view external returns(uint256) {
     return 0;
   }
 
-  function getType() external returns(uint8) {
+  function getType() view external returns(uint8) {
       return 1;
   }
 
-  function getName() external returns(bytes32) {
+  function getName() view external returns(bytes32) {
     return "GeneralTransferManager";
   }
 

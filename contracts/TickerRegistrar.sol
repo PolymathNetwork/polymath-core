@@ -93,6 +93,7 @@ contract TickerRegistrar is ITickerRegistrar {
      */
     function checkValidity(string _symbol, address _owner) public {
         require(msg.sender == STRAddress);
+        require(registeredSymbols[_symbol].status != true);
         require(registeredSymbols[_symbol].owner == _owner);
         require(registeredSymbols[_symbol].timestamp.add(EXPIRY_LIMIT) >= now);
         registeredSymbols[_symbol].status = true;

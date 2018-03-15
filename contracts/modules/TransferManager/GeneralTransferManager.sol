@@ -66,7 +66,7 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
         LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
-    function onWhitelist(address _investor) internal returns(bool) {
+    function onWhitelist(address _investor) internal view returns(bool) {
       return ((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0));
     }
 
@@ -83,7 +83,10 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
             return ((_from == issuanceAddress) && onWhitelist(_to));
         }
         //Anyone on the whitelist can transfer provided the blocknumber is large enough
-        return ((whitelist[_from].fromTime >= now) && (whitelist[_to].toTime >= now));
+        if(_from == address(0)) // Issuance is whitelisted by default
+          return (whitelist[_to].toTime <= now);
+        else
+          return ((whitelist[_from].fromTime <= now) && (whitelist[_to].toTime <= now));
     }
 
     function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public onlyOwnerOrDelegates {

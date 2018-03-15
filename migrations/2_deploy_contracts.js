@@ -7,9 +7,11 @@ const DummySTO= artifacts.require('./DummySTO.sol');
 const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
 const TickerRegistrar = artifacts.require('./TickerRegistrar.sol');
 
-const owner = web3.eth.accounts[1];
-const admin = web3.eth.accounts[2];
-const investor1 = web3.eth.accounts[3];
+const Web3 = require('web3');
+const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
+
+
+
 const zero = "0x0000000000000000000000000000000000000000";
 const totalSupply = 100000;
 const name = "TEST POLY";
@@ -17,7 +19,13 @@ const symbol = "TPOLY";
 const securityDetails = "This is a legit issuance...";
 const perm = [];
 
-module.exports = async (deployer, network) => {
+
+
+module.exports = async (deployer, network, accounts) => {
+
+  const owner = accounts[1];
+  const admin = accounts[2];
+  const investor1 = accounts[3];
 
   // A) POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
   // 1. Deploy Registry, Transfer Manager
@@ -53,9 +61,11 @@ module.exports = async (deployer, network) => {
   //console.log(securityToken);
 
   // 3. Add Transfer and STO modules (Should be removed in next iteration)
-  let r_GeneralTransferManagerFactory = await securityToken.addModule(GeneralTransferManagerFactory.address, zero, 0, perm, true, {from: owner});
-  let generalTransferManagerAddress =  r_GeneralTransferManagerFactory.logs[1].args._module;
-  let generalTransferManager = await GeneralTransferManager.at(generalTransferManagerAddress);
+  // let r_GeneralTransferManagerFactory = await securityToken.addModule(GeneralTransferManagerFactory.address, zero, 0, perm, true, {from: owner});
+  // let generalTransferManagerAddress =  r_GeneralTransferManagerFactory.logs[1].args._module;
+  // let generalTransferManager = await GeneralTransferManager.at(generalTransferManagerAddress);
+  let generalTransferManagerObject = await securityToken.modules(1);
+  let generalTransferManager = await GeneralTransferManager.at(generalTransferManagerObject[1]);
 
   let r_DummySTOFactory = await securityToken.addModule(DummySTOFactory.address, zero, 0, perm, false, {from: owner});
   let dummySTOAddress =  r_DummySTOFactory.logs[1].args._module;

@@ -26,7 +26,7 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
     // TransferManager has a key of 1
     // STO has a key of 2
     // Other modules TBD
-    mapping (uint8 => ModuleData) modules;
+    mapping (uint8 => ModuleData) public modules;
 
     event LogModuleAdded(uint8 _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost);
     event Mint(address indexed to, uint256 amount);

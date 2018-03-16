@@ -4,13 +4,15 @@ const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManage
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager.sol');
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
 const DummySTO= artifacts.require('./DummySTO.sol');
+const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
+const CappedSTO= artifacts.require('./CappedSTO.sol');
 const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
 const TickerRegistrar = artifacts.require('./TickerRegistrar.sol');
 
 const Web3 = require('web3');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
-
+var BigNumber = require('bignumber.js')
 
 const zero = "0x0000000000000000000000000000000000000000";
 const totalSupply = 100000;
@@ -18,8 +20,6 @@ const name = "TEST POLY";
 const symbol = "TPOLY";
 const securityDetails = "This is a legit issuance...";
 const perm = [];
-
-
 
 module.exports = async (deployer, network, accounts) => {
 
@@ -45,6 +45,8 @@ module.exports = async (deployer, network, accounts) => {
   // B) DEPLOY STO factories and register them with the Registry
   await deployer.deploy(DummySTOFactory);
   await moduleRegistry.registerModule(DummySTOFactory.address);
+  await deployer.deploy(CappedSTOFactory);
+  await moduleRegistry.registerModule(CappedSTOFactory.address);
 
   // -------- END OF SETUP -------
 
@@ -66,6 +68,34 @@ module.exports = async (deployer, network, accounts) => {
 
   //Generate bytes to initialise the DummySTO - args for its initFunction are:
   //configure(uint256 _startTime, uint256 _endTime, uint256 _cap, bytes32 _someBytes)
+  // let bytesSTO = web3.eth.abi.encodeFunctionCall({
+  //     name: 'configure',
+  //     type: 'function',
+  //     inputs: [{
+  //         type: 'uint256',
+  //         name: '_startTime'
+  //     },{
+  //         type: 'uint256',
+  //         name: '_endTime'
+  //     },{
+  //         type: 'uint256',
+  //         name: '_cap'
+  //     },{
+  //         type: 'string',
+  //         name: '_someString'
+  //     }
+  //     ]
+  // }, ['1', '2', '3', "SomeString"]);
+  //address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable
+  // let r_DummySTOFactory = await securityToken.addModule(DummySTOFactory.address, bytesSTO, 0, perm, false, {from: owner});
+  // let dummySTOAddress =  r_DummySTOFactory.logs[1].args._module;
+  // let dummySTO = await DummySTO.at(dummySTOAddress);
+  //
+  // console.log((await dummySTO.startTime()).toString());
+  // console.log((await dummySTO.endTime()).toString());
+  // console.log((await dummySTO.cap()).toString());
+  // console.log(await dummySTO.someString());
+
   let bytesSTO = web3.eth.abi.encodeFunctionCall({
       name: 'configure',
       type: 'function',
@@ -79,33 +109,33 @@ module.exports = async (deployer, network, accounts) => {
           type: 'uint256',
           name: '_cap'
       },{
-          type: 'string',
-          name: '_someString'
+          type: 'uint256',
+          name: '_rate'
       }
       ]
-  }, ['1', '2', '3', "SomeString"]);
-  //address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable
-  let r_DummySTOFactory = await securityToken.addModule(DummySTOFactory.address, bytesSTO, 0, perm, false, {from: owner});
-  let dummySTOAddress =  r_DummySTOFactory.logs[1].args._module;
-  let dummySTO = await DummySTO.at(dummySTOAddress);
+  }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, '1000000', '1000']);
 
-  // console.log((await dummySTO.startTime()).toString());
-  // console.log((await dummySTO.endTime()).toString());
-  // console.log((await dummySTO.cap()).toString());
-  // console.log(await dummySTO.someString());
+  let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, perm, false, {from: owner});
+  let cappedSTOAddress =  r_CappedSTOFactory.logs[1].args._module;
+  let cappedSTO = await CappedSTO.at(cappedSTOAddress);
+
+  // console.log((await cappedSTO.startTime()).toString());
+  // console.log((await cappedSTO.endTime()).toString());
+  // console.log((await cappedSTO.cap()).toString());
+  // console.log((await cappedSTO.rate()).toString());
 
   // 4. Add investor to whitelist
   await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, {from:owner});
 
   // 5. INVEST
-  let r = await dummySTO.generateTokens(investor1, 1000, {from: owner});
-  let investorCount = await dummySTO.investorCount();
+  let r = await cappedSTO.buyTokens(investor1, {from: owner, value:web3.utils.toWei('1', 'ether')});
+  let investorCount = await cappedSTO.investorCount();
 
   console.log(`
     ---------------------------------------------------------------
     --------- INVESTED IN STO ---------
     ---------------------------------------------------------------
-    - ${r.logs[0].args._investor} purchased ${r.logs[0].args._amount} tokens!
+    - ${r.logs[0].args.beneficiary} purchased ${web3.utils.fromWei(r.logs[0].args.amount.toString(10))} tokens!
     - Investor count: ${investorCount}
     ---------------------------------------------------------------
   `);

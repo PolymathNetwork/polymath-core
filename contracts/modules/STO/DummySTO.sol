@@ -36,15 +36,15 @@ contract DummySTO is ISTO {
     factory = msg.sender;
   }
 
-  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap) public onlyOwnerOrFactory {
+  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public onlyOwnerOrFactory {
     startTime = _startTime;
     endTime = _endTime;
     cap = _cap;
-    /* someString = _someString; */
+    someString = _someString;
   }
 
   function getInitFunction() public returns (bytes4) {
-    return bytes4(keccak256("configure(uint256,uint256,uint256)"));
+    return bytes4(keccak256("configure(uint256,uint256,uint256,string)"));
   }
 
   function generateTokens(address _investor, uint256 _amount) public onlyOwner {

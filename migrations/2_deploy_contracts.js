@@ -81,9 +81,12 @@ module.exports = async (deployer, network, accounts) => {
       },{
           type: 'uint256',
           name: '_cap'
+      },{
+          type: 'string',
+          name: '_someString'
       }
       ]
-  }, ['1', '2', '3']);
+  }, ['1', '2', '3', "SomeString"]);
   //address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable
   let r_DummySTOFactory = await securityToken.addModule(DummySTOFactory.address, bytesSTO, 0, perm, false, {from: owner});
   let dummySTOAddress =  r_DummySTOFactory.logs[1].args._module;
@@ -92,7 +95,7 @@ module.exports = async (deployer, network, accounts) => {
   console.log((await dummySTO.startTime()).toString());
   console.log((await dummySTO.endTime()).toString());
   console.log((await dummySTO.cap()).toString());
-  // console.log(await dummySTO.someString());
+  console.log(await dummySTO.someString());
 
   // 4. Add investor to whitelist
   await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, {from:owner});

@@ -10,6 +10,11 @@ contract DummySTO is ISTO {
   address public owner;
   uint256 public investorCount;
 
+  uint256 public startTime;
+  uint256 public endTime;
+  uint256 public cap;
+  string public someString;
+
   event LogGenerateTokens(address _investor, uint256 _amount);
 
   mapping (address => uint256) public investors;
@@ -19,9 +24,27 @@ contract DummySTO is ISTO {
     _;
   }
 
+  modifier onlyOwnerOrFactory {
+    require((msg.sender == owner) || (msg.sender == factory));
+    _;
+  }
+
   function DummySTO(address _owner, address _securityToken) public {
+    //For the duration of the constructor, caller is the owner
     owner = _owner;
     securityToken = _securityToken;
+    factory = msg.sender;
+  }
+
+  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap) public onlyOwnerOrFactory {
+    startTime = _startTime;
+    endTime = _endTime;
+    cap = _cap;
+    /* someString = _someString; */
+  }
+
+  function getInitFunction() public returns (bytes4) {
+    return bytes4(keccak256("configure(uint256,uint256,uint256)"));
   }
 
   function generateTokens(address _investor, uint256 _amount) public onlyOwner {

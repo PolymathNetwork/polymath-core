@@ -38,6 +38,11 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
     DelegablePorting(_owner, _securityToken)
     public
     {
+      factory = msg.sender;
+    }
+
+    function getInitFunction() public returns(bytes4) {
+      return bytes4(0);
     }
 
     //TODO: No longer needed - can remove

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
 //Simple interface that any module contracts should implement
-interface IModuleFactory {
+contract IModuleFactory {
 
     //TODO: Add delegates to this
     //Should create an instance of the Module, or throw
@@ -13,5 +13,13 @@ interface IModuleFactory {
 
     //Return the cost (in POLY) to use this factory
     function getCost() view external returns(uint256);
+
+    //Pull function sig from _data
+    function getSig(bytes _data) internal pure returns (bytes4 sig) {
+        uint l = _data.length < 4 ? _data.length : 4;
+        for (uint i = 0; i < l; i++) {
+            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (l - 1 - i))));
+        }
+    }
 
 }

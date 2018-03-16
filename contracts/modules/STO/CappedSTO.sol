@@ -121,6 +121,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
   function _preValidatePurchase(address _beneficiary, uint256 _weiAmount) internal {
     require(_beneficiary != address(0));
     require(_weiAmount != 0);
+    require(weiRaised.add(_weiAmount) <= cap);
   }
 
   /**
@@ -178,6 +179,14 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
    */
   function _forwardFunds() internal {
     wallet.transfer(msg.value);
+  }
+
+  /**
+   * @dev Checks whether the cap has been reached.
+   * @return Whether the cap was reached
+   */
+  function capReached() public view returns (bool) {
+    return weiRaised >= cap;
   }
 
   function getRaiseEther() view public returns (uint256) {

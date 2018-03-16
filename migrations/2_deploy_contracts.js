@@ -55,7 +55,7 @@ module.exports = async (deployer, network, accounts) => {
 
   // 2. Deploy Token
   let STRegistrar = await SecurityTokenRegistrar.deployed();
-  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(owner, name, symbol, 18, securityDetails);
+  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(owner, name, symbol, 18, securityDetails, {from: owner});
   let newSecurityTokenAddress = r_generateSecurityToken.logs[0].args._securityTokenAddress;
   let securityToken = await SecurityToken.at(newSecurityTokenAddress);
   //console.log(securityToken);

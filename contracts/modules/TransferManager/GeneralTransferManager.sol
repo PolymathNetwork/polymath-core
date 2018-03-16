@@ -6,7 +6,7 @@ import '../../delegates/DelegablePorting.sol';
 contract GeneralTransferManager is ITransferManager, DelegablePorting {
 
     //Address from which issuances come
-    address public issuanceAddress;
+    address public issuanceAddress = address(0);
 
     //from and to timestamps that an investor can send / receive tokens respectively
     struct TimeRestriction {
@@ -22,11 +22,12 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
     //If true, time lock is ignored for transfers (address must still be on whitelist)
     bool public allowAllWhitelistTransfers = false;
     //If true, time lock is ignored for issuances (address must still be on whitelist)
-    bool public allowAllWhitelistIssuances = false;
+    bool public allowAllWhitelistIssuances = true;
 
     //In this case we treat delegates as having full rights to modify whitelist
     mapping (address => bytes32) public delegates;
 
+    event LogChangeIssuanceAddress(address _issuanceAddress);
     event LogAllowAllTransfers(bool _allowAllTransfers);
     event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
@@ -37,10 +38,9 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
     DelegablePorting(_owner, _securityToken)
     public
     {
-        //TODO: Could insist this is only called by the GeneralTransferManagerFactory
-        issuanceAddress = bytesToAddr(_data);
     }
 
+    //TODO: No longer needed - can remove
     function bytesToAddr(bytes b) public pure returns(address) {
         uint result = 0;
         for (uint i = b.length - 1; i + 1 > 0; i--) {
@@ -49,6 +49,11 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
             result += to_inc;
         }
         return address(result);
+    }
+
+    function changeIssuanceAddress(address _issuanceAddress) public onlyOwner {
+        issuanceAddress = _issuanceAddress;
+        LogChangeIssuanceAddress(_issuanceAddress);
     }
 
     function changeAllowAllTransfers(bool _allowAllTransfers) public onlyOwner {
@@ -83,10 +88,7 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
             return ((_from == issuanceAddress) && onWhitelist(_to));
         }
         //Anyone on the whitelist can transfer provided the blocknumber is large enough
-        if(_from == address(0)) // Issuance is whitelisted by default
-          return onWhitelist(_to);
-        else
-          return ((whitelist[_from].fromTime <= now) && (whitelist[_to].toTime <= now));
+        return ((whitelist[_from].fromTime <= now) && (whitelist[_to].toTime <= now));
     }
 
     function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public onlyOwnerOrDelegates {

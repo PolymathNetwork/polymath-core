@@ -2,6 +2,7 @@ pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
 import 'zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
+import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import './delegates/Delegable.sol';
 import './interfaces/ITransferManager.sol';
 import './interfaces/IModule.sol';
@@ -9,11 +10,8 @@ import './interfaces/IModuleFactory.sol';
 import './interfaces/IModuleRegistry.sol';
 import './interfaces/IST20.sol';
 
-contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
+contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownable {
     using SafeMath for uint256;
-
-    // Owner of the ST
-    address public owner;
 
     struct ModuleData {
       bytes32 name;
@@ -31,11 +29,6 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
     event LogModuleAdded(uint8 _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost);
     event Mint(address indexed to, uint256 amount);
 
-    modifier onlyOwner {
-        require(msg.sender == owner);
-        _;
-    }
-
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
     modifier onlyModule(uint8 _i, bool _fallback) {
       if (_fallback && (address(0) == modules[_i].moduleAddress)) {
@@ -47,34 +40,22 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20 {
     }
 
     function SecurityToken(
-        address _owner,
         string _name,
         string _symbol,
         uint8 _decimals,
         bytes32 _securityDetails,
-        address _moduleRegistry,
-        address _tokenTransferModuleFactory
+        address _moduleRegistry
     )
     public
     DetailedERC20(_name, _symbol, _decimals)
     {
-        require(_owner != address(0));
-        owner = _owner;
         moduleRegistry = _moduleRegistry;
         securityDetails = _securityDetails;
-        // For attaching the TransferManager automatically below is the process
-        // This is most simple way of doing without too many changes
-        // Before deploying this blueprint we need to hard code those general values(e.g - data, maxcost, perm).
-        // Those general value will be same for each securityToken launch. If issuer wants to other values then they can launch their
-        // new transferManager with new values.
-        // TODO: Need to finalise the variable value
-        uint256[] memory perm;
-        _addModule(_tokenTransferModuleFactory, "0xfffff", uint256(10000), perm, true);
     }
 
     function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable) external {
-      require(msg.sender == owner);
-      _addModule(_moduleFactory, _data, _maxCost, _perm, _replaceable);
+        require(msg.sender == owner);
+        _addModule(_moduleFactory, _data, _maxCost, _perm, _replaceable);
     }
 
     //You are only ever allowed one instance, for a given module type

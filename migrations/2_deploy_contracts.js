@@ -55,7 +55,7 @@ module.exports = async (deployer, network, accounts) => {
 
   // 2. Deploy Token
   let STRegistrar = await SecurityTokenRegistrar.deployed();
-  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(owner, name, symbol, 18, securityDetails);
+  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(owner, name, symbol, 18, securityDetails, {from: owner});
   let newSecurityTokenAddress = r_generateSecurityToken.logs[0].args._securityTokenAddress;
   let securityToken = await SecurityToken.at(newSecurityTokenAddress);
   //console.log(securityToken);
@@ -72,7 +72,7 @@ module.exports = async (deployer, network, accounts) => {
   let dummySTO = await DummySTO.at(dummySTOAddress);
 
   // 4. Add investor to whitelist
-  await generalTransferManager.modifyWhitelist(investor1, Date.now()/1000, {from:owner});
+  await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, {from:owner});
 
   // 5. INVEST
   let r = await dummySTO.generateTokens(investor1, 1000, {from: owner});

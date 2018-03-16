@@ -55,7 +55,7 @@ module.exports = async (deployer, network, accounts) => {
 
   // 2. Deploy Token
   let STRegistrar = await SecurityTokenRegistrar.deployed();
-  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(owner, name, symbol, 18, securityDetails, {from: owner});
+  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(owner, name, symbol, 18, securityDetails);
   let newSecurityTokenAddress = r_generateSecurityToken.logs[0].args._securityTokenAddress;
   let securityToken = await SecurityToken.at(newSecurityTokenAddress);
   //console.log(securityToken);
@@ -67,9 +67,35 @@ module.exports = async (deployer, network, accounts) => {
   let generalTransferManagerObject = await securityToken.modules(1);
   let generalTransferManager = await GeneralTransferManager.at(generalTransferManagerObject[1]);
 
-  let r_DummySTOFactory = await securityToken.addModule(DummySTOFactory.address, zero, 0, perm, false, {from: owner});
+  //Generate bytes to initialise the DummySTO - args for its initFunction are:
+  //configure(uint256 _startTime, uint256 _endTime, uint256 _cap, bytes32 _someBytes)
+  let bytesSTO = web3.eth.abi.encodeFunctionCall({
+      name: 'configure',
+      type: 'function',
+      inputs: [{
+          type: 'uint256',
+          name: '_startTime'
+      },{
+          type: 'uint256',
+          name: '_endTime'
+      },{
+          type: 'uint256',
+          name: '_cap'
+      },{
+          type: 'string',
+          name: '_someString'
+      }
+      ]
+  }, ['1', '2', '3', "SomeString"]);
+  //address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable
+  let r_DummySTOFactory = await securityToken.addModule(DummySTOFactory.address, bytesSTO, 0, perm, false, {from: owner});
   let dummySTOAddress =  r_DummySTOFactory.logs[1].args._module;
   let dummySTO = await DummySTO.at(dummySTOAddress);
+
+  console.log((await dummySTO.startTime()).toString());
+  console.log((await dummySTO.endTime()).toString());
+  console.log((await dummySTO.cap()).toString());
+  console.log(await dummySTO.someString());
 
   // 4. Add investor to whitelist
   await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, {from:owner});

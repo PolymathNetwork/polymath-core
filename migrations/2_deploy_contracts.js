@@ -60,10 +60,7 @@ module.exports = async (deployer, network, accounts) => {
   let securityToken = await SecurityToken.at(newSecurityTokenAddress);
   //console.log(securityToken);
 
-  // 3. Add Transfer and STO modules (Should be removed in next iteration)
-  // let r_GeneralTransferManagerFactory = await securityToken.addModule(GeneralTransferManagerFactory.address, zero, 0, perm, true, {from: owner});
-  // let generalTransferManagerAddress =  r_GeneralTransferManagerFactory.logs[1].args._module;
-  // let generalTransferManager = await GeneralTransferManager.at(generalTransferManagerAddress);
+  // 3. Get Transfer Module and Initialize STO module
   let generalTransferManagerObject = await securityToken.modules(1);
   let generalTransferManager = await GeneralTransferManager.at(generalTransferManagerObject[1]);
 
@@ -92,10 +89,10 @@ module.exports = async (deployer, network, accounts) => {
   let dummySTOAddress =  r_DummySTOFactory.logs[1].args._module;
   let dummySTO = await DummySTO.at(dummySTOAddress);
 
-  console.log((await dummySTO.startTime()).toString());
-  console.log((await dummySTO.endTime()).toString());
-  console.log((await dummySTO.cap()).toString());
-  console.log(await dummySTO.someString());
+  // console.log((await dummySTO.startTime()).toString());
+  // console.log((await dummySTO.endTime()).toString());
+  // console.log((await dummySTO.cap()).toString());
+  // console.log(await dummySTO.someString());
 
   // 4. Add investor to whitelist
   await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, {from:owner});

@@ -113,7 +113,7 @@ module.exports = async (deployer, network, accounts) => {
           name: '_rate'
       }
       ]
-  }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, '1000000', '1000']);
+  }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, web3.utils.toWei('100000', 'ether'), '1000']);
 
   let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, perm, false, {from: owner});
   let cappedSTOAddress =  r_CappedSTOFactory.logs[1].args._module;

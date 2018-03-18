@@ -19,7 +19,7 @@ const totalSupply = 100000;
 const name = "TEST POLY";
 const symbol = "TPOLY";
 const securityDetails = "This is a legit issuance...";
-const perm = [];
+const sig = [];
 
 module.exports = async (deployer, network, accounts) => {
 
@@ -115,7 +115,7 @@ module.exports = async (deployer, network, accounts) => {
       ]
   }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, '1000000', '1000']);
 
-  let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, perm, false, {from: owner});
+  let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, sig, false, {from: owner});
   let cappedSTOAddress =  r_CappedSTOFactory.logs[1].args._module;
   let cappedSTO = await CappedSTO.at(cappedSTOAddress);
 
@@ -123,10 +123,10 @@ module.exports = async (deployer, network, accounts) => {
   // console.log((await cappedSTO.endTime()).toString());
   // console.log((await cappedSTO.cap()).toString());
   // console.log((await cappedSTO.rate()).toString());
-
+  
   // 4. Add investor to whitelist
   await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, {from:owner});
-
+  
   // 5. INVEST
   let r = await cappedSTO.buyTokens(investor1, {from: owner, value:web3.utils.toWei('1', 'ether')});
   let investorCount = await cappedSTO.investorCount();

@@ -53,13 +53,13 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownabl
         securityDetails = _securityDetails;
     }
 
-    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable) external {
+    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bytes4[] _sig, bool _replaceable) external {
         require(msg.sender == owner);
-        _addModule(_moduleFactory, _data, _maxCost, _perm, _replaceable);
+        _addModule(_moduleFactory, _data, _maxCost, _sig, _replaceable);
     }
 
     //You are only ever allowed one instance, for a given module type
-    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable) internal {
+    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bytes4[] _sig, bool _replaceable) internal {
         //Check that module exists in registry
         require(IModuleRegistry(moduleRegistry).checkModule(_moduleFactory));
         uint256 moduleCost = IModuleRegistry(moduleRegistry).getCost(_moduleFactory);
@@ -70,7 +70,7 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownabl
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         IModule module = IModule(moduleFactory.deploy(owner, _data));
         // One way of adding the permission to delegates corresponds to the module
-        addModulePerm(_perm, module);
+        addModuleSig(module, _sig);
         //Check that this module has not already been set as non-replaceable
         if (modules[moduleFactory.getType()].moduleAddress != address(0)) {
           require(modules[moduleFactory.getType()].replaceable);

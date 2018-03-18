@@ -20,11 +20,15 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownabl
     }
 
     address public moduleRegistry;
+    address public transferManagerFactory;
 
     // TransferManager has a key of 1
     // STO has a key of 2
     // Other modules TBD
     mapping (uint8 => ModuleData) public modules;
+
+    //Shoud be set to false when we have more TransferManager options
+    bool addGeneralTransferManager = true;
 
     event LogModuleAdded(uint8 _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost);
     event Mint(address indexed to, uint256 amount);
@@ -44,13 +48,21 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownabl
         string _symbol,
         uint8 _decimals,
         bytes32 _securityDetails,
-        address _moduleRegistry
+        address _moduleRegistry,
+        address _transferManagerFactory,
+        address _owner
     )
     public
     DetailedERC20(_name, _symbol, _decimals)
     {
         moduleRegistry = _moduleRegistry;
+        transferManagerFactory = _transferManagerFactory;
         securityDetails = _securityDetails;
+        owner = _owner;
+        if (addGeneralTransferManager) {
+          bytes4[] memory sig;
+          _addModule(transferManagerFactory, "", 0, sig, true);
+        }
     }
 
     function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bytes4[] _sig, bool _replaceable) external {

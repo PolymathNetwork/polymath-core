@@ -23,7 +23,7 @@ contract DelegablePorting {
     /**
      * @dev Constructor
      * @param _owner Ethereum address of the owner
-     * @param _delegable Ethereum contract address of the delegable 
+     * @param _delegable Ethereum contract address of the delegable
      */
     function DelegablePorting(address _owner, address _delegable) public {
         owner = _owner;
@@ -31,9 +31,9 @@ contract DelegablePorting {
     }
 
     /**
-     * @dev Use to grant the permission to the delegate 
+     * @dev Use to grant the permission to the delegate
      * @param _delegate Ethereum address of the delegate
-     * @param _signatures Function signatures which are granted to access by the delegate 
+     * @param _signatures Function signatures which are granted to access by the delegate
      */
     function grantPermToDelegate(address _delegate, bytes4[] _signatures) onlyOwner public {
         require(_delegate != address(0));

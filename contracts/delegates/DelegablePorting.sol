@@ -37,11 +37,11 @@ contract DelegablePorting {
      */
     function grantPermToDelegate(address _delegate, bytes4[] _signatures) onlyOwner public {
         require(_delegate != address(0));
-        delegable.grantPermission(_delegate, this, _signatures);
+        delegable.grantPermission(_delegate, _signatures);
     }
 
     /**
-     * @dev Use to grant the permission to more than one delegatea
+     * @dev Use to grant the permission to more than one delegates
      * @param _delegates Array of addresses of delegates
      * @param _signatures Array of function signature of the contract
      */
@@ -50,6 +50,25 @@ contract DelegablePorting {
             grantPermToDelegate(_delegates[i], _signatures);
         }
     }
+
+    /**
+     * @dev Use to revoke the permission from the delegate
+     * @param _delegate Ethereum address of the delegate
+     */
+     function revokePermFromDelegate(address _delegate) onlyOwner public {
+        require(_delegate != address(0));
+        delegable.revokePermission(_delegate);
+     }
+
+    /**
+     * @dev Use to revoke the permission from the delegate.
+     * @param _delegates Array of the delegate addresses
+     */
+     function revokePermFromDelegateMulti(address[] _delegates) onlyOwner public {
+        for (uint i = 0; i < _delegates.length; i++) {
+            revokePermFromDelegate(_delegates[i]);
+        }
+     }
 
     /**
      * @dev validate the delegate. It checks whether the particular delegate have the required permission or not

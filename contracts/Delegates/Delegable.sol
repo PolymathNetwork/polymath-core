@@ -34,27 +34,23 @@ contract Delegable is IDelegable {
     /**
      * @dev Grant the permission to the delegate corresponds to the particular module
      * @param _delegate Ethereum address of the delegate
-     * @param _module Address of the module contract
      * @param _signatures Function signatures of the module contract function. 
      */
-    function grantPermission(address _delegate, address _module, bytes4[] _signatures) public {
-        require(msg.sender == _module);
-        require(_delegate != address(0) && _module == address(0));
-        require(_checkPermissions(_delegate, _module));
-        bytes32 hash = _checkSignature(_module, _signatures);
-        delegatesAcl[_permissionHash(_delegate, _module)] = hash;
-        LogPermissionGranted(_delegate, _module, now);
+    function grantPermission(address _delegate, bytes4[] _signatures) public {
+        require(_delegate != address(0));
+        require(_checkPermissions(_delegate, msg.sender));
+        bytes32 hash = _checkSignature(msg.sender, _signatures);
+        delegatesAcl[_permissionHash(_delegate, msg.sender)] = hash;
+        LogPermissionGranted(_delegate, msg.sender, now);
     }
     
     /**
      * @dev Revoke the permissions from the delegate
-     * @param _delegate Ethereum address of the delegate from whom the permission will get revoked
-     * @param _module Contract address of the module
+     * @param _delegate Ethereum address of the delegate from whom the permission will get revoke
      */
-    function revokePermission(address _delegate, address _module) public {
-        require(msg.sender == _module);
-        require(_delegate != address(0) && _module == address(0));
-        delegatesAcl[_permissionHash(_delegate, _module)] = bytes32(0);
+    function revokePermission(address _delegate) public {
+        require(_delegate != address(0) && msg.sender == address(0));
+        delegatesAcl[_permissionHash(_delegate, msg.sender)] = bytes32(0);
     }
     
     /**

@@ -43,14 +43,14 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownabl
         string _name,
         string _symbol,
         uint8 _decimals,
-        bytes32 _securityDetails,
+        bytes32 _tokenDetails,
         address _moduleRegistry
     )
     public
     DetailedERC20(_name, _symbol, _decimals)
     {
         moduleRegistry = _moduleRegistry;
-        securityDetails = _securityDetails;
+        tokenDetails = _tokenDetails;
     }
 
     function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable) external {

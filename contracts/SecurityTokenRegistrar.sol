@@ -15,9 +15,6 @@ contract SecurityTokenRegistrar {
       bytes32 securityDetails;
     }
 
-    //Shoud be set to false when we have more TransferManager options
-    bool addGeneralTransferManager = true;
-
     mapping(address => SecurityTokenData) public securityTokens;
     mapping(string => address) symbols;
 
@@ -50,13 +47,11 @@ contract SecurityTokenRegistrar {
           _symbol,
           _decimals,
           _securityDetails,
-          moduleRegistry
+          moduleRegistry,
+          transferManagerFactory,
+          _owner
         );
-        if (addGeneralTransferManager) {
-          uint256[] memory perm;
-          SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, perm, true);
-        }
-        SecurityToken(newSecurityTokenAddress).transferOwnership(_owner);
+        
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(_symbol, _owner, _securityDetails);
         symbols[_symbol] = newSecurityTokenAddress;
         LogNewSecurityToken(_symbol, newSecurityTokenAddress, _owner);

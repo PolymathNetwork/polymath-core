@@ -18,7 +18,7 @@ contract TickerRegistrar is ITickerRegistrar {
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
     // For now it's value is 90 days;
-    uint256 public constant EXPIRY_LIMIT = 90 * 1 days;  
+    uint256 public expiryLimit = 90 * 1 days;  
 
     // Ethereum address of the admin (Control some functions of the contract)
     address public admin;
@@ -42,6 +42,8 @@ contract TickerRegistrar is ITickerRegistrar {
     // Emit when the token symbol expired and now it not more reserved for its owner
     // Cont.:: After this emission of the event the token symbol will be available to sale
     event LogExpiredSymbol(string _symbol, uint256 _timestamp);
+    // Emit when the token symbol expiry get changed
+    event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
     function TickerRegistrar() public {
         admin = msg.sender;
@@ -68,7 +70,7 @@ contract TickerRegistrar is ITickerRegistrar {
      */
     function expiredSymbol(string _symbol) public {
         require(msg.sender == admin);
-        require(now > registeredSymbols[_symbol].timestamp.add(EXPIRY_LIMIT));
+        require(now > registeredSymbols[_symbol].timestamp.add(expiryLimit));
         require(registeredSymbols[_symbol].status != true);
         registeredSymbols[_symbol] = SymbolDetails(address(0),uint256(0),"",false);
         LogExpiredSymbol(_symbol, now);
@@ -95,10 +97,21 @@ contract TickerRegistrar is ITickerRegistrar {
         require(msg.sender == STRAddress);
         require(registeredSymbols[_symbol].status != true);
         require(registeredSymbols[_symbol].owner == _owner);
-        require(registeredSymbols[_symbol].timestamp.add(EXPIRY_LIMIT) >= now);
+        require(registeredSymbols[_symbol].timestamp.add(expiryLimit) >= now);
         registeredSymbols[_symbol].status = true;
     }
 
+    /**
+     * @dev Change the expiry time for the token symbol
+     * @param _newExpiry new time period for token symbol expiry 
+     */
+    function changeExpiryLimit(uint256 _newExpiry) public {
+        require(msg.sender == admin);
+        uint256 _oldExpiry = expiryLimit;
+        expiryLimit = _newExpiry;
+        LogChangeExpiryLimit(_oldExpiry, _newExpiry);
+    } 
+    
      /**
      * @dev Returns the owner and timestamp for a given symbol
      * @param _symbol symbol

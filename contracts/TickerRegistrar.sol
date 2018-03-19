@@ -39,9 +39,6 @@ contract TickerRegistrar is ITickerRegistrar {
 
     // Emit after the symbol registration
     event LogRegisterTicker(address _owner, string _symbol, uint256 _timestamp);
-    // Emit when the token symbol expired and now it not more reserved for its owner
-    // Cont.:: After this emission of the event the token symbol will be available to sale
-    event LogExpiredSymbol(string _symbol, uint256 _timestamp);
 
     function TickerRegistrar() public {
         admin = msg.sender;
@@ -56,22 +53,26 @@ contract TickerRegistrar is ITickerRegistrar {
      * @param _contact token contract details e.g. email
      */
     function registerTicker(string _symbol, string _contact) public {
-        require(registeredSymbols[_symbol].owner == address(0));
         require(bytes(_contact).length > 0);
+        require(expiryCheck(_symbol));
         registeredSymbols[_symbol] = SymbolDetails(msg.sender, now, _contact, false);
         LogRegisterTicker(msg.sender, _symbol, now);
     }
 
     /**
-     * @dev To re-intialize the token symbol details
+     * @dev To re-intialize the token symbol details if symbol validity expires
      * @param _symbol token symbol
      */
-    function expiredSymbol(string _symbol) public {
-        require(msg.sender == admin);
-        require(now > registeredSymbols[_symbol].timestamp.add(EXPIRY_LIMIT));
-        require(registeredSymbols[_symbol].status != true);
-        registeredSymbols[_symbol] = SymbolDetails(address(0),uint256(0),"",false);
-        LogExpiredSymbol(_symbol, now);
+    function expiryCheck(string _symbol) internal returns(bool) {
+        if (registeredSymbols[_symbol].owner != address(0)) {
+            if (now > registeredSymbols[_symbol].timestamp.add(EXPIRY_LIMIT) && registeredSymbols[_symbol].status != true) {
+                registeredSymbols[_symbol] = SymbolDetails(address(0), uint256(0), "", false);
+                return true;
+            } 
+            else
+                return false;
+        }
+        return true;
     }
 
     /**
@@ -104,12 +105,16 @@ contract TickerRegistrar is ITickerRegistrar {
      * @param _symbol symbol
      */
     function getDetails(string _symbol) public view returns (address, uint256, string, bool) {
-        return
-        (
-            registeredSymbols[_symbol].owner,
-            registeredSymbols[_symbol].timestamp,
-            registeredSymbols[_symbol].contact,
-            registeredSymbols[_symbol].status
-        );
+        if (registeredSymbols[_symbol].status == true || registeredSymbols[_symbol].timestamp.add(EXPIRY_LIMIT) > now ) {
+            return
+            (
+                registeredSymbols[_symbol].owner,
+                registeredSymbols[_symbol].timestamp,
+                registeredSymbols[_symbol].contact,
+                registeredSymbols[_symbol].status
+            );
+        } 
+        else 
+            return (address(0), uint256(0), "", false);
     }
 }

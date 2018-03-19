@@ -12,7 +12,6 @@ contract SecurityTokenRegistrar {
     struct SecurityTokenData {
       string symbol;
       address owner;
-      bytes32 securityDetails;
     }
 
     //Shoud be set to false when we have more TransferManager options
@@ -35,31 +34,27 @@ contract SecurityTokenRegistrar {
 
     /**
      * @dev Creates a new Security Token and saves it to the registry
-     * @param _owner Ethereum public key address of the security token owner
      * @param _name Name of the security token
      * @param _symbol Ticker name of the security
      * @param _decimals Decimals value for token
-     * @param _securityDetails off-chain security details
      */
-    function generateSecurityToken(address _owner, string _name, string _symbol, uint8 _decimals, bytes32 _securityDetails) public {
-        require(_owner != address(0));
+    function generateSecurityToken(string _name, string _symbol, uint8 _decimals) public {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0);
-        ITickerRegistrar(tickerRegistrar).checkValidity(_symbol, _owner);
+        ITickerRegistrar(tickerRegistrar).checkValidity(_symbol, msg.sender);
         address newSecurityTokenAddress = new SecurityToken(
           _name,
           _symbol,
           _decimals,
-          _securityDetails,
           moduleRegistry
         );
         if (addGeneralTransferManager) {
           uint256[] memory perm;
           SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, perm, true);
         }
-        SecurityToken(newSecurityTokenAddress).transferOwnership(_owner);
-        securityTokens[newSecurityTokenAddress] = SecurityTokenData(_symbol, _owner, _securityDetails);
+        SecurityToken(newSecurityTokenAddress).transferOwnership(msg.sender);
+        securityTokens[newSecurityTokenAddress] = SecurityTokenData(_symbol, msg.sender);
         symbols[_symbol] = newSecurityTokenAddress;
-        LogNewSecurityToken(_symbol, newSecurityTokenAddress, _owner);
+        LogNewSecurityToken(_symbol, newSecurityTokenAddress, msg.sender);
     }
 
     //////////////////////////////
@@ -72,21 +67,5 @@ contract SecurityTokenRegistrar {
      */
     function getSecurityTokenAddress(string _symbol) public view returns (address) {
       return symbols[_symbol];
-    }
-
-    /**
-     * @dev Get Security token details by its ethereum address
-     * @param _STAddress Security token address
-     */
-    function getSecurityTokenData(address _STAddress) public view returns (
-      string,
-      address,
-      bytes32
-    ) {
-      return (
-        securityTokens[_STAddress].symbol,
-        securityTokens[_STAddress].owner,
-        securityTokens[_STAddress].securityDetails
-      );
     }
 }

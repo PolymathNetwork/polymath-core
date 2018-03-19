@@ -12,6 +12,7 @@ contract SecurityTokenRegistrar {
     struct SecurityTokenData {
       string symbol;
       address owner;
+      bytes32 tokenDetails;
     }
 
     //Shoud be set to false when we have more TransferManager options
@@ -37,14 +38,16 @@ contract SecurityTokenRegistrar {
      * @param _name Name of the security token
      * @param _symbol Ticker name of the security
      * @param _decimals Decimals value for token
+     * @param _tokenDetails off-chain details of the token
      */
-    function generateSecurityToken(string _name, string _symbol, uint8 _decimals) public {
+    function generateSecurityToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails) public {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0);
         ITickerRegistrar(tickerRegistrar).checkValidity(_symbol, msg.sender);
         address newSecurityTokenAddress = new SecurityToken(
           _name,
           _symbol,
           _decimals,
+          _tokenDetails,
           moduleRegistry
         );
         if (addGeneralTransferManager) {
@@ -52,7 +55,7 @@ contract SecurityTokenRegistrar {
           SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, perm, true);
         }
         SecurityToken(newSecurityTokenAddress).transferOwnership(msg.sender);
-        securityTokens[newSecurityTokenAddress] = SecurityTokenData(_symbol, msg.sender);
+        securityTokens[newSecurityTokenAddress] = SecurityTokenData(_symbol, msg.sender, _tokenDetails);
         symbols[_symbol] = newSecurityTokenAddress;
         LogNewSecurityToken(_symbol, newSecurityTokenAddress, msg.sender);
     }

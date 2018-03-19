@@ -18,7 +18,7 @@ const zero = "0x0000000000000000000000000000000000000000";
 const totalSupply = 100000;
 const name = "TEST POLY";
 const symbol = "TPOLY";
-const securityDetails = "This is a legit issuance...";
+const tokenDetails = "This is a legit issuance...";
 const perm = [];
 
 module.exports = async (deployer, network, accounts) => {
@@ -57,7 +57,7 @@ module.exports = async (deployer, network, accounts) => {
 
   // 2. Deploy Token
   let STRegistrar = await SecurityTokenRegistrar.deployed();
-  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(name, symbol, 18, { from : owner });
+  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(name, symbol, 18, tokenDetails, { from : owner });
   let newSecurityTokenAddress = r_generateSecurityToken.logs[0].args._securityTokenAddress;
   let securityToken = await SecurityToken.at(newSecurityTokenAddress);
   //console.log(securityToken);

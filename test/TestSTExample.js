@@ -2,6 +2,8 @@
 const ModuleRegistry = artifacts.require('./contracts/ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./contracts/SecurityToken.sol');
 const GeneralTransferManagerFactory = artifacts.require('./contracts/GeneralTransferManagerFactory.sol');
+const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
+const TickerRegistrar = artifacts.require('./TickerRegistrar.sol');
 
 const Web3 = require('web3')
 
@@ -79,6 +81,8 @@ contract('SecurityToken', function(accounts) {
   let C_GeneralTransferManagerFactory;
   let C_SecurityToken;
   let C_CSTOCrowdsale;
+  let C_SecurityTokenRegistrar;
+  let C_TickerRegistrar;
 
 
   // ST data
@@ -98,7 +102,23 @@ contract('SecurityToken', function(accounts) {
 
   });
 
-  // POLYMATH SETUP step 1: Deploy Module Registry contract
+  // POLYMATH SETUP step 1: Deploy the Ticker Registrar contract
+
+  describe("Deploy Ticker Registrar", async() => {
+
+    it("Should Successfully deploy the ticker registrar", async() =>{
+      C_TickerRegistrar = await TickerRegistrar.new({ from: account_polymath });
+
+      console.log(`\nPolymath Network Smart Contracts Deployed:\n
+        TickerRegistrar: ${C_TickerRegistrar.address}\n
+      `);
+
+      assert.notEqual(C_TickerRegistrar.address.valueOf(), "0x0000000000000000000000000000000000000000", "TickerRegistrar contract was not deployed");
+
+    });
+  });
+
+  // POLYMATH SETUP step 2: Deploy Module Registry contract
 
   describe("Deploy Module Registry contract", async function () {
 
@@ -114,9 +134,9 @@ contract('SecurityToken', function(accounts) {
     });
   });
 
-  // POLYMATH SETUP step 2: Deploy GeneralTransferManagerFactory contract
+  // POLYMATH SETUP step 3: Deploy GeneralTransferManagerFactory contract
 
-  describe("Deploy GeneralTransferManagerFactory contract", async function () {
+  describe("Deploy GeneralTransferManagerFactory contract", async() => {
 
     it("Should have deployed contract", async function () {
       C_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new({from:account_polymath});
@@ -130,7 +150,7 @@ contract('SecurityToken', function(accounts) {
     });
   });
 
-  // POLYMATH SETUP step 3: Add GeneralTransferManagerFactory to ModuleRegistry
+  // POLYMATH SETUP step 4: Add GeneralTransferManagerFactory to ModuleRegistry
 
   describe("Add GeneralTransferManagerFactory to ModuleRegistry", async function () {
 
@@ -143,13 +163,48 @@ contract('SecurityToken', function(accounts) {
     });
   });
 
-  // Step 1: Deploy SecurityToken contract
+  // POLYMATH SETUP step 5: Deploy the securityTokenRegistrar
+
+  describe("Deploy the SecurityTokenRegistrar contract", async()=> {
+
+    it("Should successfully deploy the contract", async() => {
+     C_SecurityTokenRegistrar = await SecurityTokenRegistrar.new(
+        C_ModuleRegistry.address,
+        C_TickerRegistrar.address,
+        C_GeneralTransferManagerFactory.address,
+        {
+           from: account_polymath
+        });
+
+      console.log(`\nPolymath Network Smart Contracts Deployed:\n
+      SecurityTokenRegistrar: ${C_SecurityTokenRegistrar.address}\n
+     `);
+
+      assert.notEqual(C_SecurityTokenRegistrar.address.valueOf(), "0x0000000000000000000000000000000000000000", "SecurityTokenRegistrar contract was not deployed");
+    });
+
+  });
+
+//////////////////////////////////////// Below performed steps will performed by the end user //////////////////////////////////////////  
+
+// Step 1: Deploy SecurityToken contract
 
   describe("Deploy Example Token contract", async function () {
 
-    it("Should have deployed all contracts", async function () {
-      C_SecurityToken = await SecurityToken.new(token_owner,token_totalSupply,token_name, token_symbol,token_decimals,web3.utils.fromAscii("DATA"),C_ModuleRegistry.address,{from:account_issuer});
+    it("Should register the token symbol with the platform", async() => {
+      const tx = await C_TickerRegistrar.registerTicker(token_symbol, "jhon@example.com", { from : token_owner });
 
+      assert.equal(tx.logs[0].args._owner, token_owner, "Ticker doesn't get register with the platform");
+      assert.equal(tx.logs[0].args._symbol, token_symbol, "Ticker doesn't get register with the platform");
+    });
+
+    it("Should have deployed all contracts", async function () {
+      const tx = await C_SecurityTokenRegistrar.generateSecurityToken(token_owner, token_name, token_symbol, token_decimals, web3.utils.fromAscii("DATA"), { from: account_issuer });
+    
+      assert.equal(tx.logs[0].args._ticker, token_symbol, "SecurityToken Doesn't get generate");
+      
+      C_SecurityToken = SecurityToken.at(tx.logs[0].args._securityTokenAddress);
+      
       console.log(`\nPolymath Network Smart Contracts Deployed:\n
         SecurityToken: ${C_SecurityToken.address}\n
       `);
@@ -162,14 +217,12 @@ contract('SecurityToken', function(accounts) {
 
       let st_symbol = await C_SecurityToken.symbol({from:account_issuer});
       let st_name = await C_SecurityToken.name({from:account_issuer});
-      let st_totalSupply = await C_SecurityToken.totalSupply({from:account_issuer});
       let st_decimals = await C_SecurityToken.decimals({from:account_issuer});
       let st_owner = await C_SecurityToken.owner({from:account_issuer});
 
       console.log(`\nSecurity Token data:\n
         Symbol: ${st_symbol}\n
         Name: ${st_name}\n
-        TotalSupply: ${st_totalSupply}\n
         Decimals: ${st_decimals}\n
         Owner: ${st_owner}\n
       `);

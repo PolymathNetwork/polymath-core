@@ -1,9 +1,9 @@
-
-const ModuleRegistry = artifacts.require('./contracts/ModuleRegistry.sol');
-const SecurityToken = artifacts.require('./contracts/SecurityToken.sol');
-const GeneralTransferManagerFactory = artifacts.require('./contracts/GeneralTransferManagerFactory.sol');
-const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
 const TickerRegistrar = artifacts.require('./TickerRegistrar.sol');
+const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
+const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
+const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
+
+
 
 const Web3 = require('web3')
 
@@ -52,7 +52,7 @@ const logError = function (err) {
   console.log("-----------------------------------------");
 }
 
-contract('SecurityToken', function(accounts) {
+contract('SecurityToken', (accounts) => {
 
   ////
 
@@ -120,9 +120,9 @@ contract('SecurityToken', function(accounts) {
 
   // POLYMATH SETUP step 2: Deploy Module Registry contract
 
-  describe("Deploy Module Registry contract", async function () {
+  describe("Deploy Module Registry contract", async() => {
 
-    it("Should have deployed contract", async function () {
+    it("Should have deployed contract", async() => {
       C_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
 
       console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -152,7 +152,7 @@ contract('SecurityToken', function(accounts) {
 
   // POLYMATH SETUP step 4: Add GeneralTransferManagerFactory to ModuleRegistry
 
-  describe("Add GeneralTransferManagerFactory to ModuleRegistry", async function () {
+  describe("Add GeneralTransferManagerFactory to ModuleRegistry", async() => {
 
     it("Should have added GeneralTransferManager module to registry", async function () {
       await C_ModuleRegistry.registerModule(C_GeneralTransferManagerFactory.address,{from:account_polymath});
@@ -165,7 +165,7 @@ contract('SecurityToken', function(accounts) {
 
   // POLYMATH SETUP step 5: Deploy the securityTokenRegistrar
 
-  describe("Deploy the SecurityTokenRegistrar contract", async()=> {
+  describe("Deploy the SecurityTokenRegistrar contract", async() => {
 
     it("Should successfully deploy the contract", async() => {
      C_SecurityTokenRegistrar = await SecurityTokenRegistrar.new(
@@ -189,7 +189,7 @@ contract('SecurityToken', function(accounts) {
 
 // Step 1: Deploy SecurityToken contract
 
-  describe("Deploy Example Token contract", async function () {
+  describe("Deploy Example Token contract", async() => {
 
     it("Should register the token symbol with the platform", async() => {
       const tx = await C_TickerRegistrar.registerTicker(token_symbol, "jhon@example.com", { from : token_owner });
@@ -198,7 +198,7 @@ contract('SecurityToken', function(accounts) {
       assert.equal(tx.logs[0].args._symbol, token_symbol, "Ticker doesn't get register with the platform");
     });
 
-    it("Should have deployed all contracts", async function () {
+    it("Should have deployed all contracts", async() => {
       const tx = await C_SecurityTokenRegistrar.generateSecurityToken(token_owner, token_name, token_symbol, token_decimals, web3.utils.fromAscii("DATA"), { from: account_issuer });
     
       assert.equal(tx.logs[0].args._ticker, token_symbol, "SecurityToken Doesn't get generate");
@@ -213,12 +213,12 @@ contract('SecurityToken', function(accounts) {
 
     });
 
-    it("Should have the correct data", async function () {
+    it("Should have the correct data", async() => {
 
-      let st_symbol = await C_SecurityToken.symbol({from:account_issuer});
-      let st_name = await C_SecurityToken.name({from:account_issuer});
-      let st_decimals = await C_SecurityToken.decimals({from:account_issuer});
-      let st_owner = await C_SecurityToken.owner({from:account_issuer});
+      let st_symbol = await C_SecurityToken.symbol.call({ from: account_issuer });
+      let st_name = await C_SecurityToken.name.call({ from:account_issuer });
+      let st_decimals = await C_SecurityToken.decimals.call({ from:account_issuer });
+      let st_owner = await C_SecurityToken.owner.call({ from:account_issuer });
 
       console.log(`\nSecurity Token data:\n
         Symbol: ${st_symbol}\n

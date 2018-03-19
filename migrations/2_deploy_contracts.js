@@ -23,41 +23,41 @@ const perm = [];
 
 module.exports = async (deployer, network, accounts) => {
 
-  const owner = accounts[1];
-  const admin = accounts[2];
+  const PolymathAccount = accounts[0];
+  const Issuer = accounts[1];
   const investor1 = accounts[3];
 
   // A) POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
   // 1. Deploy Registry, Transfer Manager
-  await deployer.deploy(ModuleRegistry);
-  await deployer.deploy(GeneralTransferManagerFactory);
+  await deployer.deploy(ModuleRegistry, {from: PolymathAccount});
+  await deployer.deploy(GeneralTransferManagerFactory, {from: PolymathAccount});
 
   // 2. Register the Transfer Manager module
   let moduleRegistry = await ModuleRegistry.deployed();
-  await moduleRegistry.registerModule(GeneralTransferManagerFactory.address);
+  await moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount});
 
   // 3. Deploy Ticker Registrar and SecurityTokenRegistrar
-  await deployer.deploy(TickerRegistrar, {from: admin});
-  await deployer.deploy(SecurityTokenRegistrar, ModuleRegistry.address, TickerRegistrar.address, GeneralTransferManagerFactory.address);
+  await deployer.deploy(TickerRegistrar, {from: PolymathAccount});
+  await deployer.deploy(SecurityTokenRegistrar, ModuleRegistry.address, TickerRegistrar.address, GeneralTransferManagerFactory.address, {from: PolymathAccount});
   let tickerRegistrar = await TickerRegistrar.deployed();
-  await tickerRegistrar.setTokenRegistrar(SecurityTokenRegistrar.address, {from: admin });
+  await tickerRegistrar.setTokenRegistrar(SecurityTokenRegistrar.address, {from: PolymathAccount});
 
   // B) DEPLOY STO factories and register them with the Registry
-  await deployer.deploy(DummySTOFactory);
-  await moduleRegistry.registerModule(DummySTOFactory.address);
-  await deployer.deploy(CappedSTOFactory);
-  await moduleRegistry.registerModule(CappedSTOFactory.address);
+  await deployer.deploy(DummySTOFactory, {from: PolymathAccount});
+  await moduleRegistry.registerModule(DummySTOFactory.address, {from: PolymathAccount});
+  await deployer.deploy(CappedSTOFactory, {from: PolymathAccount});
+  await moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount});
 
   // -------- END OF SETUP -------
 
   // ** Token Deployment **
 
   // 1. Register ticker symbol
-  await tickerRegistrar.registerTicker(symbol, "poly@polymath.network", { from: owner });
+  await tickerRegistrar.registerTicker(symbol, "poly@polymath.network", { from: Issuer });
 
   // 2. Deploy Token
   let STRegistrar = await SecurityTokenRegistrar.deployed();
-  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(name, symbol, 18, tokenDetails, { from : owner });
+  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(name, symbol, 18, tokenDetails, { from: Issuer });
   let newSecurityTokenAddress = r_generateSecurityToken.logs[0].args._securityTokenAddress;
   let securityToken = await SecurityToken.at(newSecurityTokenAddress);
   //console.log(securityToken);
@@ -115,7 +115,7 @@ module.exports = async (deployer, network, accounts) => {
       ]
   }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, web3.utils.toWei('100000', 'ether'), '1000']);
 
-  let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, perm, false, {from: owner});
+  let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, perm, false, { from: Issuer });
   let cappedSTOAddress =  r_CappedSTOFactory.logs[1].args._module;
   let cappedSTO = await CappedSTO.at(cappedSTOAddress);
 
@@ -125,10 +125,10 @@ module.exports = async (deployer, network, accounts) => {
   // console.log((await cappedSTO.rate()).toString());
 
   // 4. Add investor to whitelist
-  await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, {from:owner});
+  await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Issuer });
 
   // 5. INVEST
-  let r = await cappedSTO.buyTokens(investor1, {from: owner, value:web3.utils.toWei('1', 'ether')});
+  let r = await cappedSTO.buyTokens(investor1, {from: investor1, value:web3.utils.toWei('1', 'ether')});
   let investorCount = await cappedSTO.investorCount();
 
   console.log(`

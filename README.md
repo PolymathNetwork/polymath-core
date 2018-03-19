@@ -33,12 +33,27 @@ $ npm run test
 # Setting up Polymath Network
 
 1. Deploy ModuleRegistry. ModuleRegistry keeps track of all available modules that add new functionalities to
-Polymath-based security tokens. * MANDATORY STEP *
+Polymath-based security tokens.
 
 2. Deploy GeneralTransferManagerFactory. This module allows the use of a general TransferManager for newly issued security tokens. The General Transfer Manager gives STs the ability to have their transfers restricted by using an on-chain whitelist.
 
-3. Add the GeneralTransferManagerFactory module to ModuleRegistry by calling `ModuleRegistry.registerModule()`. * MANDATORY STEP *
+3. Add the GeneralTransferManagerFactory module to ModuleRegistry by calling `ModuleRegistry.registerModule()`.
 
+4. Deploy TickerRegistrar. This contract handles the registration of unique token symbols. Issuers first have to claim their token symbol through the TickerRegistrar. If it's available they will be able to deploy a ST with the same symbol for a set number of days before the registration expires.
+
+5. Deploy SecurityTokenRegistrar. This contract is responsible for deploying new Security Tokens. STs should always be deployed by using the SecurityTokenRegistrar.
+
+## Deploying Security Token Offerings (Only Network Admin)
+
+Security Token Offerings (STOs) grant STs the ability to be distributed in an initial offering. Polymath offers a few out-of-the-box STO models for issuers to select from and, as the platform evolves, 3rd party developers will be able to create their own offerings and make them available to the network.
+
+As an example, we've included a CappedSTO and CappedSTOFactory contracts.
+
+In order to create a new STO, developers first have to create an STO Factory contract which will be responsible for instantiating STOs as Issuers select them. Each STO Factory has an STO contract attached to it, which will be instantiated for each Security Token that wants to use that particular STO.
+
+To make an STO available for Issuers, first, deploy the STO Factory and take note of its address. Then, call `moduleRegistry.registerModule(STO Factory address);`
+
+Once the STO Factory has been registered to the Module Registry, issuers will be able to see it on the Polymath dApp and they will be able to add it as a module of the ST.
 
 
 ### Styleguide

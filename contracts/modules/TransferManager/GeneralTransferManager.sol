@@ -1,12 +1,14 @@
 pragma solidity ^0.4.18;
 
 import '../../interfaces/ITransferManager.sol';
-import '../../delegates/DelegablePorting.sol';
 
-contract GeneralTransferManager is ITransferManager, DelegablePorting {
+contract GeneralTransferManager is ITransferManager {
 
     //Address from which issuances come
     address public issuanceAddress = address(0);
+
+    bytes32 public WHITELIST = "WHITELIST";
+    bytes32 public FLAGS = "FLAGS";
 
     //from and to timestamps that an investor can send / receive tokens respectively
     struct TimeRestriction {
@@ -34,44 +36,40 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
     event LogModifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime);
 
     //TODO: Pull in delegates here
-    function GeneralTransferManager(address _owner, bytes _data, address _securityToken)
-    DelegablePorting(_owner, _securityToken)
+    function GeneralTransferManager(bytes _data, address _securityToken)
+    IModule(_securityToken)
     public
     {
       factory = msg.sender;
+    }
+
+    function permissions() public returns(bytes32[]) {
+      bytes32[] memory allPermissions = new bytes32[](2);
+      allPermissions[0] = WHITELIST;
+      allPermissions[1] = FLAGS;
+      return allPermissions;
     }
 
     function getInitFunction() public returns(bytes4) {
       return bytes4(0);
     }
 
-    //TODO: No longer needed - can remove
-    function bytesToAddr(bytes b) public pure returns(address) {
-        uint result = 0;
-        for (uint i = b.length - 1; i + 1 > 0; i--) {
-            uint c = uint(b[i]);
-            uint to_inc = c * (16 ** ((b.length - (i - 1)) * 2));
-            result += to_inc;
-        }
-        return address(result);
-    }
-
-    function changeIssuanceAddress(address _issuanceAddress) public onlyOwner {
+    function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
         issuanceAddress = _issuanceAddress;
         LogChangeIssuanceAddress(_issuanceAddress);
     }
 
-    function changeAllowAllTransfers(bool _allowAllTransfers) public onlyOwner {
+    function changeAllowAllTransfers(bool _allowAllTransfers) public withPerm(FLAGS) {
         allowAllTransfers = _allowAllTransfers;
         LogAllowAllTransfers(_allowAllTransfers);
     }
 
-    function changeAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers) public onlyOwner {
+    function changeAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers) public withPerm(FLAGS) {
         allowAllWhitelistTransfers = _allowAllWhitelistTransfers;
         LogAllowAllWhitelistTransfers(_allowAllWhitelistTransfers);
     }
 
-    function changeAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances) public onlyOwner {
+    function changeAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances) public withPerm(FLAGS) {
         allowAllWhitelistIssuances = _allowAllWhitelistIssuances;
         LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
@@ -96,13 +94,13 @@ contract GeneralTransferManager is ITransferManager, DelegablePorting {
         return ((whitelist[_from].fromTime <= now) && (whitelist[_to].toTime <= now));
     }
 
-    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public onlyOwnerOrDelegates {
+    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime);
         LogModifyWhitelist(_investor, _fromTime, _toTime);
     }
 
-    function modifyWhitelistMulti(address[] _investors, uint256[] _fromTimes, uint256[] _toTimes) public onlyOwnerOrDelegates {
+    function modifyWhitelistMulti(address[] _investors, uint256[] _fromTimes, uint256[] _toTimes) public withPerm(WHITELIST) {
         require(_investors.length == _fromTimes.length);
         require(_fromTimes.length == _toTimes.length);
         for (uint256 i = 0; i < _investors.length; i++) {

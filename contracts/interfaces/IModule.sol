@@ -1,6 +1,6 @@
 pragma solidity ^0.4.18;
 
-import './interfaces/ISecurityToken.sol';
+import './ISecurityToken.sol';
 
 //Simple interface that any module contracts should implement
 contract IModule {
@@ -15,13 +15,15 @@ contract IModule {
       securityToken = _securityToken;
     }
 
+    //Allows owner or permissioned delegate
     modifier withPerm(bytes32 _perm) {
-        require(SecurityToken(securityToken).checkPermission(address(this), msg.sender, _perm));
+        bool isOwner = msg.sender == ISecurityToken(securityToken).owner();
+        require(isOwner || ISecurityToken(securityToken).checkPermission(address(this), msg.sender, _perm));
         _;
     }
 
     modifier onlyOwner {
-      require(msg.sender == SecurityToken(securityToken).owner());
+      require(msg.sender == ISecurityToken(securityToken).owner());
       _;
     }
 

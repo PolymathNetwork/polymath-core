@@ -2,12 +2,11 @@ pragma solidity ^0.4.18;
 
 import '../../interfaces/ISTO.sol';
 import '../../interfaces/IST20.sol';
-import '../../delegates/DelegablePorting.sol';
 
 contract DummySTO is ISTO {
 
-  address public securityToken;
-  address public owner;
+  bytes32 public ADMIN = "ADMIN";
+
   uint256 public investorCount;
 
   uint256 public startTime;
@@ -19,24 +18,13 @@ contract DummySTO is ISTO {
 
   mapping (address => uint256) public investors;
 
-  modifier onlyOwner {
-    require(msg.sender == owner);
-    _;
-  }
-
-  modifier onlyOwnerOrFactory {
-    require((msg.sender == owner) || (msg.sender == factory));
-    _;
-  }
-
-  function DummySTO(address _owner, address _securityToken) public {
-    //For the duration of the constructor, caller is the owner
-    owner = _owner;
-    securityToken = _securityToken;
+  function DummySTO(address _owner, address _securityToken) public
+  IModule(_securityToken)
+  {
     factory = msg.sender;
   }
 
-  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public onlyOwnerOrFactory {
+  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public withPerm(ADMIN) {
     startTime = _startTime;
     endTime = _endTime;
     cap = _cap;
@@ -70,5 +58,10 @@ contract DummySTO is ISTO {
     return investorCount;
   }
 
+  function permissions() public returns(bytes32[]) {
+    bytes32[] memory allPermissions = new bytes32[](1);
+    allPermissions[0] = ADMIN;
+    return allPermissions;
+  }
 
 }

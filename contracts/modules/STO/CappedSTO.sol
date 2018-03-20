@@ -2,14 +2,12 @@ pragma solidity ^0.4.18;
 
 import '../../interfaces/ISTO.sol';
 import '../../interfaces/IST20.sol';
-import '../../delegates/DelegablePorting.sol';
 import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 
 contract CappedSTO is ISTO {
   using SafeMath for uint256;
 
-  // The token being sold
-  address public securityToken;
+  bytes32 public ADMIN = "ADMIN";
 
   // Address where funds are collected
   address public wallet;
@@ -20,7 +18,6 @@ contract CappedSTO is ISTO {
   // Amount of wei raised
   uint256 public weiRaised;
 
-  address public owner;
   uint256 public investorCount;
 
   // Start time of the STO
@@ -35,16 +32,6 @@ contract CappedSTO is ISTO {
 
   mapping (address => uint256) public investors;
 
-  modifier onlyOwner {
-    require(msg.sender == owner);
-    _;
-  }
-
-  modifier onlyOwnerOrFactory {
-    require((msg.sender == owner) || (msg.sender == factory));
-    _;
-  }
-
  /**
  * Event for token purchase logging
  * @param purchaser who paid for the tokens
@@ -54,17 +41,14 @@ contract CappedSTO is ISTO {
  */
 event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
 
-  function CappedSTO(address _owner, address _securityToken) public {
-    require(_owner != address(0));
-    require(_securityToken != address(0));
-
+  function CappedSTO(address _owner, address _securityToken) public
+  IModule(_securityToken)
+  {
     //For the duration of the constructor, caller is the owner
-    owner = _owner;
-    securityToken = _securityToken;
     factory = msg.sender;
   }
 
-  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, uint _rate) public onlyOwnerOrFactory {
+  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, uint _rate) public withPerm(ADMIN) {
     require(_rate > 0);
     startTime = _startTime;
     endTime = _endTime;
@@ -201,5 +185,10 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
     return investorCount;
   }
 
+  function permissions() public returns(bytes32[]) {
+    bytes32[] memory allPermissions = new bytes32[](1);
+    allPermissions[0] = ADMIN;
+    return allPermissions;
+  }
 
 }

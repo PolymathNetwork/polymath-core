@@ -121,10 +121,10 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     // Delegates this to a Delegate module, which has a key of 1
-    // If no Delegate return true
+    // If no Delegate return true if and only if owner
     function checkPermission(address _delegate, address _module, bytes32 _perm) public returns(bool) {
       if (modules[1].moduleAddress == address(0)) {
-        return true;
+        return (_delegate == owner);
       }
       return IDelegateManager(modules[1].moduleAddress).checkPermission(_delegate, _module, _perm);
     }

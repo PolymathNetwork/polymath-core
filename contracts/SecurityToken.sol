@@ -10,6 +10,13 @@ import './interfaces/IST20.sol';
 import './modules/TransferManager/ITransferManager.sol';
 import './modules/DelegateManager/IDelegateManager.sol';
 
+/**
+* @title SecurityToken
+* @notice SecurityToken is an ERC20 token with added capabilities:
+* - Transfers are restricted
+* - Modules can be attached to it to control its behaviour
+* - ST should not be deployed directly, but rather the SecurityTokenRegistrar should be used
+*/
 contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     using SafeMath for uint256;
 
@@ -59,6 +66,15 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         _addModule(_moduleFactory, _data, _maxCost, _replaceable);
     }
 
+    /**
+    * @notice _addModule handles the attachment (or replacement) of modules for the ST
+    * E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
+    * to control restrictions on transfers.
+    * @param _moduleFactory is the address of the module factory to be added
+    * @param _data is data packed into bytes used to further configure the module (See STO usage)
+    * @param _maxCost max amount of POLY willing to pay to module. (WIP)
+    * @param _replaceable whether or not the module is supposed to be replaceable
+    */
     //You are only ever allowed one instance, for a given module type
     function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bool _replaceable) internal {
         //Check that module exists in registry

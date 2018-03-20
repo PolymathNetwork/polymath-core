@@ -7,7 +7,7 @@ pragma solidity ^0.4.18;
   registered here can only be created by their owner.
 */
 
-import './SafeMath.sol';
+import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 import './interfaces/ITickerRegistrar.sol';
 /**
  * @title TickerRegistrar
@@ -18,7 +18,7 @@ contract TickerRegistrar is ITickerRegistrar {
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
     // For now it's value is 90 days;
-    uint256 public expiryLimit = 90 * 1 days;  
+    uint256 public expiryLimit = 90 * 1 days;
 
     // Ethereum address of the admin (Control some functions of the contract)
     address public admin;
@@ -82,7 +82,7 @@ contract TickerRegistrar is ITickerRegistrar {
             if (now > registeredSymbols[_symbol].timestamp.add(expiryLimit) && registeredSymbols[_symbol].status != true) {
                 registeredSymbols[_symbol] = SymbolDetails(address(0), uint256(0), "", false);
                 return true;
-            } 
+            }
             else
                 return false;
         }
@@ -127,8 +127,8 @@ contract TickerRegistrar is ITickerRegistrar {
                 registeredSymbols[_symbol].contact,
                 registeredSymbols[_symbol].status
             );
-        } 
-        else 
+        }
+        else
             return (address(0), uint256(0), "", false);
     }
 }

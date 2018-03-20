@@ -4,9 +4,12 @@ import './interfaces/IModuleRegistry.sol';
 import './interfaces/IModuleFactory.sol';
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
-//Store registered modules
-//Could initially be centrally controlled (only Polymath can register modules)
-//and then over time move to a more decentralised version (modules can be registerd provided POLY holders agree)
+/**
+* @title ModuleRegistry
+* @notice Stores registered modules
+* Could initially be centrally controlled (only Polymath can register modules)
+* and then over time move to a more decentralised version (modules can be registerd provided POLY holders agree)
+*/
 contract ModuleRegistry is IModuleRegistry, Ownable {
 
     struct ModuleReputation {
@@ -32,6 +35,10 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         return registry[_moduleFactory].cost;
     }
 
+    /**
+    * @dev Called by Polymath to register new modules for SecurityToken to use
+    * @param _moduleFactory is the address of the module factory to be registered
+    */
     function registerModule(address _moduleFactory) external onlyOwner returns(bool) {
         require(registry[_moduleFactory].moduleType == 0);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);

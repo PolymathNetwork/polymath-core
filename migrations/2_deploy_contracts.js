@@ -30,6 +30,8 @@ module.exports = async (deployer, network, accounts) => {
   const investor2 = accounts[4];
   const Delegate = accounts[5];
 
+  // ----------- POLYMATH NETWORK Configuration ------------
+
   // A) POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
   // 1. Deploy Registry, Transfer Manager, Delegate Manager
   await deployer.deploy(ModuleRegistry, {from: PolymathAccount});
@@ -51,9 +53,9 @@ module.exports = async (deployer, network, accounts) => {
   await deployer.deploy(CappedSTOFactory, {from: PolymathAccount});
   await moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount});
 
-  // -------- END OF SETUP -------
+  // -------- END OF POLYMATH NETWORK Configuration -------
 
-  // ** Token Deployment **
+  // ----------- SECURITY TOKEN & STO DEPLOYMENT ------------
 
   // 1. Register ticker symbol
   await tickerRegistrar.registerTicker(symbol, "poly@polymath.network", { from: Issuer });
@@ -100,8 +102,13 @@ module.exports = async (deployer, network, accounts) => {
   // console.log((await cappedSTO.cap()).toString());
   // console.log((await cappedSTO.rate()).toString());
 
+  // ----------- END OF SECURITY TOKEN & STO DEPLOYMENT ------------
+
+  // ----------- WHITELISTING & INVESTING ------------
+
   // 4. Add investor to whitelist
   await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Issuer });
+
 
   // 5. INVEST
   let r = await cappedSTO.buyTokens(investor1, {from: investor1, value:web3.utils.toWei('1', 'ether')});

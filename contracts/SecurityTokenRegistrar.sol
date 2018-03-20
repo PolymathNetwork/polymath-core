@@ -50,9 +50,8 @@ contract SecurityTokenRegistrar {
           _tokenDetails,
           moduleRegistry
         );
-        if (addGeneralTransferManager) {
-          uint256[] memory perm;
-          SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, perm, true);
+        if (addGeneralTransferManager) {          
+          SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, true);
         }
         SecurityToken(newSecurityTokenAddress).transferOwnership(msg.sender);
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(_symbol, msg.sender, _tokenDetails);

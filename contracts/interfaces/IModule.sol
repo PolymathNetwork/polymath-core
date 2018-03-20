@@ -13,12 +13,14 @@ contract IModule {
 
     function IModule(address _securityToken) public {
       securityToken = _securityToken;
+      factory = msg.sender;
     }
 
-    //Allows owner or permissioned delegate
+    //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
         bool isOwner = msg.sender == ISecurityToken(securityToken).owner();
-        require(isOwner || ISecurityToken(securityToken).checkPermission(address(this), msg.sender, _perm));
+        bool isFactory = msg.sender == factory;
+        require(isOwner || isFactory || ISecurityToken(securityToken).checkPermission(address(this), msg.sender, _perm));
         _;
     }
 

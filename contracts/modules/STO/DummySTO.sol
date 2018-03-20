@@ -18,10 +18,9 @@ contract DummySTO is ISTO {
 
   mapping (address => uint256) public investors;
 
-  function DummySTO(address _owner, address _securityToken) public
+  function DummySTO(address _securityToken) public
   IModule(_securityToken)
   {
-    factory = msg.sender;
   }
 
   function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public withPerm(ADMIN) {

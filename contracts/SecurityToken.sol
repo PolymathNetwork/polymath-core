@@ -54,13 +54,13 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         tokenDetails = _tokenDetails;
     }
 
-    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable) external {
+    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bool _replaceable) external {
         require(msg.sender == owner);
-        _addModule(_moduleFactory, _data, _maxCost, _perm, _replaceable);
+        _addModule(_moduleFactory, _data, _maxCost, _replaceable);
     }
 
     //You are only ever allowed one instance, for a given module type
-    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable) internal {
+    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bool _replaceable) internal {
         //Check that module exists in registry
         require(IModuleRegistry(moduleRegistry).checkModule(_moduleFactory));
         uint256 moduleCost = IModuleRegistry(moduleRegistry).getCost(_moduleFactory);
@@ -69,7 +69,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         //TODO: Approve moduleCost from POLY wallet to _moduleFactory
         //Creates instance of module from factory
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        IModule module = IModule(moduleFactory.deploy(owner, _data));
+        IModule module = IModule(moduleFactory.deploy(_data));
         //Check that this module has not already been set as non-replaceable
         if (modules[moduleFactory.getType()].moduleAddress != address(0)) {
           require(modules[moduleFactory.getType()].replaceable);
@@ -114,9 +114,9 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         Transfer(address(0), _investor, _amount);
         return true;
     }
-
-    function investorStatus(address _investor) public returns (uint8 _status) {
-      // TODO
+    
+    //TODO: Implement this function
+    function investorStatus(address /* _investor */) public pure returns (uint8 _status) {
       return 0;
     }
 

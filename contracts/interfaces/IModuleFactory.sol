@@ -5,7 +5,7 @@ contract IModuleFactory {
 
     //TODO: Add delegates to this
     //Should create an instance of the Module, or throw
-    function deploy(address _owner, bytes _data) external returns(address);
+    function deploy(bytes _data) external returns(address);
 
     function getType() view external returns(uint8);
 

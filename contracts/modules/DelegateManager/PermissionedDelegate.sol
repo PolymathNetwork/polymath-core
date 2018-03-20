@@ -30,7 +30,7 @@ contract PermissionedDelegate is IDelegate {
 
   function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) public withPerm(CHANGE_PERMISSION) returns(bool) {
     require(delegateDetails[_delegate] != bytes32(0));
-    perms[_module][_delegate][_perm] = true;
+    perms[_module][_delegate][_perm] = _valid;
   }
 
   function delegateDetails(address _delegate) public returns(bytes32) {

@@ -5,7 +5,7 @@ import '../../interfaces/IModuleFactory.sol';
 
 contract PermissionedDelegateFactory is IModuleFactory {
 
-  function deploy(address _owner, bytes _data) external returns(address) {
+  function deploy(bytes /* _data */) external returns(address) {
     return address(new PermissionedDelegate(msg.sender));
   }
 

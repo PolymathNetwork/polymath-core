@@ -41,11 +41,9 @@ contract CappedSTO is ISTO {
  */
 event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
 
-  function CappedSTO(address _owner, address _securityToken) public
+  function CappedSTO(address _securityToken) public
   IModule(_securityToken)
   {
-    //For the duration of the constructor, caller is the owner
-    factory = msg.sender;
   }
 
   function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, uint _rate) public withPerm(ADMIN) {

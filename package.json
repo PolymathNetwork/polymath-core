@@ -9,7 +9,9 @@
   "scripts": {
     "test": "scripts/test.sh",
     "flatten": "sol-merger './contracts/*.sol' ./flat",
-    "coverage": "./node_modules/.bin/solidity-coverage"
+    "coverage": "./node_modules/.bin/solidity-coverage",
+    "flatten-modules": "sol-merger './contracts/modules/*/*.sol' ./flat/modules",
+    "flatten-delegates":"sol-merger './contracts/delegates/*.sol' ./flat/delegates"
   },
   "repository": {
     "type": "git",

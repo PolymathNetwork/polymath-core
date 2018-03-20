@@ -25,6 +25,7 @@ const perm = [];
 module.exports = async (deployer, network, accounts) => {
   var investor1;
   const PolymathAccount = accounts[0];
+  var Issuer;
 
   if (network == 'development') {
     web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
@@ -66,10 +67,9 @@ module.exports = async (deployer, network, accounts) => {
   // -------- END OF SETUP -------
 
   // ** Token Deployment **
-
   // 1. Register ticker symbol
   await tickerRegistrar.registerTicker(symbol, "poly@polymath.network", { from: Issuer });
-
+ 
   // 2. Deploy Token
   let STRegistrar = await SecurityTokenRegistrar.deployed();
   let r_generateSecurityToken = await STRegistrar.generateSecurityToken(name, symbol, 18, tokenDetails, { from: Issuer });

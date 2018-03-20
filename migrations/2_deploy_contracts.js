@@ -11,6 +11,7 @@ const CappedSTO= artifacts.require('./CappedSTO.sol');
 const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
 const TickerRegistrar = artifacts.require('./TickerRegistrar.sol');
 const STVersionProxy_001 = artifacts.require('./STVersionProxy_001.sol');
+const STVersionProxy_002 = artifacts.require('./STVersionProxy_002.sol');
 
 const Web3 = require('web3');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
@@ -75,6 +76,7 @@ module.exports = async (deployer, network, accounts) => {
   let newSecurityTokenAddress = r_generateSecurityToken.logs[1].args._securityTokenAddress;
   console.log(r_generateSecurityToken.logs);
   let securityToken = await SecurityToken.at(newSecurityTokenAddress);
+  console.log("Token Version:",web3.utils.toAscii(await(securityToken.securityTokenVersion())));
   //console.log(securityToken);
 
   // 3. Get Transfer Module and Initialize STO module
@@ -158,4 +160,20 @@ module.exports = async (deployer, network, accounts) => {
     - Investor count: ${investorCount}
     ---------------------------------------------------------------
   `);
+
+  // Token upgrade example
+  console.log("Example of Token Version Upgrade");
+  await tickerRegistrar.registerTicker("V2", "v2@polymath.network", { from: Issuer });
+  await deployer.deploy(STVersionProxy_002, {from: PolymathAccount});
+  let stVersionProxy_002 = await STVersionProxy_002.deployed();
+  await STRegistrar.setProtocolVersion(stVersionProxy_002.address,web3.utils.fromAscii("0.0.2"),{from:PolymathAccount});
+  let protocolVerV2 = web3.utils.toAscii(await STRegistrar.protocolVersion());
+  console.log("Protocol Version:",protocolVerV2);
+  let protocolVerSTV2 = await STRegistrar.protocolVersionST(protocolVerV2);
+  console.log("Protocol Version ST:",protocolVerSTV2);
+  let r_generateSecurityTokenV2 = await STRegistrar.generateSecurityToken(name, "V2", 18, tokenDetails, { from: Issuer });
+  let newSecurityTokenAddressV2 = r_generateSecurityTokenV2.logs[1].args._securityTokenAddress;
+  let securityTokenV2 = await SecurityToken.at(newSecurityTokenAddressV2);
+  console.log("Token Version:",web3.utils.toAscii(await(securityTokenV2.securityTokenVersion())));
+
 };

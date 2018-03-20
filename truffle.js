@@ -1,9 +1,11 @@
 require('babel-register');
 require('babel-polyfill');
-const WalletProvider = require("truffle-wallet-provider");
-const keystore = require('fs').readFileSync('./sample-keystore').toString();
+
+const HDWalletProvider = require("truffle-hdwallet-provider");
+// const WalletProvider = require("truffle-wallet-provider");
+// const keystore = require('fs').readFileSync('./sample-keystore').toString();
 const pass = require('fs').readFileSync('./sample-pass').toString();
-const wallet = require('ethereumjs-wallet').fromV3(keystore, pass);
+// const wallet = require('ethereumjs-wallet').fromV3(keystore, pass);
 
 module.exports = {
   networks: {
@@ -21,7 +23,8 @@ module.exports = {
       gasPrice: 10000000000
     },
     ropsten: {
-      provider: new WalletProvider(wallet, "https://ropsten.infura.io/"),
+      provider: new HDWalletProvider(pass, "https://ropsten.infura.io/g5xfoQ0jFSE9S5LwM1Ei"),
+      //provider: new WalletProvider(wallet, "https://ropsten.infura.io/"),
       host: 'localhost',
       port: 8545,
       network_id: '3', // Match any network id

@@ -16,7 +16,7 @@
     "migrate:mainnet": "truffle migrate --network=mainnet",
     "coverage": "./node_modules/.bin/solidity-coverage",
     "flatten-modules": "sol-merger './contracts/modules/*/*.sol' ./flat/modules",
-    "flatten-delegates":"sol-merger './contracts/delegates/*.sol' ./flat/delegates"
+    "flatten-delegates": "sol-merger './contracts/delegates/*.sol' ./flat/delegates"
   },
   "repository": {
     "type": "git",
@@ -44,6 +44,7 @@
     "babel-preset-stage-3": "6.24.1",
     "babel-register": "6.26.0",
     "bignumber.js": "^6.0.0",
+    "truffle-hdwallet-provider": "0.0.3",
     "web3": "^1.0.0-beta.30",
     "zeppelin-solidity": "1.7.0"
   },

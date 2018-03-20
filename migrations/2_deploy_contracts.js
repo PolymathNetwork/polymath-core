@@ -8,9 +8,10 @@ const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO= artifacts.require('./CappedSTO.sol');
 const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
 const TickerRegistrar = artifacts.require('./TickerRegistrar.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
-const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
+var web3; // Hardcoded development port
 
 var BigNumber = require('bignumber.js')
 
@@ -22,21 +23,35 @@ const tokenDetails = "This is a legit issuance...";
 const perm = [];
 
 module.exports = async (deployer, network, accounts) => {
-
+  var investor1;
   const PolymathAccount = accounts[0];
-  const Issuer = accounts[1];
-  const investor1 = accounts[3];
 
+  if (network == 'development') {
+    web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+    investor = accounts[3];
+    Issuer = accounts[1];
+  }
+  else if (network == 'ropsten') {
+    web3 = new Web3(new Web3.providers.HttpProvider("https://ropsten.infura.io/g5xfoQ0jFSE9S5LwM1Ei"));
+    investor1 = '0x37e1411f518226a7e1b4e8eb8bb0e0e9f7f86580';
+    Issuer = PolymathAccount;
+  }
+  else if (network == 'mainnet') {
+    web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei"));
+  }
+   
   // A) POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
-  // 1. Deploy Registry, Transfer Manager
+  // 1. Deploy the token faucet of polymath
+  await deployer.deploy(PolyTokenFaucet);
+  // 2. Deploy Registry, Transfer Manager
   await deployer.deploy(ModuleRegistry, {from: PolymathAccount});
   await deployer.deploy(GeneralTransferManagerFactory, {from: PolymathAccount});
 
-  // 2. Register the Transfer Manager module
+  // 3. Register the Transfer Manager module
   let moduleRegistry = await ModuleRegistry.deployed();
   await moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount});
 
-  // 3. Deploy Ticker Registrar and SecurityTokenRegistrar
+  // 4. Deploy Ticker Registrar and SecurityTokenRegistrar
   await deployer.deploy(TickerRegistrar, {from: PolymathAccount});
   await deployer.deploy(SecurityTokenRegistrar, ModuleRegistry.address, TickerRegistrar.address, GeneralTransferManagerFactory.address, {from: PolymathAccount});
   let tickerRegistrar = await TickerRegistrar.deployed();
@@ -95,7 +110,6 @@ module.exports = async (deployer, network, accounts) => {
   // console.log((await dummySTO.endTime()).toString());
   // console.log((await dummySTO.cap()).toString());
   // console.log(await dummySTO.someString());
-
   let bytesSTO = web3.eth.abi.encodeFunctionCall({
       name: 'configure',
       type: 'function',
@@ -127,17 +141,17 @@ module.exports = async (deployer, network, accounts) => {
   // 4. Add investor to whitelist
   await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Issuer });
 
-  // 5. INVEST
-  let r = await cappedSTO.buyTokens(investor1, {from: investor1, value:web3.utils.toWei('1', 'ether')});
-  let investorCount = await cappedSTO.investorCount();
+//   // 5. INVEST
+//   let r = await cappedSTO.buyTokens(investor1, {from: investor1, value:web3.utils.toWei('1', 'ether')});
+//   let investorCount = await cappedSTO.investorCount();
 
-  console.log(`
-    ---------------------------------------------------------------
-    --------- INVESTED IN STO ---------
-    ---------------------------------------------------------------
-    - ${r.logs[0].args.beneficiary} purchased ${web3.utils.fromWei(r.logs[0].args.amount.toString(10))} tokens!
-    - Investor count: ${investorCount}
-    ---------------------------------------------------------------
-  `);
+//   console.log(`
+//     ---------------------------------------------------------------
+//     --------- INVESTED IN STO ---------
+//     ---------------------------------------------------------------
+//     - ${r.logs[0].args.beneficiary} purchased ${web3.utils.fromWei(r.logs[0].args.amount.toString(10))} tokens!
+//     - Investor count: ${investorCount}
+//     ---------------------------------------------------------------
+//   `);
 
 };

@@ -9,6 +9,11 @@
   "scripts": {
     "test": "scripts/test.sh",
     "flatten": "sol-merger './contracts/*.sol' ./flat",
+    "compile": "truffle compile --optimize-runs 200",
+    "ganache-cli": "node_modules/.bin/ganache-cli -i 15 --gasLimit 50000000000",
+    "migrate:local": "truffle migrate --network=development --reset --all",
+    "migrate:ropsten": "truffle migrate --network=ropsten --reset --all",
+    "migrate:mainnet": "truffle migrate --network=mainnet",
     "coverage": "./node_modules/.bin/solidity-coverage",
     "flatten-modules": "sol-merger './contracts/modules/*/*.sol' ./flat/modules",
     "flatten-delegates":"sol-merger './contracts/delegates/*.sol' ./flat/delegates"

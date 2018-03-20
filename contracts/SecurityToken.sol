@@ -2,15 +2,15 @@ pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
 import 'zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
-import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import './delegates/Delegable.sol';
 import './interfaces/ITransferManager.sol';
+import './interfaces/ISecurityToken.sol';
 import './interfaces/IModule.sol';
 import './interfaces/IModuleFactory.sol';
 import './interfaces/IModuleRegistry.sol';
 import './interfaces/IST20.sol';
 
-contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownable {
+contract SecurityToken is ISecurityToken, StandardToken, IST20, Delegable, DetailedERC20 {
     using SafeMath for uint256;
 
     struct ModuleData {

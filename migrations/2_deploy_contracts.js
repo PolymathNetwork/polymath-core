@@ -10,6 +10,7 @@ const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO= artifacts.require('./CappedSTO.sol');
 const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
 const TickerRegistrar = artifacts.require('./TickerRegistrar.sol');
+const STVersionProxy_001 = artifacts.require('./STVersionProxy_001.sol');
 
 const Web3 = require('web3');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
@@ -44,8 +45,11 @@ module.exports = async (deployer, network, accounts) => {
   await moduleRegistry.registerModule(GeneralDelegateManagerFactory.address, {from: PolymathAccount});
 
   // 3. Deploy Ticker Registrar and SecurityTokenRegistrar
+  await deployer.deploy(STVersionProxy_001, {from: PolymathAccount});
+  let stVersionProxy_001 = await STVersionProxy_001.deployed();
+
   await deployer.deploy(TickerRegistrar, {from: PolymathAccount});
-  await deployer.deploy(SecurityTokenRegistrar, ModuleRegistry.address, TickerRegistrar.address, GeneralTransferManagerFactory.address, GeneralDelegateManagerFactory.address, {from: PolymathAccount});
+  await deployer.deploy(SecurityTokenRegistrar, ModuleRegistry.address, TickerRegistrar.address, GeneralTransferManagerFactory.address, GeneralDelegateManagerFactory.address,stVersionProxy_001.address, {from: PolymathAccount});
   let tickerRegistrar = await TickerRegistrar.deployed();
   await tickerRegistrar.setTokenRegistrar(SecurityTokenRegistrar.address, {from: PolymathAccount});
 
@@ -63,8 +67,13 @@ module.exports = async (deployer, network, accounts) => {
   // 2. Deploy Token
   let STRegistrar = await SecurityTokenRegistrar.deployed();
   console.log("Creating Security Token");
+  let protocolVer = web3.utils.toAscii(await STRegistrar.protocolVersion());
+  console.log("Protocol Version:",protocolVer);
+  let protocolVerST = await STRegistrar.protocolVersionST(protocolVer);
+  console.log("Protocol Version ST:",protocolVerST);
   let r_generateSecurityToken = await STRegistrar.generateSecurityToken(name, symbol, 18, tokenDetails, { from: Issuer });
-  let newSecurityTokenAddress = r_generateSecurityToken.logs[0].args._securityTokenAddress;
+  let newSecurityTokenAddress = r_generateSecurityToken.logs[1].args._securityTokenAddress;
+  console.log(r_generateSecurityToken.logs);
   let securityToken = await SecurityToken.at(newSecurityTokenAddress);
   //console.log(securityToken);
 

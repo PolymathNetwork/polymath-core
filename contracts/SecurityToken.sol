@@ -20,6 +20,8 @@ import './modules/DelegateManager/IDelegateManager.sol';
 contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     using SafeMath for uint256;
 
+    bytes32 public securityTokenVersion = "0.0.1";
+
     struct ModuleData {
       bytes32 name;
       address moduleAddress;
@@ -52,13 +54,15 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         string _symbol,
         uint8 _decimals,
         bytes32 _tokenDetails,
-        address _moduleRegistry
+        address _moduleRegistry,
+        address _owner
     )
     public
     DetailedERC20(_name, _symbol, _decimals)
     {
         moduleRegistry = _moduleRegistry;
         tokenDetails = _tokenDetails;
+        owner = _owner;
     }
 
     function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bool _replaceable) external {

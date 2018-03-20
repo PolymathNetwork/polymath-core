@@ -1,6 +1,6 @@
 pragma solidity ^0.4.18;
 
-import './IModule.sol';
+import '../../interfaces/IModule.sol';
 
 contract ISTO is IModule {
 

@@ -2,13 +2,13 @@ pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
 import 'zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
-import './interfaces/ITransferManager.sol';
-import './interfaces/IDelegate.sol';
 import './interfaces/ISecurityToken.sol';
 import './interfaces/IModule.sol';
 import './interfaces/IModuleFactory.sol';
 import './interfaces/IModuleRegistry.sol';
 import './interfaces/IST20.sol';
+import './modules/TransferManager/ITransferManager.sol';
+import './modules/DelegateManager/IDelegateManager.sol';
 
 contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     using SafeMath for uint256;
@@ -114,7 +114,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         Transfer(address(0), _investor, _amount);
         return true;
     }
-    
+
     //TODO: Implement this function
     function investorStatus(address /* _investor */) public pure returns (uint8 _status) {
       return 0;
@@ -126,7 +126,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
       if (modules[1].moduleAddress == address(0)) {
         return true;
       }
-      return IDelegate(modules[1].moduleAddress).checkPermission(_module, _delegate, _perm);
+      return IDelegateManager(modules[1].moduleAddress).checkPermission(_module, _delegate, _perm);
     }
 
 }

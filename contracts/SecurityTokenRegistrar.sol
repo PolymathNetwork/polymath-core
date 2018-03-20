@@ -8,6 +8,7 @@ contract SecurityTokenRegistrar {
     address public moduleRegistry;
     address public tickerRegistrar;
     address public transferManagerFactory;
+    address public delegateManagerFactory;
 
     struct SecurityTokenData {
       string symbol;
@@ -16,7 +17,8 @@ contract SecurityTokenRegistrar {
     }
 
     //Shoud be set to false when we have more TransferManager options
-    bool addGeneralTransferManager = true;
+    bool addTransferManager = true;
+    bool addDelegateManager = true;
 
     mapping(address => SecurityTokenData) public securityTokens;
     mapping(string => address) symbols;
@@ -27,10 +29,11 @@ contract SecurityTokenRegistrar {
      * @dev Constructor use to set the essentials addresses to facilitate
      * the creation of the security token
      */
-    function SecurityTokenRegistrar(address _moduleRegistry, address _tickerRegistrar, address _transferManagerFactory) public {
+    function SecurityTokenRegistrar(address _moduleRegistry, address _tickerRegistrar, address _transferManagerFactory, address _delegateManagerFactory) public {
         moduleRegistry = _moduleRegistry;
         tickerRegistrar = _tickerRegistrar;
         transferManagerFactory = _transferManagerFactory;
+        delegateManagerFactory = _delegateManagerFactory;
     }
 
     /**
@@ -50,10 +53,13 @@ contract SecurityTokenRegistrar {
           _tokenDetails,
           moduleRegistry
         );
-        if (addGeneralTransferManager) {          
+        SecurityToken(newSecurityTokenAddress).transferOwnership(msg.sender);
+        if (addTransferManager) {
           SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, true);
         }
-        SecurityToken(newSecurityTokenAddress).transferOwnership(msg.sender);
+        if (addDelegateManager) {
+          SecurityToken(newSecurityTokenAddress).addModule(delegateManagerFactory, "", 0, true);
+        }
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(_symbol, msg.sender, _tokenDetails);
         symbols[_symbol] = newSecurityTokenAddress;
         LogNewSecurityToken(_symbol, newSecurityTokenAddress, msg.sender);

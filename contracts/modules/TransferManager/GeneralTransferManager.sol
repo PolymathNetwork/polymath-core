@@ -1,6 +1,6 @@
 pragma solidity ^0.4.18;
 
-import '../../interfaces/ITransferManager.sol';
+import './ITransferManager.sol';
 
 contract GeneralTransferManager is ITransferManager {
 

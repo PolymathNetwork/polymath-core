@@ -1,6 +1,6 @@
 pragma solidity ^0.4.18;
 
-import '../../interfaces/ISTO.sol';
+import './ISTO.sol';
 import '../../interfaces/IST20.sol';
 
 contract DummySTO is ISTO {

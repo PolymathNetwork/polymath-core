@@ -1,8 +1,8 @@
 pragma solidity ^0.4.18;
 
-import './IModule.sol';
+import '../../interfaces/IModule.sol';
 
-contract IDelegate is IModule {
+contract IDelegateManager is IModule {
 
     function checkPermission(address _delegate, address _module, bytes32 _perm) public returns(bool);
 

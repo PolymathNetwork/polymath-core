@@ -1,8 +1,8 @@
 pragma solidity ^0.4.18;
 
-import '../../interfaces/IDelegate.sol';
+import './IDelegateManager.sol';
 
-contract PermissionedDelegate is IDelegate {
+contract GeneralDelegateManager is IDelegateManager {
 
   mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;
 
@@ -10,7 +10,7 @@ contract PermissionedDelegate is IDelegate {
 
   bytes32 public CHANGE_PERMISSION = "CHANGE_PERMISSION";
 
-  function PermissionedDelegate(address _securityToken) public
+  function GeneralDelegateManager(address _securityToken) public
   IModule(_securityToken)
   {
   }

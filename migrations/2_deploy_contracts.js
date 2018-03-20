@@ -28,7 +28,7 @@ module.exports = async (deployer, network, accounts) => {
 
   if (network == 'development') {
     web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-    investor = accounts[3];
+    investor1 = accounts[3];
     Issuer = accounts[1];
   }
   else if (network == 'ropsten') {

@@ -5,6 +5,7 @@ import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
 contract ISecurityToken is IST20, Ownable {
 
-    function checkPermission(address _module, address _delegate, bytes32 _perm) public returns(bool);
+    //TODO: Factor out more stuff here
+    function checkPermission(address _delegate, address _module, bytes32 _perm) public returns(bool);
 
 }

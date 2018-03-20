@@ -96,16 +96,16 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         return super.transferFrom(_from, _to, _value);
     }
 
-    // Delegates this to a TransferManager module, which has a key of 1
+    // Delegates this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
     function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool success) {
         if (modules[2].moduleAddress == address(0)) {
           return true;
         }
-        return ITransferManager(modules[1].moduleAddress).verifyTransfer(_from, _to, _amount);
+        return ITransferManager(modules[2].moduleAddress).verifyTransfer(_from, _to, _amount);
     }
 
-    // Only STO module can call this, has a key of 2
+    // Only STO module can call this, has a key of 3
     function mint(address _investor, uint256 _amount) public onlyModule(3, true) returns (bool success) {
         require(verifyTransfer(address(0), _investor, _amount));
         totalSupply_ = totalSupply_.add(_amount);
@@ -122,11 +122,11 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     // Delegates this to a Delegate module, which has a key of 1
     // If no Delegate return true
-    function checkPermission(address _module, address _delegate, bytes32 _perm) public returns(bool) {
+    function checkPermission(address _delegate, address _module, bytes32 _perm) public returns(bool) {
       if (modules[1].moduleAddress == address(0)) {
         return true;
       }
-      return IDelegateManager(modules[1].moduleAddress).checkPermission(_module, _delegate, _perm);
+      return IDelegateManager(modules[1].moduleAddress).checkPermission(_delegate, _module, _perm);
     }
 
 }

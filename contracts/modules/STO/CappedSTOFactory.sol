@@ -20,7 +20,7 @@ contract CappedSTOFactory is IModuleFactory {
   }
 
   function getType() view external returns(uint8) {
-      return 2;
+      return 3;
   }
 
   function getName() view external returns(bytes32) {

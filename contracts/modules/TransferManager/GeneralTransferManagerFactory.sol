@@ -14,7 +14,7 @@ contract GeneralTransferManagerFactory is IModuleFactory {
   }
 
   function getType() view external returns(uint8) {
-      return 1;
+      return 2;
   }
 
   function getName() view external returns(bytes32) {

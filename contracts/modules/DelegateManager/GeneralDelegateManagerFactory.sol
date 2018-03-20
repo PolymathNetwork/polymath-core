@@ -14,7 +14,7 @@ contract GeneralDelegateManagerFactory is IModuleFactory {
   }
 
   function getType() view external returns(uint8) {
-      return 0;
+      return 1;
   }
 
   function getName() view external returns(bytes32) {

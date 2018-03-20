@@ -24,7 +24,7 @@ contract GeneralDelegateManager is IDelegateManager {
     return perms[_module][_delegate][_perm];
   }
 
-  function addDelegate(address _delegate, bytes32 _details) public {
+  function addDelegate(address _delegate, bytes32 _details) public withPerm(CHANGE_PERMISSION) {
     delegateDetails[_delegate] = _details;
   }
 

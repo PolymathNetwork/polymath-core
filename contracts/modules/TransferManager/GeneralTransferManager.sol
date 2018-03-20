@@ -26,16 +26,12 @@ contract GeneralTransferManager is ITransferManager {
     //If true, time lock is ignored for issuances (address must still be on whitelist)
     bool public allowAllWhitelistIssuances = true;
 
-    //In this case we treat delegates as having full rights to modify whitelist
-    mapping (address => bytes32) public delegates;
-
     event LogChangeIssuanceAddress(address _issuanceAddress);
     event LogAllowAllTransfers(bool _allowAllTransfers);
     event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
     event LogModifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime);
 
-    //TODO: Pull in delegates here
     function GeneralTransferManager(address _securityToken)
     IModule(_securityToken)
     public

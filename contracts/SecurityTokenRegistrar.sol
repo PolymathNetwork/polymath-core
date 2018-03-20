@@ -53,13 +53,13 @@ contract SecurityTokenRegistrar {
           _tokenDetails,
           moduleRegistry
         );
-        SecurityToken(newSecurityTokenAddress).transferOwnership(msg.sender);
-        if (addTransferManager) {
-          SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, true);
-        }
         if (addDelegateManager) {
           SecurityToken(newSecurityTokenAddress).addModule(delegateManagerFactory, "", 0, true);
         }
+        if (addTransferManager) {
+          SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, true);
+        }
+        SecurityToken(newSecurityTokenAddress).transferOwnership(msg.sender);
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(_symbol, msg.sender, _tokenDetails);
         symbols[_symbol] = newSecurityTokenAddress;
         LogNewSecurityToken(_symbol, newSecurityTokenAddress, msg.sender);

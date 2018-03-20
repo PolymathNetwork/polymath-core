@@ -29,5 +29,10 @@ contract IModule {
       _;
     }
 
+    modifier onlyFactory {
+      require(msg.sender == factory);
+      _;
+    }
+
     function permissions() public returns(bytes32[]);
 }

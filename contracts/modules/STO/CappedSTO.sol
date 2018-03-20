@@ -46,7 +46,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
   {
   }
 
-  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, uint _rate) public withPerm(ADMIN) {
+  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, uint _rate) public onlyFactory {
     require(_rate > 0);
     startTime = _startTime;
     endTime = _endTime;

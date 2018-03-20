@@ -23,7 +23,7 @@ contract DummySTO is ISTO {
   {
   }
 
-  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public withPerm(ADMIN) {
+  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public onlyFactory {
     startTime = _startTime;
     endTime = _endTime;
     cap = _cap;

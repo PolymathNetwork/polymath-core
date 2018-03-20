@@ -2,6 +2,17 @@ pragma solidity ^0.4.18;
 
 import './ITransferManager.sol';
 
+/////////////////////
+// Module permissions
+/////////////////////
+//                                        Owner       WHITELIST      FLAGS
+// changeIssuanceAddress                    X                          X
+// changeAllowAllTransfers                  X                          X
+// changeAllowAllWhitelistTransfers         X                          X
+// changeAllowAllWhitelistIssuances         X                          X
+// modifyWhitelist                          X             X
+// modifyWhitelistMulti                     X             X
+
 contract GeneralTransferManager is ITransferManager {
 
     //Address from which issuances come
@@ -36,13 +47,6 @@ contract GeneralTransferManager is ITransferManager {
     IModule(_securityToken)
     public
     {
-    }
-
-    function permissions() public returns(bytes32[]) {
-      bytes32[] memory allPermissions = new bytes32[](2);
-      allPermissions[0] = WHITELIST;
-      allPermissions[1] = FLAGS;
-      return allPermissions;
     }
 
     function getInitFunction() public returns(bytes4) {
@@ -101,5 +105,12 @@ contract GeneralTransferManager is ITransferManager {
         for (uint256 i = 0; i < _investors.length; i++) {
           modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i]);
         }
+    }
+
+    function permissions() public returns(bytes32[]) {
+      bytes32[] memory allPermissions = new bytes32[](2);
+      allPermissions[0] = WHITELIST;
+      allPermissions[1] = FLAGS;
+      return allPermissions;
     }
 }

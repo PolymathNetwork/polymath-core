@@ -2,6 +2,14 @@ pragma solidity ^0.4.18;
 
 import './IDelegateManager.sol';
 
+/////////////////////
+// Module permissions
+/////////////////////
+//                          Owner       CHANGE_PERMISSION
+// addDelegate                X               X
+// changePermission           X               X
+//
+
 contract GeneralDelegateManager is IDelegateManager {
 
   mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;

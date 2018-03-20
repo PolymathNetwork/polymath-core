@@ -2,15 +2,15 @@ pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
 import 'zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
-import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
-import './delegates/Delegable.sol';
-import './interfaces/ITransferManager.sol';
+import './interfaces/ISecurityToken.sol';
 import './interfaces/IModule.sol';
 import './interfaces/IModuleFactory.sol';
 import './interfaces/IModuleRegistry.sol';
 import './interfaces/IST20.sol';
+import './modules/TransferManager/ITransferManager.sol';
+import './modules/DelegateManager/IDelegateManager.sol';
 
-contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownable {
+contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     using SafeMath for uint256;
 
     struct ModuleData {
@@ -21,8 +21,9 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownabl
 
     address public moduleRegistry;
 
-    // TransferManager has a key of 1
-    // STO has a key of 2
+    // Delegate has a key of 1
+    // TransferManager has a key of 2
+    // STO has a key of 3
     // Other modules TBD
     mapping (uint8 => ModuleData) public modules;
 
@@ -53,13 +54,13 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownabl
         tokenDetails = _tokenDetails;
     }
 
-    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable) external {
+    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bool _replaceable) external {
         require(msg.sender == owner);
-        _addModule(_moduleFactory, _data, _maxCost, _perm, _replaceable);
+        _addModule(_moduleFactory, _data, _maxCost, _replaceable);
     }
 
     //You are only ever allowed one instance, for a given module type
-    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256[] _perm, bool _replaceable) internal {
+    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bool _replaceable) internal {
         //Check that module exists in registry
         require(IModuleRegistry(moduleRegistry).checkModule(_moduleFactory));
         uint256 moduleCost = IModuleRegistry(moduleRegistry).getCost(_moduleFactory);
@@ -68,9 +69,7 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownabl
         //TODO: Approve moduleCost from POLY wallet to _moduleFactory
         //Creates instance of module from factory
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        IModule module = IModule(moduleFactory.deploy(owner, _data));
-        // One way of adding the permission to delegates corresponds to the module
-        addModulePerm(_perm, module);
+        IModule module = IModule(moduleFactory.deploy(_data));
         //Check that this module has not already been set as non-replaceable
         if (modules[moduleFactory.getType()].moduleAddress != address(0)) {
           require(modules[moduleFactory.getType()].replaceable);
@@ -97,17 +96,17 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownabl
         return super.transferFrom(_from, _to, _value);
     }
 
-    // Delegates this to a TransferManager module, which has a key of 1
-    // Will throw if no TransferManager module set
+    // Delegates this to a TransferManager module, which has a key of 2
+    // If no TransferManager return true
     function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool success) {
-        if (modules[1].moduleAddress == address(0)) {
+        if (modules[2].moduleAddress == address(0)) {
           return true;
         }
-        return ITransferManager(modules[1].moduleAddress).verifyTransfer(_from, _to, _amount);
+        return ITransferManager(modules[2].moduleAddress).verifyTransfer(_from, _to, _amount);
     }
 
-    // Only STO module can call this, has a key of 2
-    function mint(address _investor, uint256 _amount) public onlyModule(2, true) returns (bool success) {
+    // Only STO module can call this, has a key of 3
+    function mint(address _investor, uint256 _amount) public onlyModule(3, true) returns (bool success) {
         require(verifyTransfer(address(0), _investor, _amount));
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);
@@ -116,9 +115,19 @@ contract SecurityToken is StandardToken, IST20, Delegable, DetailedERC20, Ownabl
         return true;
     }
 
-    function investorStatus(address _investor) public returns (uint8 _status) {
-      // TODO
+    //TODO: Implement this function
+    function investorStatus(address /* _investor */) public pure returns (uint8 _status) {
       return 0;
+    }
+
+    // Delegates this to a Delegate module, which has a key of 1
+    // If no Delegate return false - note that IModule withPerm will allow ST owner all permissions anyway
+    // this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
+    function checkPermission(address _delegate, address _module, bytes32 _perm) public returns(bool) {
+      if (modules[1].moduleAddress == address(0)) {
+        return false;
+      }
+      return IDelegateManager(modules[1].moduleAddress).checkPermission(_delegate, _module, _perm);
     }
 
 }

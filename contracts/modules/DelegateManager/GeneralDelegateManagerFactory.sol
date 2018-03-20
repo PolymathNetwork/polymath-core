@@ -1,12 +1,12 @@
 pragma solidity ^0.4.18;
 
-import './GeneralTransferManager.sol';
+import './GeneralDelegateManager.sol';
 import '../../interfaces/IModuleFactory.sol';
 
-contract GeneralTransferManagerFactory is IModuleFactory {
+contract GeneralDelegateManagerFactory is IModuleFactory {
 
   function deploy(bytes /* _data */) external returns(address) {
-    return address(new GeneralTransferManager(msg.sender));
+    return address(new GeneralDelegateManager(msg.sender));
   }
 
   function getCost() view external returns(uint256) {
@@ -14,11 +14,11 @@ contract GeneralTransferManagerFactory is IModuleFactory {
   }
 
   function getType() view external returns(uint8) {
-      return 2;
+      return 1;
   }
 
   function getName() view external returns(bytes32) {
-    return "GeneralTransferManager";
+    return "GeneralDelegateManager";
   }
 
 

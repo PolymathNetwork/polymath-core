@@ -17,10 +17,10 @@ import './modules/DelegateManager/IDelegateManager.sol';
 * - Modules can be attached to it to control its behaviour
 * - ST should not be deployed directly, but rather the SecurityTokenRegistrar should be used
 */
-contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
+contract SecurityTokenV2 is ISecurityToken, StandardToken, DetailedERC20 {
     using SafeMath for uint256;
 
-    bytes32 public securityTokenVersion = "0.0.1";
+    bytes32 public securityTokenVersion = "0.0.2";
 
     struct ModuleData {
       bytes32 name;
@@ -49,7 +49,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
       _;
     }
 
-    function SecurityToken(
+    function SecurityTokenV2(
         string _name,
         string _symbol,
         uint8 _decimals,

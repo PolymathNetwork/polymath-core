@@ -2,13 +2,18 @@ pragma solidity ^0.4.18;
 
 import './interfaces/ITickerRegistrar.sol';
 import './SecurityToken.sol';
+import './interfaces/ISTProxy.sol';
+import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
-contract SecurityTokenRegistrar {
+contract SecurityTokenRegistrar is Ownable {
 
     address public moduleRegistry;
     address public tickerRegistrar;
     address public transferManagerFactory;
     address public delegateManagerFactory;
+
+    bytes32 public protocolVersion = "0.0.1";
+    mapping (bytes32 => address) public protocolVersionST;
 
     struct SecurityTokenData {
       string symbol;
@@ -29,11 +34,13 @@ contract SecurityTokenRegistrar {
      * @dev Constructor use to set the essentials addresses to facilitate
      * the creation of the security token
      */
-    function SecurityTokenRegistrar(address _moduleRegistry, address _tickerRegistrar, address _transferManagerFactory, address _delegateManagerFactory) public {
+    function SecurityTokenRegistrar(address _moduleRegistry, address _tickerRegistrar, address _transferManagerFactory, address _delegateManagerFactory, address _STVersionProxy) public {
         moduleRegistry = _moduleRegistry;
         tickerRegistrar = _tickerRegistrar;
         transferManagerFactory = _transferManagerFactory;
         delegateManagerFactory = _delegateManagerFactory;
+
+        setProtocolVersion(_STVersionProxy,"0.0.1");
     }
 
     /**
@@ -46,7 +53,14 @@ contract SecurityTokenRegistrar {
     function generateSecurityToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails) public {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0);
         ITickerRegistrar(tickerRegistrar).checkValidity(_symbol, msg.sender);
-        address newSecurityTokenAddress = new SecurityToken(
+        /* address newSecurityTokenAddress = new SecurityToken(
+          _name,
+          _symbol,
+          _decimals,
+          _tokenDetails,
+          moduleRegistry
+        ); */
+        address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
           _name,
           _symbol,
           _decimals,
@@ -63,6 +77,11 @@ contract SecurityTokenRegistrar {
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(_symbol, msg.sender, _tokenDetails);
         symbols[_symbol] = newSecurityTokenAddress;
         LogNewSecurityToken(_symbol, newSecurityTokenAddress, msg.sender);
+    }
+
+    function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public onlyOwner {
+      protocolVersion = _version;
+      protocolVersionST[_version]=_stVersionProxyAddress;
     }
 
     //////////////////////////////

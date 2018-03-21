@@ -74,7 +74,6 @@ module.exports = async (deployer, network, accounts) => {
   console.log("Protocol Version ST:",protocolVerST);
   let r_generateSecurityToken = await STRegistrar.generateSecurityToken(name, symbol, 18, tokenDetails, { from: Issuer });
   let newSecurityTokenAddress = r_generateSecurityToken.logs[1].args._securityTokenAddress;
-  console.log(r_generateSecurityToken.logs);
   let securityToken = await SecurityToken.at(newSecurityTokenAddress);
   console.log("Token Version:",web3.utils.toAscii(await(securityToken.securityTokenVersion())));
   //console.log(securityToken);

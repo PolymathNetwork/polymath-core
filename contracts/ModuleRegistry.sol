@@ -24,6 +24,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
 
     mapping (address => ModuleData) public registry;
     mapping (address => ModuleReputation) public reputation;
+    mapping (uint8 => address[]) public moduleList;
 
     //Checks that module is correctly configured in registry
     function checkModule(address _moduleFactory) external view returns(bool) {
@@ -44,6 +45,8 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         require(moduleFactory.getType() != 0);
         registry[_moduleFactory] = ModuleData(moduleFactory.getType(), moduleFactory.getName(), moduleFactory.getCost());
+        moduleList[moduleFactory.getType()].push(_moduleFactory);
         return true;
     }
+
 }

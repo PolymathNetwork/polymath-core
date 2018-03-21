@@ -2,13 +2,13 @@ pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
 import 'zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
-import './interfaces/ISecurityToken.sol';
-import './interfaces/IModule.sol';
-import './interfaces/IModuleFactory.sol';
-import './interfaces/IModuleRegistry.sol';
-import './interfaces/IST20.sol';
-import './modules/TransferManager/ITransferManager.sol';
-import './modules/DelegateManager/IDelegateManager.sol';
+import '../interfaces/ISecurityToken.sol';
+import '../interfaces/IModule.sol';
+import '../interfaces/IModuleFactory.sol';
+import '../interfaces/IModuleRegistry.sol';
+import '../interfaces/IST20.sol';
+import '../modules/TransferManager/ITransferManager.sol';
+import '../modules/DelegateManager/IDelegateManager.sol';
 
 /**
 * @title SecurityToken

@@ -1,4 +1,4 @@
-const SecurityToken = artifacts.require('./SecurityToken.sol');
+const SecurityToken = artifacts.require('./tokens/SecurityToken.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager.sol');
@@ -10,8 +10,8 @@ const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO= artifacts.require('./CappedSTO.sol');
 const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
 const TickerRegistrar = artifacts.require('./TickerRegistrar.sol');
-const STVersionProxy_001 = artifacts.require('./STVersionProxy_001.sol');
-const STVersionProxy_002 = artifacts.require('./STVersionProxy_002.sol');
+const STVersionProxy_001 = artifacts.require('./tokens/STVersionProxy_001.sol');
+const STVersionProxy_002 = artifacts.require('./tokens/STVersionProxy_002.sol');
 
 const Web3 = require('web3');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
@@ -74,7 +74,6 @@ module.exports = async (deployer, network, accounts) => {
   console.log("Protocol Version ST:",protocolVerST);
   let r_generateSecurityToken = await STRegistrar.generateSecurityToken(name, symbol, 18, tokenDetails, { from: Issuer });
   let newSecurityTokenAddress = r_generateSecurityToken.logs[1].args._securityTokenAddress;
-  console.log(r_generateSecurityToken.logs);
   let securityToken = await SecurityToken.at(newSecurityTokenAddress);
   console.log("Token Version:",web3.utils.toAscii(await(securityToken.securityTokenVersion())));
   //console.log(securityToken);

@@ -41,7 +41,7 @@ contract GeneralTransferManager is ITransferManager {
     event LogAllowAllTransfers(bool _allowAllTransfers);
     event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
-    event LogModifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime);
+    event LogModifyWhitelist(address _investor, uint256 _dateAdded, address _addedBy,  uint256 _fromTime, uint256 _toTime);
 
     function GeneralTransferManager(address _securityToken)
     IModule(_securityToken)
@@ -96,7 +96,7 @@ contract GeneralTransferManager is ITransferManager {
     function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime);
-        LogModifyWhitelist(_investor, _fromTime, _toTime);
+        LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime);
     }
 
     function modifyWhitelistMulti(address[] _investors, uint256[] _fromTimes, uint256[] _toTimes) public withPerm(WHITELIST) {

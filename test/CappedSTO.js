@@ -9,10 +9,11 @@ const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
 const TickerRegistrar = artifacts.require("./TickerRegistrar.sol");
 const STVersion = artifacts.require('./STVersionProxy_001.sol');
-const GeneralDelegateManagerFactory = artifacts.require('./GeneralDelegateManagerFactory.sol');
+const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
-const GeneralDelegateManager = artifacts.require('./GeneralDelegateManager');
+const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
+const PolyToken = artifacts.require('./PolyToken.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -32,9 +33,9 @@ contract('CappedSTO', accounts => {
     let toTime = latestTime() + duration.days(15);
 
     // Contract Instance Declaration 
-    let I_GeneralDelegateManagerFactory;
+    let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
-    let I_GeneralDelegateManager;
+    let I_GeneralPermissionManager;
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
     let I_TickerRegistrar;
@@ -43,6 +44,7 @@ contract('CappedSTO', accounts => {
     let I_STVersion;
     let I_SecurityToken;
     let I_CappedSTO;
+    let I_PolyToken;
 
     // SecurityToken Details
     const name = "Team";
@@ -114,10 +116,10 @@ contract('CappedSTO', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralDelegateManagerFactory = await GeneralDelegateManagerFactory.new({from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new({from:account_polymath});
 
         assert.notEqual(
-            I_GeneralDelegateManagerFactory.address.valueOf(),
+            I_GeneralPermissionManagerFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
             "GeneralDelegateManagerFactory contract was not deployed"
         );
@@ -136,36 +138,21 @@ contract('CappedSTO', accounts => {
 
         // (A) :  Register the GeneralTransferManagerFactory
         await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-        let module_ = await I_ModuleRegistry.registry(I_GeneralTransferManagerFactory.address);
+        await I_ModuleRegistry.useModule(I_GeneralTransferManagerFactory.address);
 
-        assert.equal(
-            web3.utils.toAscii(module_[1])
-            .replace(/\u0000/g, ''),
-            "GeneralTransferManager",
-            "GeneralTransferManager module was not registered"
-        );
+        // assert.isTrue(module_, "GeneralTransferManager module was not registered");
 
         // (B) :  Register the GeneralDelegateManagerFactory
-        await I_ModuleRegistry.registerModule(I_GeneralDelegateManagerFactory.address, { from: account_polymath });
-        module_ = await I_ModuleRegistry.registry(I_GeneralDelegateManagerFactory.address);
+        await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
+        await I_ModuleRegistry.useModule(I_GeneralPermissionManagerFactory.address);
 
-        assert.equal(
-            web3.utils.toAscii(module_[1])
-            .replace(/\u0000/g, ''),
-            "GeneralDelegateManager",
-            "GeneralDelegateManager module was not registered"
-        );
+        // assert.isTrue(module_, "GeneralPermissionManager module was not registered");
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
-        module_ = await I_ModuleRegistry.registry(I_CappedSTOFactory.address);
+        await I_ModuleRegistry.useModule(I_CappedSTOFactory.address);
 
-        assert.equal(
-            web3.utils.toAscii(module_[1])
-            .replace(/\u0000/g, ''),
-            "CappedSTO",
-            "CappedSTOFactory module was not registered"
-        );
+        // assert.isTrue(module_, "CappedSTO module was not registered");
 
         // Step 6: Deploy the TickerRegistrar
 
@@ -187,13 +174,17 @@ contract('CappedSTO', accounts => {
             "STVersion contract was not deployed",
         );
 
+        // Step ANY: Deploy the Polytoken Contract
+         I_PolyToken = await PolyToken.new();
+
         // Step 8: Deploy the SecurityTokenRegistrar
 
         I_SecurityTokenRegistrar = await SecurityTokenRegistrar.new(
+            I_PolyToken.address,
             I_ModuleRegistry.address,
             I_TickerRegistrar.address,
             I_GeneralTransferManagerFactory.address,
-            I_GeneralDelegateManagerFactory.address,
+            I_GeneralPermissionManagerFactory.address,
             I_STVersion.address,
             { 
                 from: account_polymath
@@ -212,7 +203,7 @@ contract('CappedSTO', accounts => {
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
             ModuleRegistry: ${I_ModuleRegistry.address}\n
             GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}\n
-            GeneralDelegateManagerFactory: ${I_GeneralDelegateManagerFactory.address}\n
+            GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
             CappedSTOFactory: ${I_CappedSTOFactory.address}\n
             TickerRegistrar: ${I_TickerRegistrar.address}\n
             STVersionProxy_001: ${I_STVersion.address}\n
@@ -241,12 +232,12 @@ contract('CappedSTO', accounts => {
                 LogAddModule.watch(function(error, log){ resolve(log);});
             });
 
-            // Verify that GeneralDelegateManager module get added successfully or not
+            // Verify that GeneralPermissionManager module get added successfully or not
             assert.equal(log.args._type.toNumber(), 1);
             assert.equal(
                 web3.utils.toAscii(log.args._name)
                 .replace(/\u0000/g, ''),
-                "GeneralDelegateManager"
+                "GeneralPermissionManager"
             );
             LogAddModule.stopWatching();
         });
@@ -262,24 +253,25 @@ contract('CappedSTO', accounts => {
            );
 
            moduleData = await I_SecurityToken.modules(1);
-           I_GeneralDelegateManager = GeneralDelegateManager.at(moduleData[1]);
+           I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
 
            assert.notEqual(
-            I_GeneralDelegateManager.address.valueOf(),
+            I_GeneralPermissionManager.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
             "GeneralDelegateManager contract was not deployed",
            );
         });
+
         it("Should successfully attach the STO factory with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, false, { from: token_owner });
-            assert.equal(tx.logs[0].args._type.toNumber(), stoKey, "CappedSTO doesn't get deployed");
+            assert.equal(tx.logs[1].args._type.toNumber(), stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[0].args._name)
+                web3.utils.toAscii(tx.logs[1].args._name)
                 .replace(/\u0000/g, ''),
                 "CappedSTO",
                 "CappedSTOFactory module was not added"
             );
-            I_CappedSTO = CappedSTO.at(tx.logs[0].args._module);
+            I_CappedSTO = CappedSTO.at(tx.logs[1].args._module);
         });
     });
 

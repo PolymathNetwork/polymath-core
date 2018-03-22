@@ -4,10 +4,12 @@ import './SecurityTokenV2.sol';
 import '../SecurityTokenRegistrar.sol';
 import '../interfaces/ISTProxy.sol';
 
-contract STVersionProxy_002 is ISTProxy{
+contract STVersionProxy_002 is ISTProxy {
 
   function deployToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails)
-  public returns (address){
+  public
+  returns (address)
+  {
     address newSecurityTokenAddress = new SecurityTokenV2(
       _name,
       _symbol,

@@ -65,6 +65,11 @@ contract SecurityTokenRegistrar is Ownable, ISecurityTokenRegistrar {
       protocolVersionST[_version]=_stVersionProxyAddress;
     }
 
+    function changeAutoSelectionModule(bool _transferManager, bool _permissionManager) public onlyOwner {
+      addTransferManager = _transferManager;
+      addPermissionManager = _permissionManager;
+    }
+
     //////////////////////////////
     ///////// Get Functions
     //////////////////////////////

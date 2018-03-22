@@ -4,8 +4,7 @@ import 'zeppelin-solidity/contracts/token/ERC20/MintableToken.sol';
 
 contract PolyToken is MintableToken {
 
-  function PolyToken() public
-  {
+  function PolyToken() public {
 
   }
 

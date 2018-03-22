@@ -77,7 +77,7 @@ contract GeneralTransferManager is ITransferManager {
       return ((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0));
     }
 
-    function verifyTransfer(address _from, address _to, uint256 /* _amount */) view external returns(bool) {
+    function verifyTransfer(address _from, address _to, uint256 _amount) view external returns(bool) {
         if (allowAllTransfers) {
           //All transfers allowed, regardless of whitelist
           return true;

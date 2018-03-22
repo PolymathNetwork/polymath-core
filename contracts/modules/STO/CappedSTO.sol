@@ -104,6 +104,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
     require(_beneficiary != address(0));
     require(_weiAmount != 0);
     require(weiRaised.add(_weiAmount) <= cap);
+    require(now >= startTime && now <= endTime);
   }
 
   /**

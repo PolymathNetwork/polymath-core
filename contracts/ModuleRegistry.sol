@@ -14,6 +14,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
 
     mapping (address => uint8) public registry;
     mapping (address => address[]) public reputation;
+    mapping (uint8 => address[]) public moduleList;
 
     //Checks that module is correctly configured in registry
     function useModule(address _moduleFactory) external returns(bool) {
@@ -33,6 +34,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         require(moduleFactory.getType() != 0);
         registry[_moduleFactory] = moduleFactory.getType();
+        moduleList[moduleFactory.getType()].push(_moduleFactory);
         reputation[_moduleFactory] = new address[](0);
         return true;
     }

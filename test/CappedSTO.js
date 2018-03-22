@@ -1,5 +1,6 @@
 import latestTime from './helpers/latestTime';
-import { duration } from './helpers/utils';
+import { duration, ensureException } from './helpers/utils';
+import { increaseTime } from './helpers/time';
 
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO = artifacts.require('./CappedSTO.sol');
@@ -24,6 +25,10 @@ contract('CappedSTO', accounts => {
     let account_investor1;
     let account_issuer;
     let token_owner;
+
+    // investor Details
+    let fromTime = latestTime();
+    let toTime = latestTime() + duration.days(15);
 
     // Contract Instance Declaration 
     let I_GeneralDelegateManagerFactory;
@@ -245,7 +250,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = await I_SecurityToken.modules(1);
+           let moduleData = await I_SecurityToken.modules(2);
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
            
            assert.notEqual(
@@ -254,7 +259,7 @@ contract('CappedSTO', accounts => {
             "GeneralTransferManager contract was not deployed",
            );
 
-           moduleData = await I_SecurityToken.modules(2);
+           moduleData = await I_SecurityToken.modules(1);
            I_GeneralDelegateManager = GeneralDelegateManager.at(moduleData[1]);
 
            assert.notEqual(
@@ -276,11 +281,85 @@ contract('CappedSTO', accounts => {
         });
     });
 
-    describe("Deploy the Capped STO", async () => {
+    describe("verify the data of STO", async () => {
 
-        it("Should deploy the capped STO successfully", async() => {
+        it("Should verify the configuration of the STO", async() => {
+            assert.equal(
+                await I_CappedSTO.startTime.call(),
+                startTime,
+                "STO Configuration doesn't set as expected"
+            );
+            assert.equal(
+                await I_CappedSTO.endTime.call(),
+                endTime,
+                "STO Configuration doesn't set as expected"
+            );
+            assert.equal(
+                (await I_CappedSTO.cap.call()).toNumber(),
+                cap,
+                "STO Configuration doesn't set as expected"
+            );
+            assert.equal(
+                await I_CappedSTO.rate.call(),
+                rate,
+                "STO Configuration doesn't set as expected"
+            );
+        });
+    });
+    describe("Buy tokens", async() => {
 
-        })
-    })
+        it("Should buy the tokens -- failed due to startTime is greater than Current time", async () => { 
+            try {
+                await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_CappedSTO.address,
+                    value: web3.utils.toWei('1', 'ether')
+                  });
+            } catch(error) {
+                console.log(`Failed due to startTime is greater than Current time`);
+                ensureException(error);
+            }
+        });
+
+        it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
+            try {
+                await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_CappedSTO.address,
+                    value: web3.utils.toWei('1', 'ether')
+                  });
+            } catch(error) {
+                console.log(`Failed because investor doesn't present in the whitelist`);
+                ensureException(error);
+            }
+        });
+
+        it("Should Buy the tokens", async() => {
+            // Add the Investor in to the whitelist
+
+            console.log(`Address of the token owner:${token_owner}\n`);
+            await I_GeneralTransferManager.securityToken.call
+            console.log(`Address of the SecurityToken Owner:`)
+
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor1,
+                fromTime,
+                toTime,
+                {
+                    form: token_owner,
+                    gas: 500000
+                });
+            let LogA = I_GeneralTransferManager.allEvents();
+            const log = await new Promise(function(resolve, reject) {
+                LogA.watch(function(error, log){ resolve(log);});
+            });
+            console.log(log);
+
+            LogA.stopWatching();
+
+            assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
+        });
+        
+    });
 
 });

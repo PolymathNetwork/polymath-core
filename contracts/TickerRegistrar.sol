@@ -9,11 +9,12 @@ pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 import './interfaces/ITickerRegistrar.sol';
+import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 /**
  * @title TickerRegistrar
  * @dev Contract use to register the security token symbols
  */
-contract TickerRegistrar is ITickerRegistrar {
+contract TickerRegistrar is ITickerRegistrar, Ownable {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
@@ -44,7 +45,6 @@ contract TickerRegistrar is ITickerRegistrar {
 
 
     function TickerRegistrar() public {
-        admin = msg.sender;
     }
 
     /**
@@ -95,7 +95,7 @@ contract TickerRegistrar is ITickerRegistrar {
      * @return bool
      */
     function setTokenRegistrar(address _STRegistrar) public returns(bool) {
-        require(msg.sender == admin);
+        require(msg.sender == owner);
         require(_STRegistrar != address(0) && STRAddress == address(0));
         STRAddress = _STRegistrar;
         return true;

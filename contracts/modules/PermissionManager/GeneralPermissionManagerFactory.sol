@@ -1,13 +1,13 @@
 pragma solidity ^0.4.18;
 
-import './GeneralTransferManager.sol';
+import './GeneralPermissionManager.sol';
 import '../../interfaces/IModuleFactory.sol';
 
-contract GeneralTransferManagerFactory is IModuleFactory {
+contract GeneralPermissionManagerFactory is IModuleFactory {
 
   function deploy(bytes /* _data */) external returns(address) {
     //polyToken.transferFrom(msg.sender, owner, getCost());
-    return address(new GeneralTransferManager(msg.sender));
+    return address(new GeneralPermissionManager(msg.sender));
   }
 
   function getCost() view external returns(uint256) {
@@ -15,19 +15,20 @@ contract GeneralTransferManagerFactory is IModuleFactory {
   }
 
   function getType() view external returns(uint8) {
-      return 2;
+      return 1;
   }
 
   function getName() view external returns(bytes32) {
-    return "GeneralTransferManager";
+    return "GeneralPermissionManager";
   }
 
   function getDescription() view external returns(string) {
-    return "Manage transfers using a time based whitelist";
+    return "Manage permissions within the Security Token and attached modules";
   }
 
   function getTitle() view external returns(string) {
-    return "General Transfer Manager";
+    return "General Permission Manager";
   }
+
 
 }

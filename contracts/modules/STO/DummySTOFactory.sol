@@ -7,6 +7,7 @@ import '../../interfaces/IModule.sol';
 contract DummySTOFactory is IModuleFactory {
 
   function deploy(bytes _data) external returns(address) {
+      //polyToken.transferFrom(msg.sender, owner, getCost());
       //Check valid bytes - can only call module init function
       DummySTO dummySTO = new DummySTO(msg.sender);
       //Checks that _data is valid (not calling anything it shouldn't)
@@ -27,5 +28,12 @@ contract DummySTOFactory is IModuleFactory {
       return "DummySTO";
   }
 
+  function getDescription() view external returns(string) {
+    return "Dummy STO";
+  }
+
+  function getTitle() view external returns(string) {
+    return "Dummy STO";
+  }
 
 }

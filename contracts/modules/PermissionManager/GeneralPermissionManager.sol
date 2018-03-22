@@ -1,16 +1,16 @@
 pragma solidity ^0.4.18;
 
-import './IDelegateManager.sol';
+import './IPermissionManager.sol';
 
 /////////////////////
 // Module permissions
 /////////////////////
 //                          Owner       CHANGE_PERMISSION
-// addDelegate                X               X
+// addPermission                X               X
 // changePermission           X               X
 //
 
-contract GeneralDelegateManager is IDelegateManager {
+contract GeneralPermissionManager is IPermissionManager {
 
   mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;
 
@@ -18,7 +18,7 @@ contract GeneralDelegateManager is IDelegateManager {
 
   bytes32 public CHANGE_PERMISSION = "CHANGE_PERMISSION";
 
-  function GeneralDelegateManager(address _securityToken) public
+  function GeneralPermissionManager(address _securityToken) public
   IModule(_securityToken)
   {
   }
@@ -32,7 +32,7 @@ contract GeneralDelegateManager is IDelegateManager {
     return perms[_module][_delegate][_perm];
   }
 
-  function addDelegate(address _delegate, bytes32 _details) public withPerm(CHANGE_PERMISSION) {
+  function addPermission(address _delegate, bytes32 _details) public withPerm(CHANGE_PERMISSION) {
     delegateDetails[_delegate] = _details;
   }
 

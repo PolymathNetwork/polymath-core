@@ -2,13 +2,15 @@ pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
 import 'zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
+import 'zeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import '../interfaces/ISecurityToken.sol';
 import '../interfaces/IModule.sol';
 import '../interfaces/IModuleFactory.sol';
 import '../interfaces/IModuleRegistry.sol';
 import '../interfaces/IST20.sol';
 import '../modules/TransferManager/ITransferManager.sol';
-import '../modules/DelegateManager/IDelegateManager.sol';
+import '../modules/PermissionManager/IPermissionManager.sol';
+import '../interfaces/ISecurityTokenRegistrar.sol';
 
 /**
 * @title SecurityToken
@@ -22,6 +24,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     bytes32 public securityTokenVersion = "0.0.1";
 
+    ERC20 public polyToken;
+
     struct ModuleData {
       bytes32 name;
       address moduleAddress;
@@ -30,7 +34,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     address public moduleRegistry;
 
-    // Delegate has a key of 1
+    // Permission has a key of 1
     // TransferManager has a key of 2
     // STO has a key of 3
     // Other modules TBD
@@ -54,13 +58,14 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         string _symbol,
         uint8 _decimals,
         bytes32 _tokenDetails,
-        address _moduleRegistry,
         address _owner
     )
     public
     DetailedERC20(_name, _symbol, _decimals)
     {
-        moduleRegistry = _moduleRegistry;
+        //When it is created, the owner is the STR
+        moduleRegistry = ISecurityTokenRegistrar(_owner).moduleRegistry();
+        polyToken = ERC20(ISecurityTokenRegistrar(_owner).polyAddress());
         tokenDetails = _tokenDetails;
         owner = _owner;
     }
@@ -82,22 +87,26 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     //You are only ever allowed one instance, for a given module type
     function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bool _replaceable) internal {
         //Check that module exists in registry
-        require(IModuleRegistry(moduleRegistry).checkModule(_moduleFactory));
-        uint256 moduleCost = IModuleRegistry(moduleRegistry).getCost(_moduleFactory);
-        //Avoids any problem where module owner changes cost by front-running a call to addModule
-        require(moduleCost <= _maxCost);
-        //TODO: Approve moduleCost from POLY wallet to _moduleFactory
-        //Creates instance of module from factory
+        IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        IModule module = IModule(moduleFactory.deploy(_data));
+        uint256 moduleCost = moduleFactory.getCost();
+        require(moduleCost <= _maxCost);
         //Check that this module has not already been set as non-replaceable
         if (modules[moduleFactory.getType()].moduleAddress != address(0)) {
           require(modules[moduleFactory.getType()].replaceable);
         }
+        //Approve fee for module
+        require(polyToken.approve(_moduleFactory, moduleCost));
+        //Creates instance of module from factory
+        address module = moduleFactory.deploy(_data);
         //Add to SecurityToken module map
-        modules[moduleFactory.getType()] = ModuleData(moduleFactory.getName(), address(module), _replaceable);
+        modules[moduleFactory.getType()] = ModuleData(moduleFactory.getName(), module, _replaceable);
         //Emit log event
-        LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, address(module), moduleCost);
+        LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost);
+    }
+
+    function withdrawPoly(uint256 _amount) public onlyOwner {
+        require(polyToken.transfer(owner, _amount));
     }
 
     /**
@@ -116,7 +125,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         return super.transferFrom(_from, _to, _value);
     }
 
-    // Delegates this to a TransferManager module, which has a key of 2
+    // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
     function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool success) {
         if (modules[2].moduleAddress == address(0)) {
@@ -140,14 +149,14 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
       return 0;
     }
 
-    // Delegates this to a Delegate module, which has a key of 1
-    // If no Delegate return false - note that IModule withPerm will allow ST owner all permissions anyway
+    // Permissions this to a Permission module, which has a key of 1
+    // If no Permission return false - note that IModule withPerm will allow ST owner all permissions anyway
     // this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
     function checkPermission(address _delegate, address _module, bytes32 _perm) public returns(bool) {
       if (modules[1].moduleAddress == address(0)) {
         return false;
       }
-      return IDelegateManager(modules[1].moduleAddress).checkPermission(_delegate, _module, _perm);
+      return IPermissionManager(modules[1].moduleAddress).checkPermission(_delegate, _module, _perm);
     }
 
 }

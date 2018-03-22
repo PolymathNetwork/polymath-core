@@ -12,27 +12,16 @@ import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 */
 contract ModuleRegistry is IModuleRegistry, Ownable {
 
-    struct ModuleReputation {
-        uint8 score;
-    }
-
-    struct ModuleData {
-        uint8 moduleType;
-        bytes32 name;
-        uint256 cost;
-    }
-
-    mapping (address => ModuleData) public registry;
-    mapping (address => ModuleReputation) public reputation;
+    mapping (address => uint8) public registry;
+    mapping (address => address[]) public reputation;
 
     //Checks that module is correctly configured in registry
-    function checkModule(address _moduleFactory) external view returns(bool) {
-        return (registry[_moduleFactory].moduleType != 0);
-    }
-
-    //Return the cost (in POLY) to use this factory
-    function getCost(address _moduleFactory) external view returns(uint256) {
-        return registry[_moduleFactory].cost;
+    function useModule(address _moduleFactory) external returns(bool) {
+        bool inRegistry = registry[_moduleFactory] != 0;
+        if (inRegistry) {
+          reputation[_moduleFactory].push(msg.sender);
+        }
+        return inRegistry;
     }
 
     /**
@@ -40,10 +29,13 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     * @param _moduleFactory is the address of the module factory to be registered
     */
     function registerModule(address _moduleFactory) external onlyOwner returns(bool) {
-        require(registry[_moduleFactory].moduleType == 0);
+        require(registry[_moduleFactory] == 0);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         require(moduleFactory.getType() != 0);
-        registry[_moduleFactory] = ModuleData(moduleFactory.getType(), moduleFactory.getName(), moduleFactory.getCost());
+        registry[_moduleFactory] = moduleFactory.getType();
+        reputation[_moduleFactory] = new address[](0);
         return true;
     }
+
+
 }

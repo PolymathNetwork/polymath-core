@@ -337,25 +337,14 @@ contract('CappedSTO', accounts => {
         it("Should Buy the tokens", async() => {
             // Add the Investor in to the whitelist
 
-            console.log(`Address of the token owner:${token_owner}\n`);
-            await I_GeneralTransferManager.securityToken.call
-            console.log(`Address of the SecurityToken Owner:`)
-
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
                 fromTime,
                 toTime,
                 {
-                    form: token_owner,
+                    form: account_issuer,
                     gas: 500000
                 });
-            let LogA = I_GeneralTransferManager.allEvents();
-            const log = await new Promise(function(resolve, reject) {
-                LogA.watch(function(error, log){ resolve(log);});
-            });
-            console.log(log);
-
-            LogA.stopWatching();
 
             assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
         });

@@ -93,14 +93,7 @@ contract GeneralTransferManager is ITransferManager {
         return ((whitelist[_from].fromTime <= now) && (whitelist[_to].toTime <= now));
     }
 
-    // function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {
-    //     //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
-    //     whitelist[_investor] = TimeRestriction(_fromTime, _toTime);
-    //     LogModifyWhitelist(_investor, _fromTime, _toTime);
-    // }
-
-    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public {
-        withPermFunc(WHITELIST);
+    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime);
         LogModifyWhitelist(_investor, _fromTime, _toTime);

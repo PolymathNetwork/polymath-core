@@ -63,49 +63,49 @@ module.exports = async (deployer, network, accounts) => {
   // ----------- SECURITY TOKEN & STO DEPLOYMENT ------------
 
   // 1. Register ticker symbol
-  await tickerRegistrar.registerTicker(symbol, "poly@polymath.network", { from: Issuer });
+//   await tickerRegistrar.registerTicker(symbol, "poly@polymath.network", { from: Issuer });
 
-  // 2. Deploy Token
-  let STRegistrar = await SecurityTokenRegistrar.deployed();
-  console.log("Creating Security Token");
-  let protocolVer = web3.utils.toAscii(await STRegistrar.protocolVersion());
-  console.log("Protocol Version:",protocolVer);
-  let protocolVerST = await STRegistrar.protocolVersionST(protocolVer);
-  console.log("Protocol Version ST:",protocolVerST);
-  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(name, symbol, 18, tokenDetails, { from: Issuer });
-  let newSecurityTokenAddress = r_generateSecurityToken.logs[1].args._securityTokenAddress;
-  let securityToken = await SecurityToken.at(newSecurityTokenAddress);
-  console.log("Token Version:",web3.utils.toAscii(await(securityToken.securityTokenVersion())));
-  //console.log(securityToken);
+//   // 2. Deploy Token
+//   let STRegistrar = await SecurityTokenRegistrar.deployed();
+//   console.log("Creating Security Token");
+//   let protocolVer = web3.utils.toAscii(await STRegistrar.protocolVersion());
+//   console.log("Protocol Version:",protocolVer);
+//   let protocolVerST = await STRegistrar.protocolVersionST(protocolVer);
+//   console.log("Protocol Version ST:",protocolVerST);
+//   let r_generateSecurityToken = await STRegistrar.generateSecurityToken(name, symbol, 18, tokenDetails, { from: Issuer });
+//   let newSecurityTokenAddress = r_generateSecurityToken.logs[1].args._securityTokenAddress;
+//   let securityToken = await SecurityToken.at(newSecurityTokenAddress);
+//   console.log("Token Version:",web3.utils.toAscii(await(securityToken.securityTokenVersion())));
+//   //console.log(securityToken);
 
-  // 3. Get Transfer Module and Initialize STO module
-  let generalTransferManagerObject = await securityToken.modules(2);
-  let generalTransferManager = await GeneralTransferManager.at(generalTransferManagerObject[1]);
-  let generalDelegateManagerObject = await securityToken.modules(1);
-  let generalDelegateManager = await GeneralDelegateManager.at(generalDelegateManagerObject[1]);
+//   // 3. Get Transfer Module and Initialize STO module
+//   let generalTransferManagerObject = await securityToken.modules(2);
+//   let generalTransferManager = await GeneralTransferManager.at(generalTransferManagerObject[1]);
+//   let generalDelegateManagerObject = await securityToken.modules(1);
+//   let generalDelegateManager = await GeneralDelegateManager.at(generalDelegateManagerObject[1]);
 
-  let bytesSTO = web3.eth.abi.encodeFunctionCall({
-      name: 'configure',
-      type: 'function',
-      inputs: [{
-          type: 'uint256',
-          name: '_startTime'
-      },{
-          type: 'uint256',
-          name: '_endTime'
-      },{
-          type: 'uint256',
-          name: '_cap'
-      },{
-          type: 'uint256',
-          name: '_rate'
-      }
-      ]
-  }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, web3.utils.toWei('100000', 'ether'), '1000']);
+//   let bytesSTO = web3.eth.abi.encodeFunctionCall({
+//       name: 'configure',
+//       type: 'function',
+//       inputs: [{
+//           type: 'uint256',
+//           name: '_startTime'
+//       },{
+//           type: 'uint256',
+//           name: '_endTime'
+//       },{
+//           type: 'uint256',
+//           name: '_cap'
+//       },{
+//           type: 'uint256',
+//           name: '_rate'
+//       }
+//       ]
+//   }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, web3.utils.toWei('100000', 'ether'), '1000']);
 
-  let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, false, { from: Issuer });
-  let cappedSTOAddress =  r_CappedSTOFactory.logs[0].args._module;
-  let cappedSTO = await CappedSTO.at(cappedSTOAddress);
+//   let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, false, { from: Issuer });
+//   let cappedSTOAddress =  r_CappedSTOFactory.logs[0].args._module;
+//   let cappedSTO = await CappedSTO.at(cappedSTOAddress);
 
   // console.log((await cappedSTO.startTime()).toString());
   // console.log((await cappedSTO.endTime()).toString());
@@ -117,7 +117,7 @@ module.exports = async (deployer, network, accounts) => {
   // ----------- WHITELISTING & INVESTING ------------
 
   // 4. Add investor to whitelist
-  await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Issuer });
+  // await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Issuer });
 
 
 //   // 5. INVEST

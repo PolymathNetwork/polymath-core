@@ -33,14 +33,6 @@ contract IModule {
       require(msg.sender == factory);
       _;
     }
-    event LogA(bool _result, bool isOwner, bool isFactory, address _o, address _sender);
-    function withPermFunc(bytes32 _perm) returns (bool) {
-        address o = ISecurityToken(securityToken).owner();
-        bool isOwner = msg.sender == ISecurityToken(securityToken).owner();
-        bool isFactory = msg.sender == factory;
-        LogA(isOwner || isFactory || ISecurityToken(securityToken).checkPermission(msg.sender, address(this), _perm), isOwner, isFactory, o, msg.sender);
-        return isOwner;
-    }
 
     function permissions() public returns(bytes32[]);
 }

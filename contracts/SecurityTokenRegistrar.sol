@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
 import './interfaces/ITickerRegistrar.sol';
-import './SecurityToken.sol';
+import './tokens/SecurityToken.sol';
 import './interfaces/ISTProxy.sol';
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 

@@ -15,6 +15,7 @@ const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralDelegateManager = artifacts.require('./GeneralDelegateManager');
 
 const Web3 = require('web3');
+const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
 contract('CappedSTO', accounts => {
@@ -25,7 +26,7 @@ contract('CappedSTO', accounts => {
     let account_investor1;
     let account_issuer;
     let token_owner;
-
+    let account_investor2;
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(15);
@@ -58,7 +59,7 @@ contract('CappedSTO', accounts => {
     // Capped STO details
     const startTime = latestTime() + duration.seconds(5000);           // Start time will be 5000 seconds more than the latest time
     const endTime = startTime + duration.days(30);                     // Add 30 days more
-    const cap = web3.utils.toWei('100000', 'ether');
+    const cap = web3.utils.toWei('10', 'ether');
     const rate = 1000;
 
     let bytesSTO = web3.eth.abi.encodeFunctionCall({
@@ -86,6 +87,7 @@ contract('CappedSTO', accounts => {
         account_polymath = accounts[0];
         account_issuer = accounts[1];
         account_investor1 = accounts[2];
+        account_investor2 = accounts[3];
         token_owner = account_issuer;
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -342,13 +344,123 @@ contract('CappedSTO', accounts => {
                 fromTime,
                 toTime,
                 {
-                    form: account_issuer,
+                    from: account_issuer,
                     gas: 500000
                 });
 
             assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
+
+            // Jump time
+            await increaseTime(5000);
+            // Fallback transaction
+            await web3.eth.sendTransaction({
+                from: account_investor1,
+                to: I_CappedSTO.address,
+                gas: 210000,
+                value: web3.utils.toWei('1', 'ether')
+              });
+            
+            assert.equal(
+                (await I_CappedSTO.weiRaised.call())
+                .dividedBy(new BigNumber(10).pow(18))
+                .toNumber(),
+                1 
+            );
+
+            assert.equal(await I_CappedSTO.getNumberInvestors.call(), 1);
+
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor1))
+                .dividedBy(new BigNumber(10).pow(18))
+                .toNumber(),
+                1000
+            );
         });
-        
+
+        it("Verification of the event Token Purchase", async() => {
+            let TokenPurchase = I_CappedSTO.allEvents();
+            let log = await new Promise(function(resolve, reject) {
+                TokenPurchase.watch(function(error, log){ resolve(log);})
+            });
+
+            assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
+            assert.equal(
+                (log.args.amount)
+                .dividedBy(new BigNumber(10).pow(18))
+                .toNumber(),
+                1000,
+                "Wrong No. token get dilivered"
+            );
+            TokenPurchase.stopWatching();
+        });
+
+        it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async() => {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor2,
+                fromTime,
+                toTime + duration.days(20),
+                {
+                    from: account_issuer,
+                    gas: 500000
+                });
+
+            assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
+            
+             // Fallback transaction
+             await web3.eth.sendTransaction({
+                from: account_investor2,
+                to: I_CappedSTO.address,
+                gas: 210000,
+                value: web3.utils.toWei('9', 'ether')
+              });
+
+              assert.equal(
+                (await I_CappedSTO.weiRaised.call())
+                .dividedBy(new BigNumber(10).pow(18))
+                .toNumber(),
+                10 
+            );
+
+            assert.equal(await I_CappedSTO.getNumberInvestors.call(), 2);
+
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor2))
+                .dividedBy(new BigNumber(10).pow(18))
+                .toNumber(),
+                9000
+            );
+            try {
+                // Fallback transaction
+             await web3.eth.sendTransaction({
+                from: account_investor2,
+                to: I_CappedSTO.address,
+                gas: 210000,
+                value: web3.utils.toWei('1', 'ether')
+              });
+            } catch(error) {
+                console.log(`failed Because of capped reached`);
+                ensureException(error);
+            }
+        });
+
+        it("Should failed at the time of buying the tokens -- Because STO get expired", async() => {
+            await increaseTime(duration.days(16)); // increased beyond the end time of the STO
+
+            try {
+                // Fallback transaction
+             await web3.eth.sendTransaction({
+                from: account_investor2,
+                to: I_CappedSTO.address,
+                gas: 210000,
+                value: web3.utils.toWei('1', 'ether')
+              });
+            } catch(error) {
+                console.log(`failed Because STO get expired reached`);
+                ensureException(error);
+            }
+
+        });
+
     });
 
 });

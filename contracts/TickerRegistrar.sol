@@ -94,8 +94,7 @@ contract TickerRegistrar is ITickerRegistrar, Ownable {
      * @param _STRegistrar contract address of the STR
      * @return bool
      */
-    function setTokenRegistrar(address _STRegistrar) public returns(bool) {
-        require(msg.sender == owner);
+    function setTokenRegistrar(address _STRegistrar) public onlyOwner returns(bool) {
         require(_STRegistrar != address(0) && STRAddress == address(0));
         STRAddress = _STRegistrar;
         return true;

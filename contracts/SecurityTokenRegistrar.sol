@@ -9,11 +9,11 @@ import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 contract SecurityTokenRegistrar is Ownable, ISecurityTokenRegistrar {
 
     address public transferManagerFactory;
-    address public delegateManagerFactory;
+    address public permissionManagerFactory;
 
     //Shoud be set to false when we have more TransferManager options
     bool addTransferManager = true;
-    bool addDelegateManager = true;
+    bool addPermissionManager = true;
 
     event LogNewSecurityToken(string _ticker, address _securityTokenAddress, address _owner);
 
@@ -21,11 +21,11 @@ contract SecurityTokenRegistrar is Ownable, ISecurityTokenRegistrar {
      * @dev Constructor use to set the essentials addresses to facilitate
      * the creation of the security token
      */
-    function SecurityTokenRegistrar(address _moduleRegistry, address _tickerRegistrar, address _transferManagerFactory, address _delegateManagerFactory, address _STVersionProxy) public {
+    function SecurityTokenRegistrar(address _moduleRegistry, address _tickerRegistrar, address _transferManagerFactory, address _permissionManagerFactory, address _STVersionProxy) public {
         moduleRegistry = _moduleRegistry;
         tickerRegistrar = _tickerRegistrar;
         transferManagerFactory = _transferManagerFactory;
-        delegateManagerFactory = _delegateManagerFactory;
+        permissionManagerFactory = _permissionManagerFactory;
 
         setProtocolVersion(_STVersionProxy,"0.0.1");
     }
@@ -40,21 +40,15 @@ contract SecurityTokenRegistrar is Ownable, ISecurityTokenRegistrar {
     function generateSecurityToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails) public {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0);
         ITickerRegistrar(tickerRegistrar).checkValidity(_symbol, msg.sender);
-        /* address newSecurityTokenAddress = new SecurityToken(
-          _name,
-          _symbol,
-          _decimals,
-          _tokenDetails,
-          moduleRegistry
-        ); */
+
         address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
           _name,
           _symbol,
           _decimals,
           _tokenDetails
         );
-        if (addDelegateManager) {
-          SecurityToken(newSecurityTokenAddress).addModule(delegateManagerFactory, "", 0, true);
+        if (addPermissionManager) {
+          SecurityToken(newSecurityTokenAddress).addModule(permissionManagerFactory, "", 0, true);
         }
         if (addTransferManager) {
           SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, true);

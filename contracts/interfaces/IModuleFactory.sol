@@ -1,7 +1,9 @@
 pragma solidity ^0.4.18;
 
+import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
+
 //Simple interface that any module contracts should implement
-contract IModuleFactory {
+contract IModuleFactory is Ownable {
 
     //TODO: Add delegates to this
     //Should create an instance of the Module, or throw
@@ -13,6 +15,10 @@ contract IModuleFactory {
 
     //Return the cost (in POLY) to use this factory
     function getCost() view external returns(uint256);
+
+    function getDescription() view external returns(string);
+
+    function getTitle() view external returns(string);
 
     //Pull function sig from _data
     function getSig(bytes _data) internal pure returns (bytes4 sig) {

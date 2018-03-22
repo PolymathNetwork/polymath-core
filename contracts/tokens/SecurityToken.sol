@@ -83,22 +83,22 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     //You are only ever allowed one instance, for a given module type
     function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bool _replaceable) internal {
         //Check that module exists in registry
-        require(IModuleRegistry(moduleRegistry).checkModule(_moduleFactory));
-        uint256 moduleCost = IModuleRegistry(moduleRegistry).getCost(_moduleFactory);
-        //Avoids any problem where module owner changes cost by front-running a call to addModule
-        require(moduleCost <= _maxCost);
-        //TODO: Approve moduleCost from POLY wallet to _moduleFactory
-        //Creates instance of module from factory
+        IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        IModule module = IModule(moduleFactory.deploy(_data));
+        uint256 moduleCost = moduleFactory.getCost();
+        require(moduleCost <= _maxCost);
         //Check that this module has not already been set as non-replaceable
         if (modules[moduleFactory.getType()].moduleAddress != address(0)) {
           require(modules[moduleFactory.getType()].replaceable);
         }
+        //TODO: Pay moduleCost to moduleFactory
+
+        //Creates instance of module from factory
+        address module = moduleFactory.deploy(_data);
         //Add to SecurityToken module map
-        modules[moduleFactory.getType()] = ModuleData(moduleFactory.getName(), address(module), _replaceable);
+        modules[moduleFactory.getType()] = ModuleData(moduleFactory.getName(), module, _replaceable);
         //Emit log event
-        LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, address(module), moduleCost);
+        LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost);
     }
 
     /**

@@ -21,5 +21,12 @@ contract GeneralTransferManagerFactory is IModuleFactory {
     return "GeneralTransferManager";
   }
 
+  function getDescription() view external returns(string) {
+    return "Manage transfers using a time based whitelist";
+  }
+
+  function getTitle() view external returns(string) {
+    return "General Transfer Manager";
+  }
 
 }

@@ -4,10 +4,7 @@ pragma solidity ^0.4.18;
 interface IModuleRegistry {
 
     //Checks that module is correctly configured in registry
-    function checkModule(address _moduleFactory) external view returns(bool);
-
-    //Return the cost (in POLY) to use this factory
-    function getCost(address _moduleFactory) external view returns(uint256);
+    function useModule(address _moduleFactory) external returns(bool);
 
     function registerModule(address _moduleFactory) external returns(bool);
 

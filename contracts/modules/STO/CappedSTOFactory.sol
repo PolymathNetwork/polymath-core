@@ -27,5 +27,13 @@ contract CappedSTOFactory is IModuleFactory {
       return "CappedSTO";
   }
 
+  function getDescription() view external returns(string) {
+    return "Capped STO";
+  }
+
+  function getTitle() view external returns(string) {
+    return "Capped STO";
+  }
+
 
 }

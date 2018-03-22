@@ -21,5 +21,13 @@ contract GeneralPermissionManagerFactory is IModuleFactory {
     return "GeneralPermissionManager";
   }
 
+  function getDescription() view external returns(string) {
+    return "Manage permissions within the Security Token and attached modules";
+  }
+
+  function getTitle() view external returns(string) {
+    return "General Permission Manager";
+  }
+
 
 }

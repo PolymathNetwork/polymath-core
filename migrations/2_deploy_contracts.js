@@ -1,3 +1,4 @@
+const PolyToken = artifacts.require('./helpers/PolyToken.sol');
 const SecurityToken = artifacts.require('./tokens/SecurityToken.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
@@ -35,10 +36,11 @@ module.exports = async (deployer, network, accounts) => {
   // ----------- POLYMATH NETWORK Configuration ------------
 
   // A) POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
-  // 1. Deploy Registry, Transfer Manager, Permission Manager
+  // 1. Deploy Registry, Transfer Manager, Permission Manager, (temp) PolyToken
   await deployer.deploy(ModuleRegistry, {from: PolymathAccount});
   await deployer.deploy(GeneralTransferManagerFactory, {from: PolymathAccount});
   await deployer.deploy(GeneralPermissionManagerFactory, {from: PolymathAccount});
+  await deployer.deploy(PolyToken, {from: PolymathAccount});
 
   // 2. Register the Transfer Manager module
   let moduleRegistry = await ModuleRegistry.deployed();
@@ -50,7 +52,7 @@ module.exports = async (deployer, network, accounts) => {
   let stVersionProxy_001 = await STVersionProxy_001.deployed();
 
   await deployer.deploy(TickerRegistrar, {from: PolymathAccount});
-  await deployer.deploy(SecurityTokenRegistrar, ModuleRegistry.address, TickerRegistrar.address, GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address,stVersionProxy_001.address, {from: PolymathAccount});
+  await deployer.deploy(SecurityTokenRegistrar, PolyToken.address, ModuleRegistry.address, TickerRegistrar.address, GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address,stVersionProxy_001.address, {from: PolymathAccount});
   let tickerRegistrar = await TickerRegistrar.deployed();
   await tickerRegistrar.setTokenRegistrar(SecurityTokenRegistrar.address, {from: PolymathAccount});
 
@@ -104,7 +106,7 @@ module.exports = async (deployer, network, accounts) => {
   }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, web3.utils.toWei('100000', 'ether'), '1000']);
 
   let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, false, { from: Issuer });
-  let cappedSTOAddress =  r_CappedSTOFactory.logs[0].args._module;
+  let cappedSTOAddress =  r_CappedSTOFactory.logs[1].args._module;
   let cappedSTO = await CappedSTO.at(cappedSTOAddress);
 
   // console.log((await cappedSTO.startTime()).toString());

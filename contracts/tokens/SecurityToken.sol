@@ -2,6 +2,7 @@ pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
 import 'zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
+import 'zeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 import '../interfaces/ISecurityToken.sol';
 import '../interfaces/IModule.sol';
 import '../interfaces/IModuleFactory.sol';
@@ -22,6 +23,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     using SafeMath for uint256;
 
     bytes32 public securityTokenVersion = "0.0.1";
+
+    ERC20 public polyToken;
 
     struct ModuleData {
       bytes32 name;
@@ -62,6 +65,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     {
         //When it is created, the owner is the STR
         moduleRegistry = ISecurityTokenRegistrar(_owner).moduleRegistry();
+        polyToken = ERC20(ISecurityTokenRegistrar(_owner).polyAddress());
         tokenDetails = _tokenDetails;
         owner = _owner;
     }
@@ -91,14 +95,18 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         if (modules[moduleFactory.getType()].moduleAddress != address(0)) {
           require(modules[moduleFactory.getType()].replaceable);
         }
-        //TODO: Pay moduleCost to moduleFactory
-
+        //Approve fee for module
+        require(polyToken.approve(_moduleFactory, moduleCost));
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
         //Add to SecurityToken module map
         modules[moduleFactory.getType()] = ModuleData(moduleFactory.getName(), module, _replaceable);
         //Emit log event
         LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost);
+    }
+
+    function withdrawPoly(uint256 _amount) public onlyOwner {
+        require(polyToken.transfer(owner, _amount));
     }
 
     /**

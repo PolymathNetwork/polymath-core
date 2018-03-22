@@ -1,11 +1,13 @@
 pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
+import 'zeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 
 //Simple interface that any module contracts should implement
 contract IModuleFactory is Ownable {
 
-    //TODO: Add delegates to this
+    ERC20 public polyToken;
+
     //Should create an instance of the Module, or throw
     function deploy(bytes _data) external returns(address);
 

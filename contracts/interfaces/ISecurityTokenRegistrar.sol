@@ -2,6 +2,8 @@ pragma solidity ^0.4.18;
 
 contract ISecurityTokenRegistrar {
 
+    address public polyAddress;
+
     address public moduleRegistry;
     address public tickerRegistrar;
 

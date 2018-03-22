@@ -21,7 +21,8 @@ contract SecurityTokenRegistrar is Ownable, ISecurityTokenRegistrar {
      * @dev Constructor use to set the essentials addresses to facilitate
      * the creation of the security token
      */
-    function SecurityTokenRegistrar(address _moduleRegistry, address _tickerRegistrar, address _transferManagerFactory, address _permissionManagerFactory, address _STVersionProxy) public {
+    function SecurityTokenRegistrar(address _polyAddress, address _moduleRegistry, address _tickerRegistrar, address _transferManagerFactory, address _permissionManagerFactory, address _STVersionProxy) public {
+        polyAddress = _polyAddress;
         moduleRegistry = _moduleRegistry;
         tickerRegistrar = _tickerRegistrar;
         transferManagerFactory = _transferManagerFactory;

@@ -3,30 +3,17 @@ pragma solidity ^0.4.18;
 import './interfaces/ITickerRegistrar.sol';
 import './tokens/SecurityToken.sol';
 import './interfaces/ISTProxy.sol';
+import './interfaces/ISecurityTokenRegistrar.sol';
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
-contract SecurityTokenRegistrar is Ownable {
+contract SecurityTokenRegistrar is Ownable, ISecurityTokenRegistrar {
 
-    address public moduleRegistry;
-    address public tickerRegistrar;
     address public transferManagerFactory;
     address public delegateManagerFactory;
-
-    bytes32 public protocolVersion = "0.0.1";
-    mapping (bytes32 => address) public protocolVersionST;
-
-    struct SecurityTokenData {
-      string symbol;
-      address owner;
-      bytes32 tokenDetails;
-    }
 
     //Shoud be set to false when we have more TransferManager options
     bool addTransferManager = true;
     bool addDelegateManager = true;
-
-    mapping(address => SecurityTokenData) public securityTokens;
-    mapping(string => address) symbols;
 
     event LogNewSecurityToken(string _ticker, address _securityTokenAddress, address _owner);
 
@@ -64,8 +51,7 @@ contract SecurityTokenRegistrar is Ownable {
           _name,
           _symbol,
           _decimals,
-          _tokenDetails,
-          moduleRegistry
+          _tokenDetails
         );
         if (addDelegateManager) {
           SecurityToken(newSecurityTokenAddress).addModule(delegateManagerFactory, "", 0, true);

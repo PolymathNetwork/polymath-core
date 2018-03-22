@@ -8,7 +8,8 @@ import '../interfaces/IModuleFactory.sol';
 import '../interfaces/IModuleRegistry.sol';
 import '../interfaces/IST20.sol';
 import '../modules/TransferManager/ITransferManager.sol';
-import '../modules/DelegateManager/IDelegateManager.sol';
+import '../modules/PermissionManager/IPermissionManager.sol';
+import '../interfaces/ISecurityTokenRegistrar.sol';
 
 /**
 * @title SecurityToken
@@ -30,7 +31,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     address public moduleRegistry;
 
-    // Delegate has a key of 1
+    // Permission has a key of 1
     // TransferManager has a key of 2
     // STO has a key of 3
     // Other modules TBD
@@ -54,13 +55,13 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         string _symbol,
         uint8 _decimals,
         bytes32 _tokenDetails,
-        address _moduleRegistry,
         address _owner
     )
     public
     DetailedERC20(_name, _symbol, _decimals)
     {
-        moduleRegistry = _moduleRegistry;
+        //When it is created, the owner is the STR
+        moduleRegistry = ISecurityTokenRegistrar(_owner).moduleRegistry();
         tokenDetails = _tokenDetails;
         owner = _owner;
     }
@@ -116,7 +117,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         return super.transferFrom(_from, _to, _value);
     }
 
-    // Delegates this to a TransferManager module, which has a key of 2
+    // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
     function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool success) {
         if (modules[2].moduleAddress == address(0)) {
@@ -140,14 +141,14 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
       return 0;
     }
 
-    // Delegates this to a Delegate module, which has a key of 1
-    // If no Delegate return false - note that IModule withPerm will allow ST owner all permissions anyway
+    // Permissions this to a Permission module, which has a key of 1
+    // If no Permission return false - note that IModule withPerm will allow ST owner all permissions anyway
     // this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
     function checkPermission(address _delegate, address _module, bytes32 _perm) public returns(bool) {
       if (modules[1].moduleAddress == address(0)) {
         return false;
       }
-      return IDelegateManager(modules[1].moduleAddress).checkPermission(_delegate, _module, _perm);
+      return IPermissionManager(modules[1].moduleAddress).checkPermission(_delegate, _module, _perm);
     }
 
 }

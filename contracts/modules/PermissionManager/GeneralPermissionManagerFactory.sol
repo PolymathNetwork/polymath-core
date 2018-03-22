@@ -1,12 +1,12 @@
 pragma solidity ^0.4.18;
 
-import './GeneralDelegateManager.sol';
+import './GeneralPermissionManager.sol';
 import '../../interfaces/IModuleFactory.sol';
 
-contract GeneralDelegateManagerFactory is IModuleFactory {
+contract GeneralPermissionManagerFactory is IModuleFactory {
 
   function deploy(bytes /* _data */) external returns(address) {
-    return address(new GeneralDelegateManager(msg.sender));
+    return address(new GeneralPermissionManager(msg.sender));
   }
 
   function getCost() view external returns(uint256) {
@@ -18,7 +18,7 @@ contract GeneralDelegateManagerFactory is IModuleFactory {
   }
 
   function getName() view external returns(bytes32) {
-    return "GeneralDelegateManager";
+    return "GeneralPermissionManager";
   }
 
 

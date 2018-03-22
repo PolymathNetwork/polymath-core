@@ -2,8 +2,8 @@ const SecurityToken = artifacts.require('./tokens/SecurityToken.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager.sol');
-const GeneralDelegateManagerFactory = artifacts.require('./GeneralDelegateManagerFactory.sol');
-const GeneralDelegateManager = artifacts.require('./GeneralDelegateManager.sol');
+const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
+const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager.sol');
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
 const DummySTO= artifacts.require('./DummySTO.sol');
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
@@ -30,27 +30,27 @@ module.exports = async (deployer, network, accounts) => {
   const Issuer = accounts[1];
   const investor1 = accounts[3];
   const investor2 = accounts[4];
-  const Delegate = accounts[5];
+  const Permission = accounts[5];
 
   // ----------- POLYMATH NETWORK Configuration ------------
 
   // A) POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
-  // 1. Deploy Registry, Transfer Manager, Delegate Manager
+  // 1. Deploy Registry, Transfer Manager, Permission Manager
   await deployer.deploy(ModuleRegistry, {from: PolymathAccount});
   await deployer.deploy(GeneralTransferManagerFactory, {from: PolymathAccount});
-  await deployer.deploy(GeneralDelegateManagerFactory, {from: PolymathAccount});
+  await deployer.deploy(GeneralPermissionManagerFactory, {from: PolymathAccount});
 
   // 2. Register the Transfer Manager module
   let moduleRegistry = await ModuleRegistry.deployed();
   await moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount});
-  await moduleRegistry.registerModule(GeneralDelegateManagerFactory.address, {from: PolymathAccount});
+  await moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, {from: PolymathAccount});
 
   // 3. Deploy Ticker Registrar and SecurityTokenRegistrar
   await deployer.deploy(STVersionProxy_001, {from: PolymathAccount});
   let stVersionProxy_001 = await STVersionProxy_001.deployed();
 
   await deployer.deploy(TickerRegistrar, {from: PolymathAccount});
-  await deployer.deploy(SecurityTokenRegistrar, ModuleRegistry.address, TickerRegistrar.address, GeneralTransferManagerFactory.address, GeneralDelegateManagerFactory.address,stVersionProxy_001.address, {from: PolymathAccount});
+  await deployer.deploy(SecurityTokenRegistrar, ModuleRegistry.address, TickerRegistrar.address, GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address,stVersionProxy_001.address, {from: PolymathAccount});
   let tickerRegistrar = await TickerRegistrar.deployed();
   await tickerRegistrar.setTokenRegistrar(SecurityTokenRegistrar.address, {from: PolymathAccount});
 
@@ -81,8 +81,8 @@ module.exports = async (deployer, network, accounts) => {
   // 3. Get Transfer Module and Initialize STO module
   let generalTransferManagerObject = await securityToken.modules(2);
   let generalTransferManager = await GeneralTransferManager.at(generalTransferManagerObject[1]);
-  let generalDelegateManagerObject = await securityToken.modules(1);
-  let generalDelegateManager = await GeneralDelegateManager.at(generalDelegateManagerObject[1]);
+  let generalPermissionManagerObject = await securityToken.modules(1);
+  let generalPermissionManager = await GeneralPermissionManager.at(generalPermissionManagerObject[1]);
 
   let bytesSTO = web3.eth.abi.encodeFunctionCall({
       name: 'configure',
@@ -134,18 +134,18 @@ module.exports = async (deployer, network, accounts) => {
   `);
 
   try {
-    await generalTransferManager.modifyWhitelist(investor2, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Delegate });
+    await generalTransferManager.modifyWhitelist(investor2, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Permission });
   } catch (err) {
-    console.log("Failed to add investor 2 with invalid Delegate (expected)");
+    console.log("Failed to add investor 2 with invalid Permission (expected)");
   }
 
-  // 6. Set up Delegate
+  // 6. Set up Permission
   //Only Issuer (owner of the ST) can do this for now
-  await generalDelegateManager.addDelegate(Delegate, "WhitelistDelegate", { from: Issuer });
-  await generalDelegateManager.changePermission(Delegate, generalTransferManagerObject[1], "WHITELIST", true, { from: Issuer });
+  await generalPermissionManager.addPermission(Permission, "WhitelistPermission", { from: Issuer });
+  await generalPermissionManager.changePermission(Permission, generalTransferManagerObject[1], "WHITELIST", true, { from: Issuer });
 
-  // 7. Delegate adds whitelist for investor_2
-  await generalTransferManager.modifyWhitelist(investor2, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Delegate });
+  // 7. Permission adds whitelist for investor_2
+  await generalTransferManager.modifyWhitelist(investor2, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Permission });
 
   // 8. Investor_2 invests
   r = await cappedSTO.buyTokens(investor2, {from: investor2, value:web3.utils.toWei('1', 'ether')});

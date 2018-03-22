@@ -17,7 +17,6 @@ contract SecurityTokenV2 is SecurityToken {
         string _symbol,
         uint8 _decimals,
         bytes32 _tokenDetails,
-        address _moduleRegistry,
         address _owner
     )
     public
@@ -26,7 +25,6 @@ contract SecurityTokenV2 is SecurityToken {
       _symbol,
       _decimals,
       _tokenDetails,
-      _moduleRegistry,
       _owner)
     {
     }

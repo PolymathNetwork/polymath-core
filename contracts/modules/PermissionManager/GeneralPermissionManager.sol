@@ -27,9 +27,12 @@ contract GeneralPermissionManager is IPermissionManager {
     return bytes4(0);
   }
 
-  function checkPermission(address _delegate, address _module, bytes32 _perm) public returns(bool) {
-    require(delegateDetails[_delegate] != bytes32(0));
-    return perms[_module][_delegate][_perm];
+  function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool) {
+    if (delegateDetails[_delegate] != bytes32(0)) {
+      return perms[_module][_delegate][_perm];
+    }
+    else
+      return false;
   }
 
   function addPermission(address _delegate, bytes32 _details) public withPerm(CHANGE_PERMISSION) {

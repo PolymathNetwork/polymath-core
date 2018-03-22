@@ -4,7 +4,7 @@ import './SecurityTokenV2.sol';
 import '../SecurityTokenRegistrar.sol';
 import '../interfaces/ISTProxy.sol';
 
-contract STVersionProxy_002 is ISTProxy{
+contract STVersionProxy_002 is ISTProxy {
 
   address public transferManagerFactory;
   address public permissionManagerFactory;

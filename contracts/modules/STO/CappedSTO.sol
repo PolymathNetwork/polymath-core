@@ -15,8 +15,8 @@ contract CappedSTO is ISTO {
   // How many token units a buyer gets per wei
   uint256 public rate;
 
-  // Amount of crypto raised
-  uint256 public cryptoRaised;
+  // Amount of funds raised
+  uint256 public fundsRaised;
 
   uint256 public investorCount;
 
@@ -46,19 +46,32 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
   {
   }
 
-  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, uint _rate, bytes8 _config, address _polyToken) public onlyFactory {
+  function configure(
+    uint256 _startTime,
+    uint256 _endTime,
+    uint256 _cap,
+    uint _rate,
+    uint8 _fundRaiseType,
+    address _polyToken,
+    address _fundsReceiver
+    ) 
+    public
+    onlyFactory 
+    {
     require(_rate > 0);
+    require(_fundsReceiver != address(0));
+    require(startTime >= now && endTime > startTime);
+    require(_cap > 0);
     startTime = _startTime;
     endTime = _endTime;
     cap = _cap;
     rate = _rate;
-     if (_config != bytes8(0)) {
-        _check(_config, _polyToken);
-    }
+    wallet = _fundsReceiver;
+    _check(_fundRaiseType, _polyToken);
   }
 
   function getInitFunction() public returns (bytes4) {
-    return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,bytes8,address)"));
+    return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8,address,address)"));
   }
 
 //////////////////////////////////
@@ -75,13 +88,13 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
     * @param _beneficiary Address performing the token purchase
     */
   function buyTokens(address _beneficiary) public payable {
-    require(!toggle);
+    require(uint(fundRaisedType) == 0);
     
-    uint256 cryptoAmount = msg.value;
-    _processTx(_beneficiary, cryptoAmount);
+    uint256 weiAmount = msg.value;
+    _processTx(_beneficiary, weiAmount);
 
     _forwardFunds();
-    _postValidatePurchase(_beneficiary, cryptoAmount);
+    _postValidatePurchase(_beneficiary, weiAmount);
   }
   
   /**
@@ -90,7 +103,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
     * @param _investedPOLY Amount of POLY invested
     */
   function buyTokensWithPoly(address _beneficiary, uint256 _investedPOLY) public {
-       require(toggle);
+       require(uint(fundRaisedType) == 1);
        verifyInvestment(_beneficiary, _investedPOLY);
       _processTx(_beneficiary, _investedPOLY);
       _forwardPoly(_beneficiary, wallet, _investedPOLY);
@@ -104,41 +117,41 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
    /**
     * Processing the purchase as well as verify the required validations
     * @param _beneficiary Address performing the token purchase
-    * @param _cryptoAmount Value in wei involved in the purchase
+    * @param _investedAmount Value in wei involved in the purchase
    */    
-  function _processTx(address _beneficiary, uint256 _cryptoAmount) internal {
+  function _processTx(address _beneficiary, uint256 _investedAmount) internal {
     
-    _preValidatePurchase(_beneficiary, _cryptoAmount);
+    _preValidatePurchase(_beneficiary, _investedAmount);
     // calculate token amount to be created
-    uint256 tokens = _getTokenAmount(_cryptoAmount);
+    uint256 tokens = _getTokenAmount(_investedAmount);
 
     // update state
-    cryptoRaised = cryptoRaised.add(_cryptoAmount);
+    fundsRaised = fundsRaised.add(_investedAmount);
 
     _processPurchase(_beneficiary, tokens);
-    TokenPurchase(msg.sender, _beneficiary, _cryptoAmount, tokens);
+    TokenPurchase(msg.sender, _beneficiary, _investedAmount, tokens);
 
-    _updatePurchasingState(_beneficiary, _cryptoAmount);
+    _updatePurchasingState(_beneficiary, _investedAmount);
   }
 
   /**
    * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met. Use super to concatenate validations.
    * @param _beneficiary Address performing the token purchase
-   * @param _cryptoAmount Value in wei involved in the purchase
+   * @param _investedAmount Value in wei involved in the purchase
    */
-  function _preValidatePurchase(address _beneficiary, uint256 _cryptoAmount) internal {
+  function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal {
     require(_beneficiary != address(0));
-    require(_cryptoAmount != 0);
-    require(cryptoRaised.add(_cryptoAmount) <= cap);
+    require(_investedAmount != 0);
+    require(fundsRaised.add(_investedAmount) <= cap);
     require(now >= startTime && now <= endTime);
   }
 
   /**
    * @dev Validation of an executed purchase. Observe state and use revert statements to undo rollback when valid conditions are not met.
    * @param _beneficiary Address performing the token purchase
-   * @param _cryptoAmount Value in wei involved in the purchase
+   * @param _investedAmount Value in wei involved in the purchase
    */
-  function _postValidatePurchase(address _beneficiary, uint256 _cryptoAmount) internal {
+  function _postValidatePurchase(address _beneficiary, uint256 _investedAmount) internal {
     // optional override
   }
 
@@ -168,19 +181,19 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
   /**
    * @dev Override for extensions that require an internal state to check for validity (current user contributions, etc.)
    * @param _beneficiary Address receiving the tokens
-   * @param _cryptoAmount Value in wei involved in the purchase
+   * @param _investedAmount Value in wei involved in the purchase
    */
-  function _updatePurchasingState(address _beneficiary, uint256 _cryptoAmount) internal {
+  function _updatePurchasingState(address _beneficiary, uint256 _investedAmount) internal {
     // optional override
   }
 
   /**
    * @dev Override to extend the way in which ether is converted to tokens.
-   * @param _cryptoAmount Value in wei to be converted into tokens
-   * @return Number of tokens that can be purchased with the specified _cryptoAmount
+   * @param _investedAmount Value in wei to be converted into tokens
+   * @return Number of tokens that can be purchased with the specified _investedAmount
    */
-  function _getTokenAmount(uint256 _cryptoAmount) internal view returns (uint256) {
-    return _cryptoAmount.mul(rate);
+  function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256) {
+    return _investedAmount.mul(rate);
   }
 
   /**
@@ -195,7 +208,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
    * @return Whether the cap was reached
    */
   function capReached() public view returns (bool) {
-    return cryptoRaised >= cap;
+    return fundsRaised >= cap;
   }
 
   function getRaiseEther() view public returns (uint256) {

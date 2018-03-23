@@ -8,25 +8,16 @@ import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
 contract SecurityTokenRegistrar is Ownable, ISecurityTokenRegistrar {
 
-    address public transferManagerFactory;
-    address public permissionManagerFactory;
-
-    //Shoud be set to false when we have more TransferManager options
-    bool addTransferManager = true;
-    bool addPermissionManager = true;
-
     event LogNewSecurityToken(string _ticker, address _securityTokenAddress, address _owner);
 
      /**
      * @dev Constructor use to set the essentials addresses to facilitate
      * the creation of the security token
      */
-    function SecurityTokenRegistrar(address _polyAddress, address _moduleRegistry, address _tickerRegistrar, address _transferManagerFactory, address _permissionManagerFactory, address _STVersionProxy) public {
+    function SecurityTokenRegistrar(address _polyAddress, address _moduleRegistry, address _tickerRegistrar, address _STVersionProxy) public {
         polyAddress = _polyAddress;
         moduleRegistry = _moduleRegistry;
         tickerRegistrar = _tickerRegistrar;
-        transferManagerFactory = _transferManagerFactory;
-        permissionManagerFactory = _permissionManagerFactory;
 
         setProtocolVersion(_STVersionProxy,"0.0.1");
     }
@@ -46,15 +37,10 @@ contract SecurityTokenRegistrar is Ownable, ISecurityTokenRegistrar {
           _name,
           _symbol,
           _decimals,
-          _tokenDetails
+          _tokenDetails,
+          msg.sender
         );
-        if (addPermissionManager) {
-          SecurityToken(newSecurityTokenAddress).addModule(permissionManagerFactory, "", 0, true);
-        }
-        if (addTransferManager) {
-          SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, true);
-        }
-        SecurityToken(newSecurityTokenAddress).transferOwnership(msg.sender);
+
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(_symbol, msg.sender, _tokenDetails);
         symbols[_symbol] = newSecurityTokenAddress;
         LogNewSecurityToken(_symbol, newSecurityTokenAddress, msg.sender);

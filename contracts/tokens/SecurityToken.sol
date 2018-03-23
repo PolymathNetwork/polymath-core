@@ -67,7 +67,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         moduleRegistry = ISecurityTokenRegistrar(_owner).moduleRegistry();
         polyToken = ERC20(ISecurityTokenRegistrar(_owner).polyAddress());
         tokenDetails = _tokenDetails;
-        owner = _owner;
+        //owner = _owner;
     }
 
     function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bool _replaceable) external {

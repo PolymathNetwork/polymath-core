@@ -101,11 +101,18 @@ module.exports = async (deployer, network, accounts) => {
       },{
           type: 'uint256',
           name: '_rate'
+      },{
+        type: 'bytes8',
+        name: '_config'
+      },{
+        type: 'address',
+        name: '_polyToken'
       }
       ]
-  }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, web3.utils.toWei('100000', 'ether'), '1000']);
+  }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, web3.utils.toWei('100000', 'ether'), '1000', zero, 0x0]);
 
   let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, false, { from: Issuer });
+  console.log("yahan tak sab sahe jai");
   let cappedSTOAddress =  r_CappedSTOFactory.logs[1].args._module;
   let cappedSTO = await CappedSTO.at(cappedSTOAddress);
 
@@ -119,9 +126,10 @@ module.exports = async (deployer, network, accounts) => {
   // ----------- WHITELISTING & INVESTING ------------
 
   // 4. Add investor to whitelist
+  
   await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Issuer });
-
-
+  console.log("toggle:", await cappedSTO.toggle.call());
+  console.log("yahan par tho nhi fata");
   // 5. INVEST
   let r = await cappedSTO.buyTokens(investor1, {from: investor1, value:web3.utils.toWei('1', 'ether')});
   let investorCount = await cappedSTO.investorCount();

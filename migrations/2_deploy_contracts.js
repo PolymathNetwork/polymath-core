@@ -101,11 +101,23 @@ module.exports = async (deployer, network, accounts) => {
       },{
           type: 'uint256',
           name: '_rate'
+      },{
+          type: 'uint8',
+          name: '_fundRaiseType'
+      },{
+          type: 'address',
+          name: '_polyToken'
+      },{
+          type: 'address',
+          name: '_fundsReceiver'
       }
       ]
-  }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, web3.utils.toWei('100000', 'ether'), '1000']);
+  }, [Math.floor(Date.now()/1000) + 5, Math.floor(Date.now()/1000) + (100 * 24 * 60 * 60), BigNumber(100000 * 10**18), BigNumber(1000), BigNumber(0), PolyToken.address, Issuer]);
+
+  console.log(Math.floor(Date.now()/1000), Math.floor(Date.now()/1000) + (100 * 24 * 60 * 60), BigNumber(100000 * 10**18), BigNumber(1000), BigNumber(0), PolyToken.address, Issuer);
 
   let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, false, { from: Issuer });
+  //console.log(JSON.stringify(r_CappedSTOFactory));
   let cappedSTOAddress =  r_CappedSTOFactory.logs[1].args._module;
   let cappedSTO = await CappedSTO.at(cappedSTOAddress);
 
@@ -119,62 +131,61 @@ module.exports = async (deployer, network, accounts) => {
   // ----------- WHITELISTING & INVESTING ------------
 
   // 4. Add investor to whitelist
+
   await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Issuer });
-
-
   // 5. INVEST
-  let r = await cappedSTO.buyTokens(investor1, {from: investor1, value:web3.utils.toWei('1', 'ether')});
-  let investorCount = await cappedSTO.investorCount();
-
-  console.log(`
-    ---------------------------------------------------------------
-    --------- INVESTED IN STO ---------
-    ---------------------------------------------------------------
-    - ${r.logs[0].args.beneficiary} purchased ${web3.utils.fromWei(r.logs[0].args.amount.toString(10))} tokens!
-    - Investor count: ${investorCount}
-    ---------------------------------------------------------------
-  `);
-
-  try {
-    await generalTransferManager.modifyWhitelist(investor2, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Permission });
-  } catch (err) {
-    console.log("Failed to add investor 2 with invalid Permission (expected)");
-  }
-
-  // 6. Set up Permission
-  //Only Issuer (owner of the ST) can do this for now
-  await generalPermissionManager.addPermission(Permission, "WhitelistPermission", { from: Issuer });
-  await generalPermissionManager.changePermission(Permission, generalTransferManagerObject[1], "WHITELIST", true, { from: Issuer });
-
-  // 7. Permission adds whitelist for investor_2
-  await generalTransferManager.modifyWhitelist(investor2, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Permission });
-
-  // 8. Investor_2 invests
-  r = await cappedSTO.buyTokens(investor2, {from: investor2, value:web3.utils.toWei('1', 'ether')});
-  investorCount = await cappedSTO.investorCount();
-
-  console.log(`
-    ---------------------------------------------------------------
-    --------- INVESTED IN STO ---------
-    ---------------------------------------------------------------
-    - ${r.logs[0].args.beneficiary} purchased ${web3.utils.fromWei(r.logs[0].args.amount.toString(10))} tokens!
-    - Investor count: ${investorCount}
-    ---------------------------------------------------------------
-  `);
-
-  // Token upgrade example
-  console.log("Example of Token Version Upgrade");
-  await tickerRegistry.registerTicker("V2", "v2@polymath.network", { from: Issuer });
-  await deployer.deploy(STVersionProxy_002,GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount});
-  let stVersionProxy_002 = await STVersionProxy_002.deployed();
-  await STRegistry.setProtocolVersion(stVersionProxy_002.address,web3.utils.fromAscii("0.0.2"),{from:PolymathAccount});
-  let protocolVerV2 = web3.utils.toAscii(await STRegistry.protocolVersion());
-  console.log("Protocol Version:",protocolVerV2);
-  let protocolVerSTV2 = await STRegistry.protocolVersionST(protocolVerV2);
-  console.log("Protocol Version ST:",protocolVerSTV2);
-  let r_generateSecurityTokenV2 = await STRegistry.generateSecurityToken(name, "V2", 18, tokenDetails, { from: Issuer });
-  let newSecurityTokenAddressV2 = r_generateSecurityTokenV2.logs[1].args._securityTokenAddress;
-  let securityTokenV2 = await SecurityToken.at(newSecurityTokenAddressV2);
-  console.log("Token Version:",web3.utils.toAscii(await(securityTokenV2.securityTokenVersion())));
+  // let r = await cappedSTO.buyTokens(investor1, {from: investor1, value:web3.utils.toWei('1', 'ether')});
+  // let investorCount = await cappedSTO.investorCount();
+  //
+  // console.log(`
+  //   ---------------------------------------------------------------
+  //   --------- INVESTED IN STO ---------
+  //   ---------------------------------------------------------------
+  //   - ${r.logs[0].args.beneficiary} purchased ${web3.utils.fromWei(r.logs[0].args.amount.toString(10))} tokens!
+  //   - Investor count: ${investorCount}
+  //   ---------------------------------------------------------------
+  // `);
+  //
+  // try {
+  //   await generalTransferManager.modifyWhitelist(investor2, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Permission });
+  // } catch (err) {
+  //   console.log("Failed to add investor 2 with invalid Permission (expected)");
+  // }
+  //
+  // // 6. Set up Permission
+  // //Only Issuer (owner of the ST) can do this for now
+  // await generalPermissionManager.addPermission(Permission, "WhitelistPermission", { from: Issuer });
+  // await generalPermissionManager.changePermission(Permission, generalTransferManagerObject[1], "WHITELIST", true, { from: Issuer });
+  //
+  // // 7. Permission adds whitelist for investor_2
+  // await generalTransferManager.modifyWhitelist(investor2, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Permission });
+  //
+  // // 8. Investor_2 invests
+  // r = await cappedSTO.buyTokens(investor2, {from: investor2, value:web3.utils.toWei('1', 'ether')});
+  // investorCount = await cappedSTO.investorCount();
+  //
+  // console.log(`
+  //   ---------------------------------------------------------------
+  //   --------- INVESTED IN STO ---------
+  //   ---------------------------------------------------------------
+  //   - ${r.logs[0].args.beneficiary} purchased ${web3.utils.fromWei(r.logs[0].args.amount.toString(10))} tokens!
+  //   - Investor count: ${investorCount}
+  //   ---------------------------------------------------------------
+  // `);
+  //
+  // // Token upgrade example
+  // console.log("Example of Token Version Upgrade");
+  // await tickerRegistry.registerTicker("V2", "v2@polymath.network", { from: Issuer });
+  // await deployer.deploy(STVersionProxy_002,GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount});
+  // let stVersionProxy_002 = await STVersionProxy_002.deployed();
+  // await STRegistry.setProtocolVersion(stVersionProxy_002.address,web3.utils.fromAscii("0.0.2"),{from:PolymathAccount});
+  // let protocolVerV2 = web3.utils.toAscii(await STRegistry.protocolVersion());
+  // console.log("Protocol Version:",protocolVerV2);
+  // let protocolVerSTV2 = await STRegistry.protocolVersionST(protocolVerV2);
+  // console.log("Protocol Version ST:",protocolVerSTV2);
+  // let r_generateSecurityTokenV2 = await STRegistry.generateSecurityToken(name, "V2", 18, tokenDetails, { from: Issuer });
+  // let newSecurityTokenAddressV2 = r_generateSecurityTokenV2.logs[1].args._securityTokenAddress;
+  // let securityTokenV2 = await SecurityToken.at(newSecurityTokenAddressV2);
+  // console.log("Token Version:",web3.utils.toAscii(await(securityTokenV2.securityTokenVersion())));
 
 };

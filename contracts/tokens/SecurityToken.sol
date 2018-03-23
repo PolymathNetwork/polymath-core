@@ -40,7 +40,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     // Other modules TBD
     mapping (uint8 => ModuleData) public modules;
 
-    event LogModuleAdded(uint8 _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost);
+    event LogModuleAdded(uint8 _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _timestamp);
     event Mint(address indexed to, uint256 amount);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
@@ -102,7 +102,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         //Add to SecurityToken module map
         modules[moduleFactory.getType()] = ModuleData(moduleFactory.getName(), module, _replaceable);
         //Emit log event
-        LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost);
+        LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, now);
     }
 
     function withdrawPoly(uint256 _amount) public onlyOwner {

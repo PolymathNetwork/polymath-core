@@ -50,17 +50,17 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
     uint256 _startTime,
     uint256 _endTime,
     uint256 _cap,
-    uint _rate,
+    uint256 _rate,
     uint8 _fundRaiseType,
     address _polyToken,
     address _fundsReceiver
-    ) 
+    )
     public
-    onlyFactory 
+    onlyFactory
     {
     require(_rate > 0);
     require(_fundsReceiver != address(0));
-    require(startTime >= now && endTime > startTime);
+    require(_startTime >= now && _endTime > _startTime);
     require(_cap > 0);
     startTime = _startTime;
     endTime = _endTime;
@@ -89,16 +89,16 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
     */
   function buyTokens(address _beneficiary) public payable {
     require(uint(fundRaisedType) == 0);
-    
+
     uint256 weiAmount = msg.value;
     _processTx(_beneficiary, weiAmount);
 
     _forwardFunds();
     _postValidatePurchase(_beneficiary, weiAmount);
   }
-  
+
   /**
-    * @dev low level token purchase 
+    * @dev low level token purchase
     * @param _beneficiary Address performing the token purchase
     * @param _investedPOLY Amount of POLY invested
     */
@@ -113,14 +113,14 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
    // -----------------------------------------
    // Internal interface (extensible)
    // -----------------------------------------
-   
+
    /**
     * Processing the purchase as well as verify the required validations
     * @param _beneficiary Address performing the token purchase
     * @param _investedAmount Value in wei involved in the purchase
-   */    
+   */
   function _processTx(address _beneficiary, uint256 _investedAmount) internal {
-    
+
     _preValidatePurchase(_beneficiary, _investedAmount);
     // calculate token amount to be created
     uint256 tokens = _getTokenAmount(_investedAmount);

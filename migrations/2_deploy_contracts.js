@@ -112,9 +112,12 @@ module.exports = async (deployer, network, accounts) => {
           name: '_fundsReceiver'
       }
       ]
-  }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, web3.utils.toWei('100000', 'ether'), '1000', 0, 0x0, Issuer]);
+  }, [Math.floor(Date.now()/1000) + 5, Math.floor(Date.now()/1000) + (100 * 24 * 60 * 60), BigNumber(100000 * 10**18), BigNumber(1000), BigNumber(0), PolyToken.address, Issuer]);
+
+  console.log(Math.floor(Date.now()/1000), Math.floor(Date.now()/1000) + (100 * 24 * 60 * 60), BigNumber(100000 * 10**18), BigNumber(1000), BigNumber(0), PolyToken.address, Issuer);
 
   let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, false, { from: Issuer });
+  console.log(JSON.stringify(r_CappedSTOFactory));
   let cappedSTOAddress =  r_CappedSTOFactory.logs[1].args._module;
   let cappedSTO = await CappedSTO.at(cappedSTOAddress);
 
@@ -128,7 +131,7 @@ module.exports = async (deployer, network, accounts) => {
   // ----------- WHITELISTING & INVESTING ------------
 
   // 4. Add investor to whitelist
-  
+
   await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Issuer });
   // 5. INVEST
   let r = await cappedSTO.buyTokens(investor1, {from: investor1, value:web3.utils.toWei('1', 'ether')});

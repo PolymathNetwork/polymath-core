@@ -1,11 +1,11 @@
 pragma solidity ^0.4.18;
 
-contract ISecurityTokenRegistrar {
+contract ISecurityTokenRegistry {
 
     address public polyAddress;
 
     address public moduleRegistry;
-    address public tickerRegistrar;
+    address public tickerRegistry;
 
     bytes32 public protocolVersion = "0.0.1";
     mapping (bytes32 => address) public protocolVersionST;

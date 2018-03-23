@@ -9,8 +9,8 @@ const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
 const DummySTO= artifacts.require('./DummySTO.sol');
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO= artifacts.require('./CappedSTO.sol');
-const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
-const TickerRegistrar = artifacts.require('./TickerRegistrar.sol');
+const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
+const TickerRegistry = artifacts.require('./TickerRegistry.sol');
 const STVersionProxy_001 = artifacts.require('./tokens/STVersionProxy_001.sol');
 const STVersionProxy_002 = artifacts.require('./tokens/STVersionProxy_002.sol');
 
@@ -47,14 +47,14 @@ module.exports = async (deployer, network, accounts) => {
   await moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount});
   await moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, {from: PolymathAccount});
 
-  // 3. Deploy Ticker Registrar and SecurityTokenRegistrar
+  // 3. Deploy Ticker Registry and SecurityTokenRegistry
   await deployer.deploy(STVersionProxy_001,GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount});
   let stVersionProxy_001 = await STVersionProxy_001.deployed();
 
-  await deployer.deploy(TickerRegistrar, {from: PolymathAccount});
-  await deployer.deploy(SecurityTokenRegistrar, PolyToken.address, ModuleRegistry.address, TickerRegistrar.address,stVersionProxy_001.address, {from: PolymathAccount});
-  let tickerRegistrar = await TickerRegistrar.deployed();
-  await tickerRegistrar.setTokenRegistrar(SecurityTokenRegistrar.address, {from: PolymathAccount});
+  await deployer.deploy(TickerRegistry, {from: PolymathAccount});
+  await deployer.deploy(SecurityTokenRegistry, PolyToken.address, ModuleRegistry.address, TickerRegistry.address,stVersionProxy_001.address, {from: PolymathAccount});
+  let tickerRegistry = await TickerRegistry.deployed();
+  await tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount});
 
   // B) DEPLOY STO factories and register them with the Registry
   await deployer.deploy(CappedSTOFactory, {from: PolymathAccount});
@@ -65,16 +65,16 @@ module.exports = async (deployer, network, accounts) => {
   // ----------- SECURITY TOKEN & STO DEPLOYMENT ------------
 
   // 1. Register ticker symbol
-  await tickerRegistrar.registerTicker(symbol, "poly@polymath.network", { from: Issuer });
+  await tickerRegistry.registerTicker(symbol, "poly@polymath.network", { from: Issuer });
 
   // 2. Deploy Token
-  let STRegistrar = await SecurityTokenRegistrar.deployed();
+  let STRegistry = await SecurityTokenRegistry.deployed();
   console.log("Creating Security Token");
-  let protocolVer = web3.utils.toAscii(await STRegistrar.protocolVersion());
+  let protocolVer = web3.utils.toAscii(await STRegistry.protocolVersion());
   console.log("Protocol Version:",protocolVer);
-  let protocolVerST = await STRegistrar.protocolVersionST(protocolVer);
+  let protocolVerST = await STRegistry.protocolVersionST(protocolVer);
   console.log("Protocol Version ST:",protocolVerST);
-  let r_generateSecurityToken = await STRegistrar.generateSecurityToken(name, symbol, 18, tokenDetails, { from: Issuer });
+  let r_generateSecurityToken = await STRegistry.generateSecurityToken(name, symbol, 18, tokenDetails, { from: Issuer });
   let newSecurityTokenAddress = r_generateSecurityToken.logs[1].args._securityTokenAddress;
   let securityToken = await SecurityToken.at(newSecurityTokenAddress);
   console.log("Token Version:",web3.utils.toAscii(await(securityToken.securityTokenVersion())));
@@ -172,15 +172,15 @@ module.exports = async (deployer, network, accounts) => {
 
   // Token upgrade example
   console.log("Example of Token Version Upgrade");
-  await tickerRegistrar.registerTicker("V2", "v2@polymath.network", { from: Issuer });
+  await tickerRegistry.registerTicker("V2", "v2@polymath.network", { from: Issuer });
   await deployer.deploy(STVersionProxy_002,GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount});
   let stVersionProxy_002 = await STVersionProxy_002.deployed();
-  await STRegistrar.setProtocolVersion(stVersionProxy_002.address,web3.utils.fromAscii("0.0.2"),{from:PolymathAccount});
-  let protocolVerV2 = web3.utils.toAscii(await STRegistrar.protocolVersion());
+  await STRegistry.setProtocolVersion(stVersionProxy_002.address,web3.utils.fromAscii("0.0.2"),{from:PolymathAccount});
+  let protocolVerV2 = web3.utils.toAscii(await STRegistry.protocolVersion());
   console.log("Protocol Version:",protocolVerV2);
-  let protocolVerSTV2 = await STRegistrar.protocolVersionST(protocolVerV2);
+  let protocolVerSTV2 = await STRegistry.protocolVersionST(protocolVerV2);
   console.log("Protocol Version ST:",protocolVerSTV2);
-  let r_generateSecurityTokenV2 = await STRegistrar.generateSecurityToken(name, "V2", 18, tokenDetails, { from: Issuer });
+  let r_generateSecurityTokenV2 = await STRegistry.generateSecurityToken(name, "V2", 18, tokenDetails, { from: Issuer });
   let newSecurityTokenAddressV2 = r_generateSecurityTokenV2.logs[1].args._securityTokenAddress;
   let securityTokenV2 = await SecurityToken.at(newSecurityTokenAddressV2);
   console.log("Token Version:",web3.utils.toAscii(await(securityTokenV2.securityTokenVersion())));

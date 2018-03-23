@@ -3,18 +3,18 @@ pragma solidity ^0.4.18;
 /*
   Allows issuers to reserve their token symbols ahead
   of actually generating their security token.
-  SecurityTokenRegistrar would reference this contract and ensure that any token symbols
+  SecurityTokenRegistry would reference this contract and ensure that any token symbols
   registered here can only be created by their owner.
 */
 
 import 'zeppelin-solidity/contracts/math/SafeMath.sol';
-import './interfaces/ITickerRegistrar.sol';
+import './interfaces/ITickerRegistry.sol';
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 /**
- * @title TickerRegistrar
+ * @title TickerRegistry
  * @dev Contract use to register the security token symbols
  */
-contract TickerRegistrar is ITickerRegistrar, Ownable {
+contract TickerRegistry is ITickerRegistry, Ownable {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
@@ -24,7 +24,7 @@ contract TickerRegistrar is ITickerRegistrar, Ownable {
     // Ethereum address of the admin (Control some functions of the contract)
     address public admin;
 
-    // SecuirtyToken Registrar contract address
+    // SecuirtyToken Registry contract address
     address public STRAddress;
 
     // Details of the symbol that get registered with the polymath platform
@@ -44,7 +44,7 @@ contract TickerRegistrar is ITickerRegistrar, Ownable {
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
 
-    function TickerRegistrar() public {
+    function TickerRegistry() public {
     }
 
     /**
@@ -90,13 +90,13 @@ contract TickerRegistrar is ITickerRegistrar, Ownable {
     }
 
     /**
-     * @dev set the address of the Security Token registrar
-     * @param _STRegistrar contract address of the STR
+     * @dev set the address of the Security Token registry
+     * @param _STRegistry contract address of the STR
      * @return bool
      */
-    function setTokenRegistrar(address _STRegistrar) public onlyOwner returns(bool) {
-        require(_STRegistrar != address(0) && STRAddress == address(0));
-        STRAddress = _STRegistrar;
+    function setTokenRegistry(address _STRegistry) public onlyOwner returns(bool) {
+        require(_STRegistry != address(0) && STRAddress == address(0));
+        STRAddress = _STRegistry;
         return true;
     }
 

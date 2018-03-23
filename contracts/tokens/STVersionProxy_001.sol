@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
 import './SecurityToken.sol';
-import '../SecurityTokenRegistrar.sol';
+import '../SecurityTokenRegistry.sol';
 import '../interfaces/ISTProxy.sol';
 
 contract STVersionProxy_001 is ISTProxy {

@@ -15,7 +15,7 @@ const SecurityTokenRegistry = contract(SecurityTokenRegistryArtifact);
 const TickerRegistry = contract(TickerRegistryArtifact);
 const SecurityToken = contract(SecurityTokenArtifact);
 
-const tickerRegistryAddress = "0xc309839cf3c730556cb1ee979aeb78ec99a13cc2";
+const tickerRegistryAddress = "0x2981123c3fd9791ffce30efb649a3070f622e528";
 
 const Web3 = require('web3');
 
@@ -109,22 +109,43 @@ async function createST20() {
 };
 
 async function step_ticker_reg(){
+  let receipt;
+
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - Step 1: Token Symbol");
   tokenSymbol =  readlineSync.question('Enter the Symbol for your new token: ');
 
   try{
-    let receipt = await tickerRegistry.registerTicker(tokenSymbol, "poly@polymath.network", { from: Issuer, gas:200000});
+    receipt = await tickerRegistry.registerTicker(tokenSymbol, "poly@polymath.network", { from: Issuer, gas:200000});
     console.log(`
-      Congratulations! You successfully registered the ${tokenSymbol} token symbol.\n
-      Review your transaction on Etherscan.\n
-      TxHash: ${receipt.receipt.transactionHash}\n`);
+      Your transaction is being processed. Please wait...
+      TxHash: ${receipt.receipt.transactionHash}\n`
+    );
 
   }catch (err){
-    console.log(err);
+    console.log(err.message);
+    return;
   }
 
+  await checkTXStatus(receipt);
 
+  console.log("FINISHED");
+}
+
+async function checkTXStatus(receipt){
+  let transactionMined = false;
+  while (transactionMined != "mined") {
+    let rr = await web3.eth.getTransactionReceipt(receipt.receipt.transactionHash);
+    transactionMined = rr.logs[0].type;
+    await timeout(7000);
+    console.log("Your transaction is being processed. Please wait...");
+  }
+
+  console.log(`
+    Congratulations! You successfully registered the ${tokenSymbol} token symbol.\n
+    Review your transaction on Etherscan.\n
+    TxHash: ${receipt.receipt.transactionHash}\n`
+  );
 }
 
 async function step_other(){
@@ -247,6 +268,10 @@ async function step_other(){
   // } catch (err){
   //   console.log(err);
   // }
+}
+
+function timeout(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 executeApp();

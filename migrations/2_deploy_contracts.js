@@ -102,7 +102,7 @@ module.exports = async (deployer, network, accounts) => {
           type: 'uint256',
           name: '_rate'
       },{
-        type: 'uint8',
+        type: 'uint256',
         name: '_fundRaiseType'
       },{
         type: 'address',

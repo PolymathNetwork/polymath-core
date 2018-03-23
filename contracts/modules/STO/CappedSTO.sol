@@ -51,7 +51,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
     uint256 _endTime,
     uint256 _cap,
     uint _rate,
-    uint8 _fundRaiseType,
+    uint _fundRaiseType,
     address _polyToken,
     address _fundsReceiver
     ) 

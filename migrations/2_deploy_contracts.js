@@ -54,11 +54,18 @@ module.exports = async (deployer, network, accounts) => {
   await deployer.deploy(TickerRegistry, {from: PolymathAccount});
   await deployer.deploy(SecurityTokenRegistry, PolyToken.address, ModuleRegistry.address, TickerRegistry.address,stVersionProxy_001.address, {from: PolymathAccount});
   let tickerRegistry = await TickerRegistry.deployed();
+
   await tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount});
 
   // B) DEPLOY STO factories and register them with the Registry
   await deployer.deploy(CappedSTOFactory, {from: PolymathAccount});
   await moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount});
+
+  console.log("\n")
+  console.log("----- Polymath Core Contracts -----");
+  console.log("*** Ticker Registry Address: ", tickerRegistry.address, "***");
+  console.log("-----------------------------------");
+  console.log("\n")
 
   // -------- END OF POLYMATH NETWORK Configuration -------
 

@@ -45,6 +45,7 @@
     "bignumber.js": "^6.0.0",
     "readline-sync": "^1.4.9",
     "truffle-contract": "^3.0.4",
+    "truffle-hdwallet-provider-privkey": "^0.1.0",
     "web3": "^1.0.0-beta.30",
     "zeppelin-solidity": "1.7.0"
   },

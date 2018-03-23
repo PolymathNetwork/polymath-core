@@ -102,14 +102,14 @@ module.exports = async (deployer, network, accounts) => {
           type: 'uint256',
           name: '_rate'
       },{
-        type: 'uint256',
-        name: '_fundRaiseType'
+          type: 'uint8',
+          name: '_fundRaiseType'
       },{
-        type: 'address',
-        name: '_polyToken'
+          type: 'address',
+          name: '_polyToken'
       },{
-        type: 'address',
-        name: '_fundsReceiver'
+          type: 'address',
+          name: '_fundsReceiver'
       }
       ]
   }, [(Date.now())/1000, (Date.now()+3600 * 24)/1000, web3.utils.toWei('100000', 'ether'), '1000', 0, 0x0, Issuer]);

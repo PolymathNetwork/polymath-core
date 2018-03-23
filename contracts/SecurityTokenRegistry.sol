@@ -1,12 +1,12 @@
 pragma solidity ^0.4.18;
 
-import './interfaces/ITickerRegistrar.sol';
+import './interfaces/ITickerRegistry.sol';
 import './tokens/SecurityToken.sol';
 import './interfaces/ISTProxy.sol';
-import './interfaces/ISecurityTokenRegistrar.sol';
+import './interfaces/ISecurityTokenRegistry.sol';
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
-contract SecurityTokenRegistrar is Ownable, ISecurityTokenRegistrar {
+contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry {
 
     event LogNewSecurityToken(string _ticker, address _securityTokenAddress, address _owner);
 
@@ -14,10 +14,10 @@ contract SecurityTokenRegistrar is Ownable, ISecurityTokenRegistrar {
      * @dev Constructor use to set the essentials addresses to facilitate
      * the creation of the security token
      */
-    function SecurityTokenRegistrar(address _polyAddress, address _moduleRegistry, address _tickerRegistrar, address _STVersionProxy) public {
+    function SecurityTokenRegistry(address _polyAddress, address _moduleRegistry, address _tickerRegistry, address _STVersionProxy) public {
         polyAddress = _polyAddress;
         moduleRegistry = _moduleRegistry;
-        tickerRegistrar = _tickerRegistrar;
+        tickerRegistry = _tickerRegistry;
 
         setProtocolVersion(_STVersionProxy,"0.0.1");
     }
@@ -31,7 +31,7 @@ contract SecurityTokenRegistrar is Ownable, ISecurityTokenRegistrar {
      */
     function generateSecurityToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails) public {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0);
-        ITickerRegistrar(tickerRegistrar).checkValidity(_symbol, msg.sender);
+        ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender);
 
         address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
           _name,

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.18;
 
-interface ITickerRegistrar {
+interface ITickerRegistry {
      /**
       * @dev Check the validity of the symbol
       * @param _symbol token symbol
@@ -14,5 +14,5 @@ interface ITickerRegistrar {
       */
      function getDetails(string _symbol) public view returns (address, uint256, string, bool);
 
-    
+
 }

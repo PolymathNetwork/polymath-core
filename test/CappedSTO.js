@@ -6,8 +6,8 @@ const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO = artifacts.require('./CappedSTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
-const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
-const TickerRegistrar = artifacts.require("./TickerRegistrar.sol");
+const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
+const TickerRegistry = artifacts.require("./TickerRegistry.sol");
 const STVersion = artifacts.require('./STVersionProxy_001.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
@@ -32,14 +32,14 @@ contract('CappedSTO', accounts => {
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(15);
 
-    // Contract Instance Declaration 
+    // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
     let I_GeneralPermissionManager;
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
-    let I_TickerRegistrar;
-    let I_SecurityTokenRegistrar;
+    let I_TickerRegistry;
+    let I_SecurityTokenRegistry;
     let I_CappedSTOFactory;
     let I_STVersion;
     let I_SecurityToken;
@@ -82,7 +82,7 @@ contract('CappedSTO', accounts => {
         }
         ]
     }, [startTime, endTime, cap, rate]);
-    
+
 
     before(async() => {
         // Accounts setup
@@ -93,7 +93,7 @@ contract('CappedSTO', accounts => {
         token_owner = account_issuer;
 
         // ----------- POLYMATH NETWORK Configuration ------------
-        
+
         // STEP 1: Deploy the ModuleRegistry
 
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
@@ -154,16 +154,16 @@ contract('CappedSTO', accounts => {
 
         // assert.isTrue(module_, "CappedSTO module was not registered");
 
-        // Step 6: Deploy the TickerRegistrar
+        // Step 6: Deploy the TickerRegistry
 
-        I_TickerRegistrar = await TickerRegistrar.new({ from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new({ from: account_polymath });
 
         assert.notEqual(
-            I_TickerRegistrar.address.valueOf(),
+            I_TickerRegistry.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "TickerRegistrar contract was not deployed",
+            "TickerRegistry contract was not deployed",
         );
-            
+
         // Step 7: Deploy the STversionProxy contract
 
         I_STVersion = await STVersion.new();
@@ -177,56 +177,56 @@ contract('CappedSTO', accounts => {
         // Step ANY: Deploy the Polytoken Contract
          I_PolyToken = await PolyToken.new();
 
-        // Step 8: Deploy the SecurityTokenRegistrar
+        // Step 8: Deploy the SecurityTokenRegistry
 
-        I_SecurityTokenRegistrar = await SecurityTokenRegistrar.new(
+        I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
             I_PolyToken.address,
             I_ModuleRegistry.address,
-            I_TickerRegistrar.address,
+            I_TickerRegistry.address,
             I_GeneralTransferManagerFactory.address,
             I_GeneralPermissionManagerFactory.address,
             I_STVersion.address,
-            { 
+            {
                 from: account_polymath
             });
 
         assert.notEqual(
-            I_SecurityTokenRegistrar.address.valueOf(),
+            I_SecurityTokenRegistry.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "SecurityTokenRegistrar contract was not deployed",
+            "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 8: Set the STR in TickerRegistrar
-        await I_TickerRegistrar.setTokenRegistrar(I_SecurityTokenRegistrar.address, {from: account_polymath});
+        // Step 8: Set the STR in TickerRegistry
+        await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
 
-        // Printing all the contract addresses 
+        // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
             ModuleRegistry: ${I_ModuleRegistry.address}\n
             GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}\n
             GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
             CappedSTOFactory: ${I_CappedSTOFactory.address}\n
-            TickerRegistrar: ${I_TickerRegistrar.address}\n
+            TickerRegistry: ${I_TickerRegistry.address}\n
             STVersionProxy_001: ${I_STVersion.address}\n
-            SecurityTokenRegistrar: ${I_SecurityTokenRegistrar.address}\n
+            SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
         `);
     });
 
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
-            let tx = await I_TickerRegistrar.registerTicker(symbol, contact, { from : token_owner });
+            let tx = await I_TickerRegistry.registerTicker(symbol, contact, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistrar.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: token_owner });
-            
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: token_owner });
+
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
-            
+
             const LogAddModule = await I_SecurityToken.allEvents();
             const log = await new Promise(function(resolve, reject) {
                 LogAddModule.watch(function(error, log){ resolve(log);});
@@ -245,7 +245,7 @@ contract('CappedSTO', accounts => {
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken.modules(2);
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-           
+
            assert.notEqual(
             I_GeneralTransferManager.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
@@ -302,7 +302,7 @@ contract('CappedSTO', accounts => {
     });
     describe("Buy tokens", async() => {
 
-        it("Should buy the tokens -- failed due to startTime is greater than Current time", async () => { 
+        it("Should buy the tokens -- failed due to startTime is greater than Current time", async () => {
             try {
                 await web3.eth.sendTransaction({
                     from: account_investor1,
@@ -351,12 +351,12 @@ contract('CappedSTO', accounts => {
                 gas: 210000,
                 value: web3.utils.toWei('1', 'ether')
               });
-            
+
             assert.equal(
                 (await I_CappedSTO.weiRaised.call())
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
-                1 
+                1
             );
 
             assert.equal(await I_CappedSTO.getNumberInvestors.call(), 1);
@@ -397,7 +397,7 @@ contract('CappedSTO', accounts => {
                 });
 
             assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
-            
+
              // Fallback transaction
              await web3.eth.sendTransaction({
                 from: account_investor2,
@@ -410,7 +410,7 @@ contract('CappedSTO', accounts => {
                 (await I_CappedSTO.weiRaised.call())
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
-                10 
+                10
             );
 
             assert.equal(await I_CappedSTO.getNumberInvestors.call(), 2);

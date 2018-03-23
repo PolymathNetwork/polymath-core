@@ -10,14 +10,14 @@ import '../interfaces/IModuleRegistry.sol';
 import '../interfaces/IST20.sol';
 import '../modules/TransferManager/ITransferManager.sol';
 import '../modules/PermissionManager/IPermissionManager.sol';
-import '../interfaces/ISecurityTokenRegistrar.sol';
+import '../interfaces/ISecurityTokenRegistry.sol';
 
 /**
 * @title SecurityToken
 * @notice SecurityToken is an ERC20 token with added capabilities:
 * - Transfers are restricted
 * - Modules can be attached to it to control its behaviour
-* - ST should not be deployed directly, but rather the SecurityTokenRegistrar should be used
+* - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
 */
 contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     using SafeMath for uint256;
@@ -64,8 +64,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     DetailedERC20(_name, _symbol, _decimals)
     {
         //When it is created, the owner is the STR
-        moduleRegistry = ISecurityTokenRegistrar(_owner).moduleRegistry();
-        polyToken = ERC20(ISecurityTokenRegistrar(_owner).polyAddress());
+        moduleRegistry = ISecurityTokenRegistry(_owner).moduleRegistry();
+        polyToken = ERC20(ISecurityTokenRegistry(_owner).polyAddress());
         tokenDetails = _tokenDetails;
         //owner = _owner;
     }

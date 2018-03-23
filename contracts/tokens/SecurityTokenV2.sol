@@ -7,7 +7,7 @@ import './SecurityToken.sol';
 * @notice SecurityToken is an ERC20 token with added capabilities:
 * - Transfers are restricted
 * - Modules can be attached to it to control its behaviour
-* - ST should not be deployed directly, but rather the SecurityTokenRegistrar should be used
+* - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
 */
 contract SecurityTokenV2 is SecurityToken {
     bytes32 public securityTokenVersion = "0.0.2";

@@ -5,21 +5,21 @@ import 'zeppelin-solidity/contracts/token/ERC20/ERC20.sol';
 
 contract ISTO is IModule {
 
-    enum RaisedType { ETH, POLY } 
-    RaisedType fundRaisedType;
+    enum FundraiseType { ETH, POLY }
+    FundraiseType public fundraiseType;
 
     address public polyAddress;
 
-    function _check(uint8 _fundRaiseType, address _polyToken) internal {
-        if (_fundRaiseType == 1) {
-            fundRaisedType = RaisedType(_fundRaiseType);
+    function _check(uint8 _fundraiseType, address _polyToken) internal {
+        if (_fundraiseType == 1) {
+            fundraiseType = FundraiseType(_fundraiseType);
             require(_polyToken != address(0));
             polyAddress = _polyToken;
-        } 
-        else 
-            fundRaisedType = RaisedType(0);
+        }
+        else
+            fundraiseType = FundraiseType(0);
     }
-    
+
     function _forwardPoly(address _beneficiary, address _to, uint256 _fundsAmount) internal {
         ERC20(polyAddress).transferFrom(_beneficiary, _to, _fundsAmount);
     }

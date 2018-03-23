@@ -25,10 +25,8 @@ contract CappedSTO is ISTO {
   // End time of the STO
   uint256 public endTime;
 
-  //
+  //How much funding this STO will be allowed to raise
   uint256 public cap;
-
-  string public someString;
 
   mapping (address => uint256) public investors;
 
@@ -47,27 +45,27 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
   }
 
   function configure(
-    uint256 _startTime,
-    uint256 _endTime,
-    uint256 _cap,
-    uint256 _rate,
-    uint8 _fundRaiseType,
-    address _polyToken,
-    address _fundsReceiver
+      uint256 _startTime,
+      uint256 _endTime,
+      uint256 _cap,
+      uint256 _rate,
+      uint8 _fundRaiseType,
+      address _polyToken,
+      address _fundsReceiver
     )
     public
     onlyFactory
     {
-    require(_rate > 0);
-    require(_fundsReceiver != address(0));
-    require(_startTime >= now && _endTime > _startTime);
-    require(_cap > 0);
-    startTime = _startTime;
-    endTime = _endTime;
-    cap = _cap;
-    rate = _rate;
-    wallet = _fundsReceiver;
-    _check(_fundRaiseType, _polyToken);
+      require(_rate > 0);
+      require(_fundsReceiver != address(0));
+      require(_startTime >= now && _endTime > _startTime);
+      require(_cap > 0);
+      startTime = _startTime;
+      endTime = _endTime;
+      cap = _cap;
+      rate = _rate;
+      wallet = _fundsReceiver;
+      _check(_fundRaiseType, _polyToken);
   }
 
   function getInitFunction() public returns (bytes4) {
@@ -88,7 +86,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
     * @param _beneficiary Address performing the token purchase
     */
   function buyTokens(address _beneficiary) public payable {
-    require(uint(fundRaisedType) == 0);
+    require(uint(fundraiseType) == 0);
 
     uint256 weiAmount = msg.value;
     _processTx(_beneficiary, weiAmount);
@@ -103,7 +101,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
     * @param _investedPOLY Amount of POLY invested
     */
   function buyTokensWithPoly(address _beneficiary, uint256 _investedPOLY) public {
-       require(uint(fundRaisedType) == 1);
+       require(uint(fundraiseType) == 1);
        verifyInvestment(_beneficiary, _investedPOLY);
       _processTx(_beneficiary, _investedPOLY);
       _forwardPoly(_beneficiary, wallet, _investedPOLY);

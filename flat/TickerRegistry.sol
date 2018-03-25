@@ -1,55 +1,52 @@
 pragma solidity ^0.4.18;
 
 /**
- *  SafeMath <https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/math/SafeMath.sol/>
- *  Copyright (c) 2016 Smart Contract Solutions, Inc.
- *  Released under the MIT License (MIT)
+ * @title SafeMath
+ * @dev Math operations with safety checks that throw on error
  */
-
-/// @title Math operations with safety checks
 library SafeMath {
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a * b;
-        assert(a == 0 || c / a == b);
-        return c;
-    }
 
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        // assert(b > 0); // Solidity automatically throws when dividing by 0
-        uint256 c = a / b;
-        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
-        return c;
+  /**
+  * @dev Multiplies two numbers, throws on overflow.
+  */
+  function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+    if (a == 0) {
+      return 0;
     }
+    uint256 c = a * b;
+    assert(c / a == b);
+    return c;
+  }
 
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        assert(b <= a);
-        return a - b;
-    }
+  /**
+  * @dev Integer division of two numbers, truncating the quotient.
+  */
+  function div(uint256 a, uint256 b) internal pure returns (uint256) {
+    // assert(b > 0); // Solidity automatically throws when dividing by 0
+    uint256 c = a / b;
+    // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+    return c;
+  }
 
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        uint256 c = a + b;
-        assert(c >= a);
-        return c;
-    }
+  /**
+  * @dev Substracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+  */
+  function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+    assert(b <= a);
+    return a - b;
+  }
 
-    function max64(uint64 a, uint64 b) internal pure returns (uint64) {
-        return a >= b ? a : b;
-    }
-
-    function min64(uint64 a, uint64 b) internal pure returns (uint64) {
-        return a < b ? a : b;
-    }
-
-    function max256(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a >= b ? a : b;
-    }
-
-    function min256(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a < b ? a : b;
-    }
+  /**
+  * @dev Adds two numbers, throws on overflow.
+  */
+  function add(uint256 a, uint256 b) internal pure returns (uint256) {
+    uint256 c = a + b;
+    assert(c >= a);
+    return c;
+  }
 }
 
-interface ITickerRegistrar {
+interface ITickerRegistry {
      /**
       * @dev Check the validity of the symbol
       * @param _symbol token symbol
@@ -63,33 +60,74 @@ interface ITickerRegistrar {
       */
      function getDetails(string _symbol) public view returns (address, uint256, string, bool);
 
-    
+
+}
+
+/**
+ * @title Ownable
+ * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * functions, this simplifies the implementation of "user permissions".
+ */
+contract Ownable {
+  address public owner;
+
+
+  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+
+  /**
+   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+   * account.
+   */
+  function Ownable() public {
+    owner = msg.sender;
+  }
+
+  /**
+   * @dev Throws if called by any account other than the owner.
+   */
+  modifier onlyOwner() {
+    require(msg.sender == owner);
+    _;
+  }
+
+  /**
+   * @dev Allows the current owner to transfer control of the contract to a newOwner.
+   * @param newOwner The address to transfer ownership to.
+   */
+  function transferOwnership(address newOwner) public onlyOwner {
+    require(newOwner != address(0));
+    OwnershipTransferred(owner, newOwner);
+    owner = newOwner;
+  }
+
 }
 
 /*
   Allows issuers to reserve their token symbols ahead
   of actually generating their security token.
-  SecurityTokenRegistrar would reference this contract and ensure that any token symbols
+  SecurityTokenRegistry would reference this contract and ensure that any token symbols
   registered here can only be created by their owner.
 */
 
 
 
+
 /**
- * @title TickerRegistrar
+ * @title TickerRegistry
  * @dev Contract use to register the security token symbols
  */
-contract TickerRegistrar is ITickerRegistrar {
+contract TickerRegistry is ITickerRegistry, Ownable {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
     // For now it's value is 90 days;
-    uint256 public expiryLimit = 90 * 1 days;  
+    uint256 public expiryLimit = 90 * 1 days;
 
     // Ethereum address of the admin (Control some functions of the contract)
     address public admin;
 
-    // SecuirtyToken Registrar contract address
+    // SecuirtyToken Registry contract address
     address public STRAddress;
 
     // Details of the symbol that get registered with the polymath platform
@@ -104,13 +142,12 @@ contract TickerRegistrar is ITickerRegistrar {
     mapping(string => SymbolDetails) registeredSymbols;
 
     // Emit after the symbol registration
-    event LogRegisterTicker(address _owner, string _symbol, uint256 _timestamp);
+    event LogRegisterTicker(address indexed _owner, string _symbol, uint256 _timestamp);
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
 
-    function TickerRegistrar() public {
-        admin = msg.sender;
+    function TickerRegistry() public {
     }
 
     /**
@@ -148,7 +185,7 @@ contract TickerRegistrar is ITickerRegistrar {
             if (now > registeredSymbols[_symbol].timestamp.add(expiryLimit) && registeredSymbols[_symbol].status != true) {
                 registeredSymbols[_symbol] = SymbolDetails(address(0), uint256(0), "", false);
                 return true;
-            } 
+            }
             else
                 return false;
         }
@@ -156,14 +193,13 @@ contract TickerRegistrar is ITickerRegistrar {
     }
 
     /**
-     * @dev set the address of the Security Token registrar
-     * @param _STRegistrar contract address of the STR
+     * @dev set the address of the Security Token registry
+     * @param _STRegistry contract address of the STR
      * @return bool
      */
-    function setTokenRegistrar(address _STRegistrar) public returns(bool) {
-        require(msg.sender == admin);
-        require(_STRegistrar != address(0) && STRAddress == address(0));
-        STRAddress = _STRegistrar;
+    function setTokenRegistry(address _STRegistry) public onlyOwner returns(bool) {
+        require(_STRegistry != address(0) && STRAddress == address(0));
+        STRAddress = _STRegistry;
         return true;
     }
 
@@ -193,8 +229,8 @@ contract TickerRegistrar is ITickerRegistrar {
                 registeredSymbols[_symbol].contact,
                 registeredSymbols[_symbol].status
             );
-        } 
-        else 
+        }
+        else
             return (address(0), uint256(0), "", false);
     }
 }

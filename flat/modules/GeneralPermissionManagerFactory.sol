@@ -94,6 +94,70 @@ contract IModule {
     function permissions() public returns(bytes32[]);
 }
 
+contract IPermissionManager is IModule {
+
+    function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool);
+
+    function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) public returns(bool);
+
+    function delegateDetails(address _delegate) public returns(bytes32);
+
+}
+
+/////////////////////
+// Module permissions
+/////////////////////
+//                          Owner       CHANGE_PERMISSION
+// addPermission                X               X
+// changePermission           X               X
+//
+
+contract GeneralPermissionManager is IPermissionManager {
+
+  mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;
+
+  mapping (address => bytes32) public delegateDetails;
+
+  bytes32 public CHANGE_PERMISSION = "CHANGE_PERMISSION";
+
+  function GeneralPermissionManager(address _securityToken) public
+  IModule(_securityToken)
+  {
+  }
+
+  function getInitFunction() public returns(bytes4) {
+    return bytes4(0);
+  }
+
+  function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool) {
+    if (delegateDetails[_delegate] != bytes32(0)) {
+      return perms[_module][_delegate][_perm];
+    }
+    else
+      return false;
+  }
+
+  function addPermission(address _delegate, bytes32 _details) public withPerm(CHANGE_PERMISSION) {
+    delegateDetails[_delegate] = _details;
+  }
+
+  function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) public withPerm(CHANGE_PERMISSION) returns(bool) {
+    require(delegateDetails[_delegate] != bytes32(0));
+    perms[_module][_delegate][_perm] = _valid;
+  }
+
+  function delegateDetails(address _delegate) public returns(bytes32) {
+    return delegateDetails[_delegate];
+  }
+
+  function permissions() public returns(bytes32[]) {
+    bytes32[] memory allPermissions = new bytes32[](1);
+    allPermissions[0] = CHANGE_PERMISSION;
+    return allPermissions;
+  }
+
+}
+
 /**
  * @title ERC20Basic
  * @dev Simpler version of ERC20 interface
@@ -115,103 +179,6 @@ contract ERC20 is ERC20Basic {
   function transferFrom(address from, address to, uint256 value) public returns (bool);
   function approve(address spender, uint256 value) public returns (bool);
   event Approval(address indexed owner, address indexed spender, uint256 value);
-}
-
-contract ISTO is IModule {
-
-    enum FundraiseType { ETH, POLY }
-    FundraiseType public fundraiseType;
-
-    address public polyAddress;
-
-    function _check(uint8 _fundraiseType, address _polyToken) internal {
-        if (_fundraiseType == 1) {
-            fundraiseType = FundraiseType(_fundraiseType);
-            require(_polyToken != address(0));
-            polyAddress = _polyToken;
-        }
-        else
-            fundraiseType = FundraiseType(0);
-    }
-
-    function _forwardPoly(address _beneficiary, address _to, uint256 _fundsAmount) internal {
-        ERC20(polyAddress).transferFrom(_beneficiary, _to, _fundsAmount);
-    }
-
-    function verifyInvestment(address _beneficiary, uint256 _fundsAmount) view public returns(bool) {
-        return ERC20(polyAddress).allowance(this, _beneficiary) >= _fundsAmount;
-    }
-
-    function getRaiseEther() public view returns (uint256);
-
-    function getRaisePOLY() public view returns (uint256);
-
-    function getNumberInvestors() public view returns (uint256);
-
-    //More stuff here
-
-}
-
-contract DummySTO is ISTO {
-
-  bytes32 public ADMIN = "ADMIN";
-
-  uint256 public investorCount;
-
-  uint256 public startTime;
-  uint256 public endTime;
-  uint256 public cap;
-  string public someString;
-
-  event LogGenerateTokens(address _investor, uint256 _amount);
-
-  mapping (address => uint256) public investors;
-
-  function DummySTO(address _securityToken) public
-  IModule(_securityToken)
-  {
-  }
-
-  function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public onlyFactory {
-    startTime = _startTime;
-    endTime = _endTime;
-    cap = _cap;
-    someString = _someString;
-  }
-
-  function getInitFunction() public returns (bytes4) {
-    return bytes4(keccak256("configure(uint256,uint256,uint256,string)"));
-  }
-
-  function generateTokens(address _investor, uint256 _amount) public onlyOwner {
-    require(_amount > 0);
-    IST20(securityToken).mint(_investor, _amount);
-    if (investors[_investor] == 0) {
-      investorCount = investorCount + 1;
-    }
-    //TODO: Add SafeMath maybe
-    investors[_investor] = investors[_investor] + _amount;
-    LogGenerateTokens(_investor, _amount);
-  }
-
-  function getRaiseEther() view public returns (uint256) {
-    return 0;
-  }
-
-  function getRaisePOLY() view public returns (uint256) {
-    return 0;
-  }
-
-  function getNumberInvestors() view public returns (uint256) {
-    return investorCount;
-  }
-
-  function permissions() public returns(bytes32[]) {
-    bytes32[] memory allPermissions = new bytes32[](1);
-    allPermissions[0] = ADMIN;
-    return allPermissions;
-  }
-
 }
 
 //Simple interface that any module contracts should implement
@@ -243,36 +210,32 @@ contract IModuleFactory is Ownable {
 
 }
 
-contract DummySTOFactory is IModuleFactory {
+contract GeneralPermissionManagerFactory is IModuleFactory {
 
-  function deploy(bytes _data) external returns(address) {
-      //polyToken.transferFrom(msg.sender, owner, getCost());
-      //Check valid bytes - can only call module init function
-      DummySTO dummySTO = new DummySTO(msg.sender);
-      //Checks that _data is valid (not calling anything it shouldn't)
-      require(getSig(_data) == dummySTO.getInitFunction());
-      require(address(dummySTO).call(_data));
-      return address(dummySTO);
+  function deploy(bytes /* _data */) external returns(address) {
+    //polyToken.transferFrom(msg.sender, owner, getCost());
+    return address(new GeneralPermissionManager(msg.sender));
   }
 
   function getCost() view external returns(uint256) {
-      return 0;
+    return 0;
   }
 
   function getType() view external returns(uint8) {
-      return 3;
+      return 1;
   }
 
   function getName() view external returns(bytes32) {
-      return "DummySTO";
+    return "GeneralPermissionManager";
   }
 
   function getDescription() view external returns(string) {
-    return "Dummy STO";
+    return "Manage permissions within the Security Token and attached modules";
   }
 
   function getTitle() view external returns(string) {
-    return "Dummy STO";
+    return "General Permission Manager";
   }
+
 
 }

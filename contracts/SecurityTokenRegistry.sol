@@ -1,25 +1,12 @@
 pragma solidity ^0.4.18;
 
-import './interfaces/ITickerRegistrar.sol';
-import './SecurityToken.sol';
+import './interfaces/ITickerRegistry.sol';
+import './tokens/SecurityToken.sol';
+import './interfaces/ISTProxy.sol';
+import './interfaces/ISecurityTokenRegistry.sol';
+import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
-contract SecurityTokenRegistrar {
-
-    address public moduleRegistry;
-    address public tickerRegistrar;
-    address public transferManagerFactory;
-
-    struct SecurityTokenData {
-      string symbol;
-      address owner;
-      bytes32 tokenDetails;
-    }
-
-    //Shoud be set to false when we have more TransferManager options
-    bool addGeneralTransferManager = true;
-
-    mapping(address => SecurityTokenData) public securityTokens;
-    mapping(string => address) symbols;
+contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry {
 
     event LogNewSecurityToken(string _ticker, address _securityTokenAddress, address _owner);
 
@@ -27,37 +14,41 @@ contract SecurityTokenRegistrar {
      * @dev Constructor use to set the essentials addresses to facilitate
      * the creation of the security token
      */
-    function SecurityTokenRegistrar(address _moduleRegistry, address _tickerRegistrar, address _transferManagerFactory) public {
+    function SecurityTokenRegistry(address _polyAddress, address _moduleRegistry, address _tickerRegistry, address _STVersionProxy) public {
+        polyAddress = _polyAddress;
         moduleRegistry = _moduleRegistry;
-        tickerRegistrar = _tickerRegistrar;
-        transferManagerFactory = _transferManagerFactory;
+        tickerRegistry = _tickerRegistry;
+
+        setProtocolVersion(_STVersionProxy,"0.0.1");
     }
 
     /**
      * @dev Creates a new Security Token and saves it to the registry
      * @param _name Name of the security token
-     * @param _symbol Ticker name of the security
+     * @param _symbol Ticker symbol of the security token
      * @param _decimals Decimals value for token
      * @param _tokenDetails off-chain details of the token
      */
     function generateSecurityToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails) public {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0);
-        ITickerRegistrar(tickerRegistrar).checkValidity(_symbol, msg.sender);
-        address newSecurityTokenAddress = new SecurityToken(
+        ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender);
+
+        address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
           _name,
           _symbol,
           _decimals,
           _tokenDetails,
-          moduleRegistry
+          msg.sender
         );
-        if (addGeneralTransferManager) {
-          uint256[] memory perm;
-          SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, perm, true);
-        }
-        SecurityToken(newSecurityTokenAddress).transferOwnership(msg.sender);
+
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(_symbol, msg.sender, _tokenDetails);
         symbols[_symbol] = newSecurityTokenAddress;
         LogNewSecurityToken(_symbol, newSecurityTokenAddress, msg.sender);
+    }
+
+    function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public onlyOwner {
+      protocolVersion = _version;
+      protocolVersionST[_version]=_stVersionProxyAddress;
     }
 
     //////////////////////////////

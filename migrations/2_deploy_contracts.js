@@ -1,14 +1,19 @@
-const SecurityToken = artifacts.require('./SecurityToken.sol');
+const PolyToken = artifacts.require('./helpers/PolyToken.sol');
+const SecurityToken = artifacts.require('./tokens/SecurityToken.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager.sol');
+const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
+const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager.sol');
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
 const DummySTO= artifacts.require('./DummySTO.sol');
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO= artifacts.require('./CappedSTO.sol');
-const SecurityTokenRegistrar = artifacts.require('./SecurityTokenRegistrar.sol');
-const TickerRegistrar = artifacts.require('./TickerRegistrar.sol');
+const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
+const TickerRegistry = artifacts.require('./TickerRegistry.sol');
 const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
+const STVersionProxy_001 = artifacts.require('./tokens/STVersionProxy_001.sol');
+
 var BigNumber = require('bignumber.js');
 
 const Web3 = require('web3');
@@ -21,7 +26,6 @@ const totalSupply = 100000;
 const name = "TEST POLY";
 const symbol = "TPOLY";
 const tokenDetails = "This is a legit issuance...";
-const perm = [];
 
 module.exports = function (deployer, network, accounts) {
     var investor1;
@@ -48,15 +52,23 @@ module.exports = function (deployer, network, accounts) {
        return deployer.deploy(ModuleRegistry, {from: PolymathAccount}).then(() => {
           return ModuleRegistry.deployed().then((moduleRegistry) => {
              return deployer.deploy(GeneralTransferManagerFactory, {from: PolymathAccount}).then(() => {
-                return moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount}).then(() => {
-                    return deployer.deploy(TickerRegistrar, {from: PolymathAccount}).then(() => {
-                        return deployer.deploy(SecurityTokenRegistrar, ModuleRegistry.address, TickerRegistrar.address, GeneralTransferManagerFactory.address, {from: PolymathAccount}).then(() =>{
-                            return TickerRegistrar.deployed().then((tickerRegistrar) => {
-                                return tickerRegistrar.setTokenRegistrar(SecurityTokenRegistrar.address, {from: PolymathAccount}).then(()=>{
-                                     return deployer.deploy(DummySTOFactory, {from: PolymathAccount}).then(() => {
-                                        return moduleRegistry.registerModule(DummySTOFactory.address, {from: PolymathAccount}).then(() => {
-                                            return deployer.deploy(CappedSTOFactory, {from: PolymathAccount}).then(() => {
-                                                return moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount});
+                return deployer.deploy(GeneralPermissionManagerFactory, {from: PolymathAccount}).then(() => {
+                    return deployer.deploy(PolyToken).then(()=> {
+                        return moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount}).then(() => {
+                            return moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, {from: PolymathAccount}).then(() => {
+                                return deployer.deploy(STVersionProxy_001, GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount}).then(() => {
+                                    return deployer.deploy(TickerRegistry, {from: PolymathAccount}).then(() => {
+                                        return deployer.deploy(SecurityTokenRegistry, ModuleRegistry.address, TickerRegistry.address, GeneralTransferManagerFactory.address, STVersionProxy_001.address, {from: PolymathAccount}).then(() =>{
+                                            return TickerRegistry.deployed().then((tickerRegistry) => {
+                                                return tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount}).then(()=>{
+                                                    return deployer.deploy(DummySTOFactory, {from: PolymathAccount}).then(() => {
+                                                        return moduleRegistry.registerModule(DummySTOFactory.address, {from: PolymathAccount}).then(() => {
+                                                            return deployer.deploy(CappedSTOFactory, {from: PolymathAccount}).then(() => {
+                                                                return moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount});
+                                                            });
+                                                        });
+                                                    });
+                                                });
                                             });
                                         });
                                     });
@@ -65,8 +77,8 @@ module.exports = function (deployer, network, accounts) {
                         });
                     });
                 });
-             });
-           });
+            });
         });
     });
-  };
+});
+};

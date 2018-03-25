@@ -8,6 +8,13 @@
 The polymath core smart contracts provide a system for launching regulatory
 compliant securities tokens on a decentralized blockchain.
 
+# Polymath Core Smart Contracts
+## Ropsten
+
+- TickerRegistry:
+- SecurityTokenRegistry:
+- ModuleRegistry:
+
 ## Setup
 
 The smart contracts are written in [Solidity][solidity] and tested/deployed
@@ -39,9 +46,9 @@ Polymath-based security tokens.
 
 3. Add the GeneralTransferManagerFactory module to ModuleRegistry by calling `ModuleRegistry.registerModule()`.
 
-4. Deploy TickerRegistrar. This contract handles the registration of unique token symbols. Issuers first have to claim their token symbol through the TickerRegistrar. If it's available they will be able to deploy a ST with the same symbol for a set number of days before the registration expires.
+4. Deploy TickerRegistry. This contract handles the registration of unique token symbols. Issuers first have to claim their token symbol through the TickerRegistry. If it's available they will be able to deploy a ST with the same symbol for a set number of days before the registration expires.
 
-5. Deploy SecurityTokenRegistrar. This contract is responsible for deploying new Security Tokens. STs should always be deployed by using the SecurityTokenRegistrar.
+5. Deploy SecurityTokenRegistry. This contract is responsible for deploying new Security Tokens. STs should always be deployed by using the SecurityTokenRegistry.
 
 ## Deploying Security Token Offerings (Only Network Admin)
 

@@ -6,9 +6,11 @@ import '../../interfaces/IModule.sol';
 
 contract CappedSTOFactory is IModuleFactory {
 
-  function deploy(address _owner, bytes _data) external returns(address) {
+  function deploy(bytes _data) external returns(address) {
+      //polyToken.transferFrom(msg.sender, owner, getCost());
+
       //Check valid bytes - can only call module init function
-      CappedSTO cappedSTO = new CappedSTO(_owner, msg.sender);
+      CappedSTO cappedSTO = new CappedSTO(msg.sender);
       //Checks that _data is valid (not calling anything it shouldn't)
       require(getSig(_data) == cappedSTO.getInitFunction());
       require(address(cappedSTO).call(_data));
@@ -20,11 +22,19 @@ contract CappedSTOFactory is IModuleFactory {
   }
 
   function getType() view external returns(uint8) {
-      return 2;
+      return 3;
   }
 
   function getName() view external returns(bytes32) {
       return "CappedSTO";
+  }
+
+  function getDescription() view external returns(string) {
+    return "Capped STO";
+  }
+
+  function getTitle() view external returns(string) {
+    return "Capped STO";
   }
 
 

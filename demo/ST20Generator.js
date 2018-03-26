@@ -1,9 +1,9 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
 
-const tickerRegistryAddress = "0x2981123c3fd9791ffce30efb649a3070f622e528";
-const securityTokenRegistryAddress = "0xfa839E611F1d9BBFb52188a201891310Fd363013";
-const cappedSTOFactoryAddress = "0xc77458d56302bc591b31740dff587753f349d113";
+const tickerRegistryAddress = "0x81b361a0039f68294f49e0ac5ca059e9766a8ec7";
+const securityTokenRegistryAddress = "0xa7af378af5bb73122466581715bf7e19fb30b7fb";
+const cappedSTOFactoryAddress = "0x184fd04392374aec793b56e3fc4767b45324d354";
 
 const tickerRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
 const securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
@@ -87,6 +87,7 @@ async function createST20() {
   if(start != "Y") return;
 
   step_ticker_reg();
+  //step_STO_Launch();
 };
 
 async function step_ticker_reg(){
@@ -176,6 +177,10 @@ async function step_STO_Launch(){
   //     console.log("SYMBOL",result);
   // });
 
+  // if(_DEBUG){
+  //   securityToken = new web3.eth.Contract(securityTokenABI,"0x1dBC275B76117f3979a5E8fC900bCBBbdf6006F1");
+  // }
+
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - Step 3: STO Launch (Capped STO in ETH)");
 
@@ -185,8 +190,8 @@ async function step_STO_Launch(){
   rate =  readlineSync.question('Enter the rate for the STO: ');
 
   if(_DEBUG){
-    startTime = (Date.now() +1000)/1000 ;
-    endTime = (Date.now()+3600 * 24)/1000;
+    startTime = Math.floor(Date.now()/1000) + 1000;
+    endTime = Math.floor(Date.now()/1000) + (100 * 24 * 60 * 60);
     cap = web3.utils.toWei('100000', 'ether');
     rate = '1000';
   }
@@ -206,12 +211,21 @@ async function step_STO_Launch(){
       },{
           type: 'uint256',
           name: '_rate'
+      },{
+          type: 'uint8',
+          name: '_fundRaiseType'
+      },{
+          type: 'address',
+          name: '_polyToken'
+      },{
+          type: 'address',
+          name: '_fundsReceiver'
       }
       ]
-  }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate]);
+  }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,0,Issuer]);
 
   try{
-    await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0, false).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+    await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0,0, false).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...

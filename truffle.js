@@ -1,7 +1,7 @@
 require('babel-register');
 require('babel-polyfill');
 
-//const HDWalletProvider = require("truffle-hdwallet-provider");
+const HDWalletProvider = require("truffle-hdwallet-provider");
 const WalletProvider = require("truffle-wallet-provider");
 const keystore = require('fs').readFileSync('./sample-keystore').toString();
 const pass = require('fs').readFileSync('./sample-pass').toString();
@@ -29,7 +29,7 @@ module.exports = {
       port: 8545,
       network_id: '3', // Match any network id
       gas: 4500000,
-      gasPrice: 10000000000
+      gasPrice: 210000000000
     }
   },
   solc: {

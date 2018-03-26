@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased](https://github.com/PolymathNetwork/polymath-core_v2/compare/npm-publish-2...master)
 
-[__0.1.7__](https://www.npmjs.com/package/polymath-core_v2?activeTab=readme) __25-03-18__
+[__0.2.0__](https://www.npmjs.com/package/polymath-core_v2?activeTab=readme) __26-03-18__
 
 ## Added      
 * ModuleRegistry contract will provide the list of modules by there types.  

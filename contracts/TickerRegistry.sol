@@ -36,7 +36,7 @@ contract TickerRegistry is ITickerRegistry, Ownable {
     mapping(string => SymbolDetails) registeredSymbols;
 
     // Emit after the symbol registration
-    event LogRegisterTicker(address _owner, string _symbol, string _name, uint256 _timestamp);
+    event LogRegisterTicker(address indexed _owner, string _symbol, string _name, uint256 _timestamp);
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 

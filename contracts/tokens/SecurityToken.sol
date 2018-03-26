@@ -40,8 +40,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     // Other modules TBD
     mapping (uint8 => ModuleData) public modules;
 
-    event LogModuleAdded(uint8 _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _budget, uint256 _timestamp);
-    event LogModuleBudgetChanged(uint8 _moduleType, address _module, uint256 _budget);
+    event LogModuleAdded(uint8 indexed _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _budget, uint256 _timestamp);
+    event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
     event Mint(address indexed to, uint256 amount);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
@@ -137,7 +137,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
-    function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool success) {
+    function verifyTransfer(address _from, address _to, uint256 _amount) view public returns (bool success) {
         if (modules[2].moduleAddress == address(0)) {
           return true;
         }

@@ -54,7 +54,7 @@ contract TickerRegistry is ITickerRegistry, Ownable {
      */
     function registerTicker(string _symbol, string _tokenName) public {
         require(expiryCheck(_symbol));
-        registeredSymbols[_symbol] = SymbolDetails(msg.sender, now, "", false);
+        registeredSymbols[_symbol] = SymbolDetails(msg.sender, now, _tokenName, false);
         LogRegisterTicker(msg.sender, _symbol, _tokenName, now);
     }
 

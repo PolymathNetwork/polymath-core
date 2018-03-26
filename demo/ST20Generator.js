@@ -105,77 +105,101 @@ async function step_ticker_reg(){
   let receipt;
 
   console.log("\n");
-  console.log('\x1b[34m%s\x1b[0m',"Token Creation - Step 1: Symbol Registration");
+  console.log('\x1b[34m%s\x1b[0m',"Token Creation - Symbol Registration");
 
+  let alreadyRegistered = false;
   let available = false;
+
   while(!available) {
-    tokenSymbol =  readlineSync.question('Enter the Symbol for your new token: ');
+    tokenSymbol =  readlineSync.question('Enter the symbol for your new token: ');
     await tickerRegistry.methods.getDetails(tokenSymbol).call({from: Issuer}, function(error, result){
         if(new BigNumber(result[1]).toNumber() == 0){
           available = true;
+        }else if(result[0] == Issuer){
+          console.log('\x1b[31m%s\x1b[0m',"Token Symbol has already been registered by you, skipping registration");
+          available = true;
+          alreadyRegistered = true;
         }else{
           console.log('\x1b[31m%s\x1b[0m',"Token Symbol has already been registered, please choose another symbol");
         }
     });
   }
 
+  if(!alreadyRegistered){
+    try{
+      await tickerRegistry.methods.registerTicker(tokenSymbol, "").send({ from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE})
+      .on('transactionHash', function(hash){
+        console.log(`
+          Your transaction is being processed. Please wait...
+          TxHash: ${hash}\n`
+        );
+      })
+      .on('receipt', function(receipt){
+        console.log(`
+          Congratulations! The transaction was successfully completed.\n
+          Review it on Etherscan.\n
+          TxHash: ${receipt.transactionHash}\n`
+        );
+      })
+      .on('error', console.error);
 
-  try{
-    await tickerRegistry.methods.registerTicker(tokenSymbol, "poly@polymath.network").send({ from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE})
-    .on('transactionHash', function(hash){
-      console.log(`
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`
-      );
-    })
-    .on('receipt', function(receipt){
-      console.log(`
-        Congratulations! The transaction was successfully completed.\n
-        Review it on Etherscan.\n
-        TxHash: ${receipt.transactionHash}\n`
-      );
-    })
-    .on('error', console.error);
 
-
-  }catch (err){
-    console.log(err.message);
-    return;
+    }catch (err){
+      console.log(err.message);
+      return;
+    }
   }
 
   await step_token_deploy();
 }
 
 async function step_token_deploy(){
-  let receipt;
 
-  console.log("\n");
-  console.log('\x1b[34m%s\x1b[0m',"Token Creation - Step 2: Token Deployment");
-  tokenName =  readlineSync.question('Enter the Name for your new token: ');
+  let tokenDeployed = false;
+  let tokenDeployedAddress;
+  // Let's check if token has already been deployed, if it has, skip to STO
+  await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({from: Issuer}, function(error, result){
+    if(result != "0x0000000000000000000000000000000000000000"){
+      console.log('\x1b[31m%s\x1b[0m',"Token has already been deployed at address "+result+". Skipping registration");
+      tokenDeployedAddress = result;
+      tokenDeployed = true;
+    }
 
-  try{
-    await securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDecimals, web3.utils.fromAscii(tokenDetails)).send({ from: Issuer, gas:4500000, gasPrice: DEFAULT_GAS_PRICE})
-    .on('transactionHash', function(hash){
-      console.log(`
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`
-      );
-    })
-    .on('receipt', function(receipt){
-      console.log(`
-        Congratulations! The transaction was successfully completed.\n
-        Deployed Token at address: ${receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress}
-        Review it on Etherscan.\n
-        TxHash: ${receipt.transactionHash}\n`
-      );
+  });
 
-      securityToken = new web3.eth.Contract(securityTokenABI,receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress);
-    })
-    .on('error', console.error);
+  if(tokenDeployed){
+    securityToken = new web3.eth.Contract(securityTokenABI,tokenDeployedAddress);
+  }else{
+    let receipt;
 
-  }catch (err){
-    console.log(err.message);
-    return;
+    console.log("\n");
+    console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Deployment");
+    tokenName =  readlineSync.question('Enter the name for your new token: ');
+
+    try{
+      await securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDecimals, web3.utils.fromAscii(tokenDetails)).send({ from: Issuer, gas:4500000, gasPrice: DEFAULT_GAS_PRICE})
+      .on('transactionHash', function(hash){
+        console.log(`
+          Your transaction is being processed. Please wait...
+          TxHash: ${hash}\n`
+        );
+      })
+      .on('receipt', function(receipt){
+        console.log(`
+          Congratulations! The transaction was successfully completed.\n
+          Deployed Token at address: ${receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress}
+          Review it on Etherscan.\n
+          TxHash: ${receipt.transactionHash}\n`
+        );
+
+        securityToken = new web3.eth.Contract(securityTokenABI,receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress);
+      })
+      .on('error', console.error);
+
+    }catch (err){
+      console.log(err.message);
+      return;
+    }
   }
 
   await step_STO_Launch();
@@ -193,21 +217,19 @@ async function step_STO_Launch(){
   // }
 
   console.log("\n");
-  console.log('\x1b[34m%s\x1b[0m',"Token Creation - Step 3: STO Launch (Capped STO in ETH)");
+  console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in ETH)");
 
   startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 hour from now = '+(Math.floor(Date.now()/1000)+3600)+' ): ');
   endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
-  cap =  readlineSync.question('Enter the cap for the STO: ');
-  rate =  readlineSync.question('Enter the rate for the STO: ');
+  cap =  readlineSync.question('Enter the cap (in ETH) for the STO (1000000): ');
+  rate =  readlineSync.question('Enter the rate (1 ETH = X ST) for the STO (1000): ');
   wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
 
-  if(_DEBUG){
-    startTime = Math.floor(Date.now()/1000) + 1000;
-    endTime = Math.floor(Date.now()/1000) + (100 * 24 * 60 * 60);
-    cap = web3.utils.toWei('100000', 'ether');
-    rate = '1000';
-    wallet = Issuer;
-  }
+  if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+3600));
+  if(endTime == "") endTime = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
+  if(cap == "") cap = web3.utils.toWei('100000', 'ether');
+  if(rate == "") rate = BigNumber(1000);
+  if(wallet == "") wallet = Issuer;
 
   let bytesSTO = web3.eth.abi.encodeFunctionCall({
       name: 'configure',

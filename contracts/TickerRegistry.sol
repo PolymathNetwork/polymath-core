@@ -21,9 +21,6 @@ contract TickerRegistry is ITickerRegistry, Ownable {
     // For now it's value is 90 days;
     uint256 public expiryLimit = 90 * 1 days;
 
-    // Ethereum address of the admin (Control some functions of the contract)
-    address public admin;
-
     // SecuirtyToken Registry contract address
     address public STRAddress;
 
@@ -31,7 +28,7 @@ contract TickerRegistry is ITickerRegistry, Ownable {
     struct SymbolDetails {
         address owner;
         uint256 timestamp;
-        string contact;
+        string tokenName;
         bool status;
     }
 
@@ -39,7 +36,7 @@ contract TickerRegistry is ITickerRegistry, Ownable {
     mapping(string => SymbolDetails) registeredSymbols;
 
     // Emit after the symbol registration
-    event LogRegisterTicker(address _owner, string _symbol, uint256 _timestamp);
+    event LogRegisterTicker(address _owner, string _symbol, string _name, uint256 _timestamp);
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
@@ -53,21 +50,20 @@ contract TickerRegistry is ITickerRegistry, Ownable {
             its ownership, until unless the symbol get expired and its issuer doesn't used it
             for its issuance.
      * @param _symbol token symbol
-     * @param _contact token contract details e.g. email
+     * @param _tokenName token contract details e.g. email
      */
-    function registerTicker(string _symbol, string _contact) public {
-        require(bytes(_contact).length > 0);
+    function registerTicker(string _symbol, string _tokenName) public {
+        require(bytes(_tokenName).length > 0);
         require(expiryCheck(_symbol));
-        registeredSymbols[_symbol] = SymbolDetails(msg.sender, now, _contact, false);
-        LogRegisterTicker(msg.sender, _symbol, now);
+        registeredSymbols[_symbol] = SymbolDetails(msg.sender, now, _tokenName, false);
+        LogRegisterTicker(msg.sender, _symbol, _tokenName, now);
     }
 
      /**
       * @dev Change the expiry time for the token symbol
       * @param _newExpiry new time period for token symbol expiry
       */
-     function changeExpiryLimit(uint256 _newExpiry) public {
-         require(msg.sender == admin);
+     function changeExpiryLimit(uint256 _newExpiry) public onlyOwner {
          uint256 _oldExpiry = expiryLimit;
          expiryLimit = _newExpiry;
          LogChangeExpiryLimit(_oldExpiry, _newExpiry);
@@ -104,13 +100,17 @@ contract TickerRegistry is ITickerRegistry, Ownable {
      * @dev Check the validity of the symbol
      * @param _symbol token symbol
      * @param _owner address of the owner
+     * @param _tokenName Name of the token
+     * @return bool
      */
-    function checkValidity(string _symbol, address _owner) public {
+    function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool) {
         require(msg.sender == STRAddress);
         require(registeredSymbols[_symbol].status != true);
         require(registeredSymbols[_symbol].owner == _owner);
         require(registeredSymbols[_symbol].timestamp.add(expiryLimit) >= now);
+        registeredSymbols[_symbol].tokenName = _tokenName;
         registeredSymbols[_symbol].status = true;
+        return true;
     }
 
      /**
@@ -123,7 +123,7 @@ contract TickerRegistry is ITickerRegistry, Ownable {
             (
                 registeredSymbols[_symbol].owner,
                 registeredSymbols[_symbol].timestamp,
-                registeredSymbols[_symbol].contact,
+                registeredSymbols[_symbol].tokenName,
                 registeredSymbols[_symbol].status
             );
         }

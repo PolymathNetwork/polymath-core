@@ -65,7 +65,7 @@ module.exports = async (deployer, network, accounts) => {
   // ----------- SECURITY TOKEN & STO DEPLOYMENT ------------
 
   // 1. Register ticker symbol
-  await tickerRegistry.registerTicker(symbol, "poly@polymath.network", { from: Issuer });
+  await tickerRegistry.registerTicker(symbol, name, { from: Issuer });
 
   // 2. Deploy Token
   let STRegistry = await SecurityTokenRegistry.deployed();

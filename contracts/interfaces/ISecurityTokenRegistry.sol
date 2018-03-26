@@ -1,5 +1,7 @@
 pragma solidity ^0.4.18;
 
+import './ISecurityToken.sol';
+
 contract ISecurityTokenRegistry {
 
     address public polyAddress;
@@ -12,11 +14,10 @@ contract ISecurityTokenRegistry {
 
     struct SecurityTokenData {
       string symbol;
-      address owner;
       bytes32 tokenDetails;
     }
 
-    mapping(address => SecurityTokenData) public securityTokens;
+    mapping(address => SecurityTokenData) securityTokens;
     mapping(string => address) symbols;
 
     /**
@@ -39,4 +40,11 @@ contract ISecurityTokenRegistry {
      * @return address _symbol
      */
     function getSecurityTokenAddress(string _symbol) public view returns (address);
+
+     /**
+     * @dev Get security token data by its address
+     * @param _securityToken Address of the Scurity token
+     * @return string, address, bytes32
+     */
+    function getSecurityTokenData(address _securityToken) public view returns (string, address, bytes32);
 }

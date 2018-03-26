@@ -4,7 +4,7 @@ pragma solidity ^0.4.18;
 interface IModuleRegistry {
 
     //Checks that module is correctly configured in registry
-    function useModule(address _moduleFactory) external returns(bool);
+    function useModule(address _moduleFactory) external;
 
     function registerModule(address _moduleFactory) external returns(bool);
 

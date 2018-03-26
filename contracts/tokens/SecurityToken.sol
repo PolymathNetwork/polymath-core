@@ -40,7 +40,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     // Other modules TBD
     mapping (uint8 => ModuleData) public modules;
 
-    event LogModuleAdded(uint8 indexed _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _timestamp);
+    event LogModuleAdded(uint8 indexed _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _budget, uint256 _timestamp);
+    event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
     event Mint(address indexed to, uint256 amount);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
@@ -70,9 +71,9 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         //owner = _owner;
     }
 
-    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bool _replaceable) external {
+    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) external {
         require(msg.sender == owner);
-        _addModule(_moduleFactory, _data, _maxCost, _replaceable);
+        _addModule(_moduleFactory, _data, _maxCost, _budget, _replaceable);
     }
 
     /**
@@ -85,8 +86,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     * @param _replaceable whether or not the module is supposed to be replaceable
     */
     //You are only ever allowed one instance, for a given module type
-    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, bool _replaceable) internal {
-        //Check that module exists in registry
+    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) internal {
+        //Check that module exists in registry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         uint256 moduleCost = moduleFactory.getCost();
@@ -99,14 +100,23 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         require(polyToken.approve(_moduleFactory, moduleCost));
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
+        //Approve ongoing budget
+        require(polyToken.approve(module, _budget));
         //Add to SecurityToken module map
         modules[moduleFactory.getType()] = ModuleData(moduleFactory.getName(), module, _replaceable);
         //Emit log event
-        LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, now);
+        LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
     }
 
     function withdrawPoly(uint256 _amount) public onlyOwner {
         require(polyToken.transfer(owner, _amount));
+    }
+
+    function changeModuleBudget(uint8 _moduleType, uint256 _budget) public onlyOwner {
+        require(_moduleType != 0);
+        require(modules[_moduleType].moduleAddress != address(0));
+        require(polyToken.approve(modules[_moduleType].moduleAddress, _budget));
+        LogModuleBudgetChanged(_moduleType, modules[_moduleType].moduleAddress, _budget);
     }
 
     /**
@@ -127,7 +137,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
-    function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool success) {
+    function verifyTransfer(address _from, address _to, uint256 _amount) view public returns (bool success) {
         if (modules[2].moduleAddress == address(0)) {
           return true;
         }

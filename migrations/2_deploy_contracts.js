@@ -46,6 +46,8 @@ module.exports = async (deployer, network, accounts) => {
   let moduleRegistry = await ModuleRegistry.deployed();
   await moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount});
   await moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, {from: PolymathAccount});
+  await moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, {from: PolymathAccount});
+  await moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, {from: PolymathAccount});
 
   // 3. Deploy Ticker Registry and SecurityTokenRegistry
   await deployer.deploy(STVersionProxy_001,GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount});
@@ -57,15 +59,15 @@ module.exports = async (deployer, network, accounts) => {
   await tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount});
 
   // B) DEPLOY STO factories and register them with the Registry
-  await deployer.deploy(CappedSTOFactory, {from: PolymathAccount});
-  await moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount});
-
+  await deployer.deploy(CappedSTOFactory, {from: Issuer});
+  await moduleRegistry.registerModule(CappedSTOFactory.address, {from: Issuer});
+  // await moduleRegistry.verifyModule(CappedSTOFactory.address, true, {from: PolymathAccount});
   // -------- END OF POLYMATH NETWORK Configuration -------
 
   // ----------- SECURITY TOKEN & STO DEPLOYMENT ------------
 
   // 1. Register ticker symbol
-  await tickerRegistry.registerTicker(symbol, name, { from: Issuer });
+  await tickerRegistry.registerTicker(symbol, { from: Issuer });
 
   // 2. Deploy Token
   let STRegistry = await SecurityTokenRegistry.deployed();
@@ -116,9 +118,9 @@ module.exports = async (deployer, network, accounts) => {
 
   console.log(Math.floor(Date.now()/1000), Math.floor(Date.now()/1000) + (100 * 24 * 60 * 60), BigNumber(100000 * 10**18), BigNumber(1000), BigNumber(0), PolyToken.address, Issuer);
 
-  let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, false, { from: Issuer });
+  let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: Issuer });
   //console.log(JSON.stringify(r_CappedSTOFactory));
-  let cappedSTOAddress =  r_CappedSTOFactory.logs[1].args._module;
+  let cappedSTOAddress =  r_CappedSTOFactory.logs[2].args._module;
   let cappedSTO = await CappedSTO.at(cappedSTOAddress);
 
   // console.log((await cappedSTO.startTime()).toString());

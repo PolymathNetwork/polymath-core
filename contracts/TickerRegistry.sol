@@ -36,7 +36,7 @@ contract TickerRegistry is ITickerRegistry, Ownable {
     mapping(string => SymbolDetails) registeredSymbols;
 
     // Emit after the symbol registration
-    event LogRegisterTicker(address indexed _owner, string _symbol, string _name, uint256 _timestamp);
+    event LogRegisterTicker(address indexed _owner, string _symbol, uint256 _timestamp);
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
@@ -50,13 +50,11 @@ contract TickerRegistry is ITickerRegistry, Ownable {
             its ownership, until unless the symbol get expired and its issuer doesn't used it
             for its issuance.
      * @param _symbol token symbol
-     * @param _tokenName token contract details e.g. email
      */
-    function registerTicker(string _symbol, string _tokenName) public {
-        require(bytes(_tokenName).length > 0);
+    function registerTicker(string _symbol) public {
         require(expiryCheck(_symbol));
-        registeredSymbols[_symbol] = SymbolDetails(msg.sender, now, _tokenName, false);
-        LogRegisterTicker(msg.sender, _symbol, _tokenName, now);
+        registeredSymbols[_symbol] = SymbolDetails(msg.sender, now, "", false);
+        LogRegisterTicker(msg.sender, _symbol, now);
     }
 
      /**

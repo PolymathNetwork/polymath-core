@@ -21,7 +21,7 @@ contract ISecurityTokenRegistry {
 
     /**
      * @dev Creates a new Security Token and saves it to the registry
-     * @param _name Name of the security token
+     * @param _name Name of the token 
      * @param _symbol Ticker symbol of the security token
      * @param _decimals Decimals value for token
      * @param _tokenDetails off-chain details of the token

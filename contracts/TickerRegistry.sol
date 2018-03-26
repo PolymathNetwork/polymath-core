@@ -8,13 +8,14 @@ pragma solidity ^0.4.18;
 */
 
 import 'zeppelin-solidity/contracts/math/SafeMath.sol';
-import './interfaces/ITickerRegistry.sol';
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
+import './interfaces/ITickerRegistry.sol';
+import './helpers/Util.sol';
 /**
  * @title TickerRegistry
  * @dev Contract use to register the security token symbols
  */
-contract TickerRegistry is ITickerRegistry, Ownable {
+contract TickerRegistry is ITickerRegistry, Ownable, Util {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
@@ -53,9 +54,10 @@ contract TickerRegistry is ITickerRegistry, Ownable {
      * @param _tokenName Name of the token
      */
     function registerTicker(string _symbol, string _tokenName) public {
-        require(expiryCheck(_symbol));
-        registeredSymbols[_symbol] = SymbolDetails(msg.sender, now, _tokenName, false);
-        LogRegisterTicker(msg.sender, _symbol, _tokenName, now);
+        string memory symbol = lower(_symbol);
+        require(expiryCheck(symbol));
+        registeredSymbols[symbol] = SymbolDetails(msg.sender, now, _tokenName, false);
+        LogRegisterTicker(msg.sender, symbol, _tokenName, now);
     }
 
      /**
@@ -103,27 +105,30 @@ contract TickerRegistry is ITickerRegistry, Ownable {
      * @return bool
      */
     function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool) {
+        string memory symbol = lower(_symbol);
         require(msg.sender == STRAddress);
-        require(registeredSymbols[_symbol].status != true);
-        require(registeredSymbols[_symbol].owner == _owner);
-        require(registeredSymbols[_symbol].timestamp.add(expiryLimit) >= now);
-        registeredSymbols[_symbol].tokenName = _tokenName;
-        registeredSymbols[_symbol].status = true;
+        require(registeredSymbols[symbol].status != true);
+        require(registeredSymbols[symbol].owner == _owner);
+        require(registeredSymbols[symbol].timestamp.add(expiryLimit) >= now);
+        registeredSymbols[symbol].tokenName = _tokenName;
+        registeredSymbols[symbol].status = true;
         return true;
     }
+
 
      /**
      * @dev Returns the owner and timestamp for a given symbol
      * @param _symbol symbol
      */
     function getDetails(string _symbol) public view returns (address, uint256, string, bool) {
-        if (registeredSymbols[_symbol].status == true || registeredSymbols[_symbol].timestamp.add(expiryLimit) > now ) {
+        string memory symbol = lower(_symbol);
+        if (registeredSymbols[symbol].status == true || registeredSymbols[symbol].timestamp.add(expiryLimit) > now ) {
             return
             (
-                registeredSymbols[_symbol].owner,
-                registeredSymbols[_symbol].timestamp,
-                registeredSymbols[_symbol].tokenName,
-                registeredSymbols[_symbol].status
+                registeredSymbols[symbol].owner,
+                registeredSymbols[symbol].timestamp,
+                registeredSymbols[symbol].tokenName,
+                registeredSymbols[symbol].status
             );
         }
         else

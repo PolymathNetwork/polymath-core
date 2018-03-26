@@ -1,7 +1,13 @@
 var readlineSync = require('readline-sync');
+var BigNumber = require('bignumber.js')
 
 const tickerRegistryAddress = "0x2981123c3fd9791ffce30efb649a3070f622e528";
 const securityTokenRegistryAddress = "0xfa839E611F1d9BBFb52188a201891310Fd363013";
+const cappedSTOFactoryAddress = "0xc77458d56302bc591b31740dff587753f349d113";
+
+const tickerRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
+const securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
+const securityTokenABI          = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
 
 const Web3 = require('web3');
 
@@ -19,7 +25,7 @@ let startTime;
 let endTime;
 let wallet;
 let rate;
-let tokenCap;
+let cap;
 let minContribution;
 let maxContribution;
 
@@ -33,6 +39,7 @@ const tokenDetails = "This is a legit issuance...";
 
 let tickerRegistry;
 let securityTokenRegistry;
+let securityToken;
 
 // App flow
 let index_mainmenu;
@@ -42,497 +49,7 @@ let Issuer;
 
 let _DEBUG = true;
 
-let tickerRegistryABI = [
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "expiryLimit",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "owner",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "STRAddress",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "transferOwnership",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "admin",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "name": "_owner",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "name": "_symbol",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "name": "_timestamp",
-        "type": "uint256"
-      }
-    ],
-    "name": "LogRegisterTicker",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "name": "_oldExpiry",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "name": "_newExpiry",
-        "type": "uint256"
-      }
-    ],
-    "name": "LogChangeExpiryLimit",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "name": "previousOwner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnershipTransferred",
-    "type": "event"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_symbol",
-        "type": "string"
-      },
-      {
-        "name": "_contact",
-        "type": "string"
-      }
-    ],
-    "name": "registerTicker",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_newExpiry",
-        "type": "uint256"
-      }
-    ],
-    "name": "changeExpiryLimit",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_STRegistry",
-        "type": "address"
-      }
-    ],
-    "name": "setTokenRegistry",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_symbol",
-        "type": "string"
-      },
-      {
-        "name": "_owner",
-        "type": "address"
-      }
-    ],
-    "name": "checkValidity",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "_symbol",
-        "type": "string"
-      }
-    ],
-    "name": "getDetails",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      },
-      {
-        "name": "",
-        "type": "uint256"
-      },
-      {
-        "name": "",
-        "type": "string"
-      },
-      {
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  }
-];
-let securityTokenRegistryABI = [
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "name": "securityTokens",
-    "outputs": [
-      {
-        "name": "symbol",
-        "type": "string"
-      },
-      {
-        "name": "owner",
-        "type": "address"
-      },
-      {
-        "name": "tokenDetails",
-        "type": "bytes32"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "tickerRegistry",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "protocolVersion",
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "name": "protocolVersionST",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "owner",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "moduleRegistry",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "transferOwnership",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "polyAddress",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "name": "_polyAddress",
-        "type": "address"
-      },
-      {
-        "name": "_moduleRegistry",
-        "type": "address"
-      },
-      {
-        "name": "_tickerRegistry",
-        "type": "address"
-      },
-      {
-        "name": "_STVersionProxy",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "constructor"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "name": "_ticker",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "name": "_securityTokenAddress",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "name": "_owner",
-        "type": "address"
-      }
-    ],
-    "name": "LogNewSecurityToken",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "name": "previousOwner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnershipTransferred",
-    "type": "event"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_name",
-        "type": "string"
-      },
-      {
-        "name": "_symbol",
-        "type": "string"
-      },
-      {
-        "name": "_decimals",
-        "type": "uint8"
-      },
-      {
-        "name": "_tokenDetails",
-        "type": "bytes32"
-      }
-    ],
-    "name": "generateSecurityToken",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "_stVersionProxyAddress",
-        "type": "address"
-      },
-      {
-        "name": "_version",
-        "type": "bytes32"
-      }
-    ],
-    "name": "setProtocolVersion",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [
-      {
-        "name": "_symbol",
-        "type": "string"
-      }
-    ],
-    "name": "getSecurityTokenAddress",
-    "outputs": [
-      {
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  }
-]
+let DEFAULT_GAS_PRICE = 80000000000;
 
 async function executeApp() {
 
@@ -577,10 +94,22 @@ async function step_ticker_reg(){
 
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - Step 1: Symbol Registration");
-  tokenSymbol =  readlineSync.question('Enter the Symbol for your new token: ');
+
+  let available = false;
+  while(!available) {
+    tokenSymbol =  readlineSync.question('Enter the Symbol for your new token: ');
+    await tickerRegistry.methods.getDetails(tokenSymbol).call({from: Issuer}, function(error, result){
+        if(new BigNumber(result[1]).toNumber() == 0){
+          available = true;
+        }else{
+          console.log('\x1b[31m%s\x1b[0m',"Token Symbol has already been registered, please choose another symbol");
+        }
+    });
+  }
+
 
   try{
-    await tickerRegistry.methods.registerTicker(tokenSymbol, "poly@polymath.network").send({ from: Issuer, gas:200000})
+    await tickerRegistry.methods.registerTicker(tokenSymbol, "poly@polymath.network").send({ from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE})
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -613,7 +142,7 @@ async function step_token_deploy(){
   tokenName =  readlineSync.question('Enter the Name for your new token: ');
 
   try{
-    await securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDecimals, web3.utils.fromAscii(tokenDetails)).send({ from: Issuer, gas:4500000})
+    await securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDecimals, web3.utils.fromAscii(tokenDetails)).send({ from: Issuer, gas:4500000, gasPrice: DEFAULT_GAS_PRICE})
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -624,6 +153,75 @@ async function step_token_deploy(){
       console.log(`
         Congratulations! The transaction was successfully completed.\n
         Deployed Token at address: ${receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress}
+        Review it on Etherscan.\n
+        TxHash: ${receipt.transactionHash}\n`
+      );
+
+      securityToken = new web3.eth.Contract(securityTokenABI,receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress);
+    })
+    .on('error', console.error);
+
+  }catch (err){
+    console.log(err.message);
+    return;
+  }
+
+  await step_STO_Launch();
+}
+
+async function step_STO_Launch(){
+  let receipt;
+
+  // await securityToken.methods.symbol().call({from: Issuer}, function(error, result){
+  //     console.log("SYMBOL",result);
+  // });
+
+  console.log("\n");
+  console.log('\x1b[34m%s\x1b[0m',"Token Creation - Step 3: STO Launch (Capped STO in ETH)");
+
+  startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time): ');
+  endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time): ');
+  cap =  readlineSync.question('Enter the cap for the STO: ');
+  rate =  readlineSync.question('Enter the rate for the STO: ');
+
+  if(_DEBUG){
+    startTime = (Date.now() +1000)/1000 ;
+    endTime = (Date.now()+3600 * 24)/1000;
+    cap = web3.utils.toWei('100000', 'ether');
+    rate = '1000';
+  }
+
+  let bytesSTO = web3.eth.abi.encodeFunctionCall({
+      name: 'configure',
+      type: 'function',
+      inputs: [{
+          type: 'uint256',
+          name: '_startTime'
+      },{
+          type: 'uint256',
+          name: '_endTime'
+      },{
+          type: 'uint256',
+          name: '_cap'
+      },{
+          type: 'uint256',
+          name: '_rate'
+      }
+      ]
+  }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate]);
+
+  try{
+    await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0, false).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+    .on('transactionHash', function(hash){
+      console.log(`
+        Your transaction is being processed. Please wait...
+        TxHash: ${hash}\n`
+      );
+    })
+    .on('receipt', function(receipt){
+      console.log(`
+        Congratulations! The transaction was successfully completed.\n
+        STO deployed at address: ${receipt.events.LogModuleAdded.returnValues._module}
         Review it on Etherscan.\n
         TxHash: ${receipt.transactionHash}\n`
       );
@@ -639,6 +237,8 @@ async function step_token_deploy(){
 
   console.log("FINISHED");
 }
+
+/////////
 
 async function step_other(){
   console.log("\n");

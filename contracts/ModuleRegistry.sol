@@ -2,6 +2,7 @@ pragma solidity ^0.4.18;
 
 import './interfaces/IModuleRegistry.sol';
 import './interfaces/IModuleFactory.sol';
+import './interfaces/ISecurityToken.sol';
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
 /**
@@ -15,29 +16,42 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     mapping (address => uint8) public registry;
     mapping (address => address[]) public reputation;
     mapping (uint8 => address[]) public moduleList;
+    mapping (address => bool) public verified;
+
+    event LogModuleUsed(address indexed _moduleFactory, address indexed _securityToken);
+    event LogModuleRegistered(address indexed _moduleFactory, address indexed _owner);
+    event LogModuleVerified(address indexed _moduleFactory, bool _verified);
 
     //Checks that module is correctly configured in registry
-    function useModule(address _moduleFactory) external returns(bool) {
-        bool inRegistry = registry[_moduleFactory] != 0;
-        if (inRegistry) {
-          reputation[_moduleFactory].push(msg.sender);
-        }
-        return inRegistry;
+    function useModule(address _moduleFactory) external {
+        require(registry[_moduleFactory] != 0);
+        //To use a module, either it must be verified, or owned by the ST owner
+        require(verified[_moduleFactory] || (IModuleFactory(_moduleFactory).owner() == ISecurityToken(msg.sender).owner()));
+        reputation[_moduleFactory].push(msg.sender);
+        LogModuleUsed(_moduleFactory, msg.sender);
     }
 
     /**
     * @dev Called by Polymath to register new modules for SecurityToken to use
     * @param _moduleFactory is the address of the module factory to be registered
     */
-    function registerModule(address _moduleFactory) external onlyOwner returns(bool) {
+    function registerModule(address _moduleFactory) external returns(bool) {
         require(registry[_moduleFactory] == 0);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         require(moduleFactory.getType() != 0);
         registry[_moduleFactory] = moduleFactory.getType();
         moduleList[moduleFactory.getType()].push(_moduleFactory);
         reputation[_moduleFactory] = new address[](0);
+        LogModuleRegistered(_moduleFactory, moduleFactory.owner());
         return true;
     }
 
+    function verifyModule(address _moduleFactory, bool _verified) external onlyOwner returns(bool) {
+        //Must already have been registered
+        require(registry[_moduleFactory] != 0);
+        verified[_moduleFactory] = _verified;
+        LogModuleVerified(_moduleFactory, _verified);
+        return true;
+    }
 
 }

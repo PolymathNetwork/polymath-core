@@ -1,9 +1,20 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
 
-const tickerRegistryAddress = "0x81b361a0039f68294f49e0ac5ca059e9766a8ec7";
-const securityTokenRegistryAddress = "0xa7af378af5bb73122466581715bf7e19fb30b7fb";
-const cappedSTOFactoryAddress = "0x184fd04392374aec793b56e3fc4767b45324d354";
+let _GANACHE_CONTRACTS = true;
+let tickerRegistryAddress;
+let securityTokenRegistryAddress;
+let cappedSTOFactoryAddress;
+
+if(_GANACHE_CONTRACTS){
+  tickerRegistryAddress = "0x7d13af296739452a54eea78185302ba8ea7cbda8";
+  securityTokenRegistryAddress = "0xd525899c93a77f5c1a9c15e06ae9061eda226258";
+  cappedSTOFactoryAddress = "0x42090447c35b52936b810f1dfe297fd02e8083ad";
+}else{
+  tickerRegistryAddress = "0x81b361a0039f68294f49e0ac5ca059e9766a8ec7";
+  securityTokenRegistryAddress = "0xa7af378af5bb73122466581715bf7e19fb30b7fb";
+  cappedSTOFactoryAddress = "0x184fd04392374aec793b56e3fc4767b45324d354";
+}
 
 const tickerRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
 const securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
@@ -47,7 +58,7 @@ let index_mainmenu;
 let accounts;
 let Issuer;
 
-let _DEBUG = true;
+let _DEBUG = false;
 
 let DEFAULT_GAS_PRICE = 80000000000;
 
@@ -184,16 +195,18 @@ async function step_STO_Launch(){
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - Step 3: STO Launch (Capped STO in ETH)");
 
-  startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time): ');
-  endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time): ');
+  startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 hour from now = '+(Math.floor(Date.now()/1000)+3600)+' ): ');
+  endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
   cap =  readlineSync.question('Enter the cap for the STO: ');
   rate =  readlineSync.question('Enter the rate for the STO: ');
+  wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
 
   if(_DEBUG){
     startTime = Math.floor(Date.now()/1000) + 1000;
     endTime = Math.floor(Date.now()/1000) + (100 * 24 * 60 * 60);
     cap = web3.utils.toWei('100000', 'ether');
     rate = '1000';
+    wallet = Issuer;
   }
 
   let bytesSTO = web3.eth.abi.encodeFunctionCall({
@@ -222,7 +235,7 @@ async function step_STO_Launch(){
           name: '_fundsReceiver'
       }
       ]
-  }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,0,Issuer]);
+  }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
 
   try{
     await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0,0, false).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})

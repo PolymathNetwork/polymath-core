@@ -7,18 +7,30 @@ let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = "0x7d13af296739452a54eea78185302ba8ea7cbda8";
-  securityTokenRegistryAddress = "0xd525899c93a77f5c1a9c15e06ae9061eda226258";
-  cappedSTOFactoryAddress = "0x42090447c35b52936b810f1dfe297fd02e8083ad";
+  tickerRegistryAddress = "0x9ef6406929f4f4dfe03b4b8b8b78912ff50d1868";
+  securityTokenRegistryAddress = "0x08f1a443fbef32842fa28ffa6a8f2ace132966d3";
+  cappedSTOFactoryAddress = "0x99b5889581bed34ffeedbad4165c59d6c870cfd2";
 }else{
   tickerRegistryAddress = "0x81b361a0039f68294f49e0ac5ca059e9766a8ec7";
   securityTokenRegistryAddress = "0xa7af378af5bb73122466581715bf7e19fb30b7fb";
   cappedSTOFactoryAddress = "0x184fd04392374aec793b56e3fc4767b45324d354";
 }
 
-const tickerRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
-const securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
-const securityTokenABI          = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
+let tickerRegistryABI;
+let securityTokenRegistryABI;
+let securityTokenABI;
+let cappedSTOABI;
+try{
+  tickerRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
+  securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
+  securityTokenABI          = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
+  cappedSTOABI              = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
+}catch(err){
+  console.log('\x1b[31m%s\x1b[0m',"Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
+  return;
+}
+
+
 
 const Web3 = require('web3');
 
@@ -51,6 +63,7 @@ const tokenDetails = "This is a legit issuance...";
 let tickerRegistry;
 let securityTokenRegistry;
 let securityToken;
+let cappedSTO;
 
 // App flow
 let index_mainmenu;
@@ -67,6 +80,39 @@ async function executeApp() {
   accounts = await web3.eth.getAccounts();
   Issuer = accounts[0];
 
+  console.log(`
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(@(&&@@@@@@@@@@@@@@@@@@@@@@@@@@(((@&&&&(/@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(#(((((((#%%%#@@@@@@@@@@@@@@@@@@@@%##(((/@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(%(((((((((((#%%%%%@#@@@@@@@@@@@@(&#####@@@@@@@@%&
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&#((((((((((((((##%%%%%%%&&&%%##@%#####%(@@@@@@@#%#&
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(%((((((((((((((((((###%%%%%((#####%%%####@@@@@@@###((@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(#(((((((((((((((((((((####%%%#((((######%&%@@(##&###(@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(#((((((((((((((((((((((((####%%#(((((((#((((((((((((#(@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(%(((((((((((((((((((((((((((######%(((((((((((((#&(/@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&#(((((((((((((((((((((((((((((((###############(##%%#@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(#((((##############(((((((((((((((((###################%@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@(&#((#(##################((((((((((((((((((##%%##############@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@@/%#(((((((##%((((##############((((((((((((((((((##%%#############%%@@@@@@@@@@
+@@@@@@@@@@@@@@@@@@@@((((((((((###%%((((((##########(((((((((((((((((((#%%%############%%%#@@@@@@@@@
+@@@@@@@@@@@@@@@@@@%((((((((((####%%%((((((((#######(((((((((((####(((((@%%############%%%#@@@@@@@@@
+@@@@@@@@@####%%%%%#(((((((((#####%%%%(((((((((((###((((#######(((((((((&@@(&#########%%%%&@@@@@@@@@
+@@@@@@@@&(((#####%###(((((((#####%%%%%((((((((####%%%%%%%%&%@%#((((((((@@@@@@(#(####%%%%%%@@@@@@@@@
+@@@@@@@&(((@@@@@@@####(((((######%%%%%%##&########%%%%%#@@@@###(((((#(@@@@@@@@@@@###%%#@@@@@@@@@@@@
+@@@#%&%(((@@@@@@@@#####(((#######%%%%@@@@@@@@@@@((##@@@@@@@@%###((((/@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@#%%&%#@@@@@@@@@@############%%%%@@@@@@@@@@@@@@@@@@@@(@&&&&#####(#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@#%%%%%#((%%%%%%#@@@@@@@@@@@@@@@@@@@@(####%((((%#(@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@@&%%%#((((((%%&@@@@@@@@@@@@@@@@@@@@@@###%%#((@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@%%%%((((((((& @@@@@@@@@@@@@@@@@@@@@@@%%&%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@@%%(((((&#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@&((###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@@#####@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@@&####@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@&&%##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@&&&%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@@@@%##%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@@@@@@@@@@#%####%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+`)
+
   console.log("********************************************")
   console.log("Welcome to the Command-Line ST-20 Generator.");
   console.log("********************************************")
@@ -76,11 +122,19 @@ async function executeApp() {
 };
 
 async function setup(){
-  tickerRegistry = new web3.eth.Contract(tickerRegistryABI,tickerRegistryAddress);
-  tickerRegistry.setProvider(web3.currentProvider);
-  securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI,securityTokenRegistryAddress);
-  securityTokenRegistry.setProvider(web3.currentProvider);
+  try {
+    tickerRegistry = new web3.eth.Contract(tickerRegistryABI,tickerRegistryAddress);
+    tickerRegistry.setProvider(web3.currentProvider);
+    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI,securityTokenRegistryAddress);
+    securityTokenRegistry.setProvider(web3.currentProvider);
+  }catch(err){
+    console.log(err)
+    console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
+    return;
+  }
+
   createST20();
+
 }
 
 async function createST20() {
@@ -116,7 +170,7 @@ async function step_ticker_reg(){
         if(new BigNumber(result[1]).toNumber() == 0){
           available = true;
         }else if(result[0] == Issuer){
-          console.log('\x1b[31m%s\x1b[0m',"Token Symbol has already been registered by you, skipping registration");
+          console.log('\x1b[32m%s\x1b[0m',"Token Symbol has already been registered by you, skipping registration");
           available = true;
           alreadyRegistered = true;
         }else{
@@ -136,8 +190,8 @@ async function step_ticker_reg(){
       })
       .on('receipt', function(receipt){
         console.log(`
-          Congratulations! The transaction was successfully completed.\n
-          Review it on Etherscan.\n
+          Congratulations! The transaction was successfully completed.
+          Review it on Etherscan.
           TxHash: ${receipt.transactionHash}\n`
         );
       })
@@ -160,7 +214,7 @@ async function step_token_deploy(){
   // Let's check if token has already been deployed, if it has, skip to STO
   await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({from: Issuer}, function(error, result){
     if(result != "0x0000000000000000000000000000000000000000"){
-      console.log('\x1b[31m%s\x1b[0m',"Token has already been deployed at address "+result+". Skipping registration");
+      console.log('\x1b[32m%s\x1b[0m',"Token has already been deployed at address "+result+". Skipping registration");
       tokenDeployedAddress = result;
       tokenDeployed = true;
     }
@@ -186,9 +240,9 @@ async function step_token_deploy(){
       })
       .on('receipt', function(receipt){
         console.log(`
-          Congratulations! The transaction was successfully completed.\n
+          Congratulations! The transaction was successfully completed.
           Deployed Token at address: ${receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress}
-          Review it on Etherscan.\n
+          Review it on Etherscan.
           TxHash: ${receipt.transactionHash}\n`
         );
 
@@ -208,81 +262,118 @@ async function step_token_deploy(){
 async function step_STO_Launch(){
   let receipt;
 
-  // await securityToken.methods.symbol().call({from: Issuer}, function(error, result){
-  //     console.log("SYMBOL",result);
-  // });
+  let stoCreated = false;
+  await securityToken.methods.modules(3).call({from: Issuer}, function(error, result){
+    if(result.moduleAddress != "0x0000000000000000000000000000000000000000"){
+      console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address "+result.moduleAddress+". Skipping STO creation");
+      stoCreated = true;
+      cappedSTO = new web3.eth.Contract(cappedSTOABI,result.moduleAddress);
+    }
+  });
 
-  // if(_DEBUG){
-  //   securityToken = new web3.eth.Contract(securityTokenABI,"0x1dBC275B76117f3979a5E8fC900bCBBbdf6006F1");
-  // }
+  if(stoCreated){
+    let displayStartTime;
+    let displayEndTime;
+    let displayRate;
+    let displayCap;
+    let displayWallet;
 
-  console.log("\n");
-  console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in ETH)");
+    await cappedSTO.methods.startTime().call({from: Issuer}, function(error, result){
+      displayStartTime = result;
+    });
+    await cappedSTO.methods.endTime().call({from: Issuer}, function(error, result){
+      displayEndTime = result;
+    });
+    await cappedSTO.methods.rate().call({from: Issuer}, function(error, result){
+      displayRate = result;
+    });
+    await cappedSTO.methods.cap().call({from: Issuer}, function(error, result){
+      displayCap = result;
+    });
+    await cappedSTO.methods.wallet().call({from: Issuer}, function(error, result){
+      displayWallet = result;
+    });
 
-  startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 hour from now = '+(Math.floor(Date.now()/1000)+3600)+' ): ');
-  endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
-  cap =  readlineSync.question('Enter the cap (in ETH) for the STO (1000000): ');
-  rate =  readlineSync.question('Enter the rate (1 ETH = X ST) for the STO (1000): ');
-  wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
+    console.log(`
+      ***** STO Information *****
+      - Start Time: ${displayStartTime}
+      - End Time:   ${displayEndTime}
+      - Rate:       ${displayRate}
+      - Cap:        ${displayCap}
+      - Wallet:     ${displayWallet}
+    `);
 
-  if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+3600));
-  if(endTime == "") endTime = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
-  if(cap == "") cap = web3.utils.toWei('100000', 'ether');
-  if(rate == "") rate = BigNumber(1000);
-  if(wallet == "") wallet = Issuer;
+  }else{
+    console.log("\n");
+    console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in ETH)");
 
-  let bytesSTO = web3.eth.abi.encodeFunctionCall({
-      name: 'configure',
-      type: 'function',
-      inputs: [{
-          type: 'uint256',
-          name: '_startTime'
-      },{
-          type: 'uint256',
-          name: '_endTime'
-      },{
-          type: 'uint256',
-          name: '_cap'
-      },{
-          type: 'uint256',
-          name: '_rate'
-      },{
-          type: 'uint8',
-          name: '_fundRaiseType'
-      },{
-          type: 'address',
-          name: '_polyToken'
-      },{
-          type: 'address',
-          name: '_fundsReceiver'
-      }
-      ]
-  }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
+    startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 hour from now = '+(Math.floor(Date.now()/1000)+3600)+' ): ');
+    endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
+    cap =  readlineSync.question('Enter the cap (in ETH) for the STO (1000000): ');
+    rate =  readlineSync.question('Enter the rate (1 ETH = X ST) for the STO (1000): ');
+    wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
 
-  try{
-    await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0,0, false).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
-    .on('transactionHash', function(hash){
-      console.log(`
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`
-      );
-    })
-    .on('receipt', function(receipt){
-      console.log(`
-        Congratulations! The transaction was successfully completed.\n
-        STO deployed at address: ${receipt.events.LogModuleAdded.returnValues._module}
-        Review it on Etherscan.\n
-        TxHash: ${receipt.transactionHash}\n`
-      );
-    })
-    .on('error', console.error);
+    if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+3600));
+    if(endTime == "") endTime = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
+    if(cap == "") cap = web3.utils.toWei('100000', 'ether');
+    if(rate == "") rate = BigNumber(1000);
+    if(wallet == "") wallet = Issuer;
 
-    //console.log("aaa",receipt.logs[1].args._securityTokenAddress);
+    let bytesSTO = web3.eth.abi.encodeFunctionCall({
+        name: 'configure',
+        type: 'function',
+        inputs: [{
+            type: 'uint256',
+            name: '_startTime'
+        },{
+            type: 'uint256',
+            name: '_endTime'
+        },{
+            type: 'uint256',
+            name: '_cap'
+        },{
+            type: 'uint256',
+            name: '_rate'
+        },{
+            type: 'uint8',
+            name: '_fundRaiseType'
+        },{
+            type: 'address',
+            name: '_polyToken'
+        },{
+            type: 'address',
+            name: '_fundsReceiver'
+        }
+        ]
+    }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
 
-  }catch (err){
-    console.log(err.message);
-    return;
+    try{
+      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0,0, false).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+      .on('transactionHash', function(hash){
+        console.log(`
+          Your transaction is being processed. Please wait...
+          TxHash: ${hash}\n`
+        );
+      })
+      .on('receipt', function(receipt){
+        console.log(`
+          Congratulations! The transaction was successfully completed.
+          STO deployed at address: ${receipt.events.LogModuleAdded.returnValues._module}
+          Review it on Etherscan.
+          TxHash: ${receipt.transactionHash}\n`
+        );
+      })
+      .on('error', console.error);
+
+      //console.log("aaa",receipt.logs[1].args._securityTokenAddress);
+
+    }catch (err){
+      console.log(err.message);
+      return;
+    }
   }
+
+
 
   console.log("FINISHED");
 }

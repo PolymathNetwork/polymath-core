@@ -70,7 +70,7 @@ module.exports = async (deployer, network, accounts) => {
   console.log("\n")
   console.log("----- Polymath Core Contracts -----");
   console.log("*** Ticker Registry Address: ", tickerRegistry.address, "***");
-  console.log("*** Module Registry Address: ", moduleRegistry.address, "***");
+  //console.log("*** Module Registry Address: ", moduleRegistry.address, "***");
   console.log("*** Security Token Registry Address: ", securityTokenRegistry.address, "***");
   console.log("*** Capped STO Factory Address: ", cappedSTOFactory.address, "***");
   console.log("-----------------------------------");

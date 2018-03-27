@@ -7,9 +7,9 @@ let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = "0x9ef6406929f4f4dfe03b4b8b8b78912ff50d1868";
-  securityTokenRegistryAddress = "0x08f1a443fbef32842fa28ffa6a8f2ace132966d3";
-  cappedSTOFactoryAddress = "0x99b5889581bed34ffeedbad4165c59d6c870cfd2";
+  tickerRegistryAddress = "0x12abdfa1d13b47735bba040af62470b90f8c6599";
+  securityTokenRegistryAddress = "0x85368e5b84cd888f5a511c45f7b1e39bf53ac081";
+  cappedSTOFactoryAddress = "0x119ae65cf8d32ccbc4ab32df6f9548c1103b5f35";
 }else{
   tickerRegistryAddress = "0x81b361a0039f68294f49e0ac5ca059e9766a8ec7";
   securityTokenRegistryAddress = "0xa7af378af5bb73122466581715bf7e19fb30b7fb";
@@ -49,6 +49,7 @@ let endTime;
 let wallet;
 let rate;
 let cap;
+let issuerTokens;
 let minContribution;
 let maxContribution;
 
@@ -277,6 +278,7 @@ async function step_STO_Launch(){
     let displayRate;
     let displayCap;
     let displayWallet;
+    let displayIssuerTokens;
 
     await cappedSTO.methods.startTime().call({from: Issuer}, function(error, result){
       displayStartTime = result;
@@ -293,29 +295,35 @@ async function step_STO_Launch(){
     await cappedSTO.methods.wallet().call({from: Issuer}, function(error, result){
       displayWallet = result;
     });
+    await cappedSTO.methods.issuerTokens().call({from: Issuer}, function(error, result){
+      displayIssuerTokens = result;
+    });
 
     console.log(`
       ***** STO Information *****
-      - Start Time: ${displayStartTime}
-      - End Time:   ${displayEndTime}
-      - Rate:       ${displayRate}
-      - Cap:        ${displayCap}
-      - Wallet:     ${displayWallet}
+      - Raise Cap:       ${web3.utils.fromWei(displayCap,"ether")}
+      - Issuer's tokens: ${web3.utils.fromWei(displayIssuerTokens,"ether")}
+      - Start Time:      ${displayStartTime}
+      - End Time:        ${displayEndTime}
+      - Rate:            ${displayRate}
+      - Wallet:          ${displayWallet}
     `);
 
   }else{
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in ETH)");
 
+    cap =  readlineSync.question('How many tokens do you plan to sell on the STO? (500.000)');
+    issuerTokens =  readlineSync.question('How many tokens do you plan to issue to your name? (500.000)');
     startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 hour from now = '+(Math.floor(Date.now()/1000)+3600)+' ): ');
     endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
-    cap =  readlineSync.question('Enter the cap (in ETH) for the STO (1000000): ');
     rate =  readlineSync.question('Enter the rate (1 ETH = X ST) for the STO (1000): ');
     wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
 
     if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+3600));
     if(endTime == "") endTime = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
-    if(cap == "") cap = web3.utils.toWei('100000', 'ether');
+    if(cap == "") cap = '500000';
+    if(issuerTokens == "") issuerTokens = '500000';
     if(rate == "") rate = BigNumber(1000);
     if(wallet == "") wallet = Issuer;
 
@@ -328,6 +336,9 @@ async function step_STO_Launch(){
         },{
             type: 'uint256',
             name: '_endTime'
+        },{
+            type: 'uint256',
+            name: '_issuerTokens'
         },{
             type: 'uint256',
             name: '_cap'
@@ -345,7 +356,7 @@ async function step_STO_Launch(){
             name: '_fundsReceiver'
         }
         ]
-    }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
+    }, [startTime, endTime, web3.utils.toWei(issuerTokens, 'ether'), web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
 
     try{
       await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0,0, false).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})

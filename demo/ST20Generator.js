@@ -7,24 +7,26 @@ let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = "0x12abdfa1d13b47735bba040af62470b90f8c6599";
-  securityTokenRegistryAddress = "0x85368e5b84cd888f5a511c45f7b1e39bf53ac081";
-  cappedSTOFactoryAddress = "0x119ae65cf8d32ccbc4ab32df6f9548c1103b5f35";
+  tickerRegistryAddress = "0x84593134df341c8d1565ea1603f4dd36528284c8";
+  securityTokenRegistryAddress = "0xd8ff878d0b88a9289e1f71286a42d877fc83d752";
+  cappedSTOFactoryAddress = "0x07b2b00ab10f92f8cec29928a594259f7a26d4af";
 }else{
-  tickerRegistryAddress = "0x81b361a0039f68294f49e0ac5ca059e9766a8ec7";
-  securityTokenRegistryAddress = "0xa7af378af5bb73122466581715bf7e19fb30b7fb";
-  cappedSTOFactoryAddress = "0x184fd04392374aec793b56e3fc4767b45324d354";
+  tickerRegistryAddress = "";
+  securityTokenRegistryAddress = "";
+  cappedSTOFactoryAddress = "";
 }
 
 let tickerRegistryABI;
 let securityTokenRegistryABI;
 let securityTokenABI;
 let cappedSTOABI;
+let generalTransferManagerABI;
 try{
   tickerRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
   securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
   securityTokenABI          = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
   cappedSTOABI              = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
+  generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
 }catch(err){
   console.log('\x1b[31m%s\x1b[0m',"Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
   return;
@@ -313,19 +315,50 @@ async function step_STO_Launch(){
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in ETH)");
 
+    console.log("Before setting up the STO, you need to specify and whitelist the wallet that will get the issuer's tokens and the incoming funds from the STO:");
+    wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
+    if(wallet == "") wallet = Issuer;
+
+    try{
+      let generalTransferManagerAddress;
+      await securityToken.methods.modules(2).call({from: Issuer}, function(error, result){
+        generalTransferManagerAddress = result[1];
+      });
+
+      let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
+      await generalTransferManager.methods.modifyWhitelist(wallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000)).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+      .on('transactionHash', function(hash){
+        console.log(`
+          Adding wallet to whitelist. Please wait...
+          TxHash: ${hash}\n`
+        );
+      })
+      .on('receipt', function(receipt){
+        console.log(`
+          Congratulations! The transaction was successfully completed.
+          Review it on Etherscan.
+          TxHash: ${receipt.transactionHash}\n`
+        );
+        console.log(receipt.events.LogModifyWhitelist.returnValues);
+      })
+      .on('error', console.error);
+
+    }catch (err){
+      console.log(err.message);
+      return;
+    }
+
     cap =  readlineSync.question('How many tokens do you plan to sell on the STO? (500.000)');
     issuerTokens =  readlineSync.question('How many tokens do you plan to issue to your name? (500.000)');
     startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 hour from now = '+(Math.floor(Date.now()/1000)+3600)+' ): ');
     endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
     rate =  readlineSync.question('Enter the rate (1 ETH = X ST) for the STO (1000): ');
-    wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
 
     if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+3600));
     if(endTime == "") endTime = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
     if(cap == "") cap = '500000';
     if(issuerTokens == "") issuerTokens = '500000';
     if(rate == "") rate = BigNumber(1000);
-    if(wallet == "") wallet = Issuer;
 
     let bytesSTO = web3.eth.abi.encodeFunctionCall({
         name: 'configure',
@@ -373,6 +406,7 @@ async function step_STO_Launch(){
           Review it on Etherscan.
           TxHash: ${receipt.transactionHash}\n`
         );
+        console.log(receipt.events);
       })
       .on('error', console.error);
 

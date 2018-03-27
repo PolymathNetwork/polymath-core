@@ -28,9 +28,6 @@ contract CappedSTO is ISTO {
   // Amount of tokens sold
   uint256 public tokensSold;
 
-  //How many tokens will be reserved for the issuer specified wallet
-  uint public issuerTokens;
-
   //How many tokens this STO will be allowed to sell to investors
   uint256 public cap;
 
@@ -72,7 +69,10 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
       cap = _cap;
       rate = _rate;
       wallet = _fundsReceiver;
-      issuerTokens = _issuerTokens;
+
+      // Attempting to issue the tokens to the issuer specified wallet.
+      //This will fail if wallet has not been previously whitelisted
+      require(IST20(securityToken).mint(wallet, _issuerTokens));
 
       _check(_fundRaiseType, _polyToken);
   }
@@ -82,17 +82,6 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
   }
 
 //////////////////////////////////
-
-  /**
-   * @dev mints the tokens assigned to the issuer designated wallet.
-   * Make sure wallet is whitelisted before attempting to call this function
-   * wallet and issuer tokens were assigned on configuration and can't be modified
-   */
-  function mintIssuerTokensToWallet() public onlyOwner {
-    uint256 tokensToMint = issuerTokens;
-    issuerTokens = 0;
-    require(IST20(securityToken).mint(wallet, tokensToMint));
-  }
 
   /**
    * @dev fallback function ***DO NOT OVERRIDE***

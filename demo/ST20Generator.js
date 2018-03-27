@@ -7,9 +7,9 @@ let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = "0x84593134df341c8d1565ea1603f4dd36528284c8";
-  securityTokenRegistryAddress = "0xd8ff878d0b88a9289e1f71286a42d877fc83d752";
-  cappedSTOFactoryAddress = "0x07b2b00ab10f92f8cec29928a594259f7a26d4af";
+  tickerRegistryAddress = "0x75c32cd516bc6d6e12b92944179d08b6385e04f7";
+  securityTokenRegistryAddress = "0x8fdf3fb46c9a2e0fc45cbc0e72173672d3ee8c03";
+  cappedSTOFactoryAddress = "0x897640d3f794e12a1ba2bc87d6297936b7f059b0";
 }else{
   tickerRegistryAddress = "";
   securityTokenRegistryAddress = "";
@@ -297,14 +297,10 @@ async function step_STO_Launch(){
     await cappedSTO.methods.wallet().call({from: Issuer}, function(error, result){
       displayWallet = result;
     });
-    await cappedSTO.methods.issuerTokens().call({from: Issuer}, function(error, result){
-      displayIssuerTokens = result;
-    });
 
     console.log(`
       ***** STO Information *****
       - Raise Cap:       ${web3.utils.fromWei(displayCap,"ether")}
-      - Issuer's tokens: ${web3.utils.fromWei(displayIssuerTokens,"ether")}
       - Start Time:      ${displayStartTime}
       - End Time:        ${displayEndTime}
       - Rate:            ${displayRate}
@@ -315,18 +311,21 @@ async function step_STO_Launch(){
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in ETH)");
 
-    console.log("Before setting up the STO, you need to specify and whitelist the wallet that will get the issuer's tokens and the incoming funds from the STO:");
-    wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
-    if(wallet == "") wallet = Issuer;
+    console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control");
+    let mintWallet =  readlineSync.question('Add the address that will hold the issued tokens to the whitelist ('+Issuer+'): ');
+    if(mintWallet == "") mintWallet = Issuer;
 
     try{
+
+      // Add address to whitelist
+
       let generalTransferManagerAddress;
       await securityToken.methods.modules(2).call({from: Issuer}, function(error, result){
         generalTransferManagerAddress = result[1];
       });
 
       let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
-      await generalTransferManager.methods.modifyWhitelist(wallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000)).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+      await generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000)).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Adding wallet to whitelist. Please wait...
@@ -339,7 +338,27 @@ async function step_STO_Launch(){
           Review it on Etherscan.
           TxHash: ${receipt.transactionHash}\n`
         );
-        console.log(receipt.events.LogModifyWhitelist.returnValues);
+      })
+      .on('error', console.error);
+
+      // Mint tokens
+
+      issuerTokens =  readlineSync.question('How many tokens do you plan to mint for the wallet you entered? (500.000)');
+      if(issuerTokens == "") issuerTokens = '500000';
+
+      await securityToken.methods.mint(mintWallet,web3.utils.toWei(issuerTokens,"ether")).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+      .on('transactionHash', function(hash){
+        console.log(`
+          Minting tokens. Please wait...
+          TxHash: ${hash}\n`
+        );
+      })
+      .on('receipt', function(receipt){
+        console.log(`
+          Congratulations! The transaction was successfully completed.
+          Review it on Etherscan.
+          TxHash: ${receipt.transactionHash}\n`
+        );
       })
       .on('error', console.error);
 
@@ -349,16 +368,16 @@ async function step_STO_Launch(){
     }
 
     cap =  readlineSync.question('How many tokens do you plan to sell on the STO? (500.000)');
-    issuerTokens =  readlineSync.question('How many tokens do you plan to issue to your name? (500.000)');
     startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 hour from now = '+(Math.floor(Date.now()/1000)+3600)+' ): ');
     endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
     rate =  readlineSync.question('Enter the rate (1 ETH = X ST) for the STO (1000): ');
+    wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
 
     if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+3600));
     if(endTime == "") endTime = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
     if(cap == "") cap = '500000';
-    if(issuerTokens == "") issuerTokens = '500000';
     if(rate == "") rate = BigNumber(1000);
+    if(wallet == "") wallet = Issuer;
 
     let bytesSTO = web3.eth.abi.encodeFunctionCall({
         name: 'configure',
@@ -369,9 +388,6 @@ async function step_STO_Launch(){
         },{
             type: 'uint256',
             name: '_endTime'
-        },{
-            type: 'uint256',
-            name: '_issuerTokens'
         },{
             type: 'uint256',
             name: '_cap'
@@ -389,7 +405,7 @@ async function step_STO_Launch(){
             name: '_fundsReceiver'
         }
         ]
-    }, [startTime, endTime, web3.utils.toWei(issuerTokens, 'ether'), web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
+    }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
 
     try{
       await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0,0, false).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
@@ -406,7 +422,6 @@ async function step_STO_Launch(){
           Review it on Etherscan.
           TxHash: ${receipt.transactionHash}\n`
         );
-        console.log(receipt.events);
       })
       .on('error', console.error);
 

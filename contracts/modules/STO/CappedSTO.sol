@@ -50,7 +50,6 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
   function configure(
       uint256 _startTime,
       uint256 _endTime,
-      uint256 _issuerTokens,
       uint256 _cap,
       uint256 _rate,
       uint8 _fundRaiseType,
@@ -70,15 +69,11 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
       rate = _rate;
       wallet = _fundsReceiver;
 
-      // Attempting to issue the tokens to the issuer specified wallet.
-      //This will fail if wallet has not been previously whitelisted
-      require(IST20(securityToken).mint(wallet, _issuerTokens));
-
       _check(_fundRaiseType, _polyToken);
   }
 
   function getInitFunction() public returns (bytes4) {
-    return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint256,uint8,address,address)"));
+    return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8,address,address)"));
   }
 
 //////////////////////////////////

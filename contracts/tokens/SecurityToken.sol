@@ -145,7 +145,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     // Only STO module can call this, has a key of 3
-    function mint(address _investor, uint256 _amount) public /*onlyModule(3, true)*/ returns (bool success) {
+    function mint(address _investor, uint256 _amount) public onlyModule(3, true) returns (bool success) {
         require(verifyTransfer(address(0), _investor, _amount));
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);

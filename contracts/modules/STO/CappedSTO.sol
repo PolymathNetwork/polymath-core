@@ -89,7 +89,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
    * wallet and issuer tokens were assigned on configuration and can't be modified
    */
   function mintIssuerTokensToWallet() public onlyOwner {
-    uint tokensToMint = issuerTokens;
+    uint256 tokensToMint = issuerTokens;
     issuerTokens = 0;
     require(IST20(securityToken).mint(wallet, tokensToMint));
   }

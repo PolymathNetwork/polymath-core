@@ -7,9 +7,9 @@ let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = "0x9ef6406929f4f4dfe03b4b8b8b78912ff50d1868";
-  securityTokenRegistryAddress = "0x08f1a443fbef32842fa28ffa6a8f2ace132966d3";
-  cappedSTOFactoryAddress = "0x99b5889581bed34ffeedbad4165c59d6c870cfd2";
+  tickerRegistryAddress = "0x12abdfa1d13b47735bba040af62470b90f8c6599";
+  securityTokenRegistryAddress = "0x85368e5b84cd888f5a511c45f7b1e39bf53ac081";
+  cappedSTOFactoryAddress = "0x119ae65cf8d32ccbc4ab32df6f9548c1103b5f35";
 }else{
   tickerRegistryAddress = "0x81b361a0039f68294f49e0ac5ca059e9766a8ec7";
   securityTokenRegistryAddress = "0xa7af378af5bb73122466581715bf7e19fb30b7fb";
@@ -49,6 +49,7 @@ let endTime;
 let wallet;
 let rate;
 let cap;
+let issuerTokens;
 let minContribution;
 let maxContribution;
 
@@ -277,6 +278,7 @@ async function step_STO_Launch(){
     let displayRate;
     let displayCap;
     let displayWallet;
+    let displayIssuerTokens;
 
     await cappedSTO.methods.startTime().call({from: Issuer}, function(error, result){
       displayStartTime = result;
@@ -293,29 +295,35 @@ async function step_STO_Launch(){
     await cappedSTO.methods.wallet().call({from: Issuer}, function(error, result){
       displayWallet = result;
     });
+    await cappedSTO.methods.issuerTokens().call({from: Issuer}, function(error, result){
+      displayIssuerTokens = result;
+    });
 
     console.log(`
       ***** STO Information *****
-      - Start Time: ${displayStartTime}
-      - End Time:   ${displayEndTime}
-      - Rate:       ${displayRate}
-      - Cap:        ${displayCap}
-      - Wallet:     ${displayWallet}
+      - Raise Cap:       ${web3.utils.fromWei(displayCap,"ether")}
+      - Issuer's tokens: ${web3.utils.fromWei(displayIssuerTokens,"ether")}
+      - Start Time:      ${displayStartTime}
+      - End Time:        ${displayEndTime}
+      - Rate:            ${displayRate}
+      - Wallet:          ${displayWallet}
     `);
 
   }else{
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in ETH)");
 
+    cap =  readlineSync.question('How many tokens do you plan to sell on the STO? (500.000)');
+    issuerTokens =  readlineSync.question('How many tokens do you plan to issue to your name? (500.000)');
     startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 hour from now = '+(Math.floor(Date.now()/1000)+3600)+' ): ');
     endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
-    cap =  readlineSync.question('Enter the cap (in ETH) for the STO (1000000): ');
     rate =  readlineSync.question('Enter the rate (1 ETH = X ST) for the STO (1000): ');
     wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
 
     if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+3600));
     if(endTime == "") endTime = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
-    if(cap == "") cap = web3.utils.toWei('100000', 'ether');
+    if(cap == "") cap = '500000';
+    if(issuerTokens == "") issuerTokens = '500000';
     if(rate == "") rate = BigNumber(1000);
     if(wallet == "") wallet = Issuer;
 
@@ -328,6 +336,9 @@ async function step_STO_Launch(){
         },{
             type: 'uint256',
             name: '_endTime'
+        },{
+            type: 'uint256',
+            name: '_issuerTokens'
         },{
             type: 'uint256',
             name: '_cap'
@@ -345,7 +356,7 @@ async function step_STO_Launch(){
             name: '_fundsReceiver'
         }
         ]
-    }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
+    }, [startTime, endTime, web3.utils.toWei(issuerTokens, 'ether'), web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
 
     try{
       await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0,0, false).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
@@ -373,137 +384,7 @@ async function step_STO_Launch(){
     }
   }
 
-
-
   console.log("FINISHED");
-}
-
-/////////
-
-async function step_other(){
-  console.log("\n");
-  console.log('\x1b[34m%s\x1b[0m',"Token Creation - Step 1: Token Name");
-  tokenName =  readlineSync.question('Enter a name for your new token: ');
-  console.log("You entered: ", tokenName, "\n");
-
-  console.log('\x1b[34m%s\x1b[0m',"Token Creation - Step 2: Token Symbol");
-  tokenSymbol =  readlineSync.question('Enter a symbol for '+tokenName+': ');
-  console.log("You entered: ", tokenSymbol, "\n");
-
-  console.log('\x1b[34m%s\x1b[0m',"Token Creation - Step 3: Decimals");
-  tokenDecimals =  readlineSync.questionInt('How many decimals will '+tokenName+' token ('+tokenSymbol+')'+' have?: ');
-  console.log("You entered: ", tokenDecimals, "\n");
-
-  console.log('\x1b[43m%s\x1b[0m',tokenName + ' token ('+tokenSymbol+') ' + 'with '+ tokenDecimals +' decimals will be used for the ICO.');
-  console.log("\n");
-
-  /////////////
-  // Start Date
-
-  console.log('\x1b[34m%s\x1b[0m',"ICO Creation - Step 1: Start date");
-  startTime =  readlineSync.question('Choose a start date for the crowdsale: ');
-  console.log("You chose: ", startTime, "\n");
-
-  ///////////
-  // End Date
-
-  var options_endTime = {limit: function(input) {
-    return (startTime <= parseInt(input));
-  },limitMessage: "Please enter an end time later than the start time"};
-
-  console.log('\x1b[34m%s\x1b[0m',"ICO Creation - Step 2: End date");
-  endTime =  readlineSync.question('Choose an end date for the crowdsale: ',options_endTime);
-  console.log("You chose: ", endTime, "\n");
-
-  /////////
-  // Wallet
-
-  console.log('\x1b[34m%s\x1b[0m',"ICO Creation - Step 3: Wallet address");
-  wallet =  readlineSync.question('Enter an ETH address to be used as wallet (funds will be transferred to this account): ');
-  console.log("You chose: ", wallet, "\n");
-
-  /////////
-  // Rate
-
-  console.log('\x1b[34m%s\x1b[0m',"ICO Creation - Step 4: ETH to " + tokenSymbol + " exchange rate.");
-  rate =  readlineSync.questionInt('Enter the exchange rate for your token (1 ETH = x '+ tokenSymbol+ '): ');
-  console.log("Each 1 ETH will yield "+ rate +" "+ tokenSymbol + "\n");
-
-  ////////////
-  // ICO Token Cap
-
-  console.log('\x1b[34m%s\x1b[0m',"ICO Creation - Step 5: Token Cap");
-  tokenCap =  readlineSync.questionInt('What will be the maximum tokens to be minted? (Token Cap): ');
-  tokenCap = tokenCap * 10 ** tokenDecimals;
-  console.log("The ICO will mint and distribute a maximum of " + tokenCap + " tokens.\n");
-
-  ///////////////////
-  // Min contribution
-
-  console.log('\x1b[34m%s\x1b[0m',"ICO Creation - Step 6: Minimum allowed contribution");
-  minContribution =  readlineSync.questionFloat('What will be the minimum possible contribution? (in ether) ');
-  console.log("The minimum allowed contribution will be " + minContribution + " ether.\n");
-
-  ///////////////////
-  // Max contribution
-
-  var options_maxContrib = {limit: function(input) {
-    return (minContribution < parseFloat(input));
-  },limitMessage: "Please enter a maximum contribution higher than the minimum contribution."};
-
-
-  console.log('\x1b[34m%s\x1b[0m',"ICO Creation - Step 7: Maximum allowed contribution");
-  maxContribution =  readlineSync.question('What will be the maximum possible contribution? (in wei) ',options_maxContrib);
-  console.log("The maximum allowed contribution will be " + maxContribution + " wei.\n");
-
-  if(_DEBUG){
-    startTime = Math.floor(new Date().getTime() /1000);
-    endTime = Math.floor(new Date().getTime() /1000 + (3600 * 24 * 30));
-
-    console.log('\x1b[31m%s\x1b[0m',"Warning: Debugging is activated. Start and End dates have been modified");
-  }
-
-  console.log("----------------------------------------------------");
-  console.log('\x1b[34m%s\x1b[0m',"Please review the information you entered:");
-  console.log("Token name: ", tokenName);
-  console.log("Token symbol: ", tokenSymbol);
-  console.log("Token decimals: ", tokenDecimals);
-  console.log("Start date: ", startTime);
-  console.log("End date: ", endTime);
-  console.log("Wallet: ", wallet);
-  console.log("Exchange rate: ", rate);
-  console.log("Token Cap: ", tokenCap);
-  console.log("Minimum contribution (in ether): ", minContribution);
-  console.log("Maximum contribution (in ether): ", maxContribution);
-  console.log("----------------------------------------------------");
-  // ICO creation
-
-  let token;
-
-  // try{
-  //
-  //   crowdsaleGenerator = await CrowdsaleGenerator.new(
-  //     startTime, endTime, wallet, rate,
-  //     tokenCap, web3.utils.toWei(minContribution.toString(10),"ether"),
-  //     web3.utils.toWei(maxContribution.toString(10),"ether"),
-  //     tokenName, tokenSymbol, tokenDecimals,
-  //     {from:accounts[0],gas:4000000});
-  //
-  //   let tokenAddress = await crowdsaleGenerator.token({from:accounts[0],gas:2000000});
-  //   token = await TokenGenerator.at(tokenAddress);
-  //
-  //   console.log("\n")
-  //   console.log('\x1b[42m%s\x1b[0m',"Congratulations! The ICO was successfully generated.")
-  //   console.log('\x1b[43m%s\x1b[0m',"ICO Address: " + crowdsaleGenerator.address.valueOf());
-  //   console.log('\x1b[43m%s\x1b[0m',"TOKEN Address: "+ token.address.valueOf());
-  //
-  // } catch (err){
-  //   console.log(err);
-  // }
-}
-
-function timeout(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 executeApp();

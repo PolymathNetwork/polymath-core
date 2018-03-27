@@ -9,7 +9,7 @@ contract CappedSTO is ISTO {
 
   bytes32 public ADMIN = "ADMIN";
 
-  // Address where funds are collected
+  // Address where funds are collected and tokens are issued to
   address public wallet;
 
   // How many token units a buyer gets per wei
@@ -25,7 +25,13 @@ contract CappedSTO is ISTO {
   // End time of the STO
   uint256 public endTime;
 
-  //How much funding this STO will be allowed to raise
+  // Amount of tokens sold
+  uint256 public tokensSold;
+
+  //How many tokens will be reserved for the issuer specified wallet
+  uint public issuerTokens;
+
+  //How many tokens this STO will be allowed to sell to investors
   uint256 public cap;
 
   mapping (address => uint256) public investors;
@@ -47,6 +53,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
   function configure(
       uint256 _startTime,
       uint256 _endTime,
+      uint256 _issuerTokens,
       uint256 _cap,
       uint256 _rate,
       uint8 _fundRaiseType,
@@ -65,14 +72,27 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
       cap = _cap;
       rate = _rate;
       wallet = _fundsReceiver;
+      issuerTokens = _issuerTokens;
+
       _check(_fundRaiseType, _polyToken);
   }
 
   function getInitFunction() public returns (bytes4) {
-    return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8,address,address)"));
+    return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint256,uint8,address,address)"));
   }
 
 //////////////////////////////////
+
+  /**
+   * @dev mints the tokens assigned to the issuer designated wallet.
+   * Make sure wallet is whitelisted before attempting to call this function
+   * wallet and issuer tokens were assigned on configuration and can't be modified
+   */
+  function mintIssuerTokensToWallet() public onlyOwner {
+    uint256 tokensToMint = issuerTokens;
+    issuerTokens = 0;
+    require(IST20(securityToken).mint(wallet, tokensToMint));
+  }
 
   /**
    * @dev fallback function ***DO NOT OVERRIDE***
@@ -125,6 +145,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
 
     // update state
     fundsRaised = fundsRaised.add(_investedAmount);
+    tokensSold = tokensSold.add(tokens);
 
     _processPurchase(_beneficiary, tokens);
     TokenPurchase(msg.sender, _beneficiary, _investedAmount, tokens);
@@ -140,7 +161,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
   function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal {
     require(_beneficiary != address(0));
     require(_investedAmount != 0);
-    require(fundsRaised.add(_investedAmount) <= cap);
+    require(tokensSold.add(_getTokenAmount(_investedAmount)) <= cap);
     require(now >= startTime && now <= endTime);
   }
 

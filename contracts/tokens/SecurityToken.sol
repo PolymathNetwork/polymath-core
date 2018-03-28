@@ -71,8 +71,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         //owner = _owner;
     }
 
-    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) external {
-        require(msg.sender == owner);
+    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) external onlyOwner {
         _addModule(_moduleFactory, _data, _maxCost, _budget, _replaceable);
     }
 
@@ -106,6 +105,12 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         modules[moduleFactory.getType()] = ModuleData(moduleFactory.getName(), module, _replaceable);
         //Emit log event
         LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
+    }
+
+    function removeModule(uint8 _moduleType) external onlyOwner {
+        require(modules[_moduleType].moduleAddress != address(0));
+        require(modules[_moduleType].replaceable);
+        modules[_moduleType] = ModuleData("", address(0), false);
     }
 
     function withdrawPoly(uint256 _amount) public onlyOwner {

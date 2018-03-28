@@ -97,15 +97,14 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
 
   /**
     * @dev low level token purchase
-    * @param _beneficiary Address performing the token purchase
     * @param _investedPOLY Amount of POLY invested
     */
-  function buyTokensWithPoly(address _beneficiary, uint256 _investedPOLY) public {
+  function buyTokensWithPoly(uint256 _investedPOLY) public {
        require(uint(fundraiseType) == 1);
-       verifyInvestment(_beneficiary, _investedPOLY);
-      _processTx(_beneficiary, _investedPOLY);
-      _forwardPoly(_beneficiary, wallet, _investedPOLY);
-      _postValidatePurchase(_beneficiary, _investedPOLY);
+       require(verifyInvestment(msg.sender, _investedPOLY));
+      _processTx(msg.sender, _investedPOLY);
+      _forwardPoly(msg.sender, wallet, _investedPOLY);
+      _postValidatePurchase(msg.sender, _investedPOLY);
   }
 
    // -----------------------------------------
@@ -210,11 +209,17 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
   }
 
   function getRaiseEther() view public returns (uint256) {
-    return 0;
+    if (uint(fundraiseType) == 0)
+      return fundsRaised;
+    else
+      return 0;
   }
 
   function getRaisePOLY() view public returns (uint256) {
-    return 0;
+    if (uint(fundraiseType) == 1)
+      return fundsRaised;
+    else
+      return 0;
   }
 
   function getNumberInvestors() view public returns (uint256) {

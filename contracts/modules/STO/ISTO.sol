@@ -25,7 +25,7 @@ contract ISTO is IModule {
     }
 
     function verifyInvestment(address _beneficiary, uint256 _fundsAmount) view public returns(bool) {
-        return ERC20(polyAddress).allowance(this, _beneficiary) >= _fundsAmount;
+        return ERC20(polyAddress).allowance(_beneficiary, address(this)) >= _fundsAmount;
     }
 
     function getRaiseEther() public view returns (uint256);

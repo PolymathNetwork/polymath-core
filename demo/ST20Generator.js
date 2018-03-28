@@ -1,30 +1,32 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
 
-let _GANACHE_CONTRACTS = true;
+let _GANACHE_CONTRACTS = false;
 let tickerRegistryAddress;
 let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = "0x12abdfa1d13b47735bba040af62470b90f8c6599";
-  securityTokenRegistryAddress = "0x85368e5b84cd888f5a511c45f7b1e39bf53ac081";
-  cappedSTOFactoryAddress = "0x119ae65cf8d32ccbc4ab32df6f9548c1103b5f35";
+  tickerRegistryAddress = "0x0a8763f6df4509e5b468bf22b209e113d5739309";
+  securityTokenRegistryAddress = "0xf0bbe423a0b51dd402c611cc711df89e46a64144";
+  cappedSTOFactoryAddress = "0x7a1d2a93b5bf9698b8ad1c5af00d4ed6d4dc9a17";
 }else{
-  tickerRegistryAddress = "0x81b361a0039f68294f49e0ac5ca059e9766a8ec7";
-  securityTokenRegistryAddress = "0xa7af378af5bb73122466581715bf7e19fb30b7fb";
-  cappedSTOFactoryAddress = "0x184fd04392374aec793b56e3fc4767b45324d354";
+  tickerRegistryAddress = "0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27";
+  securityTokenRegistryAddress = "0x6958fca8a4cd4418a5cf9ae892d1a488e8af518f";
+  cappedSTOFactoryAddress = "0x128674eeb1c26d59a27ec58e9a76142e55bade2d";
 }
 
 let tickerRegistryABI;
 let securityTokenRegistryABI;
 let securityTokenABI;
 let cappedSTOABI;
+let generalTransferManagerABI;
 try{
   tickerRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
   securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
   securityTokenABI          = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
   cappedSTOABI              = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
+  generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
 }catch(err){
   console.log('\x1b[31m%s\x1b[0m',"Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
   return;
@@ -257,6 +259,83 @@ async function step_token_deploy(){
     }
   }
 
+  await step_Wallet_Issuance();
+}
+
+async function step_Wallet_Issuance(){
+
+  let initialMint;
+  await securityToken.getPastEvents('Transfer', {
+    filter: {from: "0x0000000000000000000000000000000000000000"}, // Using an array means OR: e.g. 20 or 23
+    fromBlock: 0,
+    toBlock: 'latest'
+  }, function(error, events){
+    initialMint = events;
+  });
+
+  if(initialMint.length > 0){
+    console.log('\x1b[32m%s\x1b[0m',web3.utils.fromWei(initialMint[0].returnValues.value,"ether") +" Tokens have already been minted for "+initialMint[0].returnValues.to+". Skipping initial minting");
+  }else{
+    console.log("\n");
+    console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Minting for Issuer");
+
+    console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control");
+    let mintWallet =  readlineSync.question('Add the address that will hold the issued tokens to the whitelist ('+Issuer+'): ');
+    if(mintWallet == "") mintWallet = Issuer;
+
+    try{
+
+      // Add address to whitelist
+
+      let generalTransferManagerAddress;
+      await securityToken.methods.modules(2).call({from: Issuer}, function(error, result){
+        generalTransferManagerAddress = result[1];
+      });
+
+      let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
+      await generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000)).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+      .on('transactionHash', function(hash){
+        console.log(`
+          Adding wallet to whitelist. Please wait...
+          TxHash: ${hash}\n`
+        );
+      })
+      .on('receipt', function(receipt){
+        console.log(`
+          Congratulations! The transaction was successfully completed.
+          Review it on Etherscan.
+          TxHash: ${receipt.transactionHash}\n`
+        );
+      })
+      .on('error', console.error);
+
+      // Mint tokens
+
+      issuerTokens =  readlineSync.question('How many tokens do you plan to mint for the wallet you entered? (500.000): ');
+      if(issuerTokens == "") issuerTokens = '500000';
+
+      await securityToken.methods.mint(mintWallet,web3.utils.toWei(issuerTokens,"ether")).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+      .on('transactionHash', function(hash){
+        console.log(`
+          Minting tokens. Please wait...
+          TxHash: ${hash}\n`
+        );
+      })
+      .on('receipt', function(receipt){
+        console.log(`
+          Congratulations! The transaction was successfully completed.
+          Review it on Etherscan.
+          TxHash: ${receipt.transactionHash}\n`
+        );
+      })
+      .on('error', console.error);
+
+    }catch (err){
+      console.log(err.message);
+      return;
+    }
+  }
+
   await step_STO_Launch();
 }
 
@@ -295,14 +374,10 @@ async function step_STO_Launch(){
     await cappedSTO.methods.wallet().call({from: Issuer}, function(error, result){
       displayWallet = result;
     });
-    await cappedSTO.methods.issuerTokens().call({from: Issuer}, function(error, result){
-      displayIssuerTokens = result;
-    });
 
     console.log(`
       ***** STO Information *****
       - Raise Cap:       ${web3.utils.fromWei(displayCap,"ether")}
-      - Issuer's tokens: ${web3.utils.fromWei(displayIssuerTokens,"ether")}
       - Start Time:      ${displayStartTime}
       - End Time:        ${displayEndTime}
       - Rate:            ${displayRate}
@@ -314,16 +389,14 @@ async function step_STO_Launch(){
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in ETH)");
 
     cap =  readlineSync.question('How many tokens do you plan to sell on the STO? (500.000)');
-    issuerTokens =  readlineSync.question('How many tokens do you plan to issue to your name? (500.000)');
-    startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 hour from now = '+(Math.floor(Date.now()/1000)+3600)+' ): ');
+    startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(5 minutes from now = '+(Math.floor(Date.now()/1000)+300)+' ): ');
     endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
     rate =  readlineSync.question('Enter the rate (1 ETH = X ST) for the STO (1000): ');
     wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
 
-    if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+3600));
+    if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+300));
     if(endTime == "") endTime = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
     if(cap == "") cap = '500000';
-    if(issuerTokens == "") issuerTokens = '500000';
     if(rate == "") rate = BigNumber(1000);
     if(wallet == "") wallet = Issuer;
 
@@ -336,9 +409,6 @@ async function step_STO_Launch(){
         },{
             type: 'uint256',
             name: '_endTime'
-        },{
-            type: 'uint256',
-            name: '_issuerTokens'
         },{
             type: 'uint256',
             name: '_cap'
@@ -356,7 +426,7 @@ async function step_STO_Launch(){
             name: '_fundsReceiver'
         }
         ]
-    }, [startTime, endTime, web3.utils.toWei(issuerTokens, 'ether'), web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
+    }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
 
     try{
       await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0,0, false).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})

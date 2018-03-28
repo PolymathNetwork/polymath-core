@@ -1,7 +1,7 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
 
-let _GANACHE_CONTRACTS = true;
+let _GANACHE_CONTRACTS = false;
 let tickerRegistryAddress;
 let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
@@ -11,9 +11,9 @@ if(_GANACHE_CONTRACTS){
   securityTokenRegistryAddress = "0xf0bbe423a0b51dd402c611cc711df89e46a64144";
   cappedSTOFactoryAddress = "0x7a1d2a93b5bf9698b8ad1c5af00d4ed6d4dc9a17";
 }else{
-  tickerRegistryAddress = "";
-  securityTokenRegistryAddress = "";
-  cappedSTOFactoryAddress = "";
+  tickerRegistryAddress = "0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27";
+  securityTokenRegistryAddress = "0x6958fca8a4cd4418a5cf9ae892d1a488e8af518f";
+  cappedSTOFactoryAddress = "0x128674eeb1c26d59a27ec58e9a76142e55bade2d";
 }
 
 let tickerRegistryABI;
@@ -311,7 +311,7 @@ async function step_Wallet_Issuance(){
 
       // Mint tokens
 
-      issuerTokens =  readlineSync.question('How many tokens do you plan to mint for the wallet you entered? (500.000)');
+      issuerTokens =  readlineSync.question('How many tokens do you plan to mint for the wallet you entered? (500.000): ');
       if(issuerTokens == "") issuerTokens = '500000';
 
       await securityToken.methods.mint(mintWallet,web3.utils.toWei(issuerTokens,"ether")).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
@@ -327,7 +327,6 @@ async function step_Wallet_Issuance(){
           Review it on Etherscan.
           TxHash: ${receipt.transactionHash}\n`
         );
-        console.log(receipt.events);
       })
       .on('error', console.error);
 

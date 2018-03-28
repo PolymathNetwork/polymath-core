@@ -7,9 +7,9 @@ let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).networks[15].address;
-  securityTokenRegistryAddress = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).networks[15].address;
-  cappedSTOFactoryAddress = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).networks[15].address;
+  tickerRegistryAddress = '0x73f27670bd70ca02adda4c43c8e786efd7d5303e';
+  securityTokenRegistryAddress = '0x97a20bb29b529b282147514738a67e78f209a696';
+  cappedSTOFactoryAddress = '0x413bdb89a70b6bf5017a12a0ca9f4d8c19eb9f30';
 }else{
   tickerRegistryAddress = "0x81b361a0039f68294f49e0ac5ca059e9766a8ec7";
   securityTokenRegistryAddress = "0xa7af378af5bb73122466581715bf7e19fb30b7fb";

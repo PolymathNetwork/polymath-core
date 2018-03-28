@@ -229,14 +229,14 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
     return fundsRaised >= cap;
   }
 
-  function getRaiseEther() view public returns (uint256) {
+  function getRaisedEther() view public returns (uint256) {
     if (uint(fundraiseType) == 0)
       return fundsRaised;
     else
       return 0;
   }
 
-  function getRaisePOLY() view public returns (uint256) {
+  function getRaisedPOLY() view public returns (uint256) {
     if (uint(fundraiseType) == 1)
       return fundsRaised;
     else

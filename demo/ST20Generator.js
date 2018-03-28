@@ -1,15 +1,15 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
 
-let _GANACHE_CONTRACTS = false;
+let _GANACHE_CONTRACTS = true;
 let tickerRegistryAddress;
 let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = "0x0a8763f6df4509e5b468bf22b209e113d5739309";
-  securityTokenRegistryAddress = "0xf0bbe423a0b51dd402c611cc711df89e46a64144";
-  cappedSTOFactoryAddress = "0x7a1d2a93b5bf9698b8ad1c5af00d4ed6d4dc9a17";
+  tickerRegistryAddress = "0xadf0e80e632f08717a45def3a95485a1ee39aa5b";
+  securityTokenRegistryAddress = "0x85d6d5e1c98d201042fad2e304b262bfd129159c";
+  cappedSTOFactoryAddress = "0xfe7f2239a60cbaebc3093107ef47fcfda0e50817";
 }else{
   tickerRegistryAddress = "0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27";
   securityTokenRegistryAddress = "0x6958fca8a4cd4418a5cf9ae892d1a488e8af518f";
@@ -226,6 +226,10 @@ async function step_token_deploy(){
 
   if(tokenDeployed){
     securityToken = new web3.eth.Contract(securityTokenABI,tokenDeployedAddress);
+
+    await securityToken.methods.modules(2).call({from: Issuer}, function(error, result){
+      console.log(result);
+    });
   }else{
     let receipt;
 

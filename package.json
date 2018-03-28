@@ -51,6 +51,7 @@
     "zeppelin-solidity": "1.7.0"
   },
   "devDependencies": {
+    "fast-csv": "^2.4.1",
     "ganache-cli": "^6.1.0",
     "sol-merger": "^0.1.2",
     "truffle": "^4.1.3",

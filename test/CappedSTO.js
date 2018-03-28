@@ -77,7 +77,6 @@ contract('CappedSTO', accounts => {
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
     const fundRaiseType = 0;
-    const issuerTokens = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const P_cap = new BigNumber(50000).times(new BigNumber(10).pow(18));
     const P_fundRaiseType = 1;
     const P_rate = 5;
@@ -92,9 +91,6 @@ contract('CappedSTO', accounts => {
         },{
             type: 'uint256',
             name: '_endTime'
-        },{
-            type: 'uint256',
-            name: '_issuerTokens'
         },{
             type: 'uint256',
             name: '_cap'
@@ -288,7 +284,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to launch the STO due to rate is 0", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, issuerTokens, cap, 0, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
 
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
@@ -299,7 +295,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to launch the STO due to startTime > endTime", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), issuerTokens, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
 
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
@@ -310,7 +306,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to launch the STO due to cap is of 0 securityToken", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, issuerTokens, 0, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
 
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
@@ -322,7 +318,7 @@ contract('CappedSTO', accounts => {
 
 
         it("Should successfully attach the STO factory with the security token", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, issuerTokens, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
   
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
 
@@ -531,37 +527,6 @@ contract('CappedSTO', accounts => {
         });
 
     });
-    describe("Mint Issuers own tokens", async() => {
-
-        it("Should fail to call mintIssuerTokensToWallet", async() => {
-            try {
-                await I_CappedSTO.mintIssuerTokensToWallet({ from : accounts[8]});
-            } catch (error) {
-                console.log(`msg.sender should be the token owner`);
-                ensureException(error);
-            }
-        });
-
-        it('should successfully mint the issuer tokens', async() => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
-                account_fundsReceiver,
-                fromTime,
-                toTime + duration.days(20),
-                {
-                    from: account_issuer,
-                    gas: 500000
-                });
-
-            assert.equal(tx.logs[0].args._investor, account_fundsReceiver, "Failed in adding the investor in whitelist");
-
-            await I_CappedSTO.mintIssuerTokensToWallet({ from : token_owner });
-            assert.equal(
-                (await I_SecurityToken.balanceOf(account_fundsReceiver)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
-                issuerTokens.dividedBy(new BigNumber(10).pow(18)).toNumber(),
-                "Failure in minting the Issuers tokens"
-            );
-        });
-    });
 
     describe("Test Cases for an STO of fundraise type POLY", async() => {
         
@@ -617,7 +582,7 @@ contract('CappedSTO', accounts => {
              });
 
              it("POLY: Should successfully attach the STO factory with the security token", async () => {
-                let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [P_startTime, P_endTime, issuerTokens, P_cap, P_rate, P_fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+                let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [P_startTime, P_endTime, P_cap, P_rate, P_fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
         
                 const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
     

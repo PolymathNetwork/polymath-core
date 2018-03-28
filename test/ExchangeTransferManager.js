@@ -255,7 +255,7 @@ contract('ExchangeTransferManager', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = await I_SecurityToken.modules(2);
+           let moduleData = await I_SecurityToken.modules(2, 0);
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
 
            assert.notEqual(
@@ -264,7 +264,7 @@ contract('ExchangeTransferManager', accounts => {
             "GeneralTransferManager contract was not deployed",
            );
 
-           moduleData = await I_SecurityToken.modules(1);
+           moduleData = await I_SecurityToken.modules(1, 0);
            I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
 
            assert.notEqual(
@@ -334,15 +334,12 @@ contract('ExchangeTransferManager', accounts => {
               type: 'function',
               inputs: [{
                   type: 'address',
-                  name: '_transferManager'
-              },{
-                  type: 'address',
                   name: '_exchange'
               }
               ]
-          }, [I_GeneralTransferManager.address, account_exchange]);
+          }, [account_exchange]);
 
-          const tx = await I_SecurityToken.addModule(I_ExchangeTransferManagerFactory.address, bytesExchange, 0, 0, false, { from: token_owner });
+          const tx = await I_SecurityToken.addModule(I_ExchangeTransferManagerFactory.address, bytesExchange, 0, 0, true, { from: token_owner });
           assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "ExchangeTransferManager doesn't get deployed");
           assert.equal(
               web3.utils.toAscii(tx.logs[2].args._name)
@@ -353,7 +350,7 @@ contract('ExchangeTransferManager', accounts => {
           I_ExchangeTransferManager = ExchangeTransferManager.at(tx.logs[2].args._module);
         });
 
-        it("Existing investor should be able to transfer tokens", async() => {
+        it("Existing investor should still be able to receive tokens", async() => {
 
             await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
 
@@ -365,22 +362,22 @@ contract('ExchangeTransferManager', accounts => {
 
         it("New investor should not be able to transfer tokens", async() => {
           try {
-              await I_DummySTO.generateTokens(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner });
+              await I_SecurityToken.transfer(account_exchange, web3.utils.toWei('1', 'ether'), {from: account_investor1});
+              // await I_DummySTO.generateTokens(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner });
           } catch(error) {
               console.log(`Failed because investor isn't present in the whitelist`);
               ensureException(error);
           }
         });
 
-        it("Add both investors to exchange whitelist", async() => {
+        it("Add new investor to exchange whitelist", async() => {
 
           await I_ExchangeTransferManager.modifyWhitelist(account_investor1, true, {from: account_polymath});
-          await I_ExchangeTransferManager.modifyWhitelist(account_investor2, true, {from: account_polymath});
 
-          await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
+          await I_SecurityToken.transfer(account_exchange, web3.utils.toWei('1', 'ether'), {from: account_investor1});
 
           assert.equal(
-              (await I_SecurityToken.balanceOf(account_investor2)).toNumber(),
+              (await I_SecurityToken.balanceOf(account_exchange)).toNumber(),
               web3.utils.toWei('1', 'ether')
           );
 

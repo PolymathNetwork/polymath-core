@@ -11,8 +11,6 @@ import './ITransferManager.sol';
 
 contract ExchangeTransferManager is ITransferManager {
 
-    //Address from which issuances come
-    address public transferManager;
     address public exchange;
     mapping (address => bool) public whitelist;
 
@@ -24,31 +22,24 @@ contract ExchangeTransferManager is ITransferManager {
     {
     }
 
-    function configure(address _transferManager, address _exchange) public onlyFactory {
-        transferManager = _transferManager;
+    function configure(address _exchange) public onlyFactory {
         exchange = _exchange;
     }
 
     function getInitFunction() public returns(bytes4) {
-        return bytes4(keccak256("configure(address,address)"));
+        return bytes4(keccak256("configure(address)"));
     }
 
     function verifyTransfer(address _from, address _to, uint256 _amount) view external returns(bool) {
-        //Anyone can transfer if they are on the attached TransferManager, or this TransferManager allows it
-        //Allow users to not set another transferManager if they don't want to
-        if (transferManager != address(0)) {
-          if (ITransferManager(transferManager).verifyTransfer(_from, _to, _amount)) {
-            return true;
-          }
-        }
-        return getExchangePermission(_from) && getExchangePermission(_to);
+        //Transfer must be from / to the exchange
+        require((_from == exchange) || (_to == exchange));
+        return getExchangePermission(_from) || getExchangePermission(_to);
     }
 
     function getExchangePermission(address _investor) view internal returns (bool) {
         //This function could implement more complex logic, e.g. calling out to another contract maintained by the exchange to get list of allowed users
-        return whitelist[_investor] || (_investor == exchange);
+        return whitelist[_investor];
     }
-
 
     function modifyWhitelist(address _investor, bool _valid) public onlyFactoryOwner {
         whitelist[_investor] = _valid;

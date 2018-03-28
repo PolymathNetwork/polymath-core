@@ -1,15 +1,17 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
 
+var import_script = require('./whitelist');
+
 let _GANACHE_CONTRACTS = true;
 let tickerRegistryAddress;
 let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = "0xadf0e80e632f08717a45def3a95485a1ee39aa5b";
-  securityTokenRegistryAddress = "0x85d6d5e1c98d201042fad2e304b262bfd129159c";
-  cappedSTOFactoryAddress = "0xfe7f2239a60cbaebc3093107ef47fcfda0e50817";
+  tickerRegistryAddress = "0xc16761ae340da4c0af3bb2b9431b907059d3dc00";
+  securityTokenRegistryAddress = "0xf4f4f1fffc15b763970a8c7d2b8a556dbad73340";
+  cappedSTOFactoryAddress = "0x47ef06350b02ffb806d98ae0af975c843fd4abef";
 }else{
   tickerRegistryAddress = "0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27";
   securityTokenRegistryAddress = "0x6958fca8a4cd4418a5cf9ae892d1a488e8af518f";
@@ -67,6 +69,7 @@ let tickerRegistry;
 let securityTokenRegistry;
 let securityToken;
 let cappedSTO;
+let generalTransferManager;
 
 // App flow
 let index_mainmenu;
@@ -277,6 +280,13 @@ async function step_Wallet_Issuance(){
     initialMint = events;
   });
 
+  let generalTransferManagerAddress;
+  await securityToken.methods.modules(2).call({from: Issuer}, function(error, result){
+    generalTransferManagerAddress = result[1];
+    generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
+    console.log("GTM Address:",generalTransferManagerAddress);
+  });
+
   if(initialMint.length > 0){
     console.log('\x1b[32m%s\x1b[0m',web3.utils.fromWei(initialMint[0].returnValues.value,"ether") +" Tokens have already been minted for "+initialMint[0].returnValues.to+". Skipping initial minting");
   }else{
@@ -291,12 +301,6 @@ async function step_Wallet_Issuance(){
 
       // Add address to whitelist
 
-      let generalTransferManagerAddress;
-      await securityToken.methods.modules(2).call({from: Issuer}, function(error, result){
-        generalTransferManagerAddress = result[1];
-      });
-
-      let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
       await generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000)).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
@@ -458,7 +462,6 @@ async function step_STO_Launch(){
     }
   }
 
-  console.log("FINISHED");
 }
 
 executeApp();

@@ -3,6 +3,8 @@ var csv = require('fast-csv');
 // var BigNumber = require('bignumber.js');
 const Web3 = require('web3');
 
+securityTokenABI = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
+
 let gtmAddress = process.argv.slice(2)[0]; //general transfer manager address
 let BATCH_SIZE = process.argv.slice(2)[1];
 if (!BATCH_SIZE) BATCH_SIZE = 75;
@@ -179,7 +181,7 @@ async function setInvestors() {
 
 
 function readFile() {
-  var stream = fs.createReadStream("./scripts/whitelist_data.csv");
+  var stream = fs.createReadStream("./demo/whitelist_data.csv");
 
   let index = 0;
   let batch = 0;
@@ -236,13 +238,25 @@ function readFile() {
   stream.pipe(csvStream);
 }
 
-//entry point of the script, it will only run if you have typed into the terminal the GeneralTransferManager address
-//should be  if(gtmAddressChosen) {
-if (true) {
-  console.log("Processing investor CSV upload. Batch size is accounts per transaction");
-  readFile();
-} else {
-  console.log("Please run the script by providing the address of the GeneralTransferManager contract and batch size");
+async function startScript(){
+  //entry point of the script, it will only run if you have typed into the terminal the GeneralTransferManager address
+  if(gtmAddress != "") {
+
+    // let accounts = await web3.eth.getAccounts();
+    // let Issuer = accounts[0];
+    // let securityToken;
+    // await securityTokenRegistry.methods.getSecurityTokenAddress("tokenSymbol").call({from: Issuer}, function(error, result){
+    //   if(result != "0x0000000000000000000000000000000000000000"){
+    //     securityToken = new web3.eth.Contract(securityTokenABI,result);
+    //   }
+    //
+    // });
+
+    console.log("Processing investor CSV upload. Batch size is accounts per transaction");
+    readFile();
+  } else {
+    console.log("Please run the script by providing the address of the GeneralTransferManager contract and batch size");
+  }
 }
 
 function isValidDate(date) {
@@ -261,3 +275,5 @@ function isValidDate(date) {
     return false
   }
 }
+
+startScript();

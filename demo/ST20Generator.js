@@ -1,8 +1,6 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
 
-var import_script = require('./whitelist');
-
 let _GANACHE_CONTRACTS = true;
 let tickerRegistryAddress;
 let securityTokenRegistryAddress;

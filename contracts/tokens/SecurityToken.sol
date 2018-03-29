@@ -119,14 +119,14 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
     }
 
-    function getModule(uint8 _module, uint _index) public view returns (bytes32, address, bool){
-      if(modules[_module].length > 0){
+    function getModule(uint8 _module, uint _index) public view returns (bytes32, address, bool) {
+      if (modules[_module].length > 0) {
         return (
           modules[_module][_index].name,
           modules[_module][_index].moduleAddress,
           modules[_module][_index].replaceable
         );
-      }else{
+      }else {
         return ("",address(0),false);
       }
 

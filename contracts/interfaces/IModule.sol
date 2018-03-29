@@ -1,6 +1,7 @@
 pragma solidity ^0.4.18;
 
 import './ISecurityToken.sol';
+import './IModuleFactory.sol';
 
 //Simple interface that any module contracts should implement
 contract IModule {
@@ -31,6 +32,11 @@ contract IModule {
 
     modifier onlyFactory {
       require(msg.sender == factory);
+      _;
+    }
+
+    modifier onlyFactoryOwner {
+      require(msg.sender == IModuleFactory(factory).owner());
       _;
     }
 

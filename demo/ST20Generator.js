@@ -299,6 +299,12 @@ async function step_Wallet_Issuance(){
 
       // Add address to whitelist
 
+      let generalTransferManagerAddress;
+      await securityToken.methods.getModule(2,0).call({from: Issuer}, function(error, result){
+        generalTransferManagerAddress = result[1];
+      });
+
+      let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
       await generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000)).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
@@ -349,11 +355,12 @@ async function step_STO_Launch(){
   let receipt;
 
   let stoCreated = false;
-  await securityToken.methods.modules(3).call({from: Issuer}, function(error, result){
-    if(result.moduleAddress != "0x0000000000000000000000000000000000000000"){
-      console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address "+result.moduleAddress+". Skipping STO creation");
+  await securityToken.methods.getModule(3,0).call({from: Issuer}, function(error, result){
+    if(result[1] != "0x0000000000000000000000000000000000000000"){
+
+      console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address "+result[1]+". Skipping STO creation");
       stoCreated = true;
-      cappedSTO = new web3.eth.Contract(cappedSTOABI,result.moduleAddress);
+      cappedSTO = new web3.eth.Contract(cappedSTOABI,result[1]);
     }
   });
 

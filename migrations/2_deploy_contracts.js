@@ -58,7 +58,12 @@ module.exports = async (deployer, network, accounts) => {
   let tickerRegistry = await TickerRegistry.deployed();
   let securityTokenRegistry = await SecurityTokenRegistry.deployed();
 
+<<<<<<< HEAD
   await tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, { from: PolymathAccount });
+=======
+  await tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount});
+  await moduleRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount});
+>>>>>>> 092046d139f3aa52e2bec86d6e846ded719f6044
 
   // B) DEPLOY STO factories and register them with the Registry
   await deployer.deploy(CappedSTOFactory, { from: PolymathAccount });
@@ -75,6 +80,7 @@ module.exports = async (deployer, network, accounts) => {
   console.log("*** Capped STO Factory Address: ", cappedSTOFactory.address, "***");
   console.log("-----------------------------------");
   console.log("\n")
+<<<<<<< HEAD
 
 
 
@@ -216,5 +222,8 @@ module.exports = async (deployer, network, accounts) => {
   // let newSecurityTokenAddressV2 = r_generateSecurityTokenV2.logs[1].args._securityTokenAddress;
   // let securityTokenV2 = await SecurityToken.at(newSecurityTokenAddressV2);
   // console.log("Token Version:",web3.utils.toAscii(await(securityTokenV2.securityTokenVersion())));
+=======
+  // -------- END OF POLYMATH NETWORK Configuration -------//
+>>>>>>> 092046d139f3aa52e2bec86d6e846ded719f6044
 
 };

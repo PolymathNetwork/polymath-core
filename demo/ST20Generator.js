@@ -1,15 +1,15 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
 
-let _GANACHE_CONTRACTS = false;
+let _GANACHE_CONTRACTS = true;
 let tickerRegistryAddress;
 let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = '0x73f27670bd70ca02adda4c43c8e786efd7d5303e';
-  securityTokenRegistryAddress = '0x97a20bb29b529b282147514738a67e78f209a696';
-  cappedSTOFactoryAddress = '0x413bdb89a70b6bf5017a12a0ca9f4d8c19eb9f30';
+  tickerRegistryAddress = '0x93e8d24b2b8e912a5b6bad05b40672cb4d1ebaa1';
+  securityTokenRegistryAddress = '0xbb26af4ca9b5755f4c25deb556759bbec99f6fce';
+  cappedSTOFactoryAddress = '0x088106c03d54d549e03c55684f6b40791853c446';
 }else{
   tickerRegistryAddress = "0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27";
   securityTokenRegistryAddress = "0x6958fca8a4cd4418a5cf9ae892d1a488e8af518f";
@@ -288,7 +288,8 @@ async function step_Wallet_Issuance(){
       // Add address to whitelist
 
       let generalTransferManagerAddress;
-      await securityToken.methods.modules(2).call({from: Issuer}, function(error, result){
+      await securityToken.methods.getModule(2,0).call({from: Issuer}, function(error, result){
+        console.log(result);
         generalTransferManagerAddress = result[1];
       });
 
@@ -343,11 +344,13 @@ async function step_STO_Launch(){
   let receipt;
 
   let stoCreated = false;
-  await securityToken.methods.modules(3).call({from: Issuer}, function(error, result){
-    if(result.moduleAddress != "0x0000000000000000000000000000000000000000"){
-      console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address "+result.moduleAddress+". Skipping STO creation");
+  await securityToken.methods.getModule(3,0).call({from: Issuer}, function(error, result){
+    console.log(result);
+    if(result[1] != "0x0000000000000000000000000000000000000000"){
+
+      console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address "+result[1]+". Skipping STO creation");
       stoCreated = true;
-      cappedSTO = new web3.eth.Contract(cappedSTOABI,result.moduleAddress);
+      cappedSTO = new web3.eth.Contract(cappedSTOABI,result[1]);
     }
   });
 

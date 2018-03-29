@@ -1,6 +1,7 @@
 pragma solidity ^0.4.18;
 
 import './ITransferManager.sol';
+import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 
 /////////////////////
 // Module permissions
@@ -14,6 +15,7 @@ import './ITransferManager.sol';
 // modifyWhitelistMulti                     X             X
 
 contract GeneralTransferManager is ITransferManager {
+    using SafeMath for uint256;
 
     //Address from which issuances come
     address public issuanceAddress = address(0);
@@ -58,7 +60,6 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     function modifyRestrictionsStartDate(uint256 _date) public onlyOwner {
-      require(_date >= now);
       restrictionsStartDate = _date;
     }
 
@@ -99,7 +100,7 @@ contract GeneralTransferManager is ITransferManager {
             return ((_from == issuanceAddress) && onWhitelist(_to));
         }
         //Anyone on the whitelist can transfer provided the blocknumber is large enough
-        return ((restrictionsStartDate + whitelist[_from].fromTime <= now) && (restrictionsStartDate + whitelist[_to].toTime <= now));
+        return ((restrictionsStartDate.add(whitelist[_from].fromTime) <= now) && (restrictionsStartDate.add(whitelist[_to].toTime) <= now));
     }
 
     function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {

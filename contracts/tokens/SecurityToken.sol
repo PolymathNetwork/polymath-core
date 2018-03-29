@@ -100,6 +100,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         //Check that module exists in registry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
+        require(modules[moduleFactory.getType()].length < MAX_MODULES);
         uint256 moduleCost = moduleFactory.getCost();
         require(moduleCost <= _maxCost);
         //Check that this module has not already been set as non-replaceable

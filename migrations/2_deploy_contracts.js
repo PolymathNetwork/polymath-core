@@ -61,7 +61,6 @@ module.exports = async (deployer, network, accounts) => {
   await tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount});
   await moduleRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount});
 
-
   // B) DEPLOY STO factories and register them with the Registry
   await deployer.deploy(CappedSTOFactory, {from: PolymathAccount});
   let cappedSTOFactory = await CappedSTOFactory.deployed();

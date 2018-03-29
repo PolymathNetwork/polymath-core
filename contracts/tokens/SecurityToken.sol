@@ -118,6 +118,19 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
     }
 
+    function getModule(uint8 _module, uint _index) public view returns (bytes32, address, bool){
+      if(modules[_module].length > 0){
+        return (
+          modules[_module][_index].name,
+          modules[_module][_index].moduleAddress,
+          modules[_module][_index].replaceable
+        );
+      }else{
+        return ("",address(0),false);
+      }
+
+    }
+
     function removeModule(uint8 _moduleType, uint8 _moduleIndex) external onlyOwner {
         require(_moduleIndex < modules[_moduleType].length);
         require(modules[_moduleType][_moduleIndex].moduleAddress != address(0));

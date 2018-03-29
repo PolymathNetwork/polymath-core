@@ -38,18 +38,27 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     // TransferManager has a key of 2
     // STO has a key of 3
     // Other modules TBD
-    mapping (uint8 => ModuleData) public modules;
+    // Module list should be order agnostic!
+    mapping (uint8 => ModuleData[]) public modules;
+
+    uint8 public MAX_MODULES = 10;
 
     event LogModuleAdded(uint8 indexed _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _budget, uint256 _timestamp);
+    event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
     event Mint(address indexed to, uint256 amount);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
-    modifier onlyModule(uint8 _i, bool _fallback) {
-      if (_fallback && (address(0) == modules[_i].moduleAddress)) {
+    modifier onlyModule(uint8 _moduleType, bool _fallback) {
+      //Loop over all modules of type _moduleType
+      bool isModuleType = false;
+      for (uint8 i = 0; i < modules[_moduleType].length; i++) {
+          isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
+      }
+      if (_fallback && !isModuleType) {
           require(msg.sender == owner);
       } else {
-          require(msg.sender == modules[_i].moduleAddress);
+          require(isModuleType);
       }
       _;
     }
@@ -71,8 +80,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         //owner = _owner;
     }
 
-    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) external {
-        require(msg.sender == owner);
+    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) external onlyOwner {
         _addModule(_moduleFactory, _data, _maxCost, _budget, _replaceable);
     }
 
@@ -85,7 +93,9 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     * @param _maxCost max amount of POLY willing to pay to module. (WIP)
     * @param _replaceable whether or not the module is supposed to be replaceable
     */
-    //You are only ever allowed one instance, for a given module type
+    //You are allowed to add a new moduleType if:
+    //  - there is no existing module of that type yet added
+    //  - the last member of the module list is replacable
     function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) internal {
         //Check that module exists in registry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
@@ -93,8 +103,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         uint256 moduleCost = moduleFactory.getCost();
         require(moduleCost <= _maxCost);
         //Check that this module has not already been set as non-replaceable
-        if (modules[moduleFactory.getType()].moduleAddress != address(0)) {
-          require(modules[moduleFactory.getType()].replaceable);
+        if (modules[moduleFactory.getType()].length != 0) {
+          require(modules[moduleFactory.getType()][modules[moduleFactory.getType()].length - 1].replaceable);
         }
         //Approve fee for module
         require(polyToken.approve(_moduleFactory, moduleCost));
@@ -103,20 +113,30 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         //Approve ongoing budget
         require(polyToken.approve(module, _budget));
         //Add to SecurityToken module map
-        modules[moduleFactory.getType()] = ModuleData(moduleFactory.getName(), module, _replaceable);
+        modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module, _replaceable));
         //Emit log event
         LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
+    }
+
+    function removeModule(uint8 _moduleType, uint8 _moduleIndex) external onlyOwner {
+        require(_moduleIndex < modules[_moduleType].length);
+        require(modules[_moduleType][_moduleIndex].moduleAddress != address(0));
+        require(modules[_moduleType][_moduleIndex].replaceable);
+        //Take the last member of the list, and replace _moduleIndex with this, then shorten the list by one
+        LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
+        modules[_moduleType][_moduleIndex] = modules[_moduleType][modules[_moduleType].length - 1];
+        modules[_moduleType].length = modules[_moduleType].length - 1;
     }
 
     function withdrawPoly(uint256 _amount) public onlyOwner {
         require(polyToken.transfer(owner, _amount));
     }
 
-    function changeModuleBudget(uint8 _moduleType, uint256 _budget) public onlyOwner {
+    function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0);
-        require(modules[_moduleType].moduleAddress != address(0));
-        require(polyToken.approve(modules[_moduleType].moduleAddress, _budget));
-        LogModuleBudgetChanged(_moduleType, modules[_moduleType].moduleAddress, _budget);
+        require(_moduleIndex < modules[_moduleType].length);
+        require(polyToken.approve(modules[_moduleType][_moduleType].moduleAddress, _budget));
+        LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleType].moduleAddress, _budget);
     }
 
     /**
@@ -138,10 +158,15 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
     function verifyTransfer(address _from, address _to, uint256 _amount) view public returns (bool success) {
-        if (modules[2].moduleAddress == address(0)) {
+        if (modules[2].length == 0) {
           return true;
         }
-        return ITransferManager(modules[2].moduleAddress).verifyTransfer(_from, _to, _amount);
+        for (uint8 i = 0; i < modules[2].length; i++) {
+            if (ITransferManager(modules[2][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Only STO module can call this, has a key of 3
@@ -163,10 +188,17 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     // If no Permission return false - note that IModule withPerm will allow ST owner all permissions anyway
     // this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
     function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool) {
-      if (modules[1].moduleAddress == address(0)) {
+
+      if (modules[1].length == 0) {
         return false;
       }
-      return IPermissionManager(modules[1].moduleAddress).checkPermission(_delegate, _module, _perm);
+
+      for (uint8 i = 0; i < modules[1].length; i++) {
+          if (IPermissionManager(modules[1][i].moduleAddress).checkPermission(_delegate, _module, _perm)) {
+              return true;
+          }
+      }
+
     }
 
 }

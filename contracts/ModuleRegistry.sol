@@ -3,6 +3,7 @@ pragma solidity ^0.4.18;
 import './interfaces/IModuleRegistry.sol';
 import './interfaces/IModuleFactory.sol';
 import './interfaces/ISecurityToken.sol';
+import './interfaces/ISecurityTokenRegistry.sol';
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
 /**
@@ -18,17 +19,27 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     mapping (uint8 => address[]) public moduleList;
     mapping (address => bool) public verified;
 
+    address public securityTokenRegistry;
+
     event LogModuleUsed(address indexed _moduleFactory, address indexed _securityToken);
     event LogModuleRegistered(address indexed _moduleFactory, address indexed _owner);
     event LogModuleVerified(address indexed _moduleFactory, bool _verified);
 
     //Checks that module is correctly configured in registry
     function useModule(address _moduleFactory) external {
+        //msg.sender must be a security token - below will throw if not
+        ISecurityTokenRegistry(securityTokenRegistry).getSecurityTokenData(msg.sender);
         require(registry[_moduleFactory] != 0);
         //To use a module, either it must be verified, or owned by the ST owner
         require(verified[_moduleFactory] || (IModuleFactory(_moduleFactory).owner() == ISecurityToken(msg.sender).owner()));
         reputation[_moduleFactory].push(msg.sender);
         LogModuleUsed(_moduleFactory, msg.sender);
+    }
+
+    //Sets the securityTokenRegistry so that moduleRegistry can validate security tokens are genuine
+    function setTokenRegistry(address _securityTokenRegistry) public onlyOwner {
+        require(_securityTokenRegistry != address(0));
+        securityTokenRegistry = _securityTokenRegistry;
     }
 
     /**

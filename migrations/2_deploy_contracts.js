@@ -6,9 +6,9 @@ const GeneralTransferManager = artifacts.require('./GeneralTransferManager.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager.sol');
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
-const DummySTO= artifacts.require('./DummySTO.sol');
+const DummySTO = artifacts.require('./DummySTO.sol');
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
-const CappedSTO= artifacts.require('./CappedSTO.sol');
+const CappedSTO = artifacts.require('./CappedSTO.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
 const STVersionProxy_001 = artifacts.require('./tokens/STVersionProxy_001.sol');
@@ -37,33 +37,33 @@ module.exports = async (deployer, network, accounts) => {
 
   // A) POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
   // 1. Deploy Registry, Transfer Manager, Permission Manager, (temp) PolyToken
-  await deployer.deploy(ModuleRegistry, {from: PolymathAccount});
-  await deployer.deploy(GeneralTransferManagerFactory, {from: PolymathAccount});
-  await deployer.deploy(GeneralPermissionManagerFactory, {from: PolymathAccount});
-  await deployer.deploy(PolyToken, {from: PolymathAccount});
+  await deployer.deploy(ModuleRegistry, { from: PolymathAccount });
+  await deployer.deploy(GeneralTransferManagerFactory, { from: PolymathAccount });
+  await deployer.deploy(GeneralPermissionManagerFactory, { from: PolymathAccount });
+  await deployer.deploy(PolyToken, { from: PolymathAccount });
 
   // 2. Register the Transfer Manager module
   let moduleRegistry = await ModuleRegistry.deployed();
-  await moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount});
-  await moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, {from: PolymathAccount});
-  await moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, {from: PolymathAccount});
-  await moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, {from: PolymathAccount});
+  await moduleRegistry.registerModule(GeneralTransferManagerFactory.address, { from: PolymathAccount });
+  await moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, { from: PolymathAccount });
+  await moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, { from: PolymathAccount });
+  await moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, { from: PolymathAccount });
 
   // 3. Deploy Ticker Registry and SecurityTokenRegistry
-  await deployer.deploy(STVersionProxy_001,GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount});
+  await deployer.deploy(STVersionProxy_001, GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, { from: PolymathAccount });
   let stVersionProxy_001 = await STVersionProxy_001.deployed();
 
-  await deployer.deploy(TickerRegistry, {from: PolymathAccount});
-  await deployer.deploy(SecurityTokenRegistry, PolyToken.address, ModuleRegistry.address, TickerRegistry.address,stVersionProxy_001.address, {from: PolymathAccount});
+  await deployer.deploy(TickerRegistry, { from: PolymathAccount });
+  await deployer.deploy(SecurityTokenRegistry, PolyToken.address, ModuleRegistry.address, TickerRegistry.address, stVersionProxy_001.address, { from: PolymathAccount });
   let tickerRegistry = await TickerRegistry.deployed();
   let securityTokenRegistry = await SecurityTokenRegistry.deployed();
 
-  await tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount});
+  await tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, { from: PolymathAccount });
 
   // B) DEPLOY STO factories and register them with the Registry
-  await deployer.deploy(CappedSTOFactory, {from: PolymathAccount});
+  await deployer.deploy(CappedSTOFactory, { from: PolymathAccount });
   let cappedSTOFactory = await CappedSTOFactory.deployed();
-  await moduleRegistry.registerModule(cappedSTOFactory.address, {from: PolymathAccount});
+  await moduleRegistry.registerModule(cappedSTOFactory.address, { from: PolymathAccount });
 
   // await moduleRegistry.verifyModule(CappedSTOFactory.address, true, {from: PolymathAccount});
 
@@ -75,32 +75,44 @@ module.exports = async (deployer, network, accounts) => {
   console.log("*** Capped STO Factory Address: ", cappedSTOFactory.address, "***");
   console.log("-----------------------------------");
   console.log("\n")
+
+
+
+
+
   // -------- END OF POLYMATH NETWORK Configuration -------
 
   // ----------- SECURITY TOKEN & STO DEPLOYMENT ------------
 
-  // // 1. Register ticker symbol
-  // await tickerRegistry.registerTicker(symbol, name, { from: Issuer });
-  //
-  // // 2. Deploy Token
-  // let STRegistry = await SecurityTokenRegistry.deployed();
-  // console.log("Creating Security Token");
-  // let protocolVer = web3.utils.toAscii(await STRegistry.protocolVersion());
-  // console.log("Protocol Version:",protocolVer);
-  // let protocolVerST = await STRegistry.protocolVersionST(protocolVer);
-  // console.log("Protocol Version ST:",protocolVerST);
-  // let r_generateSecurityToken = await STRegistry.generateSecurityToken(name, symbol, 18, tokenDetails, { from: Issuer });
-  // let newSecurityTokenAddress = r_generateSecurityToken.logs[1].args._securityTokenAddress;
-  // let securityToken = await SecurityToken.at(newSecurityTokenAddress);
-  // console.log("Token Version:",web3.utils.toAscii(await(securityToken.securityTokenVersion())));
-  // //console.log(securityToken);
-  //
-  // // 3. Get Transfer Module and Initialize STO module
-  // let generalTransferManagerObject = await securityToken.modules(2);
-  // let generalTransferManager = await GeneralTransferManager.at(generalTransferManagerObject[1]);
-  // let generalPermissionManagerObject = await securityToken.modules(1);
-  // let generalPermissionManager = await GeneralPermissionManager.at(generalPermissionManagerObject[1]);
-  //
+  // 1. Register ticker symbol
+  await tickerRegistry.registerTicker(symbol, name, { from: Issuer });
+  
+  // 2. Deploy Token
+  let STRegistry = await SecurityTokenRegistry.deployed();
+  console.log("Creating Security Token");
+  let protocolVer = web3.utils.toAscii(await STRegistry.protocolVersion());
+  console.log("Protocol Version:",protocolVer);
+  let protocolVerST = await STRegistry.protocolVersionST(protocolVer);
+  console.log("Protocol Version ST:",protocolVerST);
+  let r_generateSecurityToken = await STRegistry.generateSecurityToken(name, symbol, 18, tokenDetails, { from: Issuer });
+  let newSecurityTokenAddress = r_generateSecurityToken.logs[1].args._securityTokenAddress;
+  let securityToken = await SecurityToken.at(newSecurityTokenAddress);
+  console.log("Token Version:",web3.utils.toAscii(await(securityToken.securityTokenVersion())));
+  //console.log(securityToken);
+  
+  // 3. Get Transfer Module and Initialize STO module
+  let generalTransferManagerObject = await securityToken.modules(2);
+  let generalTransferManager = await GeneralTransferManager.at(generalTransferManagerObject[1]);
+  let generalPermissionManagerObject = await securityToken.modules(1);
+  let generalPermissionManager = await GeneralPermissionManager.at(generalPermissionManagerObject[1]);
+  
+  //DAVE
+  let dktest = await generalTransferManager.whitelist(investor1, { from: Issuer });
+  console.log(dktest)
+  console.log("GENERAL TRANSFER MANAGER ADDRESS: ", generalTransferManagerObject[1])
+  //DAVE
+
+
   // let bytesSTO = web3.eth.abi.encodeFunctionCall({
   //     name: 'configure',
   //     type: 'function',
@@ -128,30 +140,30 @@ module.exports = async (deployer, network, accounts) => {
   //     }
   //     ]
   // }, [Math.floor(Date.now()/1000) + 5, Math.floor(Date.now()/1000) + (100 * 24 * 60 * 60), BigNumber(100000 * 10**18), BigNumber(1000), BigNumber(0), PolyToken.address, Issuer]);
-  //
+  
   // console.log(Math.floor(Date.now()/1000), Math.floor(Date.now()/1000) + (100 * 24 * 60 * 60), BigNumber(100000 * 10**18), BigNumber(1000), BigNumber(0), PolyToken.address, Issuer);
-  //
+  
   // let r_CappedSTOFactory = await securityToken.addModule(CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: Issuer });
   // //console.log(JSON.stringify(r_CappedSTOFactory));
   // let cappedSTOAddress =  r_CappedSTOFactory.logs[2].args._module;
   // let cappedSTO = await CappedSTO.at(cappedSTOAddress);
-  //
-  // // console.log((await cappedSTO.startTime()).toString());
-  // // console.log((await cappedSTO.endTime()).toString());
-  // // console.log((await cappedSTO.cap()).toString());
-  // // console.log((await cappedSTO.rate()).toString());
-  //
-  // // ----------- END OF SECURITY TOKEN & STO DEPLOYMENT ------------
-  //
-  // // ----------- WHITELISTING & INVESTING ------------
-  //
-  // // 4. Add investor to whitelist
-  //
-  // await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Issuer });
-  // 5. INVEST
+  
+  // console.log((await cappedSTO.startTime()).toString());
+  // console.log((await cappedSTO.endTime()).toString());
+  // console.log((await cappedSTO.cap()).toString());
+  // console.log((await cappedSTO.rate()).toString());
+  
+  // ----------- END OF SECURITY TOKEN & STO DEPLOYMENT ------------
+  
+  // ----------- WHITELISTING & INVESTING ------------
+  
+  // 4. Add investor to whitelist
+  
+  await generalTransferManager.modifyWhitelist(investor1, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Issuer });
+  // // 5. INVEST
   // let r = await cappedSTO.buyTokens(investor1, {from: investor1, value:web3.utils.toWei('1', 'ether')});
   // let investorCount = await cappedSTO.investorCount();
-  //
+  
   // console.log(`
   //   ---------------------------------------------------------------
   //   --------- INVESTED IN STO ---------
@@ -160,12 +172,14 @@ module.exports = async (deployer, network, accounts) => {
   //   - Investor count: ${investorCount}
   //   ---------------------------------------------------------------
   // `);
-  //
+  
   // try {
   //   await generalTransferManager.modifyWhitelist(investor2, (Date.now()+3600 * 24)/1000, (Date.now()+3600 * 24)/1000, { from: Permission });
   // } catch (err) {
   //   console.log("Failed to add investor 2 with invalid Permission (expected)");
   // }
+
+  console.log("DK - at this point, you have edited the modified the whitelist")
   //
   // // 6. Set up Permission
   // //Only Issuer (owner of the ST) can do this for now

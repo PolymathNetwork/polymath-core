@@ -98,9 +98,9 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     //  - the last member of the module list is replacable
     function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) internal {
         //Check that module exists in registry - will throw otherwise
-        require(modules[moduleFactory.getType()].length < MAX_MODULES);
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
+        require(modules[moduleFactory.getType()].length < MAX_MODULES);
         uint256 moduleCost = moduleFactory.getCost();
         require(moduleCost <= _maxCost);
         //Check that this module has not already been set as non-replaceable

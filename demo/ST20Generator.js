@@ -7,9 +7,9 @@ let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = '0x93e8d24b2b8e912a5b6bad05b40672cb4d1ebaa1';
-  securityTokenRegistryAddress = '0xbb26af4ca9b5755f4c25deb556759bbec99f6fce';
-  cappedSTOFactoryAddress = '0x088106c03d54d549e03c55684f6b40791853c446';
+  tickerRegistryAddress = '0x6c6fa63274821c68b6a78bdf6e86b3e89def7674';
+  securityTokenRegistryAddress = '0xec6e3cd30aec141574f2ef8e4d927986e0277393';
+  cappedSTOFactoryAddress = '0xce0fe39ceb3b606b4dd1f669ffd7c1fffe7e0ca5';
 }else{
   tickerRegistryAddress = "0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27";
   securityTokenRegistryAddress = "0x6958fca8a4cd4418a5cf9ae892d1a488e8af518f";
@@ -289,7 +289,6 @@ async function step_Wallet_Issuance(){
 
       let generalTransferManagerAddress;
       await securityToken.methods.getModule(2,0).call({from: Issuer}, function(error, result){
-        console.log(result);
         generalTransferManagerAddress = result[1];
       });
 
@@ -345,7 +344,6 @@ async function step_STO_Launch(){
 
   let stoCreated = false;
   await securityToken.methods.getModule(3,0).call({from: Issuer}, function(error, result){
-    console.log(result);
     if(result[1] != "0x0000000000000000000000000000000000000000"){
 
       console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address "+result[1]+". Skipping STO creation");

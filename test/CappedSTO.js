@@ -876,7 +876,67 @@ contract('CappedSTO', accounts => {
 
                 assert.equal(await I_SecurityToken.owner.call(), token_owner);
             });
+        });
 
+        describe("Operations on the STO", async() => {
+            it("Should Buy the tokens", async() => {
+                balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
+                // Add the Investor in to the whitelist
+               
+                let tx = await I_GeneralTransferManager.modifyWhitelist(
+                    account_investor1,
+                    fromTime + duration.days(70),
+                    toTime + duration.days(90),
+                    {
+                        from: account_issuer,
+                        gas: 500000
+                    });
+    
+                assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
+    
+                // Jump time
+                await increaseTime(duration.days(7));
+                // Fallback transaction
+                await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_CappedSTO.address,
+                    gas: 210000,
+                    value: web3.utils.toWei('1', 'ether')
+                  });
+    
+                assert.equal(
+                    (await I_CappedSTO.fundsRaised.call())
+                    .dividedBy(new BigNumber(10).pow(18))
+                    .toNumber(),
+                    1
+                );
+    
+                assert.equal(await I_CappedSTO.getNumberInvestors.call(), 1);
+    
+                assert.equal(
+                    (await I_SecurityToken.balanceOf(account_investor1))
+                    .dividedBy(new BigNumber(10).pow(18))
+                    .toNumber(),
+                    1000
+                );
+            });
+    
+            it("Verification of the event Token Purchase", async() => {
+                let TokenPurchase = I_CappedSTO.allEvents();
+                let log = await new Promise(function(resolve, reject) {
+                    TokenPurchase.watch(function(error, log){ resolve(log);})
+                });
+    
+                assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
+                assert.equal(
+                    (log.args.amount)
+                    .dividedBy(new BigNumber(10).pow(18))
+                    .toNumber(),
+                    1000,
+                    "Wrong No. token get dilivered"
+                );
+                TokenPurchase.stopWatching();
+            });
         });
     });
 

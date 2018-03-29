@@ -65,6 +65,10 @@ contract('CappedSTO', accounts => {
     const P_tokenDetails = "This is equity type of issuance";
     const P_decimals = 18;
 
+    // SecurityToken Details (Launched ST on the behalf of the issuer)
+    const PI_name = "Demo Token";
+    const PI_symbol = "DET";
+
     // Module key
     const permissionManagerKey = 1;
     const transferManagerKey = 2;
@@ -82,6 +86,8 @@ contract('CappedSTO', accounts => {
     const P_rate = 5;
     const P_startTime = endTime + duration.days(2);
     const P_endTime = P_startTime + duration.days(30);
+    const PI_startTime = P_endTime + duration.days(4);
+    const PI_endTime = PI_startTime + duration.days(30);
     const functionSignature = {
         name: 'configure',
         type: 'function',
@@ -782,6 +788,96 @@ contract('CappedSTO', accounts => {
     
          });
     
+    });
+
+    describe("Launch SecurityToken & STO on the behalf of the issuer", async() => {
+
+        describe("Create securityToken for the issuer by the polymath", async() => {
+
+            it("POLYMATH: Should register the ticker before the generation of the security token", async () => {
+                let tx = await I_TickerRegistry.registerTicker(PI_symbol, PI_name, { from : account_polymath });
+                assert.equal(tx.logs[0].args._owner, account_polymath);
+                assert.equal(tx.logs[0].args._symbol, PI_symbol.toLowerCase());
+            });
+
+            it("POLYMATH: Should generate the new security token with the same symbol as registered above", async () => {
+                let tx = await I_SecurityTokenRegistry.generateSecurityToken(PI_name, PI_symbol, decimals, tokenDetails, { from: account_polymath });
+    
+                // Verify the successful generation of the security token
+                assert.equal(tx.logs[1].args._ticker, PI_symbol.toLowerCase(), "SecurityToken doesn't get deployed");
+    
+                I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+    
+                const LogAddModule = await I_SecurityToken.allEvents();
+                const log = await new Promise(function(resolve, reject) {
+                    LogAddModule.watch(function(error, log){ resolve(log);});
+                });
+    
+                // Verify that GeneralPermissionManager module get added successfully or not
+                assert.equal(log.args._type.toNumber(), permissionManagerKey);
+                assert.equal(
+                    web3.utils.toAscii(log.args._name)
+                    .replace(/\u0000/g, ''),
+                    "GeneralPermissionManager"
+                );
+                LogAddModule.stopWatching();
+            });
+
+            it("POLYMATH: Should intialize the auto attached modules", async () => {
+                let moduleData = await I_SecurityToken.modules(transferManagerKey);
+                I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+     
+                assert.notEqual(
+                 I_GeneralTransferManager.address.valueOf(),
+                 "0x0000000000000000000000000000000000000000",
+                 "GeneralTransferManager contract was not deployed",
+                );
+     
+                moduleData = await I_SecurityToken.modules(permissionManagerKey);
+                I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
+     
+                assert.notEqual(
+                 I_GeneralPermissionManager.address.valueOf(),
+                 "0x0000000000000000000000000000000000000000",
+                 "GeneralDelegateManager contract was not deployed",
+                );
+             });
+
+             it("POLYMATH: Should successfully attach the STO factory with the security token", async () => {
+                 // STEP 4: Deploy the CappedSTOFactory
+
+                I_CappedSTOFactory = await CappedSTOFactory.new({ from: account_polymath });
+
+                assert.notEqual(
+                    I_CappedSTOFactory.address.valueOf(),
+                    "0x0000000000000000000000000000000000000000",
+                    "CappedSTOFactory contract was not deployed"
+                );
+
+                // (C) : Register the STOFactory
+                await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
+
+                let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [PI_startTime, PI_endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+      
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: account_polymath, gas: 2500000 });
+    
+                assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
+                assert.equal(
+                    web3.utils.toAscii(tx.logs[2].args._name)
+                    .replace(/\u0000/g, ''),
+                    "CappedSTO",
+                    "CappedSTOFactory module was not added"
+                );
+                I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
+            });
+
+            it("POLYMATH: Should change the ownership of the SecurityToken", async() => {
+                await I_SecurityToken.transferOwnership(token_owner, { from : account_polymath });
+
+                assert.equal(await I_SecurityToken.owner.call(), token_owner);
+            });
+
+        });
     });
 
 });

@@ -6,9 +6,9 @@ const GeneralTransferManager = artifacts.require('./GeneralTransferManager.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager.sol');
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
-const DummySTO= artifacts.require('./DummySTO.sol');
+const DummySTO = artifacts.require('./DummySTO.sol');
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
-const CappedSTO= artifacts.require('./CappedSTO.sol');
+const CappedSTO = artifacts.require('./CappedSTO.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
 const STVersionProxy_001 = artifacts.require('./tokens/STVersionProxy_001.sol');
@@ -37,24 +37,24 @@ module.exports = async (deployer, network, accounts) => {
 
   // A) POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
   // 1. Deploy Registry, Transfer Manager, Permission Manager, (temp) PolyToken
-  await deployer.deploy(ModuleRegistry, {from: PolymathAccount});
-  await deployer.deploy(GeneralTransferManagerFactory, {from: PolymathAccount});
-  await deployer.deploy(GeneralPermissionManagerFactory, {from: PolymathAccount});
-  await deployer.deploy(PolyToken, {from: PolymathAccount});
+  await deployer.deploy(ModuleRegistry, { from: PolymathAccount });
+  await deployer.deploy(GeneralTransferManagerFactory, { from: PolymathAccount });
+  await deployer.deploy(GeneralPermissionManagerFactory, { from: PolymathAccount });
+  await deployer.deploy(PolyToken, { from: PolymathAccount });
 
   // 2. Register the Transfer Manager module
   let moduleRegistry = await ModuleRegistry.deployed();
-  await moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount});
-  await moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, {from: PolymathAccount});
-  await moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, {from: PolymathAccount});
-  await moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, {from: PolymathAccount});
+  await moduleRegistry.registerModule(GeneralTransferManagerFactory.address, { from: PolymathAccount });
+  await moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, { from: PolymathAccount });
+  await moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, { from: PolymathAccount });
+  await moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, { from: PolymathAccount });
 
   // 3. Deploy Ticker Registry and SecurityTokenRegistry
-  await deployer.deploy(STVersionProxy_001,GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount});
+  await deployer.deploy(STVersionProxy_001, GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, { from: PolymathAccount });
   let stVersionProxy_001 = await STVersionProxy_001.deployed();
 
-  await deployer.deploy(TickerRegistry, {from: PolymathAccount});
-  await deployer.deploy(SecurityTokenRegistry, PolyToken.address, ModuleRegistry.address, TickerRegistry.address,stVersionProxy_001.address, {from: PolymathAccount});
+  await deployer.deploy(TickerRegistry, { from: PolymathAccount });
+  await deployer.deploy(SecurityTokenRegistry, PolyToken.address, ModuleRegistry.address, TickerRegistry.address, stVersionProxy_001.address, { from: PolymathAccount });
   let tickerRegistry = await TickerRegistry.deployed();
   let securityTokenRegistry = await SecurityTokenRegistry.deployed();
 
@@ -62,9 +62,9 @@ module.exports = async (deployer, network, accounts) => {
   await moduleRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount});
 
   // B) DEPLOY STO factories and register them with the Registry
-  await deployer.deploy(CappedSTOFactory, {from: PolymathAccount});
+  await deployer.deploy(CappedSTOFactory, { from: PolymathAccount });
   let cappedSTOFactory = await CappedSTOFactory.deployed();
-  await moduleRegistry.registerModule(cappedSTOFactory.address, {from: PolymathAccount});
+  await moduleRegistry.registerModule(cappedSTOFactory.address, { from: PolymathAccount });
 
   // await moduleRegistry.verifyModule(CappedSTOFactory.address, true, {from: PolymathAccount});
 

@@ -87,8 +87,6 @@ async function startScript() {
 
 async function invest() {
 
-  console.log("Investing xxx");
-
   // Let's check if token has already been deployed, if it has, skip to STO
   await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({ from: Issuer }, function (error, result) {
     if (result != "0x0000000000000000000000000000000000000000") {
@@ -123,13 +121,10 @@ async function invest() {
         Review it on Etherscan.
         TxHash: ${receipt.transactionHash}\n`
       );
-    })
-    .on('error', console.error);
-
-    //console.log("aaa",receipt.logs[1].args._securityTokenAddress);
+    });
 
   }catch (err){
-    console.log(err.message);
+    console.log("There was an error processing the investment transaction. \n The most probable cause for this error is the beneficiary account not being in the whitelist.")
     return;
   }
 

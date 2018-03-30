@@ -1,6 +1,6 @@
 var fs = require('fs');
 var csv = require('fast-csv');
-// var BigNumber = require('bignumber.js');
+var BigNumber = require('bignumber.js');
 const Web3 = require('web3');
 
 
@@ -71,6 +71,8 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 let Issuer;
 let accounts;
 let generalTransferManager;
+
+let DEFAULT_GAS_PRICE = 80000000000;
 
 
 
@@ -187,7 +189,6 @@ async function setInvestors() {
   //this for loop will do the batches, so it should run 75, 75, 50 with 200
   for (let i = 0; i < distribData.length; i++) {
     try {
-      let gPrice = 10000000000;
       let investorArray = [];
       let fromTimesArray = [];
       let toTimesArray = [];
@@ -201,10 +202,10 @@ async function setInvestors() {
 
       //fromTimes is ability to sell coin FROM your account (2nd row in csv, 2nd parameter in modifyWhiteList() )
       //toTimes is ability to buy coins TOwards your account (3rd row in csv, 3rd parameter in modifyWhiteList() )
-      let r = await generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray).send({ from: Issuer, gas: 4500000, gasPrice: gPrice })
+      let r = await generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray).send({ from: Issuer, gas: 4500000, gasPrice: DEFAULT_GAS_PRICE })
       console.log(`Batch ${i} - Attempting to modifyWhitelist accounts:\n\n`, investorArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
-      console.log("Whitelist transaxction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(r.gasUsed * gPrice, "ether"), "Ether");
+      console.log("Whitelist transaxction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * DEFAULT_GAS_PRICE).toString(), "ether"), "Ether");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
 
     } catch (err) {

@@ -7,9 +7,9 @@ let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = '0x6c6fa63274821c68b6a78bdf6e86b3e89def7674';
-  securityTokenRegistryAddress = '0xec6e3cd30aec141574f2ef8e4d927986e0277393';
-  cappedSTOFactoryAddress = '0xce0fe39ceb3b606b4dd1f669ffd7c1fffe7e0ca5';
+  tickerRegistryAddress = '0x345695d6d476cef2c35c96162cdb6bd39b751f07';
+  securityTokenRegistryAddress = '0x86fa33131eabcdf2e4f0ce2a6c2e0160ba8a8bf9';
+  cappedSTOFactoryAddress = '0x9e3befc5c8592619ab417066d2a3d6963e8ebe00';
 }else{
   tickerRegistryAddress = "0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27";
   securityTokenRegistryAddress = "0x6958fca8a4cd4418a5cf9ae892d1a488e8af518f";
@@ -59,7 +59,7 @@ let tokenName;
 let tokenSymbol;
 let tokenDecimals = 18;
 
-const tokenDetails = "This is a legit issuance...";
+const tokenDetails = "";
 
 ////////////////////////
 
@@ -359,6 +359,10 @@ async function step_STO_Launch(){
     let displayCap;
     let displayWallet;
     let displayIssuerTokens;
+    let displayFundsRaised;
+    let displayTokensSold;
+    let displayInvestorCount;
+    let displayTokenSymbol;
 
     await cappedSTO.methods.startTime().call({from: Issuer}, function(error, result){
       displayStartTime = result;
@@ -375,14 +379,45 @@ async function step_STO_Launch(){
     await cappedSTO.methods.wallet().call({from: Issuer}, function(error, result){
       displayWallet = result;
     });
+    await cappedSTO.methods.fundsRaised().call({from: Issuer}, function(error, result){
+      displayFundsRaised = result;
+    });
+    await cappedSTO.methods.tokensSold().call({from: Issuer}, function(error, result){
+      displayTokensSold = result;
+    });
+    await cappedSTO.methods.investorCount().call({from: Issuer}, function(error, result){
+      displayInvestorCount = result;
+    });
+
+    await securityToken.methods.symbol().call({from: Issuer}, function(error, result){
+      displayTokenSymbol = result;
+    });
+
+    let now = Math.floor(Date.now()/1000);
+    let timeTitle;
+
+    if(now < displayStartTime){
+      timeTitle = "STO starts in: ";
+      timeRemaining = displayStartTime - now;
+    }else{
+      timeTitle = "Time remaining:";
+      timeRemaining = displayEndTime - now;
+    }
+
+    timeRemaining = convertToDaysRemaining(timeRemaining);
 
     console.log(`
       ***** STO Information *****
       - Raise Cap:       ${web3.utils.fromWei(displayCap,"ether")}
-      - Start Time:      ${displayStartTime}
-      - End Time:        ${displayEndTime}
-      - Rate:            ${displayRate}
+      - Start Time:      ${new Date(displayStartTime * 1000)}
+      - End Time:        ${new Date(displayEndTime * 1000)}
+      - Rate:            1 ETH = ${displayRate} ${displayTokenSymbol.toUpperCase()}
       - Wallet:          ${displayWallet}
+      --------------------------------------
+      - ${timeTitle}  ${timeRemaining}
+      - Funds raised:    ${displayFundsRaised}
+      - Tokens sold:     ${displayTokensSold}
+      - Investor count:  ${displayInvestorCount}
     `);
 
   }else{
@@ -459,3 +494,19 @@ async function step_STO_Launch(){
 }
 
 executeApp();
+
+///////
+// HELPER FUNCTIONS
+//////
+
+function convertToDaysRemaining(timeRemaining){
+  var seconds = parseInt(timeRemaining, 10);
+
+  var days = Math.floor(seconds / (3600*24));
+  seconds  -= days*3600*24;
+  var hrs   = Math.floor(seconds / 3600);
+  seconds  -= hrs*3600;
+  var mnts = Math.floor(seconds / 60);
+  seconds  -= mnts*60;
+  return (days+" days, "+hrs+" Hrs, "+mnts+" Minutes, "+seconds+" Seconds");
+}

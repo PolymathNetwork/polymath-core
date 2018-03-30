@@ -13,9 +13,9 @@ let generalTransferManagerAddress;
 
 
 if (_GANACHE_CONTRACTS) {
-  tickerRegistryAddress = '0xaa588d3737b611bafd7bd713445b314bd453a5c8';
-  securityTokenRegistryAddress = '0xf204a4ef082f5c04bb89f7d5e6568b796096735a';
-  cappedSTOFactoryAddress = '0xdda6327139485221633a1fcd65f4ac932e60a2e1';
+  tickerRegistryAddress = '0x345695d6d476cef2c35c96162cdb6bd39b751f07';
+  securityTokenRegistryAddress = '0x86fa33131eabcdf2e4f0ce2a6c2e0160ba8a8bf9';
+  cappedSTOFactoryAddress = '0x9e3befc5c8592619ab417066d2a3d6963e8ebe00';
 } else {
   tickerRegistryAddress = "0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27";
   securityTokenRegistryAddress = "0x6958fca8a4cd4418a5cf9ae892d1a488e8af518f";
@@ -165,7 +165,7 @@ async function setInvestors() {
   // Let's check if token has already been deployed, if it has, skip to STO
   await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({ from: Issuer }, function (error, result) {
     if (result != "0x0000000000000000000000000000000000000000") {
-      console.log('\x1b[32m%s\x1b[0m', "Token has already been deployed at address " + result + ". Skipping registration");
+      console.log('\x1b[32m%s\x1b[0m', "Token deployed at address " + result + ".");
       tokenDeployedAddress = result;
       tokenDeployed = true;
     }
@@ -311,7 +311,7 @@ async function setInvestors() {
 
 //will be deleted once DATES are updated
 function isValidDayInput(days) {
-  let today = Date.now() / 1000 
+  let today = Date.now() / 1000
   let isValid = !isNaN(days)
   if (isValid) {
     let addedSeconds = days * 86400

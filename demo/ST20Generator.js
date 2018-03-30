@@ -408,15 +408,15 @@ async function step_STO_Launch(){
 
     console.log(`
       ***** STO Information *****
-      - Raise Cap:       ${web3.utils.fromWei(displayCap,"ether")}
+      - Raise Cap:       ${web3.utils.fromWei(displayCap,"ether")} ${displayTokenSymbol.toUpperCase()}
       - Start Time:      ${new Date(displayStartTime * 1000)}
       - End Time:        ${new Date(displayEndTime * 1000)}
       - Rate:            1 ETH = ${displayRate} ${displayTokenSymbol.toUpperCase()}
       - Wallet:          ${displayWallet}
       --------------------------------------
       - ${timeTitle}  ${timeRemaining}
-      - Funds raised:    ${displayFundsRaised}
-      - Tokens sold:     ${displayTokensSold}
+      - Funds raised:    ${web3.utils.fromWei(displayFundsRaised,"ether")} ETH
+      - Tokens sold:     ${web3.utils.fromWei(displayTokensSold,"ether")} ${displayTokenSymbol.toUpperCase()}
       - Investor count:  ${displayInvestorCount}
     `);
 

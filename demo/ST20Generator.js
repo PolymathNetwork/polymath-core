@@ -7,9 +7,9 @@ let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 
 if(_GANACHE_CONTRACTS){
-  tickerRegistryAddress = '0x345695d6d476cef2c35c96162cdb6bd39b751f07';
-  securityTokenRegistryAddress = '0x86fa33131eabcdf2e4f0ce2a6c2e0160ba8a8bf9';
-  cappedSTOFactoryAddress = '0x9e3befc5c8592619ab417066d2a3d6963e8ebe00';
+  tickerRegistryAddress = '0x9357349bca3fec887d6cc352c3b376cfc7aba443';
+  securityTokenRegistryAddress = '0x854d4757c43aee5a346b1e37c3658154ebab51c1';
+  cappedSTOFactoryAddress = '0x4c2614c7a3835905b3819da785f7df7c032bc1a0';
 }else{
   tickerRegistryAddress = "0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27";
   securityTokenRegistryAddress = "0x6958fca8a4cd4418a5cf9ae892d1a488e8af518f";

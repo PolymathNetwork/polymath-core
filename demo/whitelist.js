@@ -13,9 +13,9 @@ let generalTransferManagerAddress;
 
 
 if (_GANACHE_CONTRACTS) {
-  tickerRegistryAddress = '0x345695d6d476cef2c35c96162cdb6bd39b751f07';
-  securityTokenRegistryAddress = '0x86fa33131eabcdf2e4f0ce2a6c2e0160ba8a8bf9';
-  cappedSTOFactoryAddress = '0x9e3befc5c8592619ab417066d2a3d6963e8ebe00';
+  tickerRegistryAddress = '0x9357349bca3fec887d6cc352c3b376cfc7aba443';
+  securityTokenRegistryAddress = '0x854d4757c43aee5a346b1e37c3658154ebab51c1';
+  cappedSTOFactoryAddress = '0x4c2614c7a3835905b3819da785f7df7c032bc1a0';
 } else {
   tickerRegistryAddress = "0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27";
   securityTokenRegistryAddress = "0x6958fca8a4cd4418a5cf9ae892d1a488e8af518f";
@@ -83,7 +83,7 @@ async function startScript() {
     tickerRegistry.setProvider(web3.currentProvider);
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
-    console.log("Processing investor CSV upload. Batch size is accounts per transaction");
+    console.log("Processing investor CSV upload. Batch size is "+BATCH_SIZE+" accounts per transaction");
     readFile();
   } catch (err) {
     console.log(err)
@@ -109,14 +109,14 @@ function readFile() {
       // console.log(data[1])
       // console.log(data[2])
       // console.log(data[3])
-      let isAddress = web3.utils.isAddress(data[1]);
-      let sellValid = isValidDayInput(data[2])
-      let buyValid = isValidDayInput(data[3])
+      let isAddress = web3.utils.isAddress(data[0]);
+      let sellValid = isValidDate(data[1])
+      let buyValid = isValidDate(data[2])
 
 
       if (isAddress && sellValid && buyValid) {
         let userArray = new Array()
-        let checksummedAddress = web3.utils.toChecksumAddress(data[1]);
+        let checksummedAddress = web3.utils.toChecksumAddress(data[0]);
 
         userArray.push(checksummedAddress)
         userArray.push(sellValid)
@@ -137,7 +137,7 @@ function readFile() {
         let userArray = new Array()
         //dont need this here, as if it is NOT an address this function will fail
         //let checksummedAddress = web3.utils.toChecksumAddress(data[1]);
-        userArray.push(data[1])
+        userArray.push(data[0])
         userArray.push(sellValid)
         userArray.push(buyValid)
         badData.push(userArray);
@@ -178,9 +178,6 @@ async function setInvestors() {
   });
   let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
 
-  console.log('gtmAddress: ', generalTransferManagerAddress)
-  console.log('batchSize: ', BATCH_SIZE)
-
   console.log(`
     -------------------------------------------------------
     ----- Sending buy/sell restrictions to blockchain -----
@@ -207,7 +204,7 @@ async function setInvestors() {
       let r = await generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray).send({ from: Issuer, gas: 4500000, gasPrice: gPrice })
       console.log(`Batch ${i} - Attempting to modifyWhitelist accounts:\n\n`, investorArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
-      console.log("Allocation + transfer was successful.", r.gasUsed, "gas used. Spent:", r.gasUsed * gPrice, "wei");
+      console.log("Whitelist transaxction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(r.gasUsed * gPrice, "ether"), "Ether");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
 
     } catch (err) {
@@ -215,10 +212,6 @@ async function setInvestors() {
     }
   }
 
-  console.log("Script finished successfully.")
-  // console.log("Waiting 2 minutes for transactions to be mined...")
-  // await delay(90000);
-  console.log("When live, use a delay of 2 mins to let blocks be mined. On Testrpc, this can be skipped")
   console.log("Retrieving logs to determine investors have had their times uploaded correctly.\n\n")
 
   let totalInvestors = 0;
@@ -233,9 +226,8 @@ async function setInvestors() {
     fromBlock: 0,
     toBlock: 'latest'
   }, function (error, events) {
-    console.log("Error wtf dont need: ", error)
+    //console.log(error);
   });
-  // console.log("EVENTS NEW: ", events)
 
   for (var i = 0; i < event_data.length; i++) {
     let combineArray = [];
@@ -324,4 +316,21 @@ function isValidDayInput(days) {
     return false
   }
 
+}
+
+function isValidDate(date) {
+  var matches = /^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/.exec(date);
+  if (matches == null) return false;
+  var d = matches[2];
+  var m = matches[1] - 1; //not clear why this is -1, but it works after checking
+  var y = matches[3];
+  var composedDate = new Date(y, m, d);
+  var timestampDate = composedDate.getTime()
+
+  //note, some reason these timestamps are being recorded +4 hours UTC
+  if (composedDate.getDate() == d && composedDate.getMonth() == m && composedDate.getFullYear() == y) {
+    return timestampDate / 1000
+  } else {
+    return false
+  }
 }

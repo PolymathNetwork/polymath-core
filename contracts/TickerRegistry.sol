@@ -20,7 +20,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
     // For now it's value is 90 days;
-    uint256 public expiryLimit = 90 * 1 days;
+    uint256 public expiryLimit = 7 * 1 days;
 
     // SecuirtyToken Registry contract address
     address public STRAddress;
@@ -54,6 +54,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      * @param _tokenName Name of the token
      */
     function registerTicker(string _symbol, string _tokenName) public {
+        require(bytes(_symbol).length > 0);
         string memory symbol = lower(_symbol);
         require(expiryCheck(symbol));
         registeredSymbols[symbol] = SymbolDetails(msg.sender, now, _tokenName, false);

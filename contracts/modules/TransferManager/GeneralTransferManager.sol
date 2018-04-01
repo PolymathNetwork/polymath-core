@@ -1,7 +1,6 @@
 pragma solidity ^0.4.18;
 
 import './ITransferManager.sol';
-import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 
 /////////////////////
 // Module permissions
@@ -15,7 +14,6 @@ import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 // modifyWhitelistMulti                     X             X
 
 contract GeneralTransferManager is ITransferManager {
-    using SafeMath for uint256;
 
     //Address from which issuances come
     address public issuanceAddress = address(0);
@@ -28,10 +26,6 @@ contract GeneralTransferManager is ITransferManager {
       uint256 fromTime;
       uint256 toTime;
     }
-
-    //The date from when the purchase/sale restrictions should apply.
-    //Transfer Manager creation date by default (~Token Deployment)
-    uint256 public restrictionsStartDate = now;
 
     //An address can only send / receive tokens once their corresponding uint256 > block.number (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
     mapping (address => TimeRestriction) public whitelist;
@@ -57,10 +51,6 @@ contract GeneralTransferManager is ITransferManager {
 
     function getInitFunction() public returns(bytes4) {
       return bytes4(0);
-    }
-
-    function modifyRestrictionsStartDate(uint256 _date) public onlyOwner {
-      restrictionsStartDate = _date;
     }
 
     function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
@@ -100,7 +90,7 @@ contract GeneralTransferManager is ITransferManager {
             return ((_from == issuanceAddress) && onWhitelist(_to));
         }
         //Anyone on the whitelist can transfer provided the blocknumber is large enough
-        return ((restrictionsStartDate.add(whitelist[_from].fromTime) <= now) && (restrictionsStartDate.add(whitelist[_to].toTime) <= now));
+        return ((whitelist[_from].fromTime <= now) && (whitelist[_to].toTime <= now));
     }
 
     function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {

@@ -33,7 +33,11 @@ contract ExchangeTransferManager is ITransferManager {
     function verifyTransfer(address _from, address _to, uint256 _amount) view external returns(bool) {
         //Transfer must be from / to the exchange
         require((_from == exchange) || (_to == exchange));
-        return getExchangePermission(_from) || getExchangePermission(_to);
+
+        if(_from == exchange)
+          return getExchangePermission(_to);
+        else if(_to == exchange)
+          return getExchangePermission(_from);
     }
 
     function getExchangePermission(address _investor) view internal returns (bool) {

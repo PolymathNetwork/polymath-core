@@ -90,7 +90,8 @@ contract GeneralTransferManager is ITransferManager {
             return onWhitelist(_to);
         }
         //Anyone on the whitelist can transfer provided the blocknumber is large enough
-        return ((whitelist[_from].fromTime <= now) && (whitelist[_to].toTime <= now));
+        return ((onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
+                (onWhitelist(_to) && whitelist[_to].toTime <= now));
     }
 
     function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {

@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/PolymathNetwork/polymath-core.svg?token=Urvmqzpy4pAxp6EpzZd6&branch=master)](https://travis-ci.com/PolymathNetwork/polymath-core)
+[![Build Status](https://travis-ci.com/PolymathNetwork/polymath-core_v2.svg?token=rqsL7PsbwLxrskjYAHpq&branch=master)](https://travis-ci.com/PolymathNetwork/polymath-core_v2)
 <a href="https://t.me/polymathnetwork"><img src="https://img.shields.io/badge/50k+-telegram-blue.svg" target="_blank"></a>
 
 ![Polymath](Polymath.png)
@@ -62,6 +62,14 @@ To make an STO available for Issuers, first, deploy the STO Factory and take not
 
 Once the STO Factory has been registered to the Module Registry, issuers will be able to see it on the Polymath dApp and they will be able to add it as a module of the ST.
 
+# Using the CLI ST-20 Generator
+
+The CLI ST-20 Generator is a wizard-like script that will guide you in the creation and deployment of the ST-20 token.
+
+To use it, make sure you are connected to a full-node (or locally to Ganache-cli).
+1. Edit demo/ST20Generator.js to make sure it's pointing to the correct contract addresses
+2. On your terminal, run the following command: `node demo/ST20Generator`
+3. Follow the Command-line prompts
 
 ### Styleguide
 

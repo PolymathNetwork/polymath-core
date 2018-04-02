@@ -9,7 +9,7 @@ contract CappedSTO is ISTO {
 
   bytes32 public ADMIN = "ADMIN";
 
-  // Address where funds are collected
+  // Address where funds are collected and tokens are issued to
   address public wallet;
 
   // How many token units a buyer gets per wei
@@ -25,7 +25,10 @@ contract CappedSTO is ISTO {
   // End time of the STO
   uint256 public endTime;
 
-  //How much funding this STO will be allowed to raise
+  // Amount of tokens sold
+  uint256 public tokensSold;
+
+  //How many tokens this STO will be allowed to sell to investors
   uint256 public cap;
 
   mapping (address => uint256) public investors;
@@ -65,6 +68,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
       cap = _cap;
       rate = _rate;
       wallet = _fundsReceiver;
+
       _check(_fundRaiseType, _polyToken);
   }
 
@@ -97,15 +101,14 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
 
   /**
     * @dev low level token purchase
-    * @param _beneficiary Address performing the token purchase
     * @param _investedPOLY Amount of POLY invested
     */
-  function buyTokensWithPoly(address _beneficiary, uint256 _investedPOLY) public {
+  function buyTokensWithPoly(uint256 _investedPOLY) public {
        require(uint(fundraiseType) == 1);
-       verifyInvestment(_beneficiary, _investedPOLY);
-      _processTx(_beneficiary, _investedPOLY);
-      _forwardPoly(_beneficiary, wallet, _investedPOLY);
-      _postValidatePurchase(_beneficiary, _investedPOLY);
+       require(verifyInvestment(msg.sender, _investedPOLY));
+      _processTx(msg.sender, _investedPOLY);
+      _forwardPoly(msg.sender, wallet, _investedPOLY);
+      _postValidatePurchase(msg.sender, _investedPOLY);
   }
 
    // -----------------------------------------
@@ -125,6 +128,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
 
     // update state
     fundsRaised = fundsRaised.add(_investedAmount);
+    tokensSold = tokensSold.add(tokens);
 
     _processPurchase(_beneficiary, tokens);
     TokenPurchase(msg.sender, _beneficiary, _investedAmount, tokens);
@@ -140,7 +144,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
   function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal {
     require(_beneficiary != address(0));
     require(_investedAmount != 0);
-    require(fundsRaised.add(_investedAmount) <= cap);
+    require(tokensSold.add(_getTokenAmount(_investedAmount)) <= cap);
     require(now >= startTime && now <= endTime);
   }
 
@@ -209,12 +213,18 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
     return fundsRaised >= cap;
   }
 
-  function getRaiseEther() view public returns (uint256) {
-    return 0;
+  function getRaisedEther() view public returns (uint256) {
+    if (uint(fundraiseType) == 0)
+      return fundsRaised;
+    else
+      return 0;
   }
 
-  function getRaisePOLY() view public returns (uint256) {
-    return 0;
+  function getRaisedPOLY() view public returns (uint256) {
+    if (uint(fundraiseType) == 1)
+      return fundsRaised;
+    else
+      return 0;
   }
 
   function getNumberInvestors() view public returns (uint256) {

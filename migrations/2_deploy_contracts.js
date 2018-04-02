@@ -56,15 +56,31 @@ module.exports = function (deployer, network, accounts) {
                     return deployer.deploy(PolyToken).then(()=> {
                         return moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount}).then(() => {
                             return moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, {from: PolymathAccount}).then(() => {
-                                return deployer.deploy(STVersionProxy_001, GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount}).then(() => {
-                                    return deployer.deploy(TickerRegistry, {from: PolymathAccount}).then(() => {
-                                        return deployer.deploy(SecurityTokenRegistry, PolyToken.address, ModuleRegistry.address, TickerRegistry.address, STVersionProxy_001.address, {from: PolymathAccount}).then(() =>{
-                                            return TickerRegistry.deployed().then((tickerRegistry) => {
-                                                return tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount}).then(()=>{
-                                                    return deployer.deploy(DummySTOFactory, {from: PolymathAccount}).then(() => {
-                                                        return moduleRegistry.registerModule(DummySTOFactory.address, {from: PolymathAccount}).then(() => {
-                                                            return deployer.deploy(CappedSTOFactory, {from: PolymathAccount}).then(() => {
-                                                                return moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount});
+                                return moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, {from: PolymathAccount}).then(()=>{
+                                    return moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, {from: PolymathAccount}).then(()=> {
+                                        return deployer.deploy(STVersionProxy_001, GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount}).then(() => {
+                                            return deployer.deploy(TickerRegistry, {from: PolymathAccount}).then(() => {
+                                                return deployer.deploy(SecurityTokenRegistry, PolyToken.address, ModuleRegistry.address, TickerRegistry.address, STVersionProxy_001.address, {from: PolymathAccount}).then(() =>{
+                                                    return TickerRegistry.deployed().then((tickerRegistry) => {
+                                                        return tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount}).then(()=>{
+                                                            return moduleRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount}).then(()=> {
+                                                                return deployer.deploy(DummySTOFactory, {from: PolymathAccount}).then(() => {
+                                                                    return moduleRegistry.registerModule(DummySTOFactory.address, {from: PolymathAccount}).then(() => {
+                                                                        return deployer.deploy(CappedSTOFactory, {from: PolymathAccount}).then(() => {
+                                                                            return moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount}).then(()=>{
+                                                                                console.log("\n")
+                                                                                console.log("----- Polymath Core Contracts -----");
+                                                                                console.log("*** Ticker Registry Address: ", tickerRegistry.address, "***");
+                                                                                //console.log("*** Module Registry Address: ", moduleRegistry.address, "***");
+                                                                                console.log("*** Security Token Registry Address: ", SecurityTokenRegistry.address, "***");
+                                                                                console.log("*** Capped STO Factory Address: ", CappedSTOFactory.address, "***");
+                                                                                console.log("-----------------------------------");
+                                                                                console.log("\n")
+                                                                                // -------- END OF POLYMATH NETWORK Configuration -------//
+                                                                            });
+                                                                        });
+                                                                    });
+                                                                });
                                                             });
                                                         });
                                                     });
@@ -81,4 +97,5 @@ module.exports = function (deployer, network, accounts) {
         });
     });
 });
+
 };

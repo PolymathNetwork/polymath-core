@@ -46,23 +46,6 @@ library SafeMath {
   }
 }
 
-interface ITickerRegistry {
-     /**
-      * @dev Check the validity of the symbol
-      * @param _symbol token symbol
-      * @param _owner address of the owner
-      */
-     function checkValidity(string _symbol, address _owner) public;
-
-     /**
-      * @dev Returns the owner and timestamp for a given symbol
-      * @param _symbol symbol
-      */
-     function getDetails(string _symbol) public view returns (address, uint256, string, bool);
-
-
-}
-
 /**
  * @title Ownable
  * @dev The Ownable contract has an owner address, and provides basic authorization control
@@ -103,6 +86,45 @@ contract Ownable {
 
 }
 
+interface ITickerRegistry {
+     /**
+      * @dev Check the validity of the symbol
+      * @param _symbol token symbol
+      * @param _owner address of the owner
+      * @param _tokenName Name of the token
+      * @return bool
+      */
+     function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool);
+
+     /**
+      * @dev Returns the owner and timestamp for a given symbol
+      * @param _symbol symbol
+      */
+     function getDetails(string _symbol) public view returns (address, uint256, string, bool);
+
+
+}
+
+contract Util {
+
+   /**
+    * @dev changes a string to lower case
+    * @param _base string to change
+    */
+    function lower(string _base) internal pure returns (string) {
+      bytes memory _baseBytes = bytes(_base);
+      for (uint i = 0; i < _baseBytes.length; i++) {
+       bytes1 b1 = _baseBytes[i];
+       if (b1 >= 0x41 && b1 <= 0x5A) {
+         b1 = bytes1(uint8(b1)+32);
+       }
+       _baseBytes[i] = b1;
+      }
+      return string(_baseBytes);
+    }
+
+}
+
 /*
   Allows issuers to reserve their token symbols ahead
   of actually generating their security token.
@@ -113,19 +135,17 @@ contract Ownable {
 
 
 
+
 /**
  * @title TickerRegistry
  * @dev Contract use to register the security token symbols
  */
-contract TickerRegistry is ITickerRegistry, Ownable {
+contract TickerRegistry is ITickerRegistry, Ownable, Util {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
     // For now it's value is 90 days;
-    uint256 public expiryLimit = 90 * 1 days;
-
-    // Ethereum address of the admin (Control some functions of the contract)
-    address public admin;
+    uint256 public expiryLimit = 7 * 1 days;
 
     // SecuirtyToken Registry contract address
     address public STRAddress;
@@ -134,7 +154,7 @@ contract TickerRegistry is ITickerRegistry, Ownable {
     struct SymbolDetails {
         address owner;
         uint256 timestamp;
-        string contact;
+        string tokenName;
         bool status;
     }
 
@@ -142,7 +162,7 @@ contract TickerRegistry is ITickerRegistry, Ownable {
     mapping(string => SymbolDetails) registeredSymbols;
 
     // Emit after the symbol registration
-    event LogRegisterTicker(address indexed _owner, string _symbol, uint256 _timestamp);
+    event LogRegisterTicker(address indexed _owner, string _symbol, string _name, uint256 _timestamp);
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
@@ -156,21 +176,21 @@ contract TickerRegistry is ITickerRegistry, Ownable {
             its ownership, until unless the symbol get expired and its issuer doesn't used it
             for its issuance.
      * @param _symbol token symbol
-     * @param _contact token contract details e.g. email
+     * @param _tokenName Name of the token
      */
-    function registerTicker(string _symbol, string _contact) public {
-        require(bytes(_contact).length > 0);
-        require(expiryCheck(_symbol));
-        registeredSymbols[_symbol] = SymbolDetails(msg.sender, now, _contact, false);
-        LogRegisterTicker(msg.sender, _symbol, now);
+    function registerTicker(string _symbol, string _tokenName) public {
+        require(bytes(_symbol).length > 0);
+        string memory symbol = lower(_symbol);
+        require(expiryCheck(symbol));
+        registeredSymbols[symbol] = SymbolDetails(msg.sender, now, _tokenName, false);
+        LogRegisterTicker(msg.sender, symbol, _tokenName, now);
     }
 
      /**
       * @dev Change the expiry time for the token symbol
       * @param _newExpiry new time period for token symbol expiry
       */
-     function changeExpiryLimit(uint256 _newExpiry) public {
-         require(msg.sender == admin);
+     function changeExpiryLimit(uint256 _newExpiry) public onlyOwner {
          uint256 _oldExpiry = expiryLimit;
          expiryLimit = _newExpiry;
          LogChangeExpiryLimit(_oldExpiry, _newExpiry);
@@ -207,27 +227,34 @@ contract TickerRegistry is ITickerRegistry, Ownable {
      * @dev Check the validity of the symbol
      * @param _symbol token symbol
      * @param _owner address of the owner
+     * @param _tokenName Name of the token
+     * @return bool
      */
-    function checkValidity(string _symbol, address _owner) public {
+    function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool) {
+        string memory symbol = lower(_symbol);
         require(msg.sender == STRAddress);
-        require(registeredSymbols[_symbol].status != true);
-        require(registeredSymbols[_symbol].owner == _owner);
-        require(registeredSymbols[_symbol].timestamp.add(expiryLimit) >= now);
-        registeredSymbols[_symbol].status = true;
+        require(registeredSymbols[symbol].status != true);
+        require(registeredSymbols[symbol].owner == _owner);
+        require(registeredSymbols[symbol].timestamp.add(expiryLimit) >= now);
+        registeredSymbols[symbol].tokenName = _tokenName;
+        registeredSymbols[symbol].status = true;
+        return true;
     }
+
 
      /**
      * @dev Returns the owner and timestamp for a given symbol
      * @param _symbol symbol
      */
     function getDetails(string _symbol) public view returns (address, uint256, string, bool) {
-        if (registeredSymbols[_symbol].status == true || registeredSymbols[_symbol].timestamp.add(expiryLimit) > now ) {
+        string memory symbol = lower(_symbol);
+        if (registeredSymbols[symbol].status == true || registeredSymbols[symbol].timestamp.add(expiryLimit) > now ) {
             return
             (
-                registeredSymbols[_symbol].owner,
-                registeredSymbols[_symbol].timestamp,
-                registeredSymbols[_symbol].contact,
-                registeredSymbols[_symbol].status
+                registeredSymbols[symbol].owner,
+                registeredSymbols[symbol].timestamp,
+                registeredSymbols[symbol].tokenName,
+                registeredSymbols[symbol].status
             );
         }
         else

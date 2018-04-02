@@ -1,24 +1,5 @@
 pragma solidity ^0.4.18;
 
-interface ITickerRegistry {
-     /**
-      * @dev Check the validity of the symbol
-      * @param _symbol token symbol
-      * @param _owner address of the owner
-      * @param _tokenName Name of the token
-      * @return bool
-      */
-     function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool);
-
-     /**
-      * @dev Returns the owner and timestamp for a given symbol
-      * @param _symbol symbol
-      */
-     function getDetails(string _symbol) public view returns (address, uint256, string, bool);
-
-
-}
-
 /**
  * @title ERC20Basic
  * @dev Simpler version of ERC20 interface
@@ -646,100 +627,30 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
 }
 
-contract ISTProxy {
+/**
+* @title SecurityToken
+* @notice SecurityToken is an ERC20 token with added capabilities:
+* - Transfers are restricted
+* - Modules can be attached to it to control its behaviour
+* - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
+*/
+contract SecurityTokenV2 is SecurityToken {
+    bytes32 public securityTokenVersion = "0.0.2";
 
-  function deployToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails, address _issuer)
-  public returns (address);
-}
-
-contract Util {
-
-   /**
-    * @dev changes a string to lower case
-    * @param _base string to change
-    */
-    function lower(string _base) internal pure returns (string) {
-      bytes memory _baseBytes = bytes(_base);
-      for (uint i = 0; i < _baseBytes.length; i++) {
-       bytes1 b1 = _baseBytes[i];
-       if (b1 >= 0x41 && b1 <= 0x5A) {
-         b1 = bytes1(uint8(b1)+32);
-       }
-       _baseBytes[i] = b1;
-      }
-      return string(_baseBytes);
-    }
-
-}
-
-contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
-
-    event LogNewSecurityToken(string _ticker, address _securityTokenAddress, address _owner);
-
-     /**
-     * @dev Constructor use to set the essentials addresses to facilitate
-     * the creation of the security token
-     */
-    function SecurityTokenRegistry(address _polyAddress, address _moduleRegistry, address _tickerRegistry, address _STVersionProxy) public {
-        polyAddress = _polyAddress;
-        moduleRegistry = _moduleRegistry;
-        tickerRegistry = _tickerRegistry;
-
-        setProtocolVersion(_STVersionProxy,"0.0.1");
-    }
-
-    /**
-     * @dev Creates a new Security Token and saves it to the registry
-     * @param _name Name of the token
-     * @param _symbol Ticker symbol of the security token
-     * @param _decimals Decimals value for token
-     * @param _tokenDetails off-chain details of the token
-     */
-    function generateSecurityToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails) public {
-        require(bytes(_name).length > 0 && bytes(_symbol).length > 0);
-        require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name));
-        string memory symbol = lower(_symbol);
-        address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
-          _name,
-          symbol,
-          _decimals,
-          _tokenDetails,
-          msg.sender
-        );
-
-        securityTokens[newSecurityTokenAddress] = SecurityTokenData(symbol, _tokenDetails);
-        symbols[symbol] = newSecurityTokenAddress;
-        LogNewSecurityToken(symbol, newSecurityTokenAddress, msg.sender);
-    }
-
-    function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public onlyOwner {
-      protocolVersion = _version;
-      protocolVersionST[_version]=_stVersionProxyAddress;
-    }
-
-    //////////////////////////////
-    ///////// Get Functions
-    //////////////////////////////
-    /**
-     * @dev Get security token address by ticker name
-     * @param _symbol Symbol of the Scurity token
-     * @return address _symbol
-     */
-    function getSecurityTokenAddress(string _symbol) public view returns (address) {
-      string memory __symbol = lower(_symbol);
-      return symbols[__symbol];
-    }
-
-     /**
-     * @dev Get security token data by its address
-     * @param _securityToken Address of the Scurity token
-     * @return string, address, bytes32
-     */
-    function getSecurityTokenData(address _securityToken) public view returns (string, address, bytes32) {
-      return (
-        securityTokens[_securityToken].symbol,
-        ISecurityToken(_securityToken).owner(),
-        securityTokens[_securityToken].tokenDetails
-      );
+    function SecurityTokenV2(
+        string _name,
+        string _symbol,
+        uint8 _decimals,
+        bytes32 _tokenDetails,
+        address _owner
+    )
+    public
+    SecurityToken(
+      _name,
+      _symbol,
+      _decimals,
+      _tokenDetails,
+      _owner)
+    {
     }
 }

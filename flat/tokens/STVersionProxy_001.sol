@@ -1,24 +1,5 @@
 pragma solidity ^0.4.18;
 
-interface ITickerRegistry {
-     /**
-      * @dev Check the validity of the symbol
-      * @param _symbol token symbol
-      * @param _owner address of the owner
-      * @param _tokenName Name of the token
-      * @return bool
-      */
-     function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool);
-
-     /**
-      * @dev Returns the owner and timestamp for a given symbol
-      * @param _symbol symbol
-      */
-     function getDetails(string _symbol) public view returns (address, uint256, string, bool);
-
-
-}
-
 /**
  * @title ERC20Basic
  * @dev Simpler version of ERC20 interface
@@ -646,6 +627,25 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
 }
 
+interface ITickerRegistry {
+     /**
+      * @dev Check the validity of the symbol
+      * @param _symbol token symbol
+      * @param _owner address of the owner
+      * @param _tokenName Name of the token
+      * @return bool
+      */
+     function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool);
+
+     /**
+      * @dev Returns the owner and timestamp for a given symbol
+      * @param _symbol symbol
+      */
+     function getDetails(string _symbol) public view returns (address, uint256, string, bool);
+
+
+}
+
 contract ISTProxy {
 
   function deployToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails, address _issuer)
@@ -742,4 +742,41 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
         securityTokens[_securityToken].tokenDetails
       );
     }
+}
+
+contract STVersionProxy_001 is ISTProxy {
+
+  address public transferManagerFactory;
+  address public permissionManagerFactory;
+
+  //Shoud be set to false when we have more TransferManager options
+  bool addTransferManager = true;
+  bool addPermissionManager = true;
+
+  function STVersionProxy_001(address _transferManagerFactory, address _permissionManagerFactory) public {
+    transferManagerFactory = _transferManagerFactory;
+    permissionManagerFactory = _permissionManagerFactory;
+  }
+
+  function deployToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails, address _issuer)
+  public returns (address) {
+    address newSecurityTokenAddress = new SecurityToken(
+      _name,
+      _symbol,
+      _decimals,
+      _tokenDetails,
+      msg.sender
+    );
+
+    if (addPermissionManager) {
+      SecurityToken(newSecurityTokenAddress).addModule(permissionManagerFactory, "", 0, 0, true);
+    }
+    if (addTransferManager) {
+      SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, 0, true);
+    }
+
+    SecurityToken(newSecurityTokenAddress).transferOwnership(_issuer);
+
+    return newSecurityTokenAddress;
+  }
 }

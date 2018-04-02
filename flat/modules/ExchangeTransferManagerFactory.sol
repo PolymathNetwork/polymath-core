@@ -160,121 +160,69 @@ contract ITransferManager is IModule {
 /////////////////////
 // Module permissions
 /////////////////////
-//                                        Owner       WHITELIST      FLAGS
-// changeIssuanceAddress                    X                          X
-// changeAllowAllTransfers                  X                          X
-// changeAllowAllWhitelistTransfers         X                          X
-// changeAllowAllWhitelistIssuances         X                          X
-// modifyWhitelist                          X             X
-// modifyWhitelistMulti                     X             X
+//                                        Factory Owner
+// modifyWhitelist                          X
+// modifyWhitelistMulti                     X
 
-contract GeneralTransferManager is ITransferManager {
+contract ExchangeTransferManager is ITransferManager {
 
-    //Address from which issuances come
-    address public issuanceAddress = address(0);
+    address public exchange;
+    mapping (address => bool) public whitelist;
 
-    bytes32 public WHITELIST = "WHITELIST";
-    bytes32 public FLAGS = "FLAGS";
+    event LogModifyWhitelist(address _investor, uint256 _dateAdded, address _addedBy);
 
-    //from and to timestamps that an investor can send / receive tokens respectively
-    struct TimeRestriction {
-      uint256 fromTime;
-      uint256 toTime;
-    }
-
-    //An address can only send / receive tokens once their corresponding uint256 > block.number (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
-    mapping (address => TimeRestriction) public whitelist;
-
-    //If true, there are no transfer restrictions, for any addresses
-    bool public allowAllTransfers = false;
-    //If true, time lock is ignored for transfers (address must still be on whitelist)
-    bool public allowAllWhitelistTransfers = false;
-    //If true, time lock is ignored for issuances (address must still be on whitelist)
-    bool public allowAllWhitelistIssuances = true;
-
-    event LogChangeIssuanceAddress(address _issuanceAddress);
-    event LogAllowAllTransfers(bool _allowAllTransfers);
-    event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
-    event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
-    event LogModifyWhitelist(address _investor, uint256 _dateAdded, address _addedBy,  uint256 _fromTime, uint256 _toTime);
-
-    function GeneralTransferManager(address _securityToken)
+    function ExchangeTransferManager(address _securityToken)
     IModule(_securityToken)
     public
     {
     }
 
+    function configure(address _exchange) public onlyFactory {
+        exchange = _exchange;
+    }
+
     function getInitFunction() public returns(bytes4) {
-      return bytes4(0);
-    }
-
-    function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
-        issuanceAddress = _issuanceAddress;
-        LogChangeIssuanceAddress(_issuanceAddress);
-    }
-
-    function changeAllowAllTransfers(bool _allowAllTransfers) public withPerm(FLAGS) {
-        allowAllTransfers = _allowAllTransfers;
-        LogAllowAllTransfers(_allowAllTransfers);
-    }
-
-    function changeAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers) public withPerm(FLAGS) {
-        allowAllWhitelistTransfers = _allowAllWhitelistTransfers;
-        LogAllowAllWhitelistTransfers(_allowAllWhitelistTransfers);
-    }
-
-    function changeAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances) public withPerm(FLAGS) {
-        allowAllWhitelistIssuances = _allowAllWhitelistIssuances;
-        LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
-    }
-
-    function onWhitelist(address _investor) internal view returns(bool) {
-      return ((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0));
+        return bytes4(keccak256("configure(address)"));
     }
 
     function verifyTransfer(address _from, address _to, uint256 _amount) view external returns(bool) {
-        if (allowAllTransfers) {
-          //All transfers allowed, regardless of whitelist
-          return true;
-        }
-        if (allowAllWhitelistTransfers) {
-          //Anyone on the whitelist can transfer, regardless of block number
-          return (onWhitelist(_to) && onWhitelist(_from));
-        }
-        if (allowAllWhitelistIssuances) {
-            return ((_from == issuanceAddress) && onWhitelist(_to));
-        }
-        //Anyone on the whitelist can transfer provided the blocknumber is large enough
-        return ((whitelist[_from].fromTime <= now) && (whitelist[_to].toTime <= now));
+        //Transfer must be from / to the exchange
+        require((_from == exchange) || (_to == exchange));
+        return getExchangePermission(_from) || getExchangePermission(_to);
     }
 
-    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {
-        //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
-        whitelist[_investor] = TimeRestriction(_fromTime, _toTime);
-        LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime);
+    function getExchangePermission(address _investor) view internal returns (bool) {
+        //This function could implement more complex logic, e.g. calling out to another contract maintained by the exchange to get list of allowed users
+        return whitelist[_investor];
     }
 
-    function modifyWhitelistMulti(address[] _investors, uint256[] _fromTimes, uint256[] _toTimes) public withPerm(WHITELIST) {
-        require(_investors.length == _fromTimes.length);
-        require(_fromTimes.length == _toTimes.length);
+    function modifyWhitelist(address _investor, bool _valid) public onlyFactoryOwner {
+        whitelist[_investor] = _valid;
+        LogModifyWhitelist(_investor, now, msg.sender);
+    }
+
+    function modifyWhitelistMulti(address[] _investors, bool[] _valids) public onlyFactoryOwner {
+        require(_investors.length == _valids.length);
         for (uint256 i = 0; i < _investors.length; i++) {
-          modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i]);
+          modifyWhitelist(_investors[i], _valids[i]);
         }
     }
 
     function permissions() public returns(bytes32[]) {
-      bytes32[] memory allPermissions = new bytes32[](2);
-      allPermissions[0] = WHITELIST;
-      allPermissions[1] = FLAGS;
-      return allPermissions;
+        bytes32[] memory allPermissions = new bytes32[](0);
+        return allPermissions;
     }
 }
 
-contract GeneralTransferManagerFactory is IModuleFactory {
+contract ExchangeTransferManagerFactory is IModuleFactory {
 
-  function deploy(bytes /* _data */) external returns(address) {
+  function deploy(bytes _data) external returns(address) {
     //polyToken.transferFrom(msg.sender, owner, getCost());
-    return address(new GeneralTransferManager(msg.sender));
+    ExchangeTransferManager exchangeTransferManager = new ExchangeTransferManager(msg.sender);
+    require(getSig(_data) == exchangeTransferManager.getInitFunction());
+    require(address(exchangeTransferManager).call(_data));
+    return address(exchangeTransferManager);
+
   }
 
   function getCost() view external returns(uint256) {
@@ -286,15 +234,15 @@ contract GeneralTransferManagerFactory is IModuleFactory {
   }
 
   function getName() view external returns(bytes32) {
-    return "GeneralTransferManager";
+    return "ExchangeTransferManager";
   }
 
   function getDescription() view external returns(string) {
-    return "Manage transfers using a time based whitelist";
+    return "Manage transfers within an exchange";
   }
 
   function getTitle() view external returns(string) {
-    return "General Transfer Manager";
+    return "Exchange Transfer Manager";
   }
 
 }

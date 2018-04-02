@@ -1,11 +1,8 @@
-require('babel-register');
-require('babel-polyfill');
+require('babel-register')
+require('babel-polyfill')
 
-const HDWalletProvider = require("truffle-hdwallet-provider");
-const WalletProvider = require("truffle-wallet-provider");
-const keystore = require('fs').readFileSync('./sample-keystore').toString();
-const pass = require('fs').readFileSync('./sample-pass').toString();
-const wallet = require('ethereumjs-wallet').fromV3(keystore, pass);
+const HDWalletProvider = require('truffle-hdwallet-provider')
+const privKey = require('fs').readFileSync('./privKey').toString()
 
 module.exports = {
   networks: {
@@ -13,7 +10,7 @@ module.exports = {
       host: 'localhost',
       port: 8545,
       network_id: '*', // Match any network id
-      gas: 4500000,
+      gas: 4500000
     },
     mainnet: {
       host: 'localhost',
@@ -23,8 +20,7 @@ module.exports = {
       gasPrice: 10000000000
     },
     ropsten: {
-      // provider: new HDWalletProvider(pass, "https://ropsten.infura.io/g5xfoQ0jFSE9S5LwM1Ei"),
-      provider: new WalletProvider(wallet, "https://ropsten.infura.io/"),
+      provider: new HDWalletProvider(privKey, 'https://ropsten.infura.io/g5xfoQ0jFSE9S5LwM1Ei'),
       host: 'localhost',
       port: 8545,
       network_id: '3', // Match any network id
@@ -35,7 +31,7 @@ module.exports = {
   solc: {
     optimizer: {
       enabled: true,
-      runs: 200,
-    },
-  },
-};
+      runs: 200
+    }
+  }
+}

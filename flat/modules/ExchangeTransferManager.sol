@@ -151,96 +151,65 @@ contract IModule {
     function permissions() public returns(bytes32[]);
 }
 
-contract IPermissionManager is IModule {
+contract ITransferManager is IModule {
 
-    function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool);
-
-    function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) public returns(bool);
-
-    function delegateDetails(address _delegate) public returns(bytes32);
+    function verifyTransfer(address _from, address _to, uint256 _amount) view external returns(bool);
 
 }
 
 /////////////////////
 // Module permissions
 /////////////////////
-//                          Owner       CHANGE_PERMISSION
-// addPermission                X               X
-// changePermission           X               X
-//
+//                                        Factory Owner
+// modifyWhitelist                          X
+// modifyWhitelistMulti                     X
 
-contract GeneralPermissionManager is IPermissionManager {
+contract ExchangeTransferManager is ITransferManager {
 
-  mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;
+    address public exchange;
+    mapping (address => bool) public whitelist;
 
-  mapping (address => bytes32) public delegateDetails;
+    event LogModifyWhitelist(address _investor, uint256 _dateAdded, address _addedBy);
 
-  bytes32 public CHANGE_PERMISSION = "CHANGE_PERMISSION";
-
-  function GeneralPermissionManager(address _securityToken) public
-  IModule(_securityToken)
-  {
-  }
-
-  function getInitFunction() public returns(bytes4) {
-    return bytes4(0);
-  }
-
-  function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool) {
-    if (delegateDetails[_delegate] != bytes32(0)) {
-      return perms[_module][_delegate][_perm];
+    function ExchangeTransferManager(address _securityToken)
+    IModule(_securityToken)
+    public
+    {
     }
-    else
-      return false;
-  }
 
-  function addPermission(address _delegate, bytes32 _details) public withPerm(CHANGE_PERMISSION) {
-    delegateDetails[_delegate] = _details;
-  }
+    function configure(address _exchange) public onlyFactory {
+        exchange = _exchange;
+    }
 
-  function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) public withPerm(CHANGE_PERMISSION) returns(bool) {
-    require(delegateDetails[_delegate] != bytes32(0));
-    perms[_module][_delegate][_perm] = _valid;
-  }
+    function getInitFunction() public returns(bytes4) {
+        return bytes4(keccak256("configure(address)"));
+    }
 
-  function delegateDetails(address _delegate) public returns(bytes32) {
-    return delegateDetails[_delegate];
-  }
+    function verifyTransfer(address _from, address _to, uint256 _amount) view external returns(bool) {
+        //Transfer must be from / to the exchange
+        require((_from == exchange) || (_to == exchange));
+        return getExchangePermission(_from) || getExchangePermission(_to);
+    }
 
-  function permissions() public returns(bytes32[]) {
-    bytes32[] memory allPermissions = new bytes32[](1);
-    allPermissions[0] = CHANGE_PERMISSION;
-    return allPermissions;
-  }
+    function getExchangePermission(address _investor) view internal returns (bool) {
+        //This function could implement more complex logic, e.g. calling out to another contract maintained by the exchange to get list of allowed users
+        return whitelist[_investor];
+    }
 
-}
+    function modifyWhitelist(address _investor, bool _valid) public onlyFactoryOwner {
+        whitelist[_investor] = _valid;
+        LogModifyWhitelist(_investor, now, msg.sender);
+    }
 
-contract GeneralPermissionManagerFactory is IModuleFactory {
+    function modifyWhitelistMulti(address[] _investors, bool[] _valids) public onlyFactoryOwner {
+        require(_investors.length == _valids.length);
+        for (uint256 i = 0; i < _investors.length; i++) {
+          modifyWhitelist(_investors[i], _valids[i]);
+        }
+    }
 
-  function deploy(bytes /* _data */) external returns(address) {
-    //polyToken.transferFrom(msg.sender, owner, getCost());
-    return address(new GeneralPermissionManager(msg.sender));
-  }
-
-  function getCost() view external returns(uint256) {
-    return 0;
-  }
-
-  function getType() view external returns(uint8) {
-      return 1;
-  }
-
-  function getName() view external returns(bytes32) {
-    return "GeneralPermissionManager";
-  }
-
-  function getDescription() view external returns(string) {
-    return "Manage permissions within the Security Token and attached modules";
-  }
-
-  function getTitle() view external returns(string) {
-    return "General Permission Manager";
-  }
-
-
+    function permissions() public returns(bytes32[]) {
+        bytes32[] memory allPermissions = new bytes32[](0);
+        return allPermissions;
+    }
 }

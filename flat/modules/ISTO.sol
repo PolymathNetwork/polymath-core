@@ -6,7 +6,7 @@ contract IST20 {
     bytes32 public tokenDetails;
 
     //transfer, transferFrom must respect use respect the result of verifyTransfer
-    function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool success);
+    function verifyTransfer(address _from, address _to, uint256 _amount) view public returns (bool success);
 
     //used to create tokens
     function mint(address _investor, uint256 _amount) public returns (bool success);
@@ -59,6 +59,58 @@ contract ISecurityToken is IST20, Ownable {
 
 }
 
+/**
+ * @title ERC20Basic
+ * @dev Simpler version of ERC20 interface
+ * @dev see https://github.com/ethereum/EIPs/issues/179
+ */
+contract ERC20Basic {
+  function totalSupply() public view returns (uint256);
+  function balanceOf(address who) public view returns (uint256);
+  function transfer(address to, uint256 value) public returns (bool);
+  event Transfer(address indexed from, address indexed to, uint256 value);
+}
+
+/**
+ * @title ERC20 interface
+ * @dev see https://github.com/ethereum/EIPs/issues/20
+ */
+contract ERC20 is ERC20Basic {
+  function allowance(address owner, address spender) public view returns (uint256);
+  function transferFrom(address from, address to, uint256 value) public returns (bool);
+  function approve(address spender, uint256 value) public returns (bool);
+  event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+//Simple interface that any module contracts should implement
+contract IModuleFactory is Ownable {
+
+    ERC20 public polyToken;
+
+    //Should create an instance of the Module, or throw
+    function deploy(bytes _data) external returns(address);
+
+    function getType() view external returns(uint8);
+
+    function getName() view external returns(bytes32);
+
+    //Return the cost (in POLY) to use this factory
+    function getCost() view external returns(uint256);
+
+    function getDescription() view external returns(string);
+
+    function getTitle() view external returns(string);
+
+    //Pull function sig from _data
+    function getSig(bytes _data) internal pure returns (bytes4 sig) {
+        uint l = _data.length < 4 ? _data.length : 4;
+        for (uint i = 0; i < l; i++) {
+            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (l - 1 - i))));
+        }
+    }
+
+}
+
 //Simple interface that any module contracts should implement
 contract IModule {
 
@@ -91,30 +143,12 @@ contract IModule {
       _;
     }
 
+    modifier onlyFactoryOwner {
+      require(msg.sender == IModuleFactory(factory).owner());
+      _;
+    }
+
     function permissions() public returns(bytes32[]);
-}
-
-/**
- * @title ERC20Basic
- * @dev Simpler version of ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/179
- */
-contract ERC20Basic {
-  function totalSupply() public view returns (uint256);
-  function balanceOf(address who) public view returns (uint256);
-  function transfer(address to, uint256 value) public returns (bool);
-  event Transfer(address indexed from, address indexed to, uint256 value);
-}
-
-/**
- * @title ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/20
- */
-contract ERC20 is ERC20Basic {
-  function allowance(address owner, address spender) public view returns (uint256);
-  function transferFrom(address from, address to, uint256 value) public returns (bool);
-  function approve(address spender, uint256 value) public returns (bool);
-  event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
 contract ISTO is IModule {
@@ -139,12 +173,12 @@ contract ISTO is IModule {
     }
 
     function verifyInvestment(address _beneficiary, uint256 _fundsAmount) view public returns(bool) {
-        return ERC20(polyAddress).allowance(this, _beneficiary) >= _fundsAmount;
+        return ERC20(polyAddress).allowance(_beneficiary, address(this)) >= _fundsAmount;
     }
 
-    function getRaiseEther() public view returns (uint256);
+    function getRaisedEther() public view returns (uint256);
 
-    function getRaisePOLY() public view returns (uint256);
+    function getRaisedPOLY() public view returns (uint256);
 
     function getNumberInvestors() public view returns (uint256);
 

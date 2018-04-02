@@ -64,12 +64,53 @@ Once the STO Factory has been registered to the Module Registry, issuers will be
 
 # Using the CLI ST-20 Generator
 
-The CLI ST-20 Generator is a wizard-like script that will guide you in the creation and deployment of the ST-20 token.
+The CLI ST-20 Generator is a wizard-like script that will guide you in the creation and deployment of an ST-20 token.
 
 To use it, make sure you are connected to a full-node (or locally to Ganache-cli).
-1. Edit demo/ST20Generator.js to make sure it's pointing to the correct contract addresses
-2. On your terminal, run the following command: `node demo/ST20Generator`
+1. Edit `demo/helpers/contract_addresses.js` to make sure scripts are pointing to the correct contract addresses
+2. On the terminal, run the following command: `npm run st20Generator`
 3. Follow the Command-line prompts
+
+a) You will be asked for a token symbol. Enter a new symbol to register it or a symbol you already registered to manage the token.
+
+b) Enter the token name to complete the token registration process. The token will be deployed to the blockchain.
+
+c) (Optional) If you want to issue tokens to an account you own, enter the account and then how many tokens you want to issue.
+
+d) Configure the Capped STO. Enter start and end times, the issuance cap and exchange rate.
+
+e) Once the process is finished, you can run the st20generator again and enter the token symbol to see the STO progress.
+
+## Whitelisting investors
+
+After starting the STO you can run the whitelist script to mass update the whitelist of investors.
+Make sure the `whitelist_data.csv` file is present in the demo folder.
+
+```
+node demo/whitelist TOKEN_SYMBOL
+```
+
+## Investing in the STO
+
+You can run the invest script to participate in any STO you have been whitelist for.
+The script takes 3 parameters:
+- The token symbol for the STO you want to invest in
+- The account that will receive the tokens
+- How much ETH to send
+
+```
+node demo/invest TOKEN_SYMBOL BENEFICIARY ETHER
+```
+
+## Transferring tokens
+You can run the transfer script to transfer ST tokens to another account (As long as both are whitelisted and have been cleared of any lockup periods).
+- The token symbol of the ST you want to transfer
+- The account that will receive the tokens 
+- How many tokens to send
+
+```
+node demo/transfer TOKEN_SYMBOL ACCOUNT_TO AMOUNT
+```
 
 ### Styleguide
 

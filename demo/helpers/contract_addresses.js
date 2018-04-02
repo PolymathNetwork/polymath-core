@@ -1,22 +1,27 @@
-let _GANACHE_CONTRACTS = true;
+var NETWORKS = {
+  GANACHE: 0,
+  MAINNET: 1,
+  ROPSTEN: 3,
+};
+var SELECTED_NETWORK = NETWORKS.GANACHE;
 
 module.exports = {
   tickerRegistryAddress: function() {
-    if(_GANACHE_CONTRACTS)
-      return "0xf207b817475c646684dd844673401f2d79823999";
-    else
+    if(SELECTED_NETWORK == NETWORKS.GANACHE)
+      return "0xbb18aaa2af79ab4977d751292c528ac936b63265";
+    else if(SELECTED_NETWORK == NETWORKS.ROPSTEN)
       return "";
   },
   securityTokenRegistryAddress: function() {
-    if(_GANACHE_CONTRACTS)
-      return "0x2ae556fcab3366cebc7af880582cfe6970e8f434";
-    else
+    if(SELECTED_NETWORK == NETWORKS.GANACHE)
+      return "0xd6c985d538beeb8ee2642761ca8cdee15e2c604d";
+    else if(SELECTED_NETWORK == NETWORKS.ROPSTEN)
       return "";
   },
   cappedSTOFactoryAddress: function() {
-    if(_GANACHE_CONTRACTS)
-      return "0xf928eda0542238ef2999e8931d45a7a3371cdd2d";
-    else
+    if(SELECTED_NETWORK == NETWORKS.GANACHE)
+      return "0xcf3491244098c1a27eec3f0ea26e25ccccacbfe9";
+    else if(SELECTED_NETWORK == NETWORKS.ROPSTEN)
       return "";
   },
 

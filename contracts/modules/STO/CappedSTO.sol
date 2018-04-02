@@ -141,7 +141,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
    * @param _beneficiary Address performing the token purchase
    * @param _investedAmount Value in wei involved in the purchase
    */
-  function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal {
+  function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal view {
     require(_beneficiary != address(0));
     require(_investedAmount != 0);
     require(tokensSold.add(_getTokenAmount(_investedAmount)) <= cap);
@@ -153,7 +153,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
    * @param _beneficiary Address performing the token purchase
    * @param _investedAmount Value in wei involved in the purchase
    */
-  function _postValidatePurchase(address _beneficiary, uint256 _investedAmount) internal {
+  function _postValidatePurchase(address _beneficiary, uint256 _investedAmount) internal pure {
     // optional override
   }
 
@@ -185,7 +185,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
    * @param _beneficiary Address receiving the tokens
    * @param _investedAmount Value in wei involved in the purchase
    */
-  function _updatePurchasingState(address _beneficiary, uint256 _investedAmount) internal {
+  function _updatePurchasingState(address _beneficiary, uint256 _investedAmount) internal pure {
     // optional override
   }
 

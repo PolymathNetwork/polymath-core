@@ -1,6 +1,6 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
-import { increaseTime } from './helpers/time';
+import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO = artifacts.require('./CappedSTO.sol');
@@ -18,7 +18,7 @@ const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.s
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
-const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
+const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8535")) // Hardcoded development port
 
 
 contract('SecurityToken', accounts => {
@@ -222,6 +222,169 @@ contract('SecurityToken', accounts => {
         `);
     });
 
-    describe("")
+    describe("Generate the SecurityToken", async() => {
+
+        it("Should register the ticker before the generation of the security token", async () => {
+            let tx = await I_TickerRegistry.registerTicker(symbol, name, { from : token_owner });
+            assert.equal(tx.logs[0].args._owner, token_owner);
+            assert.equal(tx.logs[0].args._symbol, symbol.toLowerCase());
+        });
+
+        it("Should generate the new security token with the same symbol as registered above", async () => {
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: token_owner });
+
+            // Verify the successful generation of the security token
+            assert.equal(tx.logs[1].args._ticker, symbol.toLowerCase(), "SecurityToken doesn't get deployed");
+
+            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+
+            const LogAddModule = await I_SecurityToken.allEvents();
+            const log = await new Promise(function(resolve, reject) {
+                LogAddModule.watch(function(error, log){ resolve(log);});
+            });
+
+            // Verify that GeneralPermissionManager module get added successfully or not
+            assert.equal(log.args._type.toNumber(), permissionManagerKey);
+            assert.equal(
+                web3.utils.toAscii(log.args._name)
+                .replace(/\u0000/g, ''),
+                "GeneralPermissionManager"
+            );
+            LogAddModule.stopWatching();
+        });
+
+        it("Should intialize the auto attached modules", async () => {
+        let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
+        I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+
+            assert.notEqual(
+                I_GeneralTransferManager.address.valueOf(),
+                "0x0000000000000000000000000000000000000000",
+                "GeneralTransferManager contract was not deployed",
+            );
+
+            moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
+            I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
+
+            assert.notEqual(
+                I_GeneralPermissionManager.address.valueOf(),
+                "0x0000000000000000000000000000000000000000",
+                "GeneralDelegateManager contract was not deployed",
+            );
+        });
+
+        it("Should successfully attach the STO factory with the security token", async () => {
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
+
+            assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name)
+                .replace(/\u0000/g, ''),
+                "CappedSTO",
+                "CappedSTOFactory module was not added"
+            );
+            I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
+        });
+    });
+
+    describe("Module related functions", async() => {
+        it("Should get the modules of the securityToken", async () => {
+            let moduleData = await I_SecurityToken.getModule.call(stoKey, 0);
+            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "CappedSTO");
+            assert.equal(moduleData[1], I_CappedSTO.address);
+            assert.isFalse(moduleData[2]);
+        });
+
+        it("Should fails in removing the module from the securityToken", async() => {
+            try {
+                await I_SecurityToken.removeModule(stoKey, 0, { from : token_owner });
+            } catch (error) {
+                console.log(`Test case passed by restricting the removal of non replacable module`);
+                ensureException(error);
+            }
+        });
+
+        it("Should successfully remove the general transfer manager module from the securityToken -- fails msg.sender should be Owner", async() => {
+            let key = await takeSnapshot();
+            try {
+                let tx = await I_SecurityToken.removeModule(transferManagerKey, 0, { from : accounts[8] });
+            } catch (error) {
+                console.log(`Test Case passed by restricting the unknown account to call removeModule of the securityToken`);
+                ensureException(error);
+            }
+        });
+
+        it("Should successfully remove the general transfer manager module from the securityToken", async() => {
+            let key = await takeSnapshot();
+            let tx = await I_SecurityToken.removeModule(transferManagerKey, 0, { from : token_owner });
+            assert.equal(tx.logs[0].args._type, transferManagerKey);
+            assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);            
+            await revertToSnapshot(key);
+        });
+
+        it("Should verify the revertion of snapshot works properly", async() => {
+            let moduleData = await I_SecurityToken.getModule.call(transferManagerKey, 0);
+            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "GeneralTransferManager");
+            assert.equal(moduleData[1], I_GeneralTransferManager.address);
+            assert.isTrue(moduleData[2]);
+        });
+
+        it("Should change the budget of the module", async() => {
+           let tx = await I_SecurityToken.changeModuleBudget(stoKey, 0, (100 * Math.pow(10, 18)),{ from : token_owner});
+           assert.equal(tx.logs[1].args._moduleType, stoKey);
+           assert.equal(tx.logs[1].args._module, I_CappedSTO.address);
+           assert.equal(tx.logs[1].args._budget.dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
+        });
+    });
+
+    describe("General Transfer manager Related test cases", async () => {
+
+            it("Should Buy the tokens", async() => {
+                balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
+                // Add the Investor in to the whitelist
+    
+                let tx = await I_GeneralTransferManager.modifyWhitelist(
+                    account_investor1,
+                    fromTime,
+                    toTime,
+                    {
+                        from: account_issuer,
+                        gas: 500000
+                    });
+    
+                assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
+    
+                // Jump time
+                await increaseTime(5000);
+                // Fallback transaction
+                await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_CappedSTO.address,
+                    gas: 210000,
+                    value: web3.utils.toWei('1', 'ether')
+                    });
+    
+                assert.equal(
+                    (await I_CappedSTO.fundsRaised.call())
+                    .dividedBy(new BigNumber(10).pow(18))
+                    .toNumber(),
+                    1
+                );
+    
+                assert.equal(await I_CappedSTO.getNumberInvestors.call(), 1);
+    
+                assert.equal(
+                    (await I_SecurityToken.balanceOf(account_investor1))
+                    .dividedBy(new BigNumber(10).pow(18))
+                    .toNumber(),
+                    1000
+                );
+            });
+        it("Should transfer the token from one whitelist investor 1 to investor 2", async() => {
+            await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
+        });
+    });
 
   });

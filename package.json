@@ -22,7 +22,8 @@
     "coverage": "./node_modules/.bin/solidity-coverage",
     "flatten-modules": "sol-merger './contracts/modules/*/*.sol' ./flat/modules",
     "flatten-token": "sol-merger './contracts/tokens/*.sol' ./flat/tokens",
-    "flatten": "sol-merger './contracts/*.sol' ./flat"
+    "flatten": "sol-merger './contracts/*.sol' ./flat",
+    "st20generator": "node demo/ST20Generator"
   },
   "repository": {
     "type": "git",
@@ -67,7 +68,7 @@
     "ganache-cli": "^6.1.0",
     "sol-merger": "^0.1.2",
     "solium": "^1.1.6",
-    "truffle": "^4.1.3",
+    "truffle": "^4.1.5",
     "truffle-wallet-provider": "0.0.5"
   }
 }

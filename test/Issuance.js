@@ -1,13 +1,13 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
-import { increaseTime } from './helpers/time';
+import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO = artifacts.require('./CappedSTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
-const TickerRegistry = artifacts.require("./TickerRegistry.sol");
+const TickerRegistry = artifacts.require('./TickerRegistry.sol');
 const STVersion = artifacts.require('./STVersionProxy_001.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
@@ -37,7 +37,6 @@ contract('SecurityToken', accounts => {
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(15);
     
-
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
@@ -103,8 +102,8 @@ contract('SecurityToken', accounts => {
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
-        account_investor1 = accounts[2];
-        account_investor2 = accounts[3];
+        account_investor1 = accounts[3];
+        account_investor2 = accounts[2];
         account_fundsReceiver = accounts[4];
         token_owner = account_issuer;
 
@@ -229,14 +228,14 @@ contract('SecurityToken', accounts => {
             it("POLYMATH: Should register the ticker before the generation of the security token", async () => {
                 let tx = await I_TickerRegistry.registerTicker(symbol, name, { from : account_polymath });
                 assert.equal(tx.logs[0].args._owner, account_polymath);
-                assert.equal(tx.logs[0].args._symbol, symbol.toLowerCase());
+                assert.equal(tx.logs[0].args._symbol, symbol);
             });
 
             it("POLYMATH: Should generate the new security token with the same symbol as registered above", async () => {
                 let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: account_polymath });
     
                 // Verify the successful generation of the security token
-                assert.equal(tx.logs[1].args._ticker, symbol.toLowerCase(), "SecurityToken doesn't get deployed");
+                assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
     
                 I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
     

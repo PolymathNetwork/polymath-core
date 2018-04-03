@@ -40,5 +40,5 @@ contract IModule {
       _;
     }
 
-    function permissions() public returns(bytes32[]);
+    function getPermissions() view public returns(bytes32[]);
 }

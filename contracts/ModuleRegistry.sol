@@ -43,7 +43,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     }
 
     /**
-    * @dev Called by Polymath to register new modules for SecurityToken to use
+    * @dev Called by moduleFactory owner to register new modules for SecurityToken to use
     * @param _moduleFactory is the address of the module factory to be registered
     */
     function registerModule(address _moduleFactory) external returns(bool) {
@@ -57,6 +57,10 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         return true;
     }
 
+    /**
+    * @dev Called by Polymath to verify modules for SecurityToken to use
+    * @param _moduleFactory is the address of the module factory to be registered
+    */
     function verifyModule(address _moduleFactory, bool _verified) external onlyOwner returns(bool) {
         //Must already have been registered
         require(registry[_moduleFactory] != 0);

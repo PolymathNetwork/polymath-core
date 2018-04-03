@@ -30,4 +30,6 @@ contract IModuleFactory is Ownable {
         }
     }
 
+    function getInstructions() public view returns (string);
+
 }

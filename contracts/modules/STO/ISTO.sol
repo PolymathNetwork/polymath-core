@@ -11,13 +11,15 @@ contract ISTO is IModule {
     address public polyAddress;
 
     function _check(uint8 _fundraiseType, address _polyToken) internal {
+        require(_fundraiseType == 0 || _fundraiseType == 1);
+        if (_fundraiseType == 0) {
+            fundraiseType = FundraiseType.ETH;
+        }
         if (_fundraiseType == 1) {
-            fundraiseType = FundraiseType(_fundraiseType);
             require(_polyToken != address(0));
+            fundraiseType = FundraiseType.POLY;
             polyAddress = _polyToken;
         }
-        else
-            fundraiseType = FundraiseType(0);
     }
 
     function _forwardPoly(address _beneficiary, address _to, uint256 _fundsAmount) internal {

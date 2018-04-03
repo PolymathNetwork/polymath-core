@@ -34,4 +34,8 @@ contract ExchangeTransferManagerFactory is IModuleFactory {
     return "Exchange Transfer Manager";
   }
 
+  function getInstructions() public view returns(string) {
+    return "Allows an exchange to whitelist users for depositing / withdrawing from an exchange address. Init function takes exchange address as a parameter and users are added via modifyWhitelist.";
+  }
+
 }

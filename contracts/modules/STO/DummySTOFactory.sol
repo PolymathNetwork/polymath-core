@@ -36,4 +36,8 @@ contract DummySTOFactory is IModuleFactory {
     return "Dummy STO";
   }
 
+  function getInstructions() public view returns(string) {
+    return "Dummy STO - you can mint tokens at will";
+  }
+
 }

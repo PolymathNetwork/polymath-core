@@ -5,22 +5,10 @@ const Web3 = require('web3');
 
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
-let _GANACHE_CONTRACTS = true;
-let tickerRegistryAddress;
-let securityTokenRegistryAddress;
-let cappedSTOFactoryAddress;
-let generalTransferManagerAddress;
-
-
-if (_GANACHE_CONTRACTS) {
-  tickerRegistryAddress = '0x9357349bca3fec887d6cc352c3b376cfc7aba443';
-  securityTokenRegistryAddress = '0x854d4757c43aee5a346b1e37c3658154ebab51c1';
-  cappedSTOFactoryAddress = '0x4c2614c7a3835905b3819da785f7df7c032bc1a0';
-} else {
-  tickerRegistryAddress = "0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27";
-  securityTokenRegistryAddress = "0x6958fca8a4cd4418a5cf9ae892d1a488e8af518f";
-  cappedSTOFactoryAddress = "0x128674eeb1c26d59a27ec58e9a76142e55bade2d";
-}
+var contracts = require("./helpers/contract_addresses");
+let tickerRegistryAddress = contracts.tickerRegistryAddress();
+let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
+let cappedSTOFactoryAddress = contracts.cappedSTOFactoryAddress();
 
 let tickerRegistryABI;
 let securityTokenRegistryABI;

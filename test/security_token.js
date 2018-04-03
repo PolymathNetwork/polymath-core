@@ -415,7 +415,14 @@ contract('SecurityToken', accounts => {
 
                 assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
 
-                // await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
+                await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
+
+                assert.equal(
+                    (await I_SecurityToken.balanceOf(account_investor2))
+                    .dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                    10,
+                    "Transfer doesn't take place properly"
+                );
             });
 
             it("Should fail to provide the permission to the delegate to change the transfer bools", async () => {
@@ -492,7 +499,7 @@ contract('SecurityToken', accounts => {
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor2))
                     .dividedBy(new BigNumber(10).pow(18)).toNumber(),
-                    10,
+                    20,
                     "Transfer doesn't take place properly"
                 );
                 await revertToSnapshot(ID_snap);

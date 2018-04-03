@@ -86,11 +86,12 @@ contract GeneralTransferManager is ITransferManager {
           //Anyone on the whitelist can transfer, regardless of block number
           return (onWhitelist(_to) && onWhitelist(_from));
         }
-        if (allowAllWhitelistIssuances) {
-            return ((_from == issuanceAddress) && onWhitelist(_to));
+        if (allowAllWhitelistIssuances && _from == issuanceAddress) {
+            return onWhitelist(_to);
         }
         //Anyone on the whitelist can transfer provided the blocknumber is large enough
-        return ((whitelist[_from].fromTime <= now) && (whitelist[_to].toTime <= now));
+        return ((onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
+                (onWhitelist(_to) && whitelist[_to].toTime <= now));
     }
 
     function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {

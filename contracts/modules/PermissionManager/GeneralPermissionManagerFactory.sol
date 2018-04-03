@@ -30,5 +30,8 @@ contract GeneralPermissionManagerFactory is IModuleFactory {
     return "General Permission Manager";
   }
 
+  function getInstructions() public view returns(string) {
+    return "Add and remove permissions for the SecurityToken and associated modules. Permission types should be encoded as bytes32 values, and attached using the withPerm modifier to relevant functions. No initFunction required.";
+  }
 
 }

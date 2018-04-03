@@ -150,10 +150,8 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
 
   /**
    * @dev Validation of an executed purchase. Observe state and use revert statements to undo rollback when valid conditions are not met.
-   * @param _beneficiary Address performing the token purchase
-   * @param _investedAmount Value in wei involved in the purchase
    */
-  function _postValidatePurchase(address _beneficiary, uint256 _investedAmount) internal pure {
+  function _postValidatePurchase(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
     // optional override
   }
 
@@ -182,10 +180,8 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
 
   /**
    * @dev Override for extensions that require an internal state to check for validity (current user contributions, etc.)
-   * @param _beneficiary Address receiving the tokens
-   * @param _investedAmount Value in wei involved in the purchase
    */
-  function _updatePurchasingState(address _beneficiary, uint256 _investedAmount) internal pure {
+  function _updatePurchasingState(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
     // optional override
   }
 
@@ -231,7 +227,7 @@ event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint
     return investorCount;
   }
 
-  function permissions() public returns(bytes32[]) {
+  function getPermissions() view public returns(bytes32[]) {
     bytes32[] memory allPermissions = new bytes32[](1);
     allPermissions[0] = ADMIN;
     return allPermissions;

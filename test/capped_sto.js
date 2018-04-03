@@ -7,7 +7,7 @@ const CappedSTO = artifacts.require('./CappedSTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
-const TickerRegistry = artifacts.require("./TickerRegistry.sol");
+const TickerRegistry = artifacts.require('./TickerRegistry.sol');
 const STVersion = artifacts.require('./STVersionProxy_001.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
@@ -112,11 +112,11 @@ contract('CappedSTO', accounts => {
 
     before(async() => {
         // Accounts setup
-        account_polymath = accounts[0];
-        account_issuer = accounts[1];
-        account_investor1 = accounts[2];
+        account_polymath = accounts[5];
+        account_issuer = accounts[6];
+        account_investor1 = accounts[4];
         account_investor2 = accounts[3];
-        account_fundsReceiver = accounts[4];
+        account_fundsReceiver = accounts[2];
         token_owner = account_issuer;
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -238,14 +238,14 @@ contract('CappedSTO', accounts => {
         it("Should register the ticker before the generation of the security token", async () => {
             let tx = await I_TickerRegistry.registerTicker(symbol, name, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
-            assert.equal(tx.logs[0].args._symbol, symbol.toLowerCase());
+            assert.equal(tx.logs[0].args._symbol, symbol);
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, symbol.toLowerCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
@@ -538,14 +538,14 @@ contract('CappedSTO', accounts => {
             it("POLY: Should register the ticker before the generation of the security token", async () => {
                 let tx = await I_TickerRegistry.registerTicker(P_symbol, P_name, { from : token_owner });
                 assert.equal(tx.logs[0].args._owner, token_owner);
-                assert.equal(tx.logs[0].args._symbol, P_symbol.toLowerCase());
+                assert.equal(tx.logs[0].args._symbol, P_symbol);
             });
 
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
                 let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_decimals, P_tokenDetails, { from: token_owner });
 
                 // Verify the successful generation of the security token
-                assert.equal(tx.logs[1].args._ticker, P_symbol.toLowerCase(), "SecurityToken doesn't get deployed");
+                assert.equal(tx.logs[1].args._ticker, P_symbol, "SecurityToken doesn't get deployed");
 
                 I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 

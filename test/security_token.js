@@ -7,7 +7,7 @@ const CappedSTO = artifacts.require('./CappedSTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
-const TickerRegistry = artifacts.require("./TickerRegistry.sol");
+const TickerRegistry = artifacts.require('./TickerRegistry.sol');
 const STVersion = artifacts.require('./STVersionProxy_001.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
@@ -18,7 +18,7 @@ const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.s
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
-const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8535")) // Hardcoded development port
+const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
 
 contract('SecurityToken', accounts => {
@@ -31,12 +31,14 @@ contract('SecurityToken', accounts => {
     let token_owner;
     let account_investor2;
     let account_fundsReceiver;
+    let account_delegate;
 
     let balanceOfReceiver;
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(15);
     
+    let ID_snap;
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -64,6 +66,10 @@ contract('SecurityToken', accounts => {
     const transferManagerKey = 2;
     const stoKey = 3;
     const budget = 0;
+
+    // delagate details
+    const delegateDetails = "I am delegate ..";
+    const TM_Perm = 'FLAGS';
 
     // Capped STO details
     const startTime = latestTime() + duration.seconds(5000);           // Start time will be 5000 seconds more than the latest time
@@ -106,6 +112,7 @@ contract('SecurityToken', accounts => {
         account_investor1 = accounts[2];
         account_investor2 = accounts[3];
         account_fundsReceiver = accounts[4];
+        account_delegate = accounts[5];
         token_owner = account_issuer;
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -227,14 +234,14 @@ contract('SecurityToken', accounts => {
         it("Should register the ticker before the generation of the security token", async () => {
             let tx = await I_TickerRegistry.registerTicker(symbol, name, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
-            assert.equal(tx.logs[0].args._symbol, symbol.toLowerCase());
+            assert.equal(tx.logs[0].args._symbol, symbol);
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, symbol.toLowerCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
@@ -382,9 +389,112 @@ contract('SecurityToken', accounts => {
                     1000
                 );
             });
-        it("Should transfer the token from one whitelist investor 1 to investor 2", async() => {
-            await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
-        });
+
+            it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async() => {
+                try {
+                    await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
+                } catch(error) {
+                    console.log(`Test case pass. Tx failed because investor 2 is not in the whitelist`);
+                    ensureException(error);
+                }
+            });   
+            
+            /// Below test case will work after the latest PR merge by Pablo
+
+            it("Should transfer the token from one whitelist investor 1 to whitelist investor 2", async() => {
+                let tx = await I_GeneralTransferManager.modifyWhitelist(
+                    account_investor2,
+                    fromTime,
+                    toTime,
+                    {
+                        from: account_issuer,
+                        gas: 500000
+                    });
+
+                assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
+
+                // await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
+            });
+
+            it("Should fail to provide the permission to the delegate to change the transfer bools", async () => {
+                // Add permission to the deletgate (A regesteration process)
+                try {
+                    await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: accounts[8] });
+                } catch (error) {
+                    console.log(`${accounts[8]} doesn't have permissions to register the delegate`);
+                    ensureException(error);
+                }
+            });
+
+            it("Should provide the permission to the delegate to change the transfer bools", async () => {
+                // Add permission to the deletgate (A regesteration process)
+                await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: token_owner});
+                // Providing the permission to the delegate
+                await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, { from: token_owner });
+
+                assert.isTrue(await I_GeneralPermissionManager.checkPermission(account_delegate, I_GeneralTransferManager.address, TM_Perm));
+            });
+
+
+            it("Should fail to activate the bool allowAllTransfer", async() => {
+                try {
+                    let tx = await I_GeneralTransferManager.changeAllowAllTransfers(true, { from : accounts[8] });
+                } catch (error) {
+                    console.log(`${accounts[8]} doesn't have permissions to activate the bool allowAllTransfer`);
+                    ensureException(error);
+                }
+            });
+
+            it("Should activate the bool allowAllTransfer", async() => {
+                ID_snap = await takeSnapshot();
+                let tx = await I_GeneralTransferManager.changeAllowAllTransfers(true, { from : account_delegate });
+
+                assert.isTrue(tx.logs[0].args._allowAllTransfers, "AllowTransfer variable is not successfully updated");
+            });
+
+            it("Should transfer from whitelist investor to non-whitelist investor in first tx and in 2nd tx non-whitelist to non-whitelist transfer", async() => {
+                await I_SecurityToken.transfer(accounts[7], (10 *  Math.pow(10, 18)), { from : account_investor1});
+
+                assert.equal(
+                    (await I_SecurityToken.balanceOf(accounts[7]))
+                    .dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                    10,
+                    "Transfer doesn't take place properly"
+                );
+
+                await I_SecurityToken.transfer(accounts[8], (5 *  Math.pow(10, 18)), { from : accounts[7]});
+
+                assert.equal(
+                    (await I_SecurityToken.balanceOf(accounts[8]))
+                    .dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                    5,
+                    "Transfer doesn't take place properly"
+                );
+                await revertToSnapshot(ID_snap);
+            });
+
+            it("Should bool allowAllTransfer value is false", async() => {
+                assert.isFalse(await I_GeneralTransferManager.allowAllTransfers.call(), "reverting of snapshot doesn't works properly");
+            });
+
+            it("Should change the bool allowAllWhitelistTransfers to true", async () => {
+                ID_snap = await takeSnapshot();
+                let tx = await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, { from : account_delegate });
+
+                assert.isTrue(tx.logs[0].args._allowAllWhitelistTransfers, "allowAllWhitelistTransfers variable is not successfully updated");
+            });
+
+            it("Should transfer from whitelist investor1 to whitelist investor 2", async() => {
+                await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
+                // Here balance should be 20 after passing the above commented test case
+                assert.equal(
+                    (await I_SecurityToken.balanceOf(account_investor2))
+                    .dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                    10,
+                    "Transfer doesn't take place properly"
+                );
+                await revertToSnapshot(ID_snap);
+            });
     });
 
   });

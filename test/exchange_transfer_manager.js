@@ -7,7 +7,7 @@ const DummySTO = artifacts.require('./DummySTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
-const TickerRegistry = artifacts.require("./TickerRegistry.sol");
+const TickerRegistry = artifacts.require('./TickerRegistry.sol');
 const STVersion = artifacts.require('./STVersionProxy_001.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
@@ -228,14 +228,14 @@ contract('ExchangeTransferManager', accounts => {
         it("Should register the ticker before the generation of the security token", async () => {
             let tx = await I_TickerRegistry.registerTicker(symbol, contact, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
-            assert.equal(tx.logs[0].args._symbol, symbol);
+            assert.equal(tx.logs[0].args._symbol, symbol.toUpperCase());
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 

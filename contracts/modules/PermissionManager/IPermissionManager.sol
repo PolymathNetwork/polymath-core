@@ -8,6 +8,6 @@ contract IPermissionManager is IModule {
 
     function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) public returns(bool);
 
-    function delegateDetails(address _delegate) public returns(bytes32);
+    function getDelegateDetails(address _delegate) view public returns(bytes32);
 
 }

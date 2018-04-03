@@ -2,7 +2,7 @@ require('babel-register');
 require('babel-polyfill');
 
 const HDWalletProvider = require("truffle-hdwallet-provider-privkey");
-// const privKey = require('fs').readFileSync('./privKey').toString();
+const privKey = require('fs').readFileSync('./privKey').toString();
 
 module.exports = {
   networks: {
@@ -20,7 +20,7 @@ module.exports = {
       gasPrice: 10000000000
     },
     ropsten: {
-      // provider: new HDWalletProvider(privKey, "http://localhost:8545"),
+      provider: new HDWalletProvider(privKey, "http://localhost:8545"),
       host: 'localhost',
       port: 8545,
       network_id: '3', // Match any network id

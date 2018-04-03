@@ -33,7 +33,7 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
     function generateSecurityToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails) public {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0);
         require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name));
-        string memory symbol = lower(_symbol);
+        string memory symbol = upper(_symbol);
         address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
           _name,
           symbol,
@@ -61,7 +61,7 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @return address _symbol
      */
     function getSecurityTokenAddress(string _symbol) public view returns (address) {
-      string memory __symbol = lower(_symbol);
+      string memory __symbol = upper(_symbol);
       return symbols[__symbol];
     }
 

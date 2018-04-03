@@ -30,7 +30,7 @@ contract ExchangeTransferManager is ITransferManager {
         return bytes4(keccak256("configure(address)"));
     }
 
-    function verifyTransfer(address _from, address _to, uint256 _amount) view external returns(bool) {
+    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) view external returns(bool) {
 
         if(_from == exchange) {
           return getExchangePermission(_to);
@@ -58,7 +58,7 @@ contract ExchangeTransferManager is ITransferManager {
         }
     }
 
-    function permissions() public returns(bytes32[]) {
+    function getPermissions() view public returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }

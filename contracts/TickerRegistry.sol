@@ -54,8 +54,8 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      * @param _tokenName Name of the token
      */
     function registerTicker(string _symbol, string _tokenName) public {
-        require(bytes(_symbol).length > 0);
-        string memory symbol = lower(_symbol);
+        require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10);
+        string memory symbol = upper(_symbol);
         require(expiryCheck(symbol));
         registeredSymbols[symbol] = SymbolDetails(msg.sender, now, _tokenName, false);
         LogRegisterTicker(msg.sender, symbol, _tokenName, now);
@@ -66,6 +66,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
       * @param _newExpiry new time period for token symbol expiry
       */
      function changeExpiryLimit(uint256 _newExpiry) public onlyOwner {
+         require(_newExpiry >= 1 days);
          uint256 _oldExpiry = expiryLimit;
          expiryLimit = _newExpiry;
          LogChangeExpiryLimit(_oldExpiry, _newExpiry);
@@ -106,7 +107,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      * @return bool
      */
     function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool) {
-        string memory symbol = lower(_symbol);
+        string memory symbol = upper(_symbol);
         require(msg.sender == STRAddress);
         require(registeredSymbols[symbol].status != true);
         require(registeredSymbols[symbol].owner == _owner);
@@ -122,7 +123,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      * @param _symbol symbol
      */
     function getDetails(string _symbol) public view returns (address, uint256, string, bool) {
-        string memory symbol = lower(_symbol);
+        string memory symbol = upper(_symbol);
         if (registeredSymbols[symbol].status == true || registeredSymbols[symbol].timestamp.add(expiryLimit) > now ) {
             return
             (

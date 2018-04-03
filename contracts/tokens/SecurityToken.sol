@@ -119,12 +119,12 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
     }
 
-    function getModule(uint8 _module, uint _index) public view returns (bytes32, address, bool) {
-      if (modules[_module].length > 0) {
+    function getModule(uint8 _moduleType, uint _index) public view returns (bytes32, address, bool) {
+      if (modules[_moduleType].length > 0) {
         return (
-          modules[_module][_index].name,
-          modules[_module][_index].moduleAddress,
-          modules[_module][_index].replaceable
+          modules[_moduleType][_index].name,
+          modules[_moduleType][_index].moduleAddress,
+          modules[_moduleType][_index].replaceable
         );
       }else {
         return ("",address(0),false);
@@ -149,8 +149,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0);
         require(_moduleIndex < modules[_moduleType].length);
-        require(polyToken.approve(modules[_moduleType][_moduleType].moduleAddress, _budget));
-        LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleType].moduleAddress, _budget);
+        require(polyToken.approve(modules[_moduleType][_moduleIndex].moduleAddress, _budget));
+        LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
     }
 
     /**

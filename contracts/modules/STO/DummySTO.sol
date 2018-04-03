@@ -57,7 +57,7 @@ contract DummySTO is ISTO {
     return investorCount;
   }
 
-  function permissions() public returns(bytes32[]) {
+  function getPermissions() view public returns(bytes32[]) {
     bytes32[] memory allPermissions = new bytes32[](1);
     allPermissions[0] = ADMIN;
     return allPermissions;

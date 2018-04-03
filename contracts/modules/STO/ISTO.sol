@@ -11,8 +11,8 @@ contract ISTO is IModule {
     address public polyAddress;
 
     function _check(uint8 _fundraiseType, address _polyToken) internal {
-        require(_fundRaiseType == 0 || _fundRaiseType == 1);
-        if (_fundRaiseType == 0) {
+        require(_fundraiseType == 0 || _fundraiseType == 1);
+        if (_fundraiseType == 0) {
             fundraiseType = FundraiseType.ETH;
         }
         if (_fundraiseType == 1) {

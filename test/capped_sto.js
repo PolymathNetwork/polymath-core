@@ -1,6 +1,6 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
-import { increaseTime } from './helpers/time';
+import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO = artifacts.require('./CappedSTO.sol');
@@ -21,8 +21,6 @@ const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
 contract('CappedSTO', accounts => {
-
-
     // Accounts Variable declaration
     let account_polymath;
     let account_investor1;
@@ -72,7 +70,7 @@ contract('CappedSTO', accounts => {
     const budget = 0;
 
     // Capped STO details
-    const startTime = latestTime() + duration.seconds(5000);           // Start time will be 5000 seconds more than the latest time
+    const startTime = latestTime() + duration.days(1);           // Start time will be 5000 seconds more than the latest time
     const endTime = startTime + duration.days(30);                     // Add 30 days more
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
@@ -112,8 +110,8 @@ contract('CappedSTO', accounts => {
 
     before(async() => {
         // Accounts setup
-        account_polymath = accounts[5];
-        account_issuer = accounts[6];
+        account_polymath = accounts[0];
+        account_issuer = accounts[1];
         account_investor1 = accounts[4];
         account_investor2 = accounts[3];
         account_fundsReceiver = accounts[2];
@@ -320,7 +318,6 @@ contract('CappedSTO', accounts => {
 
         it("Should successfully attach the STO factory with the security token", async () => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
-
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
 
             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
@@ -408,7 +405,7 @@ contract('CappedSTO', accounts => {
             assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
 
             // Jump time
-            await increaseTime(5000);
+            await increaseTime(duration.days(1));
             // Fallback transaction
             await web3.eth.sendTransaction({
                 from: account_investor1,
@@ -501,7 +498,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should failed at the time of buying the tokens -- Because STO get expired", async() => {
-            await increaseTime(duration.days(16)); // increased beyond the end time of the STO
+            await increaseTime(duration.days(17)); // increased beyond the end time of the STO
 
             try {
                 // Fallback transaction
@@ -659,7 +656,7 @@ contract('CappedSTO', accounts => {
                 assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
 
                 // Jump time
-                await increaseTime(duration.days(16));
+                await increaseTime(duration.days(17));
 
                 await I_PolyFaucet.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
 
@@ -758,7 +755,7 @@ contract('CappedSTO', accounts => {
             });
 
             it("Should failed at the time of buying the tokens -- Because STO get expired", async() => {
-                await increaseTime(duration.days(30)); // increased beyond the end time of the STO
+                await increaseTime(duration.days(31)); // increased beyond the end time of the STO
 
                 try {
                     await I_PolyFaucet.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});

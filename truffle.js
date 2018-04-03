@@ -2,7 +2,7 @@ require('babel-register');
 require('babel-polyfill');
 
 const HDWalletProvider = require("truffle-hdwallet-provider-privkey");
-const privKey = require('fs').readFileSync('./privKey').toString();
+// const privKey = require('fs').readFileSync('./privKey').toString();
 
 module.exports = {
   networks: {

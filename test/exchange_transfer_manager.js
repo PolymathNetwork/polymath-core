@@ -1,6 +1,6 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
-import { increaseTime } from './helpers/time';
+import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
 const DummySTO = artifacts.require('./DummySTO.sol');
@@ -380,9 +380,8 @@ contract('ExchangeTransferManager', accounts => {
               (await I_SecurityToken.balanceOf(account_exchange)).toNumber(),
               web3.utils.toWei('1', 'ether')
           );
-
         });
-
+        
 
     });
 });

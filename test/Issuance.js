@@ -1,6 +1,6 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
-import { increaseTime } from './helpers/time';
+import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO = artifacts.require('./CappedSTO.sol');
@@ -37,7 +37,6 @@ contract('SecurityToken', accounts => {
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(15);
     
-
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
@@ -101,11 +100,11 @@ contract('SecurityToken', accounts => {
 
     before(async() => {
         // Accounts setup
-        account_polymath = accounts[6];
-        account_issuer = accounts[5];
-        account_investor1 = accounts[4];
-        account_investor2 = accounts[1];
-        account_fundsReceiver = accounts[2];
+        account_polymath = accounts[0];
+        account_issuer = accounts[1];
+        account_investor1 = accounts[3];
+        account_investor2 = accounts[2];
+        account_fundsReceiver = accounts[4];
         token_owner = account_issuer;
 
         // ----------- POLYMATH NETWORK Configuration ------------

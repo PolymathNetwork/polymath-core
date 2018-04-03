@@ -32,6 +32,7 @@ contract('SecurityToken', accounts => {
     let account_investor2;
     let account_fundsReceiver;
     let account_delegate;
+    let account_temp;
 
     let balanceOfReceiver;
     // investor Details
@@ -39,7 +40,6 @@ contract('SecurityToken', accounts => {
     let toTime = latestTime() + duration.days(15);
     
     let ID_snap;
-
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
@@ -72,8 +72,8 @@ contract('SecurityToken', accounts => {
     const TM_Perm = 'FLAGS';
 
     // Capped STO details
-    const startTime = latestTime() + duration.seconds(5000);           // Start time will be 5000 seconds more than the latest time
-    const endTime = startTime + duration.days(30);                     // Add 30 days more
+    let startTime;
+    let endTime;
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
     const fundRaiseType = 0;
@@ -109,12 +109,13 @@ contract('SecurityToken', accounts => {
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
-        account_investor1 = accounts[2];
-        account_investor2 = accounts[3];
+        account_investor1 = accounts[9];
+        account_investor2 = accounts[6];
         account_fundsReceiver = accounts[4];
         account_delegate = accounts[5];
+        account_temp = accounts[8];
         token_owner = account_issuer;
-
+      
         // ----------- POLYMATH NETWORK Configuration ------------
 
         // STEP 1: Deploy the ModuleRegistry
@@ -281,9 +282,11 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
+            startTime = latestTime() + duration.seconds(5000);
+            endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
-
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
+            
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 5000000 });
 
             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
@@ -314,9 +317,8 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should successfully remove the general transfer manager module from the securityToken -- fails msg.sender should be Owner", async() => {
-            let key = await takeSnapshot();
             try {
-                let tx = await I_SecurityToken.removeModule(transferManagerKey, 0, { from : accounts[8] });
+                let tx = await I_SecurityToken.removeModule(transferManagerKey, 0, { from : account_temp });
             } catch (error) {
                 console.log(`Test Case passed by restricting the unknown account to call removeModule of the securityToken`);
                 ensureException(error);
@@ -419,9 +421,9 @@ contract('SecurityToken', accounts => {
             it("Should fail to provide the permission to the delegate to change the transfer bools", async () => {
                 // Add permission to the deletgate (A regesteration process)
                 try {
-                    await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: accounts[8] });
+                    await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_temp });
                 } catch (error) {
-                    console.log(`${accounts[8]} doesn't have permissions to register the delegate`);
+                    console.log(`${account_temp} doesn't have permissions to register the delegate`);
                     ensureException(error);
                 }
             });
@@ -438,9 +440,9 @@ contract('SecurityToken', accounts => {
 
             it("Should fail to activate the bool allowAllTransfer", async() => {
                 try {
-                    let tx = await I_GeneralTransferManager.changeAllowAllTransfers(true, { from : accounts[8] });
+                    let tx = await I_GeneralTransferManager.changeAllowAllTransfers(true, { from : account_temp });
                 } catch (error) {
-                    console.log(`${accounts[8]} doesn't have permissions to activate the bool allowAllTransfer`);
+                    console.log(`${account_temp} doesn't have permissions to activate the bool allowAllTransfer`);
                     ensureException(error);
                 }
             });
@@ -462,10 +464,10 @@ contract('SecurityToken', accounts => {
                     "Transfer doesn't take place properly"
                 );
 
-                await I_SecurityToken.transfer(accounts[8], (5 *  Math.pow(10, 18)), { from : accounts[7]});
+                await I_SecurityToken.transfer(account_temp, (5 *  Math.pow(10, 18)), { from : accounts[7]});
 
                 assert.equal(
-                    (await I_SecurityToken.balanceOf(accounts[8]))
+                    (await I_SecurityToken.balanceOf(account_temp))
                     .dividedBy(new BigNumber(10).pow(18)).toNumber(),
                     5,
                     "Transfer doesn't take place properly"

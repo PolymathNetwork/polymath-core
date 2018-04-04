@@ -11,8 +11,8 @@ const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO= artifacts.require('./CappedSTO.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersionProxy_001 = artifacts.require('./tokens/STVersionProxy_001.sol');
-const STVersionProxy_002 = artifacts.require('./tokens/STVersionProxy_002.sol');
+const STVersionProxy001 = artifacts.require('./tokens/STVersionProxy001.sol');
+const STVersionProxy002 = artifacts.require('./tokens/STVersionProxy002.sol');
 
 const Web3 = require('web3');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
@@ -50,11 +50,11 @@ module.exports = async (deployer, network, accounts) => {
   await moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, {from: PolymathAccount});
 
   // 3. Deploy Ticker Registry and SecurityTokenRegistry
-  await deployer.deploy(STVersionProxy_001,GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount});
-  let stVersionProxy_001 = await STVersionProxy_001.deployed();
+  await deployer.deploy(STVersionProxy001,GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount});
+  let stVersionProxy001 = await STVersionProxy001.deployed();
 
   await deployer.deploy(TickerRegistry, {from: PolymathAccount});
-  await deployer.deploy(SecurityTokenRegistry, PolyToken.address, ModuleRegistry.address, TickerRegistry.address,stVersionProxy_001.address, {from: PolymathAccount});
+  await deployer.deploy(SecurityTokenRegistry, PolyToken.address, ModuleRegistry.address, TickerRegistry.address,stVersionProxy001.address, {from: PolymathAccount});
   let tickerRegistry = await TickerRegistry.deployed();
   let securityTokenRegistry = await SecurityTokenRegistry.deployed();
 

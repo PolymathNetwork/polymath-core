@@ -1,6 +1,7 @@
 pragma solidity ^0.4.18;
 
-import './ISecurityToken.sol';
+import "./ISecurityToken.sol";
+
 
 contract ISecurityTokenRegistry {
 
@@ -13,8 +14,8 @@ contract ISecurityTokenRegistry {
     mapping (bytes32 => address) public protocolVersionST;
 
     struct SecurityTokenData {
-      string symbol;
-      bytes32 tokenDetails;
+        string symbol;
+        bytes32 tokenDetails;
     }
 
     mapping(address => SecurityTokenData) securityTokens;

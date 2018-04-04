@@ -1,5 +1,6 @@
 pragma solidity ^0.4.18;
 
+
 //Simple interface that any module contracts should implement
 interface IModuleRegistry {
 

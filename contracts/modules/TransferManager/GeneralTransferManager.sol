@@ -1,6 +1,6 @@
 pragma solidity ^0.4.18;
 
-import './ITransferManager.sol';
+import "./ITransferManager.sol";
 
 /////////////////////
 // Module permissions
@@ -18,16 +18,17 @@ contract GeneralTransferManager is ITransferManager {
     //Address from which issuances come
     address public issuanceAddress = address(0);
 
-    bytes32 public WHITELIST = "WHITELIST";
-    bytes32 public FLAGS = "FLAGS";
+    bytes32 public constant WHITELIST = "WHITELIST";
+    bytes32 public constant FLAGS = "FLAGS";
 
     //from and to timestamps that an investor can send / receive tokens respectively
     struct TimeRestriction {
-      uint256 fromTime;
-      uint256 toTime;
+        uint256 fromTime;
+        uint256 toTime;
     }
 
-    //An address can only send / receive tokens once their corresponding uint256 > block.number (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
+    // An address can only send / receive tokens once their corresponding uint256 > block.number 
+    // (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
     mapping (address => TimeRestriction) public whitelist;
 
     //If true, there are no transfer restrictions, for any addresses
@@ -41,16 +42,23 @@ contract GeneralTransferManager is ITransferManager {
     event LogAllowAllTransfers(bool _allowAllTransfers);
     event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
-    event LogModifyWhitelist(address _investor, uint256 _dateAdded, address _addedBy,  uint256 _fromTime, uint256 _toTime);
+    
+    event LogModifyWhitelist(
+        address _investor,
+        uint256 _dateAdded,
+        address _addedBy,
+        uint256 _fromTime,
+        uint256 _toTime
+    );
 
     function GeneralTransferManager(address _securityToken)
-    IModule(_securityToken)
     public
+    IModule(_securityToken)
     {
     }
 
     function getInitFunction() public returns(bytes4) {
-      return bytes4(0);
+        return bytes4(0);
     }
 
     function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
@@ -73,18 +81,14 @@ contract GeneralTransferManager is ITransferManager {
         LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
-    function onWhitelist(address _investor) internal view returns(bool) {
-      return ((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0));
-    }
-
-    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) view external returns(bool) {
+    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(bool) {
         if (allowAllTransfers) {
-          //All transfers allowed, regardless of whitelist
-          return true;
+            //All transfers allowed, regardless of whitelist
+            return true;
         }
         if (allowAllWhitelistTransfers) {
-          //Anyone on the whitelist can transfer, regardless of block number
-          return (onWhitelist(_to) && onWhitelist(_from));
+            //Anyone on the whitelist can transfer, regardless of block number
+            return (onWhitelist(_to) && onWhitelist(_from));
         }
         if (allowAllWhitelistIssuances && _from == issuanceAddress) {
             return onWhitelist(_to);
@@ -100,18 +104,26 @@ contract GeneralTransferManager is ITransferManager {
         LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime);
     }
 
-    function modifyWhitelistMulti(address[] _investors, uint256[] _fromTimes, uint256[] _toTimes) public withPerm(WHITELIST) {
+    function modifyWhitelistMulti(
+        address[] _investors,
+        uint256[] _fromTimes,
+        uint256[] _toTimes
+    ) public withPerm(WHITELIST) {
         require(_investors.length == _fromTimes.length);
         require(_fromTimes.length == _toTimes.length);
         for (uint256 i = 0; i < _investors.length; i++) {
-          modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i]);
+            modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i]);
         }
     }
 
-    function getPermissions() view public returns(bytes32[]) {
-      bytes32[] memory allPermissions = new bytes32[](2);
-      allPermissions[0] = WHITELIST;
-      allPermissions[1] = FLAGS;
-      return allPermissions;
+    function getPermissions() public view returns(bytes32[]) {
+        bytes32[] memory allPermissions = new bytes32[](2);
+        allPermissions[0] = WHITELIST;
+        allPermissions[1] = FLAGS;
+        return allPermissions;
+    }
+
+    function onWhitelist(address _investor) internal view returns(bool) {
+        return ((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0));
     }
 }

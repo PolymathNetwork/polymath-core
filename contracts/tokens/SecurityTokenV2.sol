@@ -1,6 +1,7 @@
 pragma solidity ^0.4.18;
 
-import './SecurityToken.sol';
+import "./SecurityToken.sol";
+
 
 /**
 * @title SecurityToken
@@ -21,11 +22,11 @@ contract SecurityTokenV2 is SecurityToken {
     )
     public
     SecurityToken(
-      _name,
-      _symbol,
-      _decimals,
-      _tokenDetails,
-      _owner)
+        _name,
+        _symbol,
+        _decimals,
+        _tokenDetails,
+        _owner)
     {
     }
 }

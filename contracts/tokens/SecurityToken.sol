@@ -34,10 +34,10 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     address public moduleRegistry;
 
-    // Permission has a key of 1
-    // TransferManager has a key of 2
-    // STO has a key of 3
-    // Other modules TBD
+    uint8 public PERMISSIONMANAGER_KEY = 1;
+    uint8 public TRANSFERMANAGER_KEY = 2;
+    uint8 public STO_KEY = 3;
+
     // Module list should be order agnostic!
     mapping (uint8 => ModuleData[]) public modules;
 
@@ -68,16 +68,15 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         string _symbol,
         uint8 _decimals,
         bytes32 _tokenDetails,
-        address _owner
+        address _securityTokenRegistry
     )
     public
     DetailedERC20(_name, _symbol, _decimals)
     {
         //When it is created, the owner is the STR
-        moduleRegistry = ISecurityTokenRegistry(_owner).moduleRegistry();
-        polyToken = ERC20(ISecurityTokenRegistry(_owner).polyAddress());
+        moduleRegistry = ISecurityTokenRegistry(_securityTokenRegistry).moduleRegistry();
+        polyToken = ERC20(ISecurityTokenRegistry(_securityTokenRegistry).polyAddress());
         tokenDetails = _tokenDetails;
-        //owner = _owner;
     }
 
     function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) external onlyOwner {
@@ -120,15 +119,15 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     function getModule(uint8 _moduleType, uint _index) public view returns (bytes32, address, bool) {
-      if (modules[_moduleType].length > 0) {
-        return (
-          modules[_moduleType][_index].name,
-          modules[_moduleType][_index].moduleAddress,
-          modules[_moduleType][_index].replaceable
-        );
-      }else {
-        return ("",address(0),false);
-      }
+        if (modules[_moduleType].length > 0) {
+            return (
+              modules[_moduleType][_index].name,
+              modules[_moduleType][_index].moduleAddress,
+              modules[_moduleType][_index].replaceable
+            );
+        } else {
+            return ("",address(0),false);
+        }
 
     }
 
@@ -172,11 +171,11 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
     function verifyTransfer(address _from, address _to, uint256 _amount) view public returns (bool success) {
-        if (modules[2].length == 0) {
+        if (modules[TRANSFERMANAGER_KEY].length == 0) {
           return true;
         }
-        for (uint8 i = 0; i < modules[2].length; i++) {
-            if (ITransferManager(modules[2][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
+        for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
+            if (ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
                 return true;
             }
         }
@@ -184,7 +183,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     // Only STO module can call this, has a key of 3
-    function mint(address _investor, uint256 _amount) public onlyModule(3, true) returns (bool success) {
+    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) returns (bool success) {
         require(verifyTransfer(address(0), _investor, _amount));
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);
@@ -195,7 +194,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     //TODO: Implement this function
     function investorStatus(address /* _investor */) public pure returns (uint8 _status) {
-      return 0;
+        return 0;
     }
 
     // Permissions this to a Permission module, which has a key of 1
@@ -203,12 +202,12 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     // this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
     function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool) {
 
-      if (modules[1].length == 0) {
+      if (modules[PERMISSIONMANAGER_KEY].length == 0) {
         return false;
       }
 
-      for (uint8 i = 0; i < modules[1].length; i++) {
-          if (IPermissionManager(modules[1][i].moduleAddress).checkPermission(_delegate, _module, _perm)) {
+      for (uint8 i = 0; i < modules[PERMISSIONMANAGER_KEY].length; i++) {
+          if (IPermissionManager(modules[PERMISSIONMANAGER_KEY][i].moduleAddress).checkPermission(_delegate, _module, _perm)) {
               return true;
           }
       }

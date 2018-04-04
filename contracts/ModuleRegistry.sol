@@ -26,7 +26,10 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     event LogModuleRegistered(address indexed _moduleFactory, address indexed _owner);
     event LogModuleVerified(address indexed _moduleFactory, bool _verified);
 
-    //Checks that module is correctly configured in registry
+    /**
+    * @dev Called by a security token to notify the registry it is using a module
+    * @param _moduleFactory is the address of the relevant module factory
+    */
     function useModule(address _moduleFactory) external {
         //msg.sender must be a security token - below will throw if not
         ISecurityTokenRegistry(securityTokenRegistry).getSecurityTokenData(msg.sender);
@@ -35,6 +38,15 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         require(verified[_moduleFactory]||(IModuleFactory(_moduleFactory).owner() == ISecurityToken(msg.sender).owner()));
         reputation[_moduleFactory].push(msg.sender);
         LogModuleUsed(_moduleFactory, msg.sender);
+    }
+
+    /**
+    * @dev Called by owner to set the token registry address
+    * @param _securityTokenRegistry is the address of the token registry
+    */
+    function setTokenRegistry(address _securityTokenRegistry) public onlyOwner {
+        require(_securityTokenRegistry != address(0));
+        securityTokenRegistry = _securityTokenRegistry;
     }
 
     /**

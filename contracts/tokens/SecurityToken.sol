@@ -35,10 +35,10 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     address public moduleRegistry;
 
-    // Permission has a key of 1
-    // TransferManager has a key of 2
-    // STO has a key of 3
-    // Other modules TBD
+    uint8 public PERMISSIONMANAGER_KEY = 1;
+    uint8 public TRANSFERMANAGER_KEY = 2;
+    uint8 public STO_KEY = 3;
+
     // Module list should be order agnostic!
     mapping (uint8 => ModuleData[]) public modules;
 
@@ -78,16 +78,15 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         string _symbol,
         uint8 _decimals,
         bytes32 _tokenDetails,
-        address _owner
+        address _securityTokenRegistry
     )
     public
     DetailedERC20(_name, _symbol, _decimals)
     {
         //When it is created, the owner is the STR
-        moduleRegistry = ISecurityTokenRegistry(_owner).moduleRegistry();
-        polyToken = ERC20(ISecurityTokenRegistry(_owner).polyAddress());
+        moduleRegistry = ISecurityTokenRegistry(_securityTokenRegistry).moduleRegistry();
+        polyToken = ERC20(ISecurityTokenRegistry(_securityTokenRegistry).polyAddress());
         tokenDetails = _tokenDetails;
-        //owner = _owner;
     }
 
     function addModule(
@@ -100,6 +99,54 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         _addModule(_moduleFactory, _data, _maxCost, _budget, _replaceable);
     }
 
+    /**
+    * @notice _addModule handles the attachment (or replacement) of modules for the ST
+    * E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
+    * to control restrictions on transfers.
+    * @param _moduleFactory is the address of the module factory to be added
+    * @param _data is data packed into bytes used to further configure the module (See STO usage)
+    * @param _maxCost max amount of POLY willing to pay to module. (WIP)
+    * @param _replaceable whether or not the module is supposed to be replaceable
+    */
+    //You are allowed to add a new moduleType if:
+    //  - there is no existing module of that type yet added
+    //  - the last member of the module list is replacable
+    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) internal {
+        //Check that module exists in registry - will throw otherwise
+        IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
+        IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
+        require(modules[moduleFactory.getType()].length < MAX_MODULES);
+        uint256 moduleCost = moduleFactory.getCost();
+        require(moduleCost <= _maxCost);
+        //Check that this module has not already been set as non-replaceable
+        if (modules[moduleFactory.getType()].length != 0) {
+          require(modules[moduleFactory.getType()][modules[moduleFactory.getType()].length - 1].replaceable);
+        }
+        //Approve fee for module
+        require(polyToken.approve(_moduleFactory, moduleCost));
+        //Creates instance of module from factory
+        address module = moduleFactory.deploy(_data);
+        //Approve ongoing budget
+        require(polyToken.approve(module, _budget));
+        //Add to SecurityToken module map
+        modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module, _replaceable));
+        //Emit log event
+        LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
+    }
+
+    function getModule(uint8 _moduleType, uint _index) public view returns (bytes32, address, bool) {
+        if (modules[_moduleType].length > 0) {
+            return (
+              modules[_moduleType][_index].name,
+              modules[_moduleType][_index].moduleAddress,
+              modules[_moduleType][_index].replaceable
+            );
+        } else {
+            return ("",address(0),false);
+        }
+
+    }
+    
     function removeModule(uint8 _moduleType, uint8 _moduleIndex) external onlyOwner {
         require(_moduleIndex < modules[_moduleType].length);
         require(modules[_moduleType][_moduleIndex].moduleAddress != address(0));
@@ -153,11 +200,11 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
     function verifyTransfer(address _from, address _to, uint256 _amount) public view returns (bool success) {
-        if (modules[2].length == 0) {
+        if (modules[TRANSFERMANAGER_KEY].length == 0) {
             return true;
         }
-        for (uint8 i = 0; i < modules[2].length; i++) {
-            if (ITransferManager(modules[2][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
+        for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
+            if (ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
                 return true;
             }
         }
@@ -165,7 +212,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     // Only STO module can call this, has a key of 3
-    function mint(address _investor, uint256 _amount) public onlyModule(3, true) returns (bool success) {
+    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) returns (bool success) {
         require(verifyTransfer(address(0), _investor, _amount));
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);
@@ -183,66 +230,14 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     // If no Permission return false - note that IModule withPerm will allow ST owner all permissions anyway
     // this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
-
-        if (modules[1].length == 0) {
+        if (modules[PERMISSIONMANAGER_KEY].length == 0) {
             return false;
         }
 
-        for (uint8 i = 0; i < modules[1].length; i++) {
-            if (IPermissionManager(modules[1][i].moduleAddress).checkPermission(_delegate, _module, _perm)) {
+        for (uint8 i = 0; i < modules[PERMISSIONMANAGER_KEY].length; i++) {
+            if (IPermissionManager(modules[PERMISSIONMANAGER_KEY][i].moduleAddress).checkPermission(_delegate, _module, _perm)) {
                 return true;
             }
         }
-
     }
-
-    /**
-    * @notice _addModule handles the attachment (or replacement) of modules for the ST
-    * E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
-    * to control restrictions on transfers.
-    * @param _moduleFactory is the address of the module factory to be added
-    * @param _data is data packed into bytes used to further configure the module (See STO usage)
-    * @param _maxCost max amount of POLY willing to pay to module. (WIP)
-    * @param _replaceable whether or not the module is supposed to be replaceable
-    */
-    //You are allowed to add a new moduleType if:
-    //  - there is no existing module of that type yet added
-    //  - the last member of the module list is replacable
-    function _addModule(
-        address _moduleFactory,
-        bytes _data,
-        uint256 _maxCost,
-        uint256 _budget,
-        bool _replaceable
-    ) internal {
-        //Check that module exists in registry - will throw otherwise
-        IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
-        IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        require(modules[moduleFactory.getType()].length < MAX_MODULES);
-        uint256 moduleCost = moduleFactory.getCost();
-        require(moduleCost <= _maxCost);
-        //Check that this module has not already been set as non-replaceable
-        if (modules[moduleFactory.getType()].length != 0) {
-            require(modules[moduleFactory.getType()][modules[moduleFactory.getType()].length - 1].replaceable);
-        }
-        //Approve fee for module
-        require(polyToken.approve(_moduleFactory, moduleCost));
-        //Creates instance of module from factory
-        address module = moduleFactory.deploy(_data);
-        //Approve ongoing budget
-        require(polyToken.approve(module, _budget));
-        //Add to SecurityToken module map
-        modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module, _replaceable));
-        //Emit log event
-        LogModuleAdded(
-            moduleFactory.getType(),
-            moduleFactory.getName(),
-            _moduleFactory,
-            module,
-            moduleCost,
-            _budget,
-            now
-        );
-    }
-
 }

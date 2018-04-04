@@ -8,8 +8,6 @@ import "zeppelin-solidity/contracts/math/SafeMath.sol";
 contract CappedSTO is ISTO {
     using SafeMath for uint256;
 
-    bytes32 public constant ADMIN = "ADMIN";
-
     // Address where funds are collected and tokens are issued to
     address public wallet;
 
@@ -90,7 +88,7 @@ contract CappedSTO is ISTO {
       * @param _beneficiary Address performing the token purchase
       */
     function buyTokens(address _beneficiary) public payable {
-        require(uint(fundraiseType) == 0);
+        require(fundraiseType == FundraiseType.ETH);
 
         uint256 weiAmount = msg.value;
         _processTx(_beneficiary, weiAmount);
@@ -104,7 +102,7 @@ contract CappedSTO is ISTO {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyTokensWithPoly(uint256 _investedPOLY) public {
-        require(uint(fundraiseType) == 1);
+        require(fundraiseType == FundraiseType.POLY);
         require(verifyInvestment(msg.sender, _investedPOLY));
         _processTx(msg.sender, _investedPOLY);
         _forwardPoly(msg.sender, wallet, _investedPOLY);
@@ -120,14 +118,14 @@ contract CappedSTO is ISTO {
     }
 
     function getRaisedEther() public view returns (uint256) {
-        if (uint(fundraiseType) == 0)
+        if (fundraiseType == FundraiseType.ETH)
             return fundsRaised;
         else
             return 0;
     }
 
     function getRaisedPOLY() public view returns (uint256) {
-        if (uint(fundraiseType) == 1)
+        if (fundraiseType == FundraiseType.POLY)
             return fundsRaised;
         else
             return 0;
@@ -138,8 +136,7 @@ contract CappedSTO is ISTO {
     }
 
     function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](1);
-        allPermissions[0] = ADMIN;
+        bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }
 

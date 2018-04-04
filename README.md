@@ -85,7 +85,7 @@ The module registry keeps track of modules added by Polymath or any other users.
 
 The diagram below explains the relationship between the registries and the SecurityToken contract:
 
------INCLUDE DIAGRAM 1-----
+![alt text](https://github.com/PolymathNetwork/polymath-core_v2/blob/master/docs/images/PolymathCore.png)
 
 # Using the CLI ST-20 Generator
 

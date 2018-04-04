@@ -52,13 +52,14 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
             for its issuance.
      * @param _symbol token symbol
      * @param _tokenName Name of the token
+     * @param _owner Address of the owner of the token
      */
-    function registerTicker(string _symbol, string _tokenName) public {
+    function registerTicker(address _owner, string _symbol, string _tokenName) public {
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10);
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol));
-        registeredSymbols[symbol] = SymbolDetails(msg.sender, now, _tokenName, false);
-        LogRegisterTicker(msg.sender, symbol, _tokenName, now);
+        registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, false);
+        LogRegisterTicker(_owner, symbol, _tokenName, now);
     }
 
      /**

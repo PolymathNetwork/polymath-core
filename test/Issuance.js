@@ -226,7 +226,7 @@ contract('SecurityToken', accounts => {
         describe("Create securityToken for the issuer by the polymath", async() => {
 
             it("POLYMATH: Should register the ticker before the generation of the security token", async () => {
-                let tx = await I_TickerRegistry.registerTicker(symbol, name, { from : account_polymath });
+                let tx = await I_TickerRegistry.registerTicker(account_polymath, symbol, name, { from : account_polymath });
                 assert.equal(tx.logs[0].args._owner, account_polymath);
                 assert.equal(tx.logs[0].args._symbol, symbol);
             });

@@ -233,7 +233,7 @@ contract('SecurityToken', accounts => {
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
-            let tx = await I_TickerRegistry.registerTicker(symbol, name, { from : token_owner });
+            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });

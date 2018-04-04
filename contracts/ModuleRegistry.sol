@@ -75,11 +75,4 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         LogModuleVerified(_moduleFactory, _verified);
         return true;
     }
-
-    //Sets the securityTokenRegistry so that moduleRegistry can validate security tokens are genuine
-    function setTokenRegistry(address _securityTokenRegistry) public onlyOwner {
-        require(_securityTokenRegistry != address(0));
-        securityTokenRegistry = _securityTokenRegistry;
-    }
-
 }

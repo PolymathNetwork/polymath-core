@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.21;
 
 import "./SecurityToken.sol";
 
@@ -22,11 +22,11 @@ contract SecurityTokenV2 is SecurityToken {
     )
     public
     SecurityToken(
-      _name,
-      _symbol,
-      _decimals,
-      _tokenDetails,
-      _securityTokenRegistry)
+    _name,
+    _symbol,
+    _decimals,
+    _tokenDetails,
+    _securityTokenRegistry)
     {
     }
 }

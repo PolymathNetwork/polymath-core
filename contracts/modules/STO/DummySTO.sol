@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.21;
 
 import "./ISTO.sol";
 import "../../interfaces/IST20.sol";
@@ -43,7 +43,7 @@ contract DummySTO is ISTO {
         }
         //TODO: Add SafeMath maybe
         investors[_investor] = investors[_investor] + _amount;
-        LogGenerateTokens(_investor, _amount);
+        emit LogGenerateTokens (_investor, _amount);
     }
 
     function getRaisedEther() public view returns (uint256) {

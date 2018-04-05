@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.21;
 
 import "./IST20.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";

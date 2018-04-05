@@ -34,6 +34,8 @@ contract('ExchangeTransferManager', accounts => {
     let fromTime = latestTime();
     let toTime = latestTime();
 
+    let message = "Transaction Should Fail!";
+
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
@@ -51,6 +53,7 @@ contract('ExchangeTransferManager', accounts => {
     let I_PolyToken;
 
     // SecurityToken Details
+    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Team";
     const symbol = "sap";
     const tokenDetails = "This is equity type of issuance";
@@ -226,7 +229,7 @@ contract('ExchangeTransferManager', accounts => {
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
-            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, contact, { from : token_owner });
+            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, contact, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol.toUpperCase());
         });
@@ -290,12 +293,15 @@ contract('ExchangeTransferManager', accounts => {
     describe("Buy tokens", async() => {
 
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
+            let errorThrown = false;
             try {
                 await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
             } catch(error) {
                 console.log(`Failed because investor isn't present in the whitelist`);
+                errorThrown = true;
                 ensureException(error);
             }
+            assert.ok(errorThrown, message);
         });
 
         it("Should Buy the tokens", async() => {
@@ -376,9 +382,7 @@ contract('ExchangeTransferManager', accounts => {
 
         it("Existing investor should be able to transfer to exchange", async() => {
           let w1 = await I_ExchangeTransferManager.verifyTransfer(account_investor1,account_exchange,1000);
-          console.log("WWW",w1);
           let w2 = await I_GeneralTransferManager.verifyTransfer(account_investor1,account_exchange,1000);
-          console.log("WWW",w2);
             await I_SecurityToken.transfer(account_exchange, web3.utils.toWei('1', 'ether'), {from: account_investor1});
 
             assert.equal(
@@ -388,13 +392,16 @@ contract('ExchangeTransferManager', accounts => {
         });
 
         it("New investor should not be able to get tokens transferred", async() => {
+           let errorThrown = false;
           try {
               await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), {from: account_exchange});
 
           } catch(error) {
               console.log(`Failed because investor isn't present in the whitelist`);
+              errorThrown = true;
               ensureException(error);
           }
+          assert.ok(errorThrown, message);
         });
 
         it("Add new investor to exchange whitelist", async() => {

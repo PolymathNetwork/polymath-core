@@ -37,9 +37,11 @@ contract('SecurityToken', accounts => {
     let balanceOfReceiver;
     // investor Details
     let fromTime = latestTime();
-    let toTime = latestTime() + duration.days(15);
+    let toTime = latestTime() + duration.days(100);
     
     let ID_snap;
+    const message = "Transaction Should Fail!!";
+
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
@@ -56,6 +58,7 @@ contract('SecurityToken', accounts => {
     let I_PolyFaucet;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
+    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Demo Token";
     const symbol = "DET";
     const tokenDetails = "This is equity type of issuance";
@@ -70,6 +73,7 @@ contract('SecurityToken', accounts => {
     // delagate details
     const delegateDetails = "I am delegate ..";
     const TM_Perm = 'FLAGS';
+    const TM_Perm_Whitelist = 'WHITELIST';
 
     // Capped STO details
     let startTime;
@@ -233,7 +237,7 @@ contract('SecurityToken', accounts => {
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
-            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, { from : token_owner });
+            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
@@ -308,21 +312,27 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should fails in removing the module from the securityToken", async() => {
+            let errorThrown = false;
             try {
                 await I_SecurityToken.removeModule(stoKey, 0, { from : token_owner });
             } catch (error) {
                 console.log(`Test case passed by restricting the removal of non replacable module`);
+                errorThrown = true;
                 ensureException(error);
             }
+            assert.ok(errorThrown, message);
         });
 
         it("Should successfully remove the general transfer manager module from the securityToken -- fails msg.sender should be Owner", async() => {
+            let errorThrown = false;
             try {
                 let tx = await I_SecurityToken.removeModule(transferManagerKey, 0, { from : account_temp });
             } catch (error) {
                 console.log(`Test Case passed by restricting the unknown account to call removeModule of the securityToken`);
+                errorThrown = true;
                 ensureException(error);
             }
+            assert.ok(errorThrown, message);
         });
 
         it("Should successfully remove the general transfer manager module from the securityToken", async() => {
@@ -393,46 +403,28 @@ contract('SecurityToken', accounts => {
             });
 
             it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async() => {
+                let errorThrown = false;
                 try {
                     await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
                 } catch(error) {
                     console.log(`Test case pass. Tx failed because investor 2 is not in the whitelist`);
+                    errorThrown = true;
                     ensureException(error);
                 }
+                assert.ok(errorThrown, message);
             });   
-            
-            /// Below test case will work after the latest PR merge by Pablo
-
-            it("Should transfer the token from one whitelist investor 1 to whitelist investor 2", async() => {
-                let tx = await I_GeneralTransferManager.modifyWhitelist(
-                    account_investor2,
-                    fromTime,
-                    toTime,
-                    {
-                        from: account_issuer,
-                        gas: 500000
-                    });
-
-                assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
-
-                await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
-
-                assert.equal(
-                    (await I_SecurityToken.balanceOf(account_investor2))
-                    .dividedBy(new BigNumber(10).pow(18)).toNumber(),
-                    10,
-                    "Transfer doesn't take place properly"
-                );
-            });
 
             it("Should fail to provide the permission to the delegate to change the transfer bools", async () => {
+                let errorThrown = false;
                 // Add permission to the deletgate (A regesteration process)
                 try {
                     await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_temp });
                 } catch (error) {
                     console.log(`${account_temp} doesn't have permissions to register the delegate`);
+                    errorThrown = true;
                     ensureException(error);
                 }
+                assert.ok(errorThrown, message);
             });
 
             it("Should provide the permission to the delegate to change the transfer bools", async () => {
@@ -446,12 +438,15 @@ contract('SecurityToken', accounts => {
 
 
             it("Should fail to activate the bool allowAllTransfer", async() => {
+                let errorThrown = false;
                 try {
                     let tx = await I_GeneralTransferManager.changeAllowAllTransfers(true, { from : account_temp });
                 } catch (error) {
                     console.log(`${account_temp} doesn't have permissions to activate the bool allowAllTransfer`);
+                    errorThrown = true;
                     ensureException(error);
                 }
+                assert.ok(errorThrown, message);
             });
 
             it("Should activate the bool allowAllTransfer", async() => {
@@ -494,15 +489,59 @@ contract('SecurityToken', accounts => {
             });
 
             it("Should transfer from whitelist investor1 to whitelist investor 2", async() => {
+                let tx = await I_GeneralTransferManager.modifyWhitelist(
+                    account_investor2,
+                    fromTime,
+                    toTime,
+                    {
+                        from: account_issuer,
+                        gas: 500000
+                    });
+    
+                assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
+
                 await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
-                // Here balance should be 20 after passing the above commented test case
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor2))
                     .dividedBy(new BigNumber(10).pow(18)).toNumber(),
-                    20,
+                    10,
                     "Transfer doesn't take place properly"
                 );
+            });
+
+            it("Should Fail in trasferring from whitelist investor1 to non-whitelist investor", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.transfer(account_temp, (10 *  Math.pow(10, 18)), { from : account_investor1});
+                } catch(error) {
+                    console.log(`non-whitelist investor is not allowed`);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
                 await revertToSnapshot(ID_snap);
+            });
+
+            it("Should provide more permissions to the delegate", async() => {
+                // Providing the permission to the delegate
+                await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm_Whitelist, true, { from: token_owner });
+
+                assert.isTrue(await I_GeneralPermissionManager.checkPermission(account_delegate, I_GeneralTransferManager.address, TM_Perm_Whitelist));
+            });
+
+            it("Should add the investor in the whitelist by the delegate", async() => {
+                let id = await takeSnapshot();
+                let tx = await I_GeneralTransferManager.modifyWhitelist(
+                    account_temp,
+                    fromTime,
+                    toTime,
+                    {
+                        from: account_delegate,
+                        gas: 500000
+                    });
+
+                assert.equal(tx.logs[0].args._investor, account_temp, "Failed in adding the investor in whitelist");
+                await revertToSnapshot(id);
             });
     });
 

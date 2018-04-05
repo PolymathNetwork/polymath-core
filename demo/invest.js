@@ -112,7 +112,7 @@ async function invest() {
     });
 
   }catch (err){
-    console.log('\x1b[31m%s\x1b[0m',"There was an error processing the investment transaction. \nThe most probable cause for this error is the beneficiary account not being in the whitelist.")
+    console.log('\x1b[31m%s\x1b[0m',"There was an error processing the investment transaction. \nThe most probable cause for this error is the beneficiary account not being in the whitelist or the STO not having started yet.")
     return;
   }
 

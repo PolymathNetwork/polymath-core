@@ -8,19 +8,19 @@ var SELECTED_NETWORK = NETWORKS.GANACHE;
 module.exports = {
   tickerRegistryAddress: function() {
     if(SELECTED_NETWORK == NETWORKS.GANACHE)
-      return "0xc34666b7e3d6408d16414319f37df05d3b13056b";
+      return "0x07ddbce0c195da96e62e4104c9aee308f39528d0";
     else if(SELECTED_NETWORK == NETWORKS.ROPSTEN)
       return "";
   },
   securityTokenRegistryAddress: function() {
     if(SELECTED_NETWORK == NETWORKS.GANACHE)
-      return "0x556d1b38d2e9b78747e4ec35568783b6c635dc5d";
+      return "0xf230cdb121cc283cb521dd4243ebfa70031e1eff";
     else if(SELECTED_NETWORK == NETWORKS.ROPSTEN)
       return "";
   },
   cappedSTOFactoryAddress: function() {
     if(SELECTED_NETWORK == NETWORKS.GANACHE)
-      return "0x41cd63dd19474cc3f07c83949165e1a0132bf79e";
+      return "0x542226494324c90f992f49b106dda02bba3918e0";
     else if(SELECTED_NETWORK == NETWORKS.ROPSTEN)
       return "";
   },

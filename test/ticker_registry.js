@@ -5,7 +5,7 @@ import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy_001.sol');
+const STVersion = artifacts.require('./STVersionProxy001.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -176,7 +176,7 @@ contract('TickerRegistry', accounts => {
 
     describe("Test cases for the TickerRegistry", async () => {
         it("verify the securityTokenRegistry address", async() => {
-            let str = await I_TickerRegistry.STRAddress.call();
+            let str = await I_TickerRegistry.strAddress.call();
             assert.equal(str, I_SecurityTokenRegistry.address);
         });
 

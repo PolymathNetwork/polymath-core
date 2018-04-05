@@ -1,11 +1,12 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.21;
 
-import './interfaces/ITickerRegistry.sol';
-import './tokens/SecurityToken.sol';
-import './interfaces/ISTProxy.sol';
-import './interfaces/ISecurityTokenRegistry.sol';
-import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
-import './helpers/Util.sol';
+import "./interfaces/ITickerRegistry.sol";
+import "./tokens/SecurityToken.sol";
+import "./interfaces/ISTProxy.sol";
+import "./interfaces/ISecurityTokenRegistry.sol";
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./helpers/Util.sol";
+
 
 contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
 
@@ -15,12 +16,19 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @dev Constructor use to set the essentials addresses to facilitate
      * the creation of the security token
      */
-    function SecurityTokenRegistry(address _polyAddress, address _moduleRegistry, address _tickerRegistry, address _STVersionProxy) public {
+    function SecurityTokenRegistry(
+        address _polyAddress,
+        address _moduleRegistry,
+        address _tickerRegistry,
+        address _stVersionProxy
+    )
+    public
+    {
         polyAddress = _polyAddress;
         moduleRegistry = _moduleRegistry;
         tickerRegistry = _tickerRegistry;
 
-        setProtocolVersion(_STVersionProxy,"0.0.1");
+        setProtocolVersion(_stVersionProxy, "0.0.1");
     }
 
     /**
@@ -35,21 +43,21 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
         require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name));
         string memory symbol = upper(_symbol);
         address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
-          _name,
-          symbol,
-          _decimals,
-          _tokenDetails,
-          msg.sender
+        _name,
+        symbol,
+        _decimals,
+        _tokenDetails,
+        msg.sender
         );
 
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(symbol, _tokenDetails);
         symbols[symbol] = newSecurityTokenAddress;
-        LogNewSecurityToken(symbol, newSecurityTokenAddress, msg.sender);
+        emit LogNewSecurityToken(symbol, newSecurityTokenAddress, msg.sender);
     }
 
     function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public onlyOwner {
-      protocolVersion = _version;
-      protocolVersionST[_version]=_stVersionProxyAddress;
+        protocolVersion = _version;
+        protocolVersionST[_version] = _stVersionProxyAddress;
     }
 
     //////////////////////////////
@@ -61,8 +69,8 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @return address _symbol
      */
     function getSecurityTokenAddress(string _symbol) public view returns (address) {
-      string memory __symbol = upper(_symbol);
-      return symbols[__symbol];
+        string memory __symbol = upper(_symbol);
+        return symbols[__symbol];
     }
 
      /**
@@ -71,10 +79,10 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @return string, address, bytes32
      */
     function getSecurityTokenData(address _securityToken) public view returns (string, address, bytes32) {
-      return (
-        securityTokens[_securityToken].symbol,
-        ISecurityToken(_securityToken).owner(),
-        securityTokens[_securityToken].tokenDetails
-      );
+        return (
+            securityTokens[_securityToken].symbol,
+            ISecurityToken(_securityToken).owner(),
+            securityTokens[_securityToken].tokenDetails
+        );
     }
 }

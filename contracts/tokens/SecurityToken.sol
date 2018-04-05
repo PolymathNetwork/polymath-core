@@ -1,16 +1,17 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.21;
 
-import 'zeppelin-solidity/contracts/token/ERC20/StandardToken.sol';
-import 'zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol';
-import 'zeppelin-solidity/contracts/token/ERC20/ERC20.sol';
-import '../interfaces/ISecurityToken.sol';
-import '../interfaces/IModule.sol';
-import '../interfaces/IModuleFactory.sol';
-import '../interfaces/IModuleRegistry.sol';
-import '../interfaces/IST20.sol';
-import '../modules/TransferManager/ITransferManager.sol';
-import '../modules/PermissionManager/IPermissionManager.sol';
-import '../interfaces/ISecurityTokenRegistry.sol';
+import "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
+import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "../interfaces/ISecurityToken.sol";
+import "../interfaces/IModule.sol";
+import "../interfaces/IModuleFactory.sol";
+import "../interfaces/IModuleRegistry.sol";
+import "../interfaces/IST20.sol";
+import "../modules/TransferManager/ITransferManager.sol";
+import "../modules/PermissionManager/IPermissionManager.sol";
+import "../interfaces/ISecurityTokenRegistry.sol";
+
 
 /**
 * @title SecurityToken
@@ -27,23 +28,32 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     ERC20 public polyToken;
 
     struct ModuleData {
-      bytes32 name;
-      address moduleAddress;
-      bool replaceable;
+        bytes32 name;
+        address moduleAddress;
+        bool replaceable;
     }
 
     address public moduleRegistry;
 
-    uint8 public PERMISSIONMANAGER_KEY = 1;
-    uint8 public TRANSFERMANAGER_KEY = 2;
-    uint8 public STO_KEY = 3;
+    uint8 public constant PERMISSIONMANAGER_KEY = 1;
+    uint8 public constant TRANSFERMANAGER_KEY = 2;
+    uint8 public constant STO_KEY = 3;
 
     // Module list should be order agnostic!
     mapping (uint8 => ModuleData[]) public modules;
 
-    uint8 public MAX_MODULES = 10;
+    uint8 public constant MAX_MODULES = 10;
 
-    event LogModuleAdded(uint8 indexed _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _budget, uint256 _timestamp);
+    event LogModuleAdded(
+        uint8 indexed _type,
+        bytes32 _name,
+        address _moduleFactory,
+        address _module,
+        uint256 _moduleCost,
+        uint256 _budget,
+        uint256 _timestamp
+    );
+
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
     event Mint(address indexed to, uint256 amount);
@@ -51,16 +61,16 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
       //Loop over all modules of type _moduleType
-      bool isModuleType = false;
-      for (uint8 i = 0; i < modules[_moduleType].length; i++) {
-          isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
-      }
-      if (_fallback && !isModuleType) {
-          require(msg.sender == owner);
-      } else {
-          require(isModuleType);
-      }
-      _;
+        bool isModuleType = false;
+        for (uint8 i = 0; i < modules[_moduleType].length; i++) {
+            isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
+        }
+        if (_fallback && !isModuleType) {
+            require(msg.sender == owner);
+        } else {
+            require(isModuleType);
+        }
+        _;
     }
 
     function SecurityToken(
@@ -79,7 +89,13 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         tokenDetails = _tokenDetails;
     }
 
-    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) external onlyOwner {
+    function addModule(
+        address _moduleFactory,
+        bytes _data,
+        uint256 _maxCost,
+        uint256 _budget,
+        bool _replaceable
+    ) external onlyOwner {
         _addModule(_moduleFactory, _data, _maxCost, _budget, _replaceable);
     }
 
@@ -104,7 +120,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         require(moduleCost <= _maxCost);
         //Check that this module has not already been set as non-replaceable
         if (modules[moduleFactory.getType()].length != 0) {
-          require(modules[moduleFactory.getType()][modules[moduleFactory.getType()].length - 1].replaceable);
+            require(modules[moduleFactory.getType()][modules[moduleFactory.getType()].length - 1].replaceable);
         }
         //Approve fee for module
         require(polyToken.approve(_moduleFactory, moduleCost));
@@ -115,20 +131,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         //Add to SecurityToken module map
         modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module, _replaceable));
         //Emit log event
-        LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
-    }
-
-    function getModule(uint8 _moduleType, uint _index) public view returns (bytes32, address, bool) {
-        if (modules[_moduleType].length > 0) {
-            return (
-              modules[_moduleType][_index].name,
-              modules[_moduleType][_index].moduleAddress,
-              modules[_moduleType][_index].replaceable
-            );
-        } else {
-            return ("",address(0),false);
-        }
-
+        emit LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
     }
 
     function removeModule(uint8 _moduleType, uint8 _moduleIndex) external onlyOwner {
@@ -136,9 +139,22 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         require(modules[_moduleType][_moduleIndex].moduleAddress != address(0));
         require(modules[_moduleType][_moduleIndex].replaceable);
         //Take the last member of the list, and replace _moduleIndex with this, then shorten the list by one
-        LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
+        emit LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
         modules[_moduleType][_moduleIndex] = modules[_moduleType][modules[_moduleType].length - 1];
         modules[_moduleType].length = modules[_moduleType].length - 1;
+    }
+
+    function getModule(uint8 _moduleType, uint _index) public view returns (bytes32, address, bool) {
+        if (modules[_moduleType].length > 0) {
+            return (
+            modules[_moduleType][_index].name,
+            modules[_moduleType][_index].moduleAddress,
+            modules[_moduleType][_index].replaceable
+            );
+        }else {
+            return ("", address(0), false);
+        }
+
     }
 
     function withdrawPoly(uint256 _amount) public onlyOwner {
@@ -149,7 +165,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         require(_moduleType != 0);
         require(_moduleIndex < modules[_moduleType].length);
         require(polyToken.approve(modules[_moduleType][_moduleIndex].moduleAddress, _budget));
-        LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
+        emit LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
     }
 
     /**
@@ -170,9 +186,9 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
-    function verifyTransfer(address _from, address _to, uint256 _amount) view public returns (bool success) {
+    function verifyTransfer(address _from, address _to, uint256 _amount) public view returns (bool success) {
         if (modules[TRANSFERMANAGER_KEY].length == 0) {
-          return true;
+            return true;
         }
         for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
             if (ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
@@ -187,8 +203,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         require(verifyTransfer(address(0), _investor, _amount));
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);
-        Mint(_investor, _amount);
-        Transfer(address(0), _investor, _amount);
+        emit Mint(_investor, _amount);
+        emit Transfer(address(0), _investor, _amount);
         return true;
     }
 
@@ -200,18 +216,15 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     // Permissions this to a Permission module, which has a key of 1
     // If no Permission return false - note that IModule withPerm will allow ST owner all permissions anyway
     // this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
-    function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool) {
+    function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
+        if (modules[PERMISSIONMANAGER_KEY].length == 0) {
+            return false;
+        }
 
-      if (modules[PERMISSIONMANAGER_KEY].length == 0) {
-        return false;
-      }
-
-      for (uint8 i = 0; i < modules[PERMISSIONMANAGER_KEY].length; i++) {
-          if (IPermissionManager(modules[PERMISSIONMANAGER_KEY][i].moduleAddress).checkPermission(_delegate, _module, _perm)) {
-              return true;
-          }
-      }
-
+        for (uint8 i = 0; i < modules[PERMISSIONMANAGER_KEY].length; i++) {
+            if (IPermissionManager(modules[PERMISSIONMANAGER_KEY][i].moduleAddress).checkPermission(_delegate, _module, _perm)) {
+                return true;
+            }
+        }
     }
-
 }

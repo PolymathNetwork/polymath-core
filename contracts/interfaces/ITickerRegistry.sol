@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
 
-interface ITickerRegistry {
+contract ITickerRegistry {
     /**
     * @dev Check the validity of the symbol
     * @param _symbol token symbol

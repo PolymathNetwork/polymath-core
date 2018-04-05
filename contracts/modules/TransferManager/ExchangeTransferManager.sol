@@ -42,7 +42,7 @@ contract ExchangeTransferManager is ITransferManager {
 
     function modifyWhitelist(address _investor, bool _valid) public onlyFactoryOwner {
         whitelist[_investor] = _valid;
-        LogModifyWhitelist(_investor, now, msg.sender);
+        emit LogModifyWhitelist(_investor, now, msg.sender);
     }
 
     function modifyWhitelistMulti(address[] _investors, bool[] _valids) public onlyFactoryOwner {

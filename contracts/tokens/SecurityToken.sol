@@ -120,7 +120,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         require(moduleCost <= _maxCost);
         //Check that this module has not already been set as non-replaceable
         if (modules[moduleFactory.getType()].length != 0) {
-          require(modules[moduleFactory.getType()][modules[moduleFactory.getType()].length - 1].replaceable);
+            require(modules[moduleFactory.getType()][modules[moduleFactory.getType()].length - 1].replaceable);
         }
         //Approve fee for module
         require(polyToken.approve(_moduleFactory, moduleCost));
@@ -131,15 +131,15 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         //Add to SecurityToken module map
         modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module, _replaceable));
         //Emit log event
-        LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
+        emit LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
     }
-    
+
     function removeModule(uint8 _moduleType, uint8 _moduleIndex) external onlyOwner {
         require(_moduleIndex < modules[_moduleType].length);
         require(modules[_moduleType][_moduleIndex].moduleAddress != address(0));
         require(modules[_moduleType][_moduleIndex].replaceable);
         //Take the last member of the list, and replace _moduleIndex with this, then shorten the list by one
-        LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
+        emit LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
         modules[_moduleType][_moduleIndex] = modules[_moduleType][modules[_moduleType].length - 1];
         modules[_moduleType].length = modules[_moduleType].length - 1;
     }
@@ -165,7 +165,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         require(_moduleType != 0);
         require(_moduleIndex < modules[_moduleType].length);
         require(polyToken.approve(modules[_moduleType][_moduleIndex].moduleAddress, _budget));
-        LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
+        emit LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
     }
 
     /**
@@ -203,8 +203,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         require(verifyTransfer(address(0), _investor, _amount));
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);
-        Mint(_investor, _amount);
-        Transfer(address(0), _investor, _amount);
+        emit Mint(_investor, _amount);
+        emit Transfer(address(0), _investor, _amount);
         return true;
     }
 

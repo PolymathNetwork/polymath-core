@@ -61,7 +61,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol));
         registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, false);
-        LogRegisterTicker(_owner, symbol, _tokenName, now);
+        emit LogRegisterTicker(_owner, symbol, _tokenName, now);
     }
 
      /**
@@ -72,7 +72,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
         require(_newExpiry >= 1 days);
         uint256 _oldExpiry = expiryLimit;
         expiryLimit = _newExpiry;
-        LogChangeExpiryLimit(_oldExpiry, _newExpiry);
+        emit LogChangeExpiryLimit(_oldExpiry, _newExpiry);
     }
 
     /**
@@ -137,8 +137,8 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
         return true;
     }
 
-    
 
 
-     
+
+
 }

@@ -159,13 +159,13 @@ contract CappedSTO is ISTO {
         tokensSold = tokensSold.add(tokens);
 
         _processPurchase(_beneficiary, tokens);
-        TokenPurchase(msg.sender, _beneficiary, _investedAmount, tokens);
+        emit TokenPurchase(msg.sender, _beneficiary, _investedAmount, tokens);
 
         _updatePurchasingState(_beneficiary, _investedAmount);
     }
 
     /**
-    * @dev Validation of an incoming purchase. 
+    * @dev Validation of an incoming purchase.
       Use require statements to revert state when conditions are not met. Use super to concatenate validations.
     * @param _beneficiary Address performing the token purchase
     * @param _investedAmount Value in wei involved in the purchase
@@ -186,7 +186,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-    * @dev Source of tokens. 
+    * @dev Source of tokens.
       Override this method to modify the way in which the crowdsale ultimately gets and sends its tokens.
     * @param _beneficiary Address performing the token purchase
     * @param _tokenAmount Number of tokens to be emitted
@@ -210,7 +210,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-    * @dev Override for extensions that require an internal state to check for validity 
+    * @dev Override for extensions that require an internal state to check for validity
       (current user contributions, etc.)
     */
     function _updatePurchasingState(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {

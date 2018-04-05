@@ -37,7 +37,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         //To use a module, either it must be verified, or owned by the ST owner
         require(verified[_moduleFactory]||(IModuleFactory(_moduleFactory).owner() == ISecurityToken(msg.sender).owner()));
         reputation[_moduleFactory].push(msg.sender);
-        LogModuleUsed(_moduleFactory, msg.sender);
+        emit LogModuleUsed(_moduleFactory, msg.sender);
     }
 
     /**
@@ -60,7 +60,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         registry[_moduleFactory] = moduleFactory.getType();
         moduleList[moduleFactory.getType()].push(_moduleFactory);
         reputation[_moduleFactory] = new address[](0);
-        LogModuleRegistered(_moduleFactory, moduleFactory.owner());
+        emit LogModuleRegistered(_moduleFactory, moduleFactory.owner());
         return true;
     }
 
@@ -72,7 +72,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         //Must already have been registered
         require(registry[_moduleFactory] != 0);
         verified[_moduleFactory] = _verified;
-        LogModuleVerified(_moduleFactory, _verified);
+        emit LogModuleVerified(_moduleFactory, _verified);
         return true;
     }
 }

@@ -27,7 +27,7 @@ contract GeneralTransferManager is ITransferManager {
         uint256 toTime;
     }
 
-    // An address can only send / receive tokens once their corresponding uint256 > block.number 
+    // An address can only send / receive tokens once their corresponding uint256 > block.number
     // (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
     mapping (address => TimeRestriction) public whitelist;
 
@@ -42,7 +42,7 @@ contract GeneralTransferManager is ITransferManager {
     event LogAllowAllTransfers(bool _allowAllTransfers);
     event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
-    
+
     event LogModifyWhitelist(
         address _investor,
         uint256 _dateAdded,
@@ -63,22 +63,22 @@ contract GeneralTransferManager is ITransferManager {
 
     function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
         issuanceAddress = _issuanceAddress;
-        LogChangeIssuanceAddress(_issuanceAddress);
+        emit LogChangeIssuanceAddress(_issuanceAddress);
     }
 
     function changeAllowAllTransfers(bool _allowAllTransfers) public withPerm(FLAGS) {
         allowAllTransfers = _allowAllTransfers;
-        LogAllowAllTransfers(_allowAllTransfers);
+        emit LogAllowAllTransfers(_allowAllTransfers);
     }
 
     function changeAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers) public withPerm(FLAGS) {
         allowAllWhitelistTransfers = _allowAllWhitelistTransfers;
-        LogAllowAllWhitelistTransfers(_allowAllWhitelistTransfers);
+        emit LogAllowAllWhitelistTransfers(_allowAllWhitelistTransfers);
     }
 
     function changeAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances) public withPerm(FLAGS) {
         allowAllWhitelistIssuances = _allowAllWhitelistIssuances;
-        LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
+        emit LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
     function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(bool) {
@@ -95,13 +95,13 @@ contract GeneralTransferManager is ITransferManager {
         }
         //Anyone on the whitelist can transfer provided the blocknumber is large enough
         return ((onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
-                (onWhitelist(_to) && whitelist[_to].toTime <= now));
+            (onWhitelist(_to) && whitelist[_to].toTime <= now));
     }
 
     function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime);
-        LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime);
+        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime);
     }
 
     function modifyWhitelistMulti(

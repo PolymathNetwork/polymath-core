@@ -17,11 +17,11 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * the creation of the security token
      */
     function SecurityTokenRegistry(
-    address _polyAddress,
-    address _moduleRegistry,
-    address _tickerRegistry,
-    address _stVersionProxy
-    ) 
+        address _polyAddress,
+        address _moduleRegistry,
+        address _tickerRegistry,
+        address _stVersionProxy
+    )
     public
     {
         polyAddress = _polyAddress;
@@ -52,7 +52,7 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
 
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(symbol, _tokenDetails);
         symbols[symbol] = newSecurityTokenAddress;
-        LogNewSecurityToken(symbol, newSecurityTokenAddress, msg.sender);
+        emit LogNewSecurityToken(symbol, newSecurityTokenAddress, msg.sender);
     }
 
     function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public onlyOwner {

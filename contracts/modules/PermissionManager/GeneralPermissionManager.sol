@@ -14,17 +14,17 @@ contract GeneralPermissionManager is IPermissionManager {
 
     // Mapping used to hold the permissions on the modules provided to delegate
     mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;
-    // Mapping hold the delagate details 
+    // Mapping hold the delagate details
     mapping (address => bytes32) public delegateDetails;
     // Permission flag
     bytes32 public constant CHANGE_PERMISSION = "CHANGE_PERMISSION";
 
-    /// Event emitted after any permission get changed for the delegate 
+    /// Event emitted after any permission get changed for the delegate
     event LogChangePermission(address _delegate, address _module, bytes32 _perm, bool _valid, uint256 _timestamp);
     /// Use to notify when delegate is added in permission manager contract
     event LogAddPermission(address _delegate, bytes32 _details, uint256 _timestamp);
 
-    /// @notice constructor 
+    /// @notice constructor
     function GeneralPermissionManager(address _securityToken) public
     IModule(_securityToken)
     {
@@ -59,7 +59,7 @@ contract GeneralPermissionManager is IPermissionManager {
     */
     function addPermission(address _delegate, bytes32 _details) public withPerm(CHANGE_PERMISSION) {
         delegateDetails[_delegate] = _details;
-        LogAddPermission(_delegate, _details, now);
+        emit LogAddPermission(_delegate, _details, now);
     }
 
   /**
@@ -71,19 +71,19 @@ contract GeneralPermissionManager is IPermissionManager {
     * @return bool
     */
     function changePermission(
-    address _delegate,
-    address _module,
-    bytes32 _perm,
-    bool _valid
-    ) 
-    public 
+        address _delegate,
+        address _module,
+        bytes32 _perm,
+        bool _valid
+    )
+    public
     withPerm(CHANGE_PERMISSION)
-    returns(bool) 
+    returns(bool)
     {
         require(delegateDetails[_delegate] != bytes32(0));
         perms[_module][_delegate][_perm] = _valid;
-        LogChangePermission(_delegate, _module, _perm, _valid, now);
-        return true; 
+        emit LogChangePermission(_delegate, _module, _perm, _valid, now);
+        return true;
     }
 
     /**
@@ -97,7 +97,7 @@ contract GeneralPermissionManager is IPermissionManager {
 
     /**
     * @dev Use to get the Permission flag related the `this` contract
-    * @return Array of permission flags  
+    * @return Array of permission flags
     */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);

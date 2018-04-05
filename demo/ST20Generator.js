@@ -174,7 +174,7 @@ async function step_ticker_reg(){
 
   if(!alreadyRegistered){
     try{
-      await tickerRegistry.methods.registerTicker(tokenSymbol, "").send({ from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE})
+      await tickerRegistry.methods.registerTicker(Issuer,tokenSymbol, "").send({ from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...
@@ -383,6 +383,8 @@ async function step_STO_Launch(){
       displayTokenSymbol = result;
     });
 
+    let displayWalletBalance = web3.utils.fromWei(await web3.eth.getBalance(displayWallet),"ether");
+
     let now = Math.floor(Date.now()/1000);
     let timeTitle;
 
@@ -403,6 +405,7 @@ async function step_STO_Launch(){
       - End Time:        ${new Date(displayEndTime * 1000)}
       - Rate:            1 ETH = ${displayRate} ${displayTokenSymbol.toUpperCase()}
       - Wallet:          ${displayWallet}
+      - Wallet Balance:  ${displayWalletBalance} ETH
       --------------------------------------
       - ${timeTitle}  ${timeRemaining}
       - Funds raised:    ${web3.utils.fromWei(displayFundsRaised,"ether")} ETH

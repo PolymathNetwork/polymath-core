@@ -15,7 +15,7 @@ contract ITickerRegistry {
     * @dev Returns the owner and timestamp for a given symbol
     * @param _symbol symbol
     */
-    function getDetails(string _symbol) public view returns (address, uint256, string, bool);
+    function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool);
 
 
 }

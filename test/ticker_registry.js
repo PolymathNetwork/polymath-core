@@ -48,6 +48,7 @@ contract('TickerRegistry', accounts => {
     let I_PolyToken;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
+    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Demo Token";
     const symbol = "DET";
     const tokenDetails = "This is equity type of issuance";
@@ -174,7 +175,8 @@ contract('TickerRegistry', accounts => {
         `);
     });
 
-    describe("Test cases for the TickerRegistry", async () => {
+    describe("Test cases for the TickerRegistry public variable", async () => {
+        
         it("verify the securityTokenRegistry address", async() => {
             let str = await I_TickerRegistry.strAddress.call();
             assert.equal(str, I_SecurityTokenRegistry.address);
@@ -183,6 +185,140 @@ contract('TickerRegistry', accounts => {
         it("verify the expiry limit", async() => {
             let expiry = await I_TickerRegistry.expiryLimit.call();
             assert.equal(expiry.toNumber(), 604800);
+        });
+    });
+
+    describe("Test cases for the registerTicker function", async() => {
+        
+        it("Should fail in regestering the ticker due to the symbol length is 0", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_TickerRegistry.registerTicker(token_owner, "", name, swarmHash, { from: token_owner });
+            } catch(error) {
+                console.log(`Tx get Failed. Because symbol Length is 0`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in regestering the ticker due to the symbol length is greater than 10", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_TickerRegistry.registerTicker(token_owner, "POLYMATHNET", name, swarmHash, { from: token_owner });
+            } catch(error) {
+                console.log(`Tx get Failed. Because symbol Length is 0`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+
+        it("Should successfully register the ticker", async() => {
+            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from: token_owner });
+            assert.equal(tx.logs[0].args._owner, token_owner);
+            assert.equal(tx.logs[0].args._symbol, symbol);
+        });
+
+        it("Should register the same symbol again", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_TickerRegistry.registerTicker(account_temp, symbol, name, swarmHash, { from: account_temp });
+            } catch(error) {
+                console.log(`Tx get Failed.symbol is already alloted to someone else`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should allot the pre registerd token if expiry get reached", async() => {
+            await increaseTime(605000);
+            let tx = await I_TickerRegistry.registerTicker(account_temp, symbol, name, swarmHash, { from: account_temp });
+            assert.equal(tx.logs[0].args._owner, account_temp);
+            assert.equal(tx.logs[0].args._symbol, symbol);
+        });
+    });
+
+    describe("test cases for the expiry limit", async() => {
+        
+        it("Should fail to set the expiry limit because msg.sender is not owner", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_TickerRegistry.changeExpiryLimit(duration.days(10), {from: account_temp});
+            } catch(error) {
+                console.log(`Tx get Failed. Because msg.sender is not owner`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+        
+        it("Should successfully set the expiry limit", async() => {
+            await I_TickerRegistry.changeExpiryLimit(duration.days(10), {from: account_polymath});
+            assert.equal(
+                (await I_TickerRegistry.expiryLimit.call())
+                .toNumber(),
+                duration.days(10),
+                "Failed to change the expiry limit");
+        });
+
+        it("Should fail to set the expiry limit because new expiry limit is lesser than one day", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_TickerRegistry.changeExpiryLimit(duration.seconds(5000), {from: account_polymath});
+            } catch(error) {
+                console.log(`Tx get Failed. Because new expiry limit is lesser than one day`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+    });
+
+    describe("Test cases for the setTokenRegistry", async() => {
+        
+        it("Should fail to set the TokenRegistry", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
+            } catch(error) {
+                console.log(`Tx get Failed. Failed to set again`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+    });
+
+    describe("Test cases for the getDetails", async() => {
+
+        it("Should get the details of the symbol", async() => {
+            let tx = await I_TickerRegistry.getDetails.call(symbol);
+            assert.equal(tx[0], account_temp);
+            assert.equal(tx[2], name);
+            assert.equal(
+                web3.utils.toAscii(tx[3])
+                .replace(/\u0000/g, ''),
+                swarmHash
+            );
+            assert.equal(tx[4], false);                                        
+        });
+    });
+
+    describe("Test cases for check validity", async() => {
+
+        it("Should fail to check the validity because msg.sender is not STR", async() => {
+            let errorThrown = false;
+            try {
+                await I_TickerRegistry.checkValidity(symbol, account_temp, name, {from: accounts[9]});
+            } catch(error) {
+                console.log(`Tx get Failed. Failed the check the validity because msg.sender is not the STR`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
         });
     });
 });

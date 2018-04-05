@@ -53,6 +53,7 @@ contract('ExchangeTransferManager', accounts => {
     let I_PolyToken;
 
     // SecurityToken Details
+    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Team";
     const symbol = "sap";
     const tokenDetails = "This is equity type of issuance";
@@ -228,7 +229,7 @@ contract('ExchangeTransferManager', accounts => {
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
-            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, contact, { from : token_owner });
+            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, contact, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol.toUpperCase());
         });

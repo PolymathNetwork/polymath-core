@@ -57,6 +57,7 @@ contract('SecurityToken', accounts => {
     let I_PolyFaucet;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
+    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Demo Token";
     const symbol = "DET";
     const tokenDetails = "This is equity type of issuance";
@@ -231,7 +232,7 @@ contract('SecurityToken', accounts => {
         describe("Create securityToken for the issuer by the polymath", async() => {
 
             it("POLYMATH: Should register the ticker before the generation of the security token", async () => {
-                let tx = await I_TickerRegistry.registerTicker(account_polymath, symbol, name, { from : account_polymath });
+                let tx = await I_TickerRegistry.registerTicker(account_polymath, symbol, name, swarmHash, { from : account_polymath });
                 assert.equal(tx.logs[0].args._owner, account_polymath);
                 assert.equal(tx.logs[0].args._symbol, symbol);
             });

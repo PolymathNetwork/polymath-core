@@ -53,6 +53,7 @@ contract('CappedSTO', accounts => {
     let I_PolyFaucet;
 
     // SecurityToken Details for funds raise Type ETH
+    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Team";
     const symbol = "SAP";
     const tokenDetails = "This is equity type of issuance";
@@ -235,7 +236,7 @@ contract('CappedSTO', accounts => {
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
-            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, { from : token_owner });
+            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
@@ -547,7 +548,7 @@ contract('CappedSTO', accounts => {
         describe("Launch a new SecurityToken", async() => {
 
             it("POLY: Should register the ticker before the generation of the security token", async () => {
-                let tx = await I_TickerRegistry.registerTicker(token_owner, P_symbol, P_name, { from : token_owner });
+                let tx = await I_TickerRegistry.registerTicker(token_owner, P_symbol, P_name, swarmHash, { from : token_owner });
                 assert.equal(tx.logs[0].args._owner, token_owner);
                 assert.equal(tx.logs[0].args._symbol, P_symbol);
             });

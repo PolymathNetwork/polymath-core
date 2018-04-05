@@ -32,6 +32,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
         address owner;
         uint256 timestamp;
         string tokenName;
+        bytes32 swarmHash;
         bool status;
     }
 
@@ -39,7 +40,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     mapping(string => SymbolDetails) registeredSymbols;
 
     // Emit after the symbol registration
-    event LogRegisterTicker(address indexed _owner, string _symbol, string _name, uint256 _timestamp);
+    event LogRegisterTicker(address indexed _owner, string _symbol, string _name, bytes32 _swarmHash, uint256 _timestamp);
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
@@ -55,13 +56,14 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      * @param _symbol token symbol
      * @param _tokenName Name of the token
      * @param _owner Address of the owner of the token
+     * @param _swarmHash Off-chain details of the issuer and token
      */
-    function registerTicker(address _owner, string _symbol, string _tokenName) public {
+    function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) public {
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10);
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol));
-        registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, false);
-        emit LogRegisterTicker(_owner, symbol, _tokenName, now);
+        registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, _swarmHash, false);
+        emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now);
     }
 
      /**
@@ -108,7 +110,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      * @dev Returns the owner and timestamp for a given symbol
      * @param _symbol symbol
      */
-    function getDetails(string _symbol) public view returns (address, uint256, string, bool) {
+    function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool) {
         string memory symbol = upper(_symbol);
         if (registeredSymbols[symbol].status == true||registeredSymbols[symbol].timestamp.add(expiryLimit) > now) {
             return
@@ -116,10 +118,11 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
                 registeredSymbols[symbol].owner,
                 registeredSymbols[symbol].timestamp,
                 registeredSymbols[symbol].tokenName,
+                registeredSymbols[symbol].swarmHash,
                 registeredSymbols[symbol].status
             );
         }else
-            return (address(0), uint256(0), "", false);
+            return (address(0), uint256(0), "", bytes32(0), false);
     }
 
     /**
@@ -129,7 +132,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     function expiryCheck(string _symbol) internal returns(bool) {
         if (registeredSymbols[_symbol].owner != address(0)) {
             if (now > registeredSymbols[_symbol].timestamp.add(expiryLimit) && registeredSymbols[_symbol].status != true) {
-                registeredSymbols[_symbol] = SymbolDetails(address(0), uint256(0), "", false);
+                registeredSymbols[_symbol] = SymbolDetails(address(0), uint256(0), "", bytes32(0), false);
                 return true;
             }else
                 return false;

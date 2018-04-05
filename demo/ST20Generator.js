@@ -174,7 +174,7 @@ async function step_ticker_reg(){
 
   if(!alreadyRegistered){
     try{
-      await tickerRegistry.methods.registerTicker(Issuer,tokenSymbol, "").send({ from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE})
+      await tickerRegistry.methods.registerTicker(Issuer,tokenSymbol,"",web3.utils.asciiToHex("")).send({ from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...

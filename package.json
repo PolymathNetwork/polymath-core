@@ -1,7 +1,7 @@
 {
-  "name": "polymath-core_v2",
+  "name": "polymath-core",
   "version": "0.2.0",
-  "description": "Polymath Network Core Smart Contracts v2",
+  "description": "Polymath Network Core Smart Contracts",
   "main": "truffle.js",
   "directories": {
     "test": "test"

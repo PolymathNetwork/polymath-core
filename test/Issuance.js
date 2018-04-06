@@ -1,14 +1,14 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
-import { increaseTime } from './helpers/time';
+import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO = artifacts.require('./CappedSTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
-const TickerRegistry = artifacts.require("./TickerRegistry.sol");
-const STVersion = artifacts.require('./STVersionProxy_001.sol');
+const TickerRegistry = artifacts.require('./TickerRegistry.sol');
+const STVersion = artifacts.require('./STVersionProxy001.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -31,13 +31,16 @@ contract('SecurityToken', accounts => {
     let token_owner;
     let account_investor2;
     let account_fundsReceiver;
+    let account_delegate;
 
     let balanceOfReceiver;
+    let message = "Transaction Should Fail!";
+    const TM_Perm = "WHITELIST";
+    const delegateDetails = "I am delegate"
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(15);
     
-
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
@@ -54,6 +57,7 @@ contract('SecurityToken', accounts => {
     let I_PolyFaucet;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
+    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Demo Token";
     const symbol = "DET";
     const tokenDetails = "This is equity type of issuance";
@@ -103,9 +107,10 @@ contract('SecurityToken', accounts => {
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
-        account_investor1 = accounts[2];
-        account_investor2 = accounts[3];
+        account_investor1 = accounts[3];
+        account_investor2 = accounts[2];
         account_fundsReceiver = accounts[4];
+        account_delegate = accounts[5];
         token_owner = account_issuer;
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -227,16 +232,16 @@ contract('SecurityToken', accounts => {
         describe("Create securityToken for the issuer by the polymath", async() => {
 
             it("POLYMATH: Should register the ticker before the generation of the security token", async () => {
-                let tx = await I_TickerRegistry.registerTicker(symbol, name, { from : account_polymath });
+                let tx = await I_TickerRegistry.registerTicker(account_polymath, symbol, name, swarmHash, { from : account_polymath });
                 assert.equal(tx.logs[0].args._owner, account_polymath);
-                assert.equal(tx.logs[0].args._symbol, symbol.toLowerCase());
+                assert.equal(tx.logs[0].args._symbol, symbol);
             });
 
             it("POLYMATH: Should generate the new security token with the same symbol as registered above", async () => {
                 let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: account_polymath });
     
                 // Verify the successful generation of the security token
-                assert.equal(tx.logs[1].args._ticker, symbol.toLowerCase(), "SecurityToken doesn't get deployed");
+                assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
     
                 I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
     
@@ -302,29 +307,40 @@ contract('SecurityToken', accounts => {
                 );
                 I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
             });
+        });
+
+        describe("Transfer Manager operations by the polymath_account", async() => {
+            it("Should modify the whitelist", async () => {
+                let tx = await I_GeneralTransferManager.modifyWhitelist(
+                    account_investor1,
+                    fromTime + duration.days(70),
+                    toTime + duration.days(90),
+                    {
+                        from: account_polymath,
+                        gas: 500000
+                    });
+                assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
+            });
+
+            it("Should add the delegate with permission", async() => {
+                 // Add permission to the deletgate (A regesteration process)
+                 await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_polymath});
+                 // Providing the permission to the delegate
+                 await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, { from: account_polymath });
+ 
+                 assert.isTrue(await I_GeneralPermissionManager.checkPermission(account_delegate, I_GeneralTransferManager.address, TM_Perm));
+            });
 
             it("POLYMATH: Should change the ownership of the SecurityToken", async() => {
                 await I_SecurityToken.transferOwnership(token_owner, { from : account_polymath });
 
                 assert.equal(await I_SecurityToken.owner.call(), token_owner);
             });
-        });
+        })
 
         describe("Operations on the STO", async() => {
             it("Should Buy the tokens", async() => {
                 balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
-                // Add the Investor in to the whitelist
-               
-                let tx = await I_GeneralTransferManager.modifyWhitelist(
-                    account_investor1,
-                    fromTime + duration.days(70),
-                    toTime + duration.days(90),
-                    {
-                        from: account_issuer,
-                        gas: 500000
-                    });
-    
-                assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
     
                 // Jump time
                 await increaseTime(5000);
@@ -369,6 +385,43 @@ contract('SecurityToken', accounts => {
                 );
                 TokenPurchase.stopWatching();
             });
+
+            it("should add the investor into the whitelist by the delegate", async () => {
+                let tx = await I_GeneralTransferManager.modifyWhitelist(
+                    account_investor2,
+                    fromTime,
+                    toTime,
+                    {
+                        from: account_delegate,
+                        gas: 500000
+                    });
+                assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
+            });
+
+            it("Should buy the token", async () => {
+                await web3.eth.sendTransaction({
+                    from: account_investor2,
+                    to: I_CappedSTO.address,
+                    gas: 210000,
+                    value: web3.utils.toWei('1', 'ether')
+                  });
+    
+                assert.equal(
+                    (await I_CappedSTO.fundsRaised.call())
+                    .dividedBy(new BigNumber(10).pow(18))
+                    .toNumber(),
+                    2
+                );
+    
+                assert.equal(await I_CappedSTO.getNumberInvestors.call(), 2);
+    
+                assert.equal(
+                    (await I_SecurityToken.balanceOf(account_investor2))
+                    .dividedBy(new BigNumber(10).pow(18))
+                    .toNumber(),
+                    1000
+                );
+            })
         });
     });
 });

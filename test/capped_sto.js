@@ -1,14 +1,14 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
-import { increaseTime } from './helpers/time';
+import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO = artifacts.require('./CappedSTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
-const TickerRegistry = artifacts.require("./TickerRegistry.sol");
-const STVersion = artifacts.require('./STVersionProxy_001.sol');
+const TickerRegistry = artifacts.require('./TickerRegistry.sol');
+const STVersion = artifacts.require('./STVersionProxy001.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -21,8 +21,6 @@ const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
 contract('CappedSTO', accounts => {
-
-
     // Accounts Variable declaration
     let account_polymath;
     let account_investor1;
@@ -32,6 +30,7 @@ contract('CappedSTO', accounts => {
     let account_fundsReceiver;
 
     let balanceOfReceiver;
+    let message = "Transaction Should Fail!";
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(15);
@@ -54,6 +53,7 @@ contract('CappedSTO', accounts => {
     let I_PolyFaucet;
 
     // SecurityToken Details for funds raise Type ETH
+    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Team";
     const symbol = "SAP";
     const tokenDetails = "This is equity type of issuance";
@@ -72,7 +72,7 @@ contract('CappedSTO', accounts => {
     const budget = 0;
 
     // Capped STO details
-    const startTime = latestTime() + duration.seconds(5000);           // Start time will be 5000 seconds more than the latest time
+    const startTime = latestTime() + duration.days(1);           // Start time will be 5000 seconds more than the latest time
     const endTime = startTime + duration.days(30);                     // Add 30 days more
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
@@ -114,9 +114,9 @@ contract('CappedSTO', accounts => {
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
-        account_investor1 = accounts[2];
+        account_investor1 = accounts[4];
         account_investor2 = accounts[3];
-        account_fundsReceiver = accounts[4];
+        account_fundsReceiver = accounts[2];
         token_owner = account_issuer;
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -236,16 +236,16 @@ contract('CappedSTO', accounts => {
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
-            let tx = await I_TickerRegistry.registerTicker(symbol, name, { from : token_owner });
+            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
-            assert.equal(tx.logs[0].args._symbol, symbol.toLowerCase());
+            assert.equal(tx.logs[0].args._symbol, symbol);
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, symbol.toLowerCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
@@ -286,41 +286,46 @@ contract('CappedSTO', accounts => {
 
         it("Should fail to launch the STO due to rate is 0", async () => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
-
+            let errorThrown = false;
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
             } catch(error) {
                 console.log(`Tx Failed because of rate is ${0}. Test Passed Successfully`);
+                errorThrown = true;
                 ensureException(error);
             }
+            assert.ok(errorThrown, message);
         });
 
         it("Should fail to launch the STO due to startTime > endTime", async () => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
-
+            let errorThrown = false;
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
             } catch(error) {
+                errorThrown = true;
                 console.log(`Tx Failed because of startTime is greater than endTime. Test Passed Successfully`);
                 ensureException(error);
             }
+            assert.ok(errorThrown, message);
         });
 
         it("Should fail to launch the STO due to cap is of 0 securityToken", async () => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
-
+            let errorThrown = false;
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
             } catch(error) {
                 console.log(`Tx Failed because the Cap is equal to ${0}. Test Passed Successfully`);
+                errorThrown = true;
                 ensureException(error);
             }
+            assert.ok(errorThrown, message);            
         });
 
 
         it("Should successfully attach the STO factory with the security token", async () => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
-
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
 
             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
@@ -367,6 +372,7 @@ contract('CappedSTO', accounts => {
     describe("Buy tokens", async() => {
 
         it("Should buy the tokens -- failed due to startTime is greater than Current time", async () => {
+            let errorThrown = false;
             try {
                 await web3.eth.sendTransaction({
                     from: account_investor1,
@@ -375,11 +381,14 @@ contract('CappedSTO', accounts => {
                   });
             } catch(error) {
                 console.log(`Failed due to startTime is greater than Current time`);
+                errorThrown = true;
                 ensureException(error);
             }
+            assert.ok(errorThrown, message);
         });
 
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
+            let errorThrown = false;
             try {
                 await web3.eth.sendTransaction({
                     from: account_investor1,
@@ -389,7 +398,9 @@ contract('CappedSTO', accounts => {
             } catch(error) {
                 console.log(`Failed because investor doesn't present in the whitelist`);
                 ensureException(error);
+                errorThrown = true;
             }
+            assert.ok(errorThrown, message);
         });
 
         it("Should Buy the tokens", async() => {
@@ -408,7 +419,7 @@ contract('CappedSTO', accounts => {
             assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
 
             // Jump time
-            await increaseTime(5000);
+            await increaseTime(duration.days(1));
             // Fallback transaction
             await web3.eth.sendTransaction({
                 from: account_investor1,
@@ -501,8 +512,8 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should failed at the time of buying the tokens -- Because STO get expired", async() => {
-            await increaseTime(duration.days(16)); // increased beyond the end time of the STO
-
+            await increaseTime(duration.days(17)); // increased beyond the end time of the STO
+            let errorThrown = false;
             try {
                 // Fallback transaction
              await web3.eth.sendTransaction({
@@ -513,9 +524,10 @@ contract('CappedSTO', accounts => {
               });
             } catch(error) {
                 console.log(`failed Because STO get expired reached`);
+                errorThrown = true;
                 ensureException(error);
             }
-
+            assert.ok(errorThrown, message);
         });
 
         it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {
@@ -536,16 +548,16 @@ contract('CappedSTO', accounts => {
         describe("Launch a new SecurityToken", async() => {
 
             it("POLY: Should register the ticker before the generation of the security token", async () => {
-                let tx = await I_TickerRegistry.registerTicker(P_symbol, P_name, { from : token_owner });
+                let tx = await I_TickerRegistry.registerTicker(token_owner, P_symbol, P_name, swarmHash, { from : token_owner });
                 assert.equal(tx.logs[0].args._owner, token_owner);
-                assert.equal(tx.logs[0].args._symbol, P_symbol.toLowerCase());
+                assert.equal(tx.logs[0].args._symbol, P_symbol);
             });
 
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
                 let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_decimals, P_tokenDetails, { from: token_owner });
 
                 // Verify the successful generation of the security token
-                assert.equal(tx.logs[1].args._ticker, P_symbol.toLowerCase(), "SecurityToken doesn't get deployed");
+                assert.equal(tx.logs[1].args._ticker, P_symbol, "SecurityToken doesn't get deployed");
 
                 I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
@@ -659,7 +671,7 @@ contract('CappedSTO', accounts => {
                 assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
 
                 // Jump time
-                await increaseTime(duration.days(16));
+                await increaseTime(duration.days(17));
 
                 await I_PolyFaucet.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
 
@@ -743,6 +755,7 @@ contract('CappedSTO', accounts => {
                     .toNumber(),
                     45000
                 );
+                let errorThrown = false;
                 try {
 
                 await I_PolyFaucet.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
@@ -753,13 +766,15 @@ contract('CappedSTO', accounts => {
                 );
                 } catch(error) {
                     console.log(`failed Because of capped reached`);
+                    errorThrown = true;
                     ensureException(error);
                 }
+                assert.ok(errorThrown, message);
             });
 
             it("Should failed at the time of buying the tokens -- Because STO get expired", async() => {
-                await increaseTime(duration.days(30)); // increased beyond the end time of the STO
-
+                await increaseTime(duration.days(31)); // increased beyond the end time of the STO
+                let errorThrown = false;
                 try {
                     await I_PolyFaucet.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
                     // buyTokensWithPoly transaction
@@ -769,9 +784,10 @@ contract('CappedSTO', accounts => {
                     );
                 } catch(error) {
                     console.log(`failed Because STO get expired reached`);
+                    errorThrown = true;                    
                     ensureException(error);
                 }
-
+                assert.ok(errorThrown, message);                
             });
 
             it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {

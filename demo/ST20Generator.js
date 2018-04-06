@@ -174,7 +174,7 @@ async function step_ticker_reg(){
 
   if(!alreadyRegistered){
     try{
-      await tickerRegistry.methods.registerTicker(tokenSymbol, "").send({ from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE})
+      await tickerRegistry.methods.registerTicker(Issuer,tokenSymbol,"",web3.utils.asciiToHex("")).send({ from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...
@@ -383,6 +383,11 @@ async function step_STO_Launch(){
       displayTokenSymbol = result;
     });
 
+    let displayWalletBalance = web3.utils.fromWei(await web3.eth.getBalance(displayWallet),"ether");
+
+    let formattedCap = BigNumber(web3.utils.fromWei(displayCap,"ether"));
+    let formattedSold = BigNumber(web3.utils.fromWei(displayTokensSold,"ether"));
+
     let now = Math.floor(Date.now()/1000);
     let timeTitle;
 
@@ -398,23 +403,25 @@ async function step_STO_Launch(){
 
     console.log(`
       ***** STO Information *****
-      - Raise Cap:       ${web3.utils.fromWei(displayCap,"ether")} ${displayTokenSymbol.toUpperCase()}
-      - Start Time:      ${new Date(displayStartTime * 1000)}
-      - End Time:        ${new Date(displayEndTime * 1000)}
-      - Rate:            1 ETH = ${displayRate} ${displayTokenSymbol.toUpperCase()}
-      - Wallet:          ${displayWallet}
+      - Raise Cap:         ${web3.utils.fromWei(displayCap,"ether")} ${displayTokenSymbol.toUpperCase()}
+      - Start Time:        ${new Date(displayStartTime * 1000)}
+      - End Time:          ${new Date(displayEndTime * 1000)}
+      - Rate:              1 ETH = ${displayRate} ${displayTokenSymbol.toUpperCase()}
+      - Wallet:            ${displayWallet}
+      - Wallet Balance:    ${displayWalletBalance} ETH
       --------------------------------------
-      - ${timeTitle}  ${timeRemaining}
-      - Funds raised:    ${web3.utils.fromWei(displayFundsRaised,"ether")} ETH
-      - Tokens sold:     ${web3.utils.fromWei(displayTokensSold,"ether")} ${displayTokenSymbol.toUpperCase()}
-      - Investor count:  ${displayInvestorCount}
+      - ${timeTitle}    ${timeRemaining}
+      - Funds raised:      ${web3.utils.fromWei(displayFundsRaised,"ether")} ETH
+      - Tokens sold:       ${web3.utils.fromWei(displayTokensSold,"ether")} ${displayTokenSymbol.toUpperCase()}
+      - Tokens remaining:  ${formattedCap.minus(formattedSold).toNumber()} ${displayTokenSymbol.toUpperCase()}
+      - Investor count:    ${displayInvestorCount}
     `);
 
   }else{
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in ETH)");
 
-    cap =  readlineSync.question('How many tokens do you plan to sell on the STO? (500.000)');
+    cap =  readlineSync.question('How many tokens do you plan to sell on the STO? (500.000): ');
     startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(5 minutes from now = '+(Math.floor(Date.now()/1000)+300)+' ): ');
     endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
     rate =  readlineSync.question('Enter the rate (1 ETH = X ST) for the STO (1000): ');

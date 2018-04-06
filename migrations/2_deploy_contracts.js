@@ -12,7 +12,7 @@ const CappedSTO= artifacts.require('./CappedSTO.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
 const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
-const STVersionProxy_001 = artifacts.require('./tokens/STVersionProxy_001.sol');
+const STVersionProxy001 = artifacts.require('./tokens/STVersionProxy001.sol');
 
 var BigNumber = require('bignumber.js');
 

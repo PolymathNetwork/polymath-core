@@ -1,9 +1,31 @@
 # Changelog
 All notable changes to this project will be documented in this file.   
 
-## [Unreleased](https://github.com/PolymathNetwork/polymath-core_v2/compare/npm-publish-2...master)
+## [Unreleased](https://github.com/PolymathNetwork/polymath-core/compare/npm-publish-2...master)
 
-[__0.3.0__](https://www.npmjs.com/package/polymath-core_v2?activeTab=readme) __02-04-18__
+[__0.3.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __06-04-18__
+
+## Added
+* Add `emit` keyword to emit the events.    
+* Two new variable is added at the time of registeration of ticker. `swarmHash` represents the off-chain data storage location on IPFS and `owner` It reperesent the ethereum address of the owner.       
+* `LogRegisterTicker` emits two more variable called `_swarmHash` and `_owner`.   
+* Two events are added in `GeneralPermissionManager` contract to facilitate the notifications for the UI end.
+          __`LogChangePermission`__ :Emit when permissions to a delegate get changed.    
+          __`LogAddPermission`__: Emit when delegate is added in permission manager contract.   
+* `getInstructions()` is a public function added into the factories contracts. Use to get the useful instructions about the corresponding factory.   
+* `_securityTokenRegistry` is more argument is added in __securityTokenV2__ contract. 
+
+## Changed
+* All contracts get migrated from solc version 0.4.18 to 0.4.21. 
+* Now symbols get stored in smart contract in uppercase instead of lowercase.    
+* Public variable `STRAdress` name in TickerRegistry smart contract changed to `strAddress`.   
+* Function `permissions()` name in all module factories get changed to `getPermissions()`.   
+* Function `delegateDetails()` name gets changed to `getDelegateDetails()` in GeneralPermissionManager contract.      
+* `STVersionProxy_001 & STVersionProxy_002` contract name changed to STVersionProxy001 & STVersionProxy002 respectively.   
+
+***
+
+[__0.3.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __02-04-18__
 
 ## Added   
 * Multiple events are added to `ModuleRegistry` contract to facilitate the Logging of the operations.   
@@ -44,7 +66,7 @@ All notable changes to this project will be documented in this file.
 
 ***
 
-[__0.2.0__](https://www.npmjs.com/package/polymath-core_v2?activeTab=readme) __26-03-18__
+[__0.2.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __26-03-18__
 
 ## Added      
 * ModuleRegistry contract will provide the list of modules by there types.  
@@ -91,5 +113,6 @@ All notable changes to this project will be documented in this file.
 * `SafeMath.sol` contract is replaced by the zeppelin-solidity library contract .  
 *  No more `SecurityTokens` and `symbol` information will be directly part of the SecurityTokenRegistry. Those information will accessed by inheriting the `ISecurityTokenRegistry`.   
 * Remove the Delegable.sol, AclHelpers.sol, DelegablePorting.sol contracts. Now permission manager factory takes their place . * `delegates` mapping removed from the GeneralTransferManager.  
+
 
 

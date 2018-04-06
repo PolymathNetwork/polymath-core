@@ -1,7 +1,7 @@
 {
-  "name": "polymath-core_v2",
-  "version": "0.3.0",
-  "description": "Polymath Network Core Smart Contracts v2",
+  "name": "polymath-core",
+  "version": "0.3.1",
+  "description": "Polymath Network Core Smart Contracts",
   "main": "truffle.js",
   "directories": {
     "test": "test"
@@ -22,11 +22,12 @@
     "coverage": "./node_modules/.bin/solidity-coverage",
     "flatten-modules": "sol-merger './contracts/modules/*/*.sol' ./flat/modules",
     "flatten-token": "sol-merger './contracts/tokens/*.sol' ./flat/tokens",
-    "flatten": "sol-merger './contracts/*.sol' ./flat"
+    "flatten": "sol-merger './contracts/*.sol' ./flat",
+    "st20generator": "node demo/ST20Generator"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/PolymathNetwork/polymath-core_v2.git"
+    "url": "git+https://github.com/PolymathNetwork/polymath-core.git"
   },
   "keywords": [
     "smart",
@@ -40,9 +41,9 @@
   "author": "Polymath Inc",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/PolymathNetwork/polymath-core_v2/issues"
+    "url": "https://github.com/PolymathNetwork/polymath-core/issues"
   },
-  "homepage": "https://github.com/PolymathNetwork/polymath-core_v2#readme",
+  "homepage": "https://github.com/PolymathNetwork/polymath-core#readme",
   "dependencies": {
     "babel-polyfill": "6.26.0",
     "babel-preset-es2015": "6.24.1",
@@ -68,7 +69,7 @@
     "ganache-cli": "^6.1.0",
     "sol-merger": "^0.1.2",
     "solium": "^1.1.6",
-    "truffle": "^4.1.3",
+    "truffle": "^4.1.5",
     "truffle-wallet-provider": "0.0.5"
   }
 }

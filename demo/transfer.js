@@ -38,8 +38,8 @@ if (typeof web3 !== 'undefined') {
 
 ////////////////////////////USER INPUTS//////////////////////////////////////////
 let tokenSymbol = process.argv.slice(2)[0]; //token symbol
-let beneficiary = process.argv.slice(2)[1]; //investment beneficiary
-let ethInvestment = process.argv.slice(2)[2]; //ETH investment
+let transferTo = process.argv.slice(2)[1]; //investment beneficiary
+let transferAmount = process.argv.slice(2)[2]; //ETH investment
 
 /////////////////////////GLOBAL VARS//////////////////////////////////////////
 
@@ -65,7 +65,7 @@ async function startScript() {
     tickerRegistry.setProvider(web3.currentProvider);
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
-    invest();
+    transfer();
   } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m', "There was a problem getting the contracts. Make sure they are deployed to the selected network.");
@@ -73,7 +73,7 @@ async function startScript() {
   }
 }
 
-async function invest() {
+async function transfer() {
 
   // Let's check if token has already been deployed, if it has, skip to STO
   await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({ from: Issuer }, function (error, result) {
@@ -83,14 +83,8 @@ async function invest() {
     }
   });
 
-  let stoAddress;
-  await securityToken.methods.getModule(3, 0).call({ from: Issuer }, function (error, result) {
-    stoAddress = result[1];
-  });
-  cappedSTOModule = new web3.eth.Contract(cappedSTOABI, stoAddress);
-
   try{
-    await cappedSTOModule.methods.buyTokens(beneficiary).send({ from: Issuer, value:web3.utils.toWei(ethInvestment,"ether"), gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+    await securityToken.methods.transfer(transferTo,web3.utils.toWei(transferAmount,"ether")).send({ from: Issuer, gas:500000, gasPrice:DEFAULT_GAS_PRICE})
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -101,10 +95,9 @@ async function invest() {
       console.log(`
         Congratulations! The transaction was successfully completed.
 
-        Account ${receipt.events.TokenPurchase.returnValues.purchaser}
-        invested ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues.value,"ether")} ETH
-        purchasing ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues.amount,"ether")} tokens
-        for beneficiary account ${receipt.events.TokenPurchase.returnValues.beneficiary}
+        Account ${receipt.events.Transfer.returnValues.from}
+        transfered ${web3.utils.fromWei(receipt.events.Transfer.returnValues.value,"ether")} tokens
+        to account ${receipt.events.Transfer.returnValues.to}
 
         Review it on Etherscan.
         TxHash: ${receipt.transactionHash}\n`
@@ -112,7 +105,8 @@ async function invest() {
     });
 
   }catch (err){
-    console.log('\x1b[31m%s\x1b[0m',"There was an error processing the investment transaction. \nThe most probable cause for this error is the beneficiary account not being in the whitelist or the STO not having started yet.")
+    console.log(err);
+    console.log("There was an error processing the transfer transaction. \n The most probable cause for this error is one of the involved accounts not being in the whitelist or under a lockup period.")
     return;
   }
 

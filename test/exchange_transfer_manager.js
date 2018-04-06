@@ -1,14 +1,14 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
-import { increaseTime } from './helpers/time';
+import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
 const DummySTO = artifacts.require('./DummySTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
-const TickerRegistry = artifacts.require("./TickerRegistry.sol");
-const STVersion = artifacts.require('./STVersionProxy_001.sol');
+const TickerRegistry = artifacts.require('./TickerRegistry.sol');
+const STVersion = artifacts.require('./STVersionProxy001.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const ExchangeTransferManagerFactory = artifacts.require('./ExchangeTransferManagerFactory.sol');
@@ -32,7 +32,9 @@ contract('ExchangeTransferManager', accounts => {
     let account_exchange;
     // investor Details
     let fromTime = latestTime();
-    let toTime = latestTime() + duration.days(15);
+    let toTime = latestTime();
+
+    let message = "Transaction Should Fail!";
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -51,6 +53,7 @@ contract('ExchangeTransferManager', accounts => {
     let I_PolyToken;
 
     // SecurityToken Details
+    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Team";
     const symbol = "sap";
     const tokenDetails = "This is equity type of issuance";
@@ -91,9 +94,9 @@ contract('ExchangeTransferManager', accounts => {
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
-        account_investor1 = accounts[2];
-        account_investor2 = accounts[3];
-        account_exchange = accounts[4];
+        account_investor1 = accounts[8];
+        account_investor2 = accounts[9];
+        account_exchange = accounts[7];
         token_owner = account_issuer;
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -226,16 +229,16 @@ contract('ExchangeTransferManager', accounts => {
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
-            let tx = await I_TickerRegistry.registerTicker(symbol, contact, { from : token_owner });
+            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, contact, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
-            assert.equal(tx.logs[0].args._symbol, symbol);
+            assert.equal(tx.logs[0].args._symbol, symbol.toUpperCase());
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
@@ -290,12 +293,15 @@ contract('ExchangeTransferManager', accounts => {
     describe("Buy tokens", async() => {
 
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
+            let errorThrown = false;
             try {
                 await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
             } catch(error) {
                 console.log(`Failed because investor isn't present in the whitelist`);
+                errorThrown = true;
                 ensureException(error);
             }
+            assert.ok(errorThrown, message);
         });
 
         it("Should Buy the tokens", async() => {
@@ -348,6 +354,20 @@ contract('ExchangeTransferManager', accounts => {
               "ExchangeTransferManager module was not added"
           );
           I_ExchangeTransferManager = ExchangeTransferManager.at(tx.logs[2].args._module);
+
+
+          // Add exchange address to General Transfer Manager whitelist
+          let whitelist_exchange = await I_GeneralTransferManager.modifyWhitelist(
+              account_exchange,
+              fromTime,
+              toTime,
+              {
+                  from: account_issuer,
+                  gas: 500000
+              });
+
+          assert.equal(whitelist_exchange.logs[0].args._investor, account_exchange, "Failed in adding the account_exchange in whitelist");
+
         });
 
         it("Existing investor should still be able to receive tokens", async() => {
@@ -360,29 +380,42 @@ contract('ExchangeTransferManager', accounts => {
             );
         });
 
-        it("New investor should not be able to transfer tokens", async() => {
+        it("Existing investor should be able to transfer to exchange", async() => {
+          let w1 = await I_ExchangeTransferManager.verifyTransfer(account_investor1,account_exchange,1000);
+          let w2 = await I_GeneralTransferManager.verifyTransfer(account_investor1,account_exchange,1000);
+            await I_SecurityToken.transfer(account_exchange, web3.utils.toWei('1', 'ether'), {from: account_investor1});
+
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_exchange)).toNumber(),
+                web3.utils.toWei('1', 'ether')
+            );
+        });
+
+        it("New investor should not be able to get tokens transferred", async() => {
+           let errorThrown = false;
           try {
-              await I_SecurityToken.transfer(account_exchange, web3.utils.toWei('1', 'ether'), {from: account_investor1});
-              // await I_DummySTO.generateTokens(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner });
+              await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), {from: account_exchange});
+
           } catch(error) {
               console.log(`Failed because investor isn't present in the whitelist`);
+              errorThrown = true;
               ensureException(error);
           }
+          assert.ok(errorThrown, message);
         });
 
         it("Add new investor to exchange whitelist", async() => {
 
-          await I_ExchangeTransferManager.modifyWhitelist(account_investor1, true, {from: account_polymath});
+          await I_ExchangeTransferManager.modifyWhitelist(account_investor2, true, {from: account_polymath});
 
-          await I_SecurityToken.transfer(account_exchange, web3.utils.toWei('1', 'ether'), {from: account_investor1});
+          await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), {from: account_exchange});
 
           assert.equal(
-              (await I_SecurityToken.balanceOf(account_exchange)).toNumber(),
+              (await I_SecurityToken.balanceOf(account_investor2)).toNumber(),
               web3.utils.toWei('1', 'ether')
           );
-
         });
-
+        
 
     });
 });

@@ -60,7 +60,7 @@ let Issuer;
 let accounts;
 let generalTransferManager;
 
-let DEFAULT_GAS_PRICE = 80000000000;
+let DEFAULT_GAS_PRICE = 10000000000;
 
 
 

@@ -63,7 +63,10 @@ First, assure that you have [setup Polymath Core properly](#Setting-up-Polymath-
 
 The CLI (Command Line Interface) ST-20 Generator tool is a wizard-like script that will guide technical users in the creation and deployment of an ST-20 token. The commands are operated from a *nix command prompt (unix or mac).
 
-To use it, make sure you are connected to a full ethereum node (or locally to Ganache-cli, a local fake test network).
+To use it, make sure you are connected to a full ethereum node (or locally to Ganache-cli, a local private test network).
+You can run Parity with the following command to get started (make sure the node is fully synced before using the CLI tool):
+`parity --chain ropsten  --rpcapi "eth,net,web3,personal,parity" --unlock YOUR_ETH_ACCOUNT --password $HOME/password.file`
+
 1. Edit `demo/helpers/contract_addresses.js` to make sure scripts are pointing to the correct contract addresses
 2. On the terminal, run the following command: `npm run st20Generator`
 3. Follow the text prompts:
@@ -157,6 +160,8 @@ In order to create a new STO, developers first have to create an STO Factory con
 To make an STO available for Issuers, first, deploy the STO Factory and take note of its address. Then, call `moduleRegistry.registerModule(STO Factory address);`
 
 Once the STO Factory has been registered to the Module Registry, issuers will be able to see it on the Polymath dApp and they will be able to add it as a module of the ST.
+
+Note that while anyone can register an STO Factory, only those "approved" by Polymath will be enabled to be attached by the general community. An STO Factory not yet approved by Polymath may only be used by it's author.
 
 
 # Code Styleguide

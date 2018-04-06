@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/PolymathNetwork/polymath-core_v2.svg?token=rqsL7PsbwLxrskjYAHpq&branch=master)](https://travis-ci.com/PolymathNetwork/polymath-core_v2)
+[![Build Status](https://travis-ci.com/PolymathNetwork/polymath-core.svg?token=rqsL7PsbwLxrskjYAHpq&branch=master)](https://travis-ci.com/PolymathNetwork/polymath-core)
 <a href="https://t.me/polymathnetwork"><img src="https://img.shields.io/badge/50k+-telegram-blue.svg" target="_blank"></a>
 
 ![Polymath](Polymath.png)
@@ -35,7 +35,7 @@ contract IST20 {
 # The Polymath Core Architecture
 The diagram below depicts a high-level view of the various modules, registries, and contracts implemented in Polymath Core:
 
-![alt text](https://github.com/PolymathNetwork/polymath-core_v2/blob/master/docs/images/PolymathCore.png)
+![alt text](https://github.com/PolymathNetwork/polymath-core/blob/master/docs/images/PolymathCore.png)
 
 ## Components
 ### SecurityToken

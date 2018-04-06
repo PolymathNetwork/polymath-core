@@ -7,32 +7,6 @@
 
 The Polymath Core smart contracts provide a system for launching regulatory-compliant securities tokens on a decentralized blockchain. This particular repository is the implementation of a system that allows the creation of ST-20-compatible tokens. This system has a modular design that promotes a variety of pluggable components for various types of issuances, legal requirements, and offering processes.
 
-# Polymath Core Smart Contracts
-## Ropsten
-
-- TickerRegistry: TBA
-- SecurityTokenRegistry: TBA
-- ModuleRegistry: TBA
-
-## Setup
-
-The smart contracts are written in [Solidity][solidity] and tested/deployed using [Truffle][truffle] version 4.1.0. The new version of Truffle doesn't require testrpc to be installed separately so you can just run the following:
-
-```bash
-# Install Truffle package globally:
-$ npm install -g truffle
-
-# Install local node dependencies:
-$ npm install
-```
-
-## Testing
-
-To test the code simply run:
-
-```
-$ npm run test
-```
 
 # ST-20 Interface Overview
 ## Description
@@ -85,6 +59,7 @@ Modules allow custom add-in functionality in the issuance process and beyond. Th
 
 
 # Stepping through an issuance with the CLI Tool
+First, assure that you have [setup Polymath Core properly](#Setting-up-Polymath-Core).
 
 The CLI (Command Line Interface) ST-20 Generator tool is a wizard-like script that will guide technical users in the creation and deployment of an ST-20 token. The commands are operated from a *nix command prompt (unix or mac).
 
@@ -127,6 +102,34 @@ You can run the transfer script to transfer ST tokens to another account (as lon
 
 ```
 node demo/transfer TOKEN_SYMBOL ACCOUNT_TO AMOUNT
+```
+
+
+# Setting up Polymath Core
+## Ropsten
+
+- TickerRegistry: TBA
+- SecurityTokenRegistry: TBA
+- ModuleRegistry: TBA
+
+## Setup
+
+The smart contracts are written in [Solidity][solidity] and tested/deployed using [Truffle][truffle] version 4.1.0. The new version of Truffle doesn't require testrpc to be installed separately so you can just run the following:
+
+```bash
+# Install Truffle package globally:
+$ npm install -g truffle
+
+# Install local node dependencies:
+$ npm install
+```
+
+## Testing
+
+To test the code simply run:
+
+```
+$ npm run test
 ```
 
 

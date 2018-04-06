@@ -164,10 +164,10 @@ Once the STO Factory has been registered to the Module Registry, issuers will be
 The polymath-core repo follows the style guide overviewed here:
 http://solidity.readthedocs.io/en/develop/style-guide.html
 
-# Links
+# Links    
 
-[polymath]: https://polymath.network
-[ethereum]: https://www.ethereum.org/
-[solidity]: https://solidity.readthedocs.io/en/develop/
-[truffle]: http://truffleframework.com/
-[testrpc]: https://github.com/ethereumjs/testrpc
+[Polymath](https://polymath.network)
+[Ethereum](https://www.ethereum.org/)
+[Solidity](https://solidity.readthedocs.io/en/develop/)
+[Truffle](http://truffleframework.com/)
+[Testrpc](https://github.com/ethereumjs/testrpc)

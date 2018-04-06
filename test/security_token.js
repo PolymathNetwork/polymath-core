@@ -530,7 +530,6 @@ contract('SecurityToken', accounts => {
             });
 
             it("Should add the investor in the whitelist by the delegate", async() => {
-                let id = await takeSnapshot();
                 let tx = await I_GeneralTransferManager.modifyWhitelist(
                     account_temp,
                     fromTime,
@@ -541,8 +540,66 @@ contract('SecurityToken', accounts => {
                     });
 
                 assert.equal(tx.logs[0].args._investor, account_temp, "Failed in adding the investor in whitelist");
-                await revertToSnapshot(id);
             });
+
+            it("should account_temp successfully buy the token", async() => {
+                 // Fallback transaction
+                 await web3.eth.sendTransaction({
+                    from: account_temp,
+                    to: I_CappedSTO.address,
+                    gas: 210000,
+                    value: web3.utils.toWei('1', 'ether')
+                    });
+    
+                assert.equal(
+                    (await I_CappedSTO.fundsRaised.call())
+                    .dividedBy(new BigNumber(10).pow(18))
+                    .toNumber(),
+                    2
+                );
+    
+                assert.equal(await I_CappedSTO.getNumberInvestors.call(), 2);
+    
+                assert.equal(
+                    (await I_SecurityToken.balanceOf(account_investor1))
+                    .dividedBy(new BigNumber(10).pow(18))
+                    .toNumber(),
+                    1000
+                );
+            });
+
+            it("Should remove investor from the whitelist by the delegate", async() => {
+                let tx = await I_GeneralTransferManager.modifyWhitelist(
+                    account_temp,
+                    0,
+                    0,
+                    {
+                        from: account_delegate,
+                        gas: 500000
+                    });
+
+                assert.equal(tx.logs[0].args._investor, account_temp, "Failed in removing the investor from whitelist");
+            });
+
+            it("should account_temp fail in buying the token", async() => {
+                let errorThrown = false;
+                try {
+                    // Fallback transaction
+                await web3.eth.sendTransaction({
+                    from: account_temp,
+                    to: I_CappedSTO.address,
+                    gas: 210000,
+                    value: web3.utils.toWei('1', 'ether')
+                    });
+
+                } catch (error) {
+                    console.log(`non-whitelist investor is not allowed`);
+                    errorThrown = true;
+                    ensureException(error);
+                } 
+                assert.ok(errorThrown, message);
+           });
+
     });
 
   });

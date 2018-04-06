@@ -13,7 +13,7 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
     event LogNewSecurityToken(string _ticker, address _securityTokenAddress, address _owner);
 
      /**
-     * @dev Constructor use to set the essentials addresses to facilitate
+     * @dev Constructor used to set the essentials addresses to facilitate
      * the creation of the security token
      */
     function SecurityTokenRegistry(
@@ -28,6 +28,7 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
         moduleRegistry = _moduleRegistry;
         tickerRegistry = _tickerRegistry;
 
+        // By default, the STR version is set to 0.0.1
         setProtocolVersion(_stVersionProxy, "0.0.1");
     }
 
@@ -55,6 +56,11 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
         emit LogNewSecurityToken(symbol, newSecurityTokenAddress, msg.sender);
     }
 
+    /**
+    * @dev Changes the protocol version and the SecurityToken contract that the registry points to
+    * Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
+    * Changing versions does not affect existing tokens.
+    */
     function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public onlyOwner {
         protocolVersion = _version;
         protocolVersionST[_version] = _stVersionProxyAddress;

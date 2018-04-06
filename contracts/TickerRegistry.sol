@@ -1,10 +1,9 @@
 pragma solidity ^0.4.21;
 
 /*
-  Allows issuers to reserve their token symbols ahead
-  of actually generating their security token.
-  SecurityTokenRegistry would reference this contract and ensure that any token symbols
-  registered here can only be created by their owner.
+  Allows issuers to reserve their token symbols ahead of actually generating their security token.
+  SecurityTokenRegistry would reference this contract and ensure that a token symbol exists here and
+  only its owner can deploy the token with that symbol.
 */
 
 import "zeppelin-solidity/contracts/math/SafeMath.sol";
@@ -14,7 +13,7 @@ import "./helpers/Util.sol";
 
 /**
  * @title TickerRegistry
- * @dev Contract use to register the security token symbols
+ * @dev Contract used to register the security token symbols
  */
 
 contract TickerRegistry is ITickerRegistry, Ownable, Util {
@@ -50,9 +49,8 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
 
     /**
      * @dev Register the token symbol for its particular owner
-            Once symbol get register to its owner then no other issuer can claim
-            its ownership, until unless the symbol get expired and its issuer doesn't used it
-            for its issuance.
+            Once the token symbol is registered to its owner then no other issuer can claim
+            its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
      * @param _symbol token symbol
      * @param _tokenName Name of the token
      * @param _owner Address of the owner of the token

@@ -16,6 +16,7 @@ import "../interfaces/ISecurityTokenRegistry.sol";
 /**
 * @title SecurityToken
 * @notice SecurityToken is an ERC20 token with added capabilities:
+* - Implements the ST-20 Interface
 * - Transfers are restricted
 * - Modules can be attached to it to control its behaviour
 * - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
@@ -25,6 +26,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     bytes32 public securityTokenVersion = "0.0.1";
 
+    // Reference to the POLY token.
     ERC20 public polyToken;
 
     struct ModuleData {
@@ -134,6 +136,11 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         emit LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
     }
 
+    /**
+    * @dev removes a module attached to the SecurityToken
+    * @param _moduleType is which type of module we are trying to remove
+    * @param _moduleIndex is the index of the module within the chosen type
+    */
     function removeModule(uint8 _moduleType, uint8 _moduleIndex) external onlyOwner {
         require(_moduleIndex < modules[_moduleType].length);
         require(modules[_moduleType][_moduleIndex].moduleAddress != address(0));
@@ -157,10 +164,17 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     }
 
+    /**
+    * @dev allows the owner to withdraw unspent POLY stored by them on the ST.
+    * Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
+    */
     function withdrawPoly(uint256 _amount) public onlyOwner {
         require(polyToken.transfer(owner, _amount));
     }
 
+    /**
+    * @dev allows owner to approve more POLY to one of the modules 
+    */
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0);
         require(_moduleIndex < modules[_moduleType].length);
@@ -198,7 +212,10 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         return false;
     }
 
-    // Only STO module can call this, has a key of 3
+    /**
+    * @dev mints new tokens and assigns them to the target _investor.
+    * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+    */
     function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) returns (bool success) {
         require(verifyTransfer(address(0), _investor, _amount));
         totalSupply_ = totalSupply_.add(_amount);

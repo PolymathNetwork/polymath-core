@@ -10,8 +10,7 @@ The Polymath Core smart contracts provide a system for launching regulatory-comp
 
 # ST-20 Interface Overview
 ## Description
-ST-20 is an Ethereum-based token implemented on top of the ERC-20 protocol that adds the ability for tokens to control transfers based on rules that can be applied to it.
-ST-20 tokens depend on *Transfer Managers* to determine the ruleset the token should apply to allow or disallow a transfer, be it between the issuer and investors, in a peer to peer exchange, or a transaction with an exchange.
+An ST-20 token is an Ethereum-based token implemented on top of the ERC-20 protocol that adds the ability for tokens to control transfers based on specific rules. ST-20 tokens rely on Transfer Managers to determine the ruleset the token should apply in order to allow or deny a transfer, be it between the issuer and investors, in a peer to peer exchange, or a transaction with an exchange.
 
 ## How it works
 ST-20 tokens must implement a `verifyTransfer` method which will be called when attempting to execute a `transfer` or `transferFrom` method. The `verifyTransfer` method will determine whether that transaction can be completed or not. The implementation of `verifyTransfer` can take many forms, but the default approach is a whitelist controlled by the `GeneralTransferManager`.

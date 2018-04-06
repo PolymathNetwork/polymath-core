@@ -9,8 +9,7 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 /**
 * @title ModuleRegistry
 * @notice Stores registered modules
-* Could initially be centrally controlled (only Polymath can register modules)
-* and then over time move to a more decentralised version (modules can be registerd provided POLY holders agree)
+* Anyone can register modules, but only those "approved" by Polymath will be allowed to everyone.
 */
 
 contract ModuleRegistry is IModuleRegistry, Ownable {
@@ -56,7 +55,9 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     }
 
     /**
-    * @dev Called by Polymath to verify modules for SecurityToken to use
+    * @dev Called by Polymath to verify modules for SecurityToken to use.
+    * A module can not be used by an ST unless first approved/verified by Polymath
+    * (The only exception to this is that the author of the module is the owner of the ST)
     * @param _moduleFactory is the address of the module factory to be registered
     */
     function verifyModule(address _moduleFactory, bool _verified) external onlyOwner returns(bool) {

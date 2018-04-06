@@ -81,6 +81,14 @@ contract GeneralTransferManager is ITransferManager {
         emit LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
+    /**
+    * @dev default implementation of verifyTransfer used by SecurityToken
+    * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
+    * If the transfer request comes from a token holder, it checks that:
+    * a) Both are on the whitelist
+    * b) Seller's sale lockup period is over
+    * c) Buyer's purchase lockup is over
+    */
     function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(bool) {
         if (allowAllTransfers) {
             //All transfers allowed, regardless of whitelist
@@ -98,6 +106,12 @@ contract GeneralTransferManager is ITransferManager {
             (onWhitelist(_to) && whitelist[_to].toTime <= now));
     }
 
+    /**
+    * @dev adds or removes addresses from the whitelist.
+    * @param _investor is the address to whitelist
+    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    */
     function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime);

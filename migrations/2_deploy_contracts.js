@@ -53,21 +53,21 @@ module.exports = function (deployer, network, accounts) {
           return ModuleRegistry.deployed().then((moduleRegistry) => {
              return deployer.deploy(GeneralTransferManagerFactory, {from: PolymathAccount}).then(() => {
                 return deployer.deploy(GeneralPermissionManagerFactory, {from: PolymathAccount}).then(() => {
-                    return deployer.deploy(PolyToken).then(()=> {
+                    return deployer.deploy(PolyToken).then(() => {
                         return moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount}).then(() => {
                             return moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, {from: PolymathAccount}).then(() => {
-                                return moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, {from: PolymathAccount}).then(()=>{
-                                    return moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, {from: PolymathAccount}).then(()=> {
-                                        return deployer.deploy(STVersionProxy_001, GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount}).then(() => {
+                                return moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, {from: PolymathAccount}).then(() => {
+                                    return moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, {from: PolymathAccount}).then(() => {
+                                        return deployer.deploy(STVersionProxy001, GeneralTransferManagerFactory.address, GeneralPermissionManagerFactory.address, {from: PolymathAccount}).then(() => {
                                             return deployer.deploy(TickerRegistry, {from: PolymathAccount}).then(() => {
-                                                return deployer.deploy(SecurityTokenRegistry, PolyToken.address, ModuleRegistry.address, TickerRegistry.address, STVersionProxy_001.address, {from: PolymathAccount}).then(() =>{
+                                                return deployer.deploy(SecurityTokenRegistry, PolyToken.address, ModuleRegistry.address, TickerRegistry.address, STVersionProxy001.address, {from: PolymathAccount}).then(() => {
                                                     return TickerRegistry.deployed().then((tickerRegistry) => {
-                                                        return tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount}).then(()=>{
-                                                            return moduleRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount}).then(()=> {
+                                                        return tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount}).then(() => {
+                                                            return moduleRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount}).then(() => {
                                                                 return deployer.deploy(DummySTOFactory, {from: PolymathAccount}).then(() => {
                                                                     return moduleRegistry.registerModule(DummySTOFactory.address, {from: PolymathAccount}).then(() => {
                                                                         return deployer.deploy(CappedSTOFactory, {from: PolymathAccount}).then(() => {
-                                                                            return moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount}).then(()=>{
+                                                                            return moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount}).then(() => {
                                                                                 console.log("\n")
                                                                                 console.log("----- Polymath Core Contracts -----");
                                                                                 console.log("*** Ticker Registry Address: ", tickerRegistry.address, "***");

@@ -1,7 +1,7 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.21;
 
 //Simple interface that any module contracts should implement
-interface IModuleRegistry {
+contract IModuleRegistry {
 
     //Checks that module is correctly configured in registry
     function useModule(address _moduleFactory) external;
@@ -81,22 +81,24 @@ contract IModuleFactory is Ownable {
     //Should create an instance of the Module, or throw
     function deploy(bytes _data) external returns(address);
 
-    function getType() view external returns(uint8);
+    function getType() public view returns(uint8);
 
-    function getName() view external returns(bytes32);
+    function getName() public view returns(bytes32);
 
     //Return the cost (in POLY) to use this factory
-    function getCost() view external returns(uint256);
+    function getCost() public view returns(uint256);
 
-    function getDescription() view external returns(string);
+    function getDescription() public view returns(string);
 
-    function getTitle() view external returns(string);
+    function getTitle() public view returns(string);
+
+    function getInstructions() public view returns (string);
 
     //Pull function sig from _data
     function getSig(bytes _data) internal pure returns (bytes4 sig) {
-        uint l = _data.length < 4 ? _data.length : 4;
-        for (uint i = 0; i < l; i++) {
-            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (l - 1 - i))));
+        uint len = _data.length < 4 ? _data.length : 4;
+        for (uint i = 0; i < len; i++) {
+            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
         }
     }
 
@@ -108,7 +110,7 @@ contract IST20 {
     bytes32 public tokenDetails;
 
     //transfer, transferFrom must respect use respect the result of verifyTransfer
-    function verifyTransfer(address _from, address _to, uint256 _amount) view public returns (bool success);
+    function verifyTransfer(address _from, address _to, uint256 _amount) public view returns (bool success);
 
     //used to create tokens
     function mint(address _investor, uint256 _amount) public returns (bool success);
@@ -117,7 +119,7 @@ contract IST20 {
 contract ISecurityToken is IST20, Ownable {
 
     //TODO: Factor out more stuff here
-    function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool);
+    function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool);
 
 }
 
@@ -132,8 +134,8 @@ contract ISecurityTokenRegistry {
     mapping (bytes32 => address) public protocolVersionST;
 
     struct SecurityTokenData {
-      string symbol;
-      bytes32 tokenDetails;
+        string symbol;
+        bytes32 tokenDetails;
     }
 
     mapping(address => SecurityTokenData) securityTokens;
@@ -171,9 +173,9 @@ contract ISecurityTokenRegistry {
 /**
 * @title ModuleRegistry
 * @notice Stores registered modules
-* Could initially be centrally controlled (only Polymath can register modules)
-* and then over time move to a more decentralised version (modules can be registerd provided POLY holders agree)
+* Anyone can register modules, but only those "approved" by Polymath will be allowed to everyone.
 */
+
 contract ModuleRegistry is IModuleRegistry, Ownable {
 
     mapping (address => uint8) public registry;
@@ -187,25 +189,22 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     event LogModuleRegistered(address indexed _moduleFactory, address indexed _owner);
     event LogModuleVerified(address indexed _moduleFactory, bool _verified);
 
-    //Checks that module is correctly configured in registry
+    /**
+    * @dev Called by a security token to notify the registry it is using a module
+    * @param _moduleFactory is the address of the relevant module factory
+    */
     function useModule(address _moduleFactory) external {
         //msg.sender must be a security token - below will throw if not
         ISecurityTokenRegistry(securityTokenRegistry).getSecurityTokenData(msg.sender);
         require(registry[_moduleFactory] != 0);
         //To use a module, either it must be verified, or owned by the ST owner
-        require(verified[_moduleFactory] || (IModuleFactory(_moduleFactory).owner() == ISecurityToken(msg.sender).owner()));
+        require(verified[_moduleFactory]||(IModuleFactory(_moduleFactory).owner() == ISecurityToken(msg.sender).owner()));
         reputation[_moduleFactory].push(msg.sender);
-        LogModuleUsed(_moduleFactory, msg.sender);
-    }
-
-    //Sets the securityTokenRegistry so that moduleRegistry can validate security tokens are genuine
-    function setTokenRegistry(address _securityTokenRegistry) public onlyOwner {
-        require(_securityTokenRegistry != address(0));
-        securityTokenRegistry = _securityTokenRegistry;
+        emit LogModuleUsed (_moduleFactory, msg.sender);
     }
 
     /**
-    * @dev Called by Polymath to register new modules for SecurityToken to use
+    * @dev Called by moduleFactory owner to register new modules for SecurityToken to use
     * @param _moduleFactory is the address of the module factory to be registered
     */
     function registerModule(address _moduleFactory) external returns(bool) {
@@ -215,16 +214,31 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         registry[_moduleFactory] = moduleFactory.getType();
         moduleList[moduleFactory.getType()].push(_moduleFactory);
         reputation[_moduleFactory] = new address[](0);
-        LogModuleRegistered(_moduleFactory, moduleFactory.owner());
+        emit LogModuleRegistered (_moduleFactory, moduleFactory.owner());
         return true;
     }
 
+    /**
+    * @dev Called by Polymath to verify modules for SecurityToken to use.
+    * A module can not be used by an ST unless first approved/verified by Polymath
+    * (The only exception to this is that the author of the module is the owner of the ST)
+    * @param _moduleFactory is the address of the module factory to be registered
+    */
     function verifyModule(address _moduleFactory, bool _verified) external onlyOwner returns(bool) {
         //Must already have been registered
         require(registry[_moduleFactory] != 0);
         verified[_moduleFactory] = _verified;
-        LogModuleVerified(_moduleFactory, _verified);
+        emit LogModuleVerified(_moduleFactory, _verified);
         return true;
+    }
+
+    /**
+    * @dev Called by owner to set the token registry address
+    * @param _securityTokenRegistry is the address of the token registry
+    */
+    function setTokenRegistry(address _securityTokenRegistry) public onlyOwner {
+        require(_securityTokenRegistry != address(0));
+        securityTokenRegistry = _securityTokenRegistry;
     }
 
 }

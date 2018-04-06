@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.21;
 
 contract IST20 {
 
@@ -6,7 +6,7 @@ contract IST20 {
     bytes32 public tokenDetails;
 
     //transfer, transferFrom must respect use respect the result of verifyTransfer
-    function verifyTransfer(address _from, address _to, uint256 _amount) view public returns (bool success);
+    function verifyTransfer(address _from, address _to, uint256 _amount) public view returns (bool success);
 
     //used to create tokens
     function mint(address _investor, uint256 _amount) public returns (bool success);
@@ -55,7 +55,7 @@ contract Ownable {
 contract ISecurityToken is IST20, Ownable {
 
     //TODO: Factor out more stuff here
-    function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool);
+    function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool);
 
 }
 
@@ -90,22 +90,24 @@ contract IModuleFactory is Ownable {
     //Should create an instance of the Module, or throw
     function deploy(bytes _data) external returns(address);
 
-    function getType() view external returns(uint8);
+    function getType() public view returns(uint8);
 
-    function getName() view external returns(bytes32);
+    function getName() public view returns(bytes32);
 
     //Return the cost (in POLY) to use this factory
-    function getCost() view external returns(uint256);
+    function getCost() public view returns(uint256);
 
-    function getDescription() view external returns(string);
+    function getDescription() public view returns(string);
 
-    function getTitle() view external returns(string);
+    function getTitle() public view returns(string);
+
+    function getInstructions() public view returns (string);
 
     //Pull function sig from _data
     function getSig(bytes _data) internal pure returns (bytes4 sig) {
-        uint l = _data.length < 4 ? _data.length : 4;
-        for (uint i = 0; i < l; i++) {
-            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (l - 1 - i))));
+        uint len = _data.length < 4 ? _data.length : 4;
+        for (uint i = 0; i < len; i++) {
+            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
         }
     }
 
@@ -114,49 +116,49 @@ contract IModuleFactory is Ownable {
 //Simple interface that any module contracts should implement
 contract IModule {
 
-    function getInitFunction() public returns (bytes4);
-
     address public factory;
 
     address public securityToken;
 
     function IModule(address _securityToken) public {
-      securityToken = _securityToken;
-      factory = msg.sender;
+        securityToken = _securityToken;
+        factory = msg.sender;
     }
 
+    function getInitFunction() public returns (bytes4);
+    
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
         bool isOwner = msg.sender == ISecurityToken(securityToken).owner();
         bool isFactory = msg.sender == factory;
-        require(isOwner || isFactory || ISecurityToken(securityToken).checkPermission(msg.sender, address(this), _perm));
+        require(isOwner||isFactory||ISecurityToken(securityToken).checkPermission(msg.sender, address(this), _perm));
         _;
     }
 
     modifier onlyOwner {
-      require(msg.sender == ISecurityToken(securityToken).owner());
-      _;
+        require(msg.sender == ISecurityToken(securityToken).owner());
+        _;
     }
 
     modifier onlyFactory {
-      require(msg.sender == factory);
-      _;
+        require(msg.sender == factory);
+        _;
     }
 
     modifier onlyFactoryOwner {
-      require(msg.sender == IModuleFactory(factory).owner());
-      _;
+        require(msg.sender == IModuleFactory(factory).owner());
+        _;
     }
 
-    function permissions() public returns(bytes32[]);
+    function getPermissions() public view returns(bytes32[]);
 }
 
 contract IPermissionManager is IModule {
 
-    function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool);
+    function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool);
 
     function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) public returns(bool);
 
-    function delegateDetails(address _delegate) public returns(bytes32);
+    function getDelegateDetails(address _delegate) public view returns(bytes32);
 
 }

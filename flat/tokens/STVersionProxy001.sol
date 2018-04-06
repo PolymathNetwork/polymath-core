@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.21;
 
 /**
  * @title ERC20Basic
@@ -227,7 +227,7 @@ contract IST20 {
     bytes32 public tokenDetails;
 
     //transfer, transferFrom must respect use respect the result of verifyTransfer
-    function verifyTransfer(address _from, address _to, uint256 _amount) view public returns (bool success);
+    function verifyTransfer(address _from, address _to, uint256 _amount) public view returns (bool success);
 
     //used to create tokens
     function mint(address _investor, uint256 _amount) public returns (bool success);
@@ -276,7 +276,7 @@ contract Ownable {
 contract ISecurityToken is IST20, Ownable {
 
     //TODO: Factor out more stuff here
-    function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool);
+    function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool);
 
 }
 
@@ -288,22 +288,24 @@ contract IModuleFactory is Ownable {
     //Should create an instance of the Module, or throw
     function deploy(bytes _data) external returns(address);
 
-    function getType() view external returns(uint8);
+    function getType() public view returns(uint8);
 
-    function getName() view external returns(bytes32);
+    function getName() public view returns(bytes32);
 
     //Return the cost (in POLY) to use this factory
-    function getCost() view external returns(uint256);
+    function getCost() public view returns(uint256);
 
-    function getDescription() view external returns(string);
+    function getDescription() public view returns(string);
 
-    function getTitle() view external returns(string);
+    function getTitle() public view returns(string);
+
+    function getInstructions() public view returns (string);
 
     //Pull function sig from _data
     function getSig(bytes _data) internal pure returns (bytes4 sig) {
-        uint l = _data.length < 4 ? _data.length : 4;
-        for (uint i = 0; i < l; i++) {
-            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (l - 1 - i))));
+        uint len = _data.length < 4 ? _data.length : 4;
+        for (uint i = 0; i < len; i++) {
+            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
         }
     }
 
@@ -312,45 +314,45 @@ contract IModuleFactory is Ownable {
 //Simple interface that any module contracts should implement
 contract IModule {
 
-    function getInitFunction() public returns (bytes4);
-
     address public factory;
 
     address public securityToken;
 
     function IModule(address _securityToken) public {
-      securityToken = _securityToken;
-      factory = msg.sender;
+        securityToken = _securityToken;
+        factory = msg.sender;
     }
 
+    function getInitFunction() public returns (bytes4);
+    
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
         bool isOwner = msg.sender == ISecurityToken(securityToken).owner();
         bool isFactory = msg.sender == factory;
-        require(isOwner || isFactory || ISecurityToken(securityToken).checkPermission(msg.sender, address(this), _perm));
+        require(isOwner||isFactory||ISecurityToken(securityToken).checkPermission(msg.sender, address(this), _perm));
         _;
     }
 
     modifier onlyOwner {
-      require(msg.sender == ISecurityToken(securityToken).owner());
-      _;
+        require(msg.sender == ISecurityToken(securityToken).owner());
+        _;
     }
 
     modifier onlyFactory {
-      require(msg.sender == factory);
-      _;
+        require(msg.sender == factory);
+        _;
     }
 
     modifier onlyFactoryOwner {
-      require(msg.sender == IModuleFactory(factory).owner());
-      _;
+        require(msg.sender == IModuleFactory(factory).owner());
+        _;
     }
 
-    function permissions() public returns(bytes32[]);
+    function getPermissions() public view returns(bytes32[]);
 }
 
 //Simple interface that any module contracts should implement
-interface IModuleRegistry {
+contract IModuleRegistry {
 
     //Checks that module is correctly configured in registry
     function useModule(address _moduleFactory) external;
@@ -361,17 +363,17 @@ interface IModuleRegistry {
 
 contract ITransferManager is IModule {
 
-    function verifyTransfer(address _from, address _to, uint256 _amount) view external returns(bool);
+    function verifyTransfer(address _from, address _to, uint256 _amount) public view returns(bool);
 
 }
 
 contract IPermissionManager is IModule {
 
-    function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool);
+    function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool);
 
     function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) public returns(bool);
 
-    function delegateDetails(address _delegate) public returns(bytes32);
+    function getDelegateDetails(address _delegate) public view returns(bytes32);
 
 }
 
@@ -386,8 +388,8 @@ contract ISecurityTokenRegistry {
     mapping (bytes32 => address) public protocolVersionST;
 
     struct SecurityTokenData {
-      string symbol;
-      bytes32 tokenDetails;
+        string symbol;
+        bytes32 tokenDetails;
     }
 
     mapping(address => SecurityTokenData) securityTokens;
@@ -425,6 +427,7 @@ contract ISecurityTokenRegistry {
 /**
 * @title SecurityToken
 * @notice SecurityToken is an ERC20 token with added capabilities:
+* - Implements the ST-20 Interface
 * - Transfers are restricted
 * - Modules can be attached to it to control its behaviour
 * - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
@@ -434,26 +437,36 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     bytes32 public securityTokenVersion = "0.0.1";
 
+    // Reference to the POLY token.
     ERC20 public polyToken;
 
     struct ModuleData {
-      bytes32 name;
-      address moduleAddress;
-      bool replaceable;
+        bytes32 name;
+        address moduleAddress;
+        bool replaceable;
     }
 
     address public moduleRegistry;
 
-    // Permission has a key of 1
-    // TransferManager has a key of 2
-    // STO has a key of 3
-    // Other modules TBD
+    uint8 public constant PERMISSIONMANAGER_KEY = 1;
+    uint8 public constant TRANSFERMANAGER_KEY = 2;
+    uint8 public constant STO_KEY = 3;
+
     // Module list should be order agnostic!
     mapping (uint8 => ModuleData[]) public modules;
 
-    uint8 public MAX_MODULES = 10;
+    uint8 public constant MAX_MODULES = 10;
 
-    event LogModuleAdded(uint8 indexed _type, bytes32 _name, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _budget, uint256 _timestamp);
+    event LogModuleAdded(
+        uint8 indexed _type,
+        bytes32 _name,
+        address _moduleFactory,
+        address _module,
+        uint256 _moduleCost,
+        uint256 _budget,
+        uint256 _timestamp
+    );
+
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
     event Mint(address indexed to, uint256 amount);
@@ -461,16 +474,16 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
       //Loop over all modules of type _moduleType
-      bool isModuleType = false;
-      for (uint8 i = 0; i < modules[_moduleType].length; i++) {
-          isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
-      }
-      if (_fallback && !isModuleType) {
-          require(msg.sender == owner);
-      } else {
-          require(isModuleType);
-      }
-      _;
+        bool isModuleType = false;
+        for (uint8 i = 0; i < modules[_moduleType].length; i++) {
+            isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
+        }
+        if (_fallback && !isModuleType) {
+            require(msg.sender == owner);
+        } else {
+            require(isModuleType);
+        }
+        _;
     }
 
     function SecurityToken(
@@ -478,19 +491,24 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         string _symbol,
         uint8 _decimals,
         bytes32 _tokenDetails,
-        address _owner
+        address _securityTokenRegistry
     )
     public
     DetailedERC20(_name, _symbol, _decimals)
     {
         //When it is created, the owner is the STR
-        moduleRegistry = ISecurityTokenRegistry(_owner).moduleRegistry();
-        polyToken = ERC20(ISecurityTokenRegistry(_owner).polyAddress());
+        moduleRegistry = ISecurityTokenRegistry(_securityTokenRegistry).moduleRegistry();
+        polyToken = ERC20(ISecurityTokenRegistry(_securityTokenRegistry).polyAddress());
         tokenDetails = _tokenDetails;
-        //owner = _owner;
     }
 
-    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) external onlyOwner {
+    function addModule(
+        address _moduleFactory,
+        bytes _data,
+        uint256 _maxCost,
+        uint256 _budget,
+        bool _replaceable
+    ) external onlyOwner {
         _addModule(_moduleFactory, _data, _maxCost, _budget, _replaceable);
     }
 
@@ -515,7 +533,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         require(moduleCost <= _maxCost);
         //Check that this module has not already been set as non-replaceable
         if (modules[moduleFactory.getType()].length != 0) {
-          require(modules[moduleFactory.getType()][modules[moduleFactory.getType()].length - 1].replaceable);
+            require(modules[moduleFactory.getType()][modules[moduleFactory.getType()].length - 1].replaceable);
         }
         //Approve fee for module
         require(polyToken.approve(_moduleFactory, moduleCost));
@@ -526,41 +544,53 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         //Add to SecurityToken module map
         modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module, _replaceable));
         //Emit log event
-        LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
+        emit LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
     }
 
-    function getModule(uint8 _module, uint _index) public view returns (bytes32, address, bool) {
-      if (modules[_module].length > 0) {
-        return (
-          modules[_module][_index].name,
-          modules[_module][_index].moduleAddress,
-          modules[_module][_index].replaceable
-        );
-      }else {
-        return ("",address(0),false);
-      }
-
-    }
-
+    /**
+    * @dev removes a module attached to the SecurityToken
+    * @param _moduleType is which type of module we are trying to remove
+    * @param _moduleIndex is the index of the module within the chosen type
+    */
     function removeModule(uint8 _moduleType, uint8 _moduleIndex) external onlyOwner {
         require(_moduleIndex < modules[_moduleType].length);
         require(modules[_moduleType][_moduleIndex].moduleAddress != address(0));
         require(modules[_moduleType][_moduleIndex].replaceable);
         //Take the last member of the list, and replace _moduleIndex with this, then shorten the list by one
-        LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
+        emit LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
         modules[_moduleType][_moduleIndex] = modules[_moduleType][modules[_moduleType].length - 1];
         modules[_moduleType].length = modules[_moduleType].length - 1;
     }
 
+    function getModule(uint8 _moduleType, uint _index) public view returns (bytes32, address, bool) {
+        if (modules[_moduleType].length > 0) {
+            return (
+            modules[_moduleType][_index].name,
+            modules[_moduleType][_index].moduleAddress,
+            modules[_moduleType][_index].replaceable
+            );
+        }else {
+            return ("", address(0), false);
+        }
+
+    }
+
+    /**
+    * @dev allows the owner to withdraw unspent POLY stored by them on the ST.
+    * Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
+    */
     function withdrawPoly(uint256 _amount) public onlyOwner {
         require(polyToken.transfer(owner, _amount));
     }
 
+    /**
+    * @dev allows owner to approve more POLY to one of the modules 
+    */
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0);
         require(_moduleIndex < modules[_moduleType].length);
-        require(polyToken.approve(modules[_moduleType][_moduleType].moduleAddress, _budget));
-        LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleType].moduleAddress, _budget);
+        require(polyToken.approve(modules[_moduleType][_moduleIndex].moduleAddress, _budget));
+        emit LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
     }
 
     /**
@@ -581,93 +611,93 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
-    function verifyTransfer(address _from, address _to, uint256 _amount) view public returns (bool success) {
-        if (modules[2].length == 0) {
-          return true;
+    function verifyTransfer(address _from, address _to, uint256 _amount) public view returns (bool success) {
+        if (modules[TRANSFERMANAGER_KEY].length == 0) {
+            return true;
         }
-        for (uint8 i = 0; i < modules[2].length; i++) {
-            if (ITransferManager(modules[2][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
+        for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
+            if (ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
                 return true;
             }
         }
         return false;
     }
 
-    // Only STO module can call this, has a key of 3
-    function mint(address _investor, uint256 _amount) public onlyModule(3, true) returns (bool success) {
+    /**
+    * @dev mints new tokens and assigns them to the target _investor.
+    * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+    */
+    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) returns (bool success) {
         require(verifyTransfer(address(0), _investor, _amount));
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);
-        Mint(_investor, _amount);
-        Transfer(address(0), _investor, _amount);
+        emit Mint(_investor, _amount);
+        emit Transfer(address(0), _investor, _amount);
         return true;
     }
 
     //TODO: Implement this function
     function investorStatus(address /* _investor */) public pure returns (uint8 _status) {
-      return 0;
+        return 0;
     }
 
     // Permissions this to a Permission module, which has a key of 1
     // If no Permission return false - note that IModule withPerm will allow ST owner all permissions anyway
     // this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
-    function checkPermission(address _delegate, address _module, bytes32 _perm) view public returns(bool) {
+    function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
+        if (modules[PERMISSIONMANAGER_KEY].length == 0) {
+            return false;
+        }
 
-      if (modules[1].length == 0) {
-        return false;
-      }
-
-      for (uint8 i = 0; i < modules[1].length; i++) {
-          if (IPermissionManager(modules[1][i].moduleAddress).checkPermission(_delegate, _module, _perm)) {
-              return true;
-          }
-      }
-
+        for (uint8 i = 0; i < modules[PERMISSIONMANAGER_KEY].length; i++) {
+            if (IPermissionManager(modules[PERMISSIONMANAGER_KEY][i].moduleAddress).checkPermission(_delegate, _module, _perm)) {
+                return true;
+            }
+        }
     }
-
 }
 
-interface ITickerRegistry {
-     /**
-      * @dev Check the validity of the symbol
-      * @param _symbol token symbol
-      * @param _owner address of the owner
-      * @param _tokenName Name of the token
-      * @return bool
-      */
-     function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool);
+contract ITickerRegistry {
+    /**
+    * @dev Check the validity of the symbol
+    * @param _symbol token symbol
+    * @param _owner address of the owner
+    * @param _tokenName Name of the token
+    * @return bool
+    */
+    function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool);
 
-     /**
-      * @dev Returns the owner and timestamp for a given symbol
-      * @param _symbol symbol
-      */
-     function getDetails(string _symbol) public view returns (address, uint256, string, bool);
+    /**
+    * @dev Returns the owner and timestamp for a given symbol
+    * @param _symbol symbol
+    */
+    function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool);
 
 
 }
 
 contract ISTProxy {
 
-  function deployToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails, address _issuer)
-  public returns (address);
+    function deployToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails, address _issuer)
+        public returns (address);
 }
 
 contract Util {
 
    /**
-    * @dev changes a string to lower case
+    * @dev changes a string to upper case
     * @param _base string to change
     */
-    function lower(string _base) internal pure returns (string) {
-      bytes memory _baseBytes = bytes(_base);
-      for (uint i = 0; i < _baseBytes.length; i++) {
-       bytes1 b1 = _baseBytes[i];
-       if (b1 >= 0x41 && b1 <= 0x5A) {
-         b1 = bytes1(uint8(b1)+32);
-       }
-       _baseBytes[i] = b1;
-      }
-      return string(_baseBytes);
+    function upper(string _base) internal pure returns (string) {
+        bytes memory _baseBytes = bytes(_base);
+        for (uint i = 0; i < _baseBytes.length; i++) {
+            bytes1 b1 = _baseBytes[i];
+            if (b1 >= 0x61 && b1 <= 0x7A) {
+                b1 = bytes1(uint8(b1)-32);
+            }
+            _baseBytes[i] = b1;
+        }
+        return string(_baseBytes);
     }
 
 }
@@ -677,15 +707,23 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
     event LogNewSecurityToken(string _ticker, address _securityTokenAddress, address _owner);
 
      /**
-     * @dev Constructor use to set the essentials addresses to facilitate
+     * @dev Constructor used to set the essentials addresses to facilitate
      * the creation of the security token
      */
-    function SecurityTokenRegistry(address _polyAddress, address _moduleRegistry, address _tickerRegistry, address _STVersionProxy) public {
+    function SecurityTokenRegistry(
+        address _polyAddress,
+        address _moduleRegistry,
+        address _tickerRegistry,
+        address _stVersionProxy
+    )
+    public
+    {
         polyAddress = _polyAddress;
         moduleRegistry = _moduleRegistry;
         tickerRegistry = _tickerRegistry;
 
-        setProtocolVersion(_STVersionProxy,"0.0.1");
+        // By default, the STR version is set to 0.0.1
+        setProtocolVersion(_stVersionProxy, "0.0.1");
     }
 
     /**
@@ -698,23 +736,28 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
     function generateSecurityToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails) public {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0);
         require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name));
-        string memory symbol = lower(_symbol);
+        string memory symbol = upper(_symbol);
         address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
-          _name,
-          symbol,
-          _decimals,
-          _tokenDetails,
-          msg.sender
+        _name,
+        symbol,
+        _decimals,
+        _tokenDetails,
+        msg.sender
         );
 
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(symbol, _tokenDetails);
         symbols[symbol] = newSecurityTokenAddress;
-        LogNewSecurityToken(symbol, newSecurityTokenAddress, msg.sender);
+        emit LogNewSecurityToken(symbol, newSecurityTokenAddress, msg.sender);
     }
 
+    /**
+    * @dev Changes the protocol version and the SecurityToken contract that the registry points to
+    * Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
+    * Changing versions does not affect existing tokens.
+    */
     function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public onlyOwner {
-      protocolVersion = _version;
-      protocolVersionST[_version]=_stVersionProxyAddress;
+        protocolVersion = _version;
+        protocolVersionST[_version] = _stVersionProxyAddress;
     }
 
     //////////////////////////////
@@ -726,8 +769,8 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @return address _symbol
      */
     function getSecurityTokenAddress(string _symbol) public view returns (address) {
-      string memory __symbol = lower(_symbol);
-      return symbols[__symbol];
+        string memory __symbol = upper(_symbol);
+        return symbols[__symbol];
     }
 
      /**
@@ -736,47 +779,50 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @return string, address, bytes32
      */
     function getSecurityTokenData(address _securityToken) public view returns (string, address, bytes32) {
-      return (
-        securityTokens[_securityToken].symbol,
-        ISecurityToken(_securityToken).owner(),
-        securityTokens[_securityToken].tokenDetails
-      );
+        return (
+            securityTokens[_securityToken].symbol,
+            ISecurityToken(_securityToken).owner(),
+            securityTokens[_securityToken].tokenDetails
+        );
     }
 }
 
-contract STVersionProxy_001 is ISTProxy {
+contract STVersionProxy001 is ISTProxy {
 
-  address public transferManagerFactory;
-  address public permissionManagerFactory;
+    address public transferManagerFactory;
+    address public permissionManagerFactory;
 
-  //Shoud be set to false when we have more TransferManager options
-  bool addTransferManager = true;
-  bool addPermissionManager = true;
+    //Shoud be set to false when we have more TransferManager options
+    bool addTransferManager = true;
+    bool addPermissionManager = true;
 
-  function STVersionProxy_001(address _transferManagerFactory, address _permissionManagerFactory) public {
-    transferManagerFactory = _transferManagerFactory;
-    permissionManagerFactory = _permissionManagerFactory;
-  }
-
-  function deployToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails, address _issuer)
-  public returns (address) {
-    address newSecurityTokenAddress = new SecurityToken(
-      _name,
-      _symbol,
-      _decimals,
-      _tokenDetails,
-      msg.sender
-    );
-
-    if (addPermissionManager) {
-      SecurityToken(newSecurityTokenAddress).addModule(permissionManagerFactory, "", 0, 0, true);
+    function STVersionProxy001(address _transferManagerFactory, address _permissionManagerFactory) public {
+        transferManagerFactory = _transferManagerFactory;
+        permissionManagerFactory = _permissionManagerFactory;
     }
-    if (addTransferManager) {
-      SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, 0, true);
+    /**
+    * @dev deploys the token and adds default modules like permission manager and transfer manager.
+    * Future versions of the proxy can attach different modules or pass some other paramters.
+    */
+    function deployToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails, address _issuer)
+    public returns (address) {
+        address newSecurityTokenAddress = new SecurityToken(
+        _name,
+        _symbol,
+        _decimals,
+        _tokenDetails,
+        msg.sender
+        );
+
+        if (addPermissionManager) {
+            SecurityToken(newSecurityTokenAddress).addModule(permissionManagerFactory, "", 0, 0, true);
+        }
+        if (addTransferManager) {
+            SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, 0, true);
+        }
+
+        SecurityToken(newSecurityTokenAddress).transferOwnership(_issuer);
+
+        return newSecurityTokenAddress;
     }
-
-    SecurityToken(newSecurityTokenAddress).transferOwnership(_issuer);
-
-    return newSecurityTokenAddress;
-  }
 }

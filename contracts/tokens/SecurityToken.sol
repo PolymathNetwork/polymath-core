@@ -173,7 +173,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     /**
-    * @dev allows owner to approve more POLY to one of the modules 
+    * @dev allows owner to approve more POLY to one of the modules
     */
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0);
@@ -183,7 +183,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     /**
-     * @dev Overladed version of the transfer function
+     * @dev Overloaded version of the transfer function
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
         require(verifyTransfer(msg.sender, _to, _value));
@@ -191,7 +191,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     /**
-     * @dev Overladed version of the transferFrom function
+     * @dev Overloaded version of the transferFrom function
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         require(verifyTransfer(_from, _to, _value));

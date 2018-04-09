@@ -14,6 +14,7 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
+const PolyToken = artifacts.require('./PolyToken.sol');
 const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
@@ -38,7 +39,7 @@ contract('SecurityTokenRegistry', accounts => {
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(100);
-    
+
     let ID_snap;
     const message = "Transaction Should Fail!!";
 
@@ -71,7 +72,7 @@ contract('SecurityTokenRegistry', accounts => {
     const name2 = "Demo2 Token";
     const symbol2 = "DET2";
     const tokenDetails2 = "This is equity type of issuance";
-    
+
     // Module key
     const permissionManagerKey = 1;
     const transferManagerKey = 2;
@@ -97,7 +98,7 @@ contract('SecurityTokenRegistry', accounts => {
              type: 'string',
              name: '_someString'
          }]
-     };    
+     };
 
     before(async() => {
         // Accounts setup
@@ -109,9 +110,12 @@ contract('SecurityTokenRegistry', accounts => {
         account_delegate = accounts[5];
         account_temp = accounts[8];
         token_owner = account_issuer;
-      
+
         // ----------- POLYMATH NETWORK Configuration ------------
 
+        // Step 0: Deploy the Polytoken Contract
+        I_PolyToken = await PolyToken.new();
+        
         // STEP 1: Deploy the ModuleRegistry
 
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
@@ -124,7 +128,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new({from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -134,7 +138,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new({from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -144,7 +148,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 4: Deploy the CappedSTOFactory
 
-        I_TestSTOFactory = await TestSTOFactory.new({ from: token_owner });
+        I_TestSTOFactory = await TestSTOFactory.new(I_PolyToken.address, { from: token_owner });
 
         assert.notEqual(
             I_TestSTOFactory.address.valueOf(),
@@ -209,7 +213,7 @@ contract('SecurityTokenRegistry', accounts => {
         await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
         await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
 
-       
+
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -353,16 +357,16 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should intialize the auto attached modules", async () => {
             let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
             I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
- 
+
             assert.notEqual(
              I_GeneralTransferManager.address.valueOf(),
              "0x0000000000000000000000000000000000000000",
              "GeneralTransferManager contract was not deployed",
             );
- 
+
             moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
             I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
- 
+
             assert.notEqual(
              I_GeneralPermissionManager.address.valueOf(),
              "0x0000000000000000000000000000000000000000",
@@ -386,9 +390,9 @@ contract('SecurityTokenRegistry', accounts => {
                 (1000 * Math.pow(10, 18)),
                 (1000 * Math.pow(10, 18)),
                 false,
-                { 
+                {
                     from: token_owner,
-                    gas: 2500000 
+                    gas: 2500000
                 });
 
             assert.equal(tx.logs[2].args._type, stoKey, "TestSTO doesn't get deployed");

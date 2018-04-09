@@ -122,6 +122,9 @@ contract('SecurityToken', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
+        // Step 0: Deploy the Polytoken Contract
+        I_PolyToken = await PolyToken.new();
+
         // STEP 1: Deploy the ModuleRegistry
 
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
@@ -134,7 +137,7 @@ contract('SecurityToken', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new({from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -144,7 +147,7 @@ contract('SecurityToken', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new({from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -154,7 +157,7 @@ contract('SecurityToken', accounts => {
 
         // STEP 4: Deploy the CappedSTOFactory
 
-        I_CappedSTOFactory = await CappedSTOFactory.new({ from: token_owner });
+        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, { from: token_owner });
 
         assert.notEqual(
             I_CappedSTOFactory.address.valueOf(),
@@ -194,9 +197,6 @@ contract('SecurityToken', accounts => {
             "0x0000000000000000000000000000000000000000",
             "STVersion contract was not deployed",
         );
-
-        // Step ANY: Deploy the Polytoken Contract
-         I_PolyToken = await PolyToken.new();
 
         // Step 8: Deploy the SecurityTokenRegistry
 
@@ -291,15 +291,14 @@ contract('SecurityToken', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
 
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 5000000 });
-
-            assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
+            assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name)
+                web3.utils.toAscii(tx.logs[3].args._name)
                 .replace(/\u0000/g, ''),
                 "CappedSTO",
                 "CappedSTOFactory module was not added"
             );
-            I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
+            I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
         });
     });
 

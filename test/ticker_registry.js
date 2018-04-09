@@ -80,6 +80,9 @@ contract('TickerRegistry', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
+        // Step 0: Deploy the Polytoken Contract
+        I_PolyToken = await PolyToken.new();
+
         // STEP 1: Deploy the ModuleRegistry
 
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
@@ -92,7 +95,7 @@ contract('TickerRegistry', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new({from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -102,7 +105,7 @@ contract('TickerRegistry', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new({from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -139,9 +142,6 @@ contract('TickerRegistry', accounts => {
             "0x0000000000000000000000000000000000000000",
             "STVersion contract was not deployed",
         );
-
-        // Step ANY: Deploy the Polytoken Contract
-         I_PolyToken = await PolyToken.new();
 
         // Step 8: Deploy the SecurityTokenRegistry
 

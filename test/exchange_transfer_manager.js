@@ -101,6 +101,9 @@ contract('ExchangeTransferManager', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
+        // Step 0: Deploy the Polytoken Contract
+        I_PolyToken = await PolyToken.new();
+
         // STEP 1: Deploy the ModuleRegistry
 
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
@@ -113,7 +116,7 @@ contract('ExchangeTransferManager', accounts => {
 
         // STEP 2a: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new({from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -123,7 +126,7 @@ contract('ExchangeTransferManager', accounts => {
 
         // STEP 2b: Deploy the ExchangeTransferManagerFactory
 
-        I_ExchangeTransferManagerFactory = await ExchangeTransferManagerFactory.new({from:account_polymath});
+        I_ExchangeTransferManagerFactory = await ExchangeTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
         assert.notEqual(
             I_ExchangeTransferManagerFactory.address.valueOf(),
@@ -133,7 +136,7 @@ contract('ExchangeTransferManager', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new({from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -143,7 +146,7 @@ contract('ExchangeTransferManager', accounts => {
 
         // STEP 4: Deploy the DummySTOFactory
 
-        I_DummySTOFactory = await DummySTOFactory.new({from:account_polymath});
+        I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, {from:account_polymath});
 
         assert.notEqual(
             I_DummySTOFactory.address.valueOf(),
@@ -188,9 +191,6 @@ contract('ExchangeTransferManager', accounts => {
             "0x0000000000000000000000000000000000000000",
             "STVersion contract was not deployed",
         );
-
-        // Step ANY: Deploy the Polytoken Contract
-        I_PolyToken = await PolyToken.new();
 
         // Step 8: Deploy the SecurityTokenRegistry
 
@@ -279,14 +279,14 @@ contract('ExchangeTransferManager', accounts => {
 
         it("Should successfully attach the STO factory with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner });
-            assert.equal(tx.logs[2].args._type.toNumber(), stoKey, "DummySTO doesn't get deployed");
+            assert.equal(tx.logs[3].args._type.toNumber(), stoKey, "DummySTO doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name)
+                web3.utils.toAscii(tx.logs[3].args._name)
                 .replace(/\u0000/g, ''),
                 "DummySTO",
                 "DummySTOFactory module was not added"
             );
-            I_DummySTO = DummySTO.at(tx.logs[2].args._module);
+            I_DummySTO = DummySTO.at(tx.logs[3].args._module);
         });
     });
 
@@ -346,14 +346,14 @@ contract('ExchangeTransferManager', accounts => {
           }, [account_exchange]);
 
           const tx = await I_SecurityToken.addModule(I_ExchangeTransferManagerFactory.address, bytesExchange, 0, 0, true, { from: token_owner });
-          assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "ExchangeTransferManager doesn't get deployed");
+          assert.equal(tx.logs[3].args._type.toNumber(), transferManagerKey, "ExchangeTransferManager doesn't get deployed");
           assert.equal(
-              web3.utils.toAscii(tx.logs[2].args._name)
+              web3.utils.toAscii(tx.logs[3].args._name)
               .replace(/\u0000/g, ''),
               "ExchangeTransferManager",
               "ExchangeTransferManager module was not added"
           );
-          I_ExchangeTransferManager = ExchangeTransferManager.at(tx.logs[2].args._module);
+          I_ExchangeTransferManager = ExchangeTransferManager.at(tx.logs[3].args._module);
 
 
           // Add exchange address to General Transfer Manager whitelist

@@ -1,9 +1,9 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
-import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
+import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 
-const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
-const CappedSTO = artifacts.require('./CappedSTO.sol');
+const TestSTOFactory = artifacts.require('./test/helpers/contracts/TestSTOFactory.sol');
+const DummySTO = artifacts.require('./DummySTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
@@ -14,7 +14,6 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyToken = artifacts.require('./PolyToken.sol');
 const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
@@ -51,14 +50,15 @@ contract('SecurityTokenRegistry', accounts => {
     let I_ModuleRegistry;
     let I_TickerRegistry;
     let I_SecurityTokenRegistry;
-    let I_CappedSTOFactory;
+    let I_TestSTOFactory;
     let I_STVersion;
     let I_SecurityToken;
-    let I_CappedSTO;
+    let I_DummySTO;
     let I_PolyToken;
     let I_PolyFaucet;
     let I_STVersion002;
-    let I_SecurityToken002
+    let I_SecurityToken002;
+    let I_STVersion003;
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Demo Token";
@@ -78,7 +78,26 @@ contract('SecurityTokenRegistry', accounts => {
     const stoKey = 3;
     const budget = 0;
 
-    
+     // Capped STO details
+     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
+     const someString = "Hello string";
+     const functionSignature = {
+         name: 'configure',
+         type: 'function',
+         inputs: [{
+             type: 'uint256',
+             name: '_startTime'
+         },{
+             type: 'uint256',
+             name: '_endTime'
+         },{
+             type: 'uint256',
+             name: '_cap'
+         },{
+             type: 'string',
+             name: '_someString'
+         }]
+     };    
 
     before(async() => {
         // Accounts setup
@@ -125,12 +144,12 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 4: Deploy the CappedSTOFactory
 
-        I_CappedSTOFactory = await CappedSTOFactory.new({ from: token_owner });
+        I_TestSTOFactory = await TestSTOFactory.new({ from: token_owner });
 
         assert.notEqual(
-            I_CappedSTOFactory.address.valueOf(),
+            I_TestSTOFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "CappedSTOFactory contract was not deployed"
+            "TestSTOFactory contract was not deployed"
         );
 
         // STEP 5: Register the Modules with the ModuleRegistry contract
@@ -144,7 +163,7 @@ contract('SecurityTokenRegistry', accounts => {
         await I_ModuleRegistry.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
 
         // (C) : Register the STOFactory
-        await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: token_owner });
+        await I_ModuleRegistry.registerModule(I_TestSTOFactory.address, { from: token_owner });
 
         // Step 6: Deploy the TickerRegistry
 
@@ -166,13 +185,13 @@ contract('SecurityTokenRegistry', accounts => {
             "STVersion contract was not deployed",
         );
 
-        // Step ANY: Deploy the Polytoken Contract
-         I_PolyToken = await PolyToken.new();
+         // Step 8: Deploy the token Faucet
+         I_PolyFaucet = await PolyTokenFaucet.new();
 
-        // Step 8: Deploy the SecurityTokenRegistry
+        // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolyToken.address,
+            I_PolyFaucet.address,
             I_ModuleRegistry.address,
             I_TickerRegistry.address,
             I_STVersion.address,
@@ -190,15 +209,14 @@ contract('SecurityTokenRegistry', accounts => {
         await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
         await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
 
-        // Step 9: Deploy the token Faucet
-        I_PolyFaucet = await PolyTokenFaucet.new();
+       
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
             ModuleRegistry: ${I_ModuleRegistry.address}\n
             GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}\n
             GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
-            CappedSTOFactory: ${I_CappedSTOFactory.address}\n
+            TestSTOFactory: ${I_TestSTOFactory.address}\n
             TickerRegistry: ${I_TickerRegistry.address}\n
             STVersionProxy_001: ${I_STVersion.address}\n
             SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
@@ -246,7 +264,7 @@ contract('SecurityTokenRegistry', accounts => {
                 "0x0000000000000000000000000000000000000000",
                 "STVersion002 contract was not deployed",
             );
-            I_SecurityTokenRegistry.setProtocolVersion(I_STVersion002.address, "0.2.0", { from: account_polymath });
+            await I_SecurityTokenRegistry.setProtocolVersion(I_STVersion002.address, "0.2.0", { from: account_polymath });
 
             assert.equal(
                 web3.utils.toAscii(await I_SecurityTokenRegistry.protocolVersion.call())
@@ -287,14 +305,14 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should deploy the st vesrion 3", async() => {
             // Step 7: Deploy the STversionProxy contract
 
-            I_STVersion002 = await STVersion002.new(I_GeneralTransferManagerFactory.address, I_GeneralPermissionManagerFactory.address, {from : account_polymath });
+            I_STVersion003 = await STVersion002.new(I_GeneralTransferManagerFactory.address, I_GeneralPermissionManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
-                I_STVersion002.address.valueOf(),
+                I_STVersion003.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
                 "STVersion002 contract was not deployed",
             );
-            I_SecurityTokenRegistry.setProtocolVersion(I_STVersion002.address, "0.3.0", { from: account_polymath });
+            await I_SecurityTokenRegistry.setProtocolVersion(I_STVersion003.address, "0.3.0", { from: account_polymath });
 
             assert.equal(
                 web3.utils.toAscii(await I_SecurityTokenRegistry.protocolVersion.call())
@@ -332,5 +350,58 @@ contract('SecurityTokenRegistry', accounts => {
             LogAddModule.stopWatching();
         });
 
+        it("Should intialize the auto attached modules", async () => {
+            let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
+            I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+ 
+            assert.notEqual(
+             I_GeneralTransferManager.address.valueOf(),
+             "0x0000000000000000000000000000000000000000",
+             "GeneralTransferManager contract was not deployed",
+            );
+ 
+            moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
+            I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
+ 
+            assert.notEqual(
+             I_GeneralPermissionManager.address.valueOf(),
+             "0x0000000000000000000000000000000000000000",
+             "GeneralDelegateManager contract was not deployed",
+            );
+         });
+
+         it("Should successfully attach the STO factory with the security token", async () => {
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(
+                functionSignature,
+                [
+                    (latestTime() + duration.seconds(500)),
+                    (latestTime() + duration.days(30)),
+                    cap,
+                    someString,
+                ]);
+
+            const tx = await I_SecurityToken.addModule(
+                I_TestSTOFactory.address,
+                bytesSTO,
+                (1000 * Math.pow(10, 18)),
+                (1000 * Math.pow(10, 18)),
+                false,
+                { 
+                    from: token_owner,
+                    gas: 2500000 
+                });
+
+            assert.equal(tx.logs[2].args._type, stoKey, "TestSTO doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name)
+                .replace(/\u0000/g, ''),
+                "TestSTO",
+                "TestSTOFactory module was not added"
+            );
+            I_DummySTO = DummySTO.at(tx.logs[2].args._module);
+        });
     });
+
+
+
 });

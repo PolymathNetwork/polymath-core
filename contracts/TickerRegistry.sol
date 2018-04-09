@@ -124,7 +124,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     }
 
     /**
-     * @dev To re-intialize the token symbol details if symbol validity expires
+     * @dev To re-initialize the token symbol details if symbol validity expires
      * @param _symbol token symbol
      */
     function expiryCheck(string _symbol) internal returns(bool) {

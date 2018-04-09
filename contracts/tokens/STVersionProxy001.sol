@@ -33,10 +33,10 @@ contract STVersionProxy001 is ISTProxy {
         );
 
         if (addPermissionManager) {
-            SecurityToken(newSecurityTokenAddress).addModule(permissionManagerFactory, "", 0, 0, true);
+            SecurityToken(newSecurityTokenAddress).addModule(permissionManagerFactory, "", 0, 0, false);
         }
         if (addTransferManager) {
-            SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, 0, true);
+            SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, 0, false);
         }
 
         SecurityToken(newSecurityTokenAddress).transferOwnership(_issuer);

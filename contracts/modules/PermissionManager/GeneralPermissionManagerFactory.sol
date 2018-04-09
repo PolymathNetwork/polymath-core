@@ -6,8 +6,14 @@ import "../../interfaces/IModuleFactory.sol";
 
 contract GeneralPermissionManagerFactory is IModuleFactory {
 
+    function GeneralPermissionManagerFactory(address _polyAddress) public
+      IModuleFactory(_polyAddress)
+    {
+
+    }
+
     function deploy(bytes /* _data */) external returns(address) {
-      //polyToken.transferFrom(msg.sender, owner, getCost());
+        polyToken.transferFrom(msg.sender, owner, getCost());
         return address(new GeneralPermissionManager(msg.sender));
     }
 

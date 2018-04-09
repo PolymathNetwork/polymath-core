@@ -39,7 +39,7 @@ contract('ModuleRegistry', accounts => {
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(15);
-    
+
     let ID_snap;
     let message = "Transaction Should fail!";
     // Contract Instance Declaration
@@ -119,8 +119,11 @@ contract('ModuleRegistry', accounts => {
         account_delegate = accounts[5];
         account_temp = accounts[8];
         token_owner = account_issuer;
-      
+
         // ----------- POLYMATH NETWORK Configuration ------------
+
+        // Step 0: Deploy the Polytoken Contract
+        I_PolyToken = await PolyToken.new();
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -144,9 +147,6 @@ contract('ModuleRegistry', accounts => {
 
         // Step 7: Deploy the STversionProxy contract
 
-        // Step ANY: Deploy the Polytoken Contract
-         I_PolyToken = await PolyToken.new();
-
         // Step 9: Deploy the token Faucet
         I_PolyFaucet = await PolyTokenFaucet.new();
 
@@ -160,8 +160,8 @@ contract('ModuleRegistry', accounts => {
         });
 
         it("Should successfully deployed the Module Fatories", async () => {
-        
-            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new({from:account_polymath});
+
+            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
             assert.notEqual(
                 I_GeneralTransferManagerFactory.address.valueOf(),
@@ -169,8 +169,8 @@ contract('ModuleRegistry', accounts => {
                 "GeneralTransferManagerFactory contract was not deployed"
             );
 
-        
-            I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new({from:account_polymath});
+
+            I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
             assert.notEqual(
                 I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -178,8 +178,8 @@ contract('ModuleRegistry', accounts => {
                 "GeneralDelegateManagerFactory contract was not deployed"
             );
 
-        
-            I_CappedSTOFactory = await CappedSTOFactory.new({ from: account_polymath });
+
+            I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, { from: account_polymath });
 
             assert.notEqual(
                 I_CappedSTOFactory.address.valueOf(),
@@ -187,7 +187,7 @@ contract('ModuleRegistry', accounts => {
                 "CappedSTOFactory contract was not deployed"
             );
 
-            I_DummySTOFactory = await DummySTOFactory.new({ from: account_temp });
+            I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, { from: account_temp });
 
             assert.notEqual(
                 I_DummySTOFactory.address.valueOf(),
@@ -201,7 +201,7 @@ contract('ModuleRegistry', accounts => {
 
         it("Should succssfully registered the module", async() => {
             let tx = await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-            
+
             assert.equal(
                 tx.logs[0].args._moduleFactory,
                 I_GeneralTransferManagerFactory.address,
@@ -211,7 +211,7 @@ contract('ModuleRegistry', accounts => {
             assert.equal(tx.logs[0].args._owner, account_polymath);
 
             tx = await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-            
+
             assert.equal(
                 tx.logs[0].args._moduleFactory,
                 I_GeneralPermissionManagerFactory.address,
@@ -221,7 +221,7 @@ contract('ModuleRegistry', accounts => {
             assert.equal(tx.logs[0].args._owner, account_polymath);
 
             tx = await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
-            
+
             assert.equal(
                 tx.logs[0].args._moduleFactory,
                 I_CappedSTOFactory.address,
@@ -322,7 +322,7 @@ contract('ModuleRegistry', accounts => {
                 "0x0000000000000000000000000000000000000000",
                 "STVersion contract was not deployed",
             );
-            
+
             // Deploy the SecurityTokenRegistry
 
             I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
@@ -429,7 +429,7 @@ contract('ModuleRegistry', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
             let errorThrown = false;
             try {
-                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 5000000 });
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 5000000 });
             } catch(error) {
                 errorThrown = true;
                 console.log(`Tx get failed. Because module is un-verified`);
@@ -439,7 +439,7 @@ contract('ModuleRegistry', accounts => {
         });
 
         it("Should successfully add the CappedSTO module. Because module is deployed by the owner of ST", async() => {
-            I_CappedSTOFactory = await CappedSTOFactory.new({ from: token_owner });
+            I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, { from: token_owner });
 
             assert.notEqual(
                 I_CappedSTOFactory.address.valueOf(),
@@ -448,7 +448,7 @@ contract('ModuleRegistry', accounts => {
             );
 
             let tx = await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: token_owner });
-            
+
             assert.equal(
                 tx.logs[0].args._moduleFactory,
                 I_CappedSTOFactory.address,
@@ -460,12 +460,12 @@ contract('ModuleRegistry', accounts => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
-            
-            tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 5000000 });
-           
-            assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
+
+            tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 5000000 });
+
+            assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name)
+                web3.utils.toAscii(tx.logs[3].args._name)
                 .replace(/\u0000/g, ''),
                 "CappedSTO",
                 "CappedSTOFactory module was not added"

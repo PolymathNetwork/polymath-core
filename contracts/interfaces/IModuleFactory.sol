@@ -9,6 +9,10 @@ contract IModuleFactory is Ownable {
 
     ERC20 public polyToken;
 
+    function IModuleFactory(address _polyAddress) public {
+      polyToken = ERC20(_polyAddress);
+    }
+
     //Should create an instance of the Module, or throw
     function deploy(bytes _data) external returns(address);
 

@@ -6,8 +6,14 @@ import "../../interfaces/IModuleFactory.sol";
 
 contract ExchangeTransferManagerFactory is IModuleFactory {
 
+    function ExchangeTransferManagerFactory(address _polyAddress) public
+      IModuleFactory(_polyAddress)
+    {
+
+    }
+
     function deploy(bytes _data) external returns(address) {
-        //polyToken.transferFrom(msg.sender, owner, getCost());
+        polyToken.transferFrom(msg.sender, owner, getCost());
         ExchangeTransferManager exchangeTransferManager = new ExchangeTransferManager(msg.sender);
         require(getSig(_data) == exchangeTransferManager.getInitFunction());
         require(address(exchangeTransferManager).call(_data));

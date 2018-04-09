@@ -40,7 +40,7 @@ contract('SecurityToken', accounts => {
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(15);
-    
+
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
@@ -115,6 +115,9 @@ contract('SecurityToken', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
+        // Step 0: Deploy the Polytoken Contract
+        I_PolyToken = await PolyToken.new();
+
         // STEP 1: Deploy the ModuleRegistry
 
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
@@ -127,7 +130,7 @@ contract('SecurityToken', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new({from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -137,7 +140,7 @@ contract('SecurityToken', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new({from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -147,7 +150,7 @@ contract('SecurityToken', accounts => {
 
         // STEP 4: Deploy the CappedSTOFactory
 
-        I_CappedSTOFactory = await CappedSTOFactory.new({ from: token_owner });
+        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, { from: token_owner });
 
         assert.notEqual(
             I_CappedSTOFactory.address.valueOf(),
@@ -188,8 +191,6 @@ contract('SecurityToken', accounts => {
             "STVersion contract was not deployed",
         );
 
-        // Step ANY: Deploy the Polytoken Contract
-         I_PolyToken = await PolyToken.new();
 
         // Step 8: Deploy the SecurityTokenRegistry
 
@@ -239,17 +240,17 @@ contract('SecurityToken', accounts => {
 
             it("POLYMATH: Should generate the new security token with the same symbol as registered above", async () => {
                 let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: account_polymath });
-    
+
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
-    
+
                 I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
-    
+
                 const LogAddModule = await I_SecurityToken.allEvents();
                 const log = await new Promise(function(resolve, reject) {
                     LogAddModule.watch(function(error, log){ resolve(log);});
                 });
-    
+
                 // Verify that GeneralPermissionManager module get added successfully or not
                 assert.equal(log.args._type.toNumber(), permissionManagerKey);
                 assert.equal(
@@ -263,16 +264,16 @@ contract('SecurityToken', accounts => {
             it("POLYMATH: Should intialize the auto attached modules", async () => {
                 let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
                 I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-     
+
                 assert.notEqual(
                  I_GeneralTransferManager.address.valueOf(),
                  "0x0000000000000000000000000000000000000000",
                  "GeneralTransferManager contract was not deployed",
                 );
-     
+
                 moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
                 I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
-     
+
                 assert.notEqual(
                  I_GeneralPermissionManager.address.valueOf(),
                  "0x0000000000000000000000000000000000000000",
@@ -283,7 +284,7 @@ contract('SecurityToken', accounts => {
              it("POLYMATH: Should successfully attach the STO factory with the security token", async () => {
                  // STEP 4: Deploy the CappedSTOFactory
 
-                I_CappedSTOFactory = await CappedSTOFactory.new({ from: account_polymath });
+                I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, { from: account_polymath });
 
                 assert.notEqual(
                     I_CappedSTOFactory.address.valueOf(),
@@ -295,17 +296,17 @@ contract('SecurityToken', accounts => {
                 await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
 
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [(latestTime() + duration.seconds(5000)), (latestTime() + duration.days(30)), cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
-            
-                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: account_polymath, gas: 2500000 });
-    
-                assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
+
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: account_polymath, gas: 2500000 });
+
+                assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
-                    web3.utils.toAscii(tx.logs[2].args._name)
+                    web3.utils.toAscii(tx.logs[3].args._name)
                     .replace(/\u0000/g, ''),
                     "CappedSTO",
                     "CappedSTOFactory module was not added"
                 );
-                I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
+                I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
             });
         });
 
@@ -327,7 +328,7 @@ contract('SecurityToken', accounts => {
                  await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_polymath});
                  // Providing the permission to the delegate
                  await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, { from: account_polymath });
- 
+
                  assert.isTrue(await I_GeneralPermissionManager.checkPermission(account_delegate, I_GeneralTransferManager.address, TM_Perm));
             });
 
@@ -341,7 +342,7 @@ contract('SecurityToken', accounts => {
         describe("Operations on the STO", async() => {
             it("Should Buy the tokens", async() => {
                 balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
-    
+
                 // Jump time
                 await increaseTime(5000);
                 // Fallback transaction
@@ -351,16 +352,16 @@ contract('SecurityToken', accounts => {
                     gas: 210000,
                     value: web3.utils.toWei('1', 'ether')
                   });
-    
+
                 assert.equal(
                     (await I_CappedSTO.fundsRaised.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1
                 );
-    
+
                 assert.equal(await I_CappedSTO.getNumberInvestors.call(), 1);
-    
+
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor1))
                     .dividedBy(new BigNumber(10).pow(18))
@@ -368,13 +369,13 @@ contract('SecurityToken', accounts => {
                     1000
                 );
             });
-    
+
             it("Verification of the event Token Purchase", async() => {
                 let TokenPurchase = I_CappedSTO.allEvents();
                 let log = await new Promise(function(resolve, reject) {
                     TokenPurchase.watch(function(error, log){ resolve(log);})
                 });
-    
+
                 assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
                 assert.equal(
                     (log.args.amount)
@@ -405,16 +406,16 @@ contract('SecurityToken', accounts => {
                     gas: 210000,
                     value: web3.utils.toWei('1', 'ether')
                   });
-    
+
                 assert.equal(
                     (await I_CappedSTO.fundsRaised.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     2
                 );
-    
+
                 assert.equal(await I_CappedSTO.getNumberInvestors.call(), 2);
-    
+
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor2))
                     .dividedBy(new BigNumber(10).pow(18))

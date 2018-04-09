@@ -37,10 +37,10 @@ module.exports = async (deployer, network, accounts) => {
 
   // A) POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
   // 1. Deploy Registry, Transfer Manager, Permission Manager, (temp) PolyToken
-  await deployer.deploy(ModuleRegistry, {from: PolymathAccount});
-  await deployer.deploy(GeneralTransferManagerFactory, {from: PolymathAccount});
-  await deployer.deploy(GeneralPermissionManagerFactory, {from: PolymathAccount});
   await deployer.deploy(PolyToken, {from: PolymathAccount});
+  await deployer.deploy(ModuleRegistry, {from: PolymathAccount});
+  await deployer.deploy(GeneralTransferManagerFactory, PolyToken.address, {from: PolymathAccount});
+  await deployer.deploy(GeneralPermissionManagerFactory, PolyToken.address, {from: PolymathAccount});
 
   // 2. Register the Transfer Manager module
   let moduleRegistry = await ModuleRegistry.deployed();
@@ -62,7 +62,7 @@ module.exports = async (deployer, network, accounts) => {
   await moduleRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount});
 
   // B) DEPLOY STO factories and register them with the Registry
-  await deployer.deploy(CappedSTOFactory, {from: PolymathAccount});
+  await deployer.deploy(CappedSTOFactory, PolyToken.address, {from: PolymathAccount});
   let cappedSTOFactory = await CappedSTOFactory.deployed();
   await moduleRegistry.registerModule(cappedSTOFactory.address, {from: PolymathAccount});
 

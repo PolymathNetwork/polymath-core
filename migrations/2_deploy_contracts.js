@@ -18,9 +18,6 @@ var BigNumber = require('bignumber.js');
 
 const Web3 = require('web3');
 var web3; 
-
-
-
 const zero = "0x0000000000000000000000000000000000000000";
 const totalSupply = 100000;
 const name = "TEST POLY";
@@ -51,8 +48,8 @@ module.exports = function (deployer, network, accounts) {
     return deployer.deploy(PolyTokenFaucet).then(() => {
        return deployer.deploy(ModuleRegistry, {from: PolymathAccount}).then(() => {
           return ModuleRegistry.deployed().then((moduleRegistry) => {
-             return deployer.deploy(GeneralTransferManagerFactory, {from: PolymathAccount}).then(() => {
-                return deployer.deploy(GeneralPermissionManagerFactory, {from: PolymathAccount}).then(() => {
+             return deployer.deploy(GeneralTransferManagerFactory, PolyTokenFaucet.address, {from: PolymathAccount}).then(() => {
+                return deployer.deploy(GeneralPermissionManagerFactory, PolyTokenFaucet.address, {from: PolymathAccount}).then(() => {
                     return deployer.deploy(PolyToken).then(() => {
                         return moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount}).then(() => {
                             return moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, {from: PolymathAccount}).then(() => {
@@ -64,9 +61,9 @@ module.exports = function (deployer, network, accounts) {
                                                     return TickerRegistry.deployed().then((tickerRegistry) => {
                                                         return tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount}).then(() => {
                                                             return moduleRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount}).then(() => {
-                                                                return deployer.deploy(DummySTOFactory, {from: PolymathAccount}).then(() => {
+                                                                return deployer.deploy(DummySTOFactory, PolyTokenFaucet.address, {from: PolymathAccount}).then(() => {
                                                                     return moduleRegistry.registerModule(DummySTOFactory.address, {from: PolymathAccount}).then(() => {
-                                                                        return deployer.deploy(CappedSTOFactory, {from: PolymathAccount}).then(() => {
+                                                                        return deployer.deploy(CappedSTOFactory, PolyTokenFaucet.address, {from: PolymathAccount}).then(() => {
                                                                             return moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount}).then(() => {
                                                                                 console.log("\n")
                                                                                 console.log("----- Polymath Core Contracts -----");

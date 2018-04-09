@@ -1,21 +1,20 @@
 pragma solidity ^0.4.21;
 
-import "./DummySTO.sol";
-import "../../interfaces/IModuleFactory.sol";
-import "../../interfaces/IModule.sol";
+import "../../../contracts/modules/STO/DummySTO.sol";
+import "../../../contracts/interfaces/IModuleFactory.sol";
+import "../../../contracts/interfaces/IModule.sol";
 
 
-contract DummySTOFactory is IModuleFactory {
+contract TestSTOFactory is IModuleFactory {
 
-    function DummySTOFactory(address _polyAddress) public
+    function TestSTOFactory(address _polyAddress) public
       IModuleFactory(_polyAddress)
     {
 
     }
 
-
     function deploy(bytes _data) external returns(address) {
-        polyToken.transferFrom(msg.sender, owner, getCost());
+        //polyToken.transferFrom(msg.sender, owner, getCost());
         //Check valid bytes - can only call module init function
         DummySTO dummySTO = new DummySTO(msg.sender);
         //Checks that _data is valid (not calling anything it shouldn't)
@@ -25,7 +24,7 @@ contract DummySTOFactory is IModuleFactory {
     }
 
     function getCost() public view returns(uint256) {
-        return 0;
+        return uint256(1000 * 10 ** 18);
     }
 
     function getType() public view returns(uint8) {
@@ -33,19 +32,19 @@ contract DummySTOFactory is IModuleFactory {
     }
 
     function getName() public view returns(bytes32) {
-        return "DummySTO";
+        return "TestSTO";
     }
 
     function getDescription() public view returns(string) {
-        return "Dummy STO";
+        return "Test STO";
     }
 
     function getTitle() public view returns(string) {
-        return "Dummy STO";
+        return "Test STO";
     }
 
     function getInstructions() public view returns(string) {
-        return "Dummy STO - you can mint tokens at will";
+        return "Test STO - you can mint tokens at will";
     }
 
 }

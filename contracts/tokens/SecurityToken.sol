@@ -32,7 +32,6 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     struct ModuleData {
         bytes32 name;
         address moduleAddress;
-        bool replaceable;
     }
 
     address public moduleRegistry;
@@ -43,6 +42,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     // Module list should be order agnostic!
     mapping (uint8 => ModuleData[]) public modules;
+    mapping (uint8 => bool) public modulesLocked;
 
     uint8 public constant MAX_MODULES = 10;
 
@@ -96,9 +96,9 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         bytes _data,
         uint256 _maxCost,
         uint256 _budget,
-        bool _replaceable
+        bool _locked
     ) external onlyOwner {
-        _addModule(_moduleFactory, _data, _maxCost, _budget, _replaceable);
+        _addModule(_moduleFactory, _data, _maxCost, _budget, _locked);
     }
 
     /**
@@ -108,22 +108,20 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     * @param _moduleFactory is the address of the module factory to be added
     * @param _data is data packed into bytes used to further configure the module (See STO usage)
     * @param _maxCost max amount of POLY willing to pay to module. (WIP)
-    * @param _replaceable whether or not the module is supposed to be replaceable
+    * @param _locked whether or not the module is supposed to be locked
     */
     //You are allowed to add a new moduleType if:
     //  - there is no existing module of that type yet added
     //  - the last member of the module list is replacable
-    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _replaceable) internal {
+    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _locked) internal {
         //Check that module exists in registry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         require(modules[moduleFactory.getType()].length < MAX_MODULES);
         uint256 moduleCost = moduleFactory.getCost();
         require(moduleCost <= _maxCost);
-        //Check that this module has not already been set as non-replaceable
-        if (modules[moduleFactory.getType()].length != 0) {
-            require(modules[moduleFactory.getType()][modules[moduleFactory.getType()].length - 1].replaceable);
-        }
+        //Check that this module has not already been set as locked
+        require(!modulesLocked[moduleFactory.getType()]);
         //Approve fee for module
         require(polyToken.approve(_moduleFactory, moduleCost));
         //Creates instance of module from factory
@@ -131,7 +129,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         //Approve ongoing budget
         require(polyToken.approve(module, _budget));
         //Add to SecurityToken module map
-        modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module, _replaceable));
+        modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module));
+        modulesLocked[moduleFactory.getType()] = _locked;
         //Emit log event
         emit LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
     }
@@ -144,7 +143,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     function removeModule(uint8 _moduleType, uint8 _moduleIndex) external onlyOwner {
         require(_moduleIndex < modules[_moduleType].length);
         require(modules[_moduleType][_moduleIndex].moduleAddress != address(0));
-        require(modules[_moduleType][_moduleIndex].replaceable);
+        require(!modulesLocked[_moduleType]);
         //Take the last member of the list, and replace _moduleIndex with this, then shorten the list by one
         emit LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
         modules[_moduleType][_moduleIndex] = modules[_moduleType][modules[_moduleType].length - 1];
@@ -156,7 +155,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
             return (
             modules[_moduleType][_index].name,
             modules[_moduleType][_index].moduleAddress,
-            modules[_moduleType][_index].replaceable
+            modulesLocked[_moduleType]
             );
         }else {
             return ("", address(0), false);
@@ -173,7 +172,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     /**
-    * @dev allows owner to approve more POLY to one of the modules 
+    * @dev allows owner to approve more POLY to one of the modules
     */
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0);
@@ -183,7 +182,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     /**
-     * @dev Overladed version of the transfer function
+     * @dev Overloaded version of the transfer function
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
         require(verifyTransfer(msg.sender, _to, _value));
@@ -191,7 +190,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     /**
-     * @dev Overladed version of the transferFrom function
+     * @dev Overloaded version of the transferFrom function
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         require(verifyTransfer(_from, _to, _value));

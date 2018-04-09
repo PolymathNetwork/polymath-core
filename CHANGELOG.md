@@ -3,6 +3,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased](https://github.com/PolymathNetwork/polymath-core/compare/npm-publish-2...master)
 
+[__0.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __09-04-18__     
+
+## Added
+* Issuer can see the list of lock and unlocked modules by accessing the public mapping **modulesLocked**.     
+
+## Changed
+* Now `IModuleFactory` contract takes PolyToken address to intialize the contract. So each and every module factory takes polytoken address to intialize there constructor.      
+* No modules will be replacable now. Terminology got changed, In this release we make the module lockable. So owner of the modules can 
+make the module locable with a boolean value. `True` signifies the lock it means that module can't be unlocked or no one can change that module. `False` represent the module could be changed if issuer wants.      
+
+***
+
 [__0.3.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __06-04-18__
 
 ## Added

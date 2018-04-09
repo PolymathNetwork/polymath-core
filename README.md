@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.com/PolymathNetwork/polymath-core.svg?token=rqsL7PsbwLxrskjYAHpq&branch=master)](https://travis-ci.com/PolymathNetwork/polymath-core)
+[![Build Status](https://travis-ci.org/PolymathNetwork/polymath-core.svg?branch=master)](https://travis-ci.org/PolymathNetwork/polymath-core)
 <a href="https://t.me/polymathnetwork"><img src="https://img.shields.io/badge/50k+-telegram-blue.svg" target="_blank"></a>
 
 ![Polymath](Polymath.png)

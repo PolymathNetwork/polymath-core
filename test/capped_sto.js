@@ -288,7 +288,7 @@ contract('CappedSTO', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
             let errorThrown = false;
             try {
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
             } catch(error) {
                 console.log(`Tx Failed because of rate is ${0}. Test Passed Successfully`);
                 errorThrown = true;
@@ -301,7 +301,7 @@ contract('CappedSTO', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
             let errorThrown = false;
             try {
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
             } catch(error) {
                 errorThrown = true;
                 console.log(`Tx Failed because of startTime is greater than endTime. Test Passed Successfully`);
@@ -314,19 +314,19 @@ contract('CappedSTO', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
             let errorThrown = false;
             try {
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
             } catch(error) {
                 console.log(`Tx Failed because the Cap is equal to ${0}. Test Passed Successfully`);
                 errorThrown = true;
                 ensureException(error);
             }
-            assert.ok(errorThrown, message);            
+            assert.ok(errorThrown, message);
         });
 
 
         it("Should successfully attach the STO factory with the security token", async () => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
 
             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
@@ -599,7 +599,7 @@ contract('CappedSTO', accounts => {
              it("POLY: Should successfully attach the STO factory with the security token", async () => {
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [P_startTime, P_endTime, P_cap, P_rate, P_fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
 
-                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 2500000 });
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
 
                 assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
@@ -784,10 +784,10 @@ contract('CappedSTO', accounts => {
                     );
                 } catch(error) {
                     console.log(`failed Because STO get expired reached`);
-                    errorThrown = true;                    
+                    errorThrown = true;
                     ensureException(error);
                 }
-                assert.ok(errorThrown, message);                
+                assert.ok(errorThrown, message);
             });
 
             it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {

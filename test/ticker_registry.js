@@ -31,7 +31,7 @@ contract('TickerRegistry', accounts => {
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(100);
-    
+
     let ID_snap;
     const message = "Transaction Should Fail!!";
 
@@ -70,14 +70,14 @@ contract('TickerRegistry', accounts => {
     let endTime;
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
-    
+
     before(async() => {
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
         account_temp = accounts[8];
         token_owner = account_issuer;
-      
+
         // ----------- POLYMATH NETWORK Configuration ------------
 
         // STEP 1: Deploy the ModuleRegistry
@@ -176,7 +176,7 @@ contract('TickerRegistry', accounts => {
     });
 
     describe("Test cases for the TickerRegistry public variable", async () => {
-        
+
         it("verify the securityTokenRegistry address", async() => {
             let str = await I_TickerRegistry.strAddress.call();
             assert.equal(str, I_SecurityTokenRegistry.address);
@@ -189,7 +189,7 @@ contract('TickerRegistry', accounts => {
     });
 
     describe("Test cases for the registerTicker function", async() => {
-        
+
         it("Should fail in regestering the ticker due to the symbol length is 0", async() => {
             let errorThrown = false;
             try {
@@ -242,7 +242,7 @@ contract('TickerRegistry', accounts => {
     });
 
     describe("test cases for the expiry limit", async() => {
-        
+
         it("Should fail to set the expiry limit because msg.sender is not owner", async() => {
             let errorThrown = false;
             try {
@@ -254,7 +254,7 @@ contract('TickerRegistry', accounts => {
             }
             assert.ok(errorThrown, message);
         });
-        
+
         it("Should successfully set the expiry limit", async() => {
             await I_TickerRegistry.changeExpiryLimit(duration.days(10), {from: account_polymath});
             assert.equal(
@@ -278,7 +278,7 @@ contract('TickerRegistry', accounts => {
     });
 
     describe("Test cases for the setTokenRegistry", async() => {
-        
+
         it("Should fail to set the TokenRegistry", async() => {
             let errorThrown = false;
             try {
@@ -303,7 +303,7 @@ contract('TickerRegistry', accounts => {
                 .replace(/\u0000/g, ''),
                 swarmHash
             );
-            assert.equal(tx[4], false);                                        
+            assert.equal(tx[4], false);
         });
     });
 

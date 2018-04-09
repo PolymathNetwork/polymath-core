@@ -38,7 +38,7 @@ contract('SecurityToken', accounts => {
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(100);
-    
+
     let ID_snap;
     const message = "Transaction Should Fail!!";
 
@@ -119,7 +119,7 @@ contract('SecurityToken', accounts => {
         account_delegate = accounts[5];
         account_temp = accounts[8];
         token_owner = account_issuer;
-      
+
         // ----------- POLYMATH NETWORK Configuration ------------
 
         // STEP 1: Deploy the ModuleRegistry
@@ -289,8 +289,8 @@ contract('SecurityToken', accounts => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
-            
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner, gas: 5000000 });
+
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 5000000 });
 
             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
@@ -308,7 +308,7 @@ contract('SecurityToken', accounts => {
             let moduleData = await I_SecurityToken.getModule.call(stoKey, 0);
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "CappedSTO");
             assert.equal(moduleData[1], I_CappedSTO.address);
-            assert.isFalse(moduleData[2]);
+            assert.isTrue(moduleData[2]);
         });
 
         it("Should fails in removing the module from the securityToken", async() => {
@@ -339,7 +339,7 @@ contract('SecurityToken', accounts => {
             let key = await takeSnapshot();
             let tx = await I_SecurityToken.removeModule(transferManagerKey, 0, { from : token_owner });
             assert.equal(tx.logs[0].args._type, transferManagerKey);
-            assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);            
+            assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
             await revertToSnapshot(key);
         });
 
@@ -347,7 +347,7 @@ contract('SecurityToken', accounts => {
             let moduleData = await I_SecurityToken.getModule.call(transferManagerKey, 0);
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "GeneralTransferManager");
             assert.equal(moduleData[1], I_GeneralTransferManager.address);
-            assert.isTrue(moduleData[2]);
+            assert.isFalse(moduleData[2]);
         });
 
         it("Should change the budget of the module", async() => {
@@ -363,7 +363,7 @@ contract('SecurityToken', accounts => {
             it("Should Buy the tokens", async() => {
                 balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
                 // Add the Investor in to the whitelist
-    
+
                 let tx = await I_GeneralTransferManager.modifyWhitelist(
                     account_investor1,
                     fromTime,
@@ -372,9 +372,9 @@ contract('SecurityToken', accounts => {
                         from: account_issuer,
                         gas: 500000
                     });
-    
+
                 assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
-    
+
                 // Jump time
                 await increaseTime(5000);
                 // Fallback transaction
@@ -384,16 +384,16 @@ contract('SecurityToken', accounts => {
                     gas: 210000,
                     value: web3.utils.toWei('1', 'ether')
                     });
-    
+
                 assert.equal(
                     (await I_CappedSTO.fundsRaised.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1
                 );
-    
+
                 assert.equal(await I_CappedSTO.getNumberInvestors.call(), 1);
-    
+
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor1))
                     .dividedBy(new BigNumber(10).pow(18))
@@ -412,7 +412,7 @@ contract('SecurityToken', accounts => {
                     ensureException(error);
                 }
                 assert.ok(errorThrown, message);
-            });   
+            });
 
             it("Should fail to provide the permission to the delegate to change the transfer bools", async () => {
                 let errorThrown = false;
@@ -497,7 +497,7 @@ contract('SecurityToken', accounts => {
                         from: account_issuer,
                         gas: 500000
                     });
-    
+
                 assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
 
                 await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
@@ -550,16 +550,16 @@ contract('SecurityToken', accounts => {
                     gas: 210000,
                     value: web3.utils.toWei('1', 'ether')
                     });
-    
+
                 assert.equal(
                     (await I_CappedSTO.fundsRaised.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     2
                 );
-    
+
                 assert.equal(await I_CappedSTO.getNumberInvestors.call(), 2);
-    
+
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor1))
                     .dividedBy(new BigNumber(10).pow(18))
@@ -596,7 +596,7 @@ contract('SecurityToken', accounts => {
                     console.log(`non-whitelist investor is not allowed`);
                     errorThrown = true;
                     ensureException(error);
-                } 
+                }
                 assert.ok(errorThrown, message);
            });
 

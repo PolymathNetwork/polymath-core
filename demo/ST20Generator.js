@@ -462,7 +462,7 @@ async function step_STO_Launch(){
     }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
 
     try{
-      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0,0, false).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0,0, true).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...

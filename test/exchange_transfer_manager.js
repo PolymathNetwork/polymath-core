@@ -278,7 +278,7 @@ contract('ExchangeTransferManager', accounts => {
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, 0, 0, false, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner });
             assert.equal(tx.logs[2].args._type.toNumber(), stoKey, "DummySTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
@@ -415,7 +415,7 @@ contract('ExchangeTransferManager', accounts => {
               web3.utils.toWei('1', 'ether')
           );
         });
-        
+
 
     });
 });

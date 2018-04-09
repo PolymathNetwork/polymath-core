@@ -7,6 +7,12 @@ import "../../../contracts/interfaces/IModule.sol";
 
 contract TestSTOFactory is IModuleFactory {
 
+    function TestSTOFactory(address _polyAddress) public
+      IModuleFactory(_polyAddress)
+    {
+
+    }
+
     function deploy(bytes _data) external returns(address) {
         //polyToken.transferFrom(msg.sender, owner, getCost());
         //Check valid bytes - can only call module init function

@@ -170,8 +170,8 @@ http://solidity.readthedocs.io/en/develop/style-guide.html
 
 # Links    
 
-[Polymath](https://polymath.network)
-[Ethereum](https://www.ethereum.org/)
-[Solidity](https://solidity.readthedocs.io/en/develop/)
-[Truffle](http://truffleframework.com/)
-[Testrpc](https://github.com/ethereumjs/testrpc)
+- [Polymath Website](https://polymath.network)
+- [Ethereum Project](https://www.ethereum.org/)
+- [Solidity Docs](https://solidity.readthedocs.io/en/develop/)
+- [Truffle Framework](http://truffleframework.com/)
+- [Ganache CLI / TestRPC](https://github.com/trufflesuite/ganache-cli)

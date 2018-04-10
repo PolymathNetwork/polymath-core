@@ -110,9 +110,14 @@ node demo/transfer TOKEN_SYMBOL ACCOUNT_TO AMOUNT
 # Setting up Polymath Core
 ## Ropsten
 
-- TickerRegistry: TBA
-- SecurityTokenRegistry: TBA
-- ModuleRegistry: TBA
+### v1.0.0 (TORO Release)
+
+| Contract                                                         | Address                                                                                                                       |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| TickerRegistry:                                               | [0x0abeafae9333f7dc64959914f67765edee5fd05f](https://ropsten.etherscan.io/address/0x0abeafae9333f7dc64959914f67765edee5fd05f)                                              |
+| SecurityTokenRegistry:                                        | [0x8e736d9caeb9eb9b7a766c196fbb01eb53344e81](https://ropsten.etherscan.io/address/0x8e736d9caeb9eb9b7a766c196fbb01eb53344e81)                                              |
+| ModuleRegistry:                                               | [0x850bfedbf6c957fd195e4f555c7deab6cd226a5a](https://ropsten.etherscan.io/address/0x850bfedbf6c957fd195e4f555c7deab6cd226a5a)                                              |
+| CappedSTOFactory:                                               | [0x423105526255dB03C36FD763C982daD96B95D17e](https://etherscan.io/address/0x423105526255dB03C36FD763C982daD96B95D17e)                                              |
 
 ## Setup
 

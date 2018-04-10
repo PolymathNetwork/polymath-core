@@ -137,9 +137,4 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
         }
         return true;
     }
-
-
-
-
-
 }

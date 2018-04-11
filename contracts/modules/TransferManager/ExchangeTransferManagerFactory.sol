@@ -13,7 +13,7 @@ contract ExchangeTransferManagerFactory is IModuleFactory {
     }
 
     function deploy(bytes _data) external returns(address) {
-        polyToken.transferFrom(msg.sender, owner, getCost());
+        require(polyToken.transferFrom(msg.sender, owner, getCost()));
         ExchangeTransferManager exchangeTransferManager = new ExchangeTransferManager(msg.sender);
         require(getSig(_data) == exchangeTransferManager.getInitFunction());
         require(address(exchangeTransferManager).call(_data));

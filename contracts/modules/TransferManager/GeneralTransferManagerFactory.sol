@@ -13,7 +13,7 @@ contract GeneralTransferManagerFactory is IModuleFactory {
     }
 
     function deploy(bytes /* _data */) external returns(address) {
-        polyToken.transferFrom(msg.sender, owner, getCost());
+        require(polyToken.transferFrom(msg.sender, owner, getCost()));
         return address(new GeneralTransferManager(msg.sender));
     }
 

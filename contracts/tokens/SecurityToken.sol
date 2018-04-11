@@ -178,8 +178,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
             for (uint256 i = 0; i < modules[_moduleType].length; i++) {
                 if (modules[_moduleType][i].name == _name) {
                   return (
-                      modules[_moduleType][_index].name,
-                      modules[_moduleType][_index].moduleAddress,
+                      modules[_moduleType][i].name,
+                      modules[_moduleType][i].moduleAddress,
                       modulesLocked[_moduleType]
                   );
                 }

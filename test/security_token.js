@@ -303,8 +303,15 @@ contract('SecurityToken', accounts => {
     });
 
     describe("Module related functions", async() => {
-        it("Should get the modules of the securityToken", async () => {
+        it("Should get the modules of the securityToken by index", async () => {
             let moduleData = await I_SecurityToken.getModule.call(stoKey, 0);
+            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "CappedSTO");
+            assert.equal(moduleData[1], I_CappedSTO.address);
+            assert.isTrue(moduleData[2]);
+        });
+
+        it("Should get the modules of the securityToken by name", async () => {
+            let moduleData = await I_SecurityToken.getModuleByName.call(stoKey, "CappedSTO");
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "CappedSTO");
             assert.equal(moduleData[1], I_CappedSTO.address);
             assert.isTrue(moduleData[2]);

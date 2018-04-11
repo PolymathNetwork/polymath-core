@@ -150,17 +150,44 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         modules[_moduleType].length = modules[_moduleType].length - 1;
     }
 
-    function getModule(uint8 _moduleType, uint _index) public view returns (bytes32, address, bool) {
+    /**
+    * @dev returns module list for a module type
+    * @param _moduleType is which type of module we are trying to remove
+    * @param _moduleIndex is the index of the module within the chosen type
+    */
+    function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address, bool) {
         if (modules[_moduleType].length > 0) {
             return (
-            modules[_moduleType][_index].name,
-            modules[_moduleType][_index].moduleAddress,
-            modulesLocked[_moduleType]
+                modules[_moduleType][_moduleIndex].name,
+                modules[_moduleType][_moduleIndex].moduleAddress,
+                modulesLocked[_moduleType]
             );
-        }else {
+        } else {
             return ("", address(0), false);
         }
 
+    }
+
+    /**
+    * @dev returns module list for a module name - will return first match
+    * @param _moduleType is which type of module we are trying to remove
+    * @param _name is the name of the module within the chosen type
+    */
+    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address, bool) {
+        if (modules[_moduleType].length > 0) {
+            for (uint256 i = 0; i < modules[_moduleType].length; i++) {
+                if (modules[_moduleType][i].name == _name) {
+                  return (
+                      modules[_moduleType][i].name,
+                      modules[_moduleType][i].moduleAddress,
+                      modulesLocked[_moduleType]
+                  );
+                }
+            }
+            return ("", address(0), false);
+        } else {
+            return ("", address(0), false);
+        }
     }
 
     /**

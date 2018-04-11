@@ -55,7 +55,6 @@ contract('SecurityTokenRegistry', accounts => {
     let I_STVersion;
     let I_SecurityToken;
     let I_DummySTO;
-    let I_PolyToken;
     let I_PolyFaucet;
     let I_STVersion002;
     let I_SecurityToken002;
@@ -113,12 +112,12 @@ contract('SecurityTokenRegistry', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the Polytoken Contract
-        I_PolyToken = await PolyToken.new();
+        // Step 0: Deploy the token Faucet
+        I_PolyFaucet = await PolyTokenFaucet.new();
         
         // STEP 1: Deploy the ModuleRegistry
 
-        I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
+        I_ModuleRegistry = await ModuleRegistry.new({ from: account_polymath });
 
         assert.notEqual(
             I_ModuleRegistry.address.valueOf(),
@@ -128,7 +127,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, { from: account_polymath });
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -138,7 +137,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, { from: account_polymath });
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -146,17 +145,8 @@ contract('SecurityTokenRegistry', accounts => {
             "GeneralDelegateManagerFactory contract was not deployed"
         );
 
-        // STEP 4: Deploy the CappedSTOFactory
 
-        I_TestSTOFactory = await TestSTOFactory.new(I_PolyToken.address, { from: token_owner });
-
-        assert.notEqual(
-            I_TestSTOFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "TestSTOFactory contract was not deployed"
-        );
-
-        // STEP 5: Register the Modules with the ModuleRegistry contract
+        // STEP 4: Register the Modules with the ModuleRegistry contract
 
         // (A) :  Register the GeneralTransferManagerFactory
         await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
@@ -166,10 +156,7 @@ contract('SecurityTokenRegistry', accounts => {
         await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
         await I_ModuleRegistry.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
 
-        // (C) : Register the STOFactory
-        await I_ModuleRegistry.registerModule(I_TestSTOFactory.address, { from: token_owner });
-
-        // Step 6: Deploy the TickerRegistry
+        // Step 5: Deploy the TickerRegistry
 
         I_TickerRegistry = await TickerRegistry.new({ from: account_polymath });
 
@@ -179,7 +166,7 @@ contract('SecurityTokenRegistry', accounts => {
             "TickerRegistry contract was not deployed",
         );
 
-        // Step 7: Deploy the STversionProxy contract
+        // Step 6: Deploy the STversionProxy contract
 
         I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, I_GeneralPermissionManagerFactory.address, {from : account_polymath });
 
@@ -189,8 +176,18 @@ contract('SecurityTokenRegistry', accounts => {
             "STVersion contract was not deployed",
         );
 
-         // Step 8: Deploy the token Faucet
-         I_PolyFaucet = await PolyTokenFaucet.new();
+        // STEP 8: Deploy the CappedSTOFactory
+
+        I_TestSTOFactory = await TestSTOFactory.new(I_PolyFaucet.address, { from: token_owner });
+        
+        assert.notEqual(
+            I_TestSTOFactory.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "TestSTOFactory contract was not deployed"
+        );
+
+        // (C) : Register the STOFactory
+        await I_ModuleRegistry.registerModule(I_TestSTOFactory.address, { from: token_owner });
 
         // Step 9: Deploy the SecurityTokenRegistry
 
@@ -374,7 +371,7 @@ contract('SecurityTokenRegistry', accounts => {
             );
          });
 
-         it("Should successfully attach the STO factory with the security token", async () => {
+         it("Should failed in attaching the STO factory with the security token -- because securityToken doesn't have sufficient balance", async () => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(
                 functionSignature,
                 [
@@ -384,26 +381,60 @@ contract('SecurityTokenRegistry', accounts => {
                     someString,
                 ]);
 
+            let errorThrown = false;
+
+            try {
+                const tx = await I_SecurityToken.addModule(
+                    I_TestSTOFactory.address,
+                    bytesSTO,
+                    (1000 * Math.pow(10, 18)),
+                    (1000 * Math.pow(10, 18)),
+                    true,
+                    {
+                        from: token_owner,
+                        gas: 2500000
+                    });
+            } catch(error) {
+                console.log(`Tx. get failed. Becuase securityToken doesn't have sufficient POLY to pay`);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully attach the STO factory with the security token", async () => {
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(
+                functionSignature,
+                [
+                    (latestTime() + duration.seconds(500)),
+                    (latestTime() + duration.days(30)),
+                    cap,
+                    someString,
+                ]);
+            
+            await I_PolyFaucet.getTokens((1000 * Math.pow(10, 18)), I_SecurityToken.address);
+
             const tx = await I_SecurityToken.addModule(
                 I_TestSTOFactory.address,
                 bytesSTO,
                 (1000 * Math.pow(10, 18)),
                 (1000 * Math.pow(10, 18)),
-                false,
+                true,
                 {
                     from: token_owner,
                     gas: 2500000
                 });
-
-            assert.equal(tx.logs[2].args._type, stoKey, "TestSTO doesn't get deployed");
+    
+            assert.equal(tx.logs[3].args._type, stoKey, "TestSTO doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name)
+                web3.utils.toAscii(tx.logs[3].args._name)
                 .replace(/\u0000/g, ''),
                 "TestSTO",
                 "TestSTOFactory module was not added"
             );
-            I_DummySTO = DummySTO.at(tx.logs[2].args._module);
+
+            I_DummySTO = DummySTO.at(tx.logs[3].args._module);
         });
+
     });
 
 

@@ -16,9 +16,9 @@ contract ExchangeTransferManager is ITransferManager {
 
     event LogModifyWhitelist(address _investor, uint256 _dateAdded, address _addedBy);
 
-    function ExchangeTransferManager(address _securityToken)
+    function ExchangeTransferManager(address _securityToken, address _polyAddress)
     public
-    IModule(_securityToken)
+    IModule(_securityToken, _polyAddress)
     {
     }
 
@@ -58,7 +58,7 @@ contract ExchangeTransferManager is ITransferManager {
     }
 
     function getExchangePermission(address _investor) internal view returns (bool) {
-        // This function could implement more complex logic, 
+        // This function could implement more complex logic,
         // e.g. calling out to another contract maintained by the exchange to get list of allowed users
         return whitelist[_investor];
     }

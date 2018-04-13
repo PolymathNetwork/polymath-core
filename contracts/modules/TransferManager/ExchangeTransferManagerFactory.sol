@@ -14,7 +14,7 @@ contract ExchangeTransferManagerFactory is IModuleFactory {
 
     function deploy(bytes _data) external returns(address) {
         require(polyToken.transferFrom(msg.sender, owner, getCost()));
-        ExchangeTransferManager exchangeTransferManager = new ExchangeTransferManager(msg.sender);
+        ExchangeTransferManager exchangeTransferManager = new ExchangeTransferManager(msg.sender, address(polyToken));
         require(getSig(_data) == exchangeTransferManager.getInitFunction());
         require(address(exchangeTransferManager).call(_data));
         return address(exchangeTransferManager);

@@ -1,6 +1,7 @@
 pragma solidity ^0.4.21;
 
 import "./ITransferManager.sol";
+import "../../katipult/KatipultKYC.sol";
 
 /////////////////////
 // Module permissions
@@ -13,23 +14,15 @@ import "./ITransferManager.sol";
 // modifyWhitelist                          X             X
 // modifyWhitelistMulti                     X             X
 
-contract GeneralTransferManager is ITransferManager {
+contract KatipultTransferManager is ITransferManager {
+
+    bytes32 public constant FLAGS = "FLAGS";
 
     //Address from which issuances come
     address public issuanceAddress = address(0);
 
-    bytes32 public constant WHITELIST = "WHITELIST";
-    bytes32 public constant FLAGS = "FLAGS";
-
-    //from and to timestamps that an investor can send / receive tokens respectively
-    struct TimeRestriction {
-        uint256 fromTime;
-        uint256 toTime;
-    }
-
-    // An address can only send / receive tokens once their corresponding uint256 > block.number
-    // (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
-    mapping (address => TimeRestriction) public whitelist;
+    //Address of central Katipult KYC contract
+    KatipultKYC public katipultKYC;
 
     //If true, there are no transfer restrictions, for any addresses
     bool public allowAllTransfers = false;
@@ -51,10 +44,11 @@ contract GeneralTransferManager is ITransferManager {
         uint256 _toTime
     );
 
-    function GeneralTransferManager(address _securityToken, address _polyAddress)
+    function KatipultTransferManager(address _securityToken, address _polyAddress, address _katipultKYCAddress)
     public
     IModule(_securityToken, _polyAddress)
     {
+      katipultKYC = KatipultKYC(_katipultKYCAddress);
     }
 
     function getInitFunction() public returns(bytes4) {
@@ -102,42 +96,23 @@ contract GeneralTransferManager is ITransferManager {
             return onWhitelist(_to);
         }
         //Anyone on the whitelist can transfer provided the blocknumber is large enough
-        return ((onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
-            (onWhitelist(_to) && whitelist[_to].toTime <= now));
-    }
+        uint256 fromTime;
+        uint256 toTime;
+        (fromTime, ) = katipultKYC.getWhitelist(address(this), _from);
+        (, toTime) = katipultKYC.getWhitelist(address(this), _to);
 
-    /**
-    * @dev adds or removes addresses from the whitelist.
-    * @param _investor is the address to whitelist
-    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
-    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
-    */
-    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {
-        //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
-        whitelist[_investor] = TimeRestriction(_fromTime, _toTime);
-        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime);
-    }
-
-    function modifyWhitelistMulti(
-        address[] _investors,
-        uint256[] _fromTimes,
-        uint256[] _toTimes
-    ) public withPerm(WHITELIST) {
-        require(_investors.length == _fromTimes.length);
-        require(_fromTimes.length == _toTimes.length);
-        for (uint256 i = 0; i < _investors.length; i++) {
-            modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i]);
-        }
-    }
-
-    function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](2);
-        allPermissions[0] = WHITELIST;
-        allPermissions[1] = FLAGS;
-        return allPermissions;
+        return ((onWhitelist(_from) && fromTime <= now) &&
+            (onWhitelist(_to) && toTime <= now));
     }
 
     function onWhitelist(address _investor) internal view returns(bool) {
-        return ((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0));
+        return katipultKYC.onWhitelist(address(this), _investor);
     }
+
+    function getPermissions() public view returns(bytes32[]) {
+        bytes32[] memory allPermissions = new bytes32[](1);
+        allPermissions[0] = FLAGS;
+        return allPermissions;
+    }
+
 }

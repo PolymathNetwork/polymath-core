@@ -25,8 +25,8 @@ contract GeneralPermissionManager is IPermissionManager {
     event LogAddPermission(address _delegate, bytes32 _details, uint256 _timestamp);
 
     /// @notice constructor
-    function GeneralPermissionManager(address _securityToken) public
-    IModule(_securityToken)
+    function GeneralPermissionManager(address _securityToken, address _polyAddress) public
+    IModule(_securityToken, _polyAddress)
     {
     }
 

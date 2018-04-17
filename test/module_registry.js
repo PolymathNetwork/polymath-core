@@ -14,7 +14,6 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyToken = artifacts.require('./PolyToken.sol');
 const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
@@ -55,7 +54,6 @@ contract('ModuleRegistry', accounts => {
     let I_SecurityToken;
     let I_CappedSTO;
     let I_PolyToken;
-    let I_PolyFaucet;
     let I_DummySTOFactory;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
@@ -123,7 +121,7 @@ contract('ModuleRegistry', accounts => {
         // ----------- POLYMATH NETWORK Configuration ------------
 
         // Step 0: Deploy the Polytoken Contract
-        I_PolyToken = await PolyToken.new();
+        I_PolyToken = await PolyTokenFaucet.new();
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -146,10 +144,6 @@ contract('ModuleRegistry', accounts => {
         );
 
         // Step 7: Deploy the STversionProxy contract
-
-        // Step 9: Deploy the token Faucet
-        I_PolyFaucet = await PolyTokenFaucet.new();
-
     });
 
     describe("Test case of the module registry", async() => {
@@ -463,9 +457,9 @@ contract('ModuleRegistry', accounts => {
 
             tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 5000000 });
 
-            assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[3].args._name)
+                web3.utils.toAscii(tx.logs[2].args._name)
                 .replace(/\u0000/g, ''),
                 "CappedSTO",
                 "CappedSTOFactory module was not added"

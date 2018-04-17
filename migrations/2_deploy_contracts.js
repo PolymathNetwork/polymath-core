@@ -5,7 +5,8 @@ const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
 const TickerRegistry = artifacts.require('./TickerRegistry.sol')
 const STVersionProxy001 = artifacts.require('./tokens/STVersionProxy001.sol')
-let PolyToken = '0xafbf8a012b63c7e1ddd333882c612b7100a77d78' // PolyToken Ropsten Faucet Address
+const DevPolyToken = artifacts.require('./helpers/PolyToken.sol')
+let PolyToken
 
 const Web3 = require('web3')
 
@@ -16,13 +17,16 @@ module.exports = function (deployer, network, accounts) {
   if (network === 'development') {
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
     PolymathAccount = accounts[0]
+    PolyToken = DevPolyToken.address // Development network polytoken address
   } else if (network === 'ropsten') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://ropsten.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
+    PolyToken = '0xafbf8a012b63c7e1ddd333882c612b7100a77d78' // PolyToken Ropsten Faucet Address
   } else if (network === 'mainnet') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolyToken = '0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC' // Mainnet PolyToken Address
   }
+
   // POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
   // A) Deploy the ModuleRegistry Contract (It contains the list of verified ModuleFactory)
   return deployer.deploy(ModuleRegistry, {from: PolymathAccount}).then(() => {

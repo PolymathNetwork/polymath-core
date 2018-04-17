@@ -15,7 +15,7 @@ contract DummySTOFactory is IModuleFactory {
 
 
     function deploy(bytes _data) external returns(address) {
-        if(getCost() >0)
+        if(getCost() > 0)
             require(polyToken.transferFrom(msg.sender, owner, getCost()));
         //Check valid bytes - can only call module init function
         DummySTO dummySTO = new DummySTO(msg.sender);

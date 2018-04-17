@@ -55,7 +55,6 @@ contract('SecurityToken', accounts => {
     let I_SecurityToken;
     let I_CappedSTO;
     let I_PolyToken;
-    let I_PolyFaucet;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const swarmHash = "dagwrgwgvwergwrvwrg";
@@ -123,7 +122,7 @@ contract('SecurityToken', accounts => {
         // ----------- POLYMATH NETWORK Configuration ------------
 
         // Step 0: Deploy the Polytoken Contract
-        I_PolyToken = await PolyToken.new();
+        I_PolyToken = await PolyTokenFaucet.new();
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -219,9 +218,6 @@ contract('SecurityToken', accounts => {
         await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
         await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
 
-        // Step 9: Deploy the token Faucet
-        I_PolyFaucet = await PolyTokenFaucet.new();
-
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
             ModuleRegistry: ${I_ModuleRegistry.address}\n
@@ -291,14 +287,14 @@ contract('SecurityToken', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
 
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 5000000 });
-            assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[3].args._name)
+                web3.utils.toAscii(tx.logs[2].args._name)
                 .replace(/\u0000/g, ''),
                 "CappedSTO",
                 "CappedSTOFactory module was not added"
             );
-            I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
+            I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
         });
     });
 

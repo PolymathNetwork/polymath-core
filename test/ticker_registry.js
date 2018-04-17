@@ -10,7 +10,7 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyToken = artifacts.require('./PolyToken.sol');
+const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
 
 
 const Web3 = require('web3');
@@ -81,7 +81,7 @@ contract('TickerRegistry', accounts => {
         // ----------- POLYMATH NETWORK Configuration ------------
 
         // Step 0: Deploy the Polytoken Contract
-        I_PolyToken = await PolyToken.new();
+        I_PolyToken = await PolyTokenFaucet.new();
 
         // STEP 1: Deploy the ModuleRegistry
 

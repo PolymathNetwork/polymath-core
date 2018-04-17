@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.   
 
+__1.0.1__ __17-04-18__
+
+## Changed
+
+* Fixed `capReached()` which was checking fundsRaised agains cap, but the cap is expressed in tokens.
+
+
 ## [Unreleased](https://github.com/PolymathNetwork/polymath-core/compare/npm-publish-2...master)
 
 [__0.3.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __06-04-18__
@@ -13,10 +20,10 @@ All notable changes to this project will be documented in this file.
           __`LogChangePermission`__ :Emit when permissions to a delegate get changed.    
           __`LogAddPermission`__: Emit when delegate is added in permission manager contract.   
 * `getInstructions()` is a public function added into the factories contracts. Use to get the useful instructions about the corresponding factory.   
-* `_securityTokenRegistry` is more argument is added in __securityTokenV2__ contract. 
+* `_securityTokenRegistry` is more argument is added in __securityTokenV2__ contract.
 
 ## Changed
-* All contracts get migrated from solc version 0.4.18 to 0.4.21. 
+* All contracts get migrated from solc version 0.4.18 to 0.4.21.
 * Now symbols get stored in smart contract in uppercase instead of lowercase.    
 * Public variable `STRAdress` name in TickerRegistry smart contract changed to `strAddress`.   
 * Function `permissions()` name in all module factories get changed to `getPermissions()`.   
@@ -46,9 +53,9 @@ All notable changes to this project will be documented in this file.
 * `removeModule` new function added facilitate the removal of the module from the securityToken. It is ownable type function.    
 * `changeModuleBudget` function added to change the budget of the module that already been added. It is ownable type function.  
 
-## Changed 
+## Changed
 * In early release token symbol in uppercase or in lowercase entertain differently. But for this release both upercase and lowercase symbol name are same.   
-* Address of the owner of the securityToken is removed from the strucuture of the `SecurityTokenData`. 
+* Address of the owner of the securityToken is removed from the strucuture of the `SecurityTokenData`.
 * Mapping `securityTokens` in ISecurityTokenRegistry is now being private instead of public.   
 * `expiryLimit` default value get changed to 7 days instead of the 90 days in TickerRegistry.    
 * __contact__ variable is replaced by the __tokenName__ variable in `SymbolDetails` structure of TickerRegistry.  
@@ -61,7 +68,7 @@ All notable changes to this project will be documented in this file.
 * `LogModuleAdded` emit one more variable called ___budget__.   
 * `modules` mapping in the securityToken contract now returns __the array of ModuleData__.    
 
-## Removed 
+## Removed
 * `admin` varaible is removed from the TickerRegistry contract.    
 
 ***
@@ -75,9 +82,9 @@ All notable changes to this project will be documented in this file.
 * `SecurityToken` now have the integration with polyToken. At the time of `addModule()` SecurityToken approve the cost of the module to moduleFactory as the spender.   
 * New function `withdrawPoly(uint256 _amount)` is added to withdrawal the unused POLY from the securityToken contract. Called only by the owner of the contract.   
 * `checkPermission(address _delegate, address _module, bytes32 _perm)` function is added to check the permissions on the service providers(delegate).
-* `STVersionProxy_001.sol` & `STVersionProxy_002.sol` are the two new contract added. Both of those are the proxy contract use to generate the SecurityToken. Both contract constructor takes two variables address of `transferManagerFactory` address of the 
+* `STVersionProxy_001.sol` & `STVersionProxy_002.sol` are the two new contract added. Both of those are the proxy contract use to generate the SecurityToken. Both contract constructor takes two variables address of `transferManagerFactory` address of the
 `permissionManagerFactory`.   
-* New Module type is added called `PermissionManager`. It has three contracts called GeneralPermissionManagerFactory, GeneralPermissionManager, IPermissionManager. 
+* New Module type is added called `PermissionManager`. It has three contracts called GeneralPermissionManagerFactory, GeneralPermissionManager, IPermissionManager.
 * `GeneralPermissionManger` is all about providing the permission to the delegate corresponds to the SecurityToken. Major functionality is added, check, change the permission of the delegate.   
 * Two more functions added for each factory type i.e `getDescription()` & `getTitle()`.  
 * `CappedSTO` is now Configurable by choosing the type of fundraise. Either POLY or ETH.
@@ -88,7 +95,7 @@ All notable changes to this project will be documented in this file.
 * `permissions()` function added in GeneralTransferManager to get all permissions.  
 * `PolyToken.sol` contract is added at contracts/helpers/PolyToken.sol. For now, it has no big use.
 
-## Changed 
+## Changed
 * ModuleRegistry only holds the module type of modules only not there names or cost anymore.   
 * No More ModuleReputation struct for counting the reputation of module. Now `reputation` mapping only contains the list of the addresses those used that module factory.    
 * `checkModule()` of ModuleRegistry contract rename to `useModule()` with same function parameters.   
@@ -113,6 +120,3 @@ All notable changes to this project will be documented in this file.
 * `SafeMath.sol` contract is replaced by the zeppelin-solidity library contract .  
 *  No more `SecurityTokens` and `symbol` information will be directly part of the SecurityTokenRegistry. Those information will accessed by inheriting the `ISecurityTokenRegistry`.   
 * Remove the Delegable.sol, AclHelpers.sol, DelegablePorting.sol contracts. Now permission manager factory takes their place . * `delegates` mapping removed from the GeneralTransferManager.  
-
-
-

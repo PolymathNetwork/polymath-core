@@ -114,7 +114,7 @@ contract CappedSTO is ISTO {
     * @return Whether the cap was reached
     */
     function capReached() public view returns (bool) {
-        return fundsRaised >= cap;
+        return tokensSold >= cap;
     }
 
     function getRaisedEther() public view returns (uint256) {

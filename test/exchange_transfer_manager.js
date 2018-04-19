@@ -15,7 +15,7 @@ const ExchangeTransferManagerFactory = artifacts.require('./ExchangeTransferMana
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 const ExchangeTransferManager = artifacts.require('./ExchangeTransferManager');
-const PolyToken = artifacts.require('./PolyToken.sol');
+const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -102,7 +102,7 @@ contract('ExchangeTransferManager', accounts => {
         // ----------- POLYMATH NETWORK Configuration ------------
 
         // Step 0: Deploy the Polytoken Contract
-        I_PolyToken = await PolyToken.new();
+        I_PolyToken = await PolyTokenFaucet.new();
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -279,14 +279,14 @@ contract('ExchangeTransferManager', accounts => {
 
         it("Should successfully attach the STO factory with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner });
-            assert.equal(tx.logs[3].args._type.toNumber(), stoKey, "DummySTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._type.toNumber(), stoKey, "DummySTO doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[3].args._name)
+                web3.utils.toAscii(tx.logs[2].args._name)
                 .replace(/\u0000/g, ''),
                 "DummySTO",
                 "DummySTOFactory module was not added"
             );
-            I_DummySTO = DummySTO.at(tx.logs[3].args._module);
+            I_DummySTO = DummySTO.at(tx.logs[2].args._module);
         });
     });
 
@@ -346,14 +346,14 @@ contract('ExchangeTransferManager', accounts => {
           }, [account_exchange]);
 
           const tx = await I_SecurityToken.addModule(I_ExchangeTransferManagerFactory.address, bytesExchange, 0, 0, true, { from: token_owner });
-          assert.equal(tx.logs[3].args._type.toNumber(), transferManagerKey, "ExchangeTransferManager doesn't get deployed");
+          assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "ExchangeTransferManager doesn't get deployed");
           assert.equal(
-              web3.utils.toAscii(tx.logs[3].args._name)
+              web3.utils.toAscii(tx.logs[2].args._name)
               .replace(/\u0000/g, ''),
               "ExchangeTransferManager",
               "ExchangeTransferManager module was not added"
           );
-          I_ExchangeTransferManager = ExchangeTransferManager.at(tx.logs[3].args._module);
+          I_ExchangeTransferManager = ExchangeTransferManager.at(tx.logs[2].args._module);
 
 
           // Add exchange address to General Transfer Manager whitelist

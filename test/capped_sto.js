@@ -13,7 +13,6 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyToken = artifacts.require('./PolyToken.sol');
 const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
@@ -49,7 +48,6 @@ contract('CappedSTO', accounts => {
     let I_STVersion;
     let I_SecurityToken;
     let I_CappedSTO;
-    let I_PolyToken;
     let I_PolyFaucet;
 
     // SecurityToken Details for funds raise Type ETH
@@ -121,8 +119,8 @@ contract('CappedSTO', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the Polytoken Contract
-        I_PolyToken = await PolyToken.new();
+        // Step 0: Deploy the token Faucet
+        I_PolyFaucet = await PolyTokenFaucet.new();
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -136,7 +134,7 @@ contract('CappedSTO', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -146,7 +144,7 @@ contract('CappedSTO', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -156,7 +154,7 @@ contract('CappedSTO', accounts => {
 
         // STEP 4: Deploy the CappedSTOFactory
 
-        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, { from: token_owner });
+        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, { from: token_owner });
 
         assert.notEqual(
             I_CappedSTOFactory.address.valueOf(),
@@ -200,7 +198,7 @@ contract('CappedSTO', accounts => {
         // Step 8: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolyToken.address,
+            I_PolyFaucet.address,
             I_ModuleRegistry.address,
             I_TickerRegistry.address,
             I_STVersion.address,
@@ -217,9 +215,6 @@ contract('CappedSTO', accounts => {
         // Step 8: Set the STR in TickerRegistry
         await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
         await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-
-        // Step 9: Deploy the token Faucet
-        I_PolyFaucet = await PolyTokenFaucet.new();
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -285,7 +280,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to launch the STO due to rate is 0", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
@@ -298,7 +293,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to launch the STO due to startTime > endTime", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
@@ -311,7 +306,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to launch the STO due to cap is of 0 securityToken", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
@@ -325,17 +320,17 @@ contract('CappedSTO', accounts => {
 
 
         it("Should successfully attach the STO factory with the security token", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
 
-            assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[3].args._name)
+                web3.utils.toAscii(tx.logs[2].args._name)
                 .replace(/\u0000/g, ''),
                 "CappedSTO",
                 "CappedSTOFactory module was not added"
             );
-            I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
+            I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
         });
     });
 
@@ -601,14 +596,14 @@ contract('CappedSTO', accounts => {
 
                 const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
 
-                assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
+                assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
-                    web3.utils.toAscii(tx.logs[3].args._name)
+                    web3.utils.toAscii(tx.logs[2].args._name)
                     .replace(/\u0000/g, ''),
                     "CappedSTO",
                     "CappedSTOFactory module was not added"
                 );
-                I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
+                I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
             });
 
         });

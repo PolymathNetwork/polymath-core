@@ -13,7 +13,8 @@ contract GeneralPermissionManagerFactory is IModuleFactory {
     }
 
     function deploy(bytes /* _data */) external returns(address) {
-        require(polyToken.transferFrom(msg.sender, owner, getCost()));
+        if(getCost() > 0)
+            require(polyToken.transferFrom(msg.sender, owner, getCost()));
         return address(new GeneralPermissionManager(msg.sender, address(polyToken)));
     }
 

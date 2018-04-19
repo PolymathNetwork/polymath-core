@@ -41,8 +41,8 @@ contract CappedSTO is ISTO {
     */
     event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
 
-    function CappedSTO(address _securityToken) public
-    IModule(_securityToken)
+    function CappedSTO(address _securityToken, address _polyAddress) public
+    IModule(_securityToken, _polyAddress)
     {
     }
 

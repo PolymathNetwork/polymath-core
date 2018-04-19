@@ -36,10 +36,6 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     address public moduleRegistry;
 
-    uint8 public constant PERMISSIONMANAGER_KEY = 1;
-    uint8 public constant TRANSFERMANAGER_KEY = 2;
-    uint8 public constant STO_KEY = 3;
-
     // Module list should be order agnostic!
     mapping (uint8 => ModuleData[]) public modules;
     mapping (uint8 => bool) public modulesLocked;

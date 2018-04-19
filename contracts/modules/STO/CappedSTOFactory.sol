@@ -17,7 +17,7 @@ contract CappedSTOFactory is IModuleFactory {
         if(getCost() > 0)
             require(polyToken.transferFrom(msg.sender, owner, getCost()));
         //Check valid bytes - can only call module init function
-        CappedSTO cappedSTO = new CappedSTO(msg.sender);
+        CappedSTO cappedSTO = new CappedSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
         require(getSig(_data) == cappedSTO.getInitFunction());
         require(address(cappedSTO).call(_data));

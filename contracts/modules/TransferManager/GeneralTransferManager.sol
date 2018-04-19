@@ -51,9 +51,9 @@ contract GeneralTransferManager is ITransferManager {
         uint256 _toTime
     );
 
-    function GeneralTransferManager(address _securityToken)
+    function GeneralTransferManager(address _securityToken, address _polyAddress)
     public
-    IModule(_securityToken)
+    IModule(_securityToken, _polyAddress)
     {
     }
 

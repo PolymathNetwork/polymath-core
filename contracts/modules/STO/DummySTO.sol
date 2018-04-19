@@ -19,8 +19,8 @@ contract DummySTO is ISTO {
 
     mapping (address => uint256) public investors;
 
-    function DummySTO(address _securityToken) public
-    IModule(_securityToken)
+    function DummySTO(address _securityToken, address _polyAddress) public
+    IModule(_securityToken, _polyAddress)
     {
     }
 

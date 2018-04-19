@@ -2,7 +2,7 @@ pragma solidity ^0.4.21;
 
 import "./ISecurityToken.sol";
 import "./IModuleFactory.sol";
-
+import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 //Simple interface that any module contracts should implement
 contract IModule {
@@ -11,13 +11,18 @@ contract IModule {
 
     address public securityToken;
 
-    function IModule(address _securityToken) public {
+    bytes32 public FEE_ADMIN = "FEE_ADMIN";
+
+    ERC20 public polyToken;
+
+    function IModule(address _securityToken, address _polyAddress) public {
         securityToken = _securityToken;
         factory = msg.sender;
+        polyToken = ERC20(_polyAddress);
     }
 
     function getInitFunction() public returns (bytes4);
-    
+
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
         bool isOwner = msg.sender == ISecurityToken(securityToken).owner();
@@ -42,4 +47,9 @@ contract IModule {
     }
 
     function getPermissions() public view returns(bytes32[]);
+
+    function takeFee(uint256 _amount) public withPerm(FEE_ADMIN) returns(bool) {
+        require(polyToken.transferFrom(address(this), IModuleFactory(factory).owner(), _amount));
+        return true;
+    }
 }

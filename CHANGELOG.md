@@ -3,21 +3,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased](https://github.com/PolymathNetwork/polymath-core/compare/npm-publish-2...master)
 
-[__1.0.2__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __19-04-18__
+[__1.0.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __17-04-18__
 
-## Changed   
+## Changed    
+
+* Fixed `capReached()` which was checking fundsRaised agains cap, but the cap is expressed in tokens.    
 * Constant key variables migrated from the securityToken to ISecurityToken contract.   
 
 ## Added   
 
-* IModule interface takes the polyToken contract address as the constructor argument to wrapping all the factories with the polyToken   
+* IModule contract takes the polyToken contract address as the constructor argument to wrapping all the factories with the polyToken contract address.      
 * `takeFee()` new function introduced to extract the POLY token from the factory. It only be called by the owner of the factory.      
 
-[__1.0.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __17-04-18__
-
-## Changed
-
-* Fixed `capReached()` which was checking fundsRaised agains cap, but the cap is expressed in tokens.
 
 ***
 

@@ -16,7 +16,6 @@ All notable changes to this project will be documented in this file.
 * `takeFee()` new function introduced to extract the POLY token from the factory. It only be called by the owner of the factory.      
 * Added ability for issuer to provide a signed piece of data to allow investors to whitelist themselves.
 
-
 ***
 
 [__0.3.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __06-04-18__

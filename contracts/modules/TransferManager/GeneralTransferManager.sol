@@ -60,7 +60,7 @@ contract GeneralTransferManager is ITransferManager {
     public
     IModule(_securityToken, _polyAddress)
     {
-      signingAddress = _securityToken;
+      signingAddress = ISecurityToken(_securityToken).owner();
     }
 
     function getInitFunction() public returns(bytes4) {

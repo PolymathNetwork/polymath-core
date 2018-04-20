@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 
 * IModule contract takes the polyToken contract address as the constructor argument to wrapping all the factories with the polyToken contract address.      
 * `takeFee()` new function introduced to extract the POLY token from the factory. It only be called by the owner of the factory.      
+* Added ability for issuer to provide a signed piece of data to allow investors to whitelist themselves.
 
 
 ***
@@ -22,7 +23,7 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 * Add `emit` keyword to emit the events.    
-* Two new variable is added at the time of registeration of ticker. `swarmHash` represents the off-chain data storage location on IPFS and `owner` It reperesent the ethereum address of the owner.       
+* Two new variable is added at the time of registration of ticker. `swarmHash` represents the off-chain data storage location on IPFS and `owner` It reperesent the ethereum address of the owner.       
 * `LogRegisterTicker` emits two more variable called `_swarmHash` and `_owner`.   
 * Two events are added in `GeneralPermissionManager` contract to facilitate the notifications for the UI end.
           __`LogChangePermission`__ :Emit when permissions to a delegate get changed.    

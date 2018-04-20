@@ -18,6 +18,9 @@ contract GeneralTransferManager is ITransferManager {
     //Address from which issuances come
     address public issuanceAddress = address(0);
 
+    //Address which can sign whitelist changes
+    address public signingAddress = address(0);
+
     bytes32 public constant WHITELIST = "WHITELIST";
     bytes32 public constant FLAGS = "FLAGS";
 
@@ -25,6 +28,7 @@ contract GeneralTransferManager is ITransferManager {
     struct TimeRestriction {
         uint256 fromTime;
         uint256 toTime;
+        uint256 updated;
     }
 
     // An address can only send / receive tokens once their corresponding uint256 > block.number
@@ -42,6 +46,7 @@ contract GeneralTransferManager is ITransferManager {
     event LogAllowAllTransfers(bool _allowAllTransfers);
     event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
+    event LogChangeSigningAddress(address _signingAddress);
 
     event LogModifyWhitelist(
         address _investor,
@@ -55,6 +60,7 @@ contract GeneralTransferManager is ITransferManager {
     public
     IModule(_securityToken, _polyAddress)
     {
+      signingAddress = _securityToken;
     }
 
     function getInitFunction() public returns(bytes4) {
@@ -64,6 +70,11 @@ contract GeneralTransferManager is ITransferManager {
     function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
         issuanceAddress = _issuanceAddress;
         emit LogChangeIssuanceAddress(_issuanceAddress);
+    }
+
+    function changeSigningAddress(address _signingAddress) public withPerm(FLAGS) {
+        signingAddress = _signingAddress;
+        emit LogChangeSigningAddress(_signingAddress);
     }
 
     function changeAllowAllTransfers(bool _allowAllTransfers) public withPerm(FLAGS) {
@@ -114,7 +125,7 @@ contract GeneralTransferManager is ITransferManager {
     */
     function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
-        whitelist[_investor] = TimeRestriction(_fromTime, _toTime);
+        whitelist[_investor] = TimeRestriction(_fromTime, _toTime, now);
         emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime);
     }
 
@@ -128,6 +139,33 @@ contract GeneralTransferManager is ITransferManager {
         for (uint256 i = 0; i < _investors.length; i++) {
             modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i]);
         }
+    }
+
+    /**
+    * @dev adds or removes addresses from the whitelist - can be called by anyone with a valid signature
+    * @param _investor is the address to whitelist
+    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _validFrom is the time that this signature is valid from
+    * @param _validTo is the time that this signature is valid until
+    * @param _v issuer signature
+    * @param _r issuer signature
+    * @param _s issuer signature
+    */
+    function modifyWhitelistSigned(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _validFrom, uint256 _validTo, uint8 _v, bytes32 _r, bytes32 _s) public {
+        require(_validFrom > whitelist[_investor].updated);
+        require(_validTo <= now);
+        bytes32 hash = keccak256(this, _investor, _fromTime, _toTime, _validTo);
+        checkSig(hash, _v, _r, _s);
+        //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
+        whitelist[_investor] = TimeRestriction(_fromTime, _toTime, now);
+        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime);
+    }
+
+    function checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
+        //Check that the signature is valid
+        //sig should be signing - _investor, _fromTime & _toTime and be signed by the issuer address
+        require(ecrecover(keccak256("\x19Ethereum Signed Message:\n32", _hash), _v, _r, _s) == signingAddress);
     }
 
     function getPermissions() public view returns(bytes32[]) {

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./ISTO.sol";
 import "../../interfaces/IST20.sol";
@@ -19,7 +19,7 @@ contract DummySTO is ISTO {
 
     mapping (address => uint256) public investors;
 
-    function DummySTO(address _securityToken, address _polyAddress) public
+    constructor (address _securityToken, address _polyAddress) public
     IModule(_securityToken, _polyAddress)
     {
     }
@@ -36,7 +36,7 @@ contract DummySTO is ISTO {
     }
 
     function generateTokens(address _investor, uint256 _amount) public onlyOwner {
-        require(_amount > 0);
+        require(_amount > 0, "Amount should be greater than 0");
         IST20(securityToken).mint(_investor, _amount);
         if (investors[_investor] == 0) {
             investorCount = investorCount + 1;

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./SecurityToken.sol";
 import "../SecurityTokenRegistry.sol";
@@ -14,7 +14,7 @@ contract STVersionProxy001 is ISTProxy {
     bool addTransferManager = true;
     bool addPermissionManager = true;
 
-    function STVersionProxy001(address _transferManagerFactory, address _permissionManagerFactory) public {
+    constructor (address _transferManagerFactory, address _permissionManagerFactory) public {
         transferManagerFactory = _transferManagerFactory;
         permissionManagerFactory = _permissionManagerFactory;
     }

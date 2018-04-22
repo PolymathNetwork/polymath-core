@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
@@ -71,7 +71,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         _;
     }
 
-    function SecurityToken(
+    constructor (
         string _name,
         string _symbol,
         uint8 _decimals,
@@ -113,17 +113,17 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         //Check that module exists in registry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        require(modules[moduleFactory.getType()].length < MAX_MODULES);
+        require(modules[moduleFactory.getType()].length < MAX_MODULES, "Limit of MAX MODULES is reached");
         uint256 moduleCost = moduleFactory.getCost();
-        require(moduleCost <= _maxCost);
+        require(moduleCost <= _maxCost, "Max Cost is always be greater than module cost");
         //Check that this module has not already been set as locked
-        require(!modulesLocked[moduleFactory.getType()]);
+        require(!modulesLocked[moduleFactory.getType()], "Module has already been set as locked");
         //Approve fee for module
-        require(polyToken.approve(_moduleFactory, moduleCost));
+        require(polyToken.approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
         //Approve ongoing budget
-        require(polyToken.approve(module, _budget));
+        require(polyToken.approve(module, _budget), "Not able to approve the budget");
         //Add to SecurityToken module map
         modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module));
         modulesLocked[moduleFactory.getType()] = _locked;
@@ -137,9 +137,11 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     * @param _moduleIndex is the index of the module within the chosen type
     */
     function removeModule(uint8 _moduleType, uint8 _moduleIndex) external onlyOwner {
-        require(_moduleIndex < modules[_moduleType].length);
-        require(modules[_moduleType][_moduleIndex].moduleAddress != address(0));
-        require(!modulesLocked[_moduleType]);
+        require(_moduleIndex < modules[_moduleType].length,
+        "Module index doesn't exist as per the choosen module type");
+        require(modules[_moduleType][_moduleIndex].moduleAddress != address(0),
+        "Module contract address should not be 0x");
+        require(!modulesLocked[_moduleType], "Module should not be locked");
         //Take the last member of the list, and replace _moduleIndex with this, then shorten the list by one
         emit LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
         modules[_moduleType][_moduleIndex] = modules[_moduleType][modules[_moduleType].length - 1];
@@ -191,7 +193,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     * Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
     */
     function withdrawPoly(uint256 _amount) public onlyOwner {
-        require(polyToken.transfer(owner, _amount));
+        require(polyToken.transfer(owner, _amount), "In-sufficient balance");
     }
 
     /**
@@ -208,7 +210,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
      * @dev Overloaded version of the transfer function
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
-        require(verifyTransfer(msg.sender, _to, _value));
+        require(verifyTransfer(msg.sender, _to, _value), "Transfer is not valid");
         return super.transfer(_to, _value);
     }
 
@@ -216,7 +218,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
      * @dev Overloaded version of the transferFrom function
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-        require(verifyTransfer(_from, _to, _value));
+        require(verifyTransfer(_from, _to, _value), "Transfer is not valid");
         return super.transferFrom(_from, _to, _value);
     }
 
@@ -239,7 +241,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
     */
     function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) returns (bool success) {
-        require(verifyTransfer(address(0), _investor, _amount));
+        require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);
         emit Mint(_investor, _amount);

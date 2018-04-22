@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./ISecurityToken.sol";
 import "./IModuleFactory.sol";
@@ -15,7 +15,7 @@ contract IModule {
 
     ERC20 public polyToken;
 
-    function IModule(address _securityToken, address _polyAddress) public {
+    constructor (address _securityToken, address _polyAddress) public {
         securityToken = _securityToken;
         factory = msg.sender;
         polyToken = ERC20(_polyAddress);

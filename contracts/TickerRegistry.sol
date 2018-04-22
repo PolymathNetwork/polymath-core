@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 /*
   Allows issuers to reserve their token symbols ahead of actually generating their security token.
@@ -43,7 +43,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
-    function TickerRegistry() public {
+    constructor() public {
 
     }
 
@@ -57,9 +57,9 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      * @param _swarmHash Off-chain details of the issuer and token
      */
     function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) public {
-        require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10);
+        require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         string memory symbol = upper(_symbol);
-        require(expiryCheck(symbol));
+        require(expiryCheck(symbol), "Ticker is already reserved");
         registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, _swarmHash, false);
         emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now);
     }
@@ -69,7 +69,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
       * @param _newExpiry new time period for token symbol expiry
       */
     function changeExpiryLimit(uint256 _newExpiry) public onlyOwner {
-        require(_newExpiry >= 1 days);
+        require(_newExpiry >= 1 days, "Expiry should greater than or equal to 1 day");
         uint256 _oldExpiry = expiryLimit;
         expiryLimit = _newExpiry;
         emit LogChangeExpiryLimit(_oldExpiry, _newExpiry);
@@ -81,7 +81,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      * @return bool
      */
     function setTokenRegistry(address _stRegistry) public onlyOwner returns(bool) {
-        require(_stRegistry != address(0) && strAddress == address(0));
+        require(_stRegistry != address(0) && strAddress == address(0), "Token registry contract is already set or input argument is 0x");
         strAddress = _stRegistry;
         return true;
     }
@@ -95,10 +95,10 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      */
     function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool) {
         string memory symbol = upper(_symbol);
-        require(msg.sender == strAddress);
-        require(registeredSymbols[symbol].status != true);
-        require(registeredSymbols[symbol].owner == _owner);
-        require(registeredSymbols[symbol].timestamp.add(expiryLimit) >= now);
+        require(msg.sender == strAddress, "msg.sender should be SecurityTokenRegistry contract");
+        require(registeredSymbols[symbol].status != true, "Symbol status should not equal to true");
+        require(registeredSymbols[symbol].owner == _owner, "Owner of the symbol should matched with the requested issuer address");
+        require(registeredSymbols[symbol].timestamp.add(expiryLimit) >= now, "Ticker should not be expired");
         registeredSymbols[symbol].tokenName = _tokenName;
         registeredSymbols[symbol].status = true;
         return true;

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./DummySTO.sol";
 import "../../interfaces/IModuleFactory.sol";
@@ -7,7 +7,7 @@ import "../../interfaces/IModule.sol";
 
 contract DummySTOFactory is IModuleFactory {
 
-    function DummySTOFactory(address _polyAddress) public
+    constructor (address _polyAddress) public
       IModuleFactory(_polyAddress)
     {
 
@@ -15,13 +15,13 @@ contract DummySTOFactory is IModuleFactory {
 
 
     function deploy(bytes _data) external returns(address) {
-        if(getCost() > 0)
-            require(polyToken.transferFrom(msg.sender, owner, getCost()));
+        if (getCost() > 0)
+            require(polyToken.transferFrom(msg.sender, owner, getCost()), "Failed transferFrom because of sufficent Allowance is not provided");
         //Check valid bytes - can only call module init function
         DummySTO dummySTO = new DummySTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(getSig(_data) == dummySTO.getInitFunction());
-        require(address(dummySTO).call(_data));
+        require(getSig(_data) == dummySTO.getInitFunction(), "Provided data is not valid");
+        require(address(dummySTO).call(_data), "Un-successfull call");
         return address(dummySTO);
     }
 

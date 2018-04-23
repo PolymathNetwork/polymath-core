@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./ITransferManager.sol";
 
@@ -56,7 +56,7 @@ contract GeneralTransferManager is ITransferManager {
         uint256 _toTime
     );
 
-    function GeneralTransferManager(address _securityToken, address _polyAddress)
+    constructor (address _securityToken, address _polyAddress)
     public
     IModule(_securityToken, _polyAddress)
     {

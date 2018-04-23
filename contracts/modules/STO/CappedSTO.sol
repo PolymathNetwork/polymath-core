@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./ISTO.sol";
 import "../../interfaces/IST20.sol";
@@ -41,7 +41,7 @@ contract CappedSTO is ISTO {
     */
     event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
 
-    function CappedSTO(address _securityToken, address _polyAddress) public
+    constructor (address _securityToken, address _polyAddress) public
     IModule(_securityToken, _polyAddress)
     {
     }
@@ -66,10 +66,10 @@ contract CappedSTO is ISTO {
     public
     onlyFactory
     {
-        require(_rate > 0);
-        require(_fundsReceiver != address(0));
-        require(_startTime >= now && _endTime > _startTime);
-        require(_cap > 0);
+        require(_rate > 0, "Rate of token should be greater than 0");
+        require(_fundsReceiver != address(0), "Zero address is not permitted");
+        require(_startTime >= now && _endTime > _startTime, "Date parameters are not valid");
+        require(_cap > 0, "Cap should be greater than 0");
         startTime = _startTime;
         endTime = _endTime;
         cap = _cap;
@@ -88,7 +88,7 @@ contract CappedSTO is ISTO {
       * @param _beneficiary Address performing the token purchase
       */
     function buyTokens(address _beneficiary) public payable {
-        require(fundraiseType == FundraiseType.ETH);
+        require(fundraiseType == FundraiseType.ETH, "ETH should be the mode of investment");
 
         uint256 weiAmount = msg.value;
         _processTx(_beneficiary, weiAmount);
@@ -102,8 +102,8 @@ contract CappedSTO is ISTO {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyTokensWithPoly(uint256 _investedPOLY) public {
-        require(fundraiseType == FundraiseType.POLY);
-        require(verifyInvestment(msg.sender, _investedPOLY));
+        require(fundraiseType == FundraiseType.POLY, "POLY should be the mode of investment");
+        require(verifyInvestment(msg.sender, _investedPOLY), "Not valid Investment");
         _processTx(msg.sender, _investedPOLY);
         _forwardPoly(msg.sender, wallet, _investedPOLY);
         _postValidatePurchase(msg.sender, _investedPOLY);
@@ -171,10 +171,10 @@ contract CappedSTO is ISTO {
     * @param _investedAmount Value in wei involved in the purchase
     */
     function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal view {
-        require(_beneficiary != address(0));
-        require(_investedAmount != 0);
-        require(tokensSold.add(_getTokenAmount(_investedAmount)) <= cap);
-        require(now >= startTime && now <= endTime);
+        require(_beneficiary != address(0), "Beneficiary address should not be 0x");
+        require(_investedAmount != 0, "Amount invested should not be equal to 0");
+        require(tokensSold.add(_getTokenAmount(_investedAmount)) <= cap, "Investment more than cap is not allowed");
+        require(now >= startTime && now <= endTime, "Offering is closed/Not yet started");
     }
 
     /**
@@ -192,7 +192,7 @@ contract CappedSTO is ISTO {
     * @param _tokenAmount Number of tokens to be emitted
     */
     function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-        require(IST20(securityToken).mint(_beneficiary, _tokenAmount));
+        require(IST20(securityToken).mint(_beneficiary, _tokenAmount), "Error in minting the tokens");
     }
 
     /**

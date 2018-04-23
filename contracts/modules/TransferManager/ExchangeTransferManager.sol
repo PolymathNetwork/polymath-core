@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./ITransferManager.sol";
 
@@ -16,7 +16,7 @@ contract ExchangeTransferManager is ITransferManager {
 
     event LogModifyWhitelist(address _investor, uint256 _dateAdded, address _addedBy);
 
-    function ExchangeTransferManager(address _securityToken, address _polyAddress)
+    constructor (address _securityToken, address _polyAddress)
     public
     IModule(_securityToken, _polyAddress)
     {
@@ -46,7 +46,7 @@ contract ExchangeTransferManager is ITransferManager {
     }
 
     function modifyWhitelistMulti(address[] _investors, bool[] _valids) public onlyFactoryOwner {
-        require(_investors.length == _valids.length);
+        require(_investors.length == _valids.length, "Length of arrays are un-equal");
         for (uint256 i = 0; i < _investors.length; i++) {
             modifyWhitelist(_investors[i], _valids[i]);
         }

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
@@ -9,7 +9,7 @@ contract IModuleFactory is Ownable {
 
     ERC20 public polyToken;
 
-    function IModuleFactory(address _polyAddress) public {
+    constructor (address _polyAddress) public {
       polyToken = ERC20(_polyAddress);
     }
 

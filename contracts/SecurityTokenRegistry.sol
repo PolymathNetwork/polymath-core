@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./interfaces/ITickerRegistry.sol";
 import "./tokens/SecurityToken.sol";
@@ -16,7 +16,7 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @dev Constructor used to set the essentials addresses to facilitate
      * the creation of the security token
      */
-    function SecurityTokenRegistry(
+    constructor (
         address _polyAddress,
         address _moduleRegistry,
         address _tickerRegistry,
@@ -40,8 +40,8 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @param _tokenDetails off-chain details of the token
      */
     function generateSecurityToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails) public {
-        require(bytes(_name).length > 0 && bytes(_symbol).length > 0);
-        require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name));
+        require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
+        require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
         string memory symbol = upper(_symbol);
         address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
         _name,

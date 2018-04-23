@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./IPermissionManager.sol";
 
@@ -25,7 +25,7 @@ contract GeneralPermissionManager is IPermissionManager {
     event LogAddPermission(address _delegate, bytes32 _details, uint256 _timestamp);
 
     /// @notice constructor
-    function GeneralPermissionManager(address _securityToken, address _polyAddress) public
+    constructor (address _securityToken, address _polyAddress) public
     IModule(_securityToken, _polyAddress)
     {
     }

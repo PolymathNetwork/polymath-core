@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.21;
 
 import "./ITransferManager.sol";
 
@@ -56,7 +56,7 @@ contract GeneralTransferManager is ITransferManager {
         uint256 _toTime
     );
 
-    constructor (address _securityToken, address _polyAddress)
+    function GeneralTransferManager(address _securityToken, address _polyAddress)
     public
     IModule(_securityToken, _polyAddress)
     {
@@ -155,7 +155,7 @@ contract GeneralTransferManager is ITransferManager {
     function modifyWhitelistSigned(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _validFrom, uint256 _validTo, uint8 _v, bytes32 _r, bytes32 _s) public {
         require(_validFrom > whitelist[_investor].updated);
         require(_validTo <= now);
-        bytes32 hash = keccak256(this, _investor, _fromTime, _toTime, _validTo);
+        bytes32 hash = keccak256(this, _investor, _fromTime, _toTime, _validFrom, _validTo);
         checkSig(hash, _v, _r, _s);
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, now);

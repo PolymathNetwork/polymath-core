@@ -7,7 +7,7 @@ import "../../interfaces/IModule.sol";
 
 contract CappedSTOFactory is IModuleFactory {
 
-    constructor CappedSTOFactory(address _polyAddress) public
+    constructor (address _polyAddress) public
       IModuleFactory(_polyAddress)
     {
 

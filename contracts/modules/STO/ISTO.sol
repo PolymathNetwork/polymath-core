@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "../../interfaces/IModule.sol";
 import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
@@ -22,12 +22,12 @@ contract ISTO is IModule {
     function getNumberInvestors() public view returns (uint256);
 
     function _check(uint8 _fundraiseType, address _polyToken) internal {
-        require(_fundraiseType == 0 || _fundraiseType == 1);
+        require(_fundraiseType == 0 || _fundraiseType == 1, "Not a valid fundraise type");
         if (_fundraiseType == 0) {
             fundraiseType = FundraiseType.ETH;
         }
         if (_fundraiseType == 1) {
-            require(_polyToken != address(0));
+            require(_polyToken != address(0), "Address of the polyToken should not be 0x");
             fundraiseType = FundraiseType.POLY;
             polyAddress = _polyToken;
         }

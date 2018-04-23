@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "./interfaces/IModuleRegistry.sol";
 import "./interfaces/IModuleFactory.sol";
@@ -32,9 +32,10 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     function useModule(address _moduleFactory) external {
         //msg.sender must be a security token - below will throw if not
         ISecurityTokenRegistry(securityTokenRegistry).getSecurityTokenData(msg.sender);
-        require(registry[_moduleFactory] != 0);
+        require(registry[_moduleFactory] != 0, "ModuleFactory type should not be 0");
         //To use a module, either it must be verified, or owned by the ST owner
-        require(verified[_moduleFactory]||(IModuleFactory(_moduleFactory).owner() == ISecurityToken(msg.sender).owner()));
+        require(verified[_moduleFactory]||(IModuleFactory(_moduleFactory).owner() == ISecurityToken(msg.sender).owner()),
+        "Module factory is not verified as well as not called by the owner");
         reputation[_moduleFactory].push(msg.sender);
         emit LogModuleUsed (_moduleFactory, msg.sender);
     }
@@ -44,9 +45,9 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     * @param _moduleFactory is the address of the module factory to be registered
     */
     function registerModule(address _moduleFactory) external returns(bool) {
-        require(registry[_moduleFactory] == 0);
+        require(registry[_moduleFactory] == 0, "Module factory should not be pre-registered");
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        require(moduleFactory.getType() != 0);
+        require(moduleFactory.getType() != 0, "Factory type should not equal to 0");
         registry[_moduleFactory] = moduleFactory.getType();
         moduleList[moduleFactory.getType()].push(_moduleFactory);
         reputation[_moduleFactory] = new address[](0);
@@ -62,7 +63,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     */
     function verifyModule(address _moduleFactory, bool _verified) external onlyOwner returns(bool) {
         //Must already have been registered
-        require(registry[_moduleFactory] != 0);
+        require(registry[_moduleFactory] != 0, "Module factory should have been already registered");
         verified[_moduleFactory] = _verified;
         emit LogModuleVerified(_moduleFactory, _verified);
         return true;
@@ -73,7 +74,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     * @param _securityTokenRegistry is the address of the token registry
     */
     function setTokenRegistry(address _securityTokenRegistry) public onlyOwner {
-        require(_securityTokenRegistry != address(0));
+        require(_securityTokenRegistry != address(0), "Address of securityTokenregistry should not be 0x");
         securityTokenRegistry = _securityTokenRegistry;
     }
 

@@ -4,7 +4,7 @@ pragma solidity ^0.4.23;
 contract Migrations {
 
     address public owner;
-  
+
     uint public lastCompletedMigration;
 
     modifier restricted() {
@@ -12,7 +12,7 @@ contract Migrations {
         _;
     }
 
-    constructor() public {
+    function Migrations() public {
         owner = msg.sender;
     }
 

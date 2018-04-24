@@ -80,7 +80,7 @@ contract GeneralPermissionManager is IPermissionManager {
     withPerm(CHANGE_PERMISSION)
     returns(bool)
     {
-        require(delegateDetails[_delegate] != bytes32(0));
+        require(delegateDetails[_delegate] != bytes32(0), "Delegate details not set");
         perms[_module][_delegate][_perm] = _valid;
         emit LogChangePermission(_delegate, _module, _perm, _valid, now);
         return true;

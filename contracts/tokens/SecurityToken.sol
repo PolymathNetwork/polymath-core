@@ -64,9 +64,9 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
             isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
         }
         if (_fallback && !isModuleType) {
-            require(msg.sender == owner);
+            require(msg.sender == owner, "Sender is not owner");
         } else {
-            require(isModuleType);
+            require(isModuleType, "Sender is not correct module type");
         }
         _;
     }
@@ -200,9 +200,9 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     * @dev allows owner to approve more POLY to one of the modules
     */
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
-        require(_moduleType != 0);
-        require(_moduleIndex < modules[_moduleType].length);
-        require(polyToken.approve(modules[_moduleType][_moduleIndex].moduleAddress, _budget));
+        require(_moduleType != 0, "Module type cannot be zero");
+        require(_moduleIndex < modules[_moduleType].length, "Incorrrect module index");
+        require(polyToken.approve(modules[_moduleType][_moduleIndex].moduleAddress, _budget), "Insufficient balance to approve");
         emit LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
     }
 

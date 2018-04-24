@@ -177,7 +177,7 @@ contract('GeneralTransferManager', accounts => {
 
         // Step 7: Deploy the STversionProxy contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, I_GeneralPermissionManagerFactory.address);
+        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address);
 
         assert.notEqual(
             I_STVersion.address.valueOf(),
@@ -240,12 +240,12 @@ contract('GeneralTransferManager', accounts => {
                 LogAddModule.watch(function(error, log){ resolve(log);});
             });
 
-            // Verify that GeneralPermissionManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), 1);
+            // Verify that GeneralTransferManager module get added successfully or not
+            assert.equal(log.args._type.toNumber(), 2);
             assert.equal(
                 web3.utils.toAscii(log.args._name)
                 .replace(/\u0000/g, ''),
-                "GeneralPermissionManager"
+                "GeneralTransferManager"
             );
             LogAddModule.stopWatching();
         });
@@ -260,14 +260,6 @@ contract('GeneralTransferManager', accounts => {
             "GeneralTransferManager contract was not deployed",
            );
 
-           moduleData = await I_SecurityToken.modules(1, 0);
-           I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
-
-           assert.notEqual(
-            I_GeneralPermissionManager.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManager contract was not deployed",
-           );
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {

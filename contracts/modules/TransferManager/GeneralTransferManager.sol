@@ -132,8 +132,8 @@ contract GeneralTransferManager is ITransferManager {
         uint256[] _fromTimes,
         uint256[] _toTimes
     ) public withPerm(WHITELIST) {
-        require(_investors.length == _fromTimes.length);
-        require(_fromTimes.length == _toTimes.length);
+        require(_investors.length == _fromTimes.length, "Mismatched input lengths");
+        require(_fromTimes.length == _toTimes.length, "Mismatched input lengths");
         for (uint256 i = 0; i < _investors.length; i++) {
             modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i]);
         }
@@ -151,8 +151,8 @@ contract GeneralTransferManager is ITransferManager {
     * @param _s issuer signature
     */
     function modifyWhitelistSigned(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _validFrom, uint256 _validTo, uint8 _v, bytes32 _r, bytes32 _s) public {
-        require(_validFrom <= now);
-        require(_validTo >= now);
+        require(_validFrom <= now, "ValidFrom is too early");
+        require(_validTo >= now, "ValidTo is too late");
         bytes32 hash = keccak256(this, _investor, _fromTime, _toTime, _validFrom, _validTo);
         checkSig(hash, _v, _r, _s);
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
@@ -164,7 +164,7 @@ contract GeneralTransferManager is ITransferManager {
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime & _toTime and be signed by the issuer address
         address signer = ecrecover(keccak256("\x19Ethereum Signed Message:\n32", _hash), _v, _r, _s);
-        require(signer == ISecurityToken(securityToken).owner() || signer == signingAddress);
+        require(signer == ISecurityToken(securityToken).owner() || signer == signingAddress, "Incorrect signer");
     }
 
     function getPermissions() public view returns(bytes32[]) {

@@ -27,29 +27,29 @@ contract IModule {
     modifier withPerm(bytes32 _perm) {
         bool isOwner = msg.sender == ISecurityToken(securityToken).owner();
         bool isFactory = msg.sender == factory;
-        require(isOwner||isFactory||ISecurityToken(securityToken).checkPermission(msg.sender, address(this), _perm));
+        require(isOwner||isFactory||ISecurityToken(securityToken).checkPermission(msg.sender, address(this), _perm), "Permission check failed");
         _;
     }
 
     modifier onlyOwner {
-        require(msg.sender == ISecurityToken(securityToken).owner());
+        require(msg.sender == ISecurityToken(securityToken).owner(), "Sender is not owner");
         _;
     }
 
     modifier onlyFactory {
-        require(msg.sender == factory);
+        require(msg.sender == factory, "Sender is not factory");
         _;
     }
 
     modifier onlyFactoryOwner {
-        require(msg.sender == IModuleFactory(factory).owner());
+        require(msg.sender == IModuleFactory(factory).owner(), "Sender is not factory owner");
         _;
     }
 
     function getPermissions() public view returns(bytes32[]);
 
     function takeFee(uint256 _amount) public withPerm(FEE_ADMIN) returns(bool) {
-        require(polyToken.transferFrom(address(this), IModuleFactory(factory).owner(), _amount));
+        require(polyToken.transferFrom(address(this), IModuleFactory(factory).owner(), _amount), "Unable to take fee");
         return true;
     }
 }

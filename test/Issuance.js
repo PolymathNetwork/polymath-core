@@ -20,7 +20,7 @@ const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
 
-contract('SecurityToken', accounts => {
+contract('Issuance', accounts => {
 
 
     // Accounts Variable declaration
@@ -181,7 +181,7 @@ contract('SecurityToken', accounts => {
 
         // Step 7: Deploy the STversionProxy contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, I_GeneralPermissionManagerFactory.address, {from : account_polymath });
+        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
         assert.notEqual(
             I_STVersion.address.valueOf(),
@@ -246,12 +246,12 @@ contract('SecurityToken', accounts => {
                     LogAddModule.watch(function(error, log){ resolve(log);});
                 });
 
-                // Verify that GeneralPermissionManager module get added successfully or not
-                assert.equal(log.args._type.toNumber(), permissionManagerKey);
+                // Verify that GeneralTransferManager module get added successfully or not
+                assert.equal(log.args._type.toNumber(), transferManagerKey);
                 assert.equal(
                     web3.utils.toAscii(log.args._name)
                     .replace(/\u0000/g, ''),
-                    "GeneralPermissionManager"
+                    "GeneralTransferManager"
                 );
                 LogAddModule.stopWatching();
             });
@@ -266,14 +266,6 @@ contract('SecurityToken', accounts => {
                  "GeneralTransferManager contract was not deployed",
                 );
 
-                moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
-                I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
-
-                assert.notEqual(
-                 I_GeneralPermissionManager.address.valueOf(),
-                 "0x0000000000000000000000000000000000000000",
-                 "GeneralDelegateManager contract was not deployed",
-                );
              });
 
              it("POLYMATH: Should successfully attach the STO factory with the security token", async () => {
@@ -293,7 +285,7 @@ contract('SecurityToken', accounts => {
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [(latestTime() + duration.seconds(5000)), (latestTime() + duration.days(30)), cap, rate, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
 
                 const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: account_polymath, gas: 2500000 });
-     
+
                 assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
                     web3.utils.toAscii(tx.logs[2].args._name)
@@ -319,6 +311,10 @@ contract('SecurityToken', accounts => {
             });
 
             it("Should add the delegate with permission", async() => {
+                 //First attach a permission manager to the token
+                 await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, false, {from: account_polymath});
+                 let moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
+                 I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
                  // Add permission to the deletgate (A regesteration process)
                  await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_polymath});
                  // Providing the permission to the delegate

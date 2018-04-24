@@ -29,8 +29,7 @@ contract('GeneralTransferManager', accounts => {
     let account_polymath;
     let account_issuer;
     let token_owner;
-    let pk_investor1;
-    let pk_investor2;
+    let token_owner_pk;
     let account_investor1;
     let account_investor2;
     let account_investor3;
@@ -100,16 +99,12 @@ contract('GeneralTransferManager', accounts => {
         account_polymath = accounts[0];
         account_issuer = accounts[1];
 
-        pk_investor1 = pk.account_1;
-        pk_investor2 = pk.account_2;
-
-        account_investor1 = pk.public_1;
-        account_investor2 = pk.public_2;
-
-        account_investor3 = accounts[8];
-        account_investor4 = accounts[9];
-
         token_owner = account_issuer;
+        token_owner_pk = pk.account_1;
+
+        account_investor1 = accounts[8];
+        account_investor2 = accounts[9];
+
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
@@ -288,7 +283,7 @@ contract('GeneralTransferManager', accounts => {
         });
     });
 
-    describe("Buy tokens", async() => {
+    describe("Buy tokens using on-chain whitelist", async() => {
 
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
             let errorThrown = false;
@@ -314,7 +309,7 @@ contract('GeneralTransferManager', accounts => {
                     gas: 500000
                 });
 
-            assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
+            assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Jump time
             await increaseTime(5000);
@@ -326,6 +321,168 @@ contract('GeneralTransferManager', accounts => {
                 (await I_SecurityToken.balanceOf(account_investor1)).toNumber(),
                 web3.utils.toWei('1', 'ether')
             );
+        });
+
+    });
+
+    describe("Buy tokens using off-chain whitelist", async() => {
+
+        it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
+            let errorThrown = false;
+            try {
+                await I_DummySTO.generateTokens(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner });
+            } catch(error) {
+                console.log(`Failed because investor isn't present in the whitelist`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should buy the tokens -- Failed due to incorrect signature input", async() => {
+            // Add the Investor in to the whitelist
+            //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
+            let validFrom = latestTime();
+            let validTo = latestTime() + (60 * 60);
+            const sig = signData(account_investor2, account_investor2, fromTime, toTime, validFrom, validTo, token_owner_pk);
+
+            const r = `0x${sig.r.toString('hex')}`;
+            const s = `0x${sig.s.toString('hex')}`;
+            const v = sig.v;
+            let errorThrown = false;
+
+            try {
+              let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
+                  account_investor2,
+                  fromTime,
+                  toTime,
+                  validFrom,
+                  validTo,
+                  v,
+                  r,
+                  s,
+                  {
+                      from: account_investor2,
+                      gas: 500000
+                  });
+            } catch(error) {
+                console.log(`Failed because incorrect sig data`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+
+        });
+
+        it("Should buy the tokens -- Failed due to incorrect signature timing", async() => {
+            // Add the Investor in to the whitelist
+            //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
+            let validFrom = latestTime() - 100;
+            let validTo = latestTime()  - 1;
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, validFrom, validTo, token_owner_pk);
+
+            const r = `0x${sig.r.toString('hex')}`;
+            const s = `0x${sig.s.toString('hex')}`;
+            const v = sig.v;
+
+            let errorThrown = false;
+            try {
+              let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
+                  account_investor2,
+                  fromTime,
+                  toTime,
+                  validFrom,
+                  validTo,
+                  v,
+                  r,
+                  s,
+                  {
+                      from: account_investor2,
+                      gas: 500000
+                  });
+            } catch(error) {
+                console.log(`Failed because incorrect sig data`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+
+        });
+
+        it("Should buy the tokens -- Failed due to incorrect signature signer", async() => {
+            // Add the Investor in to the whitelist
+            //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
+            let validFrom = latestTime();
+            let validTo = latestTime() + (60 * 60);
+
+            const sig = signData(account_investor2, account_investor2, fromTime, toTime, validFrom, validTo, '2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200');
+
+            const r = `0x${sig.r.toString('hex')}`;
+            const s = `0x${sig.s.toString('hex')}`;
+            const v = sig.v;
+            let errorThrown = false;
+
+            try {
+              let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
+                  account_investor2,
+                  fromTime,
+                  toTime,
+                  validFrom,
+                  validTo,
+                  v,
+                  r,
+                  s,
+                  {
+                      from: account_investor2,
+                      gas: 500000
+                  });
+            } catch(error) {
+                console.log(`Failed because incorrect sig data`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+
+        });
+
+        it("Should Buy the tokens", async() => {
+            // Add the Investor in to the whitelist
+            //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
+            let validFrom = latestTime();
+            let validTo = latestTime() + (60 * 60);
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, validFrom, validTo, token_owner_pk);
+
+            const r = `0x${sig.r.toString('hex')}`;
+            const s = `0x${sig.s.toString('hex')}`;
+            const v = sig.v;
+
+            let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
+                account_investor2,
+                fromTime,
+                toTime,
+                validFrom,
+                validTo,
+                v,
+                r,
+                s,
+                {
+                    from: account_investor2,
+                    gas: 500000
+                });
+
+            assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
+
+            // Jump time
+            await increaseTime(5000);
+
+            // Mint some tokens
+            await I_DummySTO.generateTokens(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner });
+
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor2)).toNumber(),
+                web3.utils.toWei('1', 'ether')
+            );
+
         });
 
     });

@@ -4,12 +4,6 @@ const ethUtil = require('ethereumjs-util');
 
 //this, _investor, _fromTime, _toTime, _validTo
 function signData(tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk) {
-// let nonce = 1;//Number(Math.random().toString().slice(2));
-  let accreditedBytes = "0x00";
-  if (accredited) {
-    accreditedBytes = "0x01";
-  }
-  // let nonce = 1;
   let packedData = utils.solidityKeccak256(
       [ "address", "address", "uint256", "uint256", "uint256", "uint256" ],
       [ tmAddress, investorAddress, fromTime, toTime, validFrom, validTo ]

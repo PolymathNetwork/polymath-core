@@ -114,7 +114,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // Step 0: Deploy the token Faucet
         I_PolyFaucet = await PolyTokenFaucet.new();
-        
+
         // STEP 1: Deploy the ModuleRegistry
 
         I_ModuleRegistry = await ModuleRegistry.new({ from: account_polymath });
@@ -168,7 +168,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // Step 6: Deploy the STversionProxy contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, I_GeneralPermissionManagerFactory.address, {from : account_polymath });
+        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
         assert.notEqual(
             I_STVersion.address.valueOf(),
@@ -179,7 +179,7 @@ contract('SecurityTokenRegistry', accounts => {
         // STEP 8: Deploy the CappedSTOFactory
 
         I_TestSTOFactory = await TestSTOFactory.new(I_PolyFaucet.address, { from: token_owner });
-        
+
         assert.notEqual(
             I_TestSTOFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
@@ -245,12 +245,12 @@ contract('SecurityTokenRegistry', accounts => {
                 LogAddModule.watch(function(error, log){ resolve(log);});
             });
 
-            // Verify that GeneralPermissionManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), permissionManagerKey);
+            // Verify that GeneralTrasnferManager module get added successfully or not
+            assert.equal(log.args._type.toNumber(), transferManagerKey);
             assert.equal(
                 web3.utils.toAscii(log.args._name)
                 .replace(/\u0000/g, ''),
-                "GeneralPermissionManager"
+                "GeneralTransferManager"
             );
             LogAddModule.stopWatching();
         });
@@ -258,7 +258,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should deploy the st vesrion 2", async() => {
             // Step 7: Deploy the STversionProxy contract
 
-            I_STVersion002 = await STVersion002.new(I_GeneralTransferManagerFactory.address, I_GeneralPermissionManagerFactory.address, {from : account_polymath });
+            I_STVersion002 = await STVersion002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
                 I_STVersion002.address.valueOf(),
@@ -293,12 +293,12 @@ contract('SecurityTokenRegistry', accounts => {
                 LogAddModule.watch(function(error, log){ resolve(log);});
             });
 
-            // Verify that GeneralPermissionManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), permissionManagerKey);
+            // Verify that GeneralTransferManager module get added successfully or not
+            assert.equal(log.args._type.toNumber(), transferManagerKey);
             assert.equal(
                 web3.utils.toAscii(log.args._name)
                 .replace(/\u0000/g, ''),
-                "GeneralPermissionManager"
+                "GeneralTransferManager"
             );
             LogAddModule.stopWatching();
         });
@@ -306,7 +306,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should deploy the st vesrion 3", async() => {
             // Step 7: Deploy the STversionProxy contract
 
-            I_STVersion003 = await STVersion002.new(I_GeneralTransferManagerFactory.address, I_GeneralPermissionManagerFactory.address, {from : account_polymath });
+            I_STVersion003 = await STVersion002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
                 I_STVersion003.address.valueOf(),
@@ -341,12 +341,12 @@ contract('SecurityTokenRegistry', accounts => {
                 LogAddModule.watch(function(error, log){ resolve(log);});
             });
 
-            // Verify that GeneralPermissionManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), permissionManagerKey);
+            // Verify that GeneralTransferManager module get added successfully or not
+            assert.equal(log.args._type.toNumber(), transferManagerKey);
             assert.equal(
                 web3.utils.toAscii(log.args._name)
                 .replace(/\u0000/g, ''),
-                "GeneralPermissionManager"
+                "GeneralTransferManager"
             );
             LogAddModule.stopWatching();
         });
@@ -361,14 +361,6 @@ contract('SecurityTokenRegistry', accounts => {
              "GeneralTransferManager contract was not deployed",
             );
 
-            moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
-            I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
-
-            assert.notEqual(
-             I_GeneralPermissionManager.address.valueOf(),
-             "0x0000000000000000000000000000000000000000",
-             "GeneralDelegateManager contract was not deployed",
-            );
          });
 
          it("Should failed in attaching the STO factory with the security token -- because securityToken doesn't have sufficient balance", async () => {
@@ -410,7 +402,7 @@ contract('SecurityTokenRegistry', accounts => {
                     cap,
                     someString,
                 ]);
-            
+
             await I_PolyFaucet.getTokens((1000 * Math.pow(10, 18)), I_SecurityToken.address);
 
             const tx = await I_SecurityToken.addModule(
@@ -423,7 +415,7 @@ contract('SecurityTokenRegistry', accounts => {
                     from: token_owner,
                     gas: 2500000
                 });
-    
+
             assert.equal(tx.logs[3].args._type, stoKey, "TestSTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)

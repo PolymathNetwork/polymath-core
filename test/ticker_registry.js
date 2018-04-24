@@ -135,7 +135,7 @@ contract('TickerRegistry', accounts => {
 
         // Step 7: Deploy the STversionProxy contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, I_GeneralPermissionManagerFactory.address, {from : account_polymath });
+        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
         assert.notEqual(
             I_STVersion.address.valueOf(),

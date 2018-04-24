@@ -8,15 +8,12 @@ import "../interfaces/ISTProxy.sol";
 contract STVersionProxy001 is ISTProxy {
 
     address public transferManagerFactory;
-    address public permissionManagerFactory;
 
     //Shoud be set to false when we have more TransferManager options
     bool addTransferManager = true;
-    bool addPermissionManager = true;
 
-    constructor (address _transferManagerFactory, address _permissionManagerFactory) public {
+    constructor (address _transferManagerFactory) public {
         transferManagerFactory = _transferManagerFactory;
-        permissionManagerFactory = _permissionManagerFactory;
     }
     /**
     * @dev deploys the token and adds default modules like permission manager and transfer manager.
@@ -32,9 +29,6 @@ contract STVersionProxy001 is ISTProxy {
         msg.sender
         );
 
-        if (addPermissionManager) {
-            SecurityToken(newSecurityTokenAddress).addModule(permissionManagerFactory, "", 0, 0, false);
-        }
         if (addTransferManager) {
             SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, 0, false);
         }

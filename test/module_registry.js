@@ -309,7 +309,7 @@ contract('ModuleRegistry', accounts => {
                 "Failed in verifying the module"
             );
 
-            I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, I_GeneralPermissionManagerFactory.address, {from : account_polymath });
+            I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
                 I_STVersion.address.valueOf(),
@@ -384,12 +384,12 @@ contract('ModuleRegistry', accounts => {
                 LogAddModule.watch(function(error, log){ resolve(log);});
             });
 
-            // Verify that GeneralPermissionManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), permissionManagerKey);
+            // Verify that GeneralTransferManager module get added successfully or not
+            assert.equal(log.args._type.toNumber(), transferManagerKey);
             assert.equal(
                 web3.utils.toAscii(log.args._name)
                 .replace(/\u0000/g, ''),
-                "GeneralPermissionManager"
+                "GeneralTransferManager"
             );
             LogAddModule.stopWatching();
         });
@@ -404,14 +404,6 @@ contract('ModuleRegistry', accounts => {
                 "GeneralTransferManager contract was not deployed",
             );
 
-            moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
-            I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
-
-            assert.notEqual(
-                I_GeneralPermissionManager.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
-                "GeneralDelegateManager contract was not deployed",
-            );
         });
     });
 

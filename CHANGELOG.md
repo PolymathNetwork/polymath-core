@@ -8,7 +8,8 @@ All notable changes to this project will be documented in this file.
 ## Changed    
 
 * Fixed `capReached()` which was checking fundsRaised agains cap, but the cap is expressed in tokens.    
-* Constant key variables migrated from the securityToken to ISecurityToken contract.   
+* Constant key variables migrated from the securityToken to ISecurityToken contract.
+* Solidity compiler version get changed to 0.4.23 that leads to the addition of reason string in the `require` and `revert` statements.   
 
 ## Added   
 

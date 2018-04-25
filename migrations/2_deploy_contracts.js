@@ -79,6 +79,11 @@ module.exports = function (deployer, network, accounts) {
       // N) Register the CappedSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the CappedSTOFactory contract.
     return moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount})
+    }).then(()=>{
+      // G) Once the CappedSTOFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+      // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+      return moduleRegistry.verifyModule(CappedSTOFactory.address, true, {from: PolymathAccount})
     }).then(() => {
         console.log('\n')
         console.log('----- Polymath Core Contracts -----')

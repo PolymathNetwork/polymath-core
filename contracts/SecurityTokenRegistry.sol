@@ -10,7 +10,7 @@ import "./helpers/Util.sol";
 
 contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
 
-    event LogNewSecurityToken(string indexed _ticker, address _securityTokenAddress, address _owner);
+    event LogNewSecurityToken(string _ticker, address _securityTokenAddress, address _owner);
 
      /**
      * @dev Constructor used to set the essentials addresses to facilitate

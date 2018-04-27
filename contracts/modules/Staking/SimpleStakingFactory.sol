@@ -11,7 +11,7 @@ contract SimpleStakingFactory is IModuleFactory {
 
     }
 
-    function deploy(bytes _data) external returns(address) {
+    function deploy(bytes /*_data*/) external returns(address) {
         if (getCost() > 0)
             require(polyToken.transferFrom(msg.sender, owner, getCost()), "Failed transferFrom because of sufficent Allowance is not provided");
         return address(new SimpleStaking(msg.sender, address(polyToken)));

@@ -16,7 +16,7 @@ contract SimpleStaking is IStaking {
     struct StakingMetrics {
         uint256 startDate;
         uint256 endDate;
-        uint256 totalstake;
+        uint256 totalStake;
     }
 
     struct Securitiesholders {
@@ -39,6 +39,7 @@ contract SimpleStaking is IStaking {
         require(_startDate >= now && _endDate > _startDate);
         require(allowedModule[msg.sender] == true);
         require(staking[msg.sender].endDate != 0 && now > staking[msg.sender].endDate);
+        
         staking[msg.sender] = StakingMetrics(_startDate, _endDate, 0);
         emit LogIntiateStaking(_startDate, _endDate, msg.sender, now);
     }
@@ -46,24 +47,28 @@ contract SimpleStaking is IStaking {
     function whitelistModule(uint8 _moduleType, bytes32 _moduleName) public withPerm(WHITELIST) {
         address moduleAddress;
         bool locked;
+
         (,moduleAddress,locked)= ISecurityToken(securityToken).getModuleByName(_moduleType, _moduleName);
         require(moduleAddress != address(0) && locked == true);
+
         allowedModule[moduleAddress] = true;
         emit LogWhitelistModule(_moduleName, moduleAddress, now);
     }
 
     function participate(address _moduleAddress) public {
         require(staking[_moduleAddress].endDate >= now && now >= staking[_moduleAddress].startDate);
-        uint256 balance = ERC20(securityToken).balanceOf(msg.sender);
-        require(ERC20(securityToken).transferFrom(msg.sender, address(this), balance));
-        holdingsData[_moduleAddress][msg.sender] = Securitiesholders(balance, false, now);
-        staking[_moduleAddress].totalstake = (staking[_moduleAddress].totalstake).add(balance);
-        emit LogParticipate(msg.sender, balance, _moduleAddress);
+        uint256 _balance = ERC20(securityToken).balanceOf(msg.sender);
+
+        require(ERC20(securityToken).transferFrom(msg.sender, address(this), _balance));
+        holdingsData[_moduleAddress][msg.sender] = Securitiesholders(_balance, false, now);
+
+        staking[_moduleAddress].totalStake = (staking[_moduleAddress].totalStake).add(_balance);
+        emit LogParticipate(msg.sender, _balance, _moduleAddress);
     }
 
     function provideAllowance() public returns(bool) {
         require(allowedModule[msg.sender] == true);
-        require(ERC20(securityToken).approve(msg.sender, staking[msg.sender].totalstake));
+        require(ERC20(securityToken).approve(msg.sender, staking[msg.sender].totalStake));
         return true;
     }
 

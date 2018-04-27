@@ -46,24 +46,24 @@ contract SimpleDividend is IDividend {
 
     function issueDividendInETH(uint256 _declarationDate, uint256 _recordDate) payable public withPerm(ISSUE_DIVIDEND) {
         _preDividendValidation(_declarationDate, _recordDate);
-        uint256 payoutRatio = msg.value.div(ERC20(securityToken).totalSupply());
+        uint256 _payoutRatio = msg.value.div(ERC20(securityToken).totalSupply());
 
-        currentDividend = Dividend(_declarationDate, _recordDate, 0, payoutRatio, "ETH", false);
+        currentDividend = Dividend(_declarationDate, _recordDate, 0, _payoutRatio, "ETH", false);
         IStaking(simpleStaking).intiateStaking(_declarationDate, _recordDate);
 
-        emit LogIssueDividend("ETH", _declarationDate, _recordDate, payoutRatio);
+        emit LogIssueDividend("ETH", _declarationDate, _recordDate, _payoutRatio);
     }
 
     function issueDividendInPoly(uint256 _totalDividendAmount, uint256 _declarationDate, uint256 _recordDate) public withPerm(ISSUE_DIVIDEND) {
         _preDividendValidation(_declarationDate, _recordDate);
         require(polyToken.transferFrom(msg.sender, this, _totalDividendAmount));
 
-        uint256 payoutRatio = _totalDividendAmount.div(ERC20(securityToken).totalSupply());
+        uint256 _payoutRatio = _totalDividendAmount.div(ERC20(securityToken).totalSupply());
 
-        currentDividend = Dividend(_declarationDate, _recordDate, 0, payoutRatio, "POLY", false);
+        currentDividend = Dividend(_declarationDate, _recordDate, 0, _payoutRatio, "POLY", false);
         IStaking(simpleStaking).intiateStaking(_declarationDate, _recordDate);
 
-        emit LogIssueDividend("POLY", _declarationDate, _recordDate, payoutRatio);
+        emit LogIssueDividend("POLY", _declarationDate, _recordDate, _payoutRatio);
     }
 
     function _preDividendValidation(uint256 _declarationDate, uint256 _recordDate) internal {
@@ -75,7 +75,7 @@ contract SimpleDividend is IDividend {
 
     function claimedDividend() public {
         require((currentDividend.paymentDate + DividendTime) >= currentDividend.recordDate);
-        require(currentDividend.isActive == true);
+        require(currentDividend.isActive);
         uint256 balance;
         bool isWithdrawal;
         (balance, isWithdrawal,) = IStaking(simpleStaking).getHolderByModule(address(this), msg.sender);

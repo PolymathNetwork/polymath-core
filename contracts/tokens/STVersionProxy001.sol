@@ -25,6 +25,7 @@ contract STVersionProxy001 is ISTProxy {
         _name,
         _symbol,
         _decimals,
+        uint256(10)**_decimals,
         _tokenDetails,
         msg.sender
         );

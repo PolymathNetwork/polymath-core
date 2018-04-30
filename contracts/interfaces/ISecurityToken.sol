@@ -9,6 +9,7 @@ contract ISecurityToken is IST20, Ownable {
     uint8 public constant PERMISSIONMANAGER_KEY = 1;
     uint8 public constant TRANSFERMANAGER_KEY = 2;
     uint8 public constant STO_KEY = 3;
+    uint256 public granularity;
 
     //TODO: Factor out more stuff here
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool);

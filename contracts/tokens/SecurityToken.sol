@@ -52,6 +52,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         uint256 _timestamp
     );
 
+    event LogGranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
     event Mint(address indexed to, uint256 amount);
@@ -71,10 +72,16 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         _;
     }
 
+    modifier checkGranularity(uint256 _amount) {
+      require(_amount.div(granularity).mul(granularity) == _amount, "Unable to modify token balances at this granularity");
+      _;
+    }
+
     constructor (
         string _name,
         string _symbol,
         uint8 _decimals,
+        uint256 _granularity,
         bytes32 _tokenDetails,
         address _securityTokenRegistry
     )
@@ -85,6 +92,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         moduleRegistry = ISecurityTokenRegistry(_securityTokenRegistry).moduleRegistry();
         polyToken = ERC20(ISecurityTokenRegistry(_securityTokenRegistry).polyAddress());
         tokenDetails = _tokenDetails;
+        granularity = _granularity;
     }
 
     function addModule(
@@ -207,6 +215,15 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     /**
+    * @dev allows owner to change token granularity
+    */
+    function changeGranularity(uint256 _granularity) public onlyOwner {
+        require(_granularity != 0, "Granularity can not be 0");
+        emit LogGranularityChanged(granularity, _granularity);
+        granularity = _granularity;
+    }
+
+    /**
      * @dev Overloaded version of the transfer function
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
@@ -224,7 +241,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
-    function verifyTransfer(address _from, address _to, uint256 _amount) public view returns (bool success) {
+    function verifyTransfer(address _from, address _to, uint256 _amount) public view checkGranularity(_amount) returns (bool success) {
         if (modules[TRANSFERMANAGER_KEY].length == 0) {
             return true;
         }
@@ -240,7 +257,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     * @dev mints new tokens and assigns them to the target _investor.
     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
     */
-    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) returns (bool success) {
+    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) returns (bool success) {
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);

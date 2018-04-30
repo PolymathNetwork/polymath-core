@@ -14,6 +14,7 @@ contract SecurityTokenV2 is SecurityToken {
         string _name,
         string _symbol,
         uint8 _decimals,
+        uint256 _granularity,
         bytes32 _tokenDetails,
         address _securityTokenRegistry
     )
@@ -22,6 +23,7 @@ contract SecurityTokenV2 is SecurityToken {
     _name,
     _symbol,
     _decimals,
+    _granularity,
     _tokenDetails,
     _securityTokenRegistry)
     {

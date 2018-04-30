@@ -453,6 +453,26 @@ contract('SecurityToken', accounts => {
                 assert.isTrue(tx.logs[0].args._allowAllTransfers, "AllowTransfer variable is not successfully updated");
             });
 
+
+            it("Should fail to send tokens with the wrong granularity", async() => {
+                let errorThrown = false;
+                try {
+                  await I_SecurityToken.transfer(accounts[7], Math.pow(10, 17), { from : account_investor1});
+                } catch (error) {
+                    console.log('Failed due to incorrect token granularity - expected');
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should adjust granularity", async() => {
+                let errorThrown = false;
+                await I_SecurityToken.changeGranularity(Math.pow(10, 17), {from: token_owner });
+                await I_SecurityToken.transfer(accounts[7], Math.pow(10, 17), { from : account_investor1});
+                await I_SecurityToken.transfer(account_investor1, Math.pow(10, 17), { from : accounts[7]});
+            });
+
             it("Should transfer from whitelist investor to non-whitelist investor in first tx and in 2nd tx non-whitelist to non-whitelist transfer", async() => {
                 await I_SecurityToken.transfer(accounts[7], (10 *  Math.pow(10, 18)), { from : account_investor1});
 

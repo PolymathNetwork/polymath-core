@@ -389,6 +389,22 @@ contract('CappedSTO', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should buy the tokens -- Failed due to wrong granularity", async () => {
+            let errorThrown = false;
+            try {
+                await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_CappedSTO.address,
+                    value: web3.utils.toWei('0.1111', 'ether')
+                  });
+            } catch(error) {
+                console.log(`Failed due to wrong purchase granularity`);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should Buy the tokens", async() => {
             balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
             // Add the Investor in to the whitelist
@@ -446,6 +462,22 @@ contract('CappedSTO', accounts => {
                 "Wrong No. token get dilivered"
             );
             TokenPurchase.stopWatching();
+        });
+
+        it("Should buy the tokens -- Failed due to wrong granularity", async () => {
+            let errorThrown = false;
+            try {
+                 await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_CappedSTO.address,
+                    value: web3.utils.toWei('0.1111', 'ether')
+                  });
+            } catch(error) {
+                console.log(`Failed due to wrong purchase granularity`);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
         });
 
         it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async() => {

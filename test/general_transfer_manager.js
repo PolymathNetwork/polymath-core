@@ -466,7 +466,6 @@ contract('GeneralTransferManager', accounts => {
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
             const v = sig.v;
-            console.log("Hola");
             let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
                 account_investor2,
                 fromTime,
@@ -481,10 +480,7 @@ contract('GeneralTransferManager', accounts => {
                     from: account_investor2,
                     gas: 500000
                 });
-            console.log("cola");
-            console.log(latestTime());
-            console.log(expiryTime + duration.days(100));
-            console.log(await I_DummySTO.endTime.call());
+                
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Jump time

@@ -72,7 +72,7 @@ contract('GeneralTransferManager', accounts => {
 
     // Dummy STO details
     const startTime = latestTime() + duration.seconds(5000);           // Start time will be 5000 seconds more than the latest time
-    const endTime = startTime + duration.days(30);                     // Add 30 days more
+    const endTime = startTime + duration.days(80);                     // Add 80 days more
     const cap = web3.utils.toWei('10', 'ether');
     const someString = "A string which is not used";
 
@@ -352,7 +352,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
-            const sig = signData(account_investor2, account_investor2, fromTime, toTime, validFrom, validTo, token_owner_pk);
+            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -388,7 +388,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime() - 100;
             let validTo = latestTime()  - 1;
-            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, validFrom, validTo, token_owner_pk);
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -425,7 +425,7 @@ contract('GeneralTransferManager', accounts => {
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
 
-            const sig = signData(account_investor2, account_investor2, fromTime, toTime, validFrom, validTo, '2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200');
+            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, validFrom, validTo, '2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200');
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -461,17 +461,17 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
-            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, validFrom, validTo, token_owner_pk);
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime + duration.days(100), validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
             const v = sig.v;
-
+            console.log("Hola");
             let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
                 account_investor2,
                 fromTime,
                 toTime,
-                expiryTime,
+                expiryTime + duration.days(100),
                 validFrom,
                 validTo,
                 v,
@@ -481,7 +481,10 @@ contract('GeneralTransferManager', accounts => {
                     from: account_investor2,
                     gas: 500000
                 });
-
+            console.log("cola");
+            console.log(latestTime());
+            console.log(expiryTime + duration.days(100));
+            console.log(await I_DummySTO.endTime.call());
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Jump time

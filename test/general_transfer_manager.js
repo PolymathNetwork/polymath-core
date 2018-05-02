@@ -37,6 +37,7 @@ contract('GeneralTransferManager', accounts => {
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime();
+    let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
 
@@ -71,7 +72,7 @@ contract('GeneralTransferManager', accounts => {
 
     // Dummy STO details
     const startTime = latestTime() + duration.seconds(5000);           // Start time will be 5000 seconds more than the latest time
-    const endTime = startTime + duration.days(30);                     // Add 30 days more
+    const endTime = startTime + duration.days(80);                     // Add 80 days more
     const cap = web3.utils.toWei('10', 'ether');
     const someString = "A string which is not used";
 
@@ -291,11 +292,12 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should Buy the tokens", async() => {
             // Add the Investor in to the whitelist
-
+            
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                fromTime,
-                toTime,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(10),
                 {
                     from: account_issuer,
                     gas: 500000
@@ -314,6 +316,20 @@ contract('GeneralTransferManager', accounts => {
                 web3.utils.toWei('1', 'ether')
             );
         });
+
+        it("Should fail in investing the money in STO -- expiry limit reached", async() => {
+            let errorThrown = false;
+            await increaseTime(duration.days(10));
+
+            try {
+                await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
+            } catch(error) {
+                console.log(`Failed because investor isn't present in the whitelist`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
 
     });
 
@@ -336,7 +352,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
-            const sig = signData(account_investor2, account_investor2, fromTime, toTime, validFrom, validTo, token_owner_pk);
+            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -348,6 +364,7 @@ contract('GeneralTransferManager', accounts => {
                   account_investor2,
                   fromTime,
                   toTime,
+                  expiryTime,
                   validFrom,
                   validTo,
                   v,
@@ -371,7 +388,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime() - 100;
             let validTo = latestTime()  - 1;
-            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, validFrom, validTo, token_owner_pk);
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -383,6 +400,7 @@ contract('GeneralTransferManager', accounts => {
                   account_investor2,
                   fromTime,
                   toTime,
+                  expiryTime,
                   validFrom,
                   validTo,
                   v,
@@ -407,7 +425,7 @@ contract('GeneralTransferManager', accounts => {
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
 
-            const sig = signData(account_investor2, account_investor2, fromTime, toTime, validFrom, validTo, '2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200');
+            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, validFrom, validTo, '2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200');
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -419,6 +437,7 @@ contract('GeneralTransferManager', accounts => {
                   account_investor2,
                   fromTime,
                   toTime,
+                  expiryTime,
                   validFrom,
                   validTo,
                   v,
@@ -442,16 +461,16 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
-            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, validFrom, validTo, token_owner_pk);
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime + duration.days(100), validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
             const v = sig.v;
-
             let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
                 account_investor2,
                 fromTime,
                 toTime,
+                expiryTime + duration.days(100),
                 validFrom,
                 validTo,
                 v,
@@ -461,7 +480,7 @@ contract('GeneralTransferManager', accounts => {
                     from: account_investor2,
                     gas: 500000
                 });
-
+                
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Jump time

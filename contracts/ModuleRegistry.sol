@@ -4,7 +4,7 @@ import "./interfaces/IModuleRegistry.sol";
 import "./interfaces/IModuleFactory.sol";
 import "./interfaces/ISecurityToken.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /**
 * @title ModuleRegistry

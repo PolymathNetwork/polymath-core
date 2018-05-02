@@ -28,6 +28,7 @@ contract GeneralTransferManager is ITransferManager {
     struct TimeRestriction {
         uint256 fromTime;
         uint256 toTime;
+        uint256 expiryTime;
     }
 
     // An address can only send / receive tokens once their corresponding uint256 > block.number
@@ -52,7 +53,8 @@ contract GeneralTransferManager is ITransferManager {
         uint256 _dateAdded,
         address _addedBy,
         uint256 _fromTime,
-        uint256 _toTime
+        uint256 _toTime,
+        uint256 _expiryTime
     );
 
     constructor (address _securityToken, address _polyAddress)
@@ -120,22 +122,25 @@ contract GeneralTransferManager is ITransferManager {
     * @param _investor is the address to whitelist
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     */
-    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime) public withPerm(WHITELIST) {
+    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime) public withPerm(WHITELIST) {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
-        whitelist[_investor] = TimeRestriction(_fromTime, _toTime);
-        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime);
+        whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime);
+        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime);
     }
 
     function modifyWhitelistMulti(
         address[] _investors,
         uint256[] _fromTimes,
-        uint256[] _toTimes
+        uint256[] _toTimes,
+        uint256[] _expiryTime
     ) public withPerm(WHITELIST) {
         require(_investors.length == _fromTimes.length, "Mismatched input lengths");
         require(_fromTimes.length == _toTimes.length, "Mismatched input lengths");
+        require(_toTimes.length == _expiryTime.length, "Mismatched input lengths");
         for (uint256 i = 0; i < _investors.length; i++) {
-            modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i]);
+            modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTime[i]);
         }
     }
 
@@ -144,25 +149,36 @@ contract GeneralTransferManager is ITransferManager {
     * @param _investor is the address to whitelist
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _validFrom is the time that this signature is valid from
     * @param _validTo is the time that this signature is valid until
     * @param _v issuer signature
     * @param _r issuer signature
     * @param _s issuer signature
     */
-    function modifyWhitelistSigned(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _validFrom, uint256 _validTo, uint8 _v, bytes32 _r, bytes32 _s) public {
+    function modifyWhitelistSigned(
+        address _investor,
+        uint256 _fromTime,
+        uint256 _toTime,
+        uint256 _expiryTime,
+        uint256 _validFrom,
+        uint256 _validTo,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) public {
         require(_validFrom <= now, "ValidFrom is too early");
         require(_validTo >= now, "ValidTo is too late");
-        bytes32 hash = keccak256(this, _investor, _fromTime, _toTime, _validFrom, _validTo);
+        bytes32 hash = keccak256(this, _investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo);
         checkSig(hash, _v, _r, _s);
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
-        whitelist[_investor] = TimeRestriction(_fromTime, _toTime);
-        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime);
+        whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime);
+        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime);
     }
 
     function checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
         //Check that the signature is valid
-        //sig should be signing - _investor, _fromTime & _toTime and be signed by the issuer address
+        //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
         address signer = ecrecover(keccak256("\x19Ethereum Signed Message:\n32", _hash), _v, _r, _s);
         require(signer == ISecurityToken(securityToken).owner() || signer == signingAddress, "Incorrect signer");
     }
@@ -175,6 +191,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     function onWhitelist(address _investor) internal view returns(bool) {
-        return ((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0));
+        return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) && 
+            (whitelist[_investor].expiryTime >= now));
     }
 }

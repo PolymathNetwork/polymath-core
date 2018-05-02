@@ -39,6 +39,7 @@ contract('Issuance', accounts => {
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(15);
+    let expiryTime = toTime + duration.days(100);
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -303,6 +304,7 @@ contract('Issuance', accounts => {
                     account_investor1,
                     fromTime + duration.days(70),
                     toTime + duration.days(90),
+                    expiryTime + duration.days(50),
                     {
                         from: account_polymath,
                         gas: 500000
@@ -383,6 +385,7 @@ contract('Issuance', accounts => {
                     account_investor2,
                     fromTime,
                     toTime,
+                    expiryTime,
                     {
                         from: account_delegate,
                         gas: 500000

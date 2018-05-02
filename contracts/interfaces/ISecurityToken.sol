@@ -1,7 +1,7 @@
 pragma solidity ^0.4.23;
 
 import "./IST20.sol";
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
 contract ISecurityToken is IST20, Ownable {

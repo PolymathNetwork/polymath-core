@@ -2,7 +2,7 @@ pragma solidity ^0.4.23;
 
 import "./ISecurityToken.sol";
 import "./IModuleFactory.sol";
-import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 //Simple interface that any module contracts should implement
 contract IModule {

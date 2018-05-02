@@ -4,13 +4,13 @@ import "./interfaces/ITickerRegistry.sol";
 import "./tokens/SecurityToken.sol";
 import "./interfaces/ISTProxy.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./helpers/Util.sol";
 
 
 contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
 
-    event LogNewSecurityToken(string _ticker, address _securityTokenAddress, address _owner);
+    event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address _owner);
 
      /**
      * @dev Constructor used to set the essentials addresses to facilitate

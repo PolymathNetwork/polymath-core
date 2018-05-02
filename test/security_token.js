@@ -38,6 +38,7 @@ contract('SecurityToken', accounts => {
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(100);
+    let expiryTime = toTime + duration.days(100);
 
     let ID_snap;
     const message = "Transaction Should Fail!!";
@@ -362,6 +363,7 @@ contract('SecurityToken', accounts => {
                     account_investor1,
                     fromTime,
                     toTime,
+                    expiryTime,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -490,6 +492,7 @@ contract('SecurityToken', accounts => {
                     account_investor2,
                     fromTime,
                     toTime,
+                    expiryTime,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -531,6 +534,7 @@ contract('SecurityToken', accounts => {
                     account_temp,
                     fromTime,
                     toTime,
+                    expiryTime,
                     {
                         from: account_delegate,
                         gas: 500000
@@ -568,6 +572,7 @@ contract('SecurityToken', accounts => {
             it("Should remove investor from the whitelist by the delegate", async() => {
                 let tx = await I_GeneralTransferManager.modifyWhitelist(
                     account_temp,
+                    0,
                     0,
                     0,
                     {

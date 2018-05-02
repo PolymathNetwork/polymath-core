@@ -3,10 +3,10 @@ const utils = ethers.utils;
 const ethUtil = require('ethereumjs-util');
 
 //this, _investor, _fromTime, _toTime, _validTo
-function signData(tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk) {
+function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, validFrom, validTo, pk) {
   let packedData = utils.solidityKeccak256(
-      [ "address", "address", "uint256", "uint256", "uint256", "uint256" ],
-      [ tmAddress, investorAddress, fromTime, toTime, validFrom, validTo ]
+      [ "address", "address", "uint256", "uint256", "uint256", "uint256", "uint256" ],
+      [ tmAddress, investorAddress, fromTime, toTime, expiryTime, validFrom, validTo ]
     ).slice(2);
   packedData = new Buffer(packedData, 'hex');
   packedData = Buffer.concat([

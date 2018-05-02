@@ -6,8 +6,8 @@ pragma solidity ^0.4.23;
   only its owner can deploy the token with that symbol.
 */
 
-import "zeppelin-solidity/contracts/math/SafeMath.sol";
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./interfaces/ITickerRegistry.sol";
 import "./helpers/Util.sol";
 
@@ -43,7 +43,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
-    constructor() public {
+    constructor () public {
 
     }
 

@@ -238,7 +238,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: token_owner });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -391,6 +391,22 @@ contract('CappedSTO', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should buy the tokens -- Failed due to wrong granularity", async () => {
+            let errorThrown = false;
+            try {
+                await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_CappedSTO.address,
+                    value: web3.utils.toWei('0.1111', 'ether')
+                  });
+            } catch(error) {
+                console.log(`Failed due to wrong purchase granularity`);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should Buy the tokens", async() => {
             balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
             // Add the Investor in to the whitelist
@@ -449,6 +465,22 @@ contract('CappedSTO', accounts => {
                 "Wrong No. token get dilivered"
             );
             TokenPurchase.stopWatching();
+        });
+
+        it("Should buy the tokens -- Failed due to wrong granularity", async () => {
+            let errorThrown = false;
+            try {
+                 await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_CappedSTO.address,
+                    value: web3.utils.toWei('0.1111', 'ether')
+                  });
+            } catch(error) {
+                console.log(`Failed due to wrong purchase granularity`);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
         });
 
         it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async() => {
@@ -544,7 +576,7 @@ contract('CappedSTO', accounts => {
             });
 
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
-                let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_decimals, P_tokenDetails, { from: token_owner });
+                let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_decimals, P_tokenDetails, false, { from: token_owner });
 
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[1].args._ticker, P_symbol, "SecurityToken doesn't get deployed");

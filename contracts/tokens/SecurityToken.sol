@@ -1,8 +1,8 @@
 pragma solidity ^0.4.23;
 
-import "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
-import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
@@ -247,11 +247,6 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         emit Mint(_investor, _amount);
         emit Transfer(address(0), _investor, _amount);
         return true;
-    }
-
-    //TODO: Implement this function
-    function investorStatus(address /* _investor */) public pure returns (uint8 _status) {
-        return 0;
     }
 
     // Permissions this to a Permission module, which has a key of 1

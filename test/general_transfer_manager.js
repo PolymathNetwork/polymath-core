@@ -37,7 +37,7 @@ contract('GeneralTransferManager', accounts => {
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime();
-    let expiryTime = toTime + duration.days(100);
+    let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
 
@@ -292,12 +292,12 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should Buy the tokens", async() => {
             // Add the Investor in to the whitelist
-
+            
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                fromTime,
-                toTime,
-                expiryTime,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(10),
                 {
                     from: account_issuer,
                     gas: 500000
@@ -316,6 +316,20 @@ contract('GeneralTransferManager', accounts => {
                 web3.utils.toWei('1', 'ether')
             );
         });
+
+        it("Should fail in investing the money in STO -- expiry limit reached", async() => {
+            let errorThrown = false;
+            await increaseTime(duration.days(10));
+
+            try {
+                await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
+            } catch(error) {
+                console.log(`Failed because investor isn't present in the whitelist`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
 
     });
 

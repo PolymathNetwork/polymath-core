@@ -9,13 +9,20 @@ All notable changes to this project will be documented in this file.
 
 * Fixed `capReached()` which was checking fundsRaised agains cap, but the cap is expressed in tokens.    
 * Constant key variables migrated from the securityToken to ISecurityToken contract.
-* Solidity compiler version get changed to 0.4.23 that leads to the addition of reason string in the `require` and `revert` statements.   
+* Solidity compiler version get changed to 0.4.23 that leads to the addition of reason string in the `require` and `revert` statements. 
+* zeppelin-solidity package version and name get changed to openzeppelin-solidity v1.9.0.      
 
 ## Added   
 
 * IModule contract takes the polyToken contract address as the constructor argument to wrapping all the factories with the polyToken contract address.      
 * `takeFee()` new function introduced to extract the POLY token from the factory. It only be called by the owner of the factory.      
-* Added ability for issuer to provide a signed piece of data to allow investors to whitelist themselves.
+* Added ability for issuer to provide a signed piece of data to allow investors to whitelist themselves. 
+* `_securityTokenAddress` get indexed in the `LogNewSecurityToken` event.     
+* Now each investor have its `expiryTime` for the KYC. After the expiryTime limit reached, investor will not abe to use transfer related functions.           
+
+## Remove     
+
+* `investorStatus()` function in securityToken contract has removed.
 
 ***
 

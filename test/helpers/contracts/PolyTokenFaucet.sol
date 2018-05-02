@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "zeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /*
  POLY token faucet is only used on testnet for testing purposes

@@ -16,14 +16,14 @@ contract STVersionProxy002 is ISTProxy {
         transferManagerFactory = _transferManagerFactory;
     }
 
-    function deployToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails, address _issuer)
+    function deployToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails, address _issuer, bool _divisible)
     public returns (address)
     {
         address newSecurityTokenAddress = new SecurityTokenV2(
         _name,
         _symbol,
         _decimals,
-        uint256(10)**_decimals,
+        _divisible ? 1 : uint256(10)**_decimals,
         _tokenDetails,
         msg.sender
         );

@@ -236,7 +236,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: token_owner });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -572,7 +572,7 @@ contract('CappedSTO', accounts => {
             });
 
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
-                let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_decimals, P_tokenDetails, { from: token_owner });
+                let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_decimals, P_tokenDetails, false, { from: token_owner });
 
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[1].args._ticker, P_symbol, "SecurityToken doesn't get deployed");

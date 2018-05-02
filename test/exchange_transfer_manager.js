@@ -33,6 +33,7 @@ contract('ExchangeTransferManager', accounts => {
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime();
+    let expiryTime = toTime + duration.days(100);
 
     let message = "Transaction Should Fail!";
 
@@ -303,6 +304,7 @@ contract('ExchangeTransferManager', accounts => {
                 account_investor1,
                 fromTime,
                 toTime,
+                expiryTime,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -353,6 +355,7 @@ contract('ExchangeTransferManager', accounts => {
               account_exchange,
               fromTime,
               toTime,
+              expiryTime,
               {
                   from: account_issuer,
                   gas: 500000

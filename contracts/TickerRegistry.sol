@@ -43,7 +43,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
-    constructor() public {
+    constructor () public {
 
     }
 

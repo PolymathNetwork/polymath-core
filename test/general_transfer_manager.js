@@ -37,6 +37,7 @@ contract('GeneralTransferManager', accounts => {
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime();
+    let expiryTime = toTime + duration.days(100);
 
     let message = "Transaction Should Fail!";
 
@@ -296,6 +297,7 @@ contract('GeneralTransferManager', accounts => {
                 account_investor1,
                 fromTime,
                 toTime,
+                expiryTime,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -348,6 +350,7 @@ contract('GeneralTransferManager', accounts => {
                   account_investor2,
                   fromTime,
                   toTime,
+                  expiryTime,
                   validFrom,
                   validTo,
                   v,
@@ -383,6 +386,7 @@ contract('GeneralTransferManager', accounts => {
                   account_investor2,
                   fromTime,
                   toTime,
+                  expiryTime,
                   validFrom,
                   validTo,
                   v,
@@ -419,6 +423,7 @@ contract('GeneralTransferManager', accounts => {
                   account_investor2,
                   fromTime,
                   toTime,
+                  expiryTime,
                   validFrom,
                   validTo,
                   v,
@@ -452,6 +457,7 @@ contract('GeneralTransferManager', accounts => {
                 account_investor2,
                 fromTime,
                 toTime,
+                expiryTime,
                 validFrom,
                 validTo,
                 v,

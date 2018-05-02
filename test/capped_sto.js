@@ -33,8 +33,10 @@ contract('CappedSTO', accounts => {
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(15);
+    let expiryTime = toTime + duration.days(100);
     let P_fromTime = fromTime + duration.days(1);
     let P_toTime = P_fromTime + duration.days(50);
+    let P_expiryTime = toTime + duration.days(100);
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -397,6 +399,7 @@ contract('CappedSTO', accounts => {
                 account_investor1,
                 fromTime,
                 toTime,
+                expiryTime,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -453,6 +456,7 @@ contract('CappedSTO', accounts => {
                 account_investor2,
                 fromTime,
                 toTime + duration.days(20),
+                expiryTime,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -641,6 +645,7 @@ contract('CappedSTO', accounts => {
                     account_investor1,
                     P_fromTime,
                     P_toTime,
+                    P_expiryTime,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -701,6 +706,7 @@ contract('CappedSTO', accounts => {
                     account_investor2,
                     P_fromTime,
                     P_toTime + duration.days(20),
+                    P_expiryTime,
                     {
                         from: account_issuer,
                         gas: 500000

@@ -240,7 +240,7 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: token_owner });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -453,6 +453,26 @@ contract('SecurityToken', accounts => {
                 let tx = await I_GeneralTransferManager.changeAllowAllTransfers(true, { from : account_delegate });
 
                 assert.isTrue(tx.logs[0].args._allowAllTransfers, "AllowTransfer variable is not successfully updated");
+            });
+
+
+            it("Should fail to send tokens with the wrong granularity", async() => {
+                let errorThrown = false;
+                try {
+                  await I_SecurityToken.transfer(accounts[7], Math.pow(10, 17), { from : account_investor1});
+                } catch (error) {
+                    console.log('Failed due to incorrect token granularity - expected');
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should adjust granularity", async() => {
+                let errorThrown = false;
+                await I_SecurityToken.changeGranularity(Math.pow(10, 17), {from: token_owner });
+                await I_SecurityToken.transfer(accounts[7], Math.pow(10, 17), { from : account_investor1});
+                await I_SecurityToken.transfer(account_investor1, Math.pow(10, 17), { from : accounts[7]});
             });
 
             it("Should transfer from whitelist investor to non-whitelist investor in first tx and in 2nd tx non-whitelist to non-whitelist transfer", async() => {

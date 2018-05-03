@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 
 ## Added   
 
+* generateSecurityToken in SecurityTokenRegistry takes an additional parameter specifying whether the token is divisible.
 * IModule contract takes the polyToken contract address as the constructor argument to wrapping all the factories with the polyToken contract address.      
 * `takeFee()` new function introduced to extract the POLY token from the factory. It only be called by the owner of the factory.      
 * Added ability for issuer to provide a signed piece of data to allow investors to whitelist themselves. 

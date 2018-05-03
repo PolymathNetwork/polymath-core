@@ -39,7 +39,7 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @param _decimals Decimals value for token
      * @param _tokenDetails off-chain details of the token
      */
-    function generateSecurityToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails) public {
+    function generateSecurityToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails, bool _divisible) public {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
         string memory symbol = upper(_symbol);
@@ -48,7 +48,8 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
         symbol,
         _decimals,
         _tokenDetails,
-        msg.sender
+        msg.sender,
+        _divisible
         );
 
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(symbol, _tokenDetails);

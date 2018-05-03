@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/PolymathNetwork/polymath-core.svg?branch=master)](https://travis-ci.org/PolymathNetwork/polymath-core)
 <a href="https://t.me/polymathnetwork"><img src="https://img.shields.io/badge/50k+-telegram-blue.svg" target="_blank"></a>
 
-![Polymath](Polymath.png)
+![Polymath logo](Polymath.png)
 
 # Polymath Core
 
@@ -35,16 +35,16 @@ contract IST20 {
 # The Polymath Core Architecture
 The diagram below depicts a high-level view of the various modules, registries, and contracts implemented in Polymath Core:
 
-![alt text](https://github.com/PolymathNetwork/polymath-core/blob/master/docs/images/PolymathCore.png)
+![Polymath Core architecture](https://github.com/PolymathNetwork/polymath-core/blob/master/docs/images/PolymathCore.png)
 
 ## Components
 ### SecurityToken
-SecurityToken is an implementation of the ST-20 protocol that allows the addition of different modules to control its behavior. Different modules can be attached to SecurityToken:
-- TransferManager modules: These control the logic behind transfers and how they are allowed or disallowed.
-By default, the ST (Security Token) gets a GeneralTransferManager module attached in order to determine if transfers should be allowed based on a whitelist approach. The GeneralTransferManager behaves differently depending who is trying to transfer the tokens.
-a) In an offering setting (investors buying tokens from the issuer) the investor's address should be present on an internal whitelist managed by the issuer within the GeneralTransferManager.
+`SecurityToken` is an implementation of the ST-20 protocol that allows the addition of different modules to control its behavior. Different modules can be attached to `SecurityToken`:
+- `TransferManager` modules: These control the logic behind transfers and how they are allowed or disallowed.
+By default, the ST (Security Token) gets a `GeneralTransferManager` module attached in order to determine if transfers should be allowed based on a whitelist approach. The `GeneralTransferManager` behaves differently depending who is trying to transfer the tokens.
+a) In an offering setting (investors buying tokens from the issuer) the investor's address should be present on an internal whitelist managed by the issuer within the `GeneralTransferManager`.
 b) In a peer to peer transfer, restrictions apply based on real-life lockups that are enforced on-chain. For example, if a particular holder has a 1-year sale restriction for the token, the transaction will fail until that year passes.
-- Security Token Offering (STO) modules: A SecurityToken can be attached to one (and only one) STO module that will dictate the logic of how those tokens will be sold/distributed. An STO is the equivalent to the Crowdsale contracts often found present in traditional ICOs.
+- Security Token Offering (STO) modules: A `SecurityToken` can be attached to one (and only one) STO module that will dictate the logic of how those tokens will be sold/distributed. An STO is the equivalent to the Crowdsale contracts often found present in traditional ICOs.
 - Permission Manager modules: These modules manage permissions on different aspects of the issuance process. The issuer can use this module to manage permissions and designate administrators on his token. For example, the issuer might give a KYC firm permissions to add investors to the whitelist.
 
 ### TickerRegistry
@@ -58,13 +58,16 @@ Modules allow custom add-in functionality in the issuance process and beyond. Th
 
 
 # Stepping through an issuance with the CLI Tool
-First, assure that you have [setup Polymath Core properly](#Setting-up-Polymath-Core).
+First, assure that you have [setup Polymath Core properly](#setup).
 
 The CLI (Command Line Interface) ST-20 Generator tool is a wizard-like script that will guide technical users in the creation and deployment of an ST-20 token. The commands are operated from a *nix command prompt (unix or mac).
 
-To use it, make sure you are connected to a full ethereum node (or locally to Ganache-cli, a local private test network).
+To use it, make sure you are connected to a full ethereum node (or locally to `ganache-cli`, a local private test network).
 You can run Parity with the following command to get started (make sure the node is fully synced before using the CLI tool):
-`parity --chain ropsten  --rpcapi "eth,net,web3,personal,parity" --unlock YOUR_ETH_ACCOUNT --password $HOME/password.file`
+
+```bash
+parity --chain ropsten  --rpcapi "eth,net,web3,personal,parity" --unlock YOUR_ETH_ACCOUNT --password $HOME/password.file
+```
 
 1. Edit `demo/helpers/contract_addresses.js` to make sure scripts are pointing to the correct contract addresses
 2. On the terminal, run the following command: `npm run st20Generator`
@@ -80,7 +83,7 @@ You can run Parity with the following command to get started (make sure the node
 After starting the STO you can run a whitelist script to mass-update a whitelist of allowed/known investors.
 Make sure the `whitelist_data.csv` file is present in the demo folder.
 
-```
+```bash
 node demo/whitelist TOKEN_SYMBOL
 ```
 
@@ -92,7 +95,7 @@ The script takes 3 parameters:
 - The account that will receive the tokens
 - How much ETH to send
 
-```
+```bash
 node demo/invest TOKEN_SYMBOL BENEFICIARY ETHER
 ```
 
@@ -102,7 +105,7 @@ You can run the transfer script to transfer ST tokens to another account (as lon
 - The account that will receive the tokens
 - How many tokens to send
 
-```
+```bash
 node demo/transfer TOKEN_SYMBOL ACCOUNT_TO AMOUNT
 ```
 
@@ -121,7 +124,7 @@ node demo/transfer TOKEN_SYMBOL ACCOUNT_TO AMOUNT
 
 ## Setup
 
-The smart contracts are written in [Solidity][solidity] and tested/deployed using [Truffle][truffle] version 4.1.0. The new version of Truffle doesn't require testrpc to be installed separately so you can just run the following:
+The smart contracts are written in [Solidity](https://github.com/ethereum/solidity) and tested/deployed using [Truffle](https://github.com/trufflesuite/truffle) version 4.1.0. The new version of Truffle doesn't require testrpc to be installed separately so you can just run the following:
 
 ```bash
 # Install Truffle package globally:
@@ -135,21 +138,21 @@ $ npm install
 
 To test the code simply run:
 
-```
+```bash
 $ npm run test
 ```
 
 
 # Extending Polymath Core
 
-1. Deploy ModuleRegistry. ModuleRegistry keeps track of all available modules that add new functionalities to
+1. Deploy `ModuleRegistry`. `ModuleRegistry` keeps track of all available modules that add new functionalities to
 Polymath-based security tokens.
 
-2. Deploy GeneralTransferManagerFactory. This module allows the use of a general TransferManager for newly issued security tokens. The General Transfer Manager gives STs the ability to have their transfers restricted by using an on-chain whitelist.
+2. Deploy `GeneralTransferManagerFactory`. This module allows the use of a general `TransferManager` for newly issued security tokens. The General Transfer Manager gives STs the ability to have their transfers restricted by using an on-chain whitelist.
 
-3. Add the GeneralTransferManagerFactory module to ModuleRegistry by calling `ModuleRegistry.registerModule()`.
+3. Add the `GeneralTransferManagerFactory` module to `ModuleRegistry` by calling `ModuleRegistry.registerModule()`.
 
-4. Deploy TickerRegistry. This contract handles the registration of unique token symbols. Issuers first have to claim their token symbol through the TickerRegistry. If it's available they will be able to deploy a ST with the same symbol for a set number of days before the registration expires.
+4. Deploy `TickerRegistry`. This contract handles the registration of unique token symbols. Issuers first have to claim their token symbol through the `TickerRegistry`. If it's available they will be able to deploy a ST with the same symbol for a set number of days before the registration expires.
 
 5. Deploy SecurityTokenRegistry. This contract is responsible for deploying new Security Tokens. STs should always be deployed by using the SecurityTokenRegistry.
 
@@ -157,7 +160,7 @@ Polymath-based security tokens.
 
 Security Token Offerings (STOs) grant STs the ability to be distributed in an initial offering. Polymath offers a few out-of-the-box STO models for issuers to select from and, as the platform evolves, 3rd party developers will be able to create their own offerings and make them available to the network.
 
-As an example, we've included a CappedSTO and CappedSTOFactory contracts.
+As an example, we've included a `CappedSTO` and `CappedSTOFactory` contracts.
 
 In order to create a new STO, developers first have to create an STO Factory contract which will be responsible for instantiating STOs as Issuers select them. Each STO Factory has an STO contract attached to it, which will be instantiated for each Security Token that wants to use that particular STO.
 
@@ -170,8 +173,7 @@ Note that while anyone can register an STO Factory, only those "approved" by Pol
 
 # Code Styleguide
 
-The polymath-core repo follows the style guide overviewed here:
-http://solidity.readthedocs.io/en/develop/style-guide.html
+The polymath-core repo follows the [Solidity style guide](http://solidity.readthedocs.io/en/develop/style-guide.html).
 
 # Links    
 

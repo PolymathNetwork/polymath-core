@@ -78,4 +78,19 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         securityTokenRegistry = _securityTokenRegistry;
     }
 
+    /**
+     * @dev Use to get all the tags releated to the functionality of the Module Factory.
+     * @param _moduleType Type of module
+     */
+    function getTagByModuleType(uint8 _moduleType) public view returns(bytes32[]) {
+        bytes32[] storage tags;
+        for ( uint8 i = 0; i < moduleList[_moduleType].length; i++) {
+            bytes32[] memory getTag = IModuleFactory(moduleList[_moduleType][i]).getTags();
+            for (uint8 j = 0; j < getTag.length; j++) {
+                tags.push(getTag[j]);
+            }
+        }
+        return tags;
+    }
+
 }

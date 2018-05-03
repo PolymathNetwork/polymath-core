@@ -42,5 +42,11 @@ contract GeneralTransferManagerFactory is IModuleFactory {
         return "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist, and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.";
     }
 
+    function getTags() public view returns(bytes32[]) {
+         bytes32[] memory availableTags = new bytes32[](1);
+        availableTags[0] = "Transfer Restriction";
+        return availableTags;
+    }
+
 
 }

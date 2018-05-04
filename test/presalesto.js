@@ -31,9 +31,9 @@ contract('PreSaleSTO', accounts => {
     let balanceOfReceiver;
     let message = "Transaction Should Fail!";
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime() + duration.days(15);
-    let expiryTime = toTime + duration.days(100);
+    let fromTime;
+    let toTime;
+    let expiryTime;
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -80,6 +80,11 @@ contract('PreSaleSTO', accounts => {
     };
 
     before(async() => {
+        
+        fromTime = latestTime();
+        toTime = latestTime() + duration.days(15);
+        expiryTime = toTime + duration.days(100);
+        
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];

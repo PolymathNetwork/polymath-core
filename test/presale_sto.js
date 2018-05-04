@@ -79,7 +79,7 @@ contract('PreSaleSTO', accounts => {
     };
 
     before(async() => {
-        
+
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
@@ -315,12 +315,11 @@ contract('PreSaleSTO', accounts => {
                 });
 
             assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
-            
+
             // Jump time
             await increaseTime(duration.days(1));
-            console.log("Buy latestTime: " + latestTime() + ":" + await I_PreSaleSTO.endTime.call());
-            await I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei('1', 'ether'), 0, {from: account_issuer, gas: 5000000});
-  
+            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether'), 0, {from: account_issuer, gas: 5000000});
+
             assert.equal(
                 (await I_PreSaleSTO.getRaisedEther.call())
                 .dividedBy(new BigNumber(10).pow(18))

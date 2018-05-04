@@ -101,11 +101,11 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     /**
      * @dev remove the tag for specified Module Factory
      * @param _moduleType Type of module.
-     * @param _tag List of tags
+     * @param _removedTags List of tags
      */
      function removeTagByModuleType(uint8 _moduleType, bytes32[] _removedTags) public onlyOwner {
          for (uint8 i = 0; i < availableTags[_moduleType].length; i++) {
-            for (uint8 j = 0; j < _tag.length; j++) {
+            for (uint8 j = 0; j < _removedTags.length; j++) {
                 if (availableTags[_moduleType][i] == _removedTags[j]) {
                     delete availableTags[_moduleType][i];
                 }

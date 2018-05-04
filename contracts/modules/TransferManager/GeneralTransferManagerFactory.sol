@@ -43,8 +43,9 @@ contract GeneralTransferManagerFactory is IModuleFactory {
     }
 
     function getTags() public view returns(bytes32[]) {
-         bytes32[] memory availableTags = new bytes32[](1);
-        availableTags[0] = "Transfer Restriction";
+         bytes32[] memory availableTags = new bytes32[](2);
+        availableTags[0] = "General";
+        availableTags[1] = "Transfer Restriction";
         return availableTags;
     }
 

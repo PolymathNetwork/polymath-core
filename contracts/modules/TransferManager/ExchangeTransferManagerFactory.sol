@@ -47,8 +47,9 @@ contract ExchangeTransferManagerFactory is IModuleFactory {
     }
 
     function getTags() public view returns(bytes32[]) {
-         bytes32[] memory availableTags = new bytes32[](1);
-        availableTags[0] = "Exchange Transfer Restriction";
+         bytes32[] memory availableTags = new bytes32[](2);
+        availableTags[0] = "Exchange" 
+        availableTags[1] = "Transfer Restriction";
         return availableTags;
     }
 }

@@ -36,9 +36,9 @@ contract('SecurityToken', accounts => {
 
     let balanceOfReceiver;
     // investor Details
-    let fromTime;
-    let toTime;
-    let expiryTime;
+    let fromTime = latestTime();
+    let toTime = latestTime() + duration.days(100);
+    let expiryTime = toTime + duration.days(100);
 
     let ID_snap;
     const message = "Transaction Should Fail!!";
@@ -110,7 +110,6 @@ contract('SecurityToken', accounts => {
     };
 
     before(async() => {
-
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
@@ -360,20 +359,18 @@ contract('SecurityToken', accounts => {
                 balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
                 // Add the Investor in to the whitelist
 
-                fromTime = latestTime();
-                toTime = fromTime + duration.days(100);
-                expiryTime = toTime + duration.days(100);
-        
                 let tx = await I_GeneralTransferManager.modifyWhitelist(
                     account_investor1,
                     fromTime,
                     toTime,
                     expiryTime,
                     {
-                        from: token_owner,
+                        from: account_issuer,
                         gas: 500000
                     });
+
                 assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
+
                 // Jump time
                 await increaseTime(5000);
                 // Fallback transaction

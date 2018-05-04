@@ -9,4 +9,6 @@ contract IModuleRegistry {
 
     function registerModule(address _moduleFactory) external returns(bool);
 
+    function getTagByModuleType(uint8 _moduleType) public view returns(bytes32[]);
+
 }

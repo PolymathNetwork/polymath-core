@@ -18,6 +18,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     mapping (address => address[]) public reputation;
     mapping (uint8 => address[]) public moduleList;
     mapping (address => bool) public verified;
+    mapping (uint8 => bytes32[]) public availableTags;
 
     address public securityTokenRegistry;
 
@@ -77,5 +78,39 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         require(_securityTokenRegistry != address(0), "Address of securityTokenregistry should not be 0x");
         securityTokenRegistry = _securityTokenRegistry;
     }
+
+    /**
+     * @dev Use to get all the tags releated to the functionality of the Module Factory.
+     * @param _moduleType Type of module
+     */
+    function getTagByModuleType(uint8 _moduleType) public view returns(bytes32[]) {
+        return availableTags[_moduleType];
+    }
+
+    /**
+     * @dev Add the tag for specified Module Factory
+     * @param _moduleType Type of module.
+     * @param _tag List of tags
+     */
+     function addTagByModuleType(uint8 _moduleType, bytes32[] _tag) public onlyOwner {
+         for (uint8 i = 0; i < _tag.length; i++) {
+             availableTags[_moduleType].push(_tag[i]);
+         }
+     }
+
+    /**
+     * @dev remove the tag for specified Module Factory
+     * @param _moduleType Type of module.
+     * @param _removedTags List of tags
+     */
+     function removeTagByModuleType(uint8 _moduleType, bytes32[] _removedTags) public onlyOwner {
+         for (uint8 i = 0; i < availableTags[_moduleType].length; i++) {
+            for (uint8 j = 0; j < _removedTags.length; j++) {
+                if (availableTags[_moduleType][i] == _removedTags[j]) {
+                    delete availableTags[_moduleType][i];
+                }
+            }
+        }
+     }
 
 }

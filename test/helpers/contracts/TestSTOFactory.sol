@@ -48,4 +48,12 @@ contract TestSTOFactory is IModuleFactory {
         return "Test STO - you can mint tokens at will";
     }
 
+    function getTags() public view returns(bytes32[]) {
+        bytes32[] memory availableTags = new bytes32[](4);
+        availableTags[0] = "Test";
+        availableTags[1] = "Non-refundable";
+        availableTags[2] = "ETH";
+        return availableTags;
+    }
+
 }

@@ -81,10 +81,6 @@ contract('PreSaleSTO', accounts => {
 
     before(async() => {
         
-        fromTime = latestTime();
-        toTime = latestTime() + duration.days(15);
-        expiryTime = toTime + duration.days(100);
-        
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
@@ -203,7 +199,6 @@ contract('PreSaleSTO', accounts => {
             SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
             LatestTime: ${latestTime()}\n
         `);
-        endTime = latestTime() + duration.days(20);           // Start time will be 5000 seconds more than the latest time
     });
 
     describe("Generate the SecurityToken", async() => {
@@ -263,7 +258,7 @@ contract('PreSaleSTO', accounts => {
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
-
+            endTime = latestTime() + duration.days(30);           // Start time will be 5000 seconds more than the latest time
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [endTime]);
 
             const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
@@ -305,6 +300,10 @@ contract('PreSaleSTO', accounts => {
         });
 
         it("Should Buy the tokens", async() => {
+            fromTime = latestTime();
+            toTime = fromTime + duration.days(100);
+            expiryTime = toTime + duration.days(100);
+
             // Add the Investor in to the whitelist
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
@@ -336,7 +335,7 @@ contract('PreSaleSTO', accounts => {
         });
 
         it("Should failed at the time of buying the tokens -- Because STO has started", async() => {
-            await increaseTime(duration.days(200)); // increased beyond the end time of the STO
+            await increaseTime(duration.days(100)); // increased beyond the end time of the STO
             let errorThrown = false;
             try {
                 // Fallback transaction

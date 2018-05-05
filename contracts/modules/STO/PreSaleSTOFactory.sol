@@ -49,4 +49,10 @@ contract PreSaleSTOFactory is IModuleFactory {
         return "Configure and track pre-sale token allocations";
     }
 
+    function getTags() public view returns(bytes32[]) {
+        bytes32[] memory availableTags = new bytes32[](1);
+        availableTags[0] = "Presale";
+        return availableTags;
+    }
+
 }

@@ -292,7 +292,7 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should Buy the tokens", async() => {
             // Add the Investor in to the whitelist
-            
+
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
                 latestTime(),
@@ -480,7 +480,7 @@ contract('GeneralTransferManager', accounts => {
                     from: account_investor2,
                     gas: 500000
                 });
-                
+
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Jump time

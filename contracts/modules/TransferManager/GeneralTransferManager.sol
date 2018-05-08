@@ -100,21 +100,24 @@ contract GeneralTransferManager is ITransferManager {
     * b) Seller's sale lockup period is over
     * c) Buyer's purchase lockup is over
     */
-    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view whenNotPaused returns(bool) {
-        if (allowAllTransfers) {
-        //All transfers allowed, regardless of whitelist
-        return true;
+    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(bool) {
+        if (!paused) {
+            if (allowAllTransfers) {
+            //All transfers allowed, regardless of whitelist
+            return true;
+            }
+            if (allowAllWhitelistTransfers) {
+                //Anyone on the whitelist can transfer, regardless of block number
+                return (onWhitelist(_to) && onWhitelist(_from));
+            }
+            if (allowAllWhitelistIssuances && _from == issuanceAddress) {
+                return onWhitelist(_to);
+            }
+            //Anyone on the whitelist can transfer provided the blocknumber is large enough
+            return ((onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
+                (onWhitelist(_to) && whitelist[_to].toTime <= now));
         }
-        if (allowAllWhitelistTransfers) {
-            //Anyone on the whitelist can transfer, regardless of block number
-            return (onWhitelist(_to) && onWhitelist(_from));
-        }
-        if (allowAllWhitelistIssuances && _from == issuanceAddress) {
-            return onWhitelist(_to);
-        }
-        //Anyone on the whitelist can transfer provided the blocknumber is large enough
-        return ((onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
-            (onWhitelist(_to) && whitelist[_to].toTime <= now));
+        return false;
     }
 
     /**

@@ -22,13 +22,14 @@ contract ExchangeTransferManager is ITransferManager {
     {
     }
 
-    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view whenNotPaused returns(bool) {
-        if (_from == exchange) {
-            return getExchangePermission(_to);
-        } else if (_to == exchange) {
-            return getExchangePermission(_from);
+    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(bool) {
+        if (!paused) {
+             if (_from == exchange) {
+                return getExchangePermission(_to);
+            } else if (_to == exchange) {
+                return getExchangePermission(_from);
+            }
         }
-
         return false;
     }
 

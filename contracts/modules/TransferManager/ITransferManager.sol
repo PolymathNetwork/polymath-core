@@ -10,27 +10,11 @@ contract ITransferManager is IModule {
 
     bool public paused = false;
 
-
-  /**
-   * @dev Modifier to make a function callable only when the contract is not paused.
-   */
-  modifier whenNotPaused() {
-    require(!paused);
-    _;
-  }
-
-  /**
-   * @dev Modifier to make a function callable only when the contract is paused.
-   */
-  modifier whenPaused() {
-    require(paused);
-    _;
-  }
-
   /**
    * @dev called by the owner to pause, triggers stopped state
    */
-  function pause() onlyOwner whenNotPaused public {
+  function pause() onlyOwner public {
+    require(!paused);
     paused = true;
     emit Pause(now);
   }
@@ -38,7 +22,8 @@ contract ITransferManager is IModule {
   /**
    * @dev called by the owner to unpause, returns to normal state
    */
-  function unpause() onlyOwner whenPaused public {
+  function unpause() onlyOwner public {
+    require(paused);
     paused = false;
     emit Unpause(now);
   }

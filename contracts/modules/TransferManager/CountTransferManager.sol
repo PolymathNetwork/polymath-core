@@ -30,6 +30,7 @@ contract CountTransferManager is ITransferManager {
     function changeHolderCount(uint256 _holderCount) public onlyOwner {
         emit LogModifyHolderCount(holderCount, _holderCount);
         holderCount = _holderCount;
+        require(holderCount <= ISecurityToken(securityToken).investorCount());
     }
 
     function getPermissions() public view returns(bytes32[]) {

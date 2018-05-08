@@ -27,6 +27,11 @@ contract CountTransferManager is ITransferManager {
         return bytes4(keccak256("configure(uint256)"));
     }
 
+    function changeHolderCount(uint256 _holderCount) public onlyOwner {
+        emit LogModifyHolderCount(holderCount, _holderCount);
+        holderCount = _holderCount;
+    }
+
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;

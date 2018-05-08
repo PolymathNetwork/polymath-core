@@ -496,6 +496,28 @@ contract('GeneralTransferManager', accounts => {
 
         });
 
+        it("should able to trasfer the tokens", async() => {
+            await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, {from : token_owner});
+            console.log(await I_SecurityToken.balanceOf(account_investor1));
+            console.log(await I_SecurityToken.balanceOf(account_investor2));
+            await I_SecurityToken.transfer(account_investor1, 10, {from: account_investor2});
+            console.log(await I_SecurityToken.balanceOf(account_investor1));
+            console.log(await I_SecurityToken.balanceOf(account_investor2));
+        });
+
+        it("should failed in trasfering the tokens", async() => {
+            await I_GeneralTransferManager.pause({from: token_owner});
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor1, 10, {from: account_investor2});
+            } catch(error) {
+                console.log(`Failed because trasfer is paused`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
     });
 
 });

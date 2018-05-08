@@ -22,7 +22,7 @@ contract ExchangeTransferManager is ITransferManager {
     {
     }
 
-    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(bool) {
+    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view whenNotPaused returns(bool) {
         if (_from == exchange) {
             return getExchangePermission(_to);
         } else if (_to == exchange) {
@@ -62,4 +62,5 @@ contract ExchangeTransferManager is ITransferManager {
         // e.g. calling out to another contract maintained by the exchange to get list of allowed users
         return whitelist[_investor];
     }
+
 }

@@ -5,10 +5,10 @@ import "../../interfaces/IModule.sol";
 
 contract ITransferManager is IModule {
 
-   event Pause(uint256 _timestamp);
-   event Unpause(uint256 _timestamp);
+    event Pause(uint256 _timestammp);
+    event Unpause(uint256 _timestamp);
 
-  bool public paused = false;
+    bool public paused = false;
 
 
   /**

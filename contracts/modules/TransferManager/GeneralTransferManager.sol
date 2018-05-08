@@ -102,8 +102,8 @@ contract GeneralTransferManager is ITransferManager {
     */
     function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view whenNotPaused returns(bool) {
         if (allowAllTransfers) {
-            //All transfers allowed, regardless of whitelist
-            return true;
+        //All transfers allowed, regardless of whitelist
+        return true;
         }
         if (allowAllWhitelistTransfers) {
             //Anyone on the whitelist can transfer, regardless of block number
@@ -194,4 +194,9 @@ contract GeneralTransferManager is ITransferManager {
         return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) && 
             (whitelist[_investor].expiryTime >= now));
     }
+
+    // function pauseTransfers(bool _pause) public {
+    //     pause = _pause;
+    //     emit LogTransfersHalted(_pause, now);
+    // }
 }

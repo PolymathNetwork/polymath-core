@@ -56,6 +56,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
     event Mint(address indexed to, uint256 amount);
+    event Burn(address indexed _burner, uint256 _value);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
@@ -279,5 +280,16 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
                 return true;
             }
         }
+    }
+
+    function burn(uint256 _value) checkGranularity(_value) public {
+        require(_value <= balances[msg.sender]);
+        // no need to require value <= totalSupply, since that would imply the
+        // sender's balance is greater than the totalSupply, which *should* be an assertion failure
+
+        balances[msg.sender] = balances[msg.sender].sub(_value);
+        totalSupply_ = totalSupply_.sub(_value);
+        emit Burn(msg.sender, _value);
+        emit Transfer(msg.sender, address(0), _value);
     }
 }

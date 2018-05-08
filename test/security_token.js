@@ -625,6 +625,26 @@ contract('SecurityToken', accounts => {
                 assert.ok(errorThrown, message);
            });
 
+           it("should fail in burning the securities token because of granularity check", async() => {
+            let balance = await I_SecurityToken.balanceOf(account_temp);
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.burn(55555, {from: account_temp});
+            } catch (error) {
+                console.log(`Granularity failure`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+            
+        });
+
+           it("should burn the securities token", async() => {
+               let balance = await I_SecurityToken.balanceOf(account_temp);
+               await I_SecurityToken.burn(balance, {from: account_temp});
+               assert.equal((await I_SecurityToken.balanceOf(account_temp)).toNumber(), 0);
+           });
+
     });
 
   });

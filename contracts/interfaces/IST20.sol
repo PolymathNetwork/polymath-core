@@ -11,4 +11,7 @@ contract IST20 {
 
     //used to create tokens
     function mint(address _investor, uint256 _amount) public returns (bool success);
+
+    //burn the tokens
+    function burn(uint256 _value) public;
 }

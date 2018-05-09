@@ -61,8 +61,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     event LogGranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
-    event Mint(address indexed to, uint256 amount);
-    event Burn(address indexed _burner, uint256 _value);
+    event Minted(address indexed to, uint256 amount);
+    event Burnt(address indexed _burner, uint256 _value);
     event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
@@ -298,7 +298,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);
-        emit Mint(_investor, _amount);
+        emit Minted(_investor, _amount);
         emit Transfer(address(0), _investor, _amount);
         return true;
     }
@@ -324,14 +324,14 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     function burn(uint256 _value) checkGranularity(_value) public {
         require(tokenBurner != address(0), "Token Burner contract address is not set yet");
-        require(_value <= balances[msg.sender], "Value should no be greater than the balance of meg.sender");
+        require(_value <= balances[msg.sender], "Value should no be greater than the balance of msg.sender");
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
 
         balances[msg.sender] = balances[msg.sender].sub(_value);
         require(tokenBurner.burn(msg.sender, _value), "Token burner process is not validated");
         totalSupply_ = totalSupply_.sub(_value);
-        emit Burn(msg.sender, _value);
+        emit Burnt(msg.sender, _value);
         emit Transfer(msg.sender, address(0), _value);
     }
 }

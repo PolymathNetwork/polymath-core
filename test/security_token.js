@@ -15,6 +15,7 @@ const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 const PolyToken = artifacts.require('./PolyToken.sol');
 const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const TokenBurner = artifacts.require('./TokenBurner.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -56,6 +57,7 @@ contract('SecurityToken', accounts => {
     let I_SecurityToken;
     let I_CappedSTO;
     let I_PolyToken;
+    let I_TokenBurner;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const swarmHash = "dagwrgwgvwergwrvwrg";
@@ -683,6 +685,32 @@ contract('SecurityToken', accounts => {
            it("Should able to transfers the tokens from one user to another", async() => {
                 console.log(await I_SecurityToken.balanceOf(account_investor1));
                 await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), {from: account_temp});
+           });
+
+           it("Should fail to call the burn the tokens because token burner contract is not set", async() => {
+                // Deploy the token burner contract
+                I_TokenBurner = await TokenBurner.new(I_SecurityToken.address, { from: token_owner });
+
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });
+                } catch(error) {
+                   console.log('failed in calling burn function because token burner contract is not set');
+                   errorThrown = true;
+                   ensureException(error);
+               }
+               assert.ok(errorThrown, message);
+           });
+
+           it("Should burn the tokens", async ()=> {
+                // Deploy the token burner contract
+                I_TokenBurner = await TokenBurner.new(I_SecurityToken.address, { from: token_owner });
+
+                await I_SecurityToken.setTokenBurner(I_TokenBurner.address, { from: token_owner });
+                assert.equal(await I_SecurityToken.tokenBurner.call(), I_TokenBurner.address);
+        
+                let tx = await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });
+                assert.equal(tx.logs[0].args._value, web3.utils.toWei('1', 'ether'));
            });
     });
 

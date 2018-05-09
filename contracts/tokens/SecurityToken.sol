@@ -11,7 +11,7 @@ import "../interfaces/IST20.sol";
 import "../modules/TransferManager/ITransferManager.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "../interfaces/ISecurityTokenRegistry.sol";
-
+import "../helpers/TokenBurner.sol";
 
 /**
 * @title SecurityToken
@@ -25,6 +25,9 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     using SafeMath for uint256;
 
     bytes32 public securityTokenVersion = "0.0.1";
+
+    // Reference to token burner contract
+    TokenBurner public tokenBurner;
 
     // Reference to the POLY token.
     ERC20 public polyToken;
@@ -52,11 +55,13 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         uint256 _timestamp
     );
 
+    event LogUpdateTokenDetails(bytes32 _oldDetails, bytes32 _newDetails);
     event LogGranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
     event Mint(address indexed to, uint256 amount);
     event Burn(address indexed _burner, uint256 _value);
+    
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
@@ -216,6 +221,15 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     /**
+     * @dev change the tokenDetails
+     */
+    function updateTokenDetails(bytes32 _newTokenDetails) public onlyOwner {
+        bytes32 _oldTokenDetails = tokenDetails;
+        tokenDetails = _newTokenDetails;
+        emit LogUpdateTokenDetails(_oldTokenDetails, tokenDetails);
+    }
+
+    /**
     * @dev allows owner to change token granularity
     */
     function changeGranularity(uint256 _granularity) public onlyOwner {
@@ -282,12 +296,18 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
         }
     }
 
+    function setTokenBurner(address _tokenBurner) public onlyOwner {
+        tokenBurner = TokenBurner(_tokenBurner);
+    }
+
     function burn(uint256 _value) checkGranularity(_value) public {
-        require(_value <= balances[msg.sender]);
+        require(tokenBurner != address(0), "Token Burner contract address is not set yet");
+        require(_value <= balances[msg.sender], "Value should no be greater than the balance of meg.sender");
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
 
         balances[msg.sender] = balances[msg.sender].sub(_value);
+        require(tokenBurner.burn(msg.sender, _value), "Token burner process is not validated");
         totalSupply_ = totalSupply_.sub(_value);
         emit Burn(msg.sender, _value);
         emit Transfer(msg.sender, address(0), _value);

@@ -241,7 +241,7 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:5000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -625,6 +625,65 @@ contract('SecurityToken', accounts => {
                 assert.ok(errorThrown, message);
            });
 
+           it("Should freeze the transfers", async() => {
+               let tx = await I_SecurityToken.freezeTransfers({from: token_owner});
+                assert.isTrue(tx.logs[0].args._freeze);
+           });
+
+           it("Should fail in buying to tokens", async() => {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_temp,
+                fromTime,
+                toTime,
+                expiryTime,
+                {
+                    from: account_delegate,
+                    gas: 500000
+                });
+
+            assert.equal(tx.logs[0].args._investor, account_temp, "Failed in adding the investor in whitelist");
+            
+            let errorThrown = false;
+            try {
+                    // Fallback transaction
+                await web3.eth.sendTransaction({
+                    from: account_temp,
+                    to: I_CappedSTO.address,
+                    gas: 210000,
+                    value: web3.utils.toWei('1', 'ether')
+                    });
+
+            } catch (error) {
+                    console.log(`Because all transfers get freezed`);
+                    errorThrown = true;
+                    ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+           });
+
+           it("Should fail in trasfering the tokens from one user to another", async() => {
+               await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, {from : token_owner});
+               console.log(await I_SecurityToken.balanceOf(account_investor1));
+               let errorThrown = false;
+               try {
+                    await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), {from: account_temp});
+               } catch(error) {
+                   console.log('failed in trasfer because all transfers are at hold');
+                   errorThrown = true;
+                   ensureException(error);
+               }
+               assert.ok(errorThrown, message);
+           });
+
+           it("Should un freeze all the transfers", async() => {
+                let tx = await I_SecurityToken.unfreezeTransfers({from: token_owner});
+                assert.isFalse(tx.logs[0].args._freeze);
+           });
+
+           it("Should able to transfers the tokens from one user to another", async() => {
+                console.log(await I_SecurityToken.balanceOf(account_investor1));
+                await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), {from: account_temp});
+           });
     });
 
   });

@@ -25,7 +25,8 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     using SafeMath for uint256;
 
     bytes32 public securityTokenVersion = "0.0.1";
-
+    // Use to halt all the transactions
+    bool public freeze = false;
     // Reference to the POLY token.
     ERC20 public polyToken;
 
@@ -56,6 +57,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
     event Mint(address indexed to, uint256 amount);
+    event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
@@ -224,6 +226,24 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     /**
+     * @dev freeze all the transfers
+     */
+    function freezeTransfers() public onlyOwner {
+        require(!freeze);
+        freeze = true;
+        emit LogFreezeTransfers(freeze, now);
+    }
+
+    /**
+     * @dev un-freeze all the transfers
+     */
+    function unfreezeTransfers() public onlyOwner {
+        require(freeze);
+        freeze = false;
+        emit LogFreezeTransfers(freeze, now);
+    }
+
+    /**
      * @dev Overloaded version of the transfer function
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
@@ -242,12 +262,14 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
     function verifyTransfer(address _from, address _to, uint256 _amount) public view checkGranularity(_amount) returns (bool success) {
-        if (modules[TRANSFERMANAGER_KEY].length == 0) {
-            return true;
-        }
-        for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
-            if (ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
+        if (!freeze) {
+            if (modules[TRANSFERMANAGER_KEY].length == 0) {
                 return true;
+            }
+            for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
+                if (ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
+                    return true;
+                }
             }
         }
         return false;

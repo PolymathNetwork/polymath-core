@@ -48,5 +48,13 @@ contract CappedSTOFactory is IModuleFactory {
         return "Initialises a capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY/ETH to token rate), _fundRaiseType (whether you are raising in POLY or ETH), _polyToken (address of POLY token), _fundsReceiver (address which will receive funds)";
     }
 
+    function getTags() public view returns(bytes32[]) {
+        bytes32[] memory availableTags = new bytes32[](4);
+        availableTags[0] = "Capped";
+        availableTags[1] = "Non-refundable";
+        availableTags[2] = "POLY";
+        availableTags[3] = "ETH";
+        return availableTags;
+    }
 
 }

@@ -71,16 +71,16 @@ contract('CappedSTO', accounts => {
     const budget = 0;
 
     // Capped STO details
-    const startTime = latestTime() + duration.days(1);           // Start time will be 5000 seconds more than the latest time
-    const endTime = startTime + duration.days(30);                     // Add 30 days more
+    let startTime;           // Start time will be 5000 seconds more than the latest time
+    let endTime;                     // Add 30 days more
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
     const fundRaiseType = 0;
     const P_cap = new BigNumber(50000).times(new BigNumber(10).pow(18));
     const P_fundRaiseType = 1;
     const P_rate = 5;
-    const P_startTime = endTime + duration.days(2);
-    const P_endTime = P_startTime + duration.days(30);
+    let P_startTime = endTime + duration.days(2);
+    let P_endTime = P_startTime + duration.days(30);
     const functionSignature = {
         name: 'configure',
         type: 'function',
@@ -238,7 +238,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:5000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -273,6 +273,8 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to launch the STO due to rate is 0", async () => {
+            startTime = latestTime() + duration.days(1);           // Start time will be 5000 seconds more than the latest time
+            endTime = startTime + duration.days(30);       
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
             let errorThrown = false;
             try {
@@ -576,7 +578,9 @@ contract('CappedSTO', accounts => {
             });
 
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
-                let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_decimals, P_tokenDetails, false, { from: token_owner });
+                P_startTime = endTime + duration.days(2);
+                P_endTime = P_startTime + duration.days(30);
+                let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_decimals, P_tokenDetails, false, { from: token_owner, gas:5000000 });
 
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[1].args._ticker, P_symbol, "SecurityToken doesn't get deployed");

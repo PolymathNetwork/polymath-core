@@ -1,11 +1,11 @@
 pragma solidity ^0.4.23;
 
-import "./DummySTO.sol";
+import "./PreSaleSTO.sol";
 import "../../interfaces/IModuleFactory.sol";
 import "../../interfaces/IModule.sol";
 
 
-contract DummySTOFactory is IModuleFactory {
+contract PreSaleSTOFactory is IModuleFactory {
 
     constructor (address _polyAddress) public
       IModuleFactory(_polyAddress)
@@ -13,16 +13,16 @@ contract DummySTOFactory is IModuleFactory {
 
     }
 
-
     function deploy(bytes _data) external returns(address) {
-        if (getCost() > 0)
+        if (getCost() > 0) {
             require(polyToken.transferFrom(msg.sender, owner, getCost()), "Failed transferFrom because of sufficent Allowance is not provided");
+        }
         //Check valid bytes - can only call module init function
-        DummySTO dummySTO = new DummySTO(msg.sender, address(polyToken));
+        PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(getSig(_data) == dummySTO.getInitFunction(), "Provided data is not valid");
-        require(address(dummySTO).call(_data), "Un-successfull call");
-        return address(dummySTO);
+        require(getSig(_data) == preSaleSTO.getInitFunction(), "Provided data is not valid");
+        require(address(preSaleSTO).call(_data), "Un-successfull call");
+        return address(preSaleSTO);
     }
 
     function getCost() public view returns(uint256) {
@@ -34,26 +34,25 @@ contract DummySTOFactory is IModuleFactory {
     }
 
     function getName() public view returns(bytes32) {
-        return "DummySTO";
+        return "PreSaleSTO";
     }
 
     function getDescription() public view returns(string) {
-        return "Dummy STO";
+        return "Allows Issuer to configure pre-sale token allocations";
     }
 
     function getTitle() public view returns(string) {
-        return "Dummy STO";
+        return "PreSale STO";
     }
 
     function getInstructions() public view returns(string) {
-        return "Dummy STO - you can mint tokens at will";
+        return "Configure and track pre-sale token allocations";
     }
 
     function getTags() public view returns(bytes32[]) {
-        bytes32[] memory availableTags = new bytes32[](4);
-        availableTags[0] = "Dummy";
-        availableTags[1] = "Non-refundable";
-        availableTags[2] = "ETH";
+        bytes32[] memory availableTags = new bytes32[](1);
+        availableTags[0] = "Presale";
         return availableTags;
     }
+
 }

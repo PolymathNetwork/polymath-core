@@ -229,7 +229,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 5000000});
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -292,7 +292,7 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should Buy the tokens", async() => {
             // Add the Investor in to the whitelist
-            
+
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
                 latestTime(),
@@ -480,7 +480,7 @@ contract('GeneralTransferManager', accounts => {
                     from: account_investor2,
                     gas: 500000
                 });
-                
+
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Jump time
@@ -494,6 +494,20 @@ contract('GeneralTransferManager', accounts => {
                 web3.utils.toWei('1', 'ether')
             );
 
+        });
+
+        it("should failed in trasfering the tokens", async() => {
+            await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, {from : token_owner});
+            await I_GeneralTransferManager.pause({from: token_owner});
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('2','ether'), {from: account_investor2});
+            } catch(error) {
+                console.log(`Failed because trasfer is paused`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
         });
 
     });

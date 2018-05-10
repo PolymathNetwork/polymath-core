@@ -28,6 +28,8 @@ contract IModuleFactory is Ownable {
     function getTitle() public view returns(string);
 
     function getInstructions() public view returns (string);
+    
+    function getTags() public view returns (bytes32[]);
 
     //Pull function sig from _data
     function getSig(bytes _data) internal pure returns (bytes4 sig) {

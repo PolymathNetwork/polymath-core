@@ -101,20 +101,23 @@ contract GeneralTransferManager is ITransferManager {
     * c) Buyer's purchase lockup is over
     */
     function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(bool) {
-        if (allowAllTransfers) {
-            //All transfers allowed, regardless of whitelist
-            return Result.VALID;
+        if (!paused) {
+            if (allowAllTransfers) {
+                //All transfers allowed, regardless of whitelist
+                return Result.VALID;
+            }
+            if (allowAllWhitelistTransfers) {
+                //Anyone on the whitelist can transfer, regardless of block number
+                return (onWhitelist(_to) && onWhitelist(_from)) ? Result.VALID : Result.NA;
+            }
+            if (allowAllWhitelistIssuances && _from == issuanceAddress) {
+                return onWhitelist(_to) ? Result.VALID : Result.NA;
+            }
+            //Anyone on the whitelist can transfer provided the blocknumber is large enough
+            return ((onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
+                (onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA;
         }
-        if (allowAllWhitelistTransfers) {
-            //Anyone on the whitelist can transfer, regardless of block number
-            return (onWhitelist(_to) && onWhitelist(_from)) ? Result.VALID : Result.NA;
-        }
-        if (allowAllWhitelistIssuances && _from == issuanceAddress) {
-            return onWhitelist(_to) ? Result.VALID : Result.NA;
-        }
-        //Anyone on the whitelist can transfer provided the blocknumber is large enough
-        return ((onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
-            (onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA;
+        return Result.NA;
     }
 
     /**
@@ -194,4 +197,9 @@ contract GeneralTransferManager is ITransferManager {
         return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) &&
             (whitelist[_investor].expiryTime >= now));
     }
+
+    // function pauseTransfers(bool _pause) public {
+    //     pause = _pause;
+    //     emit LogTransfersHalted(_pause, now);
+    // }
 }

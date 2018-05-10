@@ -23,10 +23,12 @@ contract ExchangeTransferManager is ITransferManager {
     }
 
     function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(Result) {
-        if (_from == exchange) {
-            return (getExchangePermission(_to) ? Result.VALID : Result.NA);
-        } else if (_to == exchange) {
-            return (getExchangePermission(_from) ? Result.VALID : Result.NA);
+        if (!paused) {
+            if (_from == exchange) {
+                return (getExchangePermission(_to) ? Result.VALID : Result.NA);
+            } else if (_to == exchange) {
+                return (getExchangePermission(_from) ? Result.VALID : Result.NA);
+            }
         }
 
         return Result.NA;
@@ -62,4 +64,5 @@ contract ExchangeTransferManager is ITransferManager {
         // e.g. calling out to another contract maintained by the exchange to get list of allowed users
         return whitelist[_investor];
     }
+
 }

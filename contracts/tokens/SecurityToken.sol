@@ -260,16 +260,21 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
-    function verifyTransfer(address _from, address _to, uint256 _amount) public view checkGranularity(_amount) returns (bool success) {
+    function verifyTransfer(address _from, address _to, uint256 _amount) public view checkGranularity(_amount) returns (bool) {
         if (modules[TRANSFERMANAGER_KEY].length == 0) {
             return true;
         }
+        bool success = false;
         for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
-            if (ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
-                return true;
+            ITransferManager.Result valid = ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount);
+            if (valid == ITransferManager.Result.INVALID) {
+                return false;
+            }
+            if (valid == ITransferManager.Result.VALID) {
+                success = true;
             }
         }
-        return false;
+        return success;
     }
 
     /**

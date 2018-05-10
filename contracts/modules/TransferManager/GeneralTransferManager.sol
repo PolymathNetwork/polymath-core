@@ -103,18 +103,18 @@ contract GeneralTransferManager is ITransferManager {
     function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(bool) {
         if (allowAllTransfers) {
             //All transfers allowed, regardless of whitelist
-            return true;
+            return Result.VALID;
         }
         if (allowAllWhitelistTransfers) {
             //Anyone on the whitelist can transfer, regardless of block number
-            return (onWhitelist(_to) && onWhitelist(_from));
+            return (onWhitelist(_to) && onWhitelist(_from)) ? Result.VALID : Result.NA;
         }
         if (allowAllWhitelistIssuances && _from == issuanceAddress) {
-            return onWhitelist(_to);
+            return onWhitelist(_to) ? Result.VALID : Result.NA;
         }
         //Anyone on the whitelist can transfer provided the blocknumber is large enough
         return ((onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
-            (onWhitelist(_to) && whitelist[_to].toTime <= now));
+            (onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA;
     }
 
     /**
@@ -191,7 +191,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     function onWhitelist(address _investor) internal view returns(bool) {
-        return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) && 
+        return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) &&
             (whitelist[_investor].expiryTime >= now));
     }
 }

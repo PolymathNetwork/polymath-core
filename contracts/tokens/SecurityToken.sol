@@ -1,7 +1,5 @@
 pragma solidity ^0.4.23;
 
-import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/IModule.sol";
@@ -21,7 +19,7 @@ import "../interfaces/ISecurityTokenRegistry.sol";
 * - Modules can be attached to it to control its behaviour
 * - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
 */
-contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
+contract SecurityToken is ISecurityToken {
     using SafeMath for uint256;
 
     bytes32 public securityTokenVersion = "0.0.1";
@@ -281,33 +279,24 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
 
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
-<<<<<<< HEAD
     function verifyTransfer(address _from, address _to, uint256 _amount) public view checkGranularity(_amount) returns (bool) {
-        if (modules[TRANSFERMANAGER_KEY].length == 0) {
-            return true;
-        }
-        bool success = false;
-        for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
-            ITransferManager.Result valid = ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount);
-            if (valid == ITransferManager.Result.INVALID) {
-                return false;
-            }
-            if (valid == ITransferManager.Result.VALID) {
-                success = true;
-=======
-    function verifyTransfer(address _from, address _to, uint256 _amount) public view checkGranularity(_amount) returns (bool success) {
         if (!freeze) {
             if (modules[TRANSFERMANAGER_KEY].length == 0) {
                 return true;
->>>>>>> master
             }
+            bool success = false;
             for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
-                if (ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
-                    return true;
+                ITransferManager.Result valid = ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount);
+                if (valid == ITransferManager.Result.INVALID) {
+                    return false;
+                }
+                if (valid == ITransferManager.Result.VALID) {
+                    success = true;
                 }
             }
-        }
-        return success;
+            return success;
+      }
+      return false;
     }
 
     /**

@@ -23,7 +23,10 @@ All notable changes to this project will be documented in this file.
 * `takeFee()` new function introduced to extract the POLY token from the factory. It only be called by the owner of the factory.      
 * Added ability for issuer to provide a signed piece of data to allow investors to whitelist themselves.
 * `_securityTokenAddress` get indexed in the `LogNewSecurityToken` event.     
-* Now each investor have its `expiryTime` for the KYC. After the expiryTime limit reached, investor will not abe to use transfer related functions.           
+* Now each investor have its `expiryTime` for the KYC. After the expiryTime limit reached, investor will not abe to use transfer related functions.
+* Transfers of tokens gets paused at the level of all TM as well as on the ST level. To facilitate this 3 functions get added namely
+`pause()`, `unpause()`,`freezeTransfers()`. All 3 functions are called by the issuer of the securityToken only.
+* Security token has got a new feature of burning the tokens, To use this feature user need to call the `burn()` function but before that issuer need to deploy the `TokenBurner` contract and set its address into the SecurityToken contract using the function `setTokenBurner()`.            
 
 ## Remove     
 

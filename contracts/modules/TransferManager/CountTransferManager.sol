@@ -14,7 +14,7 @@ contract CountTransferManager is ITransferManager {
     {
     }
 
-    function verifyTransfer(address _from, address _to, uint256 _amount) public view returns(Result) {
+    function verifyTransfer(address /* _from */, address _to, uint256 /* _amount */) public view returns(Result) {
         if (!paused) {
             if (holderCount < ISecurityToken(securityToken).investorCount()) {
                 // Allow trannsfers to existing holders
@@ -23,7 +23,7 @@ contract CountTransferManager is ITransferManager {
                 }
                 return Result.INVALID;
             }
-            return Result.VALID;
+            return Result.NA;
         }
         return Result.NA;
     }
@@ -33,7 +33,7 @@ contract CountTransferManager is ITransferManager {
     }
 
     function getInitFunction() public returns(bytes4) {
-        return bytes4(keccak256("configure(uint256,bool)"));
+        return bytes4(keccak256("configure(uint256)"));
     }
 
     function changeHolderCount(uint256 _holderCount) public onlyOwner {

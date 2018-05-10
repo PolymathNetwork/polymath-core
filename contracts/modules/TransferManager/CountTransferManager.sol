@@ -4,7 +4,7 @@ import "./ITransferManager.sol";
 
 contract CountTransferManager is ITransferManager {
 
-    uint256 public holderCount;
+    uint256 public maxHolderCount;
 
     event LogModifyHolderCount(uint256 _oldHolderCount, uint256 _newHolderCount);
 
@@ -16,8 +16,8 @@ contract CountTransferManager is ITransferManager {
 
     function verifyTransfer(address /* _from */, address _to, uint256 /* _amount */) public view returns(Result) {
         if (!paused) {
-            if (holderCount < ISecurityToken(securityToken).investorCount()) {
-                // Allow trannsfers to existing holders
+            if (maxHolderCount < ISecurityToken(securityToken).investorCount()) {
+                // Allow trannsfers to existing maxHolders
                 if (ISecurityToken(securityToken).balanceOf(_to) != 0) {
                     return Result.VALID;
                 }
@@ -28,17 +28,17 @@ contract CountTransferManager is ITransferManager {
         return Result.NA;
     }
 
-    function configure(uint256 _holderCount) public onlyFactory {
-        holderCount = _holderCount;
+    function configure(uint256 _maxHolderCount) public onlyFactory {
+        maxHolderCount = _maxHolderCount;
     }
 
     function getInitFunction() public returns(bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
 
-    function changeHolderCount(uint256 _holderCount) public onlyOwner {
-        emit LogModifyHolderCount(holderCount, _holderCount);
-        holderCount = _holderCount;
+    function changeHolderCount(uint256 _maxHolderCount) public onlyOwner {
+        emit LogModifyHolderCount(maxHolderCount, _maxHolderCount);
+        maxHolderCount = _maxHolderCount;
     }
 
     function getPermissions() public view returns(bytes32[]) {

@@ -73,7 +73,7 @@ contract('CountTransferManager', accounts => {
         type: 'function',
         inputs: [{
             type: 'uint256',
-            name: '_holderCount'
+            name: '_maxHolderCount'
         }
         ]
     }, [holderCount]);
@@ -363,7 +363,7 @@ contract('CountTransferManager', accounts => {
             await I_CountTransferManager.changeHolderCount(1, { from: token_owner });
 
             assert.equal(
-                (await I_CountTransferManager.holderCount()).toNumber(),
+                (await I_CountTransferManager.maxHolderCount()).toNumber(),
                 1
             );
         });

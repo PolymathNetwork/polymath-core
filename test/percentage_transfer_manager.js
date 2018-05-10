@@ -73,7 +73,7 @@ contract('PercentageTransferManager', accounts => {
         type: 'function',
         inputs: [{
             type: 'uint256',
-            name: '_holderPercentage'
+            name: '_maxHolderPercentage'
         }
         ]
     }, [holderPercentage]);
@@ -363,7 +363,7 @@ contract('PercentageTransferManager', accounts => {
             await I_PercentageTransferManager.changeHolderPercentage(100 * 10**16, { from: token_owner });
 
             assert.equal(
-                (await I_PercentageTransferManager.holderPercentage()).toNumber(),
+                (await I_PercentageTransferManager.maxHolderPercentage()).toNumber(),
                 100 * 10**16
             );
         });

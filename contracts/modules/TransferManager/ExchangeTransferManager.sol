@@ -22,15 +22,16 @@ contract ExchangeTransferManager is ITransferManager {
     {
     }
 
-    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(bool) {
+    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(Result) {
         if (!paused) {
-             if (_from == exchange) {
-                return getExchangePermission(_to);
+            if (_from == exchange) {
+                return (getExchangePermission(_to) ? Result.VALID : Result.NA);
             } else if (_to == exchange) {
-                return getExchangePermission(_from);
+                return (getExchangePermission(_from) ? Result.VALID : Result.NA);
             }
         }
-        return false;
+
+        return Result.NA;
     }
 
     function configure(address _exchange) public onlyFactory {

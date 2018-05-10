@@ -1,7 +1,9 @@
 pragma solidity ^0.4.23;
 
+import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 
-contract IST20 {
+contract IST20 is StandardToken, DetailedERC20 {
 
     // off-chain hash
     bytes32 public tokenDetails;

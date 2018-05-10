@@ -10,6 +10,8 @@ contract ISecurityToken is IST20, Ownable {
     uint8 public constant TRANSFERMANAGER_KEY = 2;
     uint8 public constant STO_KEY = 3;
     uint256 public granularity;
+    // Total number of non-zero token holders
+    uint256 public investorCount;
 
     //TODO: Factor out more stuff here
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool);

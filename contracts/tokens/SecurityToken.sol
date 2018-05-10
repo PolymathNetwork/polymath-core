@@ -1,7 +1,5 @@
 pragma solidity ^0.4.23;
 
-import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/IModule.sol";
@@ -21,7 +19,7 @@ import "../interfaces/ISecurityTokenRegistry.sol";
 * - Modules can be attached to it to control its behaviour
 * - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
 */
-contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
+contract SecurityToken is ISecurityToken {
     using SafeMath for uint256;
 
     bytes32 public securityTokenVersion = "0.0.1";
@@ -226,6 +224,24 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     }
 
     /**
+    * @dev keeps track of the number of non-zero token holders
+    */
+    function adjustInvestorCount(address _from, address _to, uint256 _value) internal {
+        if (_value == 0) {
+            return;
+        }
+        // Check whether sender is moving all of their tokens
+        if (_value == balanceOf(_from)) {
+            investorCount = investorCount.sub(1);
+        }
+        // Check whether receiver is a new token holder
+        if (balanceOf(_to) == 0) {
+            investorCount = investorCount.add(1);
+        }
+
+    }
+
+    /**
      * @dev freeze all the transfers
      */
     function freezeTransfers() public onlyOwner {
@@ -247,32 +263,42 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
      * @dev Overloaded version of the transfer function
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
+        adjustInvestorCount(msg.sender, _to, _value);
         require(verifyTransfer(msg.sender, _to, _value), "Transfer is not valid");
-        return super.transfer(_to, _value);
+        require(super.transfer(_to, _value));
+        return true;
     }
 
     /**
      * @dev Overloaded version of the transferFrom function
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
+        adjustInvestorCount(_from, _to, _value);
         require(verifyTransfer(_from, _to, _value), "Transfer is not valid");
-        return super.transferFrom(_from, _to, _value);
+        require(super.transferFrom(_from, _to, _value));
+        return true;
     }
 
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
-    function verifyTransfer(address _from, address _to, uint256 _amount) public view checkGranularity(_amount) returns (bool success) {
+    function verifyTransfer(address _from, address _to, uint256 _amount) public view checkGranularity(_amount) returns (bool) {
         if (!freeze) {
             if (modules[TRANSFERMANAGER_KEY].length == 0) {
                 return true;
             }
+            bool success = false;
             for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
-                if (ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount)) {
-                    return true;
+                ITransferManager.Result valid = ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount);
+                if (valid == ITransferManager.Result.INVALID) {
+                    return false;
+                }
+                if (valid == ITransferManager.Result.VALID) {
+                    success = true;
                 }
             }
-        }
-        return false;
+            return success;
+      }
+      return false;
     }
 
     /**
@@ -280,6 +306,7 @@ contract SecurityToken is ISecurityToken, StandardToken, DetailedERC20 {
     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
     */
     function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) returns (bool success) {
+        adjustInvestorCount(address(0), _investor, _amount);
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);

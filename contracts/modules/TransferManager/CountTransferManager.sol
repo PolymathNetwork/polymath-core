@@ -15,17 +15,20 @@ contract CountTransferManager is ITransferManager {
     }
 
     function verifyTransfer(address _from, address _to, uint256 _amount) public view returns(Result) {
-        if (holderCount < ISecurityToken(securityToken).investorCount()) {
-            // Allow trannsfers to existing holders
-            if (ISecurityToken(securityToken).balanceOf(_to) != 0) {
-                return Result.VALID;
+        if (!paused) {
+            if (holderCount < ISecurityToken(securityToken).investorCount()) {
+                // Allow trannsfers to existing holders
+                if (ISecurityToken(securityToken).balanceOf(_to) != 0) {
+                    return Result.VALID;
+                }
+                return Result.INVALID;
             }
-            return Result.INVALID;
+            return Result.VALID;
         }
-        return Result.VALID;
+        return Result.NA;
     }
 
-    function configure(uint256 _holderCount, bool _pinCount) public onlyFactory {
+    function configure(uint256 _holderCount) public onlyFactory {
         holderCount = _holderCount;
     }
 

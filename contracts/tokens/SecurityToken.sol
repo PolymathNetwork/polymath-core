@@ -266,6 +266,7 @@ contract SecurityToken is ISecurityToken {
         adjustInvestorCount(msg.sender, _to, _value);
         require(verifyTransfer(msg.sender, _to, _value), "Transfer is not valid");
         require(super.transfer(_to, _value));
+        return true;
     }
 
     /**
@@ -274,7 +275,8 @@ contract SecurityToken is ISecurityToken {
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         adjustInvestorCount(_from, _to, _value);
         require(verifyTransfer(_from, _to, _value), "Transfer is not valid");
-        return super.transferFrom(_from, _to, _value);
+        require(super.transferFrom(_from, _to, _value));
+        return true;
     }
 
     // Permissions this to a TransferManager module, which has a key of 2

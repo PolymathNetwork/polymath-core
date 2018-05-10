@@ -46,4 +46,10 @@ contract CountTransferManagerFactory is IModuleFactory {
         return "Allows an issuer to restrict the total number of non-zero token holders";
     }
 
+    function getTags() public view returns(bytes32[]) {
+         bytes32[] memory availableTags = new bytes32[](2);
+        availableTags[0] = "Count";
+        availableTags[1] = "Transfer Restriction";
+        return availableTags;
+    }
 }

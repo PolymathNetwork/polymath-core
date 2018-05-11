@@ -223,7 +223,7 @@ contract CappedSTO is ISTO {
     * @return Number of tokens that can be purchased with the specified _investedAmount
     */
     function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256) {
-        return _investedAmount.mul(rate);
+        return (_investedAmount.mul(rate)).div(10 ** (18 - uint8(IST20(securityToken).decimals())));
     }
 
     /**

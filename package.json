@@ -51,12 +51,13 @@
     "babel-preset-stage-3": "6.24.1",
     "babel-register": "6.26.0",
     "bignumber.js": "^6.0.0",
+    "ethereumjs-testrpc": "^6.0.3",
     "ethers": "^3.0.15",
+    "openzeppelin-solidity": "^1.9.0",
     "readline-sync": "^1.4.9",
     "truffle-contract": "^3.0.4",
     "truffle-hdwallet-provider-privkey": "^0.1.0",
-    "web3": "^1.0.0-beta.33",
-    "openzeppelin-solidity": "^1.9.0"
+    "web3": "^1.0.0-beta.33"
   },
   "devDependencies": {
     "eslint": "^4.19.1",
@@ -68,6 +69,7 @@
     "fast-csv": "^2.4.1",
     "ganache-cli": "^6.1.0",
     "sol-merger": "^0.1.2",
+    "solidity-coverage": "^0.5.0",
     "solium": "^1.1.6",
     "truffle": "^4.1.7",
     "truffle-wallet-provider": "0.0.5"

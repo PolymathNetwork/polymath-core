@@ -1,5 +1,5 @@
 module.exports = {
-    //testrpcOptions: '--port 8545 -l 5000000',
+    norpc: true,
     port: 8545,
     copyPackages: ['openzeppelin-solidity'],
     skipFiles: ['tokens/STVersionProxy001.sol',
@@ -9,11 +9,14 @@ module.exports = {
                 'interfaces/IModuleFactory.sol',
                 'interfaces/IModuleRegistry.sol',
                 'interfaces/ISecurityToken.sol',
-                'interfaces/ISecurityTokenRegistrar.sol',
+                'interfaces/ISecurityTokenRegistry.sol',
                 'interfaces/IST20.sol',
                 'interfaces/ISTProxy.sol',
                 'interfaces/ITickerRegistry.sol',
                 'helpers/Util.sol',
                 'helpers/TokenBurner.sol',
-                'Migrations.sol']
+                'helpers/PolyToken.sol',
+                'Migrations.sol',
+                'mocks/PolyTokenFaucet.sol',
+                'mocks/TestSTOFactory.sol']
 };

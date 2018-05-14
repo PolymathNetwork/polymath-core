@@ -19,7 +19,7 @@
     "migrate:local": "truffle migrate --network=development --reset --all",
     "migrate:ropsten": "truffle migrate --network=ropsten --reset --all",
     "migrate:mainnet": "truffle migrate --network=mainnet",
-    "coverage": "./node_modules/.bin/solidity-coverage",
+    "coverage": "scripts/coverage.sh",
     "flatten-modules": "sol-merger './contracts/modules/*/*.sol' ./flat/modules",
     "flatten-token": "sol-merger './contracts/tokens/*.sol' ./flat/tokens",
     "flatten": "sol-merger './contracts/*.sol' ./flat",

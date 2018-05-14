@@ -14,7 +14,7 @@ const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManage
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 const ExchangeTransferManager = artifacts.require('./ExchangeTransferManager');
-const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 import {signData} from './helpers/signData';
 import { pk }  from './helpers/testprivateKey';
@@ -229,7 +229,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 5000000});
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 50000000});
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -300,7 +300,7 @@ contract('GeneralTransferManager', accounts => {
                 latestTime() + duration.days(10),
                 {
                     from: account_issuer,
-                    gas: 500000
+                    gas: 5000000
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in adding the investor in whitelist");
@@ -372,7 +372,7 @@ contract('GeneralTransferManager', accounts => {
                   s,
                   {
                       from: account_investor2,
-                      gas: 500000
+                      gas: 5000000
                   });
             } catch(error) {
                 console.log(`Failed because incorrect sig data`);
@@ -408,7 +408,7 @@ contract('GeneralTransferManager', accounts => {
                   s,
                   {
                       from: account_investor2,
-                      gas: 500000
+                      gas: 5000000
                   });
             } catch(error) {
                 console.log(`Failed because incorrect sig data`);
@@ -445,7 +445,7 @@ contract('GeneralTransferManager', accounts => {
                   s,
                   {
                       from: account_investor2,
-                      gas: 500000
+                      gas: 5000000
                   });
             } catch(error) {
                 console.log(`Failed because incorrect sig data`);
@@ -478,7 +478,7 @@ contract('GeneralTransferManager', accounts => {
                 s,
                 {
                     from: account_investor2,
-                    gas: 500000
+                    gas: 5000000
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");

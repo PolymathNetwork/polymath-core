@@ -13,7 +13,7 @@ const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol');
 const PercentageTransferManager = artifacts.require('./PercentageTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -208,7 +208,7 @@ contract('PercentageTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 5000000});
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 50000000});
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -256,7 +256,7 @@ contract('PercentageTransferManager', accounts => {
                 latestTime() + duration.days(10),
                 {
                     from: account_issuer,
-                    gas: 500000
+                    gas: 5000000
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in adding the investor in whitelist");
@@ -283,7 +283,7 @@ contract('PercentageTransferManager', accounts => {
                 latestTime() + duration.days(10),
                 {
                     from: account_issuer,
-                    gas: 500000
+                    gas: 5000000
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
@@ -318,7 +318,7 @@ contract('PercentageTransferManager', accounts => {
                 latestTime() + duration.days(10),
                 {
                     from: account_issuer,
-                    gas: 500000
+                    gas: 5000000
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor3.toLowerCase(), "Failed in adding the investor in whitelist");

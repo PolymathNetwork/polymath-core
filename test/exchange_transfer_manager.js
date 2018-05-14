@@ -15,7 +15,7 @@ const ExchangeTransferManagerFactory = artifacts.require('./ExchangeTransferMana
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 const ExchangeTransferManager = artifacts.require('./ExchangeTransferManager');
-const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -236,7 +236,7 @@ contract('ExchangeTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:5000000 });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:50000000 });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -307,7 +307,7 @@ contract('ExchangeTransferManager', accounts => {
                 expiryTime,
                 {
                     from: account_issuer,
-                    gas: 500000
+                    gas: 5000000
                 });
 
             assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
@@ -358,7 +358,7 @@ contract('ExchangeTransferManager', accounts => {
               expiryTime,
               {
                   from: account_issuer,
-                  gas: 500000
+                  gas: 5000000
               });
 
           assert.equal(whitelist_exchange.logs[0].args._investor, account_exchange, "Failed in adding the account_exchange in whitelist");

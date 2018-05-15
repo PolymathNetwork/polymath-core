@@ -10,7 +10,7 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 
 const Web3 = require('web3');

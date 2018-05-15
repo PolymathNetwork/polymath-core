@@ -13,7 +13,7 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -275,7 +275,7 @@ contract('CappedSTO', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 25000000 });
             } catch(error) {
                 console.log(`Tx Failed because of rate is ${0}. Test Passed Successfully`);
                 errorThrown = true;
@@ -288,7 +288,7 @@ contract('CappedSTO', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 25000000 });
             } catch(error) {
                 errorThrown = true;
                 console.log(`Tx Failed because of startTime is greater than endTime. Test Passed Successfully`);
@@ -301,7 +301,7 @@ contract('CappedSTO', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 25000000 });
             } catch(error) {
                 console.log(`Tx Failed because the Cap is equal to ${0}. Test Passed Successfully`);
                 errorThrown = true;
@@ -374,6 +374,22 @@ contract('CappedSTO', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should buy the tokens -- failed due to invested amount is zero", async () => {
+            let errorThrown = false;
+            try {
+                await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_CappedSTO.address,
+                    value: web3.utils.toWei('0', 'ether')
+                  });
+            } catch(error) {
+                console.log(`Failed due to invested amount is zero`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
             let errorThrown = false;
             try {
@@ -428,7 +444,7 @@ contract('CappedSTO', accounts => {
             await web3.eth.sendTransaction({
                 from: account_investor1,
                 to: I_CappedSTO.address,
-                gas: 210000,
+                gas: 2100000,
                 value: web3.utils.toWei('1', 'ether')
               });
 
@@ -499,7 +515,7 @@ contract('CappedSTO', accounts => {
              await web3.eth.sendTransaction({
                 from: account_investor2,
                 to: I_CappedSTO.address,
-                gas: 210000,
+                gas: 2100000,
                 value: web3.utils.toWei('9', 'ether')
               });
 
@@ -540,7 +556,7 @@ contract('CappedSTO', accounts => {
              await web3.eth.sendTransaction({
                 from: account_investor2,
                 to: I_CappedSTO.address,
-                gas: 210000,
+                gas: 2100000,
                 value: web3.utils.toWei('1', 'ether')
               });
             } catch(error) {
@@ -561,6 +577,14 @@ contract('CappedSTO', accounts => {
                 "Somewhere raised money get stolen or sent to wrong wallet"
             );
         });
+
+        it("Should get the raised amount of ether", async() => {
+            assert.equal(await I_CappedSTO.getRaisedEther.call(), web3.utils.toWei('10','ether'));
+        });
+
+        it("Should get the raised amount of poly", async() => {
+            assert.equal((await I_CappedSTO.getRaisedPOLY.call()).toNumber(), web3.utils.toWei('0','ether'));
+         });
 
     });
 
@@ -614,7 +638,7 @@ contract('CappedSTO', accounts => {
              it("POLY: Should successfully attach the STO factory with the security token", async () => {
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [P_startTime, P_endTime, P_cap, P_rate, P_fundRaiseType, account_fundsReceiver]);
 
-                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 25000000 });
 
                 assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
@@ -815,6 +839,58 @@ contract('CappedSTO', accounts => {
                     "Somewhere raised money get stolen or sent to wrong wallet"
                 );
             });
+
+         });
+
+         describe("Test cases for the CappedSTOFactory", async() => {
+            it("should get the exact details of the factory", async() => {
+                assert.equal(await I_CappedSTOFactory.getCost.call(),0);
+                assert.equal(await I_CappedSTOFactory.getType.call(),3);
+                assert.equal(web3.utils.toAscii(await I_CappedSTOFactory.getName.call())
+                            .replace(/\u0000/g, ''),
+                            "CappedSTO",
+                            "Wrong Module added");
+                assert.equal(await I_CappedSTOFactory.getDescription.call(),
+                            "Capped STO",
+                            "Wrong Module added");
+                assert.equal(await I_CappedSTOFactory.getTitle.call(),
+                            "Capped STO",
+                            "Wrong Module added");
+                assert.equal(await I_CappedSTOFactory.getInstructions.call(),
+                            "Initialises a capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY/ETH to token rate), _fundRaiseType (whether you are raising in POLY or ETH), _polyToken (address of POLY token), _fundsReceiver (address which will receive funds)",
+                            "Wrong Module added");
+                let tags = await I_CappedSTOFactory.getTags.call();
+                assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''),"Capped");
+
+            });
+         });
+
+         describe("Test cases for the get functions of the capped sto", async() => {
+             it("Should verify the cap reached or not", async() => {
+                assert.isTrue(await I_CappedSTO.capReached.call());
+             });
+
+             it("Should get the raised amount of ether", async() => {
+                assert.equal(await I_CappedSTO.getRaisedEther.call(), web3.utils.toWei('0','ether'));
+             });
+
+             it("Should get the raised amount of poly", async() => {
+                assert.equal((await I_CappedSTO.getRaisedPOLY.call()).toNumber(), web3.utils.toWei('10000','ether'));
+             });
+
+             it("Should get the investors", async() => {
+                assert.equal(await I_CappedSTO.getNumberInvestors.call(),2);
+             });
+
+             it("Should get the listed permissions", async() => {
+                let tx = await I_CappedSTO.getPermissions.call();
+                assert.equal(tx.length,0);
+             });
+
+             it("Should get the metrics of the STO", async() => {
+                let metrics = await I_CappedSTO.getSTODetails.call();
+                assert.isTrue(metrics[7]);
+             });
 
          });
     });

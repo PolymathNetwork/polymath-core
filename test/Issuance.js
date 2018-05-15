@@ -13,7 +13,7 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -282,7 +282,7 @@ contract('Issuance', accounts => {
 
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [(latestTime() + duration.seconds(5000)), (latestTime() + duration.days(30)), cap, rate, fundRaiseType, account_fundsReceiver]);
 
-                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: account_polymath, gas: 2500000 });
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: account_polymath, gas: 25000000 });
 
                 assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
@@ -339,7 +339,7 @@ contract('Issuance', accounts => {
                 await web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO.address,
-                    gas: 210000,
+                    gas: 2100000,
                     value: web3.utils.toWei('1', 'ether')
                   });
 
@@ -385,7 +385,7 @@ contract('Issuance', accounts => {
                     expiryTime,
                     {
                         from: account_delegate,
-                        gas: 500000
+                        gas: 5000000
                     });
                 assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
             });
@@ -394,7 +394,7 @@ contract('Issuance', accounts => {
                 await web3.eth.sendTransaction({
                     from: account_investor2,
                     to: I_CappedSTO.address,
-                    gas: 210000,
+                    gas: 2100000,
                     value: web3.utils.toWei('1', 'ether')
                   });
 

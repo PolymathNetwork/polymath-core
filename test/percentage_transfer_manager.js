@@ -13,7 +13,7 @@ const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol');
 const PercentageTransferManager = artifacts.require('./PercentageTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -208,7 +208,11 @@ contract('PercentageTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
+<<<<<<< HEAD
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 5000000});
+=======
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 50000000});
+>>>>>>> master
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -256,7 +260,7 @@ contract('PercentageTransferManager', accounts => {
                 latestTime() + duration.days(10),
                 {
                     from: account_issuer,
-                    gas: 500000
+                    gas: 5000000
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in adding the investor in whitelist");
@@ -283,7 +287,7 @@ contract('PercentageTransferManager', accounts => {
                 latestTime() + duration.days(10),
                 {
                     from: account_issuer,
-                    gas: 500000
+                    gas: 5000000
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
@@ -318,7 +322,7 @@ contract('PercentageTransferManager', accounts => {
                 latestTime() + duration.days(10),
                 {
                     from: account_issuer,
-                    gas: 500000
+                    gas: 5000000
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor3.toLowerCase(), "Failed in adding the investor in whitelist");
@@ -373,8 +377,38 @@ contract('PercentageTransferManager', accounts => {
             await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 });
         });
 
+        it("Should get the permission", async() => {
+            let perm = await I_PercentageTransferManager.getPermissions.call();
+            assert.equal(perm.length, 0);
+        });
 
+    });
 
+    describe("Percentage Transfer Manager Factory test cases", async() => {
+        
+        it("Should get the exact details of the factory", async() => {
+            assert.equal(await I_PercentageTransferManagerFactory.getCost.call(),0);
+            assert.equal(await I_PercentageTransferManagerFactory.getType.call(),2);
+            assert.equal(web3.utils.toAscii(await I_PercentageTransferManagerFactory.getName.call())
+                        .replace(/\u0000/g, ''),
+                        "PercentageTransferManager",
+                        "Wrong Module added");
+            assert.equal(await I_PercentageTransferManagerFactory.getDescription.call(),
+                        "Restrict the number of investors",
+                        "Wrong Module added");
+            assert.equal(await I_PercentageTransferManagerFactory.getTitle.call(),
+                        "Percentage Transfer Manager",
+                        "Wrong Module added");
+            assert.equal(await I_PercentageTransferManagerFactory.getInstructions.call(),
+                        "Allows an issuer to restrict the total number of non-zero token holders",
+                        "Wrong Module added");
+            
+        });
+
+        it("Should get the tags of the factory", async() => {
+            let tags = await I_PercentageTransferManagerFactory.getTags.call();
+            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), "Percentage");
+        });
     });
 
 });

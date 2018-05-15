@@ -356,7 +356,6 @@ contract('PercentageTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-
         it("Modify holder percentage to 100", async() => {
             // Add the Investor in to the whitelist
             // Mint some tokens
@@ -368,11 +367,16 @@ contract('PercentageTransferManager', accounts => {
             );
         });
 
-
         it("Should be able to transfer between existing token holders up to limit", async() => {
+            await I_PercentageTransferManager.modifyWhitelist(account_investor3, false, { from: token_owner });
             await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 });
         });
 
+        it("Should be able to whitelist address and then transfer regardless of holders", async() => {
+          await I_PercentageTransferManager.changeHolderPercentage(30 * 10**16, { from: token_owner });
+          await I_PercentageTransferManager.modifyWhitelist(account_investor1, true, { from: token_owner });
+          await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('2', 'ether'), { from: account_investor3 });
+        });
 
 
     });

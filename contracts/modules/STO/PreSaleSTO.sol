@@ -46,7 +46,8 @@ contract PreSaleSTO is ISTO {
     }
 
     function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](0);
+        bytes32[] memory allPermissions = new bytes32[](1);
+        allPermissions[0] = PRE_SALE_ADMIN;
         return allPermissions;
     }
 

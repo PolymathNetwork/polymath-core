@@ -25,6 +25,10 @@ module.exports = function (deployer, network, accounts) {
   } else if (network === 'mainnet') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolyToken = '0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC' // Mainnet PolyToken Address
+  }if (network === 'coverage') {
+    web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
+    PolymathAccount = accounts[0]
+    PolyToken = DevPolyToken.address // Development network polytoken address
   }
 
   // POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE

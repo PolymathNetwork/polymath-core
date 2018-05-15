@@ -1,6 +1,7 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
+import { error } from 'util';
 
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
@@ -13,7 +14,7 @@ const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol');
 const CountTransferManager = artifacts.require('./CountTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -208,7 +209,7 @@ contract('CountTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 5000000});
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 50000000});
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -357,6 +358,18 @@ contract('CountTransferManager', accounts => {
             );
         });
 
+        it("Should fail in modifying the holder count", async() => {
+            let errorThrown = false;
+            try {
+                await I_CountTransferManager.changeHolderCount(1, { from: account_investor1 });
+            } catch(error) {
+                console.log(`Failed due to only owner have the permission to change the holder count`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
         it("Modify holder count to 1", async() => {
             // Add the Investor in to the whitelist
             // Mint some tokens
@@ -379,9 +392,27 @@ contract('CountTransferManager', accounts => {
             );
         });
 
+        // it("Should not be able to transfer to a token holder", async() => {
+        //     let errorThrown = false;
+
+        //     await I_CountTransferManager.pause({from: token_owner});
+        //     assert.isTrue(await I_CountTransferManager.paused.call());
+
+        //     try {
+        //         // Mint some tokens
+        //         await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+        //     } catch(error) {
+        //         console.log(`Failed due to transfers are paused`);
+        //         ensureException(error);
+        //         errorThrown = true;
+        //     }
+        //     assert.ok(errorThrown, message);
+        //   });
+  
 
         it("Should not be able to transfer to a new token holder", async() => {
           let errorThrown = false;
+          // await I_CountTransferManager.unpause({from: token_owner});
           try {
               // Mint some tokens
               await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor2 });
@@ -396,6 +427,37 @@ contract('CountTransferManager', accounts => {
 
         it("Should be able to consolidate balances", async() => {
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
+        });
+
+        it("Should get the permission list", async() => {
+            let perm = await I_CountTransferManager.getPermissions.call();
+            assert.equal(perm.length, 0);
+        });
+
+        describe("Test cases for the factory", async() => {
+            it("should get the exact details of the factory", async() => {
+                assert.equal(await I_CountTransferManagerFactory.getCost.call(),0);
+                assert.equal(await I_CountTransferManagerFactory.getType.call(),2);
+                assert.equal(web3.utils.toAscii(await I_CountTransferManagerFactory.getName.call())
+                            .replace(/\u0000/g, ''),
+                            "CountTransferManager",
+                            "Wrong Module added");
+                assert.equal(await I_CountTransferManagerFactory.getDescription.call(),
+                            "Restrict the number of investors",
+                            "Wrong Module added");
+                assert.equal(await I_CountTransferManagerFactory.getTitle.call(),
+                            "Count Transfer Manager",
+                            "Wrong Module added");
+                assert.equal(await I_CountTransferManagerFactory.getInstructions.call(),
+                            "Allows an issuer to restrict the total number of non-zero token holders",
+                            "Wrong Module added");
+                
+            });
+
+            it("Should get the tags of the factory", async() => {
+                let tags = await I_CountTransferManagerFactory.getTags.call();
+                assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''),"Count");
+            });
         });
 
     });

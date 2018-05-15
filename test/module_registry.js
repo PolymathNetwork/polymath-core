@@ -14,7 +14,8 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
+const MockFactory = artifacts.require('./MockFactory.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -54,6 +55,7 @@ contract('ModuleRegistry', accounts => {
     let I_SecurityToken;
     let I_CappedSTO;
     let I_PolyToken;
+    let I_MockFactory;
     let I_DummySTOFactory;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
@@ -169,7 +171,7 @@ contract('ModuleRegistry', accounts => {
             assert.notEqual(
                 I_GeneralPermissionManagerFactory.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
-                "GeneralDelegateManagerFactory contract was not deployed"
+                "GeneralPermissionManagerFactory contract was not deployed"
             );
 
 
@@ -186,7 +188,15 @@ contract('ModuleRegistry', accounts => {
             assert.notEqual(
                 I_DummySTOFactory.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
-                "GeneralTransferManagerFactory contract was not deployed"
+                "DummySTOFactory contract was not deployed"
+            );
+
+            I_MockFactory = await MockFactory.new(I_PolyToken.address, { from: account_temp });
+
+            assert.notEqual(
+                I_MockFactory.address.valueOf(),
+                "0x0000000000000000000000000000000000000000",
+                "MockFactory contract was not deployed"
             );
         });
     });
@@ -232,6 +242,18 @@ contract('ModuleRegistry', accounts => {
                 await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
             } catch(error) {
                 console.log(`Tx get failed. Already Registered Module factory`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in registering the module-- type = 0", async() => {
+            let errorThrown = false;
+            try {
+                await I_ModuleRegistry.registerModule(I_MockFactory.address, { from: account_polymath });
+            } catch(error) {
+                console.log(`Tx get failed. Module factory of 0 type`);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -363,6 +385,45 @@ contract('ModuleRegistry', accounts => {
         });
     });
 
+    describe("Test cases for the tag functions", async() => {
+
+        it("Should fail in adding the tag. Because msg.sender is not the owner", async() => {
+            let errorThrown = false;
+            try {
+                await I_ModuleRegistry.addTagByModuleType(3,["Non-Refundable","Capped","ETH","POLY"],{from: account_temp});
+            } catch(error) {
+                console.log(`Tx get failed. Because msg.sender should be account_polymath`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully add the tag", async() => {
+            await I_ModuleRegistry.addTagByModuleType(3,["Non-Refundable","Capped","ETH","POLY"],{from: account_polymath});
+            let tags = await I_ModuleRegistry.getTagByModuleType.call(3);
+            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''),"Non-Refundable");
+        });
+
+        it("Should fail in removing the tag from the list", async() => {
+            let errorThrown = false;
+            try {
+                await I_ModuleRegistry.removeTagByModuleType(3,["Capped", "ETH"], {from: account_investor1});
+            } catch(error) {
+                console.log(`Tx get failed. Because msg.sender should be account_polymath`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should remove the tag from the list", async() => {
+            await I_ModuleRegistry.removeTagByModuleType(3,["Capped", "ETH"], {from:account_polymath});
+            let tags = await I_ModuleRegistry.getTagByModuleType.call(3);
+            assert.equal(web3.utils.toAscii(tags[1]).replace(/\u0000/g, ''),"");
+        });
+    });
+
     describe("Launch of SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
@@ -372,7 +433,7 @@ contract('ModuleRegistry', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:5000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:50000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -415,7 +476,7 @@ contract('ModuleRegistry', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
             let errorThrown = false;
             try {
-                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 5000000 });
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 50000000 });
             } catch(error) {
                 errorThrown = true;
                 console.log(`Tx get failed. Because module is un-verified`);
@@ -447,7 +508,7 @@ contract('ModuleRegistry', accounts => {
             endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
 
-            tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 5000000 });
+            tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 50000000 });
 
             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(

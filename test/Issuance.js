@@ -94,9 +94,6 @@ contract('Issuance', accounts => {
             name: '_fundRaiseType',
         },{
             type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
             name: '_fundsReceiver'
         }
         ]
@@ -235,7 +232,7 @@ contract('Issuance', accounts => {
             });
 
             it("POLYMATH: Should generate the new security token with the same symbol as registered above", async () => {
-                let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: account_polymath, gas:50000000  });
+                let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_polymath, gas:5000000  });
 
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -283,7 +280,7 @@ contract('Issuance', accounts => {
                 // (C) : Register the STOFactory
                 await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
 
-                let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [(latestTime() + duration.seconds(5000)), (latestTime() + duration.days(30)), cap, rate, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+                let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [(latestTime() + duration.seconds(5000)), (latestTime() + duration.days(30)), cap, rate, fundRaiseType, account_fundsReceiver]);
 
                 const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: account_polymath, gas: 25000000 });
 

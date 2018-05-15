@@ -211,7 +211,7 @@ contract('PreSaleSTO', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:50000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:5000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -366,7 +366,7 @@ contract('PreSaleSTO', accounts => {
                     from: account_issuer,
                     gas: 5000000
                 });
-            
+
             assert.equal(tx1.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
 
             // Add the Investor in to the whitelist
@@ -390,7 +390,7 @@ contract('PreSaleSTO', accounts => {
                 .toNumber(),
                 2000
             );
-            assert.equal((await I_PreSaleSTO.getNumberInvestors.call()).toNumber(), 3);  
+            assert.equal((await I_PreSaleSTO.getNumberInvestors.call()).toNumber(), 3);
         });
 
         it("Should failed at the time of buying the tokens -- Because STO has started", async() => {

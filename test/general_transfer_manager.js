@@ -231,7 +231,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 50000000});
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 5000000});
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -532,7 +532,7 @@ contract('GeneralTransferManager', accounts => {
         it("Should provide the permission and change the signing address", async() => {
             let log = await I_GeneralPermissionManager.addPermission(account_delegate, "My details", {from: token_owner});
             assert.equal(log.logs[0].args._delegate, account_delegate);
-            
+
             await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FLAGS", true, {from: token_owner});
 
             assert.isTrue(await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "FLAGS"));
@@ -579,7 +579,7 @@ contract('GeneralTransferManager', accounts => {
     });
 
     describe("WhiteList that addresses", async () => {
-        
+
         it("Should fail in adding the investors in whitelist", async() => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(20);
@@ -696,7 +696,7 @@ contract('GeneralTransferManager', accounts => {
     });
 
     describe("General Transfer Manager Factory test cases", async() => {
-        
+
         it("Should get the exact details of the factory", async() => {
             assert.equal(await I_GeneralTransferManagerFactory.getCost.call(),0);
             assert.equal(await I_GeneralTransferManagerFactory.getType.call(),2);
@@ -713,7 +713,7 @@ contract('GeneralTransferManager', accounts => {
             assert.equal(await I_GeneralTransferManagerFactory.getInstructions.call(),
                         "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist, and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.",
                         "Wrong Module added");
-            
+
         });
 
         it("Should get the tags of the factory", async() => {
@@ -739,7 +739,7 @@ contract('GeneralTransferManager', accounts => {
             assert.equal(await I_DummySTOFactory.getInstructions.call(),
                         "Dummy STO - you can mint tokens at will",
                         "Wrong Module added");
-            
+
         });
 
         it("Should get the tags of the factory", async() => {
@@ -758,10 +758,10 @@ contract('GeneralTransferManager', accounts => {
            assert.equal((await I_DummySTO.getRaisedPOLY.call()).toNumber(), web3.utils.toWei('0','ether'));
         });
 
-        it("Should get the investors", async() => { 
+        it("Should get the investors", async() => {
            assert.equal((await I_DummySTO.getNumberInvestors.call()).toNumber(), 2);
         });
-        
+
         it("Should get the listed permissions", async() => {
            let tx = await I_DummySTO.getPermissions.call();
            assert.equal(web3.utils.toAscii(tx[0]).replace(/\u0000/g, ''), "ADMIN");

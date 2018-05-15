@@ -37,7 +37,8 @@ contract PercentageTransferManager is ITransferManager {
 
     function verifyTransfer(address _from, address _to, uint256 _amount) public view returns(Result) {
         if (!paused) {
-            if (whitelist[_from] || whitelist[_to]) {
+            // If an address is on the whitelist, it is allowed to hold more than maxHolderPercentage of the tokens.
+            if (whitelist[_to]) {
                 return Result.VALID;
             }
             uint256 newBalance = ISecurityToken(securityToken).balanceOf(_to).add(_amount);

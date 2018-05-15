@@ -399,21 +399,6 @@ contract('CountTransferManager', accounts => {
         });
 
 
-        it("Should be able to whitelist address and then transfer regardless of holders", async() => {
-          let errorThrown = false;
-          try {
-              await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
-          } catch(error) {
-              console.log(`Failed due to too many holders`);
-              ensureException(error);
-              errorThrown = true;
-          }
-          assert.ok(errorThrown, message);
-          await I_CountTransferManager.modifyWhitelist(account_investor3, true, { from: token_owner });
-          await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
-        });
-
-
     });
 
 });

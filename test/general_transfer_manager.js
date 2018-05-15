@@ -14,7 +14,7 @@ const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManage
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 const ExchangeTransferManager = artifacts.require('./ExchangeTransferManager');
-const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 import {signData} from './helpers/signData';
 import { pk }  from './helpers/testprivateKey';
@@ -34,6 +34,7 @@ contract('GeneralTransferManager', accounts => {
     let account_investor2;
     let account_investor3;
     let account_investor4;
+    let account_delegate;
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime();
@@ -105,7 +106,8 @@ contract('GeneralTransferManager', accounts => {
 
         account_investor1 = accounts[8];
         account_investor2 = accounts[9];
-
+        account_delegate = accounts[7];
+        account_investor4 = accounts[6];
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
@@ -229,7 +231,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 5000000});
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 50000000});
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -274,6 +276,19 @@ contract('GeneralTransferManager', accounts => {
             );
             I_DummySTO = DummySTO.at(tx.logs[2].args._module);
         });
+
+        it("Should successfully attach the permission manager factory with the security token", async () => {
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, 0, 0, 0, true, { from: token_owner });
+            assert.equal(tx.logs[2].args._type.toNumber(), delegateManagerKey, "GeneralPermissionManager doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name)
+                .replace(/\u0000/g, ''),
+                "GeneralPermissionManager",
+                "GeneralPermissionManager module was not added"
+            );
+            I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
+        });
+
     });
 
     describe("Buy tokens using on-chain whitelist", async() => {
@@ -300,7 +315,7 @@ contract('GeneralTransferManager', accounts => {
                 latestTime() + duration.days(10),
                 {
                     from: account_issuer,
-                    gas: 500000
+                    gas: 5000000
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in adding the investor in whitelist");
@@ -372,7 +387,7 @@ contract('GeneralTransferManager', accounts => {
                   s,
                   {
                       from: account_investor2,
-                      gas: 500000
+                      gas: 5000000
                   });
             } catch(error) {
                 console.log(`Failed because incorrect sig data`);
@@ -408,7 +423,7 @@ contract('GeneralTransferManager', accounts => {
                   s,
                   {
                       from: account_investor2,
-                      gas: 500000
+                      gas: 5000000
                   });
             } catch(error) {
                 console.log(`Failed because incorrect sig data`);
@@ -445,7 +460,7 @@ contract('GeneralTransferManager', accounts => {
                   s,
                   {
                       from: account_investor2,
-                      gas: 500000
+                      gas: 5000000
                   });
             } catch(error) {
                 console.log(`Failed because incorrect sig data`);
@@ -478,7 +493,7 @@ contract('GeneralTransferManager', accounts => {
                 s,
                 {
                     from: account_investor2,
-                    gas: 500000
+                    gas: 5000000
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
@@ -496,8 +511,43 @@ contract('GeneralTransferManager', accounts => {
 
         });
 
+        it("Should fail in changing the signing address", async() => {
+            let errorThrown = false;
+            try {
+                await I_GeneralTransferManager.changeSigningAddress(account_polymath, {from: account_investor4});
+            } catch(error) {
+                console.log(`Failed due to msg.sender is not token_owner`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should get the permission", async() => {
+            let perm = await I_GeneralTransferManager.getPermissions.call();
+            assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ''), "WHITELIST");
+            assert.equal(web3.utils.toAscii(perm[1]).replace(/\u0000/g, ''), "FLAGS");
+        });
+
+        it("Should provide the permission and change the signing address", async() => {
+            let log = await I_GeneralPermissionManager.addPermission(account_delegate, "My details", {from: token_owner});
+            assert.equal(log.logs[0].args._delegate, account_delegate);
+            
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FLAGS", true, {from: token_owner});
+
+            assert.isTrue(await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "FLAGS"));
+
+            let tx = await I_GeneralTransferManager.changeSigningAddress(account_polymath, {from: account_delegate});
+            assert.equal(tx.logs[0].args._signingAddress, account_polymath);
+        });
+
+        it("Should change the white list transfer variable", async() => {
+            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistIssuances(true, {from : token_owner});
+            assert.isTrue(tx.logs[0].args._allowAllWhitelistIssuances);
+        });
+
         it("should failed in trasfering the tokens", async() => {
-            await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, {from : token_owner});
+            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, {from : token_owner});
             await I_GeneralTransferManager.pause({from: token_owner});
             let errorThrown = false;
             try {
@@ -510,6 +560,212 @@ contract('GeneralTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should change the Issuance address", async() => {
+            let tx = await I_GeneralTransferManager.changeIssuanceAddress(account_investor2, {from: account_delegate});
+            assert.equal(tx.logs[0].args._issuanceAddress, account_investor2);
+        });
+
+        it("Should unpause the transfers", async() => {
+            await I_GeneralTransferManager.unpause({from: token_owner});
+
+            assert.isFalse(await I_GeneralTransferManager.paused.call());
+        });
+
+        it("Should get the init function", async() => {
+            let byte = await I_GeneralTransferManager.getInitFunction.call();
+            assert.equal(web3.utils.toAscii(byte).replace(/\u0000/g, ''), 0);
+        });
+
+    });
+
+    describe("WhiteList that addresses", async () => {
+        
+        it("Should fail in adding the investors in whitelist", async() => {
+            let fromTime = latestTime();
+            let toTime = latestTime() + duration.days(20);
+            let expiryTime = toTime + duration.days(10);
+            let errorThrown = false;
+            try {
+                await I_GeneralTransferManager.modifyWhitelistMulti(
+                    [account_investor3, account_investor4],
+                    [fromTime, fromTime],
+                    [toTime, toTime],
+                    [expiryTime, expiryTime],
+                    {
+                        from: account_delegate,
+                        gas: 5000000
+                    }
+                );
+            } catch(error) {
+                console.log(`Failed because msg.sender is not allowed to modify the whitelist`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in adding the investors in whitelist -- array length mismatch", async() => {
+            let fromTime = latestTime();
+            let toTime = latestTime() + duration.days(20);
+            let expiryTime = toTime + duration.days(10);
+            let errorThrown = false;
+            try {
+                await I_GeneralTransferManager.modifyWhitelistMulti(
+                    [account_investor3, account_investor4],
+                    [fromTime],
+                    [toTime, toTime],
+                    [expiryTime, expiryTime],
+                    {
+                        from: account_delegate,
+                        gas: 5000000
+                    }
+                );
+            } catch(error) {
+                console.log(`Failed because array length mismatch`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in adding the investors in whitelist -- array length mismatch", async() => {
+            let fromTime = latestTime();
+            let toTime = latestTime() + duration.days(20);
+            let expiryTime = toTime + duration.days(10);
+            let errorThrown = false;
+            try {
+                await I_GeneralTransferManager.modifyWhitelistMulti(
+                    [account_investor3, account_investor4],
+                    [fromTime, fromTime],
+                    [toTime],
+                    [expiryTime, expiryTime],
+                    {
+                        from: account_delegate,
+                        gas: 5000000
+                    }
+                );
+            } catch(error) {
+                console.log(`Failed because array length mismatch`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in adding the investors in whitelist -- array length mismatch", async() => {
+            let fromTime = latestTime();
+            let toTime = latestTime() + duration.days(20);
+            let expiryTime = toTime + duration.days(10);
+            let errorThrown = false;
+            try {
+                await I_GeneralTransferManager.modifyWhitelistMulti(
+                    [account_investor3, account_investor4],
+                    [fromTime, fromTime],
+                    [toTime, toTime],
+                    [expiryTime],
+                    {
+                        from: account_delegate,
+                        gas: 5000000
+                    }
+                );
+            } catch(error) {
+                console.log(`Failed because array length mismatch`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in adding the investors in whitelist -- array length mismatch", async() => {
+            let fromTime = latestTime();
+            let toTime = latestTime() + duration.days(20);
+            let expiryTime = toTime + duration.days(10);
+            let errorThrown = false;
+            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
+                [account_investor3, account_investor4],
+                [fromTime, fromTime],
+                [toTime, toTime],
+                [expiryTime, expiryTime],
+                {
+                    from: token_owner,
+                    gas: 5000000
+                }
+            );
+            assert.equal(tx.logs[1].args._investor, account_investor4);
+        });
+    });
+
+    describe("General Transfer Manager Factory test cases", async() => {
+        
+        it("Should get the exact details of the factory", async() => {
+            assert.equal(await I_GeneralTransferManagerFactory.getCost.call(),0);
+            assert.equal(await I_GeneralTransferManagerFactory.getType.call(),2);
+            assert.equal(web3.utils.toAscii(await I_GeneralTransferManagerFactory.getName.call())
+                        .replace(/\u0000/g, ''),
+                        "GeneralTransferManager",
+                        "Wrong Module added");
+            assert.equal(await I_GeneralTransferManagerFactory.getDescription.call(),
+                        "Manage transfers using a time based whitelist",
+                        "Wrong Module added");
+            assert.equal(await I_GeneralTransferManagerFactory.getTitle.call(),
+                        "General Transfer Manager",
+                        "Wrong Module added");
+            assert.equal(await I_GeneralTransferManagerFactory.getInstructions.call(),
+                        "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist, and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.",
+                        "Wrong Module added");
+            
+        });
+
+        it("Should get the tags of the factory", async() => {
+            let tags = await I_GeneralTransferManagerFactory.getTags.call();
+            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), "General");
+        });
+    });
+
+    describe("Dummy STO Factory test cases", async() => {
+        it("should get the exact details of the factory", async() => {
+            assert.equal(await I_DummySTOFactory.getCost.call(),0);
+            assert.equal(await I_DummySTOFactory.getType.call(),3);
+            assert.equal(web3.utils.toAscii(await I_DummySTOFactory.getName.call())
+                        .replace(/\u0000/g, ''),
+                        "DummySTO",
+                        "Wrong Module added");
+            assert.equal(await I_DummySTOFactory.getDescription.call(),
+                        "Dummy STO",
+                        "Wrong Module added");
+            assert.equal(await I_DummySTOFactory.getTitle.call(),
+                        "Dummy STO",
+                        "Wrong Module added");
+            assert.equal(await I_DummySTOFactory.getInstructions.call(),
+                        "Dummy STO - you can mint tokens at will",
+                        "Wrong Module added");
+            
+        });
+
+        it("Should get the tags of the factory", async() => {
+            let tags = await I_DummySTOFactory.getTags.call();
+            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), "Dummy");
+        });
+    });
+
+    describe("Test cases for the get functions of the dummy sto", async() => {
+
+        it("Should get the raised amount of ether", async() => {
+           assert.equal(await I_DummySTO.getRaisedEther.call(), web3.utils.toWei('0','ether'));
+        });
+
+        it("Should get the raised amount of poly", async() => {
+           assert.equal((await I_DummySTO.getRaisedPOLY.call()).toNumber(), web3.utils.toWei('0','ether'));
+        });
+
+        it("Should get the investors", async() => { 
+           assert.equal((await I_DummySTO.getNumberInvestors.call()).toNumber(), 2);
+        });
+        
+        it("Should get the listed permissions", async() => {
+           let tx = await I_DummySTO.getPermissions.call();
+           assert.equal(web3.utils.toAscii(tx[0]).replace(/\u0000/g, ''), "ADMIN");
+        });
     });
 
 });

@@ -1,8 +1,8 @@
 pragma solidity ^0.4.23;
 
-import "../../../contracts/modules/STO/DummySTO.sol";
-import "../../../contracts/interfaces/IModuleFactory.sol";
-import "../../../contracts/interfaces/IModule.sol";
+import "../modules/STO/DummySTO.sol";
+import "../interfaces/IModuleFactory.sol";
+import "../interfaces/IModule.sol";
 
 
 contract TestSTOFactory is IModuleFactory {

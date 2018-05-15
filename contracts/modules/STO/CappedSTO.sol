@@ -140,6 +140,19 @@ contract CappedSTO is ISTO {
         return allPermissions;
     }
 
+    function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
+        return (
+            startTime,
+            endTime,
+            cap,
+            rate,
+            fundsRaised,
+            investorCount,
+            tokensSold,
+            (fundraiseType == FundraiseType.POLY)
+        );
+    }
+
     // -----------------------------------------
     // Internal interface (extensible)
     // -----------------------------------------

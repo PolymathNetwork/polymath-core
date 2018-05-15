@@ -2,7 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 
-const TestSTOFactory = artifacts.require('./test/helpers/contracts/TestSTOFactory.sol');
+const TestSTOFactory = artifacts.require('./TestSTOFactory.sol');
 const DummySTO = artifacts.require('./DummySTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
@@ -15,7 +15,7 @@ const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManage
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 const PolyToken = artifacts.require('./PolyToken.sol');
-const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -233,7 +233,7 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:5000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:50000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -281,7 +281,7 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should generate the new security token with version 2", async() => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, symbol2, decimals, tokenDetails, false, { from: token_owner, gas:5000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, symbol2, decimals, tokenDetails, false, { from: token_owner, gas:50000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol2, "SecurityToken doesn't get deployed");
@@ -329,7 +329,7 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should generate the new security token with version 3", async() => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, "DET3", decimals, tokenDetails, false, { from: token_owner, gas:5000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, "DET3", decimals, tokenDetails, false, { from: token_owner, gas:50000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, "DET3", "SecurityToken doesn't get deployed");
@@ -384,7 +384,7 @@ contract('SecurityTokenRegistry', accounts => {
                     true,
                     {
                         from: token_owner,
-                        gas: 2500000
+                        gas: 25000000
                     });
             } catch(error) {
                 console.log(`Tx. get failed. Becuase securityToken doesn't have sufficient POLY to pay`);
@@ -425,6 +425,17 @@ contract('SecurityTokenRegistry', accounts => {
             );
 
             I_DummySTO = DummySTO.at(tx.logs[3].args._module);
+        });
+
+        it("Should get the security token address", async() => {
+           let address = await I_SecurityTokenRegistry.getSecurityTokenAddress.call("DET");
+           assert.equal(address, I_SecurityToken.address);
+        });
+
+        it("Should get the security token data", async() => {
+            let data = await I_SecurityTokenRegistry.getSecurityTokenData.call(I_SecurityToken.address);
+            assert.equal(data[0], "DET");
+            assert.equal(data[1], token_owner);
         });
 
     });

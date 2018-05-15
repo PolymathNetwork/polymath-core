@@ -14,7 +14,7 @@ const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManage
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 const PolyToken = artifacts.require('./PolyToken.sol');
-const PolyTokenFaucet = artifacts.require('./helpers/contracts/PolyTokenFaucet.sol');
+const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 const TokenBurner = artifacts.require('./TokenBurner.sol');
 
 const Web3 = require('web3');
@@ -31,6 +31,7 @@ contract('SecurityToken', accounts => {
     let account_issuer;
     let token_owner;
     let account_investor2;
+    let account_investor3;
     let account_fundsReceiver;
     let account_delegate;
     let account_temp;
@@ -118,6 +119,7 @@ contract('SecurityToken', accounts => {
         account_issuer = accounts[1];
         account_investor1 = accounts[9];
         account_investor2 = accounts[6];
+        account_investor3 = accounts[7];
         account_fundsReceiver = accounts[4];
         account_delegate = accounts[5];
         account_temp = accounts[8];
@@ -243,7 +245,7 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:5000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:50000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -282,7 +284,7 @@ contract('SecurityToken', accounts => {
             endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
 
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 5000000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 50000000 });
             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
@@ -302,11 +304,49 @@ contract('SecurityToken', accounts => {
             assert.isTrue(moduleData[2]);
         });
 
+        it("Should get the modules of the securityToken by index (not added into the security token yet)", async () => {
+            let moduleData = await I_SecurityToken.getModule.call(permissionManagerKey, 0);
+            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "");
+            assert.equal(moduleData[1], "0x0000000000000000000000000000000000000000");
+            assert.isFalse(moduleData[2]);
+        });
+
         it("Should get the modules of the securityToken by name", async () => {
             let moduleData = await I_SecurityToken.getModuleByName.call(stoKey, "CappedSTO");
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "CappedSTO");
             assert.equal(moduleData[1], I_CappedSTO.address);
             assert.isTrue(moduleData[2]);
+        });
+
+        it("Should get the modules of the securityToken by name (not added into the security token yet)", async () => {
+            let moduleData = await I_SecurityToken.getModuleByName.call(permissionManagerKey, "GeneralPermissionManager");
+            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "");
+            assert.equal(moduleData[1], "0x0000000000000000000000000000000000000000");
+            assert.isFalse(moduleData[2]);
+        });
+
+        it("Should get the modules of the securityToken by name (not added into the security token yet)", async () => {
+            let moduleData = await I_SecurityToken.getModuleByName.call(transferManagerKey, "CountTransferManager");
+            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "");
+            assert.equal(moduleData[1], "0x0000000000000000000000000000000000000000");
+            assert.isFalse(moduleData[2]);
+        });
+
+        it("Should fail in updating the token details", async() => {
+            let errorThrown = false;
+            try {
+                let log = await I_SecurityToken.updateTokenDetails("new token details", {from: account_delegate});
+            } catch (error) {
+                console.log(`msg.sender should be the owner of the token`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should update the token details", async() => {
+            let log = await I_SecurityToken.updateTokenDetails("new token details", {from: token_owner});
+            assert.equal(web3.utils.toAscii(log.logs[0].args._newDetails).replace(/\u0000/g, ''),"new token details");
         });
 
         it("Should fails in removing the module from the securityToken", async() => {
@@ -373,7 +413,7 @@ contract('SecurityToken', accounts => {
                     expiryTime,
                     {
                         from: token_owner,
-                        gas: 500000
+                        gas: 5000000
                     });
                 assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
                 // Jump time
@@ -382,7 +422,7 @@ contract('SecurityToken', accounts => {
                 await web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO.address,
-                    gas: 210000,
+                    gas: 2100000,
                     value: web3.utils.toWei('1', 'ether')
                     });
 
@@ -476,12 +516,12 @@ contract('SecurityToken', accounts => {
             it("Should adjust granularity", async() => {
                 let errorThrown = false;
                 await I_SecurityToken.changeGranularity(Math.pow(10, 17), {from: token_owner });
-                await I_SecurityToken.transfer(accounts[7], Math.pow(10, 17), { from : account_investor1});
-                await I_SecurityToken.transfer(account_investor1, Math.pow(10, 17), { from : accounts[7]});
+                await I_SecurityToken.transfer(accounts[7], Math.pow(10, 17), { from : account_investor1, gas: 2500000 });
+                await I_SecurityToken.transfer(account_investor1, Math.pow(10, 17), { from : accounts[7], gas: 2500000});
             });
 
             it("Should transfer from whitelist investor to non-whitelist investor in first tx and in 2nd tx non-whitelist to non-whitelist transfer", async() => {
-                await I_SecurityToken.transfer(accounts[7], (10 *  Math.pow(10, 18)), { from : account_investor1});
+                await I_SecurityToken.transfer(accounts[7], (10 *  Math.pow(10, 18)), { from : account_investor1, gas: 2500000});
 
                 assert.equal(
                     (await I_SecurityToken.balanceOf(accounts[7]))
@@ -490,7 +530,7 @@ contract('SecurityToken', accounts => {
                     "Transfer doesn't take place properly"
                 );
 
-                await I_SecurityToken.transfer(account_temp, (5 *  Math.pow(10, 18)), { from : accounts[7]});
+                await I_SecurityToken.transfer(account_temp, (5 *  Math.pow(10, 18)), { from : accounts[7], gas: 2500000});
 
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_temp))
@@ -525,7 +565,7 @@ contract('SecurityToken', accounts => {
 
                 assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
 
-                await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
+                await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1, gas: 2500000});
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor2))
                     .dividedBy(new BigNumber(10).pow(18)).toNumber(),
@@ -534,10 +574,32 @@ contract('SecurityToken', accounts => {
                 );
             });
 
+            it("Should transfer from whitelist investor1 to whitelist investor 2 -- value = 0", async() => {
+                let tx = await I_SecurityToken.transfer(account_investor2, 0, { from : account_investor1, gas: 2500000});
+                assert.equal((tx.logs[0].args.value).toNumber(),0);
+            });
+
+            it("Should transferFrom from one investor to other", async() => {
+                await I_SecurityToken.approve(account_investor1, (2 *  Math.pow(10, 18)),{from: account_investor2});
+                let tx = await I_GeneralTransferManager.modifyWhitelist(
+                    account_investor3,
+                    fromTime,
+                    toTime,
+                    expiryTime,
+                    {
+                        from: account_issuer,
+                        gas: 500000
+                    });
+
+                assert.equal(tx.logs[0].args._investor, account_investor3, "Failed in adding the investor in whitelist");
+                let log = await I_SecurityToken.transferFrom(account_investor2, account_investor3, (2 *  Math.pow(10, 18)), {from: account_investor1});
+                assert.equal((log.logs[0].args.value).toNumber(), (2 *  Math.pow(10, 18)));
+            });
+
             it("Should Fail in trasferring from whitelist investor1 to non-whitelist investor", async() => {
                 let errorThrown = false;
                 try {
-                    await I_SecurityToken.transfer(account_temp, (10 *  Math.pow(10, 18)), { from : account_investor1});
+                    await I_SecurityToken.transfer(account_temp, (10 *  Math.pow(10, 18)), { from : account_investor1, gas: 2500000});
                 } catch(error) {
                     console.log(`non-whitelist investor is not allowed`);
                     errorThrown = true;
@@ -562,7 +624,7 @@ contract('SecurityToken', accounts => {
                     expiryTime,
                     {
                         from: account_delegate,
-                        gas: 500000
+                        gas: 5000000
                     });
 
                 assert.equal(tx.logs[0].args._investor, account_temp, "Failed in adding the investor in whitelist");
@@ -573,7 +635,7 @@ contract('SecurityToken', accounts => {
                  await web3.eth.sendTransaction({
                     from: account_temp,
                     to: I_CappedSTO.address,
-                    gas: 210000,
+                    gas: 2100000,
                     value: web3.utils.toWei('1', 'ether')
                     });
 
@@ -602,7 +664,7 @@ contract('SecurityToken', accounts => {
                     0,
                     {
                         from: account_delegate,
-                        gas: 500000
+                        gas: 5000000
                     });
 
                 assert.equal(tx.logs[0].args._investor, account_temp, "Failed in removing the investor from whitelist");
@@ -615,7 +677,7 @@ contract('SecurityToken', accounts => {
                 await web3.eth.sendTransaction({
                     from: account_temp,
                     to: I_CappedSTO.address,
-                    gas: 210000,
+                    gas: 2100000,
                     value: web3.utils.toWei('1', 'ether')
                     });
 
@@ -640,7 +702,7 @@ contract('SecurityToken', accounts => {
                 expiryTime,
                 {
                     from: account_delegate,
-                    gas: 500000
+                    gas: 5000000
                 });
 
             assert.equal(tx.logs[0].args._investor, account_temp, "Failed in adding the investor in whitelist");
@@ -651,7 +713,7 @@ contract('SecurityToken', accounts => {
                 await web3.eth.sendTransaction({
                     from: account_temp,
                     to: I_CappedSTO.address,
-                    gas: 210000,
+                    gas: 2100000,
                     value: web3.utils.toWei('1', 'ether')
                     });
 

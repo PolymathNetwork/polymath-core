@@ -16,4 +16,8 @@ contract IST20 is StandardToken, DetailedERC20 {
 
     // used to burn the tokens
     function burn(uint256 _value) public;
+
+    event Minted(address indexed to, uint256 amount);
+    event Burnt(address indexed _burner, uint256 _value);
+
 }

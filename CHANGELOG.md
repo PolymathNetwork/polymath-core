@@ -7,6 +7,12 @@ All notable changes to this project will be documented in this file.
 
 ## Changed    
 
+* Factored out the second reference to the POLY token from ISTO contracts
+* Defaulted all STs to have 18 decimals
+* Removed decimals parameter from `generateSecurityToken`
+* Modified TokenBurner to be an interface
+* Moved CappedSTO specific functions to CappedSTO from ISTO
+* Moved TokenBurner & PolyToken contracts to test directory (out of main contract directory)
 * Modified IST20 interface to inherit from ERC20 interfaces
 * Modified verifyTransfer function in TransferManagers to return a Result enumeration instead of boolean
 * Fixed `capReached()` which was checking fundsRaised agains cap, but the cap is expressed in tokens.    

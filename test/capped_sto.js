@@ -235,7 +235,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:5000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:5000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -577,7 +577,7 @@ contract('CappedSTO', accounts => {
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
                 P_startTime = endTime + duration.days(2);
                 P_endTime = P_startTime + duration.days(30);
-                let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_decimals, P_tokenDetails, false, { from: token_owner, gas:5000000 });
+                let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_tokenDetails, false, { from: token_owner, gas:5000000 });
 
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[1].args._ticker, P_symbol, "SecurityToken doesn't get deployed");
@@ -623,7 +623,6 @@ contract('CappedSTO', accounts => {
                     "CappedSTO",
                     "CappedSTOFactory module was not added"
                 );
-                console.log(JSON.stringify(tx.logs));
                 I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
             });
 

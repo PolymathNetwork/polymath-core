@@ -11,7 +11,7 @@ contract CappedSTO is ISTO {
     // Address where funds are collected and tokens are issued to
     address public wallet;
 
-    // How many token units a buyer gets per wei
+    // How many token units a buyer gets per wei / base unit of POLY
     uint256 public rate;
 
     // Amount of funds raised
@@ -221,7 +221,7 @@ contract CappedSTO is ISTO {
     * @return Number of tokens that can be purchased with the specified _investedAmount
     */
     function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256) {
-        return (_investedAmount.mul(rate)).div(10 ** (18 - uint8(IST20(securityToken).decimals())));
+        return _investedAmount.mul(rate);
     }
 
     /**
@@ -229,6 +229,21 @@ contract CappedSTO is ISTO {
     */
     function _forwardFunds() internal {
         wallet.transfer(msg.value);
+    }
+
+    function _check(uint8 _fundraiseType) internal {
+        require(_fundraiseType == 0 || _fundraiseType == 1, "Not a valid fundraise type");
+        if (_fundraiseType == 0) {
+            fundraiseType = FundraiseType.ETH;
+        }
+        if (_fundraiseType == 1) {
+            require(address(polyToken) != address(0), "Address of the polyToken should not be 0x");
+            fundraiseType = FundraiseType.POLY;
+        }
+    }
+
+    function _forwardPoly(address _beneficiary, address _to, uint256 _fundsAmount) internal {
+        polyToken.transferFrom(_beneficiary, _to, _fundsAmount);
     }
 
 }

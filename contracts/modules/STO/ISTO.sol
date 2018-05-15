@@ -19,19 +19,4 @@ contract ISTO is IModule {
 
     function getNumberInvestors() public view returns (uint256);
 
-    function _check(uint8 _fundraiseType) internal {
-        require(_fundraiseType == 0 || _fundraiseType == 1, "Not a valid fundraise type");
-        if (_fundraiseType == 0) {
-            fundraiseType = FundraiseType.ETH;
-        }
-        if (_fundraiseType == 1) {
-            require(address(polyToken) != address(0), "Address of the polyToken should not be 0x");
-            fundraiseType = FundraiseType.POLY;
-        }
-    }
-
-    function _forwardPoly(address _beneficiary, address _to, uint256 _fundsAmount) internal {
-        polyToken.transferFrom(_beneficiary, _to, _fundsAmount);
-    }
-
 }

@@ -2,17 +2,7 @@ pragma solidity ^0.4.23;
 
 import "./ITransferManager.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                                        Owner       WHITELIST      FLAGS
-// modifyWhitelist                          X             X
-// modifyWhitelistMulti                     X             X
-
 contract CountTransferManager is ITransferManager {
-
-    // Permission key for modifying the whitelist
-    bytes32 public constant WHITELIST = "WHITELIST";
 
     // The maximum number of concurrent token holders
     uint256 public maxHolderCount;
@@ -57,8 +47,7 @@ contract CountTransferManager is ITransferManager {
     }
 
     function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](1);
-        allPermissions[0] = WHITELIST;
+        bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }
 

@@ -16,6 +16,7 @@ All notable changes to this project will be documented in this file.
 
 ## Added   
 
+* whitelists for CountTransferManager and PercentageTransferManager to bypass logic
 * added CountTransferManager to restrict the total number of token holders
 * added PercentageTransferManager to restrict the total percentage of tokens held by any single holder
 * generateSecurityToken in SecurityTokenRegistry takes an additional parameter specifying whether the token is divisible.

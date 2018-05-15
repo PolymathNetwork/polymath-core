@@ -380,7 +380,7 @@ contract('PercentageTransferManager', accounts => {
 
         it("Should get the permission", async() => {
             let perm = await I_PercentageTransferManager.getPermissions.call();
-            assert.equal(perm.length, 0);
+            assert.equal(perm.length, 1);
         });
 
     });

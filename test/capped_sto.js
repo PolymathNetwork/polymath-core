@@ -377,6 +377,22 @@ contract('CappedSTO', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should buy the tokens -- failed due to invested amount is zero", async () => {
+            let errorThrown = false;
+            try {
+                await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_CappedSTO.address,
+                    value: web3.utils.toWei('0', 'ether')
+                  });
+            } catch(error) {
+                console.log(`Failed due to invested amount is zero`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
             let errorThrown = false;
             try {
@@ -564,6 +580,14 @@ contract('CappedSTO', accounts => {
                 "Somewhere raised money get stolen or sent to wrong wallet"
             );
         });
+
+        it("Should get the raised amount of ether", async() => {
+            assert.equal(await I_CappedSTO.getRaisedEther.call(), web3.utils.toWei('10','ether'));
+        });
+
+        it("Should get the raised amount of poly", async() => {
+            assert.equal((await I_CappedSTO.getRaisedPOLY.call()).toNumber(), web3.utils.toWei('0','ether'));
+         });
 
     });
 
@@ -818,6 +842,58 @@ contract('CappedSTO', accounts => {
                     "Somewhere raised money get stolen or sent to wrong wallet"
                 );
             });
+
+         });
+
+         describe("Test cases for the CappedSTOFactory", async() => {
+            it("should get the exact details of the factory", async() => {
+                assert.equal(await I_CappedSTOFactory.getCost.call(),0);
+                assert.equal(await I_CappedSTOFactory.getType.call(),3);
+                assert.equal(web3.utils.toAscii(await I_CappedSTOFactory.getName.call())
+                            .replace(/\u0000/g, ''),
+                            "CappedSTO",
+                            "Wrong Module added");
+                assert.equal(await I_CappedSTOFactory.getDescription.call(),
+                            "Capped STO",
+                            "Wrong Module added");
+                assert.equal(await I_CappedSTOFactory.getTitle.call(),
+                            "Capped STO",
+                            "Wrong Module added");
+                assert.equal(await I_CappedSTOFactory.getInstructions.call(),
+                            "Initialises a capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY/ETH to token rate), _fundRaiseType (whether you are raising in POLY or ETH), _polyToken (address of POLY token), _fundsReceiver (address which will receive funds)",
+                            "Wrong Module added");
+                let tags = await I_CappedSTOFactory.getTags.call();
+                assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''),"Capped");
+                
+            });
+         });
+
+         describe("Test cases for the get functions of the capped sto", async() => {
+             it("Should verify the cap reached or not", async() => {
+                assert.isTrue(await I_CappedSTO.capReached.call());
+             });
+
+             it("Should get the raised amount of ether", async() => {
+                assert.equal(await I_CappedSTO.getRaisedEther.call(), web3.utils.toWei('0','ether'));
+             });
+
+             it("Should get the raised amount of poly", async() => {
+                assert.equal((await I_CappedSTO.getRaisedPOLY.call()).toNumber(), web3.utils.toWei('10000','ether'));
+             });
+
+             it("Should get the investors", async() => { 
+                assert.equal(await I_CappedSTO.getNumberInvestors.call(),2);
+             });
+             
+             it("Should get the listed permissions", async() => {
+                let tx = await I_CappedSTO.getPermissions.call();
+                assert.equal(tx.length,0);
+             });
+
+             it("Should get the metrics of the STO", async() => {
+                let metrics = await I_CappedSTO.getSTODetails.call();
+                assert.isTrue(metrics[7]);
+             });
 
          });
     });

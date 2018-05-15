@@ -31,6 +31,7 @@ contract('SecurityToken', accounts => {
     let account_issuer;
     let token_owner;
     let account_investor2;
+    let account_investor3;
     let account_fundsReceiver;
     let account_delegate;
     let account_temp;
@@ -118,6 +119,7 @@ contract('SecurityToken', accounts => {
         account_issuer = accounts[1];
         account_investor1 = accounts[9];
         account_investor2 = accounts[6];
+        account_investor3 = accounts[7];
         account_fundsReceiver = accounts[4];
         account_delegate = accounts[5];
         account_temp = accounts[8];
@@ -302,11 +304,49 @@ contract('SecurityToken', accounts => {
             assert.isTrue(moduleData[2]);
         });
 
+        it("Should get the modules of the securityToken by index (not added into the security token yet)", async () => {
+            let moduleData = await I_SecurityToken.getModule.call(permissionManagerKey, 0);
+            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "");
+            assert.equal(moduleData[1], "0x0000000000000000000000000000000000000000");
+            assert.isFalse(moduleData[2]);
+        });
+
         it("Should get the modules of the securityToken by name", async () => {
             let moduleData = await I_SecurityToken.getModuleByName.call(stoKey, "CappedSTO");
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "CappedSTO");
             assert.equal(moduleData[1], I_CappedSTO.address);
             assert.isTrue(moduleData[2]);
+        });
+
+        it("Should get the modules of the securityToken by name (not added into the security token yet)", async () => {
+            let moduleData = await I_SecurityToken.getModuleByName.call(permissionManagerKey, "GeneralPermissionManager");
+            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "");
+            assert.equal(moduleData[1], "0x0000000000000000000000000000000000000000");
+            assert.isFalse(moduleData[2]);
+        });
+
+        it("Should get the modules of the securityToken by name (not added into the security token yet)", async () => {
+            let moduleData = await I_SecurityToken.getModuleByName.call(transferManagerKey, "CountTransferManager");
+            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "");
+            assert.equal(moduleData[1], "0x0000000000000000000000000000000000000000");
+            assert.isFalse(moduleData[2]);
+        });
+
+        it("Should fail in updating the token details", async() => {
+            let errorThrown = false;
+            try {
+                let log = await I_SecurityToken.updateTokenDetails("new token details", {from: account_delegate});
+            } catch (error) {
+                console.log(`msg.sender should be the owner of the token`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should update the token details", async() => {
+            let log = await I_SecurityToken.updateTokenDetails("new token details", {from: token_owner});
+            assert.equal(web3.utils.toAscii(log.logs[0].args._newDetails).replace(/\u0000/g, ''),"new token details");
         });
 
         it("Should fails in removing the module from the securityToken", async() => {
@@ -532,6 +572,28 @@ contract('SecurityToken', accounts => {
                     10,
                     "Transfer doesn't take place properly"
                 );
+            });
+
+            it("Should transfer from whitelist investor1 to whitelist investor 2 -- value = 0", async() => {
+                let tx = await I_SecurityToken.transfer(account_investor2, 0, { from : account_investor1, gas: 2500000});
+                assert.equal((tx.logs[0].args.value).toNumber(),0);
+            });
+
+            it("Should transferFrom from one investor to other", async() => {
+                await I_SecurityToken.approve(account_investor1, (2 *  Math.pow(10, 18)),{from: account_investor2});
+                let tx = await I_GeneralTransferManager.modifyWhitelist(
+                    account_investor3,
+                    fromTime,
+                    toTime,
+                    expiryTime,
+                    {
+                        from: account_issuer,
+                        gas: 500000
+                    });
+
+                assert.equal(tx.logs[0].args._investor, account_investor3, "Failed in adding the investor in whitelist");
+                let log = await I_SecurityToken.transferFrom(account_investor2, account_investor3, (2 *  Math.pow(10, 18)), {from: account_investor1});
+                assert.equal((log.logs[0].args.value).toNumber(), (2 *  Math.pow(10, 18)));
             });
 
             it("Should Fail in trasferring from whitelist investor1 to non-whitelist investor", async() => {

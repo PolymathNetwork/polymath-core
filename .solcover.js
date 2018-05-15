@@ -18,5 +18,6 @@ module.exports = {
                 'helpers/PolyToken.sol',
                 'Migrations.sol',
                 'mocks/PolyTokenFaucet.sol',
-                'mocks/TestSTOFactory.sol']
+                'mocks/TestSTOFactory.sol',
+                'mocks/MockFactory.sol']
 };

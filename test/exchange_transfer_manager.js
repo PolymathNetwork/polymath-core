@@ -26,6 +26,8 @@ contract('ExchangeTransferManager', accounts => {
     // Accounts Variable declaration
     let account_polymath;
     let account_investor1;
+    let account_investor3;
+    let account_investor4;
     let account_issuer;
     let token_owner;
     let account_investor2;
@@ -97,6 +99,8 @@ contract('ExchangeTransferManager', accounts => {
         account_issuer = accounts[1];
         account_investor1 = accounts[8];
         account_investor2 = accounts[9];
+        account_investor3 = accounts[2];
+        account_investor4 = accounts[3];
         account_exchange = accounts[7];
         token_owner = account_issuer;
 
@@ -399,18 +403,80 @@ contract('ExchangeTransferManager', accounts => {
           assert.ok(errorThrown, message);
         });
 
-        it("Add new investor to exchange whitelist", async() => {
-
-          await I_ExchangeTransferManager.modifyWhitelist(account_investor2, true, {from: account_polymath});
-
-          await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), {from: account_exchange});
-
-          assert.equal(
-              (await I_SecurityToken.balanceOf(account_investor2)).toNumber(),
-              web3.utils.toWei('1', 'ether')
-          );
+        it("Add new investor to exchange whitelist --fail because msg.sender has not permission to add", async() => {
+            let errorThrown = false;
+            try {
+                await I_ExchangeTransferManager.modifyWhitelist(account_investor2, true, {from: account_investor2});
+            } catch (error) {
+                console.log(`Failed because investor isn't present in the whitelist`);
+                errorThrown = true;
+                ensureException(error);
+            }
         });
 
+        it("Add new investors to exchange whitelist --fail because msg.sender has not permission to add", async() => {
+            let errorThrown = false;
+            try {
+                await I_ExchangeTransferManager.modifyWhitelistMulti([account_investor2, account_investor1], [true, true], {from: account_investor2});
+            } catch (error) {
+                console.log(`Failed because msg.sender has not permission to add`);
+                errorThrown = true;
+                ensureException(error);
+            }
+        });
+
+        it("Add new investors to exchange whitelist --fail because array length differ", async() => {
+            let errorThrown = false;
+            try {
+                await I_ExchangeTransferManager.modifyWhitelistMulti([account_investor2, account_investor1], [true], {from: account_investor2});
+            } catch (error) {
+                console.log(`Failed because array length differ`);
+                errorThrown = true;
+                ensureException(error);
+            }
+        });
+
+        it("Add new investors", async() => {
+            await I_ExchangeTransferManager.modifyWhitelistMulti([account_investor3, account_investor4], [true, true], {from: account_polymath});
+
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('1', 'ether'), {from: account_exchange});
+
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor3)).toNumber(),
+                web3.utils.toWei('1', 'ether')
+            );
+        })
+
+        it("Get the permissions", async() => {
+           let perm = await I_ExchangeTransferManager.getPermissions.call();
+           assert.equal(perm.length, 0);
+        });
 
     });
+
+        describe("Test cases for the factory", async() => {
+            it("should get the exact details of the factory", async() => {
+                assert.equal(await I_ExchangeTransferManagerFactory.getCost.call(),0);
+                assert.equal(await I_ExchangeTransferManagerFactory.getType.call(),2);
+                assert.equal(web3.utils.toAscii(await I_ExchangeTransferManagerFactory.getName.call())
+                            .replace(/\u0000/g, ''),
+                            "ExchangeTransferManager",
+                            "Wrong Module added");
+                assert.equal(await I_ExchangeTransferManagerFactory.getDescription.call(),
+                            "Manage transfers within an exchange",
+                            "Wrong Module added");
+                assert.equal(await I_ExchangeTransferManagerFactory.getTitle.call(),
+                            "Exchange Transfer Manager",
+                            "Wrong Module added");
+                assert.equal(await I_ExchangeTransferManagerFactory.getInstructions.call(),
+                            "Allows an exchange to whitelist users for depositing / withdrawing from an exchange address. Init function takes exchange address as a parameter and users are added via modifyWhitelist.",
+                            "Wrong Module added");
+                
+            });
+
+            it("Should get the tags of the factory", async() => {
+                let tags = await I_ExchangeTransferManagerFactory.getTags.call();
+                assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''),"Exchange");
+            });
+        });
 });

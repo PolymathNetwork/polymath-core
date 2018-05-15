@@ -427,6 +427,17 @@ contract('SecurityTokenRegistry', accounts => {
             I_DummySTO = DummySTO.at(tx.logs[3].args._module);
         });
 
+        it("Should get the security token address", async() => {
+           let address = await I_SecurityTokenRegistry.getSecurityTokenAddress.call("DET");
+           assert.equal(address, I_SecurityToken.address);
+        });
+
+        it("Should get the security token data", async() => {
+            let data = await I_SecurityTokenRegistry.getSecurityTokenData.call(I_SecurityToken.address);
+            assert.equal(data[0], "DET");
+            assert.equal(data[1], token_owner);
+        });
+
     });
 
 

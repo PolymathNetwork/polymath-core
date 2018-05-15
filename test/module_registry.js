@@ -101,9 +101,6 @@ contract('ModuleRegistry', accounts => {
             name: '_fundRaiseType',
         },{
             type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
             name: '_fundsReceiver'
         }
         ]
@@ -433,7 +430,7 @@ contract('ModuleRegistry', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas:50000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:5000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -473,7 +470,7 @@ contract('ModuleRegistry', accounts => {
         it("Sholud fail in adding module. Because module is un-verified", async() => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
                 const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 50000000 });
@@ -506,7 +503,7 @@ contract('ModuleRegistry', accounts => {
 
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
             tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 50000000 });
 

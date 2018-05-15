@@ -11,7 +11,7 @@ contract CappedSTO is ISTO {
     // Address where funds are collected and tokens are issued to
     address public wallet;
 
-    // How many token units a buyer gets per wei
+    // How many token units a buyer gets per wei / base unit of POLY
     uint256 public rate;
 
     // Amount of funds raised
@@ -60,7 +60,6 @@ contract CappedSTO is ISTO {
         uint256 _cap,
         uint256 _rate,
         uint8 _fundRaiseType,
-        address _polyToken,
         address _fundsReceiver
     )
     public
@@ -75,12 +74,11 @@ contract CappedSTO is ISTO {
         cap = _cap;
         rate = _rate;
         wallet = _fundsReceiver;
-
-        _check(_fundRaiseType, _polyToken);
+        _check(_fundRaiseType);
     }
 
     function getInitFunction() public returns (bytes4) {
-        return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8,address,address)"));
+        return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8,address)"));
     }
 
     /**
@@ -244,6 +242,21 @@ contract CappedSTO is ISTO {
     */
     function _forwardFunds() internal {
         wallet.transfer(msg.value);
+    }
+
+    function _check(uint8 _fundraiseType) internal {
+        require(_fundraiseType == 0 || _fundraiseType == 1, "Not a valid fundraise type");
+        if (_fundraiseType == 0) {
+            fundraiseType = FundraiseType.ETH;
+        }
+        if (_fundraiseType == 1) {
+            require(address(polyToken) != address(0), "Address of the polyToken should not be 0x");
+            fundraiseType = FundraiseType.POLY;
+        }
+    }
+
+    function _forwardPoly(address _beneficiary, address _to, uint256 _fundsAmount) internal {
+        polyToken.transferFrom(_beneficiary, _to, _fundsAmount);
     }
 
 }

@@ -23,7 +23,7 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
-contract('GeneralTransferManager', accounts => {
+contract('GeneralPermissionManager', accounts => {
 
     // Accounts Variable declaration
     let account_polymath;
@@ -224,7 +224,7 @@ contract('GeneralTransferManager', accounts => {
     });
 
     describe("Generate the SecurityToken", async() => {
-        
+
         it("Should register the ticker before the generation of the security token", async () => {
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, contact, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
@@ -232,7 +232,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 50000000});
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 50000000});
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -373,7 +373,7 @@ contract('GeneralTransferManager', accounts => {
             assert.equal(await I_GeneralPermissionManagerFactory.getInstructions.call(),
                         "Add and remove permissions for the SecurityToken and associated modules. Permission types should be encoded as bytes32 values, and attached using the withPerm modifier to relevant functions.No initFunction required.",
                         "Wrong Module added");
-            
+
         });
 
         it("Should get the tags of the factory", async() => {

@@ -9,7 +9,7 @@ import "../interfaces/IST20.sol";
 import "../modules/TransferManager/ITransferManager.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "../interfaces/ISecurityTokenRegistry.sol";
-import "../helpers/TokenBurner.sol";
+import "../interfaces/ITokenBurner.sol";
 
 /**
 * @title SecurityToken
@@ -25,7 +25,7 @@ contract SecurityToken is ISecurityToken {
     bytes32 public securityTokenVersion = "0.0.1";
 
     // Reference to token burner contract
-    TokenBurner public tokenBurner;
+    ITokenBurner public tokenBurner;
 
     // Use to halt all the transactions
     bool public freeze = false;
@@ -59,8 +59,6 @@ contract SecurityToken is ISecurityToken {
     event LogGranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
-    event Minted(address indexed to, uint256 amount);
-    event Burnt(address indexed _burner, uint256 _value);
     event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
@@ -346,7 +344,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     function setTokenBurner(address _tokenBurner) public onlyOwner {
-        tokenBurner = TokenBurner(_tokenBurner);
+        tokenBurner = ITokenBurner(_tokenBurner);
     }
 
     function burn(uint256 _value) checkGranularity(_value) public {

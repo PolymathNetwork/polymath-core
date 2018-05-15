@@ -208,7 +208,7 @@ contract('PercentageTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 50000000});
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 5000000});
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -386,7 +386,7 @@ contract('PercentageTransferManager', accounts => {
     });
 
     describe("Percentage Transfer Manager Factory test cases", async() => {
-        
+
         it("Should get the exact details of the factory", async() => {
             assert.equal(await I_PercentageTransferManagerFactory.getCost.call(),0);
             assert.equal(await I_PercentageTransferManagerFactory.getType.call(),2);
@@ -403,7 +403,7 @@ contract('PercentageTransferManager', accounts => {
             assert.equal(await I_PercentageTransferManagerFactory.getInstructions.call(),
                         "Allows an issuer to restrict the total number of non-zero token holders",
                         "Wrong Module added");
-            
+
         });
 
         it("Should get the tags of the factory", async() => {

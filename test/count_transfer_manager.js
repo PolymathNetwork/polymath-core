@@ -209,7 +209,7 @@ contract('CountTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, false, { from: token_owner, gas: 50000000});
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 5000000});
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -408,7 +408,7 @@ contract('CountTransferManager', accounts => {
         //     }
         //     assert.ok(errorThrown, message);
         //   });
-  
+
 
         it("Should not be able to transfer to a new token holder", async() => {
           let errorThrown = false;
@@ -451,7 +451,7 @@ contract('CountTransferManager', accounts => {
                 assert.equal(await I_CountTransferManagerFactory.getInstructions.call(),
                             "Allows an issuer to restrict the total number of non-zero token holders",
                             "Wrong Module added");
-                
+
             });
 
             it("Should get the tags of the factory", async() => {

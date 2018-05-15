@@ -60,7 +60,6 @@ contract CappedSTO is ISTO {
         uint256 _cap,
         uint256 _rate,
         uint8 _fundRaiseType,
-        address _polyToken,
         address _fundsReceiver
     )
     public
@@ -75,12 +74,11 @@ contract CappedSTO is ISTO {
         cap = _cap;
         rate = _rate;
         wallet = _fundsReceiver;
-
-        _check(_fundRaiseType, _polyToken);
+        _check(_fundRaiseType);
     }
 
     function getInitFunction() public returns (bytes4) {
-        return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8,address,address)"));
+        return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8,address)"));
     }
 
     /**

@@ -103,9 +103,6 @@ contract('SecurityToken', accounts => {
             name: '_fundRaiseType',
         },{
             type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
             name: '_fundsReceiver'
         }
         ]
@@ -280,7 +277,7 @@ contract('SecurityToken', accounts => {
         it("Should successfully attach the STO factory with the security token", async () => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 5000000 });
             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
@@ -365,7 +362,7 @@ contract('SecurityToken', accounts => {
                 fromTime = latestTime();
                 toTime = fromTime + duration.days(100);
                 expiryTime = toTime + duration.days(100);
-        
+
                 let tx = await I_GeneralTransferManager.modifyWhitelist(
                     account_investor1,
                     fromTime,
@@ -644,7 +641,7 @@ contract('SecurityToken', accounts => {
                 });
 
             assert.equal(tx.logs[0].args._investor, account_temp, "Failed in adding the investor in whitelist");
-            
+
             let errorThrown = false;
             try {
                     // Fallback transaction
@@ -708,7 +705,7 @@ contract('SecurityToken', accounts => {
 
                 await I_SecurityToken.setTokenBurner(I_TokenBurner.address, { from: token_owner });
                 assert.equal(await I_SecurityToken.tokenBurner.call(), I_TokenBurner.address);
-        
+
                 let tx = await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });
                 assert.equal(tx.logs[0].args._value, web3.utils.toWei('1', 'ether'));
            });

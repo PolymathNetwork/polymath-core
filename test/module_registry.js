@@ -99,9 +99,6 @@ contract('ModuleRegistry', accounts => {
             name: '_fundRaiseType',
         },{
             type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
             name: '_fundsReceiver'
         }
         ]
@@ -412,7 +409,7 @@ contract('ModuleRegistry', accounts => {
         it("Sholud fail in adding module. Because module is un-verified", async() => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
                 const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 5000000 });
@@ -445,7 +442,7 @@ contract('ModuleRegistry', accounts => {
 
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyToken.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
             tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 5000000 });
 

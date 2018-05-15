@@ -101,9 +101,6 @@ contract('CappedSTO', accounts => {
             name: '_fundRaiseType',
         },{
             type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
             name: '_fundsReceiver'
         }
         ]
@@ -274,8 +271,8 @@ contract('CappedSTO', accounts => {
 
         it("Should fail to launch the STO due to rate is 0", async () => {
             startTime = latestTime() + duration.days(1);           // Start time will be 5000 seconds more than the latest time
-            endTime = startTime + duration.days(30);       
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+            endTime = startTime + duration.days(30);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
@@ -288,7 +285,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to launch the STO due to startTime > endTime", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
@@ -301,7 +298,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to launch the STO due to cap is of 0 securityToken", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
@@ -315,7 +312,7 @@ contract('CappedSTO', accounts => {
 
 
         it("Should successfully attach the STO factory with the security token", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
 
             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
@@ -615,7 +612,7 @@ contract('CappedSTO', accounts => {
              });
 
              it("POLY: Should successfully attach the STO factory with the security token", async () => {
-                let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [P_startTime, P_endTime, P_cap, P_rate, P_fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+                let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [P_startTime, P_endTime, P_cap, P_rate, P_fundRaiseType, account_fundsReceiver]);
 
                 const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
 
@@ -626,6 +623,7 @@ contract('CappedSTO', accounts => {
                     "CappedSTO",
                     "CappedSTOFactory module was not added"
                 );
+                console.log(JSON.stringify(tx.logs));
                 I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
             });
 

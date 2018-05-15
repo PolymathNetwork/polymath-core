@@ -94,9 +94,6 @@ contract('Issuance', accounts => {
             name: '_fundRaiseType',
         },{
             type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
             name: '_fundsReceiver'
         }
         ]
@@ -283,7 +280,7 @@ contract('Issuance', accounts => {
                 // (C) : Register the STOFactory
                 await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
 
-                let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [(latestTime() + duration.seconds(5000)), (latestTime() + duration.days(30)), cap, rate, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+                let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [(latestTime() + duration.seconds(5000)), (latestTime() + duration.days(30)), cap, rate, fundRaiseType, account_fundsReceiver]);
 
                 const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: account_polymath, gas: 2500000 });
 

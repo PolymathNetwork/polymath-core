@@ -48,6 +48,7 @@ let maxContribution;
 let tokenName;
 let tokenSymbol;
 let tokenDecimals = 18;
+let divisibility = true;
 
 const tokenDetails = "";
 
@@ -222,9 +223,18 @@ async function step_token_deploy(){
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Deployment");
     tokenName =  readlineSync.question('Enter the name for your new token: ');
+    console.log("\n");
+    console.log('\x1b[34m%s\x1b[0m',"Select the Token divisibility type");
+    divisibile =  readlineSync.question('Press "N" for Non-divisible type token or hit Enter for divisible type token (Default):',{
+      defaultInput:'Y'
+    });
+
+    if(divisibile == 'N' || divisibile == 'n') {
+      divisibility = false;
+    }
 
     try{
-      await securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDecimals, web3.utils.fromAscii(tokenDetails)).send({ from: Issuer, gas:4500000, gasPrice: DEFAULT_GAS_PRICE})
+      await securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, web3.utils.fromAscii(tokenDetails), divisibility).send({ from: Issuer, gas:5000000, gasPrice: DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...
@@ -240,83 +250,6 @@ async function step_token_deploy(){
         );
 
         securityToken = new web3.eth.Contract(securityTokenABI,receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress);
-      })
-      .on('error', console.error);
-
-    }catch (err){
-      console.log(err.message);
-      return;
-    }
-  }
-
-  await step_Wallet_Issuance();
-}
-
-async function step_Wallet_Issuance(){
-
-  let initialMint;
-  await securityToken.getPastEvents('Transfer', {
-    filter: {from: "0x0000000000000000000000000000000000000000"}, // Using an array means OR: e.g. 20 or 23
-    fromBlock: 0,
-    toBlock: 'latest'
-  }, function(error, events){
-    initialMint = events;
-  });
-
-  if(initialMint.length > 0){
-    console.log('\x1b[32m%s\x1b[0m',web3.utils.fromWei(initialMint[0].returnValues.value,"ether") +" Tokens have already been minted for "+initialMint[0].returnValues.to+". Skipping initial minting");
-  }else{
-    console.log("\n");
-    console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Minting for Issuer");
-
-    console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control");
-    let mintWallet =  readlineSync.question('Add the address that will hold the issued tokens to the whitelist ('+Issuer+'): ');
-    if(mintWallet == "") mintWallet = Issuer;
-
-    try{
-
-      // Add address to whitelist
-
-      let generalTransferManagerAddress;
-      await securityToken.methods.getModule(2,0).call({from: Issuer}, function(error, result){
-        generalTransferManagerAddress = result[1];
-      });
-
-      let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
-      await generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000)).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
-      .on('transactionHash', function(hash){
-        console.log(`
-          Adding wallet to whitelist. Please wait...
-          TxHash: ${hash}\n`
-        );
-      })
-      .on('receipt', function(receipt){
-        console.log(`
-          Congratulations! The transaction was successfully completed.
-          Review it on Etherscan.
-          TxHash: ${receipt.transactionHash}\n`
-        );
-      })
-      .on('error', console.error);
-
-      // Mint tokens
-
-      issuerTokens =  readlineSync.question('How many tokens do you plan to mint for the wallet you entered? (500.000): ');
-      if(issuerTokens == "") issuerTokens = '500000';
-
-      await securityToken.methods.mint(mintWallet,web3.utils.toWei(issuerTokens,"ether")).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
-      .on('transactionHash', function(hash){
-        console.log(`
-          Minting tokens. Please wait...
-          TxHash: ${hash}\n`
-        );
-      })
-      .on('receipt', function(receipt){
-        console.log(`
-          Congratulations! The transaction was successfully completed.
-          Review it on Etherscan.
-          TxHash: ${receipt.transactionHash}\n`
-        );
       })
       .on('error', console.error);
 
@@ -419,7 +352,7 @@ async function step_STO_Launch(){
 
   }else{
     console.log("\n");
-    console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in ETH)");
+    console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in No. of Tokens)");
 
     cap =  readlineSync.question('How many tokens do you plan to sell on the STO? (500.000): ');
     startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(5 minutes from now = '+(Math.floor(Date.now()/1000)+300)+' ): ');
@@ -453,13 +386,10 @@ async function step_STO_Launch(){
             name: '_fundRaiseType'
         },{
             type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
             name: '_fundsReceiver'
         }
         ]
-    }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,0,wallet]);
+    }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,wallet]);
 
     try{
       await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0,0, true).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
@@ -507,3 +437,4 @@ function convertToDaysRemaining(timeRemaining){
   seconds  -= mnts*60;
   return (days+" days, "+hrs+" Hrs, "+mnts+" Minutes, "+seconds+" Seconds");
 }
+

@@ -47,4 +47,11 @@ contract ISecurityTokenRegistry {
      * @return string, address, bytes32
      */
     function getSecurityTokenData(address _securityToken) public view returns (string, address, string);
+
+    /**
+    * @dev Check that Security Token is registered
+    * @param _securityToken Address of the Scurity token
+    * @return bool
+    */
+    function isSecurityToken(address _securityToken) public view returns (bool);
 }

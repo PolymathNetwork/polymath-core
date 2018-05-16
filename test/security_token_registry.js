@@ -233,7 +233,7 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:5000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:6000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -281,7 +281,7 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should generate the new security token with version 2", async() => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, symbol2, tokenDetails, false, { from: token_owner, gas:5000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, symbol2, tokenDetails, false, { from: token_owner, gas:6000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol2, "SecurityToken doesn't get deployed");
@@ -329,7 +329,7 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should generate the new security token with version 3", async() => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, "DET3", tokenDetails, false, { from: token_owner, gas:5000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, "DET3", tokenDetails, false, { from: token_owner, gas:6000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, "DET3", "SecurityToken doesn't get deployed");
@@ -384,7 +384,7 @@ contract('SecurityTokenRegistry', accounts => {
                     true,
                     {
                         from: token_owner,
-                        gas: 25000000
+                        gas: 26000000
                     });
             } catch(error) {
                 console.log(`Tx. get failed. Becuase securityToken doesn't have sufficient POLY to pay`);

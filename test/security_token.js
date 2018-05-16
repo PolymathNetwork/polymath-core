@@ -242,7 +242,7 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:5000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:6000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -281,7 +281,7 @@ contract('SecurityToken', accounts => {
             endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 50000000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 60000000 });
             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
@@ -343,7 +343,7 @@ contract('SecurityToken', accounts => {
 
         it("Should update the token details", async() => {
             let log = await I_SecurityToken.updateTokenDetails("new token details", {from: token_owner});
-            assert.equal(web3.utils.toAscii(log.logs[0].args._newDetails).replace(/\u0000/g, ''),"new token details");
+            assert.equal(log.logs[0].args._newDetails, "new token details");
         });
 
         it("Should fails in removing the module from the securityToken", async() => {
@@ -410,7 +410,7 @@ contract('SecurityToken', accounts => {
                     expiryTime,
                     {
                         from: token_owner,
-                        gas: 5000000
+                        gas: 6000000
                     });
                 assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
                 // Jump time
@@ -621,7 +621,7 @@ contract('SecurityToken', accounts => {
                     expiryTime,
                     {
                         from: account_delegate,
-                        gas: 5000000
+                        gas: 6000000
                     });
 
                 assert.equal(tx.logs[0].args._investor, account_temp, "Failed in adding the investor in whitelist");
@@ -661,7 +661,7 @@ contract('SecurityToken', accounts => {
                     0,
                     {
                         from: account_delegate,
-                        gas: 5000000
+                        gas: 6000000
                     });
 
                 assert.equal(tx.logs[0].args._investor, account_temp, "Failed in removing the investor from whitelist");
@@ -699,7 +699,7 @@ contract('SecurityToken', accounts => {
                 expiryTime,
                 {
                     from: account_delegate,
-                    gas: 5000000
+                    gas: 6000000
                 });
 
             assert.equal(tx.logs[0].args._investor, account_temp, "Failed in adding the investor in whitelist");

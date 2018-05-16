@@ -82,7 +82,7 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      /**
      * @dev Get security token data by its address
      * @param _securityToken Address of the Scurity token
-     * @return string, address, bytes32
+     * @return string, address, string
      */
     function getSecurityTokenData(address _securityToken) public view returns (string, address, string) {
         return (
@@ -90,5 +90,14 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
             ISecurityToken(_securityToken).owner(),
             securityTokens[_securityToken].tokenDetails
         );
+    }
+
+    /**
+    * @dev Check that Security Token is registered
+    * @param _securityToken Address of the Scurity token
+    * @return bool
+    */
+    function isSecurityToken(address _securityToken) public view returns (bool) {
+        return (keccak256(securityTokens[_securityToken].symbol) != keccak256(""));
     }
 }

@@ -231,7 +231,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 5000000});
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 6000000});
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -315,7 +315,7 @@ contract('GeneralTransferManager', accounts => {
                 latestTime() + duration.days(10),
                 {
                     from: account_issuer,
-                    gas: 5000000
+                    gas: 6000000
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in adding the investor in whitelist");
@@ -387,7 +387,7 @@ contract('GeneralTransferManager', accounts => {
                   s,
                   {
                       from: account_investor2,
-                      gas: 5000000
+                      gas: 6000000
                   });
             } catch(error) {
                 console.log(`Failed because incorrect sig data`);
@@ -423,7 +423,7 @@ contract('GeneralTransferManager', accounts => {
                   s,
                   {
                       from: account_investor2,
-                      gas: 5000000
+                      gas: 6000000
                   });
             } catch(error) {
                 console.log(`Failed because incorrect sig data`);
@@ -460,7 +460,7 @@ contract('GeneralTransferManager', accounts => {
                   s,
                   {
                       from: account_investor2,
-                      gas: 5000000
+                      gas: 6000000
                   });
             } catch(error) {
                 console.log(`Failed because incorrect sig data`);
@@ -493,7 +493,7 @@ contract('GeneralTransferManager', accounts => {
                 s,
                 {
                     from: account_investor2,
-                    gas: 5000000
+                    gas: 6000000
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
@@ -593,7 +593,7 @@ contract('GeneralTransferManager', accounts => {
                     [expiryTime, expiryTime],
                     {
                         from: account_delegate,
-                        gas: 5000000
+                        gas: 6000000
                     }
                 );
             } catch(error) {
@@ -617,7 +617,7 @@ contract('GeneralTransferManager', accounts => {
                     [expiryTime, expiryTime],
                     {
                         from: account_delegate,
-                        gas: 5000000
+                        gas: 6000000
                     }
                 );
             } catch(error) {
@@ -641,7 +641,7 @@ contract('GeneralTransferManager', accounts => {
                     [expiryTime, expiryTime],
                     {
                         from: account_delegate,
-                        gas: 5000000
+                        gas: 6000000
                     }
                 );
             } catch(error) {
@@ -665,7 +665,7 @@ contract('GeneralTransferManager', accounts => {
                     [expiryTime],
                     {
                         from: account_delegate,
-                        gas: 5000000
+                        gas: 6000000
                     }
                 );
             } catch(error) {
@@ -688,7 +688,7 @@ contract('GeneralTransferManager', accounts => {
                 [expiryTime, expiryTime],
                 {
                     from: token_owner,
-                    gas: 5000000
+                    gas: 6000000
                 }
             );
             assert.equal(tx.logs[1].args._investor, account_investor4);

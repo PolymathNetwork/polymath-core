@@ -223,7 +223,7 @@ contract SecurityToken is ISecurityToken {
      */
     function updateTokenDetails(string _newTokenDetails) public onlyOwner {
         emit LogUpdateTokenDetails(tokenDetails, _newTokenDetails);
-        tokenDetails = _newTokenDetails;        
+        tokenDetails = _newTokenDetails;
     }
 
     /**

@@ -36,7 +36,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
         require(registry[_moduleFactory] != 0, "ModuleFactory type should not be 0");
         //To use a module, either it must be verified, or owned by the ST owner
         require(verified[_moduleFactory]||(IModuleFactory(_moduleFactory).owner() == ISecurityToken(msg.sender).owner()),
-        "Module factory is not verified as well as not called by the owner");
+          "Module factory is not verified as well as not called by the owner");
         reputation[_moduleFactory].push(msg.sender);
         emit LogModuleUsed (_moduleFactory, msg.sender);
     }

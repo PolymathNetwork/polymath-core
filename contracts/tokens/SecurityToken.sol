@@ -55,7 +55,7 @@ contract SecurityToken is ISecurityToken {
         uint256 _timestamp
     );
 
-    event LogUpdateTokenDetails(bytes32 _oldDetails, bytes32 _newDetails);
+    event LogUpdateTokenDetails(string _oldDetails, string _newDetails);
     event LogGranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
@@ -86,7 +86,7 @@ contract SecurityToken is ISecurityToken {
         string _symbol,
         uint8 _decimals,
         uint256 _granularity,
-        bytes32 _tokenDetails,
+        string _tokenDetails,
         address _securityTokenRegistry
     )
     public
@@ -221,10 +221,9 @@ contract SecurityToken is ISecurityToken {
     /**
      * @dev change the tokenDetails
      */
-    function updateTokenDetails(bytes32 _newTokenDetails) public onlyOwner {
-        bytes32 _oldTokenDetails = tokenDetails;
+    function updateTokenDetails(string _newTokenDetails) public onlyOwner {
+        emit LogUpdateTokenDetails(tokenDetails, _newTokenDetails);
         tokenDetails = _newTokenDetails;
-        emit LogUpdateTokenDetails(_oldTokenDetails, tokenDetails);
     }
 
     /**

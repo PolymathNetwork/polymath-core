@@ -6,7 +6,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 contract IST20 is StandardToken, DetailedERC20 {
 
     // off-chain hash
-    bytes32 public tokenDetails;
+    string public tokenDetails;
 
     //transfer, transferFrom must respect use respect the result of verifyTransfer
     function verifyTransfer(address _from, address _to, uint256 _amount) public view returns (bool success);

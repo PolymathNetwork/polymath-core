@@ -38,17 +38,17 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @param _symbol Ticker symbol of the security token
      * @param _tokenDetails off-chain details of the token
      */
-    function generateSecurityToken(string _name, string _symbol, bytes32 _tokenDetails, bool _divisible) public {
+    function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) public {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
         string memory symbol = upper(_symbol);
         address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
-        _name,
-        symbol,
-        18,
-        _tokenDetails,
-        msg.sender,
-        _divisible
+            _name,
+            symbol,
+            18,
+            _tokenDetails,
+            msg.sender,
+            _divisible
         );
 
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(symbol, _tokenDetails);
@@ -82,13 +82,22 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      /**
      * @dev Get security token data by its address
      * @param _securityToken Address of the Scurity token
-     * @return string, address, bytes32
+     * @return string, address, string
      */
-    function getSecurityTokenData(address _securityToken) public view returns (string, address, bytes32) {
+    function getSecurityTokenData(address _securityToken) public view returns (string, address, string) {
         return (
             securityTokens[_securityToken].symbol,
             ISecurityToken(_securityToken).owner(),
             securityTokens[_securityToken].tokenDetails
         );
+    }
+
+    /**
+    * @dev Check that Security Token is registered
+    * @param _securityToken Address of the Scurity token
+    * @return bool
+    */
+    function isSecurityToken(address _securityToken) public view returns (bool) {
+        return (keccak256(securityTokens[_securityToken].symbol) != keccak256(""));
     }
 }

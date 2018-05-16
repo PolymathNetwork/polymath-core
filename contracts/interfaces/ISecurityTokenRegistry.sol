@@ -15,7 +15,7 @@ contract ISecurityTokenRegistry {
 
     struct SecurityTokenData {
         string symbol;
-        bytes32 tokenDetails;
+        string tokenDetails;
     }
 
     mapping(address => SecurityTokenData) securityTokens;
@@ -27,7 +27,7 @@ contract ISecurityTokenRegistry {
      * @param _symbol Ticker symbol of the security token
      * @param _tokenDetails off-chain details of the token
      */
-    function generateSecurityToken(string _name, string _symbol, bytes32 _tokenDetails, bool _divisible) public;
+    function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) public;
 
     function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public;
 
@@ -46,5 +46,5 @@ contract ISecurityTokenRegistry {
      * @param _securityToken Address of the Scurity token
      * @return string, address, bytes32
      */
-    function getSecurityTokenData(address _securityToken) public view returns (string, address, bytes32);
+    function getSecurityTokenData(address _securityToken) public view returns (string, address, string);
 }

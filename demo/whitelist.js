@@ -102,15 +102,17 @@ function readFile() {
       let isAddress = web3.utils.isAddress(data[0]);
       let sellValid = isValidDate(data[1])
       let buyValid = isValidDate(data[2])
+      let kycExpiryDate = isValidDate(data[3])
 
 
-      if (isAddress && sellValid && buyValid) {
+      if (isAddress && sellValid && buyValid && kycExpiryDate) {
         let userArray = new Array()
         let checksummedAddress = web3.utils.toChecksumAddress(data[0]);
 
         userArray.push(checksummedAddress)
         userArray.push(sellValid)
         userArray.push(buyValid)
+        userArray.push(kycExpiryDate)
         // console.log(userArray)
         allocData.push(userArray);
         fullFileData.push(userArray);
@@ -130,6 +132,7 @@ function readFile() {
         userArray.push(data[0])
         userArray.push(sellValid)
         userArray.push(buyValid)
+        userArray.push(kycExpiryDate);
         badData.push(userArray);
         fullFileData.push(userArray)
       }
@@ -180,17 +183,20 @@ async function setInvestors() {
       let investorArray = [];
       let fromTimesArray = [];
       let toTimesArray = [];
+      let expiryTimeArray = [];
 
       //splitting the user arrays to be organized by input
       for (let j = 0; j < distribData[i].length; j++) {
         investorArray.push(distribData[i][j][0])
         fromTimesArray.push(distribData[i][j][1])
         toTimesArray.push(distribData[i][j][2])
+        expiryTimeArray.push(distribData[i][j][3])
       }
 
       //fromTimes is ability to sell coin FROM your account (2nd row in csv, 2nd parameter in modifyWhiteList() )
       //toTimes is ability to buy coins TOwards your account (3rd row in csv, 3rd parameter in modifyWhiteList() )
-      let r = await generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray).send({ from: Issuer, gas: 4500000, gasPrice: DEFAULT_GAS_PRICE })
+      //expiryTime is time at which KYC of investor get expired (4th row in csv, 4rd parameter in modifyWhiteList() )
+      let r = await generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray, expiryTimeArray).send({ from: Issuer, gas: 5000000, gasPrice: DEFAULT_GAS_PRICE })
       console.log(`Batch ${i} - Attempting to modifyWhitelist accounts:\n\n`, investorArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
       console.log("Whitelist transaxction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * DEFAULT_GAS_PRICE).toString(), "ether"), "Ether");
@@ -224,11 +230,13 @@ async function setInvestors() {
     let investorAddress_Event = event_data[i].returnValues._investor;
     let fromTime_Event = event_data[i].returnValues._fromTime
     let toTime_Event = event_data[i].returnValues._toTime
+    let expiryTime_Event = event_data[i].returnValues._expiryTime
     let blockNumber = event_data[i].blockNumber
 
     combineArray.push(investorAddress_Event);
     combineArray.push(fromTime_Event);
     combineArray.push(toTime_Event);
+    combineArray.push(expiryTime_Event);
     combineArray.push(blockNumber)
 
     investorData_Events.push(combineArray)
@@ -238,7 +246,7 @@ async function setInvestors() {
 
       //the block number form the event we are checking is bigger, so we gotta replace it
       if (investorObjectLookup[investorAddress_Event].recordedBlockNumber < blockNumber) {
-        investorObjectLookup[investorAddress_Event] = { fromTime: fromTime_Event, toTime: toTime_Event, recordedBlockNumber: blockNumber };
+        investorObjectLookup[investorAddress_Event] = { fromTime: fromTime_Event, toTime: toTime_Event, expiryTime: expiryTime_Event, recordedBlockNumber: blockNumber };
         updatedInvestors += 1;
         // investorAddress_Events.push(investorAddress_Event); not needed, because we start the obj with zero events
 
@@ -247,7 +255,7 @@ async function setInvestors() {
       }
       //we have never recorded this address as an object key, so we need to add it to our list of investors updated by the csv
     } else {
-      investorObjectLookup[investorAddress_Event] = { fromTime: fromTime_Event, toTime: toTime_Event, recordedBlockNumber: blockNumber };
+      investorObjectLookup[investorAddress_Event] = { fromTime: fromTime_Event, toTime: toTime_Event, expiryTime: expiryTime_Event, recordedBlockNumber: blockNumber };
       totalInvestors += 1;
       // investorAddress_Events.push(investorAddress_Event);
     }

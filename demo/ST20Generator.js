@@ -234,7 +234,7 @@ async function step_token_deploy(){
     }
 
     try{
-      await securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, web3.utils.fromAscii(tokenDetails), divisibility).send({ from: Issuer, gas:5000000, gasPrice: DEFAULT_GAS_PRICE})
+      await securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, web3.utils.fromAscii(tokenDetails), divisibility).send({ from: Issuer, gas:7700000, gasPrice: DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...
@@ -437,4 +437,3 @@ function convertToDaysRemaining(timeRemaining){
   seconds  -= mnts*60;
   return (days+" days, "+hrs+" Hrs, "+mnts+" Minutes, "+seconds+" Seconds");
 }
-

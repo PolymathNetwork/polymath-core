@@ -112,16 +112,16 @@ node demo/transfer TOKEN_SYMBOL ACCOUNT_TO AMOUNT
 
 
 # Setting up Polymath Core
-## Ropsten
+## KOVAN
 
-### v1.0.0 (TORO Release)
+### v1.1.0 (TORO Release)
 
 | Contract                                                         | Address                                                                                                                       |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| TickerRegistry:                                               | [0x0abeafae9333f7dc64959914f67765edee5fd05f](https://ropsten.etherscan.io/address/0x0abeafae9333f7dc64959914f67765edee5fd05f)                                              |
-| SecurityTokenRegistry:                                        | [0x8e736d9caeb9eb9b7a766c196fbb01eb53344e81](https://ropsten.etherscan.io/address/0x8e736d9caeb9eb9b7a766c196fbb01eb53344e81)                                              |
-| ModuleRegistry:                                               | [0x850bfedbf6c957fd195e4f555c7deab6cd226a5a](https://ropsten.etherscan.io/address/0x850bfedbf6c957fd195e4f555c7deab6cd226a5a)                                              |
-| CappedSTOFactory:                                               | [0x423105526255dB03C36FD763C982daD96B95D17e](https://etherscan.io/address/0x423105526255dB03C36FD763C982daD96B95D17e)                                              |
+| TickerRegistry:                                               | [0xcf82d3f2abdf777f559e98d85f976283595f0d30](https://kovan.etherscan.io/address/0xcf82d3f2abdf777f559e98d85f976283595f0d30)                                              |
+| SecurityTokenRegistry:                                        | [0x00d4671f8c00fcfc2256e008242f07c1428b5836](https://kovan.etherscan.io/address/0x00d4671f8c00fcfc2256e008242f07c1428b5836)                                              |
+| ModuleRegistry:                                               | [0x719287e2f1dfc7d953d0c1f05fdf27934d9c6f30](https://kovan.etherscan.io/address/0x719287e2f1dfc7d953d0c1f05fdf27934d9c6f30)                                              |
+| CappedSTOFactory:                                               | [0x30e2c3fa3297808a2e9f176be6cc587cb76259c4](https://kovan.etherscan.io/address/0x30e2c3fa3297808a2e9f176be6cc587cb76259c4)                                              |
 
 ## Setup
 

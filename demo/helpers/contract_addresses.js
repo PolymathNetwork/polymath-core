@@ -13,7 +13,7 @@ module.exports = {
     else if(SELECTED_NETWORK == NETWORKS.ROPSTEN)
       return "0x8cd431b23415d132b82d44252c69e3458eec1229";
     else if(SELECTED_NETWORK == NETWORKS.KOVAN)
-      return "0x52ef6665ca74b40cfd17b26f329de0fa5cee3b5a";
+      return "0xcf82d3f2abdf777f559e98d85f976283595f0d30";
   },
   securityTokenRegistryAddress: function() {
     if(SELECTED_NETWORK == NETWORKS.GANACHE)
@@ -21,7 +21,7 @@ module.exports = {
     else if(SELECTED_NETWORK == NETWORKS.ROPSTEN)
       return "0x6487a0c9cc1c5f0d2ff70f0252e4bd2b8e1d014b";
     else if(SELECTED_NETWORK == NETWORKS.KOVAN)
-      return "0x7bf6e63c2326d27340b21fe3a5d9187af915e87d";
+      return "0x00d4671f8c00fcfc2256e008242f07c1428b5836";
   },
   cappedSTOFactoryAddress: function() {
     if(SELECTED_NETWORK == NETWORKS.GANACHE)
@@ -29,7 +29,7 @@ module.exports = {
     else if(SELECTED_NETWORK == NETWORKS.ROPSTEN)
       return "0x4f8de4146250f60075a8357243a1b67c5052d80c";
     else if(SELECTED_NETWORK == NETWORKS.KOVAN)
-      return "0x5132e6ca98f7fa3d3393bab0f5eb8bad010f51ea";
+      return "0x30e2c3fa3297808a2e9f176be6cc587cb76259c4";
   },
 
 };

@@ -1,9 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.   
 
-## [Unreleased](https://github.com/PolymathNetwork/polymath-core/compare/npm-publish-2...master)
+## [Unreleased](https://github.com/PolymathNetwork/polymath-core/compare/release-1.1.0...master)
 
-[__1.0.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __17-04-18__
+[__1.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __18-05-18__
 
 ## Changed    
 

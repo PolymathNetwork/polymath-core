@@ -25,7 +25,7 @@ module.exports = function (deployer, network, accounts) {
   } else if (network === 'kovan') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
-    PolyToken = '0x455Da7D06862Fa7d7639473F287f88bc7b35FF7F' // PolyToken Ropsten Faucet Address
+    PolyToken = '0x455Da7D06862Fa7d7639473F287f88bc7b35FF7F' // PolyToken Kovan Faucet Address
   } else if (network === 'mainnet') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolyToken = '0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC' // Mainnet PolyToken Address

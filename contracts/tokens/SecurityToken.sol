@@ -253,7 +253,7 @@ contract SecurityToken is ISecurityToken {
             investorCount = investorCount.sub(1);
         }
         // Check whether receiver is a new token holder
-        if (balanceOf(_to) == 0) {
+        if ((balanceOf(_to) == 0) && (_to != address(0))) {
             investorCount = investorCount.add(1);
         }
 
@@ -357,6 +357,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     function burn(uint256 _value) checkGranularity(_value) public {
+        adjustInvestorCount(msg.sender, address(0), _value);
         require(tokenBurner != address(0), "Token Burner contract address is not set yet");
         require(verifyTransfer(_investor, address(0), _amount), "Transfer is not valid");
         require(_value <= balances[msg.sender], "Value should no be greater than the balance of msg.sender");

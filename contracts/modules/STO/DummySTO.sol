@@ -19,11 +19,23 @@ contract DummySTO is ISTO {
 
     mapping (address => uint256) public investors;
 
+    /**
+     * @dev Constructor
+     * @param _securityToken Address of the security token
+     * @param _polyAddress Address of the polytoken
+     */
     constructor (address _securityToken, address _polyAddress) public
     IModule(_securityToken, _polyAddress)
     {
     }
 
+    /**
+     * @dev Function used to intialize the differnet variables
+     * @param _startTime Unix timestamp at which offering get started
+     * @param _endTime Unix timestamp at which offering get ended
+     * @param _cap Maximum No. of tokens for sale 
+     * @param _someString Any string that contails the details
+     */
     function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public onlyFactory {
         startTime = _startTime;
         endTime = _endTime;
@@ -31,10 +43,18 @@ contract DummySTO is ISTO {
         someString = _someString;
     }
 
+    /**
+     * @notice This function returns the signature of configure function 
+     */
     function getInitFunction() public returns (bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256,string)"));
     }
 
+    /**
+     * @dev Function used to generate the tokens 
+     * @param _investor Address of the investor
+     * @param _amount Amount of ETH or Poly invested by the investor
+     */
     function generateTokens(address _investor, uint256 _amount) public onlyOwner {
         require(_amount > 0, "Amount should be greater than 0");
         IST20(securityToken).mint(_investor, _amount);
@@ -46,18 +66,30 @@ contract DummySTO is ISTO {
         emit LogGenerateTokens (_investor, _amount);
     }
 
+    /**
+     * @notice Return ETH raised by the STO 
+     */
     function getRaisedEther() public view returns (uint256) {
         return 0;
     }
 
+    /**
+     * @notice Return POLY raised by the STO
+     */
     function getRaisedPOLY() public view returns (uint256) {
         return 0;
     }
 
+    /**
+     * @notice Return the total no. of investors 
+     */
     function getNumberInvestors() public view returns (uint256) {
         return investorCount;
     }
 
+    /**
+     * @notice Return the permissions flag that are associated with STO
+     */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;

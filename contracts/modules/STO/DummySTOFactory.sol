@@ -7,13 +7,20 @@ import "../../interfaces/IModule.sol";
 
 contract DummySTOFactory is IModuleFactory {
 
+    /**
+     * @dev Constructor
+     * @param _polyAddress Address of the polytoken
+     */
     constructor (address _polyAddress) public
       IModuleFactory(_polyAddress)
     {
 
     }
 
-
+    /**
+     * @dev used to launch the Module with the help of factory
+     * @return address Contract address of the Module
+     */
     function deploy(bytes _data) external returns(address) {
         if (getCost() > 0)
             require(polyToken.transferFrom(msg.sender, owner, getCost()), "Failed transferFrom because of sufficent Allowance is not provided");
@@ -25,30 +32,51 @@ contract DummySTOFactory is IModuleFactory {
         return address(dummySTO);
     }
 
+    /**
+     * @dev Used to get the cost that will be paid at the time of usage of the factory
+     */
     function getCost() public view returns(uint256) {
         return 0;
     }
 
+    /**
+     * @dev Type of the Module factory
+     */
     function getType() public view returns(uint8) {
         return 3;
     }
 
+    /**
+     * @dev Get the name of the Module
+     */
     function getName() public view returns(bytes32) {
         return "DummySTO";
     }
 
+    /**
+     * @dev Get the description of the Module 
+     */
     function getDescription() public view returns(string) {
         return "Dummy STO";
     }
 
+    /**
+     * @dev Get the title of the Module
+     */
     function getTitle() public view returns(string) {
         return "Dummy STO";
     }
 
+    /**
+     * @dev Get the Instructions that helped to used the module
+     */
     function getInstructions() public view returns(string) {
         return "Dummy STO - you can mint tokens at will";
     }
 
+    /**
+     * @dev Get the tags related to the module factory
+     */
     function getTags() public view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](4);
         availableTags[0] = "Dummy";

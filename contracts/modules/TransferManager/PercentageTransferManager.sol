@@ -29,12 +29,18 @@ contract PercentageTransferManager is ITransferManager {
         address _addedBy
     );
 
+    /**
+     * @dev Constructor
+     * @param _securityToken Address of the security token
+     * @param _polyAddress Address of the polytoken
+     */
     constructor (address _securityToken, address _polyAddress)
     public
     IModule(_securityToken, _polyAddress)
     {
     }
 
+    /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
     function verifyTransfer(address /* _from */, address _to, uint256 _amount) public view returns(Result) {
         if (!paused) {
             // If an address is on the whitelist, it is allowed to hold more than maxHolderPercentage of the tokens.
@@ -50,10 +56,17 @@ contract PercentageTransferManager is ITransferManager {
         return Result.NA;
     }
 
+    /**
+     * @dev Used to intialize the variables of the contract
+     * @param _maxHolderPercentage Maximum amount of ST20 tokens(in %) can hold by the investor 
+     */
     function configure(uint256 _maxHolderPercentage) public onlyFactory {
         maxHolderPercentage = _maxHolderPercentage;
     }
 
+    /**
+     * @notice This function returns the signature of configure function 
+     */
     function getInitFunction() public returns(bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
@@ -77,6 +90,9 @@ contract PercentageTransferManager is ITransferManager {
         emit LogModifyWhitelist(_investor, now, msg.sender);
     }
 
+    /**
+     * @notice Return the permissions flag that are associated with Percentage transfer Manager
+     */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = WHITELIST;

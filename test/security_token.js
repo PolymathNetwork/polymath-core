@@ -32,6 +32,8 @@ contract('SecurityToken', accounts => {
     let token_owner;
     let account_investor2;
     let account_investor3;
+    let account_affiliate1;
+    let account_affiliate2;
     let account_fundsReceiver;
     let account_delegate;
     let account_temp;
@@ -120,6 +122,9 @@ contract('SecurityToken', accounts => {
         account_fundsReceiver = accounts[4];
         account_delegate = accounts[5];
         account_temp = accounts[8];
+        account_affiliate1 = accounts[2];
+        account_affiliate2 = accounts[3];
+
         token_owner = account_issuer;
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -242,7 +247,7 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:6000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -274,6 +279,73 @@ contract('SecurityToken', accounts => {
                 "GeneralTransferManager contract was not deployed",
             );
 
+        });
+
+        it("Should mint the tokens before attaching the STO -- fail only be called by the owner", async() => {
+            let errorThrown = false;
+            let fromTime = latestTime();
+            let toTime = fromTime + duration.days(100);
+            let expiryTime = toTime + duration.days(100);
+
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_affiliate1,
+                fromTime,
+                toTime,
+                expiryTime,
+                {
+                    from: token_owner,
+                    gas: 6000000
+                });
+            assert.equal(tx.logs[0].args._investor, account_affiliate1, "Failed in adding the investor in whitelist");
+            try {
+                await I_SecurityToken.mint(account_investor1, (100 * Math.pow(10, 18)), {from: account_delegate});
+            } catch(error) {
+                console.log(`Tx. get failed because Mint only be called by the owner of the SecurityToken`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should mint the tokens before attaching the STO", async() => {
+            await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
+            let balance = await I_SecurityToken.balanceOf(account_affiliate1);
+            assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
+        });
+
+        it("Should mint the multi tokens before attaching the STO -- fail only be called by the owner", async() => {
+            let errorThrown = false;
+            let fromTime = latestTime();
+            let toTime = fromTime + duration.days(100);
+            let expiryTime = toTime + duration.days(100);
+
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_affiliate2,
+                fromTime,
+                toTime,
+                expiryTime,
+                {
+                    from: token_owner,
+                    gas: 6000000
+                });
+
+            assert.equal(tx.logs[0].args._investor, account_affiliate2, "Failed in adding the investor in whitelist");
+            try {
+                await I_SecurityToken.mintMulti([account_affiliate1, account_affiliate2], [(100 * Math.pow(10, 18)), (110 * Math.pow(10, 18))], {from: account_delegate, gas: 500000});
+            } catch(error) {
+                console.log(`Tx. get failed because Mint only be called by the owner of the SecurityToken`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should mint the tokens for multiple afiliated investors before attaching the STO", async() => {
+            await I_SecurityToken.mintMulti([account_affiliate1, account_affiliate2], [(100 * Math.pow(10, 18)), (110 * Math.pow(10, 18))], {from: token_owner, gas: 500000});
+            let balance1 = await I_SecurityToken.balanceOf(account_affiliate1);
+            assert.equal(balance1.dividedBy(new BigNumber(10).pow(18)).toNumber(), 200);
+            let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
+            assert.equal(balance2.dividedBy(new BigNumber(10).pow(18)).toNumber(), 110);
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
@@ -747,9 +819,6 @@ contract('SecurityToken', accounts => {
            });
 
            it("Should fail to call the burn the tokens because token burner contract is not set", async() => {
-                // Deploy the token burner contract
-                I_TokenBurner = await TokenBurner.new(I_SecurityToken.address, { from: token_owner });
-
                 let errorThrown = false;
                 try {
                     await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });
@@ -761,13 +830,26 @@ contract('SecurityToken', accounts => {
                assert.ok(errorThrown, message);
            });
 
-           it("Should burn the tokens", async ()=> {
+           it("Should fail to call the burn the tokens because TM does not allow it", async ()=> {
                 // Deploy the token burner contract
                 I_TokenBurner = await TokenBurner.new(I_SecurityToken.address, { from: token_owner });
 
                 await I_SecurityToken.setTokenBurner(I_TokenBurner.address, { from: token_owner });
                 assert.equal(await I_SecurityToken.tokenBurner.call(), I_TokenBurner.address);
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });
+                } catch(error) {
+                   console.log('failed in calling burn function because token burner contract is not set');
+                   errorThrown = true;
+                   ensureException(error);
+               }
+               assert.ok(errorThrown, message);
 
+           });
+
+           it("Should burn the tokens", async ()=> {
+                await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, {from : token_owner});
                 let currentInvestorCount = await I_SecurityToken.investorCount();
                 let currentBalance = await I_SecurityToken.balanceOf(account_temp);
                 // console.log(currentInvestorCount.toString(), currentBalance.toString());

@@ -240,7 +240,7 @@ contract('ExchangeTransferManager', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:6000000 });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -380,8 +380,6 @@ contract('ExchangeTransferManager', accounts => {
         });
 
         it("Existing investor should be able to transfer to exchange", async() => {
-          let w1 = await I_ExchangeTransferManager.verifyTransfer(account_investor1,account_exchange,1000);
-          let w2 = await I_GeneralTransferManager.verifyTransfer(account_investor1,account_exchange,1000);
             await I_SecurityToken.transfer(account_exchange, web3.utils.toWei('1', 'ether'), {from: account_investor1});
 
             assert.equal(

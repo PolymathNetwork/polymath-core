@@ -39,6 +39,8 @@ contract SecurityToken is ISecurityToken {
 
     address public moduleRegistry;
 
+    mapping (bytes4 => bool) transferFunctions;
+
     // Module list should be order agnostic!
     mapping (uint8 => ModuleData[]) public modules;
     mapping (uint8 => bool) public modulesLocked;
@@ -111,6 +113,10 @@ contract SecurityToken is ISecurityToken {
         polyToken = ERC20(ISecurityTokenRegistry(_securityTokenRegistry).polyAddress());
         tokenDetails = _tokenDetails;
         granularity = _granularity;
+        transferFunctions[bytes4(keccak256("transfer(address,uint256)"))] = true;
+        transferFunctions[bytes4(keccak256("transferFrom(address,address,uint256)"))] = true;
+        transferFunctions[bytes4(keccak256("mint(address,uint256)"))] = true;
+        transferFunctions[bytes4(keccak256("burn(uint256)"))] = true;
     }
 
     /**
@@ -317,12 +323,16 @@ contract SecurityToken is ISecurityToken {
     // If no TransferManager return true
     function verifyTransfer(address _from, address _to, uint256 _amount) public view checkGranularity(_amount) returns (bool) {
         if (!freeze) {
+            bool isTransfer = false;
+            if (transferFunctions[getSig(msg.data)]) {
+              isTransfer = true;
+            }
             if (modules[TRANSFERMANAGER_KEY].length == 0) {
                 return true;
             }
             bool success = false;
             for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
-                ITransferManager.Result valid = ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount);
+                ITransferManager.Result valid = ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount, isTransfer);
                 if (valid == ITransferManager.Result.INVALID) {
                     return false;
                 }
@@ -359,7 +369,7 @@ contract SecurityToken is ISecurityToken {
      * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _amounts) public onlyModule(STO_KEY, true) returns (bool success) {
+    function mintMulti(address[] _investors, uint256[] _amounts) public onlyOwner returns (bool success) {
         require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _amounts[i]);
@@ -397,6 +407,7 @@ contract SecurityToken is ISecurityToken {
     function burn(uint256 _value) checkGranularity(_value) public {
         adjustInvestorCount(msg.sender, address(0), _value);
         require(tokenBurner != address(0), "Token Burner contract address is not set yet");
+        require(verifyTransfer(msg.sender, address(0), _value), "Transfer is not valid");
         require(_value <= balances[msg.sender], "Value should no be greater than the balance of msg.sender");
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
@@ -406,5 +417,13 @@ contract SecurityToken is ISecurityToken {
         totalSupply_ = totalSupply_.sub(_value);
         emit Burnt(msg.sender, _value);
         emit Transfer(msg.sender, address(0), _value);
+    }
+
+    //Pull function sig from _data
+    function getSig(bytes _data) internal pure returns (bytes4 sig) {
+        uint len = _data.length < 4 ? _data.length : 4;
+        for (uint i = 0; i < len; i++) {
+            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
+        }
     }
 }

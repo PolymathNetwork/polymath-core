@@ -28,7 +28,7 @@ contract ExchangeTransferManager is ITransferManager {
     }
 
     /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
-    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(Result) {
+    function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
             if (_from == exchange) {
                 return (getExchangePermission(_to) ? Result.VALID : Result.NA);

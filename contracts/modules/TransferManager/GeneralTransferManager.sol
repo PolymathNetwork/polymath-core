@@ -41,6 +41,8 @@ contract GeneralTransferManager is ITransferManager {
     bool public allowAllWhitelistTransfers = false;
     //If true, time lock is ignored for issuances (address must still be on whitelist)
     bool public allowAllWhitelistIssuances = true;
+    //If true, time lock is ignored for burn transactions
+    bool public allowAllBurnTransfers = false;
 
     // Emit when Issuance address get changed
     event LogChangeIssuanceAddress(address _issuanceAddress);
@@ -50,6 +52,8 @@ contract GeneralTransferManager is ITransferManager {
     event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     // Emit when there is change in the flag variable called allowAllWhitelistIssuances
     event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
+    // Emit when there is change in the flag variable called allowAllBurnTransfers
+    event LogAllowAllBurnTransfers(bool _allowAllBurnTransfers);
     // Emit when there is change in the flag variable called signingAddress
     event LogChangeSigningAddress(address _signingAddress);
     // Emit when investor details get modified related to their whitelisting
@@ -131,6 +135,11 @@ contract GeneralTransferManager is ITransferManager {
         emit LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
+    function changeAllowAllBurnTransfers(bool _allowAllBurnTransfers) public withPerm(FLAGS) {
+        allowAllBurnTransfers = _allowAllBurnTransfers;
+        emit LogAllowAllBurnTransfers(_allowAllBurnTransfers);
+    }
+
     /**
     * @dev default implementation of verifyTransfer used by SecurityToken
     * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
@@ -139,10 +148,13 @@ contract GeneralTransferManager is ITransferManager {
     * b) Seller's sale lockup period is over
     * c) Buyer's purchase lockup is over
     */
-    function verifyTransfer(address _from, address _to, uint256 /*_amount*/) public view returns(Result) {
+    function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
+                return Result.VALID;
+            }
+            if (allowAllBurnTransfers && (_to == address(0))) {
                 return Result.VALID;
             }
             if (allowAllWhitelistTransfers) {

@@ -15,7 +15,7 @@ contract CountTransferManager is ITransferManager {
     {
     }
 
-    function verifyTransfer(address /* _from */, address _to, uint256 /* _amount */, bool /* _isTransfer */) public view returns(Result) {
+    function verifyTransfer(address /* _from */, address _to, uint256 /* _amount */, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).investorCount()) {
                 // Allow transfers to existing maxHolders

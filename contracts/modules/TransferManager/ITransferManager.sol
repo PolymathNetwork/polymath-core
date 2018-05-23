@@ -11,7 +11,7 @@ contract ITransferManager is IModule {
     //  VALID, then the transfer is valid for this TM
     enum Result {INVALID, NA, VALID}
 
-    function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public view returns(Result);
+    function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result);
 
     event Pause(uint256 _timestammp);
     event Unpause(uint256 _timestamp);

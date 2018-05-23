@@ -22,7 +22,7 @@ contract ExchangeTransferManager is ITransferManager {
     {
     }
 
-    function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bool /* _isTransfer */) public view returns(Result) {
+    function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
             if (_from == exchange) {
                 return (getExchangePermission(_to) ? Result.VALID : Result.NA);

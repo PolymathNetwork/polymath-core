@@ -4,7 +4,10 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../interfaces/IST20.sol";
 import "../Governance/VoteGovernance.sol";
 
-contract SimpleDaicoFund {
+import "../../interfaces/IModule.sol";
+import "../../interfaces/ITokenBurner.sol";
+
+contract SimpleDaicoFund is IModule, ITokenBurner {
     using SafeMath for uint256;
 
 ////////////////////

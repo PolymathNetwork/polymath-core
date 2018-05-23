@@ -41,11 +41,14 @@ contract GeneralTransferManager is ITransferManager {
     bool public allowAllWhitelistTransfers = false;
     //If true, time lock is ignored for issuances (address must still be on whitelist)
     bool public allowAllWhitelistIssuances = true;
+    //If true, time lock is ignored for burn transactions
+    bool public allowAllBurnTransfers = true;
 
     event LogChangeIssuanceAddress(address _issuanceAddress);
     event LogAllowAllTransfers(bool _allowAllTransfers);
     event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
+    event LogAllowAllBurnTransfers(bool _allowAllBurnTransfers);
     event LogChangeSigningAddress(address _signingAddress);
 
     event LogModifyWhitelist(
@@ -92,6 +95,11 @@ contract GeneralTransferManager is ITransferManager {
         emit LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
+    function changeAllowAllBurnTransfers(bool _allowAllBurnTransfers) public withPerm(FLAGS) {
+        allowAllBurnTransfers = _allowAllBurnTransfers;
+        emit LogAllowAllBurnTransfers(_allowAllBurnTransfers);
+    }
+
     /**
     * @dev default implementation of verifyTransfer used by SecurityToken
     * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
@@ -104,6 +112,9 @@ contract GeneralTransferManager is ITransferManager {
         if (!paused) {
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
+                return Result.VALID;
+            }
+            if (allowAllBurnTransfers && (_to == address(0))) {
                 return Result.VALID;
             }
             if (allowAllWhitelistTransfers) {

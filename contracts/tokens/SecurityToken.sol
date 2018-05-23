@@ -359,7 +359,7 @@ contract SecurityToken is ISecurityToken {
     function burn(uint256 _value) checkGranularity(_value) public {
         adjustInvestorCount(msg.sender, address(0), _value);
         require(tokenBurner != address(0), "Token Burner contract address is not set yet");
-        require(verifyTransfer(_investor, address(0), _amount), "Transfer is not valid");
+        require(verifyTransfer(msg.sender, address(0), _value), "Transfer is not valid");
         require(_value <= balances[msg.sender], "Value should no be greater than the balance of msg.sender");
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure

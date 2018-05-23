@@ -747,9 +747,6 @@ contract('SecurityToken', accounts => {
            });
 
            it("Should fail to call the burn the tokens because token burner contract is not set", async() => {
-                // Deploy the token burner contract
-                I_TokenBurner = await TokenBurner.new(I_SecurityToken.address, { from: token_owner });
-
                 let errorThrown = false;
                 try {
                     await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });
@@ -761,13 +758,27 @@ contract('SecurityToken', accounts => {
                assert.ok(errorThrown, message);
            });
 
-           it("Should burn the tokens", async ()=> {
+           it("Should fail to call the burn the tokens because TM does not allow it", async ()=> {
                 // Deploy the token burner contract
                 I_TokenBurner = await TokenBurner.new(I_SecurityToken.address, { from: token_owner });
 
                 await I_SecurityToken.setTokenBurner(I_TokenBurner.address, { from: token_owner });
                 assert.equal(await I_SecurityToken.tokenBurner.call(), I_TokenBurner.address);
 
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });
+                } catch(error) {
+                   console.log('failed in calling burn function because token burner contract is not set');
+                   errorThrown = true;
+                   ensureException(error);
+               }
+               assert.ok(errorThrown, message);
+
+           });
+
+           it("Should burn the tokens", async ()=> {
+                await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, {from : token_owner});
                 let currentInvestorCount = await I_SecurityToken.investorCount();
                 let currentBalance = await I_SecurityToken.balanceOf(account_temp);
                 // console.log(currentInvestorCount.toString(), currentBalance.toString());

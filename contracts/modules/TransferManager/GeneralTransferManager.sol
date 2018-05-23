@@ -42,7 +42,7 @@ contract GeneralTransferManager is ITransferManager {
     //If true, time lock is ignored for issuances (address must still be on whitelist)
     bool public allowAllWhitelistIssuances = true;
     //If true, time lock is ignored for burn transactions
-    bool public allowAllBurnTransfers = true;
+    bool public allowAllBurnTransfers = false;
 
     event LogChangeIssuanceAddress(address _issuanceAddress);
     event LogAllowAllTransfers(bool _allowAllTransfers);

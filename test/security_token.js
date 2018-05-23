@@ -764,7 +764,6 @@ contract('SecurityToken', accounts => {
 
                 await I_SecurityToken.setTokenBurner(I_TokenBurner.address, { from: token_owner });
                 assert.equal(await I_SecurityToken.tokenBurner.call(), I_TokenBurner.address);
-
                 let errorThrown = false;
                 try {
                     await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });

@@ -39,6 +39,8 @@ contract SecurityToken is ISecurityToken {
 
     address public moduleRegistry;
 
+    mapping (bytes4 => bool) transferFunctions;
+
     // Module list should be order agnostic!
     mapping (uint8 => ModuleData[]) public modules;
     mapping (uint8 => bool) public modulesLocked;
@@ -97,6 +99,10 @@ contract SecurityToken is ISecurityToken {
         polyToken = ERC20(ISecurityTokenRegistry(_securityTokenRegistry).polyAddress());
         tokenDetails = _tokenDetails;
         granularity = _granularity;
+        transferFunctions[bytes4(keccak256("transfer(address,uint256)"))] = true;
+        transferFunctions[bytes4(keccak256("transferFrom(address,address,uint256)"))] = true;
+        transferFunctions[bytes4(keccak256("mint(address,uint256)"))] = true;
+
     }
 
     function addModule(
@@ -295,12 +301,16 @@ contract SecurityToken is ISecurityToken {
     // If no TransferManager return true
     function verifyTransfer(address _from, address _to, uint256 _amount) public view checkGranularity(_amount) returns (bool) {
         if (!freeze) {
+            bool isTransfer = false;
+            if (transferFunctions[getSig(msg.data)]) {
+              isTransfer = true;
+            }
             if (modules[TRANSFERMANAGER_KEY].length == 0) {
                 return true;
             }
             bool success = false;
             for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
-                ITransferManager.Result valid = ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount);
+                ITransferManager.Result valid = ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount, isTransfer);
                 if (valid == ITransferManager.Result.INVALID) {
                     return false;
                 }
@@ -357,5 +367,13 @@ contract SecurityToken is ISecurityToken {
         totalSupply_ = totalSupply_.sub(_value);
         emit Burnt(msg.sender, _value);
         emit Transfer(msg.sender, address(0), _value);
+    }
+
+    //Pull function sig from _data
+    function getSig(bytes _data) internal pure returns (bytes4 sig) {
+        uint len = _data.length < 4 ? _data.length : 4;
+        for (uint i = 0; i < len; i++) {
+            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
+        }
     }
 }

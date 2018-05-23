@@ -380,8 +380,6 @@ contract('ExchangeTransferManager', accounts => {
         });
 
         it("Existing investor should be able to transfer to exchange", async() => {
-          let w1 = await I_ExchangeTransferManager.verifyTransfer(account_investor1,account_exchange,1000);
-          let w2 = await I_GeneralTransferManager.verifyTransfer(account_investor1,account_exchange,1000);
             await I_SecurityToken.transfer(account_exchange, web3.utils.toWei('1', 'ether'), {from: account_investor1});
 
             assert.equal(

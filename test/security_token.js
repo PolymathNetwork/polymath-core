@@ -768,8 +768,15 @@ contract('SecurityToken', accounts => {
                 await I_SecurityToken.setTokenBurner(I_TokenBurner.address, { from: token_owner });
                 assert.equal(await I_SecurityToken.tokenBurner.call(), I_TokenBurner.address);
 
-                let tx = await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });
-                assert.equal(tx.logs[0].args._value, web3.utils.toWei('1', 'ether'));
+                let currentInvestorCount = await I_SecurityToken.investorCount();
+                let currentBalance = await I_SecurityToken.balanceOf(account_temp);
+                // console.log(currentInvestorCount.toString(), currentBalance.toString());
+                let tx = await I_SecurityToken.burn(currentBalance, { from: account_temp });
+                // console.log(tx.logs[0].args._value.toNumber(), currentBalance.toNumber());
+                assert.equal(tx.logs[0].args._value.toNumber(), currentBalance.toNumber());
+                let newInvestorCount = await I_SecurityToken.investorCount();
+                // console.log(newInvestorCount.toString());
+                assert.equal(newInvestorCount.toNumber() + 1, currentInvestorCount.toNumber(), "Investor count drops by one");
            });
     });
 

@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 ## Changed    
 
 * Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not
-* Burning tokens now respects TransferManagers and investorCount
+* Burning tokens now respects TransferManagers and investorCount 
 * Factored out the second reference to the POLY token from ISTO contracts
 * Defaulted all STs to have 18 decimals
 * Removed decimals parameter from `generateSecurityToken`

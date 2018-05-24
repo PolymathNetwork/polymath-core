@@ -17,5 +17,11 @@ contract ITickerRegistry {
     */
     function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool);
 
+    /**
+     * @dev Check the symbol is reserved or not
+     * @param _symbol Symbol of the token
+     * @return bool 
+     */
+     function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) public returns(bool);
 
 }

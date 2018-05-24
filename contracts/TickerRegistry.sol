@@ -105,6 +105,25 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     }
 
     /**
+     * @dev Check the symbol is reserved or not
+     * @param _symbol Symbol of the token
+     * @param _owner Owner of the token
+     * @param _tokenName Name of the token
+     * @param _swarmHash off-chain hash
+     * @return bool 
+     */
+     function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) public returns(bool) {
+        string memory symbol = upper(_symbol);
+        require(msg.sender == strAddress, "msg.sender should be SecurityTokenRegistry contract");
+        if (registeredSymbols[symbol].owner == address(0) || expiryCheck(symbol)) {
+            registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, _swarmHash, true);
+            emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now);
+            return false;
+        } else 
+            return true;
+     }
+
+    /**
      * @dev Returns the owner and timestamp for a given symbol
      * @param _symbol symbol
      */

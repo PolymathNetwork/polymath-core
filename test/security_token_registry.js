@@ -303,6 +303,75 @@ contract('SecurityTokenRegistry', accounts => {
             LogAddModule.stopWatching();
         });
 
+        it("Should fail in adding the new custom token in the polymath network", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, "I am custom ST", "Swarm hash", {from: account_delegate});
+            } catch(error) {
+                console.log(`Tx. get failed. Becuase msg.sender is not polymath account`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in adding the new custom token in the polymath network", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", 0, "I am custom ST", "Swarm hash", {from: account_polymath});
+            } catch(error) {
+                console.log(`Tx. get failed. Becuase security token address is 0`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in adding the new custom token in the polymath network", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityTokenRegistry.addCustomSecurityToken("", "", account_temp, "I am custom ST", "Swarm hash", {from: account_polymath});
+            } catch(error) {
+                console.log(`Tx. get failed. Becuase symbol and name of zero length`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in adding the new custom token in the polymath network", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, "I am custom ST", "Swarm hash", {from: account_delegate});
+            } catch(error) {
+                console.log(`Tx. get failed. Becuase msg.sender is not polymath account`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in adding the new custom token in the polymath network", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityTokenRegistry.addCustomSecurityToken(name2, symbol2, account_temp, "I am custom ST", "Swarm hash", {from: account_polymath});
+            } catch(error) {
+                console.log(`Tx. get failed. Becuase Symbol is already reserved`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should Add the new custom token in the polymath network", async() => {
+            let tx = await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, "I am custom ST", "Swarm hash", {from: account_polymath});
+            assert.equal(tx.logs[0].args._symbol, "LOG");
+            assert.equal(tx.logs[0].args._securityToken, account_temp);
+            let symbolDetails = await I_TickerRegistry.getDetails("LOG");
+            assert.equal(symbolDetails[0], account_polymath);
+            assert.equal(symbolDetails[2], "LOGAN");
+        });
+
         it("Should deploy the st vesrion 3", async() => {
             // Step 7: Deploy the STversionProxy contract
 
@@ -389,6 +458,7 @@ contract('SecurityTokenRegistry', accounts => {
             } catch(error) {
                 console.log(`Tx. get failed. Becuase securityToken doesn't have sufficient POLY to pay`);
                 errorThrown = true;
+                ensureException(error);
             }
             assert.ok(errorThrown, message);
         });

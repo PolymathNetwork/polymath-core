@@ -369,7 +369,7 @@ contract SecurityToken is ISecurityToken {
      * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _amounts) public onlyOwner returns (bool success) {
+    function mintMulti(address[] _investors, uint256[] _amounts) public onlyModule(STO_KEY, true) returns (bool success) {
         require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _amounts[i]);

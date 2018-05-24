@@ -62,10 +62,12 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @param _symbol Ticker symbol of the security token
      * @param _securityToken Address of the securityToken
      * @param _tokenDetails off-chain details of the token
+     * @param _swarmHash off-chain details about the issuer company
      */
-    function addCustomSecurityToken(string _name, string _symbol, address _securityToken, string _tokenDetails) public onlyOwner {
+    function addCustomSecurityToken(string _name, string _symbol, address _securityToken, string _tokenDetails, bytes32 _swarmHash) public onlyOwner {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         require(_securityToken != address(0) && symbols[_symbol] == address(0), "Symbol is already at the polymath network or entered sencurity token address is 0x");
+        require(!(ITickerRegistry(tickerRegistry).isReserved(_symbol, msg.sender, _name, _swarmHash)), "Trying to use non-valid symbol");
         symbols[_symbol] = _securityToken;
         securityTokens[_securityToken] = SecurityTokenData(_symbol, _tokenDetails);
         emit LogAddCustomSecurityToken(_name, _symbol, _securityToken, now);

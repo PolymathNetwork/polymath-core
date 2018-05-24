@@ -1,6 +1,8 @@
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol')
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
+const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
+const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
 const TickerRegistry = artifacts.require('./TickerRegistry.sol')
@@ -47,6 +49,22 @@ module.exports = function (deployer, network, accounts) {
       // this manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(GeneralPermissionManagerFactory, PolyToken, {from: PolymathAccount})
     }).then(() => {
+      // D) Deploy the CountTransferManagerFactory Contract (Factory used to generate the CountTransferManager contract use
+      // to track the counts of the investors of the security token)
+      return deployer.deploy(CountTransferManagerFactory, PolyToken, {from: PolymathAccount})
+    }).then(() => {
+      // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
+      // to track the percentage of investment the investors could do for a particular security token)
+      return deployer.deploy(PercentageTransferManagerFactory, PolyToken, {from: PolymathAccount})
+    }).then(() => {
+      // D) Register the PercentageTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
+      // So any securityToken can use that factory to generate the PercentageTransferManager contract.
+      return moduleRegistry.registerModule(PercentageTransferManagerFactory.address, {from: PolymathAccount})
+    }).then(() => {
+      // D) Register the CountTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
+      // So any securityToken can use that factory to generate the CountTransferManager contract.
+      return moduleRegistry.registerModule(CountTransferManagerFactory.address, {from: PolymathAccount})
+    }).then(() => {
       // D) Register the GeneralTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the GeneralTransferManager contract.
     return moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount})
@@ -60,7 +78,17 @@ module.exports = function (deployer, network, accounts) {
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
     return moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, {from: PolymathAccount})
     }).then(() => {
-      // G) Once the GeneralPermissionManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // G) Once the CountTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+      // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+    return moduleRegistry.verifyModule(CountTransferManagerFactory.address, true, {from: PolymathAccount})
+    }).then(() => {
+      // G) Once the PercentageTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+      // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+    return moduleRegistry.verifyModule(PercentageTransferManagerFactory.address, true, {from: PolymathAccount})
+    }).then(() => {
+    // G) Once the GeneralPermissionManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
     return moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, {from: PolymathAccount})
@@ -99,6 +127,9 @@ module.exports = function (deployer, network, accounts) {
         console.log('*** Module Registry Address: ', ModuleRegistry.address, '***')
         console.log('*** Security Token Registry Address: ', SecurityTokenRegistry.address, '***')
         console.log('*** Capped STO Factory Address: ', CappedSTOFactory.address, '***')
+        console.log('*** General Permission Manager Factory: ', GeneralPermissionManagerFactory.address, '***')
+        console.log('*** Count Transfer Manager Factory: ', CountTransferManagerFactory.address, '***')
+        console.log('*** Percentage Transfer Manager Factory: ', PercentageTransferManagerFactory.address, '***')
         console.log('-----------------------------------')
         console.log('\n')
         // -------- END OF POLYMATH NETWORK Configuration -------//

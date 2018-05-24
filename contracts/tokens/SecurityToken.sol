@@ -45,7 +45,7 @@ contract SecurityToken is ISecurityToken {
     mapping (uint8 => ModuleData[]) public modules;
     mapping (uint8 => bool) public modulesLocked;
 
-    uint8 public constant MAX_MODULES = 10;
+    uint8 public constant MAX_MODULES = 20;
 
     event LogModuleAdded(
         uint8 indexed _type,
@@ -299,7 +299,7 @@ contract SecurityToken is ISecurityToken {
 
     // Permissions this to a TransferManager module, which has a key of 2
     // If no TransferManager return true
-    function verifyTransfer(address _from, address _to, uint256 _amount) public view checkGranularity(_amount) returns (bool) {
+    function verifyTransfer(address _from, address _to, uint256 _amount) public checkGranularity(_amount) returns (bool) {
         if (!freeze) {
             bool isTransfer = false;
             if (transferFunctions[getSig(msg.data)]) {

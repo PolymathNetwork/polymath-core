@@ -11,7 +11,7 @@ import "./helpers/Util.sol";
 contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
 
     event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address _owner);
-
+    event LogAddCustomSecurityToken(string _name, string _symbol, address _securityToken, uint256 _addedAt);
      /**
      * @dev Constructor used to set the essentials addresses to facilitate
      * the creation of the security token
@@ -56,6 +56,20 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
         emit LogNewSecurityToken(symbol, newSecurityTokenAddress, msg.sender);
     }
 
+    /**
+     * @dev Add a new custom (Token should follow the ISecurityToken interface) Security Token and saves it to the registry
+     * @param _name Name of the token
+     * @param _symbol Ticker symbol of the security token
+     * @param _securityToken Address of the securityToken
+     * @param _tokenDetails off-chain details of the token
+     */
+    function addCustomSecurityToken(string _name, string _symbol, address _securityToken, string _tokenDetails) public onlyOwner {
+        require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
+        require(_securityToken != address(0) && symbols[_symbol] == address(0), "Symbol is already at the polymath network or entered sencurity token address is 0x");
+        symbols[_symbol] = _securityToken;
+        securityTokens[_securityToken] = SecurityTokenData(_symbol, _tokenDetails);
+        emit LogAddCustomSecurityToken(_name, _symbol, _securityToken, now);
+    }
     /**
     * @dev Changes the protocol version and the SecurityToken contract that the registry points to
     * Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions

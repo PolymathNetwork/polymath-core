@@ -3,12 +3,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased](https://github.com/PolymathNetwork/polymath-core/compare/release-1.1.0...master)
 
+[__1.2.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __22-05-18__
+
+# Changed
+
+* Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not.      
+* Burning tokens now respects TransferManagers and investorCount.            
+
+
 [__1.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __18-05-18__
 
 ## Changed    
 
-* Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not
-* Burning tokens now respects TransferManagers and investorCount 
 * Factored out the second reference to the POLY token from ISTO contracts
 * Defaulted all STs to have 18 decimals
 * Removed decimals parameter from `generateSecurityToken`

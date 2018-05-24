@@ -9,14 +9,28 @@ contract ISTO is IModule {
     enum FundraiseType { ETH, POLY }
     FundraiseType public fundraiseType;
 
+    /**
+     * @dev use to verify the investment, whether the investor provide the allowance to the STO or not.
+     * @param _beneficiary Ethereum address of the beneficiary, who wants to buy the st-20
+     * @param _fundsAmount Amount invested by the beneficiary
+     */
     function verifyInvestment(address _beneficiary, uint256 _fundsAmount) public view returns(bool) {
         return polyToken.allowance(_beneficiary, address(this)) >= _fundsAmount;
     }
 
+    /**
+     * @notice Return ETH raised by the STO 
+     */
     function getRaisedEther() public view returns (uint256);
 
+    /**
+     * @notice Return POLY raised by the STO
+     */
     function getRaisedPOLY() public view returns (uint256);
 
+    /**
+     * @notice Return the total no. of investors 
+     */
     function getNumberInvestors() public view returns (uint256);
 
 }

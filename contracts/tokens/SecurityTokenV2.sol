@@ -10,6 +10,15 @@ import "./SecurityToken.sol";
 contract SecurityTokenV2 is SecurityToken {
     bytes32 public securityTokenVersion = "0.0.2";
 
+     /**
+     * @dev Constructor
+     * @param _name Name of the SecurityToken
+     * @param _symbol Symbol of the Token
+     * @param _decimals Decimals for the securityToken
+     * @param _granularity granular level of the token
+     * @param _tokenDetails Details of the token that are stored offchain (IPFS hash)
+     * @param _securityTokenRegistry Contract address of the security token registry
+     */
     constructor (
         string _name,
         string _symbol,

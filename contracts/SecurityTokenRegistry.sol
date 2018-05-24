@@ -10,6 +10,7 @@ import "./helpers/Util.sol";
 
 contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
 
+    // Emit at the time of launching of new security token
     event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address _owner);
 
      /**

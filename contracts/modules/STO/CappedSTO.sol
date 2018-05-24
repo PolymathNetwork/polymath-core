@@ -54,6 +54,15 @@ contract CappedSTO is ISTO {
         buyTokens(msg.sender);
     }
 
+    /**
+     * @dev Function used to intialize the contract variables
+     * @param _startTime Unix timestamp at which offering get started
+     * @param _endTime Unix timestamp at which offering get ended
+     * @param _cap Maximum No. of tokens for sale 
+     * @param _rate Token units a buyer gets per wei / base unit of POLY
+     * @param _fundRaiseType Type of currency used to collect the funds
+     * @param _fundsReceiver Ethereum account address to hold the funds
+     */
     function configure(
         uint256 _startTime,
         uint256 _endTime,
@@ -77,6 +86,9 @@ contract CappedSTO is ISTO {
         _check(_fundRaiseType);
     }
 
+    /**
+     * @notice This function returns the signature of configure function 
+     */
     function getInitFunction() public returns (bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8,address)"));
     }
@@ -109,12 +121,15 @@ contract CappedSTO is ISTO {
 
     /**
     * @dev Checks whether the cap has been reached.
-    * @return Whether the cap was reached
+    * @return bool Whether the cap was reached
     */
     function capReached() public view returns (bool) {
         return tokensSold >= cap;
     }
 
+    /**
+     * @notice Return ETH raised by the STO 
+     */
     function getRaisedEther() public view returns (uint256) {
         if (fundraiseType == FundraiseType.ETH)
             return fundsRaised;
@@ -122,6 +137,9 @@ contract CappedSTO is ISTO {
             return 0;
     }
 
+    /**
+     * @notice Return POLY raised by the STO
+     */
     function getRaisedPOLY() public view returns (uint256) {
         if (fundraiseType == FundraiseType.POLY)
             return fundsRaised;
@@ -129,15 +147,24 @@ contract CappedSTO is ISTO {
             return 0;
     }
 
+    /**
+     * @notice Return the total no. of investors 
+     */
     function getNumberInvestors() public view returns (uint256) {
         return investorCount;
     }
 
+    /**
+     * @notice Return the permissions flag that are associated with STO
+     */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }
 
+    /**
+     * @notice Return the STO details 
+     */
     function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
         return (
             startTime,
@@ -244,6 +271,10 @@ contract CappedSTO is ISTO {
         wallet.transfer(msg.value);
     }
 
+    /**
+     * @dev Internal function used to check the type of fund raise currency
+     * @param _fundraiseType Type of currency used to collect the funds
+     */
     function _check(uint8 _fundraiseType) internal {
         require(_fundraiseType == 0 || _fundraiseType == 1, "Not a valid fundraise type");
         if (_fundraiseType == 0) {
@@ -255,6 +286,12 @@ contract CappedSTO is ISTO {
         }
     }
 
+    /**
+     * @dev Internal function used to forward the POLY raised to beneficiary address
+     * @param _beneficiary Address of the funds reciever
+     * @param _to Address who wants to ST-20 tokens
+     * @param _fundsAmount Amount invested by _to
+     */
     function _forwardPoly(address _beneficiary, address _to, uint256 _fundsAmount) internal {
         polyToken.transferFrom(_beneficiary, _to, _fundsAmount);
     }

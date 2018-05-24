@@ -47,6 +47,7 @@ contract SecurityToken is ISecurityToken {
 
     uint8 public constant MAX_MODULES = 10;
 
+    // Emit at the time when module get added
     event LogModuleAdded(
         uint8 indexed _type,
         bytes32 _name,
@@ -57,10 +58,14 @@ contract SecurityToken is ISecurityToken {
         uint256 _timestamp
     );
 
+    // Emit when the token details get updated
     event LogUpdateTokenDetails(string _oldDetails, string _newDetails);
+    // Emit when the granularity get changed
     event LogGranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
+    // Emit when Module get removed from the securityToken
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
+    // Emit when all the transfers get freeze
     event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
@@ -83,6 +88,15 @@ contract SecurityToken is ISecurityToken {
       _;
     }
 
+    /**
+     * @dev Constructor
+     * @param _name Name of the SecurityToken
+     * @param _symbol Symbol of the Token
+     * @param _decimals Decimals for the securityToken
+     * @param _granularity granular level of the token
+     * @param _tokenDetails Details of the token that are stored off-chain (IPFS hash)
+     * @param _securityTokenRegistry Contract address of the security token registry
+     */
     constructor (
         string _name,
         string _symbol,
@@ -105,6 +119,14 @@ contract SecurityToken is ISecurityToken {
         transferFunctions[bytes4(keccak256("burn(uint256)"))] = true;
     }
 
+    /**
+     * @dev Function used to attach the module in security token
+     * @param _moduleFactory Contract address of the module factory that needs to be attached
+     * @param _data Data used for the intialization of the module factory variables
+     * @param _maxCost Maximum cost of the Module factory
+     * @param _budget Budget of the Module factory
+     * @param _locked whether or not the module is supposed to be locked
+     */
     function addModule(
         address _moduleFactory,
         bytes _data,
@@ -167,10 +189,10 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-    * @dev returns module list for a module type
-    * @param _moduleType is which type of module we are trying to remove
-    * @param _moduleIndex is the index of the module within the chosen type
-    */
+     * @dev returns module list for a module type
+     * @param _moduleType is which type of module we are trying to remove
+     * @param _moduleIndex is the index of the module within the chosen type
+     */
     function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address, bool) {
         if (modules[_moduleType].length > 0) {
             return (
@@ -185,10 +207,10 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-    * @dev returns module list for a module name - will return first match
-    * @param _moduleType is which type of module we are trying to remove
-    * @param _name is the name of the module within the chosen type
-    */
+     * @dev returns module list for a module name - will return first match
+     * @param _moduleType is which type of module we are trying to remove
+     * @param _name is the name of the module within the chosen type
+     */
     function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address, bool) {
         if (modules[_moduleType].length > 0) {
             for (uint256 i = 0; i < modules[_moduleType].length; i++) {
@@ -324,9 +346,12 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-    * @dev mints new tokens and assigns them to the target _investor.
-    * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
-    */
+     * @dev mints new tokens and assigns them to the target _investor.
+     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+     * @param _investor Address to whom the minted tokens will be dilivered
+     * @param _amount Number of tokens get minted
+     * @return success
+     */
     function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) returns (bool success) {
         adjustInvestorCount(address(0), _investor, _amount);
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
@@ -334,6 +359,21 @@ contract SecurityToken is ISecurityToken {
         balances[_investor] = balances[_investor].add(_amount);
         emit Minted(_investor, _amount);
         emit Transfer(address(0), _investor, _amount);
+        return true;
+    }
+
+    /**
+     * @dev mints new tokens and assigns them to the target _investor.
+     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+     * @param _investors A list of addresses to whom the minted tokens will be dilivered
+     * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
+     * @return success
+     */
+    function mintMulti(address[] _investors, uint256[] _amounts) public onlyModule(STO_KEY, true) returns (bool success) {
+        require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
+        for (uint256 i = 0; i < _investors.length; i++) {
+            mint(_investors[i], _amounts[i]);
+        }
         return true;
     }
 
@@ -352,10 +392,18 @@ contract SecurityToken is ISecurityToken {
         }
     }
 
+    /**
+     * @dev used to set the token Burner address. It only be called by the owner
+     * @param _tokenBurner Address of the token burner contract
+     */
     function setTokenBurner(address _tokenBurner) public onlyOwner {
         tokenBurner = ITokenBurner(_tokenBurner);
     }
 
+    /**
+     * @dev Burn function used to burn the securityToken
+     * @param _value No. of token that get burned     
+     */
     function burn(uint256 _value) checkGranularity(_value) public {
         adjustInvestorCount(msg.sender, address(0), _value);
         require(tokenBurner != address(0), "Token Burner contract address is not set yet");

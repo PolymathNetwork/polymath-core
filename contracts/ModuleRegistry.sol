@@ -14,16 +14,23 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract ModuleRegistry is IModuleRegistry, Ownable {
 
+    // Mapping used to hold the type of module factory corresponds to the address of the Module factory contract
     mapping (address => uint8) public registry;
+    // Mapping used to hold the reputation of the factory
     mapping (address => address[]) public reputation;
+    // Mapping contain the list of addresses of Module factory for a particular type
     mapping (uint8 => address[]) public moduleList;
+    // contains the list of verified modules
     mapping (address => bool) public verified;
+    // Contains the list of the available tags corresponds to the module type
     mapping (uint8 => bytes32[]) public availableTags;
 
     address public securityTokenRegistry;
-
+    // Emit when Module been used by the securityToken
     event LogModuleUsed(address indexed _moduleFactory, address indexed _securityToken);
+    // Emit when the Module Factory get registered with the ModuleRegistry contract
     event LogModuleRegistered(address indexed _moduleFactory, address indexed _owner);
+    // Emit when the module get verified by the Polymath team
     event LogModuleVerified(address indexed _moduleFactory, bool _verified);
 
     /**

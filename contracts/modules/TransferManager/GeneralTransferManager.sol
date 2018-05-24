@@ -44,13 +44,19 @@ contract GeneralTransferManager is ITransferManager {
     //If true, time lock is ignored for burn transactions
     bool public allowAllBurnTransfers = false;
 
+    // Emit when Issuance address get changed
     event LogChangeIssuanceAddress(address _issuanceAddress);
+    // Emit when there is change in the flag variable called allowAllTransfers
     event LogAllowAllTransfers(bool _allowAllTransfers);
+    // Emit when there is change in the flag variable called allowAllWhitelistTransfers
     event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
+    // Emit when there is change in the flag variable called allowAllWhitelistIssuances
     event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
+    // Emit when there is change in the flag variable called allowAllBurnTransfers
     event LogAllowAllBurnTransfers(bool _allowAllBurnTransfers);
+    // Emit when there is change in the flag variable called signingAddress
     event LogChangeSigningAddress(address _signingAddress);
-
+    // Emit when investor details get modified related to their whitelisting
     event LogModifyWhitelist(
         address _investor,
         uint256 _dateAdded,
@@ -60,36 +66,70 @@ contract GeneralTransferManager is ITransferManager {
         uint256 _expiryTime
     );
 
+    /**
+     * @dev Constructor
+     * @param _securityToken Address of the security token
+     * @param _polyAddress Address of the polytoken
+     */
     constructor (address _securityToken, address _polyAddress)
     public
     IModule(_securityToken, _polyAddress)
     {
     }
 
+    /**
+     * @notice This function returns the signature of configure function 
+     */
     function getInitFunction() public returns(bytes4) {
         return bytes4(0);
     }
 
+    /**
+     * @dev Used to change the Issuance Address
+     * @param _issuanceAddress new address for the issuance
+     */
     function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
         issuanceAddress = _issuanceAddress;
         emit LogChangeIssuanceAddress(_issuanceAddress);
     }
 
+    /**
+     * @dev Used to change the Sigining Address
+     * @param _signingAddress new address for the signing
+     */
     function changeSigningAddress(address _signingAddress) public withPerm(FLAGS) {
         signingAddress = _signingAddress;
         emit LogChangeSigningAddress(_signingAddress);
     }
 
+    /**
+     * @dev Used to change the flag
+            true - It refers there are no transfer restrictions, for any addresses
+            false - It refers transfers are restricted for all addresses.
+     * @param _allowAllTransfers flag value
+     */
     function changeAllowAllTransfers(bool _allowAllTransfers) public withPerm(FLAGS) {
         allowAllTransfers = _allowAllTransfers;
         emit LogAllowAllTransfers(_allowAllTransfers);
     }
 
+    /**
+     * @dev Used to change the flag
+            true - It refers that time lock is ignored for transfers (address must still be on whitelist)
+            false - It refers transfers are restricted for all addresses.
+     * @param _allowAllWhitelistTransfers flag value
+     */
     function changeAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers) public withPerm(FLAGS) {
         allowAllWhitelistTransfers = _allowAllWhitelistTransfers;
         emit LogAllowAllWhitelistTransfers(_allowAllWhitelistTransfers);
     }
 
+    /**
+     * @dev Used to change the flag
+            true - It refers that time lock is ignored for issuances (address must still be on whitelist)
+            false - It refers transfers are restricted for all addresses.
+     * @param _allowAllWhitelistIssuances flag value
+     */
     function changeAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances) public withPerm(FLAGS) {
         allowAllWhitelistIssuances = _allowAllWhitelistIssuances;
         emit LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
@@ -144,17 +184,24 @@ contract GeneralTransferManager is ITransferManager {
         emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime);
     }
 
+    /**
+    * @dev adds or removes addresses from the whitelist.
+    * @param _investors List of the addresses to whitelist
+    * @param _fromTimes An array of the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _toTimes An array of the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _expiryTimes An array of the moment till investors KYC will be validated. After that investor need to do re-KYC
+    */
     function modifyWhitelistMulti(
         address[] _investors,
         uint256[] _fromTimes,
         uint256[] _toTimes,
-        uint256[] _expiryTime
+        uint256[] _expiryTimes
     ) public withPerm(WHITELIST) {
         require(_investors.length == _fromTimes.length, "Mismatched input lengths");
         require(_fromTimes.length == _toTimes.length, "Mismatched input lengths");
-        require(_toTimes.length == _expiryTime.length, "Mismatched input lengths");
+        require(_toTimes.length == _expiryTimes.length, "Mismatched input lengths");
         for (uint256 i = 0; i < _investors.length; i++) {
-            modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTime[i]);
+            modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i]);
         }
     }
 
@@ -190,6 +237,9 @@ contract GeneralTransferManager is ITransferManager {
         emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime);
     }
 
+    /**
+     * @dev used to verify the signature 
+     */
     function checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
@@ -197,6 +247,9 @@ contract GeneralTransferManager is ITransferManager {
         require(signer == ISecurityToken(securityToken).owner() || signer == signingAddress, "Incorrect signer");
     }
 
+    /**
+     * @notice Return the permissions flag that are associated with general trnasfer manager
+     */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = WHITELIST;
@@ -204,13 +257,14 @@ contract GeneralTransferManager is ITransferManager {
         return allPermissions;
     }
 
+    /**
+     * @dev Internal function used to check whether the investor is in the whitelist or not 
+            & also checks whether the KYC of investor get expired or not
+     * @param _investor Address of the investor 
+     */
     function onWhitelist(address _investor) internal view returns(bool) {
         return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) &&
             (whitelist[_investor].expiryTime >= now));
     }
 
-    // function pauseTransfers(bool _pause) public {
-    //     pause = _pause;
-    //     emit LogTransfersHalted(_pause, now);
-    // }
 }

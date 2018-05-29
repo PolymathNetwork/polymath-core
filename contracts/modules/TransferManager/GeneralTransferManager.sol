@@ -1,6 +1,8 @@
 pragma solidity ^0.4.23;
 
 import "./ITransferManager.sol";
+import "../STO/ISTO.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /////////////////////
 // Module permissions
@@ -14,6 +16,8 @@ import "./ITransferManager.sol";
 // modifyWhitelistMulti                     X             X
 
 contract GeneralTransferManager is ITransferManager {
+
+    using SafeMath for uint256;
 
     //Address from which issuances come
     address public issuanceAddress = address(0);
@@ -135,6 +139,12 @@ contract GeneralTransferManager is ITransferManager {
         emit LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
+    /**
+     * @dev Used to change the flag
+            true - It allow to burn the tokens
+            false - It deactivate the burning mechanism.
+     * @param _allowAllBurnTransfers flag value
+     */
     function changeAllowAllBurnTransfers(bool _allowAllBurnTransfers) public withPerm(FLAGS) {
         allowAllBurnTransfers = _allowAllBurnTransfers;
         emit LogAllowAllBurnTransfers(_allowAllBurnTransfers);
@@ -164,9 +174,10 @@ contract GeneralTransferManager is ITransferManager {
             if (allowAllWhitelistIssuances && _from == issuanceAddress) {
                 return onWhitelist(_to) ? Result.VALID : Result.NA;
             }
+            uint256 _incLockupPeriod = isSTOPaused();
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
-            return ((onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
-                (onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA;
+            return ((onWhitelist(_from) && (whitelist[_from].fromTime).add(_incLockupPeriod) <= now) &&
+                (onWhitelist(_to) && (whitelist[_to].toTime).add(_incLockupPeriod) <= now)) ? Result.VALID : Result.NA;
         }
         return Result.NA;
     }
@@ -263,8 +274,22 @@ contract GeneralTransferManager is ITransferManager {
      * @param _investor Address of the investor 
      */
     function onWhitelist(address _investor) internal view returns(bool) {
-        return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) &&
+        uint256 _incLockupPeriod = isSTOPaused();
+        return ((((whitelist[_investor].fromTime + _incLockupPeriod) != 0) || ((whitelist[_investor].toTime + _incLockupPeriod) != 0)) &&
             (whitelist[_investor].expiryTime >= now));
+    }
+
+    /**
+     * @dev Calculate the difference of the time to increase the lock up period
+     */
+    function isSTOPaused() internal view returns(uint256) {
+        address _stoAddress;
+        (,_stoAddress,)= ISecurityToken(securityToken).getModuleByName(3, "CappedSTO");
+        if(_stoAddress != address(0)) {
+            uint256 _diff = (ISTO(_stoAddress).getEndTimeDiff());
+            return _diff;
+        } 
+        return 0;
     }
 
 }

@@ -1,13 +1,24 @@
 pragma solidity ^0.4.23;
 
-import "../../interfaces/IModule.sol";
+import "../../interfaces/IPausable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
+contract ISTO is IPausable {
 
-contract ISTO is IModule {
+    using SafeMath for uint256;
 
     enum FundraiseType { ETH, POLY }
     FundraiseType public fundraiseType;
+
+    // Start time of the STO
+    uint256 public startTime;
+    // End time of the STO
+    uint256 public endTime;
+    // timestamp at which STO get paused
+    uint256 public stopTimestamp;
+    // timestamp at which STO will stopped (It will be equal to endTime when STO will never be paused once)
+    uint256 public initialEndTime;
 
     /**
      * @dev use to verify the investment, whether the investor provide the allowance to the STO or not.
@@ -32,5 +43,31 @@ contract ISTO is IModule {
      * @notice Return the total no. of investors 
      */
     function getNumberInvestors() public view returns (uint256);
+
+    /**
+     * @dev pause (overridden function)
+     */
+    function pause() public onlyOwner {
+        require(now < endTime);
+        stopTimestamp = now;
+        super.pause();
+    }
+
+    /**
+     * @dev unpause (overridden function)
+     */
+    function unpause() public onlyOwner {
+        if (initialEndTime == 0)
+            initialEndTime = endTime;
+        super.unpause();
+        endTime = (now.sub(stopTimestamp)).add(endTime); 
+    }
+
+    /**
+     * @dev get the difference of the intialEndTime and the endTime 
+     */
+    function getEndTimeDiff() public view returns (uint256) {
+        return (endTime.sub(initialEndTime));
+    }
 
 }

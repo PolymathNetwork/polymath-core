@@ -19,11 +19,6 @@ contract CappedSTO is ISTO {
 
     uint256 public investorCount;
 
-    // Start time of the STO
-    uint256 public startTime;
-    // End time of the STO
-    uint256 public endTime;
-
     // Amount of tokens sold
     uint256 public tokensSold;
 
@@ -98,6 +93,7 @@ contract CappedSTO is ISTO {
       * @param _beneficiary Address performing the token purchase
       */
     function buyTokens(address _beneficiary) public payable {
+        require(!paused);
         require(fundraiseType == FundraiseType.ETH, "ETH should be the mode of investment");
 
         uint256 weiAmount = msg.value;
@@ -112,6 +108,7 @@ contract CappedSTO is ISTO {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyTokensWithPoly(uint256 _investedPOLY) public {
+        require(!paused);
         require(fundraiseType == FundraiseType.POLY, "POLY should be the mode of investment");
         require(verifyInvestment(msg.sender, _investedPOLY), "Not valid Investment");
         _processTx(msg.sender, _investedPOLY);

@@ -444,6 +444,8 @@ contract('SecurityTokenRegistry', accounts => {
 
             let errorThrown = false;
 
+            await I_TestSTOFactory.changeModuleFactoryFee(1000 * Math.pow(10, 18), {from: token_owner});
+
             try {
                 const tx = await I_SecurityToken.addModule(
                     I_TestSTOFactory.address,

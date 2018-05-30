@@ -26,12 +26,6 @@ contract GeneralTransferManagerFactory is IModuleFactory {
         return address(new GeneralTransferManager(msg.sender, address(polyToken)));
     }
 
-    /**
-     * @dev Used to get the cost that will be paid at the time of usage of the factory
-     */
-    function getCost() public view returns(uint256) {
-        return 0;
-    }
 
     /**
      * @dev Type of the Module factory

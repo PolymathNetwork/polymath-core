@@ -34,13 +34,6 @@ contract MockFactory is IModuleFactory {
     }
 
     /**
-     * @dev Used to get the cost that will be paid at the time of usage of the factory
-     */
-    function getCost() public view returns(uint256) {
-        return uint256(1000 * 10 ** 18);
-    }
-
-    /**
      * @dev Type of the Module factory
      */
     function getType() public view returns(uint8) {

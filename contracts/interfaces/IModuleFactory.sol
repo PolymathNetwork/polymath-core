@@ -8,7 +8,10 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 contract IModuleFactory is Ownable {
 
     ERC20 public polyToken;
+    uint256 fee = 0;
 
+    event LogChangeModuleFactoryFee(uint256 _oldFee, uint256 _newFee, address _moduleFactory);
+    
     /**
      * @dev Constructor
      * @param _polyAddress Address of the polytoken
@@ -31,7 +34,9 @@ contract IModuleFactory is Ownable {
     function getName() public view returns(bytes32);
 
     //Return the cost (in POLY) to use this factory
-    function getCost() public view returns(uint256);
+    function getCost() public view returns(uint256) {
+        return fee;
+    }
 
     /**
      * @dev Get the description of the Module 
@@ -59,6 +64,12 @@ contract IModuleFactory is Ownable {
         for (uint i = 0; i < len; i++) {
             sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
         }
+    }
+
+    function changeModuleFactoryFee(uint256 _newFee) public onlyOwner {
+        uint256 _oldFee = fee;
+        fee = _newFee;
+        emit LogChangeModuleFactoryFee(_oldFee, _newFee, address(this));
     }
 
 }

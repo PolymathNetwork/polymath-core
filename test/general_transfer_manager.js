@@ -76,8 +76,7 @@ contract('GeneralTransferManager', accounts => {
     const endTime = startTime + duration.days(80);                     // Add 80 days more
     const cap = web3.utils.toWei('10', 'ether');
     const someString = "A string which is not used";
-
-    let bytesSTO = web3.eth.abi.encodeFunctionCall({
+    const functionSignature = {
         name: 'configure',
         type: 'function',
         inputs: [{
@@ -94,7 +93,7 @@ contract('GeneralTransferManager', accounts => {
             name: '_someString'
         }
         ]
-    }, [startTime, endTime, cap, someString]);
+    };   
 
     before(async() => {
         // Accounts setup
@@ -266,6 +265,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, someString]);
             const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner });
             assert.equal(tx.logs[2].args._type.toNumber(), stoKey, "DummySTO doesn't get deployed");
             assert.equal(

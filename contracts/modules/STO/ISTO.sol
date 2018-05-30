@@ -1,10 +1,11 @@
 pragma solidity ^0.4.23;
 
 import "../../interfaces/IPausable.sol";
+import "../../interfaces/IModule.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-contract ISTO is IPausable {
+contract ISTO is IModule, IPausable {
 
     using SafeMath for uint256;
 

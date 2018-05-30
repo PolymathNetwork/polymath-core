@@ -1,9 +1,9 @@
 pragma solidity ^0.4.23;
 
 import "../../interfaces/IPausable.sol";
+import "../../interfaces/IModule.sol";
 
-
-contract ITransferManager is IPausable {
+contract ITransferManager is IModule, IPausable {
 
     //If verifyTransfer returns:
     //  INVALID, then the transfer should not be allowed regardless of other TM results

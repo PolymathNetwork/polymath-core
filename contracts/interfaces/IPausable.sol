@@ -1,8 +1,6 @@
 pragma solidity ^0.4.23;
 
-import "./IModule.sol";
-
-contract IPausable is IModule {
+contract IPausable {
 
     event Pause(uint256 _timestammp);
     event Unpause(uint256 _timestamp);

@@ -12,7 +12,7 @@ contract IPausable is IModule {
    /**
     * @dev called by the owner to pause, triggers stopped state
     */
-    function pause() onlyOwner public {
+    function _pause() internal {
       require(!paused);
       paused = true;
       emit Pause(now);
@@ -21,7 +21,7 @@ contract IPausable is IModule {
     /**
     * @dev called by the owner to unpause, returns to normal state
     */
-    function unpause() onlyOwner public {
+    function _unpause() internal {
       require(paused);
       paused = false;
       emit Unpause(now);

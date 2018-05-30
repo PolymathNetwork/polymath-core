@@ -12,4 +12,12 @@ contract ITransferManager is IPausable {
     enum Result {INVALID, NA, VALID}
 
     function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result);
+
+    function unpause() onlyOwner public {
+        super._unpause();
+    }
+
+    function pause() onlyOwner public {
+        super._pause();
+    }
 }

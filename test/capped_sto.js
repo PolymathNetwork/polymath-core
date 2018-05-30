@@ -519,7 +519,7 @@ contract('CappedSTO', accounts => {
         it("Should unpause the STO -- Failed due to wrong msg.sender", async()=> {
             let errorThrown = false;
             try {
-                let tx = await I_CappedSTO.unpause(Math.floor(Date.now()/1000 + 50000000), {from: account_investor1});
+                let tx = await I_CappedSTO.unpause(Math.floor(Date.now()/1000 + 50000), {from: account_investor1});
             } catch(error) {
                 console.log(`Failed due to wrong msg.sender`);
                 ensureException(error);
@@ -531,7 +531,7 @@ contract('CappedSTO', accounts => {
         it("Should unpause the STO -- Failed due to entered date is less than the end date", async()=> {
             let errorThrown = false;
             try {
-                let tx = await I_CappedSTO.unpause(Math.floor(Date.now()/1000 - 50000000), {from: account_issuer});
+                let tx = await I_CappedSTO.unpause(Math.floor(Date.now()/1000 - 500000), {from: account_issuer});
             } catch(error) {
                 console.log(`Failed due to entered date is less than the end date`);
                 ensureException(error);
@@ -541,7 +541,8 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should unpause the STO", async()=> {
-            let tx = await I_CappedSTO.unpause(Math.floor(Date.now()/1000 + 50000000),{from: account_issuer});
+            await increaseTime(50);
+            let tx = await I_CappedSTO.unpause(Math.floor(Date.now()/1000 + 2678400),{from: account_issuer});
             assert.isFalse(await I_CappedSTO.paused.call());
         });
 

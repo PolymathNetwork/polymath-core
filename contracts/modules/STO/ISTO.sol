@@ -16,6 +16,8 @@ contract ISTO is IModule, IPausable {
     uint256 public startTime;
     // End time of the STO
     uint256 public endTime;
+    // stop timestamp
+    uint256 public stopTimestamp;
     // timestamp at which STO will stopped (It will be equal to endTime when STO will never be paused once)
     uint256 public initialEndTime;
 
@@ -48,6 +50,7 @@ contract ISTO is IModule, IPausable {
      */
     function pause() public onlyOwner {
         require(now < endTime);
+        stopTimestamp = now;
         super._pause();
     }
 
@@ -55,7 +58,7 @@ contract ISTO is IModule, IPausable {
      * @dev unpause (overridden function)
      */
     function unpause(uint256 _newEndDate) public onlyOwner {
-        require(_newEndDate >= endTime);
+        require(_newEndDate >= endTime && _newEndDate <= endTime.add(now.sub(stopTimestamp)));
         if (initialEndTime == 0)
             initialEndTime = endTime;
         super._unpause();

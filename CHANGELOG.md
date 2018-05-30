@@ -8,7 +8,11 @@ All notable changes to this project will be documented in this file.
 # Changed
 
 * Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not.      
-* Burning tokens now respects TransferManagers and investorCount.            
+* Burning tokens now respects TransferManagers and investorCount.    
+
+## Added 
+
+* STOs are pausable now. It is facilated by using the IPausable interface.        
 
 
 [__1.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __18-05-18__

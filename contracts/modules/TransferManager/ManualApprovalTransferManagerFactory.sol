@@ -73,7 +73,7 @@ contract ManualApprovalTransferManagerFactory is IModuleFactory {
      */
     function getTags() public view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "Manual Approval";
+        availableTags[0] = "ManualApproval";
         availableTags[1] = "Transfer Restriction";
         return availableTags;
     }

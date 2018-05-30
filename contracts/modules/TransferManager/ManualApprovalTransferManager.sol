@@ -89,7 +89,7 @@ contract ManualApprovalTransferManager is ITransferManager {
             if (manualBlockings[_from][_to].expiryTime >= now) {
                 return Result.INVALID;
             }
-            if ((manualApprovals[_from][_to].expiryTime >= now) && (manualApprovals[_from][_to].allowance <= _amount)) {
+            if ((manualApprovals[_from][_to].expiryTime >= now) && (manualApprovals[_from][_to].allowance >= _amount)) {
                 if (_isTransfer) {
                     manualApprovals[_from][_to].allowance = manualApprovals[_from][_to].allowance.sub(_amount);
                 }

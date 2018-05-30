@@ -30,6 +30,7 @@ All notable changes to this project will be documented in this file.
 
 ## Added   
 
+* ManualApprovalTransferManager - allows approval or blocking of explicit address pairs for transfers
 * whitelists for CountTransferManager and PercentageTransferManager to bypass logic
 * added CountTransferManager to restrict the total number of token holders
 * added PercentageTransferManager to restrict the total percentage of tokens held by any single holder

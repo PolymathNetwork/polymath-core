@@ -108,7 +108,9 @@ contract ManualApprovalTransferManager is ITransferManager {
     */
     function addManualApproval(address _from, address _to, uint256 _allowance, uint256 _expiryTime) public withPerm(TRANSFER_APPROVAL) {
         //Passing a _expiryTime == 0 into this function, is equivalent to removing the manual approval.
-        /* ManualApproval storage approval = ManualApproval(_allowance, _expiryTime); */
+        require(_from != address(0), "Invalid from address");
+        require(_to != address(0), "Invalid to address");
+        require(_expiryTime > now, "Invalid expiry time");
         manualApprovals[_from][_to] = ManualApproval(_allowance, _expiryTime);
         emit LogAddManualApproval(_from, _to, _allowance, _expiryTime, msg.sender);
     }
@@ -121,7 +123,9 @@ contract ManualApprovalTransferManager is ITransferManager {
     */
     function addManualBlocking(address _from, address _to, uint256 _expiryTime) public withPerm(TRANSFER_APPROVAL) {
         //Passing a _expiryTime == 0 into this function, is equivalent to removing the manual blocking.
-        /* ManualBlocking storage blocking = ManualBlocking(_expiryTime); */
+        require(_from != address(0), "Invalid from address");
+        require(_to != address(0), "Invalid to address");
+        require(_expiryTime > now, "Invalid expiry time");
         manualBlockings[_from][_to] = ManualBlocking(_expiryTime);
         emit LogAddManualBlocking(_from, _to, _expiryTime, msg.sender);
     }

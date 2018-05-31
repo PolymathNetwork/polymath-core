@@ -6,13 +6,9 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 /////////////////////
 // Module permissions
 /////////////////////
-//                                        Owner       WHITELIST      FLAGS
-// changeIssuanceAddress                    X                          X
-// changeAllowAllTransfers                  X                          X
-// changeAllowAllWhitelistTransfers         X                          X
-// changeAllowAllWhitelistIssuances         X                          X
-// modifyWhitelist                          X             X
-// modifyWhitelistMulti                     X             X
+//                                        Owner       TRANSFER_APPROVAL
+// addManualApproval                        X                 X
+// addManualBlocking                        X                 X
 
 contract ManualApprovalTransferManager is ITransferManager {
     using SafeMath for uint256;

@@ -279,18 +279,17 @@ contract SecurityToken is ISecurityToken {
     * @dev keeps track of the number of non-zero token holders
     */
     function adjustInvestorCount(address _from, address _to, uint256 _value) internal {
-        if (_value == 0) {
+        if ((_value == 0) || (_from == _to)) {
             return;
-        }
-        // Check whether sender is moving all of their tokens
-        if (_value == balanceOf(_from)) {
-            investorCount = investorCount.sub(1);
         }
         // Check whether receiver is a new token holder
         if ((balanceOf(_to) == 0) && (_to != address(0))) {
             investorCount = investorCount.add(1);
         }
-
+        // Check whether sender is moving all of their tokens
+        if (_value == balanceOf(_from)) {
+            investorCount = investorCount.sub(1);
+        }
     }
 
     /**

@@ -37,6 +37,16 @@ contract SecurityToken is ISecurityToken {
         address moduleAddress;
     }
 
+    // Structures to maintain checkpoints of balances for governance / dividends
+    struct Checkpoint {
+        uint256 checkpointId;
+        uint256 value;
+    }
+
+    mapping (address => Checkpoint[]) public checkpointBalances;
+    Checkpoint[] public checkpointTotalSupply;
+    uint256 public currentCheckpointId;
+
     address public moduleRegistry;
 
     mapping (bytes4 => bool) transferFunctions;
@@ -67,6 +77,8 @@ contract SecurityToken is ISecurityToken {
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
     // Emit when all the transfers get freeze
     event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
+    // Emit when new checkpoint created
+    event LogCheckpointCreated(uint256 _checkpointId, uint256 _timestamp);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
@@ -84,8 +96,8 @@ contract SecurityToken is ISecurityToken {
     }
 
     modifier checkGranularity(uint256 _amount) {
-      require(_amount.div(granularity).mul(granularity) == _amount, "Unable to modify token balances at this granularity");
-      _;
+        require(_amount.div(granularity).mul(granularity) == _amount, "Unable to modify token balances at this granularity");
+        _;
     }
 
     /**
@@ -299,12 +311,42 @@ contract SecurityToken is ISecurityToken {
         emit LogFreezeTransfers(freeze, now);
     }
 
+    function adjustBalanceCheckpoints(address _investor) internal {
+        //No checkpoints set yet
+        if (currentCheckpointId == 0) {
+            return;
+        }
+        //No previous checkpoint data - add current balance against checkpoint
+        if (checkpointBalances[_investor].length == 0) {
+            checkpointBalances[_investor].push(
+                Checkpoint({
+                    checkpointId: currentCheckpointId,
+                    value: balanceOf(_investor)
+                })
+            );
+            return;
+        }
+        //No new checkpoints since last update
+        if (checkpointBalances[_investor][checkpointBalances[_investor].length - 1].checkpointId == currentCheckpointId) {
+            return;
+        }
+        //New checkpoint, so record balance
+        checkpointBalances[_investor].push(
+            Checkpoint({
+                checkpointId: currentCheckpointId,
+                value: balanceOf(_investor)
+            })
+        );
+    }
+
     /**
      * @dev Overloaded version of the transfer function
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
         adjustInvestorCount(msg.sender, _to, _value);
         require(verifyTransfer(msg.sender, _to, _value), "Transfer is not valid");
+        adjustBalanceCheckpoints(msg.sender);
+        adjustBalanceCheckpoints(_to);
         require(super.transfer(_to, _value));
         return true;
     }
@@ -315,6 +357,8 @@ contract SecurityToken is ISecurityToken {
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         adjustInvestorCount(_from, _to, _value);
         require(verifyTransfer(_from, _to, _value), "Transfer is not valid");
+        adjustBalanceCheckpoints(_from);
+        adjustBalanceCheckpoints(_to);
         require(super.transferFrom(_from, _to, _value));
         return true;
     }
@@ -402,7 +446,7 @@ contract SecurityToken is ISecurityToken {
 
     /**
      * @dev Burn function used to burn the securityToken
-     * @param _value No. of token that get burned     
+     * @param _value No. of token that get burned
      */
     function burn(uint256 _value) checkGranularity(_value) public {
         adjustInvestorCount(msg.sender, address(0), _value);
@@ -426,4 +470,181 @@ contract SecurityToken is ISecurityToken {
             sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
         }
     }
+
+    function createCheckpoint() public onlyOwner {
+        require(currentCheckpointId < 2**256 - 1);
+        currentCheckpointId = currentCheckpointId + 1;
+        emit LogCheckpointCreated(currentCheckpointId, now);
+    }
+
+    function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256) {
+        require(_checkpointId <= currentCheckpointId);
+        //Checkpoint id 0 is when the token is first created - everyone has a zero balance
+        if (_checkpointId == 0) {
+          return 0;
+        }
+        if (checkpointBalances[_investor].length == 0) {
+            return balanceOf(_investor);
+        }
+        if (checkpointBalances[_investor][0].checkpointId >= _checkpointId) {
+            return checkpointBalances[_investor][0].value;
+        }
+        if (checkpointBalances[_investor][checkpointBalances[_investor].length - 1].checkpointId < _checkpointId) {
+            return balanceOf(_investor);
+        }
+        if (checkpointBalances[_investor][checkpointBalances[_investor].length - 1].checkpointId == _checkpointId) {
+            return checkpointBalances[_investor][checkpointBalances[_investor].length - 1].value;
+        }
+        for (uint256 i = checkpointBalances[_investor].length - 1; i >= 0; i--) {
+            if (checkpointBalances[_investor][i].checkpointId < _checkpointId) {
+                return checkpointBalances[_investor][i + 1].value;
+            }
+        }
+        return 99;
+        /* uint256 min = 0;
+        uint256 max = checkpointBalances[_investor].length - 1;
+        while (max > min) {
+            uint256 mid = (max + min + 1) / 2;
+            if (checkpointBalances[_investor][mid].checkpointId == _checkpointId) {
+                break;
+            }
+            if (checkpointBalances[_investor][mid].checkpointId < _checkpointId) {
+                min = mid + 1;
+            } else {
+                max = mid;
+            }
+        }
+        return checkpointBalances[_investor][mid].value; */
+    }
+/*
+    function hasValue(
+        Checkpoint[] storage checkpoints
+    )
+        internal
+        constant
+        returns (bool)
+    {
+        return checkpoints.length > 0;
+    }
+
+    function hasValueAt(
+        Checkpoint[] storage checkpoints,
+        uint256 checkpointId
+    )
+        internal
+        constant
+        returns (bool)
+    {
+        require(checkpointId <= currentCheckpointId);
+        return (checkpoints.length > 0) && (checkpoints[0].checkpointId <= checkpointId);
+    }
+
+    function getValue(
+        Checkpoint[] storage checkpoints
+    )
+        internal
+        constant
+        returns (uint256)
+    {
+        if (checkpoints.length == 0) {
+            return 0;
+        } else {
+            return checkpoints[checkpoints.length - 1].value;
+        }
+    }
+
+    function getValueAt(
+        Checkpoint[] storage checkpoints,
+        uint256 checkpointId
+    )
+        internal
+        constant
+        returns (uint256)
+    {
+        require(checkpointId <= currentCheckpointId);
+
+        if (checkpoints.length == 0) {
+            return 0;
+        }
+
+        uint256 last = checkpoints.length - 1;
+        uint256 lastSnapshot = checkpoints[last].checkpointId;
+        if (checkpointId >= lastSnapshot) {
+            return checkpoints[last].value;
+        }
+        uint256 firstSnapshot = checkpoints[0].checkpointId;
+        if (checkpointId < firstSnapshot) {
+            return defaultValue;
+        }
+        // Binary search of the value in the array
+        uint256 min = 0;
+        uint256 max = last;
+        while (max > min) {
+            uint256 mid = (max + min + 1) / 2;
+            // must always return lower indice for approximate searches
+            if (checkpoints[mid].checkpointId <= checkpointId) {
+                min = mid;
+            } else {
+                max = mid - 1;
+            }
+        }
+        return checkpoints[min].value;
+    }
+
+    /// @dev `setValue` used to update sequence at next snapshot
+    /// @param checkpoints The sequence being updated
+    /// @param value The new last value of sequence
+    function setValue(
+        Checkpoint[] storage checkpoints,
+        uint256 value
+    )
+        internal
+    {
+        // TODO: simplify or break into smaller functions
+        // Always create a new entry if there currently is no value
+        bool empty = checkpoints.length == 0;
+        if (empty) {
+            // Create a new entry
+            checkpoints.push(
+                Checkpoint({
+                    checkpointId: currentCheckpointId,
+                    value: value
+                })
+            );
+            return;
+        }
+
+        uint256 last = checkpoints.length - 1;
+        bool hasNewSnapshot = checkpoints[last].checkpointId < currentCheckpointId;
+        if (hasNewSnapshot) {
+
+            // Do nothing if the value was not modified
+            bool unmodified = checkpoints[last].value == value;
+            if (unmodified) {
+                return;
+            }
+
+            // Create new entry
+            checkpoints.push(
+                Checkpoint({
+                    checkpointId: currentCheckpointId,
+                    value: value
+                })
+            );
+        } else {
+
+            // We are updating the currentSnapshotId
+            bool previousUnmodified = last > 0 && checkpoints[last - 1].value == value;
+            if (previousUnmodified) {
+                // Remove current snapshot if current value was set to previous value
+                delete checkpoints[last];
+                checkpoints.length--;
+                return;
+            }
+
+            // Overwrite next snapshot entry
+            checkpoints[last].value = value;
+        }
+    } */
+
 }

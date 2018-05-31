@@ -542,7 +542,8 @@ contract('CappedSTO', accounts => {
 
         it("Should unpause the STO", async()=> {
             await increaseTime(50);
-            let tx = await I_CappedSTO.unpause(Math.floor(Date.now()/1000 + 2678400),{from: account_issuer});
+            let newEndDate = ((await I_CappedSTO.endTime.call()).toNumber() - latestTime()) + latestTime() + 20;
+            let tx = await I_CappedSTO.unpause(newEndDate, {from: account_issuer});
             assert.isFalse(await I_CappedSTO.paused.call());
         });
 

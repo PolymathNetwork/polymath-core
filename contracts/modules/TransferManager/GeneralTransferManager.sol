@@ -174,7 +174,7 @@ contract GeneralTransferManager is ITransferManager {
             if (allowAllWhitelistIssuances && _from == issuanceAddress) {
                 return onWhitelist(_to) ? Result.VALID : Result.NA;
             }
-            uint256 _incLockupPeriod = isSTOPaused();
+            uint256 _incLockupPeriod = getIncreaseInLockupPeriod();
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             return ((onWhitelist(_from) && (whitelist[_from].fromTime).add(_incLockupPeriod) <= now) &&
                 (onWhitelist(_to) && (whitelist[_to].toTime).add(_incLockupPeriod) <= now)) ? Result.VALID : Result.NA;
@@ -274,7 +274,7 @@ contract GeneralTransferManager is ITransferManager {
      * @param _investor Address of the investor 
      */
     function onWhitelist(address _investor) internal view returns(bool) {
-        uint256 _incLockupPeriod = isSTOPaused();
+        uint256 _incLockupPeriod = getIncreaseInLockupPeriod();
         return ((((whitelist[_investor].fromTime + _incLockupPeriod) != 0) || ((whitelist[_investor].toTime + _incLockupPeriod) != 0)) &&
             (whitelist[_investor].expiryTime >= now));
     }
@@ -282,7 +282,7 @@ contract GeneralTransferManager is ITransferManager {
     /**
      * @dev Calculate the difference of the time to increase the lock up period
      */
-    function isSTOPaused() internal view returns(uint256) {
+    function getIncreaseInLockupPeriod() internal view returns(uint256) {
         address _stoAddress;
         (,_stoAddress,)= ISecurityToken(securityToken).getModuleByName(3, "CappedSTO");
         if(_stoAddress != address(0)) {

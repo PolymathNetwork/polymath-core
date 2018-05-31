@@ -35,6 +35,7 @@ contract PreSaleSTO is ISTO {
     function configure(uint256 _endTime) public onlyFactory {
         require(_endTime != 0);
         endTime = _endTime;
+        initialEndTime = endTime;
     }
 
     /**

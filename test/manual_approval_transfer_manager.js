@@ -252,11 +252,11 @@ contract('ManualApprovalTransferManager', accounts => {
             await increaseTime(5000);
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei('3', 'ether'), { from: token_owner });
+            await I_SecurityToken.mint(account_investor1, web3.utils.toWei('4', 'ether'), { from: token_owner });
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor1)).toNumber(),
-                web3.utils.toWei('3', 'ether')
+                web3.utils.toWei('4', 'ether')
             );
         });
 
@@ -327,7 +327,7 @@ contract('ManualApprovalTransferManager', accounts => {
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor1)).toNumber(),
-                web3.utils.toWei('4', 'ether')
+                web3.utils.toWei('5', 'ether')
             );
         });
 
@@ -399,7 +399,26 @@ contract('ManualApprovalTransferManager', accounts => {
 
         });
 
+        it("Revoke manual block and check transfer works", async() => {
+            await I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, account_investor2, { from: token_owner });
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor2)).toNumber(),
+                web3.utils.toWei('2', 'ether')
+            );
+        });
+
         it("Check manual block ignored after expiry", async() => {
+            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(1), { from: token_owner });
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
+            } catch(error) {
+                console.log(`Failed due to to manual block`);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
             await increaseTime(1 + (24 * 60 * 60));
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
         });

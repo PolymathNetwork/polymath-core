@@ -9,6 +9,8 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 //                                        Owner       TRANSFER_APPROVAL
 // addManualApproval                        X                 X
 // addManualBlocking                        X                 X
+// revokeManualApproval                     X                 X
+// revokeManualBlocking                     X                 X
 
 contract ManualApprovalTransferManager is ITransferManager {
     using SafeMath for uint256;
@@ -50,6 +52,18 @@ contract ManualApprovalTransferManager is ITransferManager {
         address _from,
         address _to,
         uint256 _expiryTime,
+        address _addedBy
+    );
+
+    event LogRevokeManualApproval(
+        address _from,
+        address _to,
+        address _addedBy
+    );
+
+    event LogRevokeManualBlocking(
+        address _from,
+        address _to,
         address _addedBy
     );
 
@@ -96,7 +110,7 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     /**
-    * @dev adds or removes pairs of addresses from manual approvals
+    * @dev adds a pair of addresses to manual approvals
     * @param _from is the address from which transfers are approved
     * @param _to is the address to which transfers are approved
     * @param _allowance is the approved amount of tokens
@@ -112,7 +126,7 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     /**
-    * @dev adds or removes pairs of addresses from manual blockings
+    * @dev adds a pair of addresses to manual blockings
     * @param _from is the address from which transfers are blocked
     * @param _to is the address to which transfers are blocked
     * @param _expiryTime is the time until which the transfer is blocked
@@ -124,6 +138,30 @@ contract ManualApprovalTransferManager is ITransferManager {
         require(_expiryTime > now, "Invalid expiry time");
         manualBlockings[_from][_to] = ManualBlocking(_expiryTime);
         emit LogAddManualBlocking(_from, _to, _expiryTime, msg.sender);
+    }
+
+    /**
+    * @dev removes a pairs of addresses from manual approvals
+    * @param _from is the address from which transfers are approved
+    * @param _to is the address to which transfers are approved
+    */
+    function revokeManualApproval(address _from, address _to) public withPerm(TRANSFER_APPROVAL) {
+        require(_from != address(0), "Invalid from address");
+        require(_to != address(0), "Invalid to address");
+        delete manualApprovals[_from][_to];
+        emit LogRevokeManualApproval(_from, _to, msg.sender);
+    }
+
+    /**
+    * @dev removes a pairs of addresses from manual approvals
+    * @param _from is the address from which transfers are approved
+    * @param _to is the address to which transfers are approved
+    */
+    function revokeManualBlocking(address _from, address _to) public withPerm(TRANSFER_APPROVAL) {
+        require(_from != address(0), "Invalid from address");
+        require(_to != address(0), "Invalid to address");
+        delete manualBlockings[_from][_to];
+        emit LogRevokeManualBlocking(_from, _to, msg.sender);
     }
 
     /**

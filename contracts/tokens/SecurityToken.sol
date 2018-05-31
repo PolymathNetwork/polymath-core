@@ -154,7 +154,7 @@ contract SecurityToken is ISecurityToken {
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         require(modules[moduleFactory.getType()].length < MAX_MODULES, "Limit of MAX MODULES is reached");
-        uint256 moduleCost = moduleFactory.getCost();
+        uint256 moduleCost = moduleFactory.setupCost();
         require(moduleCost <= _maxCost, "Max Cost is always be greater than module cost");
         //Check that this module has not already been set as locked
         require(!modulesLocked[moduleFactory.getType()], "Module has already been set as locked");

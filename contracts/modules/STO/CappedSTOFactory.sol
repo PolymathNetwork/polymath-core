@@ -11,8 +11,8 @@ contract CappedSTOFactory is IModuleFactory {
      * @dev Constructor
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress) public
-      IModuleFactory(_polyAddress)
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
 
     }
@@ -22,8 +22,8 @@ contract CappedSTOFactory is IModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        if(getCost() > 0)
-            require(polyToken.transferFrom(msg.sender, owner, getCost()), "Failed transferFrom because of sufficent Allowance is not provided");
+        if(setupCost > 0)
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         //Check valid bytes - can only call module init function
         CappedSTO cappedSTO = new CappedSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)

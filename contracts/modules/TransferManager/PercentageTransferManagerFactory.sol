@@ -10,8 +10,8 @@ contract PercentageTransferManagerFactory is IModuleFactory {
      * @dev Constructor
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress) public
-      IModuleFactory(_polyAddress)
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
 
     }
@@ -22,8 +22,8 @@ contract PercentageTransferManagerFactory is IModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        if(getCost() > 0)
-            require(polyToken.transferFrom(msg.sender, owner, getCost()), "Failed transferFrom because of sufficent Allowance is not provided");
+        if(setupCost > 0)
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender, address(polyToken));
         require(getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
         require(address(percentageTransferManager).call(_data), "Un-successfull call");

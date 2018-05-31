@@ -132,7 +132,7 @@ contract('CappedSTO', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, {from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -142,7 +142,7 @@ contract('CappedSTO', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, {from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -152,7 +152,7 @@ contract('CappedSTO', accounts => {
 
         // STEP 4: Deploy the CappedSTOFactory
 
-        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, { from: token_owner });
+        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: token_owner });
 
         assert.notEqual(
             I_CappedSTOFactory.address.valueOf(),
@@ -844,7 +844,7 @@ contract('CappedSTO', accounts => {
 
          describe("Test cases for the CappedSTOFactory", async() => {
             it("should get the exact details of the factory", async() => {
-                assert.equal(await I_CappedSTOFactory.getCost.call(),0);
+                assert.equal(await I_CappedSTOFactory.setupCost.call(),0);
                 assert.equal(await I_CappedSTOFactory.getType.call(),3);
                 assert.equal(web3.utils.toAscii(await I_CappedSTOFactory.getName.call())
                             .replace(/\u0000/g, ''),

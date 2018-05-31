@@ -127,7 +127,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, { from: account_polymath });
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: account_polymath });
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -137,7 +137,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, { from: account_polymath });
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: account_polymath });
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -178,7 +178,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 8: Deploy the CappedSTOFactory
 
-        I_TestSTOFactory = await TestSTOFactory.new(I_PolyFaucet.address, { from: token_owner });
+        I_TestSTOFactory = await TestSTOFactory.new(I_PolyFaucet.address, 1000 * Math.pow(10, 18), 0, 0,{ from: token_owner });
 
         assert.notEqual(
             I_TestSTOFactory.address.valueOf(),
@@ -443,8 +443,6 @@ contract('SecurityTokenRegistry', accounts => {
                 ]);
 
             let errorThrown = false;
-
-            await I_TestSTOFactory.changeModuleFactoryFee(1000 * Math.pow(10, 18), {from: token_owner});
 
             try {
                 const tx = await I_SecurityToken.addModule(

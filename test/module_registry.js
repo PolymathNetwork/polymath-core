@@ -154,7 +154,7 @@ contract('ModuleRegistry', accounts => {
 
         it("Should successfully deployed the Module Fatories", async () => {
 
-            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
             assert.notEqual(
                 I_GeneralTransferManagerFactory.address.valueOf(),
@@ -163,7 +163,7 @@ contract('ModuleRegistry', accounts => {
             );
 
 
-            I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+            I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
             assert.notEqual(
                 I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -172,7 +172,7 @@ contract('ModuleRegistry', accounts => {
             );
 
 
-            I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, { from: account_polymath });
+            I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
 
             assert.notEqual(
                 I_CappedSTOFactory.address.valueOf(),
@@ -180,7 +180,7 @@ contract('ModuleRegistry', accounts => {
                 "CappedSTOFactory contract was not deployed"
             );
 
-            I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, { from: account_temp });
+            I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_temp });
 
             assert.notEqual(
                 I_DummySTOFactory.address.valueOf(),
@@ -188,7 +188,7 @@ contract('ModuleRegistry', accounts => {
                 "DummySTOFactory contract was not deployed"
             );
 
-            I_MockFactory = await MockFactory.new(I_PolyToken.address, { from: account_temp });
+            I_MockFactory = await MockFactory.new(I_PolyToken.address, 1000 * Math.pow(10, 18), 0, 0, { from: account_temp });
 
             assert.notEqual(
                 I_MockFactory.address.valueOf(),
@@ -483,7 +483,7 @@ contract('ModuleRegistry', accounts => {
         });
 
         it("Should successfully add the CappedSTO module. Because module is deployed by the owner of ST", async() => {
-            I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, { from: token_owner });
+            I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: token_owner });
 
             assert.notEqual(
                 I_CappedSTOFactory.address.valueOf(),

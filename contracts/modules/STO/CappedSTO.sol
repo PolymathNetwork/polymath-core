@@ -75,7 +75,6 @@ contract CappedSTO is ISTO {
         require(_cap > 0, "Cap should be greater than 0");
         startTime = _startTime;
         endTime = _endTime;
-        initialEndTime = endTime;
         cap = _cap;
         rate = _rate;
         wallet = _fundsReceiver;

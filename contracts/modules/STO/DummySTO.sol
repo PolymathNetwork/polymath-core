@@ -37,7 +37,6 @@ contract DummySTO is ISTO {
     function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public onlyFactory {
         startTime = _startTime;
         endTime = _endTime;
-        initialEndTime = endTime;
         cap = _cap;
         someString = _someString;
     }

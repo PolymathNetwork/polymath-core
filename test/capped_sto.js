@@ -482,6 +482,71 @@ contract('CappedSTO', accounts => {
             TokenPurchase.stopWatching();
         });
 
+        it("Should pause the STO -- Failed due to wrong msg.sender", async()=> {
+            let errorThrown = false;
+            try {
+                let tx = await I_CappedSTO.pause({from: account_investor1});
+            } catch(error) {
+                console.log(`Failed due to wrong msg.sender`);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should pause the STO", async()=> {
+            let tx = await I_CappedSTO.pause({from: account_issuer});
+            assert.isTrue(await I_CappedSTO.paused.call());
+        });
+
+        it("Should fail to buy the tokens after pausing the STO", async() => {
+            let errorThrown = false;
+            try {
+                await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_CappedSTO.address,
+                    gas: 2100000,
+                    value: web3.utils.toWei('1', 'ether')
+                  });
+            } catch(error) {
+                console.log(`Failed because STO is paused`);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should unpause the STO -- Failed due to wrong msg.sender", async()=> {
+            let errorThrown = false;
+            try {
+                let tx = await I_CappedSTO.unpause(Math.floor(Date.now()/1000 + 50000), {from: account_investor1});
+            } catch(error) {
+                console.log(`Failed due to wrong msg.sender`);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should unpause the STO -- Failed due to entered date is less than the end date", async()=> {
+            let errorThrown = false;
+            try {
+                let tx = await I_CappedSTO.unpause(Math.floor(Date.now()/1000 - 500000), {from: account_issuer});
+            } catch(error) {
+                console.log(`Failed due to entered date is less than the end date`);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should unpause the STO", async()=> {
+            await increaseTime(50);
+            let newEndDate = ((await I_CappedSTO.endTime.call()).toNumber() - latestTime()) + latestTime() + 20;
+            let tx = await I_CappedSTO.unpause(newEndDate, {from: account_issuer});
+            assert.isFalse(await I_CappedSTO.paused.call());
+        });
+
         it("Should buy the tokens -- Failed due to wrong granularity", async () => {
             let errorThrown = false;
             try {

@@ -1,6 +1,8 @@
 pragma solidity ^0.4.23;
 
 import "./ITransferManager.sol";
+import "../STO/ISTO.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /////////////////////
 // Module permissions
@@ -14,6 +16,8 @@ import "./ITransferManager.sol";
 // modifyWhitelistMulti                     X             X
 
 contract GeneralTransferManager is ITransferManager {
+
+    using SafeMath for uint256;
 
     //Address from which issuances come
     address public issuanceAddress = address(0);
@@ -135,6 +139,12 @@ contract GeneralTransferManager is ITransferManager {
         emit LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
+    /**
+     * @dev Used to change the flag
+            true - It allow to burn the tokens
+            false - It deactivate the burning mechanism.
+     * @param _allowAllBurnTransfers flag value
+     */
     function changeAllowAllBurnTransfers(bool _allowAllBurnTransfers) public withPerm(FLAGS) {
         allowAllBurnTransfers = _allowAllBurnTransfers;
         emit LogAllowAllBurnTransfers(_allowAllBurnTransfers);

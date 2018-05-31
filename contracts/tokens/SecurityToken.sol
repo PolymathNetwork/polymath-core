@@ -190,7 +190,7 @@ contract SecurityToken is ISecurityToken {
 
     /**
      * @dev returns module list for a module type
-     * @param _moduleType is which type of module we are trying to remove
+     * @param _moduleType is which type of module we are trying to get
      * @param _moduleIndex is the index of the module within the chosen type
      */
     function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address, bool) {
@@ -208,7 +208,7 @@ contract SecurityToken is ISecurityToken {
 
     /**
      * @dev returns module list for a module name - will return first match
-     * @param _moduleType is which type of module we are trying to remove
+     * @param _moduleType is which type of module we are trying to get
      * @param _name is the name of the module within the chosen type
      */
     function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address, bool) {

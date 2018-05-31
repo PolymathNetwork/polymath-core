@@ -1,13 +1,21 @@
 pragma solidity ^0.4.23;
 
+import "../../interfaces/IPausable.sol";
 import "../../interfaces/IModule.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
+contract ISTO is IModule, IPausable {
 
-contract ISTO is IModule {
+    using SafeMath for uint256;
 
     enum FundraiseType { ETH, POLY }
     FundraiseType public fundraiseType;
+
+    // Start time of the STO
+    uint256 public startTime;
+    // End time of the STO
+    uint256 public endTime;
 
     /**
      * @dev use to verify the investment, whether the investor provide the allowance to the STO or not.
@@ -32,5 +40,22 @@ contract ISTO is IModule {
      * @notice Return the total no. of investors 
      */
     function getNumberInvestors() public view returns (uint256);
+
+    /**
+     * @dev pause (overridden function)
+     */
+    function pause() public onlyOwner {
+        require(now < endTime);
+        super._pause();
+    }
+
+    /**
+     * @dev unpause (overridden function)
+     */
+    function unpause(uint256 _newEndDate) public onlyOwner {
+        require(_newEndDate >= endTime);
+        super._unpause();
+        endTime = _newEndDate;
+    }
 
 }

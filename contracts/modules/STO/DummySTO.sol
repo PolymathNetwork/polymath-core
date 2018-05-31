@@ -10,8 +10,6 @@ contract DummySTO is ISTO {
 
     uint256 public investorCount;
 
-    uint256 public startTime;
-    uint256 public endTime;
     uint256 public cap;
     string public someString;
 
@@ -56,6 +54,7 @@ contract DummySTO is ISTO {
      * @param _amount Amount of ETH or Poly invested by the investor
      */
     function generateTokens(address _investor, uint256 _amount) public onlyOwner {
+        require(!paused);
         require(_amount > 0, "Amount should be greater than 0");
         IST20(securityToken).mint(_investor, _amount);
         if (investors[_investor] == 0) {

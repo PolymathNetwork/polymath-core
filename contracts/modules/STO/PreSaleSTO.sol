@@ -15,7 +15,6 @@ contract PreSaleSTO is ISTO {
 
     uint256 public investorCount;
 
-    uint256 public endTime;
     uint256 public etherRaised;
     uint256 public polyRaised;
 

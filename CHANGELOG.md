@@ -10,6 +10,9 @@ All notable changes to this project will be documented in this file.
 * Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not.      
 * Burning tokens now respects TransferManagers and investorCount.            
 
+# Added
+
+* ManualApprovalTransferManager - allows approval or blocking of explicit address pairs for transfers
 
 [__1.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __18-05-18__
 
@@ -30,7 +33,6 @@ All notable changes to this project will be documented in this file.
 
 ## Added   
 
-* ManualApprovalTransferManager - allows approval or blocking of explicit address pairs for transfers
 * whitelists for CountTransferManager and PercentageTransferManager to bypass logic
 * added CountTransferManager to restrict the total number of token holders
 * added PercentageTransferManager to restrict the total percentage of tokens held by any single holder

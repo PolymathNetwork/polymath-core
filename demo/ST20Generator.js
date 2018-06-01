@@ -1,7 +1,10 @@
 var readlineSync = require('readline-sync');
+var fs = require('fs');
+var csv = require('fast-csv');
+var whitelist = require('./whitelist.js');
 var BigNumber = require('bignumber.js')
-
 var contracts = require("./helpers/contract_addresses");
+var chalk = require('chalk');
 let tickerRegistryAddress = contracts.tickerRegistryAddress();
 let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
 let cappedSTOFactoryAddress = contracts.cappedSTOFactoryAddress();
@@ -58,6 +61,15 @@ let tickerRegistry;
 let securityTokenRegistry;
 let securityToken;
 let cappedSTO;
+
+//distribData is an array of batches. i.e. if there are 200 entries, with batch sizes of 75, we get [[75],[75],[50]]
+let distribData = new Array();
+//allocData is a temporary array that stores up to the batch size,
+//then gets push into distribData, then gets set to 0 to start another batch
+let allocData = new Array();
+//full file data is a single array that contains all arrays. i.e. if there are 200 entries we get [[200]]
+let fullFileData = new Array();
+let badData = new Array();
 
 // App flow
 let index_mainmenu;
@@ -279,64 +291,175 @@ async function step_Wallet_Issuance(){
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Minting for Issuer");
 
-    console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control");
-    let mintWallet =  readlineSync.question('Add the address that will hold the issued tokens to the whitelist ('+Issuer+'): ');
-    if(mintWallet == "") mintWallet = Issuer;
+    console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control or you can trasfer to affiliates");
+    let isaffiliate =  readlineSync.question('Press `Y` if you have list of affiliates addresses with you otherwise hit Enter: ');
+    if (isaffiliate == "Y" || isaffiliate == "y") 
+        await multi_mint_tokens();
+  //   let mintWallet =  readlineSync.question('Add the address that will hold the issued tokens to the whitelist ('+Issuer+'): ');
+  //   if(mintWallet == "") mintWallet = Issuer;
 
-    try{
+  //   try{
 
-      // Add address to whitelist
+  //     // Add address to whitelist
 
-      let generalTransferManagerAddress;
-      await securityToken.methods.getModule(2,0).call({from: Issuer}, function(error, result){
-        generalTransferManagerAddress = result[1];
-      });
+  //     let generalTransferManagerAddress;
+  //     await securityToken.methods.getModule(2,0).call({from: Issuer}, function(error, result){
+  //       generalTransferManagerAddress = result[1];
+  //     });
 
-      let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
-      await generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000)).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
-      .on('transactionHash', function(hash){
-        console.log(`
-          Adding wallet to whitelist. Please wait...
-          TxHash: ${hash}\n`
-        );
-      })
-      .on('receipt', function(receipt){
-        console.log(`
-          Congratulations! The transaction was successfully completed.
-          Review it on Etherscan.
-          TxHash: ${receipt.transactionHash}\n`
-        );
-      })
-      .on('error', console.error);
+  //     let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
+  //     await generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000)).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+  //     .on('transactionHash', function(hash){
+  //       console.log(`
+  //         Adding wallet to whitelist. Please wait...
+  //         TxHash: ${hash}\n`
+  //       );
+  //     })
+  //     .on('receipt', function(receipt){
+  //       console.log(`
+  //         Congratulations! The transaction was successfully completed.
+  //         Review it on Etherscan.
+  //         TxHash: ${receipt.transactionHash}\n`
+  //       );
+  //     })
+  //     .on('error', console.error);
 
-      // Mint tokens
+  //     // Mint tokens
 
-      issuerTokens =  readlineSync.question('How many tokens do you plan to mint for the wallet you entered? (500.000): ');
-      if(issuerTokens == "") issuerTokens = '500000';
+  //     issuerTokens =  readlineSync.question('How many tokens do you plan to mint for the wallet you entered? (500.000): ');
+  //     if(issuerTokens == "") issuerTokens = '500000';
       
-      await securityToken.methods.mint(mintWallet, web3.utils.toWei(issuerTokens,"ether")).send({ from: Issuer, gas:3000000, gasPrice:DEFAULT_GAS_PRICE})
-      .on('transactionHash', function(hash){
-        console.log(`
-          Minting tokens. Please wait...
-          TxHash: ${hash}\n`
-        );
-      })
-      .on('receipt', function(receipt){
-        console.log(`
-          Congratulations! The transaction was successfully completed.
-          Review it on Etherscan.
-          TxHash: ${receipt.transactionHash}\n`
-        );
-      })
-      .on('error', console.error);
+  //     await securityToken.methods.mint(mintWallet, web3.utils.toWei(issuerTokens,"ether")).send({ from: Issuer, gas:3000000, gasPrice:DEFAULT_GAS_PRICE})
+  //     .on('transactionHash', function(hash){
+  //       console.log(`
+  //         Minting tokens. Please wait...
+  //         TxHash: ${hash}\n`
+  //       );
+  //     })
+  //     .on('receipt', function(receipt){
+  //       console.log(`
+  //         Congratulations! The transaction was successfully completed.
+  //         Review it on Etherscan.
+  //         TxHash: ${receipt.transactionHash}\n`
+  //       );
+  //     })
+  //     .on('error', console.error);
 
-    }catch (err){
-      console.log(err.message);
-      return;
+  //   }catch (err){
+  //     console.log(err.message);
+  //     return;
+  //   }
+   }
+
+  // await step_STO_Launch();
+}
+
+
+async function multi_mint_tokens() {
+
+  await whitelist.startWhitelisting(tokenSymbol);
+
+  console.log(chalk.green(`Congrats! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
+  console.log(chalk.red(`Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`));
+
+  readFile();
+  console.log(chalk.green(`Hurray!! Tokens get successfully Minted and transfered to affiliates`));
+
+
+}
+
+function readFile() {
+  var stream = fs.createReadStream("./demo/multi_mint_data.csv");
+
+  let index = 0;
+  let batch = 0;
+  console.log(`
+    --------------------------------------------
+    ----------- Parsing the csv file -----------
+    --------------------------------------------
+  `);
+
+  var csvStream = csv()
+    .on("data", function (data) {
+      let isAddress = web3.utils.isAddress(data[0]);
+      let validToken = isvalidToken(data[1]);
+
+
+      if (isAddress && validToken) {
+        let userArray = new Array()
+        let checksummedAddress = web3.utils.toChecksumAddress(data[0]);
+
+        userArray.push(checksummedAddress)
+        userArray.push(validToken)
+        allocData.push(userArray);
+        fullFileData.push(userArray);
+        index++;
+        if (index >= 75) {
+          distribData.push(allocData);
+          allocData = [];
+          index = 0;
+        }
+
+      } else {
+        let userArray = new Array()
+        //dont need this here, as if it is NOT an address this function will fail
+        //let checksummedAddress = web3.utils.toChecksumAddress(data[1]);
+        userArray.push(data[0])
+        userArray.push(data[1]);
+        badData.push(userArray);
+        fullFileData.push(userArray)
+      }
+    })
+    .on("end", function () {
+      //Add last remainder batch
+      distribData.push(allocData);
+      allocData = [];
+      mint_tokens_for_affliliates();
+    });
+
+  stream.pipe(csvStream);
+}
+
+async function mint_tokens_for_affliliates() {
+  console.log(`
+  -------------------------------------------------------
+  ------------ Mint the tokens to affiliates ------------
+  -------------------------------------------------------
+`);
+
+//this for loop will do the batches, so it should run 75, 75, 50 with 200
+for (let i = 0; i < distribData.length; i++) {
+  try {
+    let affiliatesArray = [];
+    let tokensArray = [];
+
+    //splitting the user arrays to be organized by input
+    for (let j = 0; j < distribData[i].length; j++) {
+      affiliatesArray.push(distribData[i][j][0]);
+      let tokenAmount = web3.utils.toWei(distribData[i][j][1],"ether")
+      console.log(tokenAmount);
+      tokensArray.push(tokenAmount);
     }
-  }
 
-  await step_STO_Launch();
+    let r = await securityToken.methods.mintMulti(affiliatesArray, tokensArray).send({ from: Issuer, gas: 5000000, gasPrice: DEFAULT_GAS_PRICE })
+    console.log(`Batch ${i} - Attempting to send the Minted tokens to affiliates accounts:\n\n`, affiliatesArray, "\n\n");
+    console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
+    console.log("Multi Mint transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * DEFAULT_GAS_PRICE).toString(), "ether"), "Ether");
+    console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
+
+  } catch (err) {
+    console.log("ERROR:", err);
+  }
+}
+}
+
+
+function isvalidToken(token) {
+  var tokenAmount = parseInt(token);
+  if((tokenAmount % 1 == 0)) {
+    return tokenAmount;
+  }
+  return false;
 }
 
 

@@ -32,4 +32,18 @@ contract ISecurityToken is IST20, Ownable {
      * @param _name is the name of the module within the chosen type
      */
     function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address, bool);
+
+    /**
+     * @dev Queries totalSupply as of a defined checkpoint
+     * @param _checkpointId Checkpoint ID to query as of
+     */
+    function totalSupplyAt(uint256 _checkpointId) public view returns(uint256);
+
+    /**
+     * @dev Queries balances as of a defined checkpoint
+     * @param _investor Investor to query balance for
+     * @param _checkpointId Checkpoint ID to query as of
+     */
+    function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256);
+
 }

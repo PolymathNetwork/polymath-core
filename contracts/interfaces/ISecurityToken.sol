@@ -9,6 +9,7 @@ contract ISecurityToken is IST20, Ownable {
     uint8 public constant PERMISSIONMANAGER_KEY = 1;
     uint8 public constant TRANSFERMANAGER_KEY = 2;
     uint8 public constant STO_KEY = 3;
+    uint8 public constant CHECKPOINT_KEY = 4;
     uint256 public granularity;
     // Total number of non-zero token holders
     uint256 public investorCount;

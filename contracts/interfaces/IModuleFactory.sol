@@ -8,13 +8,23 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 contract IModuleFactory is Ownable {
 
     ERC20 public polyToken;
+    uint256 public setupCost;
+    uint256 public usageCost;
+    uint256 public monthlySubscriptionCost;
+
+    event LogchangeFactorySetupFee(uint256 _oldSetupcost, uint256 _newSetupCost, address _moduleFactory);
+    event LogchangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
+    event LogchangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
 
     /**
      * @dev Constructor
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress) public {
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public {
       polyToken = ERC20(_polyAddress);
+      setupCost = _setupCost;
+      usageCost = _usageCost;
+      monthlySubscriptionCost = _subscriptionCost;
     }
 
     //Should create an instance of the Module, or throw
@@ -29,9 +39,6 @@ contract IModuleFactory is Ownable {
      * @dev Get the name of the Module
      */
     function getName() public view returns(bytes32);
-
-    //Return the cost (in POLY) to use this factory
-    function getCost() public view returns(uint256);
 
     /**
      * @dev Get the description of the Module 
@@ -59,6 +66,36 @@ contract IModuleFactory is Ownable {
         for (uint i = 0; i < len; i++) {
             sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
         }
+    }
+
+    /**
+     * @dev used to change the fee of the setup cost
+     * @param _newSetupCost new setup cost 
+     */
+    function changeFactorySetupFee(uint256 _newSetupCost) public onlyOwner {
+        uint256 _oldSetupcost = setupCost;
+        setupCost = _newSetupCost;
+        emit LogchangeFactorySetupFee(_oldSetupcost, setupCost, address(this));
+    }
+
+    /**
+     * @dev used to change the fee of the usage cost
+     * @param _newUsageCost new usage cost 
+     */
+    function changeFactoryUsageFee(uint256 _newUsageCost) public onlyOwner {
+        uint256 _oldUsageCost = usageCost;
+        usageCost = _newUsageCost;
+        emit LogchangeFactoryUsageFee(_oldUsageCost, usageCost, address(this));
+    }
+
+    /**
+     * @dev used to change the fee of the subscription cost
+     * @param _newSubscriptionCost new subscription cost 
+     */
+    function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) public onlyOwner {
+        uint256 _oldSubscriptionCost = monthlySubscriptionCost;
+        monthlySubscriptionCost = _newSubscriptionCost;
+        emit LogchangeFactorySubscriptionFee(_oldSubscriptionCost, monthlySubscriptionCost, address(this));
     }
 
 }

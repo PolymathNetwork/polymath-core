@@ -121,7 +121,7 @@ contract('ExchangeTransferManager', accounts => {
 
         // STEP 2a: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -131,7 +131,7 @@ contract('ExchangeTransferManager', accounts => {
 
         // STEP 2b: Deploy the ExchangeTransferManagerFactory
 
-        I_ExchangeTransferManagerFactory = await ExchangeTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_ExchangeTransferManagerFactory = await ExchangeTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_ExchangeTransferManagerFactory.address.valueOf(),
@@ -141,7 +141,7 @@ contract('ExchangeTransferManager', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -151,7 +151,7 @@ contract('ExchangeTransferManager', accounts => {
 
         // STEP 4: Deploy the DummySTOFactory
 
-        I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_DummySTOFactory.address.valueOf(),
@@ -454,7 +454,7 @@ contract('ExchangeTransferManager', accounts => {
 
         describe("Test cases for the factory", async() => {
             it("should get the exact details of the factory", async() => {
-                assert.equal(await I_ExchangeTransferManagerFactory.getCost.call(),0);
+                assert.equal(await I_ExchangeTransferManagerFactory.setupCost.call(),0);
                 assert.equal(await I_ExchangeTransferManagerFactory.getType.call(),2);
                 assert.equal(web3.utils.toAscii(await I_ExchangeTransferManagerFactory.getName.call())
                             .replace(/\u0000/g, ''),

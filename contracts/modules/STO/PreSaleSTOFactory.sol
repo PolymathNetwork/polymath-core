@@ -11,8 +11,8 @@ contract PreSaleSTOFactory is IModuleFactory {
      * @dev Constructor
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress) public
-      IModuleFactory(_polyAddress)
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
 
     }
@@ -23,8 +23,8 @@ contract PreSaleSTOFactory is IModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        if (getCost() > 0) {
-            require(polyToken.transferFrom(msg.sender, owner, getCost()), "Failed transferFrom because of sufficent Allowance is not provided");
+        if (setupCost > 0) {
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         }
         //Check valid bytes - can only call module init function
         PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender, address(polyToken));
@@ -32,13 +32,6 @@ contract PreSaleSTOFactory is IModuleFactory {
         require(getSig(_data) == preSaleSTO.getInitFunction(), "Provided data is not valid");
         require(address(preSaleSTO).call(_data), "Un-successfull call");
         return address(preSaleSTO);
-    }
-
-    /**
-     * @dev Used to get the cost that will be paid at the time of usage of the factory
-     */
-    function getCost() public view returns(uint256) {
-        return 0;
     }
 
     /**

@@ -43,19 +43,19 @@ module.exports = function (deployer, network, accounts) {
     return ModuleRegistry.deployed().then((moduleRegistry) => {
       // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
       // manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(GeneralTransferManagerFactory, PolyToken, {from: PolymathAccount})
+    return deployer.deploy(GeneralTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount})
     .then(() => {
       // C) Deploy the GeneralPermissionManagerFactory Contract (Factory used to generate the GeneralPermissionManager contract and
       // this manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(GeneralPermissionManagerFactory, PolyToken, {from: PolymathAccount})
+    return deployer.deploy(GeneralPermissionManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount})
     }).then(() => {
       // D) Deploy the CountTransferManagerFactory Contract (Factory used to generate the CountTransferManager contract use
       // to track the counts of the investors of the security token)
-      return deployer.deploy(CountTransferManagerFactory, PolyToken, {from: PolymathAccount})
+      return deployer.deploy(CountTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount})
     }).then(() => {
       // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
       // to track the percentage of investment the investors could do for a particular security token)
-      return deployer.deploy(PercentageTransferManagerFactory, PolyToken, {from: PolymathAccount})
+      return deployer.deploy(PercentageTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount})
     }).then(() => {
       // D) Register the PercentageTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the PercentageTransferManager contract.
@@ -110,7 +110,7 @@ module.exports = function (deployer, network, accounts) {
     return moduleRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount})
     }).then(() => {
       // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
-    return deployer.deploy(CappedSTOFactory, PolyToken, {from: PolymathAccount})
+    return deployer.deploy(CappedSTOFactory, PolyToken, 0, 0, 0, {from: PolymathAccount})
     }).then(() => {
       // N) Register the CappedSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the CappedSTOFactory contract.

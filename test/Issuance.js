@@ -126,7 +126,7 @@ contract('Issuance', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, {from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -136,7 +136,7 @@ contract('Issuance', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, {from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -146,7 +146,7 @@ contract('Issuance', accounts => {
 
         // STEP 4: Deploy the CappedSTOFactory
 
-        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, { from: token_owner });
+        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: token_owner });
 
         assert.notEqual(
             I_CappedSTOFactory.address.valueOf(),
@@ -270,7 +270,7 @@ contract('Issuance', accounts => {
              it("POLYMATH: Should successfully attach the STO factory with the security token", async () => {
                  // STEP 4: Deploy the CappedSTOFactory
 
-                I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, { from: account_polymath });
+                I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: account_polymath });
 
                 assert.notEqual(
                     I_CappedSTOFactory.address.valueOf(),

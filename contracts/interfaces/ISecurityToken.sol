@@ -46,4 +46,9 @@ contract ISecurityToken is IST20, Ownable {
      */
     function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256);
 
+    /**
+     * @dev Creates a checkpoint that can be used to query historical balances / totalSuppy
+     */
+    function createCheckpoint() public returns(uint256);
+
 }

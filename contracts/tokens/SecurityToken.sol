@@ -426,6 +426,7 @@ contract SecurityToken is ISecurityToken {
     function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) returns (bool success) {
         adjustInvestorCount(address(0), _investor, _amount);
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
+        adjustBalanceCheckpoints(_investor);
         adjustTotalSupplyCheckpoints();
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);
@@ -481,6 +482,7 @@ contract SecurityToken is ISecurityToken {
         require(tokenBurner != address(0), "Token Burner contract address is not set yet");
         require(verifyTransfer(msg.sender, address(0), _value), "Transfer is not valid");
         require(_value <= balances[msg.sender], "Value should no be greater than the balance of msg.sender");
+        adjustBalanceCheckpoints(msg.sender);
         adjustTotalSupplyCheckpoints();
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
@@ -503,7 +505,7 @@ contract SecurityToken is ISecurityToken {
     /**
      * @dev Creates a checkpoint that can be used to query historical balances / totalSuppy
      */
-    function createCheckpoint() public onlyModule(CHECKPOINT_KEY, true) {
+    function createCheckpoint() public onlyModule(CHECKPOINT_KEY, true) returns(uint256) {
         require(currentCheckpointId < 2**256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
         emit LogCheckpointCreated(currentCheckpointId, now);

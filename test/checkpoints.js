@@ -291,7 +291,7 @@ contract('Checkpoints', accounts => {
             await I_SecurityToken.changeGranularity(1, {from: token_owner});
             let cps = [];
             let ts = [];
-            for (let j = 0; j < 40; j++) {
+            for (let j = 0; j < 100; j++) {
                 let balance1 = BigNumber(await I_SecurityToken.balanceOf(account_investor1));
                 let balance2 = BigNumber(await I_SecurityToken.balanceOf(account_investor2));
                 let balance3 = BigNumber(await I_SecurityToken.balanceOf(account_investor3));
@@ -341,6 +341,21 @@ contract('Checkpoints', accounts => {
                       }
                       console.log("Minting: " + n.toString() + " to: " + minter);
                       await I_SecurityToken.mint(minter, n, { from: token_owner });
+                    }
+                }
+                console.log("Checking Interim...");
+                for (let k = 0; k < cps.length; k++) {
+                    let balance1 = BigNumber(await I_SecurityToken.balanceOfAt(account_investor1, k + 1));
+                    let balance2 = BigNumber(await I_SecurityToken.balanceOfAt(account_investor2, k + 1));
+                    let balance3 = BigNumber(await I_SecurityToken.balanceOfAt(account_investor3, k + 1));
+                    let totalSupply = BigNumber(await I_SecurityToken.totalSupplyAt(k + 1));
+                    let balances = [balance1, balance2, balance3];
+                    console.log("Checking TotalSupply: " + totalSupply + " is " + ts[k] + " at checkpoint: " + (k + 1));
+                    assert.isTrue(totalSupply.eq(ts[k]));
+                    console.log("Checking Balances: " + balances + " is " + cps[k] + " at checkpoint: " + (k + 1));
+                    for (let l = 0; l < cps[k].length; l++) {
+                        // console.log(balances[l].toString(), cps[k][l].toString());
+                        assert.isTrue(balances[l].eq(cps[k][l]));
                     }
                 }
             }

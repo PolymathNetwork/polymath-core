@@ -76,8 +76,7 @@ contract('GeneralTransferManager', accounts => {
     const endTime = startTime + duration.days(80);                     // Add 80 days more
     const cap = web3.utils.toWei('10', 'ether');
     const someString = "A string which is not used";
-
-    let bytesSTO = web3.eth.abi.encodeFunctionCall({
+    const functionSignature = {
         name: 'configure',
         type: 'function',
         inputs: [{
@@ -94,7 +93,7 @@ contract('GeneralTransferManager', accounts => {
             name: '_someString'
         }
         ]
-    }, [startTime, endTime, cap, someString]);
+    };   
 
     before(async() => {
         // Accounts setup
@@ -126,7 +125,7 @@ contract('GeneralTransferManager', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -136,7 +135,7 @@ contract('GeneralTransferManager', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -146,7 +145,7 @@ contract('GeneralTransferManager', accounts => {
 
         // STEP 4: Deploy the DummySTOFactory
 
-        I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_DummySTOFactory.address.valueOf(),
@@ -266,6 +265,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, someString]);
             const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner });
             assert.equal(tx.logs[2].args._type.toNumber(), stoKey, "DummySTO doesn't get deployed");
             assert.equal(
@@ -698,7 +698,7 @@ contract('GeneralTransferManager', accounts => {
     describe("General Transfer Manager Factory test cases", async() => {
 
         it("Should get the exact details of the factory", async() => {
-            assert.equal(await I_GeneralTransferManagerFactory.getCost.call(),0);
+            assert.equal(await I_GeneralTransferManagerFactory.setupCost.call(),0);
             assert.equal(await I_GeneralTransferManagerFactory.getType.call(),2);
             assert.equal(web3.utils.toAscii(await I_GeneralTransferManagerFactory.getName.call())
                         .replace(/\u0000/g, ''),
@@ -724,7 +724,7 @@ contract('GeneralTransferManager', accounts => {
 
     describe("Dummy STO Factory test cases", async() => {
         it("should get the exact details of the factory", async() => {
-            assert.equal(await I_DummySTOFactory.getCost.call(),0);
+            assert.equal(await I_DummySTOFactory.setupCost.call(),0);
             assert.equal(await I_DummySTOFactory.getType.call(),3);
             assert.equal(web3.utils.toAscii(await I_DummySTOFactory.getName.call())
                         .replace(/\u0000/g, ''),

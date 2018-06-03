@@ -107,7 +107,7 @@ contract('PreSaleSTO', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, {from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -117,7 +117,7 @@ contract('PreSaleSTO', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, {from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -127,7 +127,7 @@ contract('PreSaleSTO', accounts => {
 
         // STEP 4: Deploy the PreSaleSTOFactory
 
-        I_PreSaleSTOFactory = await PreSaleSTOFactory.new(I_PolyFaucet.address, { from: token_owner });
+        I_PreSaleSTOFactory = await PreSaleSTOFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: token_owner });
 
         assert.notEqual(
             I_PreSaleSTOFactory.address.valueOf(),
@@ -411,7 +411,7 @@ contract('PreSaleSTO', accounts => {
 
     describe("Test cases for the PresaleSTOFactory", async() => {
         it("should get the exact details of the factory", async() => {
-            assert.equal(await I_PreSaleSTOFactory.getCost.call(),0);
+            assert.equal(await I_PreSaleSTOFactory.setupCost.call(),0);
             assert.equal(await I_PreSaleSTOFactory.getType.call(),3);
             assert.equal(web3.utils.toAscii(await I_PreSaleSTOFactory.getName.call())
                         .replace(/\u0000/g, ''),

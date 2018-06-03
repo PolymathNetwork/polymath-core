@@ -107,7 +107,7 @@ contract('CountTransferManager', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -117,7 +117,7 @@ contract('CountTransferManager', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -126,7 +126,7 @@ contract('CountTransferManager', accounts => {
         );
 
         // STEP 4: Deploy the CountTransferManager
-        I_CountTransferManagerFactory = await CountTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_CountTransferManagerFactory = await CountTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
         assert.notEqual(
             I_CountTransferManagerFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
@@ -436,7 +436,7 @@ contract('CountTransferManager', accounts => {
 
         describe("Test cases for the factory", async() => {
             it("should get the exact details of the factory", async() => {
-                assert.equal(await I_CountTransferManagerFactory.getCost.call(),0);
+                assert.equal(await I_CountTransferManagerFactory.setupCost.call(),0);
                 assert.equal(await I_CountTransferManagerFactory.getType.call(),2);
                 assert.equal(web3.utils.toAscii(await I_CountTransferManagerFactory.getName.call())
                             .replace(/\u0000/g, ''),

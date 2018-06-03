@@ -1,22 +1,23 @@
 # Changelog
 All notable changes to this project will be documented in this file.   
 
-## [Unreleased](https://github.com/PolymathNetwork/polymath-core/compare/release-1.1.0...master)
+# v1.2.0 - Unreleased
 
 [__1.2.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __22-05-18__
 
-# Changed
+## Added 
+
+* STOs are pausable now. It is facilated by using the IPausable interface. 
+* ManualApprovalTransferManager - allows approval or blocking of explicit address pairs for transfers.
+* Module Factories now allow their owner to set 3 types of fees: Setup fee, Usage fee, Monthly fee.
+
+
+## Changed
 
 * Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not.      
 * Burning tokens now respects TransferManagers and investorCount.    
 
-## Added 
-
-* STOs are pausable now. It is facilated by using the IPausable interface.        
-
-# Added
-
-* ManualApprovalTransferManager - allows approval or blocking of explicit address pairs for transfers
+# v1.1.0
 
 [__1.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __18-05-18__
 

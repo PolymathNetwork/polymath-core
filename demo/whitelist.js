@@ -72,8 +72,6 @@ let DEFAULT_GAS_PRICE = 10000000000;
 startScript();
 
 async function startScript() {
-  if (CALLED_BY == "ST20GENERATOR")
-    tokenSymbol = symbol;
   try {
     tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
     tickerRegistry.setProvider(web3.currentProvider);
@@ -337,11 +335,3 @@ function isValidDate(date) {
     return false
   }
 }
-
-async function startWhitelisting (_symbol) {
-      symbol = _symbol;
-      CALLED_BY = "ST20GENERATOR";
-      await startScript();
-}
-
-module.exports.startWhitelisting = startWhitelisting;

@@ -9,7 +9,7 @@ var SELECTED_NETWORK = NETWORKS.GANACHE;
 module.exports = {
   tickerRegistryAddress: function() {
     if(SELECTED_NETWORK == NETWORKS.GANACHE)
-      return "0x4dc21fa42027030bbbc23602d347abca2291c17c";
+      return "0x41a812df6f7797e22b4df355f1cdb05dc532edec";
     else if(SELECTED_NETWORK == NETWORKS.ROPSTEN)
       return "0x8cd431b23415d132b82d44252c69e3458eec1229";
     else if(SELECTED_NETWORK == NETWORKS.KOVAN)
@@ -17,7 +17,7 @@ module.exports = {
   },
   securityTokenRegistryAddress: function() {
     if(SELECTED_NETWORK == NETWORKS.GANACHE)
-      return "0x2a0bf6bb90d6c814e3bce9a233c690cc23a15a42";
+      return "0x1e2c6aeb7c6b781c05b4d02b2b5166f89b4db0c0";
     else if(SELECTED_NETWORK == NETWORKS.ROPSTEN)
       return "0x6487a0c9cc1c5f0d2ff70f0252e4bd2b8e1d014b";
     else if(SELECTED_NETWORK == NETWORKS.KOVAN)
@@ -25,7 +25,7 @@ module.exports = {
   },
   cappedSTOFactoryAddress: function() {
     if(SELECTED_NETWORK == NETWORKS.GANACHE)
-      return "0x676f27bdd12a513651e0b810e36c3ba959ef8e6e";
+      return "0x3c583a80920327db6a520d30cb4aeac9a92d1ab6";
     else if(SELECTED_NETWORK == NETWORKS.ROPSTEN)
       return "0x4f8de4146250f60075a8357243a1b67c5052d80c";
     else if(SELECTED_NETWORK == NETWORKS.KOVAN)

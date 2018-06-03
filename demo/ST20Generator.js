@@ -1,11 +1,9 @@
 var readlineSync = require('readline-sync');
-var fs = require('fs');
-var csv = require('fast-csv');
-const shell = require('shelljs');
-//var whitelist = require('./whitelist.js');
 var BigNumber = require('bignumber.js')
 var contracts = require("./helpers/contract_addresses");
 var chalk = require('chalk');
+const shell = require('shelljs');
+
 let tickerRegistryAddress = contracts.tickerRegistryAddress();
 let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
 let cappedSTOFactoryAddress = contracts.cappedSTOFactoryAddress();
@@ -63,14 +61,6 @@ let securityTokenRegistry;
 let securityToken;
 let cappedSTO;
 
-//distribData is an array of batches. i.e. if there are 200 entries, with batch sizes of 75, we get [[75],[75],[50]]
-let distribData = new Array();
-//allocData is a temporary array that stores up to the batch size,
-//then gets push into distribData, then gets set to 0 to start another batch
-let allocData = new Array();
-//full file data is a single array that contains all arrays. i.e. if there are 200 entries we get [[200]]
-let fullFileData = new Array();
-let badData = new Array();
 
 // App flow
 let index_mainmenu;

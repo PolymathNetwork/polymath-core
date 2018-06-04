@@ -73,6 +73,9 @@ async function start_explorer(){
     }
   });
 
+  let checkpointNum = await securityToken.methods.currentCheckpointId().call({ from: Issuer });
+  console.log("Token is at checkpoint:",checkpointNum);
+
   // Get the GTM
   await securityToken.methods.getModule(2, 0).call({ from: Issuer }, function (error, result) {
     generalTransferManagerAddress = result[1];
@@ -80,7 +83,7 @@ async function start_explorer(){
   generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
   generalTransferManager.setProvider(web3.currentProvider);
 
-  let options = ['Transfer tokens', 'Explore account at checkpoint','Create checkpoint'];
+  let options = ['Transfer tokens', 'Explore account at checkpoint', 'Explore total supply at checkpoint','Create checkpoint'];
   let index = readlineSync.keyInSelect(options, 'What do you want to do?');
   console.log("Selected:",options[index]);
   switch(index){
@@ -95,10 +98,17 @@ async function start_explorer(){
       await exploreAddress(_address,_checkpoint);
     break;
     case 2:
+      let _checkpoint2 =  readlineSync.question('Explore total supply at checkpoint: ');
+      await exploreTotalSupply(_checkpoint2);
+    break;
+    case 3:
       //Create new checkpoint
       await securityToken.methods.createCheckpoint().send({ from: Issuer});
     break;
   }
+
+  //Restart
+  start_explorer();
 
 }
 
@@ -110,6 +120,16 @@ async function exploreAddress(address, checkpoint){
   let balanceAt = await securityToken.methods.balanceOfAt(address,checkpoint).call({from: Issuer});
   balanceAt = web3.utils.fromWei(balanceAt,"ether");
   console.log("Balance of",address,"is:",balance,"(Using balanceOfAt - checkpoint",checkpoint,")");
+}
+
+async function exploreTotalSupply(checkpoint){
+  let totalSupply = await securityToken.methods.totalSupply().call({from: Issuer});
+  totalSupply = web3.utils.fromWei(totalSupply,"ether");
+  console.log("TotalSupply is:",totalSupply,"(Using totalSupply)");
+
+  let totalSupplyAt = await securityToken.methods.totalSupplyAt(checkpoint).call({from: Issuer});
+  totalSupplyAt = web3.utils.fromWei(totalSupplyAt,"ether");
+  console.log("totalSupply is:",totalSupplyAt,"(Using totalSupplyAt - checkpoint",checkpoint,")");
 }
 
 

@@ -124,7 +124,7 @@ async function exploreAddress(address, checkpoint){
 
   let balanceAt = await securityToken.methods.balanceOfAt(address,checkpoint).call({from: Issuer});
   balanceAt = web3.utils.fromWei(balanceAt,"ether");
-  console.log("Balance of",address,"is:",balance,"(Using balanceOfAt - checkpoint",checkpoint,")");
+  console.log("Balance of",address,"is:",balanceAt,"(Using balanceOfAt - checkpoint",checkpoint,")");
 }
 
 async function exploreTotalSupply(checkpoint){

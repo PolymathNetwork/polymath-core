@@ -291,7 +291,7 @@ contract('Checkpoints', accounts => {
             await I_SecurityToken.changeGranularity(1, {from: token_owner});
             let cps = [];
             let ts = [];
-            for (let j = 0; j < 100; j++) {
+            for (let j = 0; j < 10; j++) {
                 let balance1 = BigNumber(await I_SecurityToken.balanceOf(account_investor1));
                 let balance2 = BigNumber(await I_SecurityToken.balanceOf(account_investor2));
                 let balance3 = BigNumber(await I_SecurityToken.balanceOf(account_investor3));
@@ -300,7 +300,7 @@ contract('Checkpoints', accounts => {
                 ts.push(totalSupply);
                 console.log("Checkpoint: " + (j + 1) + " Balances: " + JSON.stringify(cps[cps.length - 1]) + " TotalSupply: " + JSON.stringify(totalSupply));
                 await I_SecurityToken.createCheckpoint({ from: token_owner });
-                let txs = Math.floor(Math.random() * 5);
+                let txs = Math.floor(Math.random() * 3);
                 for (let i = 0; i < txs; i++) {
                     let sender;
                     let receiver;
@@ -328,20 +328,21 @@ contract('Checkpoints', accounts => {
                     }
                     console.log("Sender: " + sender + " Receiver: " + receiver + " Amount: " + JSON.stringify(amount));
                     await I_SecurityToken.transfer(receiver, amount, { from: sender });
-                    if (Math.random() > 0.5) {
-                      let n = BigNumber(Math.random().toFixed(10)).mul(10**17).toFixed(0);
-                      let p = Math.random() * 3;
-                      let minter;
-                      if (r < 1) {
-                        minter = account_investor1;
-                      } else if (r < 2) {
-                        minter = account_investor2;
-                      } else {
-                        minter = account_investor3;
-                      }
-                      console.log("Minting: " + n.toString() + " to: " + minter);
-                      await I_SecurityToken.mint(minter, n, { from: token_owner });
-                    }
+                }
+                if (Math.random() > 0.5) {
+                  let n = BigNumber(Math.random().toFixed(10)).mul(10**17).toFixed(0);
+                  let p = Math.random() * 3;
+                  let r = Math.random() * 3;
+                  let minter;
+                  if (r < 1) {
+                    minter = account_investor1;
+                  } else if (r < 2) {
+                    minter = account_investor2;
+                  } else {
+                    minter = account_investor3;
+                  }
+                  console.log("Minting: " + n.toString() + " to: " + minter);
+                  await I_SecurityToken.mint(minter, n, { from: token_owner });
                 }
                 console.log("Checking Interim...");
                 for (let k = 0; k < cps.length; k++) {

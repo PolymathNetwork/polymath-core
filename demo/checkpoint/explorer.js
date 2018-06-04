@@ -83,25 +83,30 @@ async function start_explorer(){
   generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
   generalTransferManager.setProvider(web3.currentProvider);
 
-  let options = ['Transfer tokens', 'Explore account at checkpoint', 'Explore total supply at checkpoint','Create checkpoint'];
+  let options = ['Mint tokens','Transfer tokens', 'Explore account at checkpoint', 'Explore total supply at checkpoint','Create checkpoint'];
   let index = readlineSync.keyInSelect(options, 'What do you want to do?');
   console.log("Selected:",options[index]);
   switch(index){
     case 0:
-      let _to =  readlineSync.question('Enter beneficiary of tranfer: ');
-      let _amount =  readlineSync.question('Enter amount of tokens to transfer: ');
-      await transferTokens(_to,_amount);
+      let _to =  readlineSync.question('Enter beneficiary of minting: ');
+      let _amount =  readlineSync.question('Enter amount of tokens to mint: ');
+      await mintTokens(_to,_amount);
     break;
     case 1:
+      let _to2 =  readlineSync.question('Enter beneficiary of tranfer: ');
+      let _amount2 =  readlineSync.question('Enter amount of tokens to transfer: ');
+      await transferTokens(_to2,_amount2);
+    break;
+    case 2:
       let _address =  readlineSync.question('Enter address to explore: ');
       let _checkpoint =  readlineSync.question('At checkpoint: ');
       await exploreAddress(_address,_checkpoint);
     break;
-    case 2:
+    case 3:
       let _checkpoint2 =  readlineSync.question('Explore total supply at checkpoint: ');
       await exploreTotalSupply(_checkpoint2);
     break;
-    case 3:
+    case 4:
       //Create new checkpoint
       await securityToken.methods.createCheckpoint().send({ from: Issuer});
     break;
@@ -151,6 +156,37 @@ async function transferTokens(address, amount){
 
         Account ${receipt.events.Transfer.returnValues.from}
         transfered ${web3.utils.fromWei(receipt.events.Transfer.returnValues.value,"ether")} tokens
+        to account ${receipt.events.Transfer.returnValues.to}
+
+        Review it on Etherscan.
+        TxHash: ${receipt.transactionHash}\n`
+      );
+    });
+
+  }catch (err){
+    console.log(err);
+    console.log("There was an error processing the transfer transaction. \n The most probable cause for this error is one of the involved accounts not being in the whitelist or under a lockup period.")
+    return;
+  }
+}
+
+async function mintTokens(address, amount){
+
+  let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000)).send({ from: Issuer, gas:2500000});
+
+  try{
+    await securityToken.methods.mint(address,web3.utils.toWei(amount,"ether")).send({ from: Issuer, gas:250000})
+    .on('transactionHash', function(hash){
+      console.log(`
+        Your transaction is being processed. Please wait...
+        TxHash: ${hash}\n`
+      );
+    })
+    .on('receipt', function(receipt){
+      console.log(`
+        Congratulations! The transaction was successfully completed.
+
+        Minted ${web3.utils.fromWei(receipt.events.Transfer.returnValues.value,"ether")} tokens
         to account ${receipt.events.Transfer.returnValues.to}
 
         Review it on Etherscan.

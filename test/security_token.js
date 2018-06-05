@@ -292,6 +292,7 @@ contract('SecurityToken', accounts => {
                 fromTime,
                 toTime,
                 expiryTime,
+                false,
                 {
                     from: token_owner,
                     gas: 6000000
@@ -324,6 +325,7 @@ contract('SecurityToken', accounts => {
                 fromTime,
                 toTime,
                 expiryTime,
+                false,
                 {
                     from: token_owner,
                     gas: 6000000
@@ -480,6 +482,7 @@ contract('SecurityToken', accounts => {
                     fromTime,
                     toTime,
                     expiryTime,
+                    false,
                     {
                         from: token_owner,
                         gas: 6000000
@@ -627,6 +630,7 @@ contract('SecurityToken', accounts => {
                     fromTime,
                     toTime,
                     expiryTime,
+                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -655,6 +659,7 @@ contract('SecurityToken', accounts => {
                     fromTime,
                     toTime,
                     expiryTime,
+                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -691,6 +696,7 @@ contract('SecurityToken', accounts => {
                     fromTime,
                     toTime,
                     expiryTime,
+                    false,
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -731,6 +737,7 @@ contract('SecurityToken', accounts => {
                     0,
                     0,
                     0,
+                    false,
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -769,6 +776,7 @@ contract('SecurityToken', accounts => {
                 fromTime,
                 toTime,
                 expiryTime,
+                false,
                 {
                     from: account_delegate,
                     gas: 6000000

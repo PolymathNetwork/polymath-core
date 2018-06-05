@@ -290,6 +290,8 @@ async function step_Wallet_Issuance(){
     else {
     let mintWallet =  readlineSync.question('Add the address that will hold the issued tokens to the whitelist ('+Issuer+'): ');
     if(mintWallet == "") mintWallet = Issuer;
+    let isRestrictedToBuy = readlineSync.question(`Address '(${mintWallet})' is restricted to buy tokens from the STO (true): `);
+    if(isRestrictedToBuy == "") isRestrictedToBuy = true;
 
     try{
 
@@ -301,7 +303,7 @@ async function step_Wallet_Issuance(){
       });
 
       let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
-      await generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000)).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+      await generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), isRestrictedToBuy).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Adding wallet to whitelist. Please wait...

@@ -431,6 +431,7 @@ contract('CappedSTO', accounts => {
                 fromTime,
                 toTime,
                 expiryTime,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -569,6 +570,7 @@ contract('CappedSTO', accounts => {
                 fromTime,
                 toTime + duration.days(20),
                 expiryTime,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -768,6 +770,7 @@ contract('CappedSTO', accounts => {
                     P_fromTime,
                     P_toTime,
                     P_expiryTime,
+                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -829,6 +832,7 @@ contract('CappedSTO', accounts => {
                     P_fromTime,
                     P_toTime + duration.days(20),
                     P_expiryTime,
+                    false,
                     {
                         from: account_issuer,
                         gas: 500000

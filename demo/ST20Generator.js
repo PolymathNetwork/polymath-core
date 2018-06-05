@@ -1,7 +1,9 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
-
 var contracts = require("./helpers/contract_addresses");
+var chalk = require('chalk');
+const shell = require('shelljs');
+
 let tickerRegistryAddress = contracts.tickerRegistryAddress();
 let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
 let cappedSTOFactoryAddress = contracts.cappedSTOFactoryAddress();
@@ -58,6 +60,7 @@ let tickerRegistry;
 let securityTokenRegistry;
 let securityToken;
 let cappedSTO;
+
 
 // App flow
 let index_mainmenu;
@@ -279,7 +282,12 @@ async function step_Wallet_Issuance(){
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Minting for Issuer");
 
-    console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control");
+    console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control or you can trasfer to affiliates");
+    let isaffiliate =  readlineSync.question('Press'+ chalk.green(` "Y" `) + 'if you have list of affiliates addresses with you otherwise hit' + chalk.green(' Enter ') + 'and get the minted tokens to a particular address: ');
+    
+    if (isaffiliate == "Y" || isaffiliate == "y") 
+        await multi_mint_tokens();
+    else {
     let mintWallet =  readlineSync.question('Add the address that will hold the issued tokens to the whitelist ('+Issuer+'): ');
     if(mintWallet == "") mintWallet = Issuer;
 
@@ -334,9 +342,25 @@ async function step_Wallet_Issuance(){
       console.log(err.message);
       return;
     }
+   }
   }
 
   await step_STO_Launch();
+}
+
+
+async function multi_mint_tokens() {
+
+  //await whitelist.startWhitelisting(tokenSymbol);
+  shell.exec(`${__dirname}/minting.sh Whitelist ${tokenSymbol} 75`);
+
+  console.log(chalk.green(`\nCongrats! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
+  console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
+  
+  shell.exec(`${__dirname}/minting.sh Multimint ${tokenSymbol} 75`);
+
+  console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transfered to token holders`));
+
 }
 
 

@@ -10,6 +10,8 @@ let tickerRegistryAddress = contracts.tickerRegistryAddress();
 let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
 let cappedSTOFactoryAddress = contracts.cappedSTOFactoryAddress();
 
+let CALLED_BY = "";
+let symbol;
 let tickerRegistryABI;
 let securityTokenRegistryABI;
 let securityTokenABI;
@@ -43,6 +45,7 @@ let BATCH_SIZE = process.argv.slice(2)[1]; //batch size
 if (!BATCH_SIZE) BATCH_SIZE = 75;
 
 
+
 /////////////////////////GLOBAL VARS//////////////////////////////////////////
 
 //distribData is an array of batches. i.e. if there are 200 entries, with batch sizes of 75, we get [[75],[75],[50]]
@@ -65,6 +68,7 @@ let DEFAULT_GAS_PRICE = 10000000000;
 
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
+
 startScript();
 
 async function startScript() {

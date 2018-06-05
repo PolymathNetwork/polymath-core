@@ -9,6 +9,7 @@ contract ISecurityToken is IST20, Ownable {
     uint8 public constant PERMISSIONMANAGER_KEY = 1;
     uint8 public constant TRANSFERMANAGER_KEY = 2;
     uint8 public constant STO_KEY = 3;
+    uint8 public constant CHECKPOINT_KEY = 4;
     uint256 public granularity;
     // Total number of non-zero token holders
     uint256 public investorCount;
@@ -31,4 +32,23 @@ contract ISecurityToken is IST20, Ownable {
      * @param _name is the name of the module within the chosen type
      */
     function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address, bool);
+
+    /**
+     * @dev Queries totalSupply as of a defined checkpoint
+     * @param _checkpointId Checkpoint ID to query as of
+     */
+    function totalSupplyAt(uint256 _checkpointId) public view returns(uint256);
+
+    /**
+     * @dev Queries balances as of a defined checkpoint
+     * @param _investor Investor to query balance for
+     * @param _checkpointId Checkpoint ID to query as of
+     */
+    function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256);
+
+    /**
+     * @dev Creates a checkpoint that can be used to query historical balances / totalSuppy
+     */
+    function createCheckpoint() public returns(uint256);
+
 }

@@ -407,7 +407,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
-            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, validFrom, validTo, token_owner_pk);
+            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, false, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -444,7 +444,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime() - 100;
             let validTo = latestTime()  - 1;
-            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime, validFrom, validTo, token_owner_pk);
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime, false, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -482,7 +482,7 @@ contract('GeneralTransferManager', accounts => {
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
 
-            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, validFrom, validTo, '2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200');
+            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, false, validFrom, validTo, '2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200');
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -519,7 +519,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
-            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime + duration.days(100), validFrom, validTo, token_owner_pk);
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime + duration.days(100), false, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;

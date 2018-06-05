@@ -276,7 +276,7 @@ contract('GeneralTransferManager', accounts => {
                         [(latestTime() + duration.days(30)),(latestTime() + duration.days(30))],
                         [(latestTime() + duration.days(90)),(latestTime() + duration.days(90))],
                         [(latestTime() + duration.years(1)),(latestTime() + duration.years(1))],
-                        [true, true],
+                        [false, false],
                         {
                             from: account_issuer,
                             gas: 6000000
@@ -340,7 +340,7 @@ contract('GeneralTransferManager', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                false,
+                true,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -407,7 +407,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
-            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, false, validFrom, validTo, token_owner_pk);
+            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, true, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -420,7 +420,7 @@ contract('GeneralTransferManager', accounts => {
                   fromTime,
                   toTime,
                   expiryTime,
-                  false,
+                  true,
                   validFrom,
                   validTo,
                   v,
@@ -444,7 +444,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime() - 100;
             let validTo = latestTime()  - 1;
-            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime, false, validFrom, validTo, token_owner_pk);
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime, true, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -457,7 +457,7 @@ contract('GeneralTransferManager', accounts => {
                   fromTime,
                   toTime,
                   expiryTime,
-                  false,
+                  true,
                   validFrom,
                   validTo,
                   v,
@@ -482,7 +482,7 @@ contract('GeneralTransferManager', accounts => {
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
 
-            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, false, validFrom, validTo, '2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200');
+            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, true, validFrom, validTo, '2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200');
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -495,7 +495,7 @@ contract('GeneralTransferManager', accounts => {
                   fromTime,
                   toTime,
                   expiryTime,
-                  false,
+                  true,
                   validFrom,
                   validTo,
                   v,
@@ -519,7 +519,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
-            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime + duration.days(100), false, validFrom, validTo, token_owner_pk);
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime + duration.days(100), true, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -529,7 +529,7 @@ contract('GeneralTransferManager', accounts => {
                 fromTime,
                 toTime,
                 expiryTime + duration.days(100),
-                false,
+                true,
                 validFrom,
                 validTo,
                 v,
@@ -635,7 +635,7 @@ contract('GeneralTransferManager', accounts => {
                     [fromTime, fromTime],
                     [toTime, toTime],
                     [expiryTime, expiryTime],
-                    [false, false],
+                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -660,7 +660,7 @@ contract('GeneralTransferManager', accounts => {
                     [fromTime],
                     [toTime, toTime],
                     [expiryTime, expiryTime],
-                    [false, false],
+                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -685,7 +685,7 @@ contract('GeneralTransferManager', accounts => {
                     [fromTime, fromTime],
                     [toTime],
                     [expiryTime, expiryTime],
-                    [false, false],
+                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -710,7 +710,7 @@ contract('GeneralTransferManager', accounts => {
                     [fromTime, fromTime],
                     [toTime, toTime],
                     [expiryTime],
-                    [false, false],
+                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -724,7 +724,7 @@ contract('GeneralTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in adding the investors in whitelist -- array length mismatch", async() => {
+        it("Should successfully add the investors in whitelist", async() => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
@@ -734,7 +734,7 @@ contract('GeneralTransferManager', accounts => {
                 [fromTime, fromTime],
                 [toTime, toTime],
                 [expiryTime, expiryTime],
-                [false, false],
+                [true, true],
                 {
                     from: token_owner,
                     gas: 6000000

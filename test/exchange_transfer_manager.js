@@ -309,7 +309,7 @@ contract('ExchangeTransferManager', accounts => {
                 fromTime,
                 toTime,
                 expiryTime,
-                false,
+                true,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -361,7 +361,7 @@ contract('ExchangeTransferManager', accounts => {
               fromTime,
               toTime,
               expiryTime,
-              false,
+              true,
               {
                   from: account_issuer,
                   gas: 6000000

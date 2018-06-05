@@ -90,7 +90,7 @@ contract('Checkpoints', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -100,7 +100,7 @@ contract('Checkpoints', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, {from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -177,7 +177,7 @@ contract('Checkpoints', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 60000000 });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -223,6 +223,7 @@ contract('Checkpoints', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -247,6 +248,7 @@ contract('Checkpoints', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -270,6 +272,7 @@ contract('Checkpoints', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000

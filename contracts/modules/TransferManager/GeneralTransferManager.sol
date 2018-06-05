@@ -32,7 +32,7 @@ contract GeneralTransferManager is ITransferManager {
         uint256 fromTime;
         uint256 toTime;
         uint256 expiryTime;
-        bool restrictedToBuy;
+        bool canBuyFromSTO;
     }
 
     // An address can only send / receive tokens once their corresponding uint256 > block.number
@@ -68,7 +68,7 @@ contract GeneralTransferManager is ITransferManager {
         uint256 _fromTime,
         uint256 _toTime,
         uint256 _expiryTime,
-        bool _restrictedToBuy
+        bool _canBuyFromSTO
     );
 
     /**
@@ -173,7 +173,7 @@ contract GeneralTransferManager is ITransferManager {
                 return (onWhitelist(_to) && onWhitelist(_from)) ? Result.VALID : Result.NA;
             }
             if (allowAllWhitelistIssuances && _from == issuanceAddress) {
-                if (whitelist[_to].restrictedToBuy && isSTOAttached()) {
+                if (!whitelist[_to].canBuyFromSTO && isSTOAttached()) {
                     return Result.NA;
                 }
                 return onWhitelist(_to) ? Result.VALID : Result.NA;
@@ -191,12 +191,12 @@ contract GeneralTransferManager is ITransferManager {
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
-    * @param _restricted is used to know whether the investor is restricted investor or not.
+    * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
     */
-    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _restricted) public withPerm(WHITELIST) {
+    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO) public withPerm(WHITELIST) {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
-        whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _restricted);
-        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _restricted);
+        whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**
@@ -205,21 +205,21 @@ contract GeneralTransferManager is ITransferManager {
     * @param _fromTimes An array of the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTimes An array of the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTimes An array of the moment till investors KYC will be validated. After that investor need to do re-KYC
-    * @param _restricted An array of boolean values
+    * @param _canBuyFromSTO An array of boolean values
     */
     function modifyWhitelistMulti(
         address[] _investors,
         uint256[] _fromTimes,
         uint256[] _toTimes,
         uint256[] _expiryTimes,
-        bool[] _restricted
+        bool[] _canBuyFromSTO
     ) public withPerm(WHITELIST) {
         require(_investors.length == _fromTimes.length, "Mismatched input lengths");
         require(_fromTimes.length == _toTimes.length, "Mismatched input lengths");
         require(_toTimes.length == _expiryTimes.length, "Mismatched input lengths");
-        require(_restricted.length == _toTimes.length, "Mismatched input length");
+        require(_canBuyFromSTO.length == _toTimes.length, "Mismatched input length");
         for (uint256 i = 0; i < _investors.length; i++) {
-            modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _restricted[i]);
+            modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i]);
         }
     }
 
@@ -229,7 +229,7 @@ contract GeneralTransferManager is ITransferManager {
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
-    * @param _restricted is used to know whether the investor is restricted investor or not.
+    * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
     * @param _validFrom is the time that this signature is valid from
     * @param _validTo is the time that this signature is valid until
     * @param _v issuer signature
@@ -241,7 +241,7 @@ contract GeneralTransferManager is ITransferManager {
         uint256 _fromTime,
         uint256 _toTime,
         uint256 _expiryTime,
-        bool _restricted,
+        bool _canBuyFromSTO,
         uint256 _validFrom,
         uint256 _validTo,
         uint8 _v,
@@ -250,11 +250,11 @@ contract GeneralTransferManager is ITransferManager {
     ) public {
         require(_validFrom <= now, "ValidFrom is too early");
         require(_validTo >= now, "ValidTo is too late");
-        bytes32 hash = keccak256(this, _investor, _fromTime, _toTime, _expiryTime, _restricted, _validFrom, _validTo);
+        bytes32 hash = keccak256(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo);
         checkSig(hash, _v, _r, _s);
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
-        whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _restricted);
-        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _restricted);
+        whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**

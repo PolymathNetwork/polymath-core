@@ -49,6 +49,8 @@ contract SecurityToken is ISecurityToken {
 
     address public moduleRegistry;
 
+    bool public mintingFinished = false;
+
     mapping (bytes4 => bool) transferFunctions;
 
     // Module list should be order agnostic!
@@ -79,6 +81,8 @@ contract SecurityToken is ISecurityToken {
     event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
     // Emit when new checkpoint created
     event LogCheckpointCreated(uint256 _checkpointId, uint256 _timestamp);
+    // Emit when the minting get finished
+    event LogFinishedMinting(uint256 _timestamp);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
@@ -89,6 +93,7 @@ contract SecurityToken is ISecurityToken {
         }
         if (_fallback && !isModuleType) {
             require(msg.sender == owner, "Sender is not owner");
+            require(!mintingFinished);
         } else {
             require(isModuleType, "Sender is not correct module type");
         }
@@ -414,6 +419,14 @@ contract SecurityToken is ISecurityToken {
             return success;
       }
       return false;
+    }
+
+    /**
+     * @dev used to prevent forever minting only be called by the owner
+     */
+    function finishMinting() public onlyOwner {
+        mintingFinished = true;
+        LogFinishedMinting(now);
     }
 
     /**

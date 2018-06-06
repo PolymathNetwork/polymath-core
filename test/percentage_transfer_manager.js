@@ -254,6 +254,7 @@ contract('PercentageTransferManager', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
+                true,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -281,6 +282,7 @@ contract('PercentageTransferManager', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
+                true,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -316,6 +318,7 @@ contract('PercentageTransferManager', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
+                true,
                 {
                     from: account_issuer,
                     gas: 6000000

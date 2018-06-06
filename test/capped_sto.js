@@ -431,6 +431,7 @@ contract('CappedSTO', accounts => {
                 fromTime,
                 toTime,
                 expiryTime,
+                true,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -569,6 +570,7 @@ contract('CappedSTO', accounts => {
                 fromTime,
                 toTime + duration.days(20),
                 expiryTime,
+                true,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -666,7 +668,7 @@ contract('CappedSTO', accounts => {
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
                 P_startTime = endTime + duration.days(2);
                 P_endTime = P_startTime + duration.days(30);
-                let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_tokenDetails, false, { from: token_owner, gas:6000000 });
+                let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_tokenDetails, false, { from: token_owner, gas:85000000 });
 
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[1].args._ticker, P_symbol, "SecurityToken doesn't get deployed");
@@ -768,6 +770,7 @@ contract('CappedSTO', accounts => {
                     P_fromTime,
                     P_toTime,
                     P_expiryTime,
+                    true,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -829,6 +832,7 @@ contract('CappedSTO', accounts => {
                     P_fromTime,
                     P_toTime + duration.days(20),
                     P_expiryTime,
+                    true,
                     {
                         from: account_issuer,
                         gas: 500000

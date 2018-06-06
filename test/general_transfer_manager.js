@@ -35,6 +35,9 @@ contract('GeneralTransferManager', accounts => {
     let account_investor3;
     let account_investor4;
     let account_delegate;
+    let account_affiliates1;
+    let account_affiliates2;
+
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime();
@@ -107,6 +110,9 @@ contract('GeneralTransferManager', accounts => {
         account_investor2 = accounts[9];
         account_delegate = accounts[7];
         account_investor4 = accounts[6];
+
+        account_affiliates1 = accounts[3];
+        account_affiliates2 = accounts[4];
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
@@ -264,6 +270,27 @@ contract('GeneralTransferManager', accounts => {
 
         });
 
+        it("Should whitelist the affiliates before the STO attached", async() => {
+            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
+                        [account_affiliates1, account_affiliates2],
+                        [(latestTime() + duration.days(30)),(latestTime() + duration.days(30))],
+                        [(latestTime() + duration.days(90)),(latestTime() + duration.days(90))],
+                        [(latestTime() + duration.years(1)),(latestTime() + duration.years(1))],
+                        [false, false],
+                        {
+                            from: account_issuer,
+                            gas: 6000000
+                        });
+            assert.equal(tx.logs[0].args._investor, account_affiliates1);
+            assert.equal(tx.logs[1].args._investor, account_affiliates2);            
+        });
+
+        it("Should mint the tokens to the affiliates", async () => {
+            await I_SecurityToken.mintMulti([account_affiliates1, account_affiliates2], [(100 * Math.pow(10, 18)), (100 * Math.pow(10, 18))], { from: account_issuer, gas:6000000 });
+            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates1)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
+            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates2)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
+        });
+
         it("Should successfully attach the STO factory with the security token", async () => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, someString]);
             const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner });
@@ -313,6 +340,7 @@ contract('GeneralTransferManager', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
+                true,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -330,6 +358,18 @@ contract('GeneralTransferManager', accounts => {
                 (await I_SecurityToken.balanceOf(account_investor1)).toNumber(),
                 web3.utils.toWei('1', 'ether')
             );
+        });
+
+        it("Should fail in buying the token from the STO", async() => {
+            let errorThrown = false;
+            try {
+                await I_DummySTO.generateTokens(account_affiliates1, web3.utils.toWei('1', 'ether'), { from: token_owner });
+            } catch(error) {
+                console.log(`Failed because investor is restricted investor`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
         });
 
         it("Should fail in investing the money in STO -- expiry limit reached", async() => {
@@ -367,7 +407,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
-            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, validFrom, validTo, token_owner_pk);
+            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, true, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -380,6 +420,7 @@ contract('GeneralTransferManager', accounts => {
                   fromTime,
                   toTime,
                   expiryTime,
+                  true,
                   validFrom,
                   validTo,
                   v,
@@ -403,7 +444,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime() - 100;
             let validTo = latestTime()  - 1;
-            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime, validFrom, validTo, token_owner_pk);
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime, true, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -416,6 +457,7 @@ contract('GeneralTransferManager', accounts => {
                   fromTime,
                   toTime,
                   expiryTime,
+                  true,
                   validFrom,
                   validTo,
                   v,
@@ -440,7 +482,7 @@ contract('GeneralTransferManager', accounts => {
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
 
-            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, validFrom, validTo, '2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200');
+            const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, true, validFrom, validTo, '2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200');
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -453,6 +495,7 @@ contract('GeneralTransferManager', accounts => {
                   fromTime,
                   toTime,
                   expiryTime,
+                  true,
                   validFrom,
                   validTo,
                   v,
@@ -476,7 +519,7 @@ contract('GeneralTransferManager', accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + (60 * 60);
-            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime + duration.days(100), validFrom, validTo, token_owner_pk);
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime + duration.days(100), true, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
@@ -486,6 +529,7 @@ contract('GeneralTransferManager', accounts => {
                 fromTime,
                 toTime,
                 expiryTime + duration.days(100),
+                true,
                 validFrom,
                 validTo,
                 v,
@@ -591,6 +635,7 @@ contract('GeneralTransferManager', accounts => {
                     [fromTime, fromTime],
                     [toTime, toTime],
                     [expiryTime, expiryTime],
+                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -615,6 +660,7 @@ contract('GeneralTransferManager', accounts => {
                     [fromTime],
                     [toTime, toTime],
                     [expiryTime, expiryTime],
+                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -639,6 +685,7 @@ contract('GeneralTransferManager', accounts => {
                     [fromTime, fromTime],
                     [toTime],
                     [expiryTime, expiryTime],
+                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -663,6 +710,7 @@ contract('GeneralTransferManager', accounts => {
                     [fromTime, fromTime],
                     [toTime, toTime],
                     [expiryTime],
+                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -676,7 +724,7 @@ contract('GeneralTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in adding the investors in whitelist -- array length mismatch", async() => {
+        it("Should successfully add the investors in whitelist", async() => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
@@ -686,6 +734,7 @@ contract('GeneralTransferManager', accounts => {
                 [fromTime, fromTime],
                 [toTime, toTime],
                 [expiryTime, expiryTime],
+                [true, true],
                 {
                     from: token_owner,
                     gas: 6000000

@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 * ManualApprovalTransferManager - allows approval or blocking of explicit address pairs for transfers.
 * Module Factories now allow their owner to set 3 types of fees: Setup fee, Usage fee, Monthly fee.
 * Added Checkpoint feature to token. This allows the issuer to create snapshots of the token's balances and totalSupply to be used for casting votes or distributing dividends. Created CLI to demo this feature.
+* Added multi-mint feature.
 
 
 ## Changed

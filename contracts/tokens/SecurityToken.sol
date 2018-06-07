@@ -49,6 +49,8 @@ contract SecurityToken is ISecurityToken {
 
     address public moduleRegistry;
 
+    bool public mintingFinished = false;
+
     mapping (bytes4 => bool) transferFunctions;
 
     // Module list should be order agnostic!
@@ -79,6 +81,8 @@ contract SecurityToken is ISecurityToken {
     event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
     // Emit when new checkpoint created
     event LogCheckpointCreated(uint256 _checkpointId, uint256 _timestamp);
+    // Emit when the minting get finished
+    event LogFinishedMinting(uint256 _timestamp);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
@@ -417,6 +421,14 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
+     * @dev used to prevent forever minting only be called by the owner
+     */
+    function finishMinting() public onlyOwner {
+        mintingFinished = true;
+        emit LogFinishedMinting(now);
+    }
+
+    /**
      * @dev mints new tokens and assigns them to the target _investor.
      * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
      * @param _investor Address to whom the minted tokens will be dilivered
@@ -424,6 +436,7 @@ contract SecurityToken is ISecurityToken {
      * @return success
      */
     function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) returns (bool success) {
+        require(!mintingFinished, "Minting is finished, not able to mint additional tokens");
         adjustInvestorCount(address(0), _investor, _amount);
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
         adjustBalanceCheckpoints(_investor);

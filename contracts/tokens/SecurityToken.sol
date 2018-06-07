@@ -93,7 +93,6 @@ contract SecurityToken is ISecurityToken {
         }
         if (_fallback && !isModuleType) {
             require(msg.sender == owner, "Sender is not owner");
-            require(!mintingFinished);
         } else {
             require(isModuleType, "Sender is not correct module type");
         }
@@ -426,7 +425,7 @@ contract SecurityToken is ISecurityToken {
      */
     function finishMinting() public onlyOwner {
         mintingFinished = true;
-        LogFinishedMinting(now);
+        emit LogFinishedMinting(now);
     }
 
     /**
@@ -437,6 +436,8 @@ contract SecurityToken is ISecurityToken {
      * @return success
      */
     function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) returns (bool success) {
+        if (msg.sender == owner)
+            require(!mintingFinished);
         adjustInvestorCount(address(0), _investor, _amount);
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
         adjustBalanceCheckpoints(_investor);

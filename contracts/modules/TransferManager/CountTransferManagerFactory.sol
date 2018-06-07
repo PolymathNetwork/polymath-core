@@ -26,6 +26,7 @@ contract CountTransferManagerFactory is IModuleFactory {
         CountTransferManager countTransferManager = new CountTransferManager(msg.sender, address(polyToken));
         require(getSig(_data) == countTransferManager.getInitFunction(), "Provided data is not valid");
         require(address(countTransferManager).call(_data), "Un-successfull call");
+        emit LogGenerateModuleFromFactory(address(countTransferManager), getName(), address(this), msg.sender, now);
         return address(countTransferManager);
 
     }

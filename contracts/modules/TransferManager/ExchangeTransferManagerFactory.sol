@@ -3,6 +3,12 @@ pragma solidity ^0.4.23;
 import "./ExchangeTransferManager.sol";
 import "../../interfaces/IModuleFactory.sol";
 
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//// This Factory is deprecated and Polymath is not anymore supporting the use of ExchangeTransferManagerFactory to generate        /////
+//// ExchangeTransferManager contracts any more and all Exchanges addresses could be whitelisted in GeneralTransferManager          /////
+//// whitelist as any other user.                                                                                                   /////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 contract ExchangeTransferManagerFactory is IModuleFactory {
 
@@ -27,6 +33,7 @@ contract ExchangeTransferManagerFactory is IModuleFactory {
         ExchangeTransferManager exchangeTransferManager = new ExchangeTransferManager(msg.sender, address(polyToken));
         require(getSig(_data) == exchangeTransferManager.getInitFunction(), "Provided data is not valid");
         require(address(exchangeTransferManager).call(_data), "Un-successfull call");
+        emit LogGenerateModuleFromFactory(address(exchangeTransferManager), getName(), address(this), msg.sender, now);
         return address(exchangeTransferManager);
 
     }

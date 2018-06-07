@@ -436,7 +436,7 @@ contract SecurityToken is ISecurityToken {
      * @return success
      */
     function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) returns (bool success) {
-        require(!mintingFinished, "Minting is finished not able to mint more");
+        require(!mintingFinished, "Minting is finished, not able to mint additional tokens");
         adjustInvestorCount(address(0), _investor, _amount);
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
         adjustBalanceCheckpoints(_investor);

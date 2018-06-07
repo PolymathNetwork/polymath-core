@@ -266,6 +266,7 @@ contract('CountTransferManager', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
+                true,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -293,6 +294,7 @@ contract('CountTransferManager', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
+                true,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -316,6 +318,7 @@ contract('CountTransferManager', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
+                true,
                 {
                     from: account_issuer,
                     gas: 500000

@@ -303,6 +303,7 @@ contract('Issuance', accounts => {
                     fromTime + duration.days(70),
                     toTime + duration.days(90),
                     expiryTime + duration.days(50),
+                    true,
                     {
                         from: account_polymath,
                         gas: 500000
@@ -384,6 +385,7 @@ contract('Issuance', accounts => {
                     fromTime,
                     toTime,
                     expiryTime,
+                    true,
                     {
                         from: account_delegate,
                         gas: 6000000

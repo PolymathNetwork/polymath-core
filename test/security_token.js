@@ -363,6 +363,7 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should finish minting & rstrict the further minting", async() => {
+            let id = await takeSnapshot();
             await I_SecurityToken.finishMinting({from: account_issuer});
             let errorThrown = false;
             try {
@@ -373,6 +374,7 @@ contract('SecurityToken', accounts => {
                 ensureException(error);
             }
             assert.ok(errorThrown, message);
+            await revertToSnapshot(id);
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {

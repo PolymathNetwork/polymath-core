@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 * Further minting is forbidden by adding one additional check for `mintingFinished` flag. Issuer can stop minting by calling the `finishMinting()` function. 
 * Issuer can prevent addresses from participating in the STO. To facilitate this, `_canBuyFromSTO` has been added to modifyWhitelist function.
 * Added multi-mint feature.
+* Event `LogGenerateModuleFromFactory` emitted at the level of ModuleFacotry to log the creation of the module using the respective module factory. 
 
 
 

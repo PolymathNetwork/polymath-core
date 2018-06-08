@@ -350,6 +350,33 @@ contract('SecurityToken', accounts => {
             assert.equal(balance2.dividedBy(new BigNumber(10).pow(18)).toNumber(), 110);
         });
 
+        it("Should finish the minting -- fail because msg.sender is not the owner", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.finishMinting({from: account_temp});
+            } catch(error) {
+                console.log(`Tx. get failed because finishMinting only be called by the owner of the SecurityToken`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should finish minting & rstrict the further minting", async() => {
+            let id = await takeSnapshot();
+            await I_SecurityToken.finishMinting({from: account_issuer});
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
+            } catch(error) {
+                console.log(`Tx. get failed because minting is finished`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+            await revertToSnapshot(id);
+        });
+
         it("Should successfully attach the STO factory with the security token", async () => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);

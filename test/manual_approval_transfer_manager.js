@@ -44,7 +44,6 @@ contract('ManualApprovalTransferManager', accounts => {
     let I_GeneralPermissionManager;
     let I_ManualApprovalTransferManager;
     let I_GeneralTransferManager;
-    let I_ExchangeTransferManager;
     let I_ModuleRegistry;
     let I_TickerRegistry;
     let I_SecurityTokenRegistry;

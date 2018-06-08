@@ -13,7 +13,6 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const ExchangeTransferManager = artifacts.require('./ExchangeTransferManager');
 const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 import {signData} from './helpers/signData';
@@ -45,10 +44,8 @@ contract('GeneralPermissionManager', accounts => {
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
-    let I_ExchangeTransferManagerFactory;
     let I_GeneralPermissionManager;
     let I_GeneralTransferManager;
-    let I_ExchangeTransferManager;
     let I_ModuleRegistry;
     let I_TickerRegistry;
     let I_SecurityTokenRegistry;

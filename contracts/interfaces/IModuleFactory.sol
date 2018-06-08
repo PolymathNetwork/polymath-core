@@ -12,9 +12,10 @@ contract IModuleFactory is Ownable {
     uint256 public usageCost;
     uint256 public monthlySubscriptionCost;
 
-    event LogchangeFactorySetupFee(uint256 _oldSetupcost, uint256 _newSetupCost, address _moduleFactory);
-    event LogchangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
-    event LogchangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
+    event LogChangeFactorySetupFee(uint256 _oldSetupcost, uint256 _newSetupCost, address _moduleFactory);
+    event LogChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
+    event LogChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
+    event LogGenerateModuleFromFactory(address _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address _creator, uint256 _timestamp);
 
     /**
      * @dev Constructor
@@ -75,7 +76,7 @@ contract IModuleFactory is Ownable {
     function changeFactorySetupFee(uint256 _newSetupCost) public onlyOwner {
         uint256 _oldSetupcost = setupCost;
         setupCost = _newSetupCost;
-        emit LogchangeFactorySetupFee(_oldSetupcost, setupCost, address(this));
+        emit LogChangeFactorySetupFee(_oldSetupcost, setupCost, address(this));
     }
 
     /**
@@ -85,7 +86,7 @@ contract IModuleFactory is Ownable {
     function changeFactoryUsageFee(uint256 _newUsageCost) public onlyOwner {
         uint256 _oldUsageCost = usageCost;
         usageCost = _newUsageCost;
-        emit LogchangeFactoryUsageFee(_oldUsageCost, usageCost, address(this));
+        emit LogChangeFactoryUsageFee(_oldUsageCost, usageCost, address(this));
     }
 
     /**
@@ -95,7 +96,7 @@ contract IModuleFactory is Ownable {
     function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) public onlyOwner {
         uint256 _oldSubscriptionCost = monthlySubscriptionCost;
         monthlySubscriptionCost = _newSubscriptionCost;
-        emit LogchangeFactorySubscriptionFee(_oldSubscriptionCost, monthlySubscriptionCost, address(this));
+        emit LogChangeFactorySubscriptionFee(_oldSubscriptionCost, monthlySubscriptionCost, address(this));
     }
 
 }

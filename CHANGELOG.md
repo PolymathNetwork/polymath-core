@@ -24,6 +24,10 @@ All notable changes to this project will be documented in this file.
 * Burning tokens now respects TransferManagers and investorCount.  
 * Updated CLI with MultiMint process.  
 
+## Removed
+
+* `ExchangeTransferManagerFactory` and `ExchangeTransferManager` is removed from repository.
+
 # v1.1.0
 
 [__1.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __18-05-18__

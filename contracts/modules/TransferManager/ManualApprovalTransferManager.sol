@@ -103,7 +103,7 @@ contract ManualApprovalTransferManager is ITransferManager {
                 if (_isTransfer) {
                     manualApprovals[_from][_to].allowance = manualApprovals[_from][_to].allowance.sub(_amount);
                 }
-                return Result.VALID;
+                return Result.FORCE_VALID;
             }
         }
         return Result.NA;

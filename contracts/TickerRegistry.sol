@@ -8,6 +8,7 @@ pragma solidity ^0.4.23;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./interfaces/ITickerRegistry.sol";
 import "./helpers/Util.sol";
 
@@ -25,6 +26,9 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
 
     // SecuirtyToken Registry contract address
     address public strAddress;
+    
+    ERC20 public polyToken;
+    uint256 public registrationCost = 500;
 
     // Details of the symbol that get registered with the polymath platform
     struct SymbolDetails {
@@ -58,6 +62,8 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      */
     function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) public {
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
+        if(registrationCost > 0)
+            require(polyToken.transferFrom(msg.sender, owner, registrationCost), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol), "Ticker is already reserved");
         registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, _swarmHash, false);
@@ -84,6 +90,14 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
         require(_stRegistry != address(0) && strAddress == address(0), "Token registry contract is already set or input argument is 0x");
         strAddress = _stRegistry;
         return true;
+    }
+    
+    function setRegistrationCost(uint256 _registrationCost) public onlyOwner {
+        registrationCost = _registrationCost;
+    }
+
+    function setPolyAddress(uint256 _polyAddress) public onlyOwner {
+        polyToken = ERC20(_polyAddress);
     }
 
     /**

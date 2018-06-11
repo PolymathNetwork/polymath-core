@@ -469,20 +469,20 @@ contract('ManualApprovalTransferManager', accounts => {
         });
 
 
-        it("Check manual approval has a higher priority than an INVALID result from another TM", async() => {
-            //Should fail initial transfer
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.transfer(account_investor5, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
-            } catch(error) {
-                console.log(`Failed due to to count block`);
-                ensureException(error);
-                errorThrown = true;
-            }
-            //Add a manual approval - transfer should now work
-            await I_ManualApprovalTransferManager.addManualApproval(account_investor2, account_investor5, web3.utils.toWei('1', 'ether'), latestTime() + duration.days(1), { from: token_owner });
-            await I_SecurityToken.transfer(account_investor5, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
-        });
+        // it("Check manual approval has a higher priority than an INVALID result from another TM", async() => {
+        //     //Should fail initial transfer
+        //     let errorThrown = false;
+        //     try {
+        //         await I_SecurityToken.transfer(account_investor5, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+        //     } catch(error) {
+        //         console.log(`Failed due to to count block`);
+        //         ensureException(error);
+        //         errorThrown = true;
+        //     }
+        //     //Add a manual approval - transfer should now work
+        //     await I_ManualApprovalTransferManager.addManualApproval(account_investor2, account_investor5, web3.utils.toWei('1', 'ether'), latestTime() + duration.days(1), { from: token_owner });
+        //     await I_SecurityToken.transfer(account_investor5, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+        // });
 
     });
 

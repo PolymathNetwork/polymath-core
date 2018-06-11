@@ -227,6 +227,20 @@ contract('SecurityTokenRegistry', accounts => {
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
+            // Set POLY contract address
+            await I_TickerRegistry.setPolyAddress(I_PolyFaucet.address, { from:account_polymath });
+
+            // Give POLY to token issuer and approve registry contract
+            await I_PolyFaucet.getTokens((10000 * Math.pow(10, 18)), token_owner);
+            assert.equal(
+                (await I_PolyFaucet.balanceOf(token_owner))
+                .dividedBy(new BigNumber(10).pow(18))
+                .toNumber(),
+                10000,
+                "Tokens are not transfered properly"
+            );
+            await I_PolyFaucet.approve(I_TickerRegistry.address, (10000 * Math.pow(10, 18)), { from: token_owner});
+
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
@@ -308,7 +322,7 @@ contract('SecurityTokenRegistry', accounts => {
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, "I am custom ST", "Swarm hash", {from: account_delegate});
             } catch(error) {
-                console.log(`Tx. get failed. Becuase msg.sender is not polymath account`);
+                console.log(`         tx revert -> msg.sender is not polymath account`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -320,7 +334,7 @@ contract('SecurityTokenRegistry', accounts => {
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", 0, "I am custom ST", "Swarm hash", {from: account_polymath});
             } catch(error) {
-                console.log(`Tx. get failed. Becuase security token address is 0`);
+                console.log(`         tx revert -> Security token address is 0`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -332,7 +346,7 @@ contract('SecurityTokenRegistry', accounts => {
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken("", "", account_temp, "I am custom ST", "Swarm hash", {from: account_polymath});
             } catch(error) {
-                console.log(`Tx. get failed. Becuase symbol and name of zero length`);
+                console.log(`         tx revert -> Symbol and name of zero length`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -344,7 +358,7 @@ contract('SecurityTokenRegistry', accounts => {
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, "I am custom ST", "Swarm hash", {from: account_delegate});
             } catch(error) {
-                console.log(`Tx. get failed. Becuase msg.sender is not polymath account`);
+                console.log(`         tx revert -> msg.sender is not polymath account`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -356,7 +370,7 @@ contract('SecurityTokenRegistry', accounts => {
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken(name2, symbol2, account_temp, "I am custom ST", "Swarm hash", {from: account_polymath});
             } catch(error) {
-                console.log(`Tx. get failed. Becuase Symbol is already reserved`);
+                console.log(`         tx revert -> Symbol is already reserved`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -456,7 +470,7 @@ contract('SecurityTokenRegistry', accounts => {
                         gas: 26000000
                     });
             } catch(error) {
-                console.log(`Tx. get failed. Becuase securityToken doesn't have sufficient POLY to pay`);
+                console.log(`         tx revert -> SecurityToken doesn't have sufficient POLY to pay`.grey);
                 errorThrown = true;
                 ensureException(error);
             }

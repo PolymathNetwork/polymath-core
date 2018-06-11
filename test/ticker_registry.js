@@ -336,13 +336,13 @@ contract('TickerRegistry', accounts => {
 
         it("Should successfully get the registration cost", async() => {
             let cost = await I_TickerRegistry.registrationCost.call();
-            assert.equal(cost,500)
+            assert.equal(cost, 250 * Math.pow(10, 18))
         });
 
         it("Should fail to set the registration cost if msg.sender not owner", async() => {
             let errorThrown = false;
             try {
-                let tx = await I_TickerRegistry.setRegistrationCost(400, {from: account_temp});
+                let tx = await I_TickerRegistry.setRegistrationCost(400 * Math.pow(10, 18), {from: account_temp});
             } catch(error) {
                 console.log(`         tx revert -> Failed to set registrationCost`.grey);
                 errorThrown = true;
@@ -352,9 +352,9 @@ contract('TickerRegistry', accounts => {
         });
 
         it("Should successfully set the registration cost", async() => {
-            await I_TickerRegistry.setRegistrationCost(400, {from: account_polymath});
+            await I_TickerRegistry.setRegistrationCost(400 * Math.pow(10, 18), {from: account_polymath});
             let cost = await I_TickerRegistry.registrationCost.call();
-            assert.equal(cost,400)
+            assert.equal(cost, 400 * Math.pow(10, 18))
         });
     });
 

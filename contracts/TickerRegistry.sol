@@ -28,7 +28,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     address public strAddress;
     
     ERC20 public polyToken;
-    uint256 public registrationCost = 500;
+    uint256 public registrationCost = 250 * 10 ** 18;
 
     // Details of the symbol that get registered with the polymath platform
     struct SymbolDetails {

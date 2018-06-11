@@ -883,6 +883,18 @@ contract('SecurityToken', accounts => {
 
            });
 
+           it("Should check that the list of investors is correct", async ()=> {
+               // Hardcode list of expected accounts based on transfers above
+               let investorsLength = await I_SecurityToken.getInvestorsLength();
+               let expectedAccounts = [account_affiliate1, account_affiliate2, account_investor1, account_temp];
+               assert.equal(investorsLength, 4);
+               console.log("Total Seen Investors: " + investorsLength);
+               for (let i = 0; i < investorsLength; i++) {
+                 let investor = await I_SecurityToken.investors(i);
+                 assert.equal(investor, expectedAccounts[i]);
+               }
+           });
+
            it("Should burn the tokens", async ()=> {
                 await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, {from : token_owner});
                 let currentInvestorCount = await I_SecurityToken.investorCount();
@@ -894,6 +906,19 @@ contract('SecurityToken', accounts => {
                 let newInvestorCount = await I_SecurityToken.investorCount();
                 // console.log(newInvestorCount.toString());
                 assert.equal(newInvestorCount.toNumber() + 1, currentInvestorCount.toNumber(), "Investor count drops by one");
+           });
+
+           it("Should prune investor length", async ()=> {
+                await I_SecurityToken.pruneInvestors(0, 10, {from: token_owner});
+                // Hardcode list of expected accounts based on transfers above
+                let investorsLength = (await I_SecurityToken.getInvestorsLength.call()).toNumber();
+                let expectedAccounts = [account_affiliate1, account_affiliate2, account_investor1];
+                assert.equal(investorsLength, 3);
+                console.log("Total Seen Investors: " + investorsLength);
+                for (let i = 0; i < investorsLength; i++) {
+                  let investor = await I_SecurityToken.investors(i);
+                  assert.equal(investor, expectedAccounts[i]);
+                }
            });
     });
 

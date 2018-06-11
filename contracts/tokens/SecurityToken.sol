@@ -1,6 +1,7 @@
 pragma solidity ^0.4.23;
 
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/math/Math.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
@@ -58,6 +59,9 @@ contract SecurityToken is ISecurityToken {
     mapping (uint8 => bool) public modulesLocked;
 
     uint8 public constant MAX_MODULES = 20;
+
+    address[] public investors;
+    mapping (address => bool) public investorListed;
 
     // Emit at the time when module get added
     event LogModuleAdded(
@@ -294,6 +298,35 @@ contract SecurityToken is ISecurityToken {
         if (_value == balanceOf(_from)) {
             investorCount = investorCount.sub(1);
         }
+        //Also adjust investor list
+        if (!investorListed[_to] && (_to != address(0))) {
+            investors.push(_to);
+            investorListed[_to] = true;
+        }
+
+    }
+
+    /**
+    * @dev removes addresses with zero balances from the investors list
+    * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
+    */
+    function pruneInvestors(uint256 _start, uint256 _iters) public onlyOwner {
+        for (uint256 i = _start; i < Math.min256(_start.add(_iters), investors.length); i++) {
+            if ((i < investors.length) && (balanceOf(investors[i]) == 0)) {
+                investorListed[investors[i]] = false;
+                investors[i] = investors[investors.length - 1];
+                investors.length--;
+            }
+        }
+    }
+
+    /**
+     * @dev gets length of investors array
+     * NB - this length may differ from investorCount if list has not been pruned of zero balance investors
+     * @return length
+     */
+    function getInvestorsLength() public view returns(uint256) {
+        return investors.length;
     }
 
     /**

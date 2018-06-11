@@ -7,22 +7,22 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 
+* Iterable list of investors available on-chain
 * STOs are pausable now. It is facilated by using the IPausable interface.
 * ManualApprovalTransferManager - allows approval or blocking of explicit address pairs for transfers.
 * Module Factories now allow their owner to set 3 types of fees: Setup fee, Usage fee, Monthly fee.
 * Added Checkpoint feature to token. This allows the issuer to create snapshots of the token's balances and totalSupply to be used for casting votes or distributing dividends. Created CLI to demo this feature.
-* Further minting is forbidden by adding one additional check for `mintingFinished` flag. Issuer can stop minting by calling the `finishMinting()` function. 
+* Further minting is forbidden by adding one additional check for `mintingFinished` flag. Issuer can stop minting by calling the `finishMinting()` function.
 * Issuer can prevent addresses from participating in the STO. To facilitate this, `_canBuyFromSTO` has been added to modifyWhitelist function.
 * Added multi-mint feature.
-* Event `LogGenerateModuleFromFactory` emitted at the level of ModuleFacotry to log the creation of the module using the respective module factory. 
-
-
+* Event `LogGenerateModuleFromFactory` emitted at the level of ModuleFacotry to log the creation of the module using the respective module factory.
 
 ## Changed
 
 * Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not.      
 * Burning tokens now respects TransferManagers and investorCount.  
 * Updated CLI with MultiMint process.  
+* Change the `setupCost` of `cappedSTOFactory` from `0 POLY` to `20K POLY`. 
 
 ## Removed
 

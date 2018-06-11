@@ -13,7 +13,6 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyToken = artifacts.require('./PolyToken.sol');
 const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 const TokenBurner = artifacts.require('./TokenBurner.sol');
 
@@ -86,6 +85,8 @@ contract('SecurityToken', accounts => {
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
     const fundRaiseType = 0;
+    const cappedSTOSetupCost= web3.utils.toWei("20000","ether");
+    const maxCost = cappedSTOSetupCost;
     const functionSignature = {
         name: 'configure',
         type: 'function',
@@ -164,7 +165,7 @@ contract('SecurityToken', accounts => {
 
         // STEP 4: Deploy the CappedSTOFactory
 
-        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: token_owner });
+        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, cappedSTOSetupCost, 0, 0, { from: token_owner });
 
         assert.notEqual(
             I_CappedSTOFactory.address.valueOf(),
@@ -381,16 +382,20 @@ contract('SecurityToken', accounts => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 60000000 });
-            assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
+            
+            await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
+            await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
+            
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 60000000 });
+            
+            assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name)
+                web3.utils.toAscii(tx.logs[3].args._name)
                 .replace(/\u0000/g, ''),
                 "CappedSTO",
                 "CappedSTOFactory module was not added"
             );
-            I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
+            I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
         });
     });
 
@@ -883,6 +888,18 @@ contract('SecurityToken', accounts => {
 
            });
 
+           it("Should check that the list of investors is correct", async ()=> {
+               // Hardcode list of expected accounts based on transfers above
+               let investorsLength = await I_SecurityToken.getInvestorsLength();
+               let expectedAccounts = [account_affiliate1, account_affiliate2, account_investor1, account_temp];
+               assert.equal(investorsLength, 4);
+               console.log("Total Seen Investors: " + investorsLength);
+               for (let i = 0; i < investorsLength; i++) {
+                 let investor = await I_SecurityToken.investors(i);
+                 assert.equal(investor, expectedAccounts[i]);
+               }
+           });
+
            it("Should burn the tokens", async ()=> {
                 await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, {from : token_owner});
                 let currentInvestorCount = await I_SecurityToken.investorCount();
@@ -894,6 +911,19 @@ contract('SecurityToken', accounts => {
                 let newInvestorCount = await I_SecurityToken.investorCount();
                 // console.log(newInvestorCount.toString());
                 assert.equal(newInvestorCount.toNumber() + 1, currentInvestorCount.toNumber(), "Investor count drops by one");
+           });
+
+           it("Should prune investor length", async ()=> {
+                await I_SecurityToken.pruneInvestors(0, 10, {from: token_owner});
+                // Hardcode list of expected accounts based on transfers above
+                let investorsLength = (await I_SecurityToken.getInvestorsLength.call()).toNumber();
+                let expectedAccounts = [account_affiliate1, account_affiliate2, account_investor1];
+                assert.equal(investorsLength, 3);
+                console.log("Total Seen Investors: " + investorsLength);
+                for (let i = 0; i < investorsLength; i++) {
+                  let investor = await I_SecurityToken.investors(i);
+                  assert.equal(investor, expectedAccounts[i]);
+                }
            });
     });
 

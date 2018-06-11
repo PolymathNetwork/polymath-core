@@ -8,6 +8,7 @@ const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
 const TickerRegistry = artifacts.require('./TickerRegistry.sol')
 const STVersionProxy001 = artifacts.require('./tokens/STVersionProxy001.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyToken.sol')
+const cappedSTOSetupCost = 20000 * Math.pow(10,18);   // 20K POLY fee
 let PolyToken
 
 const Web3 = require('web3')
@@ -110,7 +111,7 @@ module.exports = function (deployer, network, accounts) {
     return moduleRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount})
     }).then(() => {
       // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
-    return deployer.deploy(CappedSTOFactory, PolyToken, 0, 0, 0, {from: PolymathAccount})
+    return deployer.deploy(CappedSTOFactory, PolyToken, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})
     }).then(() => {
       // N) Register the CappedSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the CappedSTOFactory contract.

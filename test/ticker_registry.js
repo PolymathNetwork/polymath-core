@@ -125,7 +125,7 @@ contract('TickerRegistry', accounts => {
 
         // Step 6: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new({ from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, { from: account_polymath });
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -192,9 +192,6 @@ contract('TickerRegistry', accounts => {
 
         it("Should successfully register ticker", async() => {
 
-            // Set POLY contract address
-            await I_TickerRegistry.setPolyAddress(I_PolyToken.address, { from:account_polymath });
-
             // Give POLY to token issuer and approve registry contract
             await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
             assert.equal(
@@ -212,12 +209,12 @@ contract('TickerRegistry', accounts => {
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
 
-        it("Should fail to register ticker if registrationCost not paid", async() => {
+        it("Should fail to register ticker if registrationFee not paid", async() => {
             let errorThrown = false;
             try {
                 let tx = await I_TickerRegistry.registerTicker(account_temp, symbol, name, swarmHash, { from: account_temp });
             } catch(error) {
-                console.log(`         tx revert -> POLY allowance not provided for registration cost`.grey);
+                console.log(`         tx revert -> POLY allowance not provided for registration fee`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -331,30 +328,30 @@ contract('TickerRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
     });
-    
-    describe("Test cases for the setRegistrationCost", async() => {
 
-        it("Should successfully get the registration cost", async() => {
-            let cost = await I_TickerRegistry.registrationCost.call();
-            assert.equal(cost, 250 * Math.pow(10, 18))
+    describe("Test cases for the setRegistrationFee", async() => {
+
+        it("Should successfully get the registration fee", async() => {
+            let fee = await I_TickerRegistry.registrationFee.call();
+            assert.equal(fee, 250 * Math.pow(10, 18))
         });
 
-        it("Should fail to set the registration cost if msg.sender not owner", async() => {
+        it("Should fail to set the registration fee if msg.sender not owner", async() => {
             let errorThrown = false;
             try {
-                let tx = await I_TickerRegistry.setRegistrationCost(400 * Math.pow(10, 18), {from: account_temp});
+                let tx = await I_TickerRegistry.setRegistrationFee(400 * Math.pow(10, 18), {from: account_temp});
             } catch(error) {
-                console.log(`         tx revert -> Failed to set registrationCost`.grey);
+                console.log(`         tx revert -> Failed to set registrationFee`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
             assert.ok(errorThrown, message);
         });
 
-        it("Should successfully set the registration cost", async() => {
-            await I_TickerRegistry.setRegistrationCost(400 * Math.pow(10, 18), {from: account_polymath});
-            let cost = await I_TickerRegistry.registrationCost.call();
-            assert.equal(cost, 400 * Math.pow(10, 18))
+        it("Should successfully set the registration fee", async() => {
+            await I_TickerRegistry.setRegistrationFee(400 * Math.pow(10, 18), {from: account_polymath});
+            let fee = await I_TickerRegistry.registrationFee.call();
+            assert.equal(fee, 400 * Math.pow(10, 18))
         });
     });
 

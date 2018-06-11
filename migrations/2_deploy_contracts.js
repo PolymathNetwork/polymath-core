@@ -98,7 +98,7 @@ module.exports = function (deployer, network, accounts) {
     return deployer.deploy(STVersionProxy001, GeneralTransferManagerFactory.address, {from: PolymathAccount})
     }).then(() => {
       // I) Deploy the TickerRegistry Contract (It is used to store the information about the ticker)
-    return deployer.deploy(TickerRegistry, {from: PolymathAccount})
+    return deployer.deploy(TickerRegistry, PolyToken, {from: PolymathAccount})
     }).then(() => {
       // J) Deploy the SecurityTokenRegistry contract (Used to hold the deployed secuirtyToken details. It also act as the interface to deploy the SecurityToken)
     return deployer.deploy(SecurityTokenRegistry, PolyToken, ModuleRegistry.address, TickerRegistry.address, STVersionProxy001.address, {from: PolymathAccount})

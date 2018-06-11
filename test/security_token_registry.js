@@ -158,7 +158,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // Step 5: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new({ from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolyFaucet.address, { from: account_polymath });
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -227,9 +227,6 @@ contract('SecurityTokenRegistry', accounts => {
     describe("Generate SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
-            // Set POLY contract address
-            await I_TickerRegistry.setPolyAddress(I_PolyFaucet.address, { from:account_polymath });
-
             // Give POLY to token issuer and approve registry contract
             await I_PolyFaucet.getTokens((10000 * Math.pow(10, 18)), token_owner);
             assert.equal(

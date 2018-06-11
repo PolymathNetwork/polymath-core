@@ -74,6 +74,8 @@ contract('Issuance', accounts => {
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
     const fundRaiseType = 0;
+    const cappedSTOSetupCost= web3.utils.toWei("20000","ether");
+    const maxCost = cappedSTOSetupCost;
     const functionSignature = {
         name: 'configure',
         type: 'function',
@@ -270,7 +272,7 @@ contract('Issuance', accounts => {
              it("POLYMATH: Should successfully attach the STO factory with the security token", async () => {
                  // STEP 4: Deploy the CappedSTOFactory
 
-                I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: account_polymath });
+                I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, cappedSTOSetupCost, 0, 0, { from: account_polymath });
 
                 assert.notEqual(
                     I_CappedSTOFactory.address.valueOf(),
@@ -283,16 +285,19 @@ contract('Issuance', accounts => {
 
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [(latestTime() + duration.seconds(5000)), (latestTime() + duration.days(30)), cap, rate, fundRaiseType, account_fundsReceiver]);
 
-                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: account_polymath, gas: 2500000 });
+                await I_PolyFaucet.getTokens(cappedSTOSetupCost, account_polymath);
+                await I_PolyFaucet.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: account_polymath});
 
-                assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: account_polymath, gas: 2500000 });
+
+                assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
-                    web3.utils.toAscii(tx.logs[2].args._name)
+                    web3.utils.toAscii(tx.logs[3].args._name)
                     .replace(/\u0000/g, ''),
                     "CappedSTO",
                     "CappedSTOFactory module was not added"
                 );
-                I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
+                I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
             });
         });
 

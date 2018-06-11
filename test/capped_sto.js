@@ -79,6 +79,8 @@ contract('CappedSTO', accounts => {
     const P_cap = new BigNumber(50000).times(new BigNumber(10).pow(18));
     const P_fundRaiseType = 1;
     const P_rate = 5;
+    const cappedSTOSetupCost= web3.utils.toWei("20000","ether");
+    const maxCost = cappedSTOSetupCost;
     let P_startTime = endTime + duration.days(2);
     let P_endTime = P_startTime + duration.days(30);
     const functionSignature = {
@@ -151,8 +153,8 @@ contract('CappedSTO', accounts => {
         );
 
         // STEP 4: Deploy the CappedSTOFactory
-
-        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: token_owner });
+    
+        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, cappedSTOSetupCost, 0, 0, { from: token_owner });
 
         assert.notEqual(
             I_CappedSTOFactory.address.valueOf(),
@@ -269,13 +271,30 @@ contract('CappedSTO', accounts => {
 
         });
 
-        it("Should fail to launch the STO due to rate is 0", async () => {
+        it("Should fail to launch the STO due to security token doesn't have the sufficeint POLY", async () => {
             startTime = latestTime() + duration.days(1);           // Start time will be 5000 seconds more than the latest time
             endTime = startTime + duration.days(30);
+            await I_PolyFaucet.getTokens(cappedSTOSetupCost, token_owner);
+
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 26000000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 26000000 });
+            } catch(error) {
+                console.log(`Tx Failed because of rate is ${0}. Test Passed Successfully`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail to launch the STO due to rate is 0", async () => {
+            await I_PolyFaucet.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
+
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, account_fundsReceiver]);
+            let errorThrown = false;
+            try {
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 26000000 });
             } catch(error) {
                 console.log(`Tx Failed because of rate is ${0}. Test Passed Successfully`);
                 errorThrown = true;
@@ -288,7 +307,7 @@ contract('CappedSTO', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 26000000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 26000000 });
             } catch(error) {
                 errorThrown = true;
                 console.log(`Tx Failed because of startTime is greater than endTime. Test Passed Successfully`);
@@ -301,7 +320,7 @@ contract('CappedSTO', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 26000000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 26000000 });
             } catch(error) {
                 console.log(`Tx Failed because the Cap is equal to ${0}. Test Passed Successfully`);
                 errorThrown = true;
@@ -313,16 +332,16 @@ contract('CappedSTO', accounts => {
 
         it("Should successfully attach the STO factory with the security token", async () => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
-
-            assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 2500000 });
+        
+            assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name)
+                web3.utils.toAscii(tx.logs[3].args._name)
                 .replace(/\u0000/g, ''),
                 "CappedSTO",
                 "CappedSTOFactory module was not added"
             );
-            I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
+            I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
         });
     });
 
@@ -703,18 +722,21 @@ contract('CappedSTO', accounts => {
              });
 
              it("POLY: Should successfully attach the STO factory with the security token", async () => {
+                await I_PolyFaucet.getTokens(cappedSTOSetupCost, token_owner);
+                await I_PolyFaucet.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
+
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [P_startTime, P_endTime, P_cap, P_rate, P_fundRaiseType, account_fundsReceiver]);
 
-                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 26000000 });
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 26000000 });
 
-                assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
+                assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
-                    web3.utils.toAscii(tx.logs[2].args._name)
+                    web3.utils.toAscii(tx.logs[3].args._name)
                     .replace(/\u0000/g, ''),
                     "CappedSTO",
                     "CappedSTOFactory module was not added"
                 );
-                I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
+                I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
             });
 
         });
@@ -913,7 +935,7 @@ contract('CappedSTO', accounts => {
 
          describe("Test cases for the CappedSTOFactory", async() => {
             it("should get the exact details of the factory", async() => {
-                assert.equal(await I_CappedSTOFactory.setupCost.call(),0);
+                assert.equal((await I_CappedSTOFactory.setupCost.call()).toNumber(), cappedSTOSetupCost);
                 assert.equal(await I_CappedSTOFactory.getType.call(),3);
                 assert.equal(web3.utils.toAscii(await I_CappedSTOFactory.getName.call())
                             .replace(/\u0000/g, ''),

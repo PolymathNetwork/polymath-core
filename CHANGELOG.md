@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file.
 * Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not.      
 * Burning tokens now respects TransferManagers and investorCount.  
 * Updated CLI with MultiMint process.  
+* Change the `setupCost` of `cappedSTOFactory` from `0 POLY` to `20K POLY`. 
 
 ## Removed
 

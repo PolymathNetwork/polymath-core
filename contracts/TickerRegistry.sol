@@ -11,13 +11,14 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./interfaces/ITickerRegistry.sol";
 import "./helpers/Util.sol";
+import "./helpers/ReclaimFunds.sol";
 
 /**
  * @title TickerRegistry
  * @dev Contract used to register the security token symbols
  */
 
-contract TickerRegistry is ITickerRegistry, Ownable, Util {
+contract TickerRegistry is ITickerRegistry, Ownable, Util, ReclaimFunds {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
@@ -54,6 +55,9 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
         polyAddress = _polyAddress;
         registrationFee = _registrationFee;
     }
+
+    // Payable Fallback
+    function() public payable {}
 
     /**
      * @dev Register the token symbol for its particular owner

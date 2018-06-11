@@ -5,6 +5,7 @@ import "./interfaces/IModuleFactory.sol";
 import "./interfaces/ISecurityToken.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./helpers/ReclaimFunds.sol";
 
 /**
 * @title ModuleRegistry
@@ -12,7 +13,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 * Anyone can register modules, but only those "approved" by Polymath will be allowed to everyone.
 */
 
-contract ModuleRegistry is IModuleRegistry, Ownable {
+contract ModuleRegistry is IModuleRegistry, Ownable, ReclaimFunds {
 
     // Mapping used to hold the type of module factory corresponds to the address of the Module factory contract
     mapping (address => uint8) public registry;
@@ -32,6 +33,9 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     event LogModuleRegistered(address indexed _moduleFactory, address indexed _owner);
     // Emit when the module get verified by the Polymath team
     event LogModuleVerified(address indexed _moduleFactory, bool _verified);
+
+    // Payable Fallback
+    function() public payable {}
 
     /**
     * @dev Called by a security token to notify the registry it is using a module

@@ -242,7 +242,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
             } catch(error) {
-                console.log(`Tx get failed. Already Registered Module factory`);
+                console.log(`         tx revert -> Already Registered Module factory`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -254,7 +254,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.registerModule(I_MockFactory.address, { from: account_polymath });
             } catch(error) {
-                console.log(`Tx get failed. Module factory of 0 type`);
+                console.log(`         tx revert -> Module factory of 0 type`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -269,7 +269,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_temp });
             } catch(error) {
-                console.log(`Tx get failed. Because msg.sender should be account_polymath`);
+                console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -309,7 +309,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
             } catch(error) {
-                console.log(`Tx get failed. Because the module is not registered`);
+                console.log(`         tx revert -> Module is not registered`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -370,7 +370,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, { from: account_temp });
             } catch(error) {
-                console.log(`Tx get failed. Because msg.sender should be account_polymath`);
+                console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -394,7 +394,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.addTagByModuleType(3,["Non-Refundable","Capped","ETH","POLY"],{from: account_temp});
             } catch(error) {
-                console.log(`Tx get failed. Because msg.sender should be account_polymath`);
+                console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -412,7 +412,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.removeTagByModuleType(3,["Capped", "ETH"], {from: account_investor1});
             } catch(error) {
-                console.log(`Tx get failed. Because msg.sender should be account_polymath`);
+                console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -483,7 +483,7 @@ contract('ModuleRegistry', accounts => {
                 const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 60000000 });
             } catch(error) {
                 errorThrown = true;
-                console.log(`Tx get failed. Because module is un-verified`);
+                console.log(`         tx revert -> Module is un-verified`.grey);
                 ensureException(error);
             }
             assert.ok(errorThrown, message);
@@ -522,6 +522,29 @@ contract('ModuleRegistry', accounts => {
                 "CappedSTOFactory module was not added"
             );
         });
+
+    });
+
+    describe("Test cases for reclaiming funds", async() => {
+
+        it("Should successfully reclaim POLY tokens", async() => {
+            I_PolyToken.transfer(I_TickerRegistry.address, 1 * Math.pow(10, 18), { from: token_owner });
+            let bal1 = await I_PolyToken.balanceOf.call(account_polymath);
+            await I_TickerRegistry.reclaimERC20(I_PolyToken.address);
+            let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
+            assert.isAbove(bal2, bal1);
+        });
+
+        it("Should successfully reclaim ETH", async() => {
+            await I_TickerRegistry.sendTransaction({ value: 1 * Math.pow(10, 18), from: account_polymath })
+            let bal1 = await web3.eth.getBalance(account_polymath);
+            await I_TickerRegistry.reclaimETH();
+            let bal2 = await web3.eth.getBalance(account_polymath);
+            let bal3 = await web3.eth.getBalance(I_TickerRegistry.address);
+            assert.isAbove(bal2, bal1);
+            assert.equal(bal3, 0);
+        });
+
     });
 
   });

@@ -7,9 +7,10 @@ import "./interfaces/ISecurityTokenRegistry.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./helpers/Util.sol";
+import "./helpers/ReclaimFunds.sol";
 
 
-contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
+contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util, ReclaimFunds {
 
     // Initial registration fee
     uint256 public registrationFee;
@@ -38,6 +39,9 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
         // By default, the STR version is set to 0.0.1
         setProtocolVersion(_stVersionProxy, "0.0.1");
     }
+
+    // Payable Fallback
+    function() public payable {}
 
     /**
      * @dev Creates a new Security Token and saves it to the registry

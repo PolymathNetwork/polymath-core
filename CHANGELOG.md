@@ -15,11 +15,12 @@ All notable changes to this project will be documented in this file.
 * Further minting is forbidden by adding one additional check for `mintingFinished` flag. Issuer can stop minting by calling the `finishMinting()` function.
 * Issuer can prevent addresses from participating in the STO. To facilitate this, `_canBuyFromSTO` has been added to modifyWhitelist function.
 * Added multi-mint feature.
-* Event `LogGenerateModuleFromFactory` emitted at the level of ModuleFacotry to log the creation of the module using the respective module factory.
+* Event `LogGenerateModuleFromFactory` emitted at the level of ModuleFactory to log the creation of the module using the respective module factory.
 
 ## Changed
 
-* Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not.      
+* Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not.  
+* Added a new return type to verifyTransfer methods called FORCE_VALID which would override any INVALID returned by TransferManagers if needed. For example, this could be used if we wanted the Manual Approval TM to force a transfer to happen even if the CountTM said that the 2000 investor cap had been reached.
 * Burning tokens now respects TransferManagers and investorCount.  
 * Updated CLI with MultiMint process.  
 * Change the `setupCost` of `cappedSTOFactory` from `0 POLY` to `20K POLY`.      

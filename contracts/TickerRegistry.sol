@@ -115,7 +115,11 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) public returns(bool) {
         string memory symbol = upper(_symbol);
         require(msg.sender == strAddress, "msg.sender should be SecurityTokenRegistry contract");
-        if (registeredSymbols[symbol].owner == address(0) || expiryCheck(symbol)) {
+        if (registeredSymbols[symbol].owner == _owner && !expiryCheck(_symbol)) {
+            registeredSymbols[symbol].status = true;
+            return false;
+        }
+        else if (registeredSymbols[symbol].owner == address(0) || expiryCheck(symbol)) {
             registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, _swarmHash, true);
             emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now);
             return false;

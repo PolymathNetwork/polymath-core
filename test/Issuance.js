@@ -53,7 +53,7 @@ contract('Issuance', accounts => {
     let I_STVersion;
     let I_SecurityToken;
     let I_CappedSTO;
-    let I_PolyFaucet;
+    let I_PolyToken;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const swarmHash = "dagwrgwgvwergwrvwrg";
@@ -67,6 +67,9 @@ contract('Issuance', accounts => {
     const transferManagerKey = 2;
     const stoKey = 3;
     const budget = 0;
+
+    // Initial fee for ticker registry and security token registry
+    const initRegFee = 250 * Math.pow(10, 18);
 
     // Capped STO details
     const startTime = latestTime() + duration.seconds(5000);           // Start time will be 5000 seconds more than the latest time
@@ -113,8 +116,9 @@ contract('Issuance', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 9: Deploy the token Faucet
-        I_PolyFaucet = await PolyTokenFaucet.new();
+        // Step 0: Deploy the token Faucet and Mint tokens for token_owner
+        I_PolyToken = await PolyTokenFaucet.new();
+        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -128,7 +132,7 @@ contract('Issuance', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, {from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -138,7 +142,7 @@ contract('Issuance', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, {from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -148,7 +152,7 @@ contract('Issuance', accounts => {
 
         // STEP 4: Deploy the CappedSTOFactory
 
-        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: token_owner });
+        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: token_owner });
 
         assert.notEqual(
             I_CappedSTOFactory.address.valueOf(),
@@ -171,7 +175,7 @@ contract('Issuance', accounts => {
 
         // Step 6: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new({ from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, initRegFee, { from: account_polymath });
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -193,10 +197,11 @@ contract('Issuance', accounts => {
         // Step 8: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolyFaucet.address,
+            I_PolyToken.address,
             I_ModuleRegistry.address,
             I_TickerRegistry.address,
             I_STVersion.address,
+            initRegFee,
             {
                 from: account_polymath
             });
@@ -228,6 +233,8 @@ contract('Issuance', accounts => {
         describe("Create securityToken for the issuer by the polymath", async() => {
 
             it("POLYMATH: Should register the ticker before the generation of the security token", async () => {
+                await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), account_polymath);
+                await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: account_polymath });
                 let tx = await I_TickerRegistry.registerTicker(account_polymath, symbol, name, swarmHash, { from : account_polymath });
                 assert.equal(tx.logs[0].args._owner, account_polymath);
                 assert.equal(tx.logs[0].args._symbol, symbol);
@@ -235,6 +242,7 @@ contract('Issuance', accounts => {
 
             it("POLYMATH: Should generate the new security token with the same symbol as registered above", async () => {
                 console.log(name, symbol, tokenDetails, false);
+                await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: account_polymath });
                 let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_polymath, gas: 60000000  });
 
                 // Verify the successful generation of the security token
@@ -272,7 +280,7 @@ contract('Issuance', accounts => {
              it("POLYMATH: Should successfully attach the STO factory with the security token", async () => {
                  // STEP 4: Deploy the CappedSTOFactory
 
-                I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, cappedSTOSetupCost, 0, 0, { from: account_polymath });
+                I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, cappedSTOSetupCost, 0, 0, { from: account_polymath });
 
                 assert.notEqual(
                     I_CappedSTOFactory.address.valueOf(),
@@ -285,8 +293,8 @@ contract('Issuance', accounts => {
 
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [(latestTime() + duration.seconds(5000)), (latestTime() + duration.days(30)), cap, rate, fundRaiseType, account_fundsReceiver]);
 
-                await I_PolyFaucet.getTokens(cappedSTOSetupCost, account_polymath);
-                await I_PolyFaucet.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: account_polymath});
+                await I_PolyToken.getTokens(cappedSTOSetupCost, account_polymath);
+                await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: account_polymath});
 
                 const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: account_polymath, gas: 2500000 });
 

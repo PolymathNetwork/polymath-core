@@ -66,6 +66,9 @@ contract('CountTransferManager', accounts => {
     const transferManagerKey = 2;
     const stoKey = 3;
 
+    // Initial fee for ticker registry and security token registry
+    const initRegFee = 250 * Math.pow(10, 18);
+
     // CountTransferManager details
     const holderCount = 2;           // Maximum number of token holders
 
@@ -92,8 +95,9 @@ contract('CountTransferManager', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the Polytoken Contract
+        // Step 0: Deploy the token Faucet and Mint tokens for token_owner
         I_PolyToken = await PolyTokenFaucet.new();
+        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -149,7 +153,7 @@ contract('CountTransferManager', accounts => {
 
         // Step 6: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new({ from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, initRegFee, { from: account_polymath });
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -174,6 +178,7 @@ contract('CountTransferManager', accounts => {
             I_ModuleRegistry.address,
             I_TickerRegistry.address,
             I_STVersion.address,
+            initRegFee,
             {
                 from: account_polymath
             });
@@ -203,12 +208,14 @@ contract('CountTransferManager', accounts => {
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, contact, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol.toUpperCase());
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
+            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
 
             // Verify the successful generation of the security token

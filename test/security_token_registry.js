@@ -55,7 +55,7 @@ contract('SecurityTokenRegistry', accounts => {
     let I_STVersion;
     let I_SecurityToken;
     let I_DummySTO;
-    let I_PolyFaucet;
+    let I_PolyToken;
     let I_STVersion002;
     let I_SecurityToken002;
     let I_STVersion003;
@@ -77,6 +77,9 @@ contract('SecurityTokenRegistry', accounts => {
     const transferManagerKey = 2;
     const stoKey = 3;
     const budget = 0;
+
+    // Initial fee for ticker registry and security token registry
+    const initRegFee = 250 * Math.pow(10, 18);
 
      // Capped STO details
      const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
@@ -112,8 +115,9 @@ contract('SecurityTokenRegistry', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the token Faucet
-        I_PolyFaucet = await PolyTokenFaucet.new();
+        // Step 0: Deploy the token Faucet and Mint tokens for token_owner
+        I_PolyToken = await PolyTokenFaucet.new();
+        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -127,7 +131,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: account_polymath });
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -137,7 +141,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: account_polymath });
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -158,7 +162,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // Step 5: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new(I_PolyFaucet.address, { from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, initRegFee, { from: account_polymath });
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -178,7 +182,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 8: Deploy the CappedSTOFactory
 
-        I_TestSTOFactory = await TestSTOFactory.new(I_PolyFaucet.address, 1000 * Math.pow(10, 18), 0, 0,{ from: token_owner });
+        I_TestSTOFactory = await TestSTOFactory.new(I_PolyToken.address, 1000 * Math.pow(10, 18), 0, 0,{ from: token_owner });
 
         assert.notEqual(
             I_TestSTOFactory.address.valueOf(),
@@ -192,10 +196,11 @@ contract('SecurityTokenRegistry', accounts => {
         // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolyFaucet.address,
+            I_PolyToken.address,
             I_ModuleRegistry.address,
             I_TickerRegistry.address,
             I_STVersion.address,
+            initRegFee,
             {
                 from: account_polymath
             });
@@ -227,19 +232,7 @@ contract('SecurityTokenRegistry', accounts => {
     describe("Generate SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
-            // Give POLY to token issuer and approve registry contract
-            await I_PolyFaucet.getTokens((10000 * Math.pow(10, 18)), token_owner);
-            assert.equal(
-                (await I_PolyFaucet.balanceOf(token_owner))
-                .dividedBy(new BigNumber(10).pow(18))
-                .toNumber(),
-                10000,
-                "Tokens are not transfered properly"
-            );
-
-            // Appove contracts for registration fees
-            await I_PolyFaucet.approve(I_TickerRegistry.address, (5000 * Math.pow(10, 18)), { from: token_owner});
-
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
@@ -258,9 +251,7 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            // Appove contracts for registration fees
-            await I_PolyFaucet.approve(I_SecurityTokenRegistry.address, (5000 * Math.pow(10, 18)), { from: token_owner});
-
+            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
@@ -307,12 +298,14 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should register the ticker before the generation of the security token", async () => {
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol2, name2, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol2);
         });
 
         it("Should generate the new security token with version 2", async() => {
+            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, symbol2, tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
@@ -432,12 +425,14 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should register the ticker before the generation of the security token", async () => {
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_TickerRegistry.registerTicker(token_owner, "DET3", name2, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, "DET3");
         });
 
         it("Should generate the new security token with version 3", async() => {
+            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, "DET3", tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
@@ -517,7 +512,7 @@ contract('SecurityTokenRegistry', accounts => {
                     someString,
                 ]);
 
-            await I_PolyFaucet.getTokens((1000 * Math.pow(10, 18)), I_SecurityToken.address);
+            await I_PolyToken.getTokens((1000 * Math.pow(10, 18)), I_SecurityToken.address);
 
             const tx = await I_SecurityToken.addModule(
                 I_TestSTOFactory.address,
@@ -562,7 +557,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         it("Should successfully get the registration fee", async() => {
             let fee = await I_SecurityTokenRegistry.registrationFee.call();
-            assert.equal(fee, 250 * Math.pow(10, 18))
+            assert.equal(fee, initRegFee)
         });
 
         it("Should fail to set the registration fee if msg.sender not owner", async() => {

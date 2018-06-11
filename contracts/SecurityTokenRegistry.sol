@@ -12,7 +12,7 @@ import "./helpers/Util.sol";
 contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
 
     // Initial registration fee
-    uint256 public registrationFee = 250 * 10 ** 18;
+    uint256 public registrationFee;
 
     // Emit at the time of launching of new security token
     event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address _owner);
@@ -25,13 +25,15 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
         address _polyAddress,
         address _moduleRegistry,
         address _tickerRegistry,
-        address _stVersionProxy
+        address _stVersionProxy,
+        uint256 _registrationFee
     )
     public
     {
         polyAddress = _polyAddress;
         moduleRegistry = _moduleRegistry;
         tickerRegistry = _tickerRegistry;
+        registrationFee = _registrationFee;
 
         // By default, the STR version is set to 0.0.1
         setProtocolVersion(_stVersionProxy, "0.0.1");

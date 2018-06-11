@@ -31,7 +31,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     address public polyAddress;
 
     // Initial registration fee
-    uint256 public registrationFee = 250 * 10 ** 18;
+    uint256 public registrationFee;
 
     // Details of the symbol that get registered with the polymath platform
     struct SymbolDetails {
@@ -50,8 +50,9 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
-    constructor (address _polyAddress) public {
+    constructor (address _polyAddress, uint256 _registrationFee) public {
         polyAddress = _polyAddress;
+        registrationFee = _registrationFee;
     }
 
     /**
@@ -66,7 +67,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) public {
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         if(registrationFee > 0)
-            require(ERC20(polyAddress).transferFrom(msg.sender, owner, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(ERC20(polyAddress).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol), "Ticker is already reserved");
         registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, _swarmHash, false);

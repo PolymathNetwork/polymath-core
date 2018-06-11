@@ -15,14 +15,16 @@ All notable changes to this project will be documented in this file.
 * Further minting is forbidden by adding one additional check for `mintingFinished` flag. Issuer can stop minting by calling the `finishMinting()` function.
 * Issuer can prevent addresses from participating in the STO. To facilitate this, `_canBuyFromSTO` has been added to modifyWhitelist function.
 * Added multi-mint feature.
-* Event `LogGenerateModuleFromFactory` emitted at the level of ModuleFacotry to log the creation of the module using the respective module factory.
+* Event `LogGenerateModuleFromFactory` emitted at the level of ModuleFactory to log the creation of the module using the respective module factory.
+* Added registration fee of `250 POLY` for registering ticker or security token with registry contracts, fee can be changed using `setPolyRegistrationFee`
+* Added ReclaimFunds helper contract and payable fallback function to withdraw funds sent to registry contracts
 
 ## Changed
 
 * Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not.      
 * Burning tokens now respects TransferManagers and investorCount.  
 * Updated CLI with MultiMint process.  
-* Change the `setupCost` of `cappedSTOFactory` from `0 POLY` to `20K POLY`. 
+* Change the `setupCost` of `cappedSTOFactory` from `0 POLY` to `20K POLY`.
 
 ## Removed
 

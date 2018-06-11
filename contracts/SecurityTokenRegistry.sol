@@ -11,6 +11,7 @@ import "./helpers/Util.sol";
 
 contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
 
+    // Initial registration fee
     uint256 public registrationFee = 250 * 10 ** 18;
 
     // Emit at the time of launching of new security token
@@ -88,6 +89,10 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
         protocolVersionST[_version] = _stVersionProxyAddress;
     }
 
+    /**
+     * @dev set the ticker registration fee in POLY tokens
+     * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
+     */
     function setPolyRegistrationFee(uint256 _registrationFee) public onlyOwner {
         registrationFee = _registrationFee;
     }

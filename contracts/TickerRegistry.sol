@@ -99,7 +99,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      * @dev set the ticker registration fee in POLY tokens
      * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
      */
-    function setRegistrationFee(uint256 _registrationFee) public onlyOwner {
+    function setPolyRegistrationFee(uint256 _registrationFee) public onlyOwner {
         registrationFee = _registrationFee;
     }
 

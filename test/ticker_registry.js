@@ -329,7 +329,7 @@ contract('TickerRegistry', accounts => {
         });
     });
 
-    describe("Test cases for the setRegistrationFee", async() => {
+    describe("Test cases for the setPolyRegistrationFee", async() => {
 
         it("Should successfully get the registration fee", async() => {
             let fee = await I_TickerRegistry.registrationFee.call();
@@ -339,7 +339,7 @@ contract('TickerRegistry', accounts => {
         it("Should fail to set the registration fee if msg.sender not owner", async() => {
             let errorThrown = false;
             try {
-                let tx = await I_TickerRegistry.setRegistrationFee(400 * Math.pow(10, 18), {from: account_temp});
+                let tx = await I_TickerRegistry.setPolyRegistrationFee(400 * Math.pow(10, 18), {from: account_temp});
             } catch(error) {
                 console.log(`         tx revert -> Failed to set registrationFee`.grey);
                 errorThrown = true;
@@ -349,7 +349,7 @@ contract('TickerRegistry', accounts => {
         });
 
         it("Should successfully set the registration fee", async() => {
-            await I_TickerRegistry.setRegistrationFee(400 * Math.pow(10, 18), {from: account_polymath});
+            await I_TickerRegistry.setPolyRegistrationFee(400 * Math.pow(10, 18), {from: account_polymath});
             let fee = await I_TickerRegistry.registrationFee.call();
             assert.equal(fee, 400 * Math.pow(10, 18))
         });

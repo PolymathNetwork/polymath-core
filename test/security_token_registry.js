@@ -224,7 +224,7 @@ contract('SecurityTokenRegistry', accounts => {
         `);
     });
 
-    describe("Generate the SecurityToken", async() => {
+    describe("Generate SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
             // Set POLY contract address
@@ -239,14 +239,31 @@ contract('SecurityTokenRegistry', accounts => {
                 10000,
                 "Tokens are not transfered properly"
             );
-            await I_PolyFaucet.approve(I_TickerRegistry.address, (10000 * Math.pow(10, 18)), { from: token_owner});
+
+            // Appove contracts for registration fees
+            await I_PolyFaucet.approve(I_TickerRegistry.address, (5000 * Math.pow(10, 18)), { from: token_owner});
 
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
 
+        it("Should fail to generate new security token if fee not provided", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
+            } catch(error) {
+                console.log(`         tx revert -> POLY allowance not provided for registration fee`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should generate the new security token with the same symbol as registered above", async () => {
+            // Appove contracts for registration fees
+            await I_PolyFaucet.approve(I_SecurityTokenRegistry.address, (5000 * Math.pow(10, 18)), { from: token_owner});
+
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
@@ -269,7 +286,11 @@ contract('SecurityTokenRegistry', accounts => {
             LogAddModule.stopWatching();
         });
 
-        it("Should deploy the st vesrion 2", async() => {
+    });
+
+    describe("Generate SecurityToken v2", async() => {
+
+        it("Should deploy the st version 2", async() => {
             // Step 7: Deploy the STversionProxy contract
 
             I_STVersion002 = await STVersion002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
@@ -316,6 +337,10 @@ contract('SecurityTokenRegistry', accounts => {
             );
             LogAddModule.stopWatching();
         });
+
+    });
+
+    describe("Generate custom tokens", async() => {
 
         it("Should fail in adding the new custom token in the polymath network", async() => {
             let errorThrown = false;
@@ -386,7 +411,11 @@ contract('SecurityTokenRegistry', accounts => {
             assert.equal(symbolDetails[2], "LOGAN");
         });
 
-        it("Should deploy the st vesrion 3", async() => {
+    });
+
+    describe("Generate SecurityToken v3", async() => {
+
+        it("Should deploy the st version 3", async() => {
             // Step 7: Deploy the STversionProxy contract
 
             I_STVersion003 = await STVersion002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
@@ -433,6 +462,10 @@ contract('SecurityTokenRegistry', accounts => {
             );
             LogAddModule.stopWatching();
         });
+
+    });
+
+    describe("Attach modules automatically", async() => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
@@ -511,6 +544,10 @@ contract('SecurityTokenRegistry', accounts => {
             I_DummySTO = DummySTO.at(tx.logs[3].args._module);
         });
 
+    });
+
+    describe("Test cases for getters", async() => {
+
         it("Should get the security token address", async() => {
            let address = await I_SecurityTokenRegistry.getSecurityTokenAddress.call("DET");
            assert.equal(address, I_SecurityToken.address);
@@ -524,6 +561,31 @@ contract('SecurityTokenRegistry', accounts => {
 
     });
 
+    describe("Test cases for setRegistrationFee", async() => {
 
+        it("Should successfully get the registration fee", async() => {
+            let fee = await I_SecurityTokenRegistry.registrationFee.call();
+            assert.equal(fee, 250 * Math.pow(10, 18))
+        });
+
+        it("Should fail to set the registration fee if msg.sender not owner", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_SecurityTokenRegistry.setPolyRegistrationFee(400 * Math.pow(10, 18), {from: account_temp});
+            } catch(error) {
+                console.log(`         tx revert -> Failed to set registrationFee`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully set the registration fee", async() => {
+            await I_SecurityTokenRegistry.setPolyRegistrationFee(400 * Math.pow(10, 18), {from: account_polymath});
+            let fee = await I_SecurityTokenRegistry.registrationFee.call();
+            assert.equal(fee, 400 * Math.pow(10, 18))
+        });
+
+    });
 
 });

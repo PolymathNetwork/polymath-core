@@ -5,10 +5,13 @@ import "./tokens/SecurityToken.sol";
 import "./interfaces/ISTProxy.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./helpers/Util.sol";
 
 
 contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
+
+    uint256 public registrationFee = 250 * 10 ** 18;
 
     // Emit at the time of launching of new security token
     event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address _owner);
@@ -42,6 +45,8 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
     function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) public {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
+        if(registrationFee > 0)
+            require(ERC20(polyAddress).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = upper(_symbol);
         address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
             _name,
@@ -81,6 +86,10 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
     function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public onlyOwner {
         protocolVersion = _version;
         protocolVersionST[_version] = _stVersionProxyAddress;
+    }
+
+    function setPolyRegistrationFee(uint256 _registrationFee) public onlyOwner {
+        registrationFee = _registrationFee;
     }
 
     //////////////////////////////

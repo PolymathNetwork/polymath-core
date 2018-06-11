@@ -438,17 +438,22 @@ contract SecurityToken is ISecurityToken {
             if (modules[TRANSFERMANAGER_KEY].length == 0) {
                 return true;
             }
-            bool success = false;
+            bool isInvalid = false;
+            bool isValid = false;
+            bool isForceValid = false;
             for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
                 ITransferManager.Result valid = ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount, isTransfer);
                 if (valid == ITransferManager.Result.INVALID) {
-                    return false;
+                    isInvalid = true;
                 }
                 if (valid == ITransferManager.Result.VALID) {
-                    success = true;
+                    isValid = true;
+                }
+                if (valid == ITransferManager.Result.FORCE_VALID) {
+                    isForceValid = true;
                 }
             }
-            return success;
+            return isForceValid ? true : (isInvalid ? false : isValid);
       }
       return false;
     }

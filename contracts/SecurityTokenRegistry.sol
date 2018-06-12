@@ -9,7 +9,6 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./helpers/Util.sol";
 
-
 contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, IRegistry {
 
     // Emit at the time of launching of new security token

@@ -15,9 +15,10 @@ contract IRegistry is Ownable {
     * @param _tokenContract The address of the token contract
     */
     function reclaimERC20(address _tokenContract) external onlyOwner {
+        require(_tokenContract != address(0));
         ERC20Basic token = ERC20Basic(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
-        token.transfer(owner, balance);
+        require(token.transfer(owner, balance));
     }
 
     /**
@@ -25,6 +26,7 @@ contract IRegistry is Ownable {
      * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
      */
     function changePolyRegisterationFee(uint256 _registrationFee) public onlyOwner {
+        require(registrationFee != _registrationFee);
         emit LogChangePolyRegisterationFee(registrationFee, _registrationFee);
         registrationFee = _registrationFee;
     }

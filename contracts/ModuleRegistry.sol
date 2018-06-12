@@ -13,7 +13,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 * Anyone can register modules, but only those "approved" by Polymath will be allowed to everyone.
 */
 
-contract ModuleRegistry is IModuleRegistry, Ownable, IRegistry {
+contract ModuleRegistry is IModuleRegistry, IRegistry {
 
     // Mapping used to hold the type of module factory corresponds to the address of the Module factory contract
     mapping (address => uint8) public registry;

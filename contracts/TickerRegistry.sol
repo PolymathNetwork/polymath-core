@@ -18,7 +18,7 @@ import "./helpers/Util.sol";
  * @dev Contract used to register the security token symbols
  */
 
-contract TickerRegistry is ITickerRegistry, Ownable, Util, IRegistry {
+contract TickerRegistry is ITickerRegistry, Util, IRegistry {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol

@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
 * Event `LogGenerateModuleFromFactory` emitted at the level of ModuleFactory to log the creation of the module using the respective module factory.
 * Added registration fee of `250 POLY` for registering ticker or security token with registry contracts, fee can be changed using `changePolyRegistrationFee`
 * Added IRegistry contract to handle setting and retrieving registration fee
+* Added pausable feature to registry functions `registerTicker`, `generateSecurityToken`, `registerModule`, `addCustomSecurityToken`
+* Added functions to change link between registry contracts for upgradability
 
 ## Changed
 

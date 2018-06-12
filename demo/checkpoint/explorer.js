@@ -133,10 +133,9 @@ async function createDividends(){
   if(etherDividendCheckpointAddress != "0x0000000000000000000000000000000000000000"){
     etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
     etherDividendCheckpoint.setProvider(web3.currentProvider);
-    console.log(etherDividendCheckpoint);
   }else{
     console.log(etherDividendCheckpointFactoryAddress);
-    await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false).send({ from: Issuer })
+    await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false).send({ from: Issuer, gas:2500000 })
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -146,13 +145,19 @@ async function createDividends(){
     .on('receipt', function(receipt){
       console.log(`
         Congratulations! The transaction was successfully completed.
-        STO deployed at address: ${receipt.events.LogModuleAdded.returnValues._module}
+        Module deployed at address: ${receipt.events.LogModuleAdded.returnValues._module}
         Review it on Etherscan.
         TxHash: ${receipt.transactionHash}\n`
       );
+
+      etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, receipt.events.LogModuleAdded.returnValues._module);
+      etherDividendCheckpoint.setProvider(web3.currentProvider);
+      console.log(etherDividendCheckpoint);
     })
     .on('error', console.error);
   }
+
+  //console.log(etherDividendCheckpoint);
 }
 
 async function exploreAddress(address, checkpoint){

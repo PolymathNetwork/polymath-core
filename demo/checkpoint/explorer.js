@@ -5,6 +5,7 @@ var contracts = require("../helpers/contract_addresses");
 let tickerRegistryAddress = contracts.tickerRegistryAddress();
 let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
 let cappedSTOFactoryAddress = contracts.cappedSTOFactoryAddress();
+let etherDividendCheckpointFactoryAddress = contracts.etherDividendCheckpointFactoryAddress();
 
 let tickerRegistryABI;
 let securityTokenRegistryABI;
@@ -12,11 +13,12 @@ let securityTokenABI;
 let cappedSTOABI;
 let generalTransferManagerABI;
 try{
-  tickerRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
-  securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
-  securityTokenABI          = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
-  cappedSTOABI              = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
-  generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
+  tickerRegistryABI           = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
+  securityTokenRegistryABI    = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
+  securityTokenABI            = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
+  cappedSTOABI                = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
+  generalTransferManagerABI   = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
+  etherDividendCheckpointABI  = JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpoint.json').toString()).abi;
 }catch(err){
   console.log('\x1b[31m%s\x1b[0m',"Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
   return;
@@ -83,7 +85,9 @@ async function start_explorer(){
   generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
   generalTransferManager.setProvider(web3.currentProvider);
 
-  let options = ['Mint tokens','Transfer tokens', 'Explore account at checkpoint', 'Explore total supply at checkpoint','Create checkpoint'];
+  let options = ['Mint tokens','Transfer tokens',
+   'Explore account at checkpoint', 'Explore total supply at checkpoint',
+   'Create checkpoint', 'Pay Dividends'];
   let index = readlineSync.keyInSelect(options, 'What do you want to do?');
   console.log("Selected:",options[index]);
   switch(index){
@@ -110,11 +114,45 @@ async function start_explorer(){
       //Create new checkpoint
       await securityToken.methods.createCheckpoint().send({ from: Issuer});
     break;
+    case 5:
+      //Create dividends
+      await createDividends();
+    break;
   }
 
   //Restart
   start_explorer();
 
+}
+
+async function createDividends(){
+  // Get the Dividends module
+  await securityToken.methods.getModule(4, 0).call({ from: Issuer }, function (error, result) {
+    etherDividendCheckpointAddress = result[1];
+  });
+  if(etherDividendCheckpointAddress != "0x0000000000000000000000000000000000000000"){
+    etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
+    etherDividendCheckpoint.setProvider(web3.currentProvider);
+    console.log(etherDividendCheckpoint);
+  }else{
+    console.log(etherDividendCheckpointFactoryAddress);
+    await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false).send({ from: Issuer })
+    .on('transactionHash', function(hash){
+      console.log(`
+        Your transaction is being processed. Please wait...
+        TxHash: ${hash}\n`
+      );
+    })
+    .on('receipt', function(receipt){
+      console.log(`
+        Congratulations! The transaction was successfully completed.
+        STO deployed at address: ${receipt.events.LogModuleAdded.returnValues._module}
+        Review it on Etherscan.
+        TxHash: ${receipt.transactionHash}\n`
+      );
+    })
+    .on('error', console.error);
+  }
 }
 
 async function exploreAddress(address, checkpoint){

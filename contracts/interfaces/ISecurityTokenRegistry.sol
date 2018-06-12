@@ -5,11 +5,6 @@ import "./ISecurityToken.sol";
 
 contract ISecurityTokenRegistry {
 
-    address public polyAddress;
-
-    address public moduleRegistry;
-    address public tickerRegistry;
-
     bytes32 public protocolVersion = "0.0.1";
     mapping (bytes32 => address) public protocolVersionST;
 

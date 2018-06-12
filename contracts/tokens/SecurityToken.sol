@@ -9,7 +9,7 @@ import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/IST20.sol";
 import "../modules/TransferManager/ITransferManager.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
-import "../interfaces/ISecurityTokenRegistry.sol";
+import "../interfaces/IRegistry.sol";
 import "../interfaces/ITokenBurner.sol";
 
 /**
@@ -129,8 +129,8 @@ contract SecurityToken is ISecurityToken {
     DetailedERC20(_name, _symbol, _decimals)
     {
         //When it is created, the owner is the STR
-        moduleRegistry = ISecurityTokenRegistry(_securityTokenRegistry).moduleRegistry();
-        polyToken = ERC20(ISecurityTokenRegistry(_securityTokenRegistry).polyAddress());
+        moduleRegistry = IRegistry(_securityTokenRegistry).MR_Address();
+        polyToken = ERC20(IRegistry(_securityTokenRegistry).POLY_Address());
         tokenDetails = _tokenDetails;
         granularity = _granularity;
         transferFunctions[bytes4(keccak256("transfer(address,uint256)"))] = true;

@@ -45,8 +45,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     mapping (address => Checkpoint[]) public checkpointBalances;
-    Checkpoint[] public checkpointTotalSupply;
-    uint256 public currentCheckpointId;
+    Checkpoint[] public checkpointTotalSupply;    
 
     address public moduleRegistry;
 
@@ -60,7 +59,6 @@ contract SecurityToken is ISecurityToken {
 
     uint8 public constant MAX_MODULES = 20;
 
-    address[] public investors;
     mapping (address => bool) public investorListed;
 
     // Emit at the time when module get added
@@ -560,6 +558,7 @@ contract SecurityToken is ISecurityToken {
         require(currentCheckpointId < 2**256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
         emit LogCheckpointCreated(currentCheckpointId, now);
+        return currentCheckpointId;
     }
 
     /**

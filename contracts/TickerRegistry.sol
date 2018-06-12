@@ -8,7 +8,9 @@ pragma solidity ^0.4.23;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./interfaces/ITickerRegistry.sol";
+import "./interfaces/IRegistry.sol";
 import "./helpers/Util.sol";
 
 /**
@@ -16,15 +18,18 @@ import "./helpers/Util.sol";
  * @dev Contract used to register the security token symbols
  */
 
-contract TickerRegistry is ITickerRegistry, Ownable, Util {
+contract TickerRegistry is ITickerRegistry, Ownable, Util, IRegistry {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
     // For now it's value is 90 days;
     uint256 public expiryLimit = 7 * 1 days;
 
-    // SecuirtyToken Registry contract address
+    // Security Token Registry contract address
     address public strAddress;
+
+    // POLY Token contract address
+    address public polyAddress;
 
     // Details of the symbol that get registered with the polymath platform
     struct SymbolDetails {
@@ -43,8 +48,9 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
-    constructor () public {
-
+    constructor (address _polyAddress, uint256 _registrationFee) public {
+        polyAddress = _polyAddress;
+        registrationFee = _registrationFee;
     }
 
     /**
@@ -58,6 +64,8 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
      */
     function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) public {
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
+        if(registrationFee > 0)
+            require(ERC20(polyAddress).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol), "Ticker is already reserved");
         registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, _swarmHash, false);

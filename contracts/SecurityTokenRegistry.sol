@@ -4,11 +4,13 @@ import "./interfaces/ITickerRegistry.sol";
 import "./tokens/SecurityToken.sol";
 import "./interfaces/ISTProxy.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
+import "./interfaces/IRegistry.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./helpers/Util.sol";
 
 
-contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
+contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util, IRegistry {
 
     // Emit at the time of launching of new security token
     event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address _owner);
@@ -21,13 +23,15 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
         address _polyAddress,
         address _moduleRegistry,
         address _tickerRegistry,
-        address _stVersionProxy
+        address _stVersionProxy,
+        uint256 _registrationFee
     )
     public
     {
         polyAddress = _polyAddress;
         moduleRegistry = _moduleRegistry;
         tickerRegistry = _tickerRegistry;
+        registrationFee = _registrationFee;
 
         // By default, the STR version is set to 0.0.1
         setProtocolVersion(_stVersionProxy, "0.0.1");
@@ -42,6 +46,8 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
     function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) public {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
+        if(registrationFee > 0)
+            require(ERC20(polyAddress).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = upper(_symbol);
         address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
             _name,

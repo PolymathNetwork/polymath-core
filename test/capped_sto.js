@@ -50,7 +50,7 @@ contract('CappedSTO', accounts => {
     let I_STVersion;
     let I_SecurityToken;
     let I_CappedSTO;
-    let I_PolyFaucet;
+    let I_PolyToken;
 
     // SecurityToken Details for funds raise Type ETH
     const swarmHash = "dagwrgwgvwergwrvwrg";
@@ -69,6 +69,9 @@ contract('CappedSTO', accounts => {
     const transferManagerKey = 2;
     const stoKey = 3;
     const budget = 0;
+
+    // Initial fee for ticker registry and security token registry
+    const initRegFee = 250 * Math.pow(10, 18);
 
     // Capped STO details
     let startTime;           // Start time will be 5000 seconds more than the latest time
@@ -119,8 +122,9 @@ contract('CappedSTO', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the token Faucet
-        I_PolyFaucet = await PolyTokenFaucet.new();
+        // Step 0: Deploy the token Faucet and Mint tokens for token_owner
+        I_PolyToken = await PolyTokenFaucet.new();
+        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -134,7 +138,7 @@ contract('CappedSTO', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, {from:account_polymath});
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -144,7 +148,7 @@ contract('CappedSTO', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, {from:account_polymath});
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -153,8 +157,8 @@ contract('CappedSTO', accounts => {
         );
 
         // STEP 4: Deploy the CappedSTOFactory
-    
-        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyFaucet.address, cappedSTOSetupCost, 0, 0, { from: token_owner });
+
+        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, cappedSTOSetupCost, 0, 0, { from: token_owner });
 
         assert.notEqual(
             I_CappedSTOFactory.address.valueOf(),
@@ -177,7 +181,7 @@ contract('CappedSTO', accounts => {
 
         // Step 6: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new({ from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, initRegFee, { from: account_polymath });
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -198,10 +202,11 @@ contract('CappedSTO', accounts => {
         // Step 8: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolyFaucet.address,
+            I_PolyToken.address,
             I_ModuleRegistry.address,
             I_TickerRegistry.address,
             I_STVersion.address,
+            initRegFee,
             {
                 from: account_polymath
             });
@@ -231,12 +236,14 @@ contract('CappedSTO', accounts => {
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
+            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000  });
 
             // Verify the successful generation of the security token
@@ -274,7 +281,7 @@ contract('CappedSTO', accounts => {
         it("Should fail to launch the STO due to security token doesn't have the sufficeint POLY", async () => {
             startTime = latestTime() + duration.days(1);           // Start time will be 5000 seconds more than the latest time
             endTime = startTime + duration.days(30);
-            await I_PolyFaucet.getTokens(cappedSTOSetupCost, token_owner);
+            await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
@@ -289,7 +296,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to launch the STO due to rate is 0", async () => {
-            await I_PolyFaucet.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
+            await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
@@ -679,6 +686,7 @@ contract('CappedSTO', accounts => {
         describe("Launch a new SecurityToken", async() => {
 
             it("POLY: Should register the ticker before the generation of the security token", async () => {
+                await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
                 let tx = await I_TickerRegistry.registerTicker(token_owner, P_symbol, P_name, swarmHash, { from : token_owner });
                 assert.equal(tx.logs[0].args._owner, token_owner);
                 assert.equal(tx.logs[0].args._symbol, P_symbol);
@@ -687,6 +695,7 @@ contract('CappedSTO', accounts => {
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
                 P_startTime = endTime + duration.days(2);
                 P_endTime = P_startTime + duration.days(30);
+                await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
                 let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_tokenDetails, false, { from: token_owner, gas:85000000 });
 
                 // Verify the successful generation of the security token
@@ -722,8 +731,8 @@ contract('CappedSTO', accounts => {
              });
 
              it("POLY: Should successfully attach the STO factory with the security token", async () => {
-                await I_PolyFaucet.getTokens(cappedSTOSetupCost, token_owner);
-                await I_PolyFaucet.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
+                await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
+                await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
 
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [P_startTime, P_endTime, P_cap, P_rate, P_fundRaiseType, account_fundsReceiver]);
 
@@ -777,10 +786,10 @@ contract('CappedSTO', accounts => {
             it("Should Buy the tokens", async() => {
                 // Add the Investor in to the whitelist
 
-                await I_PolyFaucet.getTokens((10000 * Math.pow(10, 18)), account_investor1);
+                await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), account_investor1);
 
                 assert.equal(
-                    (await I_PolyFaucet.balanceOf(account_investor1))
+                    (await I_PolyToken.balanceOf(account_investor1))
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     10000,
@@ -803,7 +812,7 @@ contract('CappedSTO', accounts => {
                 // Jump time
                 await increaseTime(duration.days(17));
 
-                await I_PolyFaucet.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
+                await I_PolyToken.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
 
                 // buyTokensWithPoly transaction
                 await I_CappedSTO.buyTokensWithPoly(
@@ -862,9 +871,9 @@ contract('CappedSTO', accounts => {
 
                 assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
 
-                await I_PolyFaucet.getTokens((10000 * Math.pow(10, 18)), account_investor2);
+                await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), account_investor2);
 
-                await I_PolyFaucet.approve(I_CappedSTO.address, (9000 * Math.pow(10, 18)), { from: account_investor2});
+                await I_PolyToken.approve(I_CappedSTO.address, (9000 * Math.pow(10, 18)), { from: account_investor2});
 
                 // buyTokensWithPoly transaction
                 await I_CappedSTO.buyTokensWithPoly(
@@ -890,7 +899,7 @@ contract('CappedSTO', accounts => {
                 let errorThrown = false;
                 try {
 
-                await I_PolyFaucet.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
+                await I_PolyToken.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
                 // buyTokensWithPoly transaction
                 await I_CappedSTO.buyTokensWithPoly(
                     (1000 * Math.pow(10, 18)),
@@ -908,7 +917,7 @@ contract('CappedSTO', accounts => {
                 await increaseTime(duration.days(31)); // increased beyond the end time of the STO
                 let errorThrown = false;
                 try {
-                    await I_PolyFaucet.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
+                    await I_PolyToken.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
                     // buyTokensWithPoly transaction
                     await I_CappedSTO.buyTokensWithPoly(
                         (1000 * Math.pow(10, 18)),
@@ -923,7 +932,7 @@ contract('CappedSTO', accounts => {
             });
 
             it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {
-                const balanceRaised = await I_PolyFaucet.balanceOf.call(account_fundsReceiver);
+                const balanceRaised = await I_PolyToken.balanceOf.call(account_fundsReceiver);
                 assert.equal(
                     (await I_CappedSTO.fundsRaised.call()).toNumber(),
                     balanceRaised,

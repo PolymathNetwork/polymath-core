@@ -10,15 +10,15 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./interfaces/ITickerRegistry.sol";
+import "./interfaces/IRegistry.sol";
 import "./helpers/Util.sol";
-import "./helpers/ReclaimFunds.sol";
 
 /**
  * @title TickerRegistry
  * @dev Contract used to register the security token symbols
  */
 
-contract TickerRegistry is ITickerRegistry, Ownable, Util, ReclaimFunds {
+contract TickerRegistry is ITickerRegistry, Ownable, Util, IRegistry {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
@@ -30,9 +30,6 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util, ReclaimFunds {
 
     // POLY Token contract address
     address public polyAddress;
-
-    // Initial registration fee
-    uint256 public registrationFee;
 
     // Details of the symbol that get registered with the polymath platform
     struct SymbolDetails {
@@ -55,9 +52,6 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util, ReclaimFunds {
         polyAddress = _polyAddress;
         registrationFee = _registrationFee;
     }
-
-    // Payable Fallback
-    function() public payable {}
 
     /**
      * @dev Register the token symbol for its particular owner
@@ -98,14 +92,6 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util, ReclaimFunds {
         require(_stRegistry != address(0) && strAddress == address(0), "Token registry contract is already set or input argument is 0x");
         strAddress = _stRegistry;
         return true;
-    }
-
-    /**
-     * @dev set the ticker registration fee in POLY tokens
-     * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
-     */
-    function setPolyRegistrationFee(uint256 _registrationFee) public onlyOwner {
-        registrationFee = _registrationFee;
     }
 
     /**

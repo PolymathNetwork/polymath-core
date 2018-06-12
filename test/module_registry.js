@@ -525,24 +525,41 @@ contract('ModuleRegistry', accounts => {
 
     });
 
+    describe("Test cases for the changePolyRegisterationFee", async() => {
+
+        it("Should successfully get the registration fee", async() => {
+            let fee = await I_ModuleRegistry.registrationFee.call();
+            assert.equal(fee, 0)
+        });
+
+        it("Should fail to change the registration fee if msg.sender not owner", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_ModuleRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_temp });
+            } catch(error) {
+                console.log(`         tx revert -> Failed to change registrationFee`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully change the registration fee", async() => {
+            await I_ModuleRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_polymath });
+            let fee = await I_ModuleRegistry.registrationFee.call();
+            assert.equal(fee, 400 * Math.pow(10, 18));
+        });
+
+    });
+
     describe("Test cases for reclaiming funds", async() => {
 
         it("Should successfully reclaim POLY tokens", async() => {
-            I_PolyToken.transfer(I_TickerRegistry.address, 1 * Math.pow(10, 18), { from: token_owner });
+            I_PolyToken.transfer(I_ModuleRegistry.address, 1 * Math.pow(10, 18), { from: token_owner });
             let bal1 = await I_PolyToken.balanceOf.call(account_polymath);
-            await I_TickerRegistry.reclaimERC20(I_PolyToken.address);
+            await I_ModuleRegistry.reclaimERC20(I_PolyToken.address);
             let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
             assert.isAbove(bal2, bal1);
-        });
-
-        it("Should successfully reclaim ETH", async() => {
-            await I_TickerRegistry.sendTransaction({ value: 1 * Math.pow(10, 18), from: account_polymath })
-            let bal1 = await web3.eth.getBalance(account_polymath);
-            await I_TickerRegistry.reclaimETH();
-            let bal2 = await web3.eth.getBalance(account_polymath);
-            let bal3 = await web3.eth.getBalance(I_TickerRegistry.address);
-            assert.isAbove(bal2, bal1);
-            assert.equal(bal3, 0);
         });
 
     });

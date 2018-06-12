@@ -4,16 +4,13 @@ import "./interfaces/ITickerRegistry.sol";
 import "./tokens/SecurityToken.sol";
 import "./interfaces/ISTProxy.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
+import "./interfaces/IRegistry.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./helpers/Util.sol";
-import "./helpers/ReclaimFunds.sol";
 
 
-contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util, ReclaimFunds {
-
-    // Initial registration fee
-    uint256 public registrationFee;
+contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util, IRegistry {
 
     // Emit at the time of launching of new security token
     event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address _owner);
@@ -39,9 +36,6 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util, Reclaim
         // By default, the STR version is set to 0.0.1
         setProtocolVersion(_stVersionProxy, "0.0.1");
     }
-
-    // Payable Fallback
-    function() public payable {}
 
     /**
      * @dev Creates a new Security Token and saves it to the registry
@@ -95,14 +89,6 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util, Reclaim
     function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public onlyOwner {
         protocolVersion = _version;
         protocolVersionST[_version] = _stVersionProxyAddress;
-    }
-
-    /**
-     * @dev set the ticker registration fee in POLY tokens
-     * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
-     */
-    function setPolyRegistrationFee(uint256 _registrationFee) public onlyOwner {
-        registrationFee = _registrationFee;
     }
 
     //////////////////////////////

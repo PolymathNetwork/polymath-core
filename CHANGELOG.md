@@ -16,8 +16,8 @@ All notable changes to this project will be documented in this file.
 * Issuer can prevent addresses from participating in the STO. To facilitate this, `_canBuyFromSTO` has been added to modifyWhitelist function.
 * Added multi-mint feature.
 * Event `LogGenerateModuleFromFactory` emitted at the level of ModuleFactory to log the creation of the module using the respective module factory.
-* Added registration fee of `250 POLY` for registering ticker or security token with registry contracts, fee can be changed using `setPolyRegistrationFee`
-* Added ReclaimFunds helper contract and payable fallback function to withdraw funds sent to registry contracts
+* Added registration fee of `250 POLY` for registering ticker or security token with registry contracts, fee can be changed using `changePolyRegistrationFee`
+* Added IRegistry contract to handle setting and retrieving registration fee
 
 ## Changed
 

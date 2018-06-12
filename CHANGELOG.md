@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 
+* EtherDividendCheckpoint module added for on-chain dividend ETH payments
 * Iterable list of investors available on-chain
 * STOs are pausable now. It is facilated by using the IPausable interface.
 * ManualApprovalTransferManager - allows approval or blocking of explicit address pairs for transfers.
@@ -24,7 +25,7 @@ All notable changes to this project will be documented in this file.
 * Burning tokens now respects TransferManagers and investorCount.  
 * Updated CLI with MultiMint process.  
 * Change the `setupCost` of `cappedSTOFactory` from `0 POLY` to `20K POLY`.      
-* Add one more parameter called the `_owner` in the `addCustomSecurityToken()`. 
+* Add one more parameter called the `_owner` in the `addCustomSecurityToken()`.
 
 ## Removed
 

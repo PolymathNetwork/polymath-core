@@ -11,7 +11,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     struct Dividend {
       uint256 checkpointId;
       uint256 created; // Time at which the dividend was created
-      uint256 maturity; // Time after which dividend can be claimed - set to 0 to bybass
+      uint256 maturity; // Time after which dividend can be claimed - set to 0 to bypass
       uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer - set to very high value to bypass
       uint256 amount; // Dividend amount in WEI
       uint256 claimedAmount; // Amount of dividend claimed so far

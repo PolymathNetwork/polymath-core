@@ -1,3 +1,12 @@
+
+const duration = {
+    seconds: function (val) { return val; },
+    minutes: function (val) { return val * this.seconds(60); },
+    hours: function (val) { return val * this.minutes(60); },
+    days: function (val) { return val * this.hours(24); },
+    weeks: function (val) { return val * this.days(7); },
+    years: function (val) { return val * this.days(365); },
+  };
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
 
@@ -85,9 +94,18 @@ async function start_explorer(){
   generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
   generalTransferManager.setProvider(web3.currentProvider);
 
+  await securityToken.methods.getModule(4, 0).call({ from: Issuer }, function (error, result) {
+    etherDividendCheckpointAddress = result[1];
+    console.log("Dividends module address is:",etherDividendCheckpointAddress);
+    if(etherDividendCheckpointAddress != "0x0000000000000000000000000000000000000000"){
+      etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
+      etherDividendCheckpoint.setProvider(web3.currentProvider);
+    }
+  });
+
   let options = ['Mint tokens','Transfer tokens',
    'Explore account at checkpoint', 'Explore total supply at checkpoint',
-   'Create checkpoint', 'Pay Dividends'];
+   'Create checkpoint', 'Calculate Dividends', 'Push dividends to account', 'Explore ETH balance'];
   let index = readlineSync.keyInSelect(options, 'What do you want to do?');
   console.log("Selected:",options[index]);
   switch(index){
@@ -116,7 +134,22 @@ async function start_explorer(){
     break;
     case 5:
       //Create dividends
-      await createDividends();
+      let ethDividend =  readlineSync.question('How much eth would you like to distribute to token holders?: ');
+      await createDividends(ethDividend);
+    break;
+    case 6:
+      //Create dividends
+      let _checkpoint3 =  readlineSync.question('Distribute dividends at checkpoint: ');
+      let _address2 =  readlineSync.question('Enter address to push dividends to: ');
+      await pushDividends(_checkpoint3,_address2);
+    break;
+    case 7:
+      //explore eth balance
+      let _address3 =  readlineSync.question('Enter address to explore: ');
+      console.log(`
+         ETH Balance: ${web3.utils.fromWei(await web3.eth.getBalance(_address3),"ether")}
+
+      `)
     break;
   }
 
@@ -125,7 +158,7 @@ async function start_explorer(){
 
 }
 
-async function createDividends(){
+async function createDividends(ethDividend){
   // Get the Dividends module
   await securityToken.methods.getModule(4, 0).call({ from: Issuer }, function (error, result) {
     etherDividendCheckpointAddress = result[1];
@@ -134,7 +167,6 @@ async function createDividends(){
     etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
     etherDividendCheckpoint.setProvider(web3.currentProvider);
   }else{
-    console.log(etherDividendCheckpointFactoryAddress);
     await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false).send({ from: Issuer, gas:2500000 })
     .on('transactionHash', function(hash){
       console.log(`
@@ -152,12 +184,46 @@ async function createDividends(){
 
       etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, receipt.events.LogModuleAdded.returnValues._module);
       etherDividendCheckpoint.setProvider(web3.currentProvider);
-      console.log(etherDividendCheckpoint);
     })
     .on('error', console.error);
   }
 
-  //console.log(etherDividendCheckpoint);
+  let time = (await web3.eth.getBlock('latest')).timestamp;
+
+  //Send eth dividends
+  await etherDividendCheckpoint.methods.createDividend(time,time + duration.days(1000))
+  .send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas:2500000 })
+  .on('transactionHash', function(hash){
+    console.log(`
+      Your transaction is being processed. Please wait...
+      TxHash: ${hash}\n`
+    );
+  })
+  .on('receipt', function(receipt){
+    console.log(`
+      ${receipt.events}
+      TxHash: ${receipt.transactionHash}\n`
+    );
+  })
+}
+
+async function pushDividends(checkpoint,account){
+  let accs = new Array(account);
+  await etherDividendCheckpoint.methods.pushDividendPaymentToAddresses(checkpoint,accs)
+  .send({ from: Issuer, gas:4500000 })
+  .on('transactionHash', function(hash){
+    console.log(`
+      Your transaction is being processed. Please wait...
+      TxHash: ${hash}\n`
+    );
+  })
+  .on('receipt', function(receipt){
+    console.log(`
+      ${receipt.events}
+      TxHash: ${receipt.transactionHash}\n`
+    );
+  })
+
 }
 
 async function exploreAddress(address, checkpoint){

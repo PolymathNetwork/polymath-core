@@ -213,8 +213,8 @@ contract('GeneralTransferManager', accounts => {
         );
 
         // Step 8: Set the STR in TickerRegistry
-        await I_TickerRegistry.changeSecurityTokenRegistryAddress(I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.changeSecurityTokenRegistryAddress(I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_TickerRegistry.setAddress("STR_Address", I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_ModuleRegistry.setAddress("STR_Address", I_SecurityTokenRegistry.address, {from: account_polymath});
 
 
         // Printing all the contract addresses

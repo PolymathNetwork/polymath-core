@@ -508,33 +508,6 @@ contract('ModuleRegistry', accounts => {
 
     describe("Test cases for IRegistry functionality", async() => {
 
-        describe("Test cases for the changePolyRegisterationFee", async() => {
-
-            it("Should successfully get the registration fee", async() => {
-                let fee = await I_ModuleRegistry.registrationFee.call();
-                assert.equal(fee, 0)
-            });
-
-            it("Should fail to change the registration fee if msg.sender not owner", async() => {
-                let errorThrown = false;
-                try {
-                    let tx = await I_ModuleRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_temp });
-                } catch(error) {
-                    console.log(`         tx revert -> Failed to change registrationFee`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
-            });
-
-            it("Should successfully change the registration fee", async() => {
-                await I_ModuleRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_polymath });
-                let fee = await I_ModuleRegistry.registrationFee.call();
-                assert.equal(fee, 400 * Math.pow(10, 18));
-            });
-
-        });
-
         describe("Test cases for reclaiming funds", async() => {
 
             it("Should successfully reclaim POLY tokens", async() => {

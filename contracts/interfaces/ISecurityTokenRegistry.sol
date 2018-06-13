@@ -26,9 +26,6 @@ contract ISecurityTokenRegistry {
 
     function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public;
 
-    //////////////////////////////
-    ///////// Get Functions
-    //////////////////////////////
     /**
      * @dev Get security token address by ticker name
      * @param _symbol Symbol of the Scurity token

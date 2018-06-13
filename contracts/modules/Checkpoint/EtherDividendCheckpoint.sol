@@ -146,8 +146,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     }
 
     function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
-        uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, _dividend.checkpointId);
-        uint256 claim = balance.mul(_dividend.amount).div(_dividend.totalSupply);
+        uint256 claim = calculateDividend(_dividendIndex, _payee);
         _dividend.claimed[_payee] = true;
         _dividend.claimedAmount = claim.add(_dividend.claimedAmount);
         if (claim > 0) {
@@ -169,6 +168,11 @@ contract EtherDividendCheckpoint is ICheckpoint {
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
         msg.sender.transfer(remainingAmount);
         emit EtherDividendReclaimed(msg.sender, _dividendIndex, remainingAmount);
+    }
+
+    function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256) {
+        uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividends[_dividendIndex].checkpointId);
+        return balance.mul(dividends[_dividendIndex].amount).div(dividends[_dividendIndex].totalSupply);
     }
 
     /**

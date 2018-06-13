@@ -171,8 +171,12 @@ contract EtherDividendCheckpoint is ICheckpoint {
     }
 
     function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256) {
-        uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividends[_dividendIndex].checkpointId);
-        return balance.mul(dividends[_dividendIndex].amount).div(dividends[_dividendIndex].totalSupply);
+        Dividend storage dividend = dividends[_dividendIndex];
+        if (dividend.claimed[msg.sender]) {
+            return 0;
+        }
+        uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividend.checkpointId);
+        return balance.mul(dividend.amount).div(dividend.totalSupply);
     }
 
     /**

@@ -166,8 +166,8 @@ contract('TickerRegistry', accounts => {
         );
 
         // Step 8: Set the STR in TickerRegistry
-        await I_TickerRegistry.changeSecurityTokenRegistryAddress(I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.changeSecurityTokenRegistryAddress(I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_TickerRegistry.setAddress("STR_Address", I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_ModuleRegistry.setAddress("STR_Address", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -183,7 +183,7 @@ contract('TickerRegistry', accounts => {
     describe("Test cases for the TickerRegistry public variable", async () => {
 
         it("verify the securityTokenRegistry address", async() => {
-            let str = await I_TickerRegistry.STR_Address.call();
+            let str = await I_TickerRegistry.getAddress.call("STR_Address");
             assert.equal(str, I_SecurityTokenRegistry.address);
         });
 
@@ -379,7 +379,7 @@ contract('TickerRegistry', accounts => {
             it("Should fail to change address if msg.sender is not owner", async() => {
                 let errorThrown = false;
                 try {
-                    await I_TickerRegistry.changeSecurityTokenRegistryAddress(I_SecurityTokenRegistry.address, { from: account_temp });
+                    await I_TickerRegistry.changeAddress("STR_Address", I_SecurityTokenRegistry.address, { from: account_temp });
                 } catch(error) {
                     console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
                     errorThrown = true;
@@ -389,15 +389,15 @@ contract('TickerRegistry', accounts => {
             });
 
             it("Should successfully change address", async() => {
-                await I_TickerRegistry.changeSecurityTokenRegistryAddress(I_PolyToken.address, { from: account_polymath });
+                await I_TickerRegistry.changeAddress("STR_Address", I_PolyToken.address, { from: account_polymath });
                 assert.equal(
-                    (await I_TickerRegistry.STR_Address.call()),
+                    (await I_TickerRegistry.getAddress.call("STR_Address")),
                     I_PolyToken.address,
                     "Failed in setting the address of the securityTokenRegistry"
                 );
-                await I_TickerRegistry.changeSecurityTokenRegistryAddress(I_SecurityTokenRegistry.address, { from: account_polymath });
+                await I_TickerRegistry.changeAddress("STR_Address", I_SecurityTokenRegistry.address, { from: account_polymath });
                 assert.equal(
-                    (await I_TickerRegistry.STR_Address.call()),
+                    (await I_TickerRegistry.getAddress.call("STR_Address")),
                     I_SecurityTokenRegistry.address,
                     "Failed in setting the address of the securityTokenRegistry"
                 );

@@ -11,6 +11,13 @@ contract IModuleRegistry {
     function useModule(address _moduleFactory) external;
 
     /**
+    * @dev Called by a security token to notify the registry it is using a module
+    * @param _moduleFactory is the address of the relevant module factory
+    * @param _callingAddress is the address of the Security Token
+    */
+    function _useModule(address _moduleFactory, address _callingAddress) public;
+
+    /**
      * @dev Called by moduleFactory owner to register new modules for SecurityToken to use
      * @param _moduleFactory is the address of the module factory to be registered
      */

@@ -5,11 +5,6 @@ import "./ISecurityToken.sol";
 
 contract ISecurityTokenRegistry {
 
-    address public polyAddress;
-
-    address public moduleRegistry;
-    address public tickerRegistry;
-
     bytes32 public protocolVersion = "0.0.1";
     mapping (bytes32 => address) public protocolVersionST;
 
@@ -30,6 +25,8 @@ contract ISecurityTokenRegistry {
     function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) public;
 
     function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public;
+
+    function _passUseModule(address _moduleFactory) external;
 
     //////////////////////////////
     ///////// Get Functions

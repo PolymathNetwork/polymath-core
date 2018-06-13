@@ -189,9 +189,9 @@ contract('CountTransferManager', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 8: Set the STR in TickerRegistry & ModuleRegistry
-        await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
+        // Step 8: Set the STR in TickerRegistry
+        await I_TickerRegistry.changeSecurityTokenRegistryAddress(I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_ModuleRegistry.changeSecurityTokenRegistryAddress(I_SecurityTokenRegistry.address, {from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -338,7 +338,7 @@ contract('CountTransferManager', accounts => {
                 // Mint some tokens
                 await I_SecurityToken.mint(account_investor3, web3.utils.toWei('3', 'ether'), { from: token_owner });
             } catch(error) {
-                console.log(`Failed due to too many holders`);
+                console.log(`         tx revert -> Too many holders`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
@@ -373,7 +373,7 @@ contract('CountTransferManager', accounts => {
             try {
                 await I_CountTransferManager.changeHolderCount(1, { from: account_investor1 });
             } catch(error) {
-                console.log(`Failed due to only owner have the permission to change the holder count`);
+                console.log(`         tx revert -> Only owner have the permission to change the holder count`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -427,7 +427,7 @@ contract('CountTransferManager', accounts => {
               // Mint some tokens
               await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor2 });
           } catch(error) {
-              console.log(`Failed due to too many holders`);
+              console.log(`         tx revert -> Too many holders`.grey);
               ensureException(error);
               errorThrown = true;
           }

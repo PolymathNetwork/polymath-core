@@ -208,9 +208,9 @@ contract('GeneralPermissionManager', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 8: Set the STR in TickerRegistry & ModuleRegistry
-        await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
+        // Step 8: Set the STR in TickerRegistry
+        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
 
         // Printing all the contract addresses
@@ -295,7 +295,7 @@ contract('GeneralPermissionManager', accounts => {
             try {
                 let tx = await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_investor1});
             } catch(error) {
-                console.log(`Failed because msg.sender doesn't have permission`);
+                console.log(`         tx revert -> msg.sender doesn't have permission`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -307,7 +307,7 @@ contract('GeneralPermissionManager', accounts => {
             try {
                 let tx = await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner});
             } catch(error) {
-                console.log(`Failed because delegate is not yet added`);
+                console.log(`         tx revert -> Delegate is not yet added`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -324,7 +324,7 @@ contract('GeneralPermissionManager', accounts => {
             try {
                 let tx = await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: account_investor1});
             } catch(error) {
-                console.log(`Failed because msg.sender doesn't have permission`);
+                console.log(`         tx revert -> msg.sender doesn't have permission`.grey);
                 errorThrown = true;
                 ensureException(error);
             }

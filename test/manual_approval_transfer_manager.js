@@ -192,9 +192,9 @@ contract('ManualApprovalTransferManager', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 8: Set the STR in TickerRegistry & ModuleRegistry
-        await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
+        // Step 8: Set the STR in TickerRegistry
+        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -399,7 +399,7 @@ contract('ManualApprovalTransferManager', accounts => {
             try {
                 await I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
             } catch(error) {
-                console.log(`Failed due to to no remaining allowance`);
+                console.log(`         tx revert -> No remaining allowance`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
@@ -419,7 +419,7 @@ contract('ManualApprovalTransferManager', accounts => {
             try {
                 await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
             } catch(error) {
-                console.log(`Failed due to to manual block`);
+                console.log(`         tx revert -> Manual block`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
@@ -442,7 +442,7 @@ contract('ManualApprovalTransferManager', accounts => {
             try {
                 await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
             } catch(error) {
-                console.log(`Failed due to to manual block`);
+                console.log(`         tx revert -> Manual block`.grey);
                 ensureException(error);
                 errorThrown = true;
             }

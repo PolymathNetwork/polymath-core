@@ -191,8 +191,8 @@ contract('PreSaleSTO', accounts => {
         );
 
         // Step 8: Set the STR in TickerRegistry
-        await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -258,7 +258,7 @@ contract('PreSaleSTO', accounts => {
             try {
                 const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 26000000 });
             } catch(error) {
-                console.log(`Tx Failed because of rate is ${0}. Test Passed Successfully`);
+                console.log(`         tx revert -> Rate is ${0}. Test Passed Successfully`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -305,7 +305,7 @@ contract('PreSaleSTO', accounts => {
             try {
                 await I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei('1', 'ether'), 0);
             } catch(error) {
-                console.log(`Failed as investor is not on whitelist`);
+                console.log(`         tx revert -> Investor is not on whitelist`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -352,7 +352,7 @@ contract('PreSaleSTO', accounts => {
             try {
                 await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether'), 0, {from: account_fundsReceiver, gas: 60000000});
             } catch(error) {
-                console.log(`Failed due to msg.sender is not pre sale admin`);
+                console.log(`         tx revert -> msg.sender is not pre sale admin`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -410,7 +410,7 @@ contract('PreSaleSTO', accounts => {
                 // Fallback transaction
                 await I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei('1', 'ether'), 0, {from: account_issuer});
             } catch(error) {
-                console.log(`failed Because STO has started`);
+                console.log(`         tx revert -> STO has started`.grey);
                 errorThrown = true;
                 ensureException(error);
             }

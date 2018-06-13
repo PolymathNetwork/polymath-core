@@ -187,9 +187,9 @@ contract('PercentageTransferManager', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 8: Set the STR in TickerRegistry & ModuleRegistry
-        await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
+        // Step 8: Set the STR in TickerRegistry
+        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -358,7 +358,7 @@ contract('PercentageTransferManager', accounts => {
             try {
                 await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 });
             } catch(error) {
-                console.log(`Failed due to too many holders`);
+                console.log(`         tx revert -> Too many holders`.grey);
                 ensureException(error);
                 errorThrown = true;
             }

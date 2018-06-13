@@ -229,8 +229,8 @@ contract('SecurityToken', accounts => {
         );
 
         // Step 8: Set the STR in TickerRegistry
-        await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -309,7 +309,7 @@ contract('SecurityToken', accounts => {
             try {
                 await I_SecurityToken.mint(account_investor1, (100 * Math.pow(10, 18)), {from: account_delegate});
             } catch(error) {
-                console.log(`Tx. get failed because Mint only be called by the owner of the SecurityToken`);
+                console.log(`         tx revert -> Mint only be called by the owner of the SecurityToken`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -343,7 +343,7 @@ contract('SecurityToken', accounts => {
             try {
                 await I_SecurityToken.mintMulti([account_affiliate1, account_affiliate2], [(100 * Math.pow(10, 18)), (110 * Math.pow(10, 18))], {from: account_delegate, gas: 500000});
             } catch(error) {
-                console.log(`Tx. get failed because Mint only be called by the owner of the SecurityToken`);
+                console.log(`         tx revert -> Mint only be called by the owner of the SecurityToken`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -363,7 +363,7 @@ contract('SecurityToken', accounts => {
             try {
                 await I_SecurityToken.finishMinting({from: account_temp});
             } catch(error) {
-                console.log(`Tx. get failed because finishMinting only be called by the owner of the SecurityToken`);
+                console.log(`         tx revert -> finishMinting only be called by the owner of the SecurityToken`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -377,7 +377,7 @@ contract('SecurityToken', accounts => {
             try {
                 await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
             } catch(error) {
-                console.log(`Tx. get failed because minting is finished`);
+                console.log(`         tx revert -> Minting is finished`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -389,12 +389,12 @@ contract('SecurityToken', accounts => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-            
+
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
-            
+
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 60000000 });
-            
+
             assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
@@ -559,7 +559,7 @@ contract('SecurityToken', accounts => {
                 try {
                     await I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1});
                 } catch(error) {
-                    console.log(`Test case pass. Tx failed because investor 2 is not in the whitelist`);
+                    console.log(`         tx revert -> Investor 2 is not in the whitelist`.grey);
                     errorThrown = true;
                     ensureException(error);
                 }
@@ -617,7 +617,7 @@ contract('SecurityToken', accounts => {
                 try {
                   await I_SecurityToken.transfer(accounts[7], Math.pow(10, 17), { from : account_investor1});
                 } catch (error) {
-                    console.log('Failed due to incorrect token granularity - expected');
+                    console.log('         tx revert -> Incorrect token granularity - expected'.grey);
                     errorThrown = true;
                     ensureException(error);
                 }
@@ -848,7 +848,7 @@ contract('SecurityToken', accounts => {
                try {
                     await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), {from: account_temp});
                } catch(error) {
-                   console.log('failed in trasfer because all transfers are at hold');
+                   console.log('         tx revert -> All transfers are at hold'.grey);
                    errorThrown = true;
                    ensureException(error);
                }
@@ -870,7 +870,7 @@ contract('SecurityToken', accounts => {
                 try {
                     await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });
                 } catch(error) {
-                   console.log('failed in calling burn function because token burner contract is not set');
+                   console.log('         tx revert -> Token burner contract is not set'.grey);
                    errorThrown = true;
                    ensureException(error);
                }
@@ -887,7 +887,7 @@ contract('SecurityToken', accounts => {
                 try {
                     await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });
                 } catch(error) {
-                   console.log('failed in calling burn function because token burner contract is not set');
+                   console.log('         tx revert -> Token burner contract is not set'.grey);
                    errorThrown = true;
                    ensureException(error);
                }

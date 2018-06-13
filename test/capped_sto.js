@@ -218,8 +218,8 @@ contract('CappedSTO', accounts => {
         );
 
         // Step 8: Set the STR in TickerRegistry
-        await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -288,7 +288,7 @@ contract('CappedSTO', accounts => {
             try {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 26000000 });
             } catch(error) {
-                console.log(`Tx Failed because of rate is ${0}. Test Passed Successfully`);
+                console.log(`         tx revert -> Rate is ${0}. Test Passed Successfully`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -317,7 +317,7 @@ contract('CappedSTO', accounts => {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 26000000 });
             } catch(error) {
                 errorThrown = true;
-                console.log(`Tx Failed because of startTime is greater than endTime. Test Passed Successfully`);
+                console.log(`         tx revert -> StartTime is greater than endTime. Test Passed Successfully`.grey);
                 ensureException(error);
             }
             assert.ok(errorThrown, message);
@@ -340,7 +340,7 @@ contract('CappedSTO', accounts => {
         it("Should successfully attach the STO factory with the security token", async () => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 2500000 });
-        
+
             assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
@@ -393,7 +393,7 @@ contract('CappedSTO', accounts => {
                     value: web3.utils.toWei('1', 'ether')
                   });
             } catch(error) {
-                console.log(`Failed due to startTime is greater than Current time`);
+                console.log(`         tx revert -> startTime is greater than Current time`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -409,7 +409,7 @@ contract('CappedSTO', accounts => {
                     value: web3.utils.toWei('0', 'ether')
                   });
             } catch(error) {
-                console.log(`Failed due to invested amount is zero`);
+                console.log(`         tx revert -> Invested amount is zero`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -425,7 +425,7 @@ contract('CappedSTO', accounts => {
                     value: web3.utils.toWei('1', 'ether')
                   });
             } catch(error) {
-                console.log(`Failed because investor doesn't present in the whitelist`);
+                console.log(`         tx revert -> Investor doesn't present in the whitelist`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
@@ -441,7 +441,7 @@ contract('CappedSTO', accounts => {
                     value: web3.utils.toWei('0.1111', 'ether')
                   });
             } catch(error) {
-                console.log(`Failed due to wrong purchase granularity`);
+                console.log(`         tx revert -> Wrong purchase granularity`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
@@ -514,7 +514,7 @@ contract('CappedSTO', accounts => {
             try {
                 let tx = await I_CappedSTO.pause({from: account_investor1});
             } catch(error) {
-                console.log(`Failed due to wrong msg.sender`);
+                console.log(`         tx revert -> Wrong msg.sender`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
@@ -536,7 +536,7 @@ contract('CappedSTO', accounts => {
                     value: web3.utils.toWei('1', 'ether')
                   });
             } catch(error) {
-                console.log(`Failed because STO is paused`);
+                console.log(`         tx revert -> STO is paused`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
@@ -548,7 +548,7 @@ contract('CappedSTO', accounts => {
             try {
                 let tx = await I_CappedSTO.unpause(Math.floor(Date.now()/1000 + 50000), {from: account_investor1});
             } catch(error) {
-                console.log(`Failed due to wrong msg.sender`);
+                console.log(`         tx revert -> Wrong msg.sender`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
@@ -560,7 +560,7 @@ contract('CappedSTO', accounts => {
             try {
                 let tx = await I_CappedSTO.unpause(Math.floor(Date.now()/1000 - 500000), {from: account_issuer});
             } catch(error) {
-                console.log(`Failed due to entered date is less than the end date`);
+                console.log(`         tx revert -> Entered date is less than the end date`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
@@ -583,7 +583,7 @@ contract('CappedSTO', accounts => {
                     value: web3.utils.toWei('0.1111', 'ether')
                   });
             } catch(error) {
-                console.log(`Failed due to wrong purchase granularity`);
+                console.log(`         tx revert -> Wrong purchase granularity`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
@@ -636,7 +636,7 @@ contract('CappedSTO', accounts => {
                 value: web3.utils.toWei('1', 'ether')
               });
             } catch(error) {
-                console.log(`failed Because of capped reached`);
+                console.log(`         tx revert -> Cap reached`.grey);
                 ensureException(error);
             }
         });
@@ -653,7 +653,7 @@ contract('CappedSTO', accounts => {
                 value: web3.utils.toWei('1', 'ether')
               });
             } catch(error) {
-                console.log(`failed Because STO get expired reached`);
+                console.log(`         tx revert -> STO get expired reached`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -906,7 +906,7 @@ contract('CappedSTO', accounts => {
                     {from : account_investor1, gas: 6000000 }
                 );
                 } catch(error) {
-                    console.log(`failed Because of capped reached`);
+                    console.log(`         tx revert -> Cap reached`.grey);
                     errorThrown = true;
                     ensureException(error);
                 }
@@ -924,7 +924,7 @@ contract('CappedSTO', accounts => {
                         {from : account_investor1, gas: 6000000 }
                     );
                 } catch(error) {
-                    console.log(`failed Because STO get expired reached`);
+                    console.log(`         tx revert -> STO expiry reached`.grey);
                     errorThrown = true;
                     ensureException(error);
                 }

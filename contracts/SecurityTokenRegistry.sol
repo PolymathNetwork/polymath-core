@@ -4,6 +4,7 @@ import "./interfaces/ITickerRegistry.sol";
 import "./tokens/SecurityToken.sol";
 import "./interfaces/ISTProxy.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
+import "./interfaces/IModuleRegistry.sol";
 import "./interfaces/IRegistry.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
@@ -125,5 +126,13 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, IRegistry {
     */
     function isSecurityToken(address _securityToken) public view returns (bool) {
         return (keccak256(securityTokens[_securityToken].symbol) != keccak256(""));
+    }
+
+    /**
+    * @dev Called by a security token to notify the registry it is using a module
+    * @param _moduleFactory is the address of the relevant module factory
+    */
+    function _passUseModule(address _moduleFactory) external {
+        IModuleRegistry(MR_Address)._useModule(_moduleFactory, msg.sender);
     }
 }

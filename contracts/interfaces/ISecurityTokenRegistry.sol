@@ -26,6 +26,8 @@ contract ISecurityTokenRegistry {
 
     function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public;
 
+    function _passUseModule(address _moduleFactory) external;
+
     //////////////////////////////
     ///////// Get Functions
     //////////////////////////////

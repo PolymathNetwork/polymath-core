@@ -3,9 +3,9 @@ pragma solidity ^0.4.23;
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 import "../interfaces/ISecurityToken.sol";
+import "../interfaces/ISecurityTokenRegistry.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
-import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/IST20.sol";
 import "../modules/TransferManager/ITransferManager.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
@@ -32,6 +32,7 @@ contract SecurityToken is ISecurityToken {
     bool public freeze = false;
     // Reference to the POLY token.
     ERC20 public polyToken;
+    address public STR_Address;
 
     struct ModuleData {
         bytes32 name;
@@ -48,7 +49,6 @@ contract SecurityToken is ISecurityToken {
     Checkpoint[] public checkpointTotalSupply;
     uint256 public currentCheckpointId;
 
-    address public moduleRegistry;
 
     bool public mintingFinished = false;
 
@@ -87,6 +87,8 @@ contract SecurityToken is ISecurityToken {
     event LogCheckpointCreated(uint256 _checkpointId, uint256 _timestamp);
     // Emit when the minting get finished
     event LogFinishedMinting(uint256 _timestamp);
+    // Change the STR address in the event of a upgrade
+    event LogChangeRegistryAddress(string _registryName, address indexed _oldAddress, address indexed _newAddress);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
@@ -129,7 +131,7 @@ contract SecurityToken is ISecurityToken {
     DetailedERC20(_name, _symbol, _decimals)
     {
         //When it is created, the owner is the STR
-        moduleRegistry = IRegistry(_securityTokenRegistry).MR_Address();
+        STR_Address = _securityTokenRegistry;
         polyToken = ERC20(IRegistry(_securityTokenRegistry).POLY_Address());
         tokenDetails = _tokenDetails;
         granularity = _granularity;
@@ -171,7 +173,7 @@ contract SecurityToken is ISecurityToken {
     //  - the last member of the module list is replacable
     function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _locked) internal {
         //Check that module exists in registry - will throw otherwise
-        IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
+        ISecurityTokenRegistry(STR_Address)._passUseModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         require(modules[moduleFactory.getType()].length < MAX_MODULES, "Limit of MAX MODULES is reached");
         uint256 moduleCost = moduleFactory.setupCost();
@@ -552,6 +554,16 @@ contract SecurityToken is ISecurityToken {
             sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
         }
     }
+
+    /**
+     * @dev set a new Security Token Registry contract address in case of upgrade
+     * @param _newAddress is address of new contract
+     */
+     function changeSecurityTokenRegistryAddress(address _newAddress) public onlyOwner {
+         require(_newAddress != STR_Address && _newAddress != address(0));
+         emit LogChangeRegistryAddress('SecurityTokenRegistry', STR_Address, _newAddress);
+         STR_Address = _newAddress;
+     }
 
     /**
      * @dev Creates a checkpoint that can be used to query historical balances / totalSuppy

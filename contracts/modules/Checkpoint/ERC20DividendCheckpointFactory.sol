@@ -44,28 +44,28 @@ contract ERC20DividendCheckpointFactory is IModuleFactory {
      * @dev Get the name of the Module
      */
     function getName() public view returns(bytes32) {
-        return "EtherDividendCheckpoint";
+        return "ERC20DividendCheckpoint";
     }
 
     /**
      * @dev Get the description of the Module
      */
     function getDescription() public view returns(string) {
-        return "Create ETH dividends for token holders at a specific checkpoint";
+        return "Create ERC20 dividends for token holders at a specific checkpoint";
     }
 
     /**
      * @dev Get the title of the Module
      */
     function getTitle() public  view returns(string) {
-        return "Ether Dividend Checkpoint";
+        return "ERC20 Dividend Checkpoint";
     }
 
     /**
      * @dev Get the Instructions that helped to used the module
      */
     function getInstructions() public view returns(string) {
-        return "Create a dividend which will be paid out to token holders proportional to their balances at the point the dividend is created";
+        return "Create a ERC20 dividend which will be paid out to token holders proportional to their balances at the point the dividend is created";
     }
 
     /**

@@ -8,11 +8,11 @@ contract IRegistry is Ownable, IPausable {
 
     /*
     Valid Address Keys
-        TR_Address -> getAddress("TR_Address")
-        STR_Address -> getAddress("STR_Address")
-        MR_Address -> getAddress("MR_Address")
-        POLY_Address -> getAddress("POLY_Address")
-        */
+    tickerRegistry = getAddress("TickerRegistry")
+    securityTokenRegistry = getAddress("SecurityTokenRegistry")
+    moduleRegistry = getAddress("ModuleRegistry")
+    polyToken = getAddress("PolyToken")
+    */
 
     // Registration fee in POLY base 18 decimals
     uint256 public registrationFee;
@@ -33,24 +33,17 @@ contract IRegistry is Ownable, IPausable {
     }
 
     /**
-     * @dev set the contract address
-     * @param _nameKey is the key for the contract address mapping
-     * @param _newAddress is the new contract address
-     */
-    function setAddress(string _nameKey, address _newAddress) public onlyOwner {
-        require(!validAddressKeys[keccak256(_nameKey)] && storedAddresses[keccak256(_nameKey)] == address(0));
-        validAddressKeys[keccak256(_nameKey)] = true;
-        storedAddresses[keccak256(_nameKey)] = _newAddress;
-        emit LogChangeAddress(_nameKey, address(0), _newAddress);
-    }
-
-    /**
      * @dev change the contract address
      * @param _nameKey is the key for the contract address mapping
      * @param _newAddress is the new contract address
      */
     function changeAddress(string _nameKey, address _newAddress) public onlyOwner {
-        address oldAddress = getAddress(_nameKey);
+        address oldAddress;
+        if (validAddressKeys[keccak256(_nameKey)]) {
+            oldAddress = getAddress(_nameKey);
+        } else {
+            validAddressKeys[keccak256(_nameKey)] = true;
+        }
         storedAddresses[keccak256(_nameKey)] = _newAddress;
         emit LogChangeAddress(_nameKey, oldAddress, _newAddress);
     }

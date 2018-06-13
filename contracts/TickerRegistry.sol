@@ -42,8 +42,8 @@ contract TickerRegistry is ITickerRegistry, Util, IRegistry {
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
 
-    constructor (address _POLY_Address, uint256 _registrationFee) public {
-        setAddress("POLY_Address", _POLY_Address);
+    constructor (address _polyToken, uint256 _registrationFee) public {
+        changeAddress("PolyToken", _polyToken);
         registrationFee = _registrationFee;
     }
 
@@ -59,7 +59,7 @@ contract TickerRegistry is ITickerRegistry, Util, IRegistry {
     function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) public whenNotPaused {
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         if(registrationFee > 0)
-            require(ERC20(getAddress("POLY_Address")).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(ERC20(getAddress("PolyToken")).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol), "Ticker is already reserved");
         registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, _swarmHash, false);
@@ -86,7 +86,7 @@ contract TickerRegistry is ITickerRegistry, Util, IRegistry {
      */
     function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool) {
         string memory symbol = upper(_symbol);
-        require(msg.sender == getAddress("STR_Address"), "msg.sender should be SecurityTokenRegistry contract");
+        require(msg.sender == getAddress("SecurityTokenRegistry"), "msg.sender should be SecurityTokenRegistry contract");
         require(registeredSymbols[symbol].status != true, "Symbol status should not equal to true");
         require(registeredSymbols[symbol].owner == _owner, "Owner of the symbol should matched with the requested issuer address");
         require(registeredSymbols[symbol].timestamp.add(expiryLimit) >= now, "Ticker should not be expired");
@@ -105,7 +105,7 @@ contract TickerRegistry is ITickerRegistry, Util, IRegistry {
      */
      function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) public returns(bool) {
         string memory symbol = upper(_symbol);
-        require(msg.sender == getAddress("STR_Address"), "msg.sender should be SecurityTokenRegistry contract");
+        require(msg.sender == getAddress("SecurityTokenRegistry"), "msg.sender should be SecurityTokenRegistry contract");
         if (registeredSymbols[symbol].owner == _owner && !expiryCheck(_symbol)) {
             registeredSymbols[symbol].status = true;
             return false;

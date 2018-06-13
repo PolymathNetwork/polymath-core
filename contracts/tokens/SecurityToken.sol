@@ -30,9 +30,9 @@ contract SecurityToken is ISecurityToken {
 
     // Use to halt all the transactions
     bool public freeze = false;
-    // Reference to the POLY token.
-    ERC20 public polyToken;
-    address public STR_Address;
+
+    // Reference to STR contract
+    address public securityTokenRegistry;
 
     struct ModuleData {
         bytes32 name;
@@ -117,7 +117,7 @@ contract SecurityToken is ISecurityToken {
      * @param _decimals Decimals for the securityToken
      * @param _granularity granular level of the token
      * @param _tokenDetails Details of the token that are stored off-chain (IPFS hash)
-     * @param _STR_Address Contract address of the security token registry
+     * @param _securityTokenRegistry Contract address of the security token registry
      */
     constructor (
         string _name,
@@ -125,14 +125,13 @@ contract SecurityToken is ISecurityToken {
         uint8 _decimals,
         uint256 _granularity,
         string _tokenDetails,
-        address _STR_Address
+        address _securityTokenRegistry
     )
     public
     DetailedERC20(_name, _symbol, _decimals)
     {
         //When it is created, the owner is the STR
-        STR_Address = _STR_Address;
-        polyToken = ERC20(IRegistry(_STR_Address).getAddress("POLY_Address"));
+        securityTokenRegistry = _securityTokenRegistry;
         tokenDetails = _tokenDetails;
         granularity = _granularity;
         transferFunctions[bytes4(keccak256("transfer(address,uint256)"))] = true;
@@ -173,7 +172,7 @@ contract SecurityToken is ISecurityToken {
     //  - the last member of the module list is replacable
     function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _locked) internal {
         //Check that module exists in registry - will throw otherwise
-        IModuleRegistry(IRegistry(STR_Address).getAddress("MR_Address")).useModule(_moduleFactory);
+        IModuleRegistry(IRegistry(securityTokenRegistry).getAddress("ModuleRegistry")).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         require(modules[moduleFactory.getType()].length < MAX_MODULES, "Limit of MAX MODULES is reached");
         uint256 moduleCost = moduleFactory.setupCost();
@@ -181,11 +180,11 @@ contract SecurityToken is ISecurityToken {
         //Check that this module has not already been set as locked
         require(!modulesLocked[moduleFactory.getType()], "Module has already been set as locked");
         //Approve fee for module
-        require(polyToken.approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
+        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
         //Approve ongoing budget
-        require(polyToken.approve(module, _budget), "Not able to approve the budget");
+        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(module, _budget), "Not able to approve the budget");
         //Add to SecurityToken module map
         modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module));
         modulesLocked[moduleFactory.getType()] = _locked;
@@ -255,7 +254,7 @@ contract SecurityToken is ISecurityToken {
     * Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
     */
     function withdrawPoly(uint256 _amount) public onlyOwner {
-        require(polyToken.transfer(owner, _amount), "In-sufficient balance");
+        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).transfer(owner, _amount), "In-sufficient balance");
     }
 
     /**
@@ -264,7 +263,7 @@ contract SecurityToken is ISecurityToken {
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0, "Module type cannot be zero");
         require(_moduleIndex < modules[_moduleType].length, "Incorrrect module index");
-        require(polyToken.approve(modules[_moduleType][_moduleIndex].moduleAddress, _budget), "Insufficient balance to approve");
+        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(modules[_moduleType][_moduleIndex].moduleAddress, _budget), "Insufficient balance to approve");
         emit LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
     }
 
@@ -560,9 +559,9 @@ contract SecurityToken is ISecurityToken {
      * @param _newAddress is address of new contract
      */
      function changeSecurityTokenRegistryAddress(address _newAddress) public onlyOwner {
-         require(_newAddress != STR_Address && _newAddress != address(0));
-         emit LogChangeSTRAddress(STR_Address, _newAddress);
-         STR_Address = _newAddress;
+         require(_newAddress != securityTokenRegistry && _newAddress != address(0));
+         emit LogChangeSTRAddress(securityTokenRegistry, _newAddress);
+         securityTokenRegistry = _newAddress;
      }
 
     /**

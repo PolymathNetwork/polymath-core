@@ -17,7 +17,7 @@ contract SecurityTokenV2 is SecurityToken {
      * @param _decimals Decimals for the securityToken
      * @param _granularity granular level of the token
      * @param _tokenDetails Details of the token that are stored offchain (IPFS hash)
-     * @param _STR_Address Contract address of the security token registry
+     * @param _securityTokenRegistry Contract address of the security token registry
      */
     constructor (
         string _name,
@@ -25,7 +25,7 @@ contract SecurityTokenV2 is SecurityToken {
         uint8 _decimals,
         uint256 _granularity,
         string _tokenDetails,
-        address _STR_Address
+        address _securityTokenRegistry
     )
     public
     SecurityToken(
@@ -34,7 +34,7 @@ contract SecurityTokenV2 is SecurityToken {
     _decimals,
     _granularity,
     _tokenDetails,
-    _STR_Address)
+    _securityTokenRegistry)
     {
     }
 }

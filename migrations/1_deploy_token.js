@@ -1,4 +1,4 @@
-const DevPolyToken = artifacts.require('./helpers/PolyToken.sol')
+const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
 const Web3 = require('web3')
 web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
 

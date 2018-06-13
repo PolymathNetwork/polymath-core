@@ -7,18 +7,24 @@ const shell = require('shelljs');
 let tickerRegistryAddress = contracts.tickerRegistryAddress();
 let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
 let cappedSTOFactoryAddress = contracts.cappedSTOFactoryAddress();
+let polytokenAddress = contracts.polyTokenAddress();
 
 let tickerRegistryABI;
 let securityTokenRegistryABI;
 let securityTokenABI;
 let cappedSTOABI;
 let generalTransferManagerABI;
+let polytokenABI;
+let cappedSTOFactoryABI;
+
 try{
   tickerRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
   securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
   securityTokenABI          = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
   cappedSTOABI              = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
   generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
+  polytokenABI              = JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).abi;
+  cappedSTOFactoryABI       = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).abi;
 }catch(err){
   console.log('\x1b[31m%s\x1b[0m',"Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
   return;
@@ -52,14 +58,19 @@ let tokenSymbol;
 let tokenDecimals = 18;
 let divisibility = true;
 
+const regFee = 250;
+const stoFee = 20000;
 const tokenDetails = "";
 
 ////////////////////////
 
 let tickerRegistry;
 let securityTokenRegistry;
+let polyToken;
 let securityToken;
+let securityTokenAddress;
 let cappedSTO;
+let cappedSTOFactory;
 
 
 // App flow
@@ -124,6 +135,10 @@ async function setup(){
     tickerRegistry.setProvider(web3.currentProvider);
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI,securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
+    polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
+    polyToken.setProvider(web3.currentProvider);
+    cappedSTOFactory = new web3.eth.Contract(cappedSTOFactoryABI, cappedSTOFactoryAddress);
+    cappedSTOFactory.setProvider(web3.currentProvider);
   }catch(err){
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
@@ -162,6 +177,7 @@ async function step_ticker_reg(){
   let available = false;
 
   while(!available) {
+    console.log(chalk.green(`\nFor Registering the new Token Symbol, 250 POLY deducted from '${Issuer}\n`));
     tokenSymbol =  readlineSync.question('Enter the symbol for your new token: ');
     await tickerRegistry.methods.getDetails(tokenSymbol).call({from: Issuer}, function(error, result){
         if(new BigNumber(result[1]).toNumber() == 0){
@@ -177,10 +193,12 @@ async function step_ticker_reg(){
   }
 
   if(!alreadyRegistered){
-    try{
+    try {  
+      await step_approval(tickerRegistryAddress, regFee);
       await tickerRegistry.methods.registerTicker(Issuer,tokenSymbol,"",web3.utils.asciiToHex("")).send({ from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
+          Congrats! Your Ticker Registeration tx populated successfully
           Your transaction is being processed. Please wait...
           TxHash: ${hash}\n`
         );
@@ -193,15 +211,56 @@ async function step_ticker_reg(){
         );
       })
       .on('error', console.error);
-
-
-    }catch (err){
+    } catch (err){
       console.log(err.message);
       return;
     }
   }
-
   await step_token_deploy();
+}
+
+async function step_approval(spender, fee) {
+  let approved = false;
+    try {
+      while (!approved) {
+      polyBalance = await polyToken.methods.balanceOf(Issuer).call({from: Issuer});
+      if (polyBalance >= web3.utils.toWei(fee.toString(), "ether")) {
+        let allowance = await polyToken.methods.allowance(spender, Issuer).call({from: Issuer});
+        if (allowance == web3.utils.toWei(fee.toString(), "ether")) {
+          approved = true;
+          return approved;
+        } else {
+          await polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether")).send({from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE })
+          .on('receipt', function(receipt) {
+            approved = true;
+            return approved;
+          })
+          .on('error', console.error);
+        }
+      } else {
+        console.log(chalk.red(`\n Not enough POLY in your account\n`));
+        await polyToken.methods.getTokens(web3.utils.toWei("21000", "ether"), Issuer).send({from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE })
+        .on('transactionHash', function(hash) {
+          console.log(`
+          21K POLY is trasferred to '${Issuer}' from POLY Faucet \n
+          Your transaction is being processed. Please wait...
+          TxHash: ${hash}\n`
+        );
+        })
+        .on('receipt', function(receipt) {
+          console.log(`
+          Congratulations! The transaction was successfully completed.
+          Review it on Etherscan.
+          TxHash: ${receipt.transactionHash}\n`
+          );
+        })
+      }
+    }
+  return approved;
+  }catch (err){
+    console.log(err.message);
+    return;
+  }
 }
 
 async function step_token_deploy(){
@@ -237,6 +296,7 @@ async function step_token_deploy(){
     }
 
     try{
+      await step_approval(securityTokenRegistryAddress, regFee);
       await securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, web3.utils.fromAscii(tokenDetails), divisibility).send({ from: Issuer, gas:7700000, gasPrice: DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
@@ -251,8 +311,8 @@ async function step_token_deploy(){
           Review it on Etherscan.
           TxHash: ${receipt.transactionHash}\n`
         );
-
-        securityToken = new web3.eth.Contract(securityTokenABI,receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress);
+        securityTokenAddress = receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress;
+        securityToken = new web3.eth.Contract(securityTokenABI, securityTokenAddress);
       })
       .on('error', console.error);
 
@@ -496,7 +556,38 @@ async function step_STO_Launch(){
     }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,wallet]);
 
     try{
-      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, 0,0, true).send({ from: Issuer, gas:2500000, gasPrice:DEFAULT_GAS_PRICE})
+      let contractBalance = await polyToken.methods.balanceOf(securityToken.address).call({from: Issuer});
+      if (contractBalance < web3.utils.toWei(stoFee.toString(), "ether")) {
+        let transferAmount = web3.utils.toWei(stoFee.toString(), "ether") - contractBalance;
+        let ownerBalance = await polyToken.methods.balanceOf(Issuer).call({from: Issuer});
+        if(ownerBalance < transferAmount) {
+          console.log(chalk.red(`You don't have sufficient balance to pay the POLY fee of Adding the CappedSTO`));
+          await polyToken.methods.getTokens(new BigNumber(transferAmount), Issuer).send({from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE })
+          .on('transactionHash', function(hash) {
+            console.log(`
+            '${transferAmount}' POLY is trasferred to '${Issuer}' from POLY Faucet \n
+            Your transaction is being processed. Please wait...
+            TxHash: ${hash}\n`
+          );
+         })
+        .on('receipt', function(receipt) {
+          console.log(`
+          Congratulations! The transaction was successfully completed.
+          Review it on Etherscan.
+          TxHash: ${receipt.transactionHash}\n`
+          );
+        })
+        }
+        await polyToken.methods.transfer(securityTokenAddress, new BigNumber(transferAmount)).send({from: Issuer, gas: 200000, gasPrice: DEFAULT_GAS_PRICE})
+        .on('transactionHash', function(hash) {
+          console.log(`
+            Your transaction is being processed. Please wait...
+            TxHash: ${hash}\n`
+          );
+        }).on('error', console.error);
+      }
+      console.log(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0, true);
+      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0, true).send({ from: Issuer, gas: 26000000, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...

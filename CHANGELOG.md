@@ -16,8 +16,10 @@ All notable changes to this project will be documented in this file.
 * Issuer can prevent addresses from participating in the STO. To facilitate this, `_canBuyFromSTO` has been added to modifyWhitelist function.
 * Added multi-mint feature.
 * Event `LogGenerateModuleFromFactory` emitted at the level of ModuleFactory to log the creation of the module using the respective module factory.
-* Added registration fee of `250 POLY` for registering ticker or security token with registry contracts, fee can be changed using `changePolyRegistrationFee`
-* Added IRegistry contract to handle setting and retrieving registration fee
+* Added registration fee of `250 POLY` for registering ticker or security token with registry contracts, fee can be changed using `changePolyRegistrationFee`.
+* Added IRegistry contract to handle setting and retrieving registration fee.
+* Added pausable feature to registry functions `registerTicker`, `generateSecurityToken`, `registerModule`, `addCustomSecurityToken`.
+* Added upgradability functionality with functions to change reference address between registry contracts.
 
 ## Changed
 
@@ -27,6 +29,7 @@ All notable changes to this project will be documented in this file.
 * Updated CLI with MultiMint process.  
 * Change the `setupCost` of `cappedSTOFactory` from `0 POLY` to `20K POLY`.      
 * Add one more parameter called the `_owner` in the `addCustomSecurityToken()`.
+* Change `_addModule` in SecurityToken.sol to get MR address from STR contract.
 
 ## Removed
 

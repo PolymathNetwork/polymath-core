@@ -45,7 +45,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     mapping (address => Checkpoint[]) public checkpointBalances;
-    Checkpoint[] public checkpointTotalSupply;    
+    Checkpoint[] public checkpointTotalSupply;
 
     address public moduleRegistry;
 
@@ -85,6 +85,8 @@ contract SecurityToken is ISecurityToken {
     event LogCheckpointCreated(uint256 _checkpointId, uint256 _timestamp);
     // Emit when the minting get finished
     event LogFinishedMinting(uint256 _timestamp);
+    // Emit when a module type is locked
+    event LogModuleLocked(uint8 _moduleType, address _locker);
 
     //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
@@ -135,6 +137,12 @@ contract SecurityToken is ISecurityToken {
         transferFunctions[bytes4(keccak256("transferFrom(address,address,uint256)"))] = true;
         transferFunctions[bytes4(keccak256("mint(address,uint256)"))] = true;
         transferFunctions[bytes4(keccak256("burn(uint256)"))] = true;
+    }
+
+    function lockModule(uint8 _moduleType) external onlyOwner {
+        require(!modulesLocked[_moduleType]);
+        modulesLocked[_moduleType] = true;
+        emit LogModuleLocked(_moduleType, msg.sender);
     }
 
     /**

@@ -192,7 +192,7 @@ async function step_ticker_reg(){
   }
 
   if(!alreadyRegistered){
-    try {  
+    try {
       await step_approval(tickerRegistryAddress, regFee);
       await tickerRegistry.methods.registerTicker(Issuer,tokenSymbol,"",web3.utils.asciiToHex("")).send({ from: Issuer, gas:200000, gasPrice: DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
@@ -240,8 +240,8 @@ async function step_approval(spender, fee) {
           let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);
           console.log(chalk.red(`\n*****************************************************************************************************************************************`));
           console.log(chalk.red(`Not enough balance to Pay the Fee, Require ${(new BigNumber(requiredBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(polyBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
-          console.log(chalk.red(`******************************************************************************************************************************************\n`));  
-          process.exit(0);        
+          console.log(chalk.red(`******************************************************************************************************************************************\n`));
+          process.exit(0);
       }
   }catch (err){
     console.log(err.message);
@@ -330,8 +330,8 @@ async function step_Wallet_Issuance(){
 
     console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control or you can trasfer to affiliates");
     let isaffiliate =  readlineSync.question('Press'+ chalk.green(` "Y" `) + 'if you have list of affiliates addresses with you otherwise hit' + chalk.green(' Enter ') + 'and get the minted tokens to a particular address: ');
-    
-    if (isaffiliate == "Y" || isaffiliate == "y") 
+
+    if (isaffiliate == "Y" || isaffiliate == "y")
         await multi_mint_tokens();
     else {
     let mintWallet =  readlineSync.question('Add the address that will hold the issued tokens to the whitelist ('+Issuer+'): ');
@@ -369,7 +369,7 @@ async function step_Wallet_Issuance(){
 
       issuerTokens =  readlineSync.question('How many tokens do you plan to mint for the wallet you entered? (500.000): ');
       if(issuerTokens == "") issuerTokens = '500000';
-      
+
       await securityToken.methods.mint(mintWallet, web3.utils.toWei(issuerTokens,"ether")).send({ from: Issuer, gas:3000000, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
@@ -404,7 +404,7 @@ async function multi_mint_tokens() {
 
   console.log(chalk.green(`\nCongrats! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
-  
+
   shell.exec(`${__dirname}/minting.sh Multimint ${tokenSymbol} 75`);
 
   console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transfered to token holders`));
@@ -571,8 +571,8 @@ async function step_STO_Launch(){
         })
         .on('error', console.error);
       }
-      
-      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0, true).send({from: Issuer, gas: 26000000, gasPrice:DEFAULT_GAS_PRICE})
+
+      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0, true).send({from: Issuer, gas: 7900000, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...

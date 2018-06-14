@@ -18,5 +18,11 @@ module.exports = {
   },
   polyTokenAddress: function() {
     return JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).networks[SELECTED_NETWORK].address;
+  },
+  etherDividendCheckpointFactoryAddress: function() {
+    return JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpointFactory.json').toString()).networks[SELECTED_NETWORK].address;
+  },
+  erc20DividendCheckpointFactoryAddress: function() {
+    return JSON.parse(require('fs').readFileSync('./build/contracts/ERC20DividendCheckpointFactory.json').toString()).networks[SELECTED_NETWORK].address;
   }
 };

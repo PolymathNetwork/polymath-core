@@ -60,6 +60,9 @@ contract('TickerRegistry', accounts => {
     const stoKey = 3;
     const budget = 0;
 
+    // Initial fee for ticker registry and security token registry
+    const initRegFee = 250 * Math.pow(10, 18);
+
     // delagate details
     const delegateDetails = "I am delegate ..";
     const TM_Perm = 'FLAGS';
@@ -80,8 +83,9 @@ contract('TickerRegistry', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the Polytoken Contract
+        // Step 0: Deploy the token Faucet and Mint tokens for token_owner
         I_PolyToken = await PolyTokenFaucet.new();
+        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -125,7 +129,7 @@ contract('TickerRegistry', accounts => {
 
         // Step 6: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new({ from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, initRegFee, { from: account_polymath });
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -150,6 +154,7 @@ contract('TickerRegistry', accounts => {
             I_ModuleRegistry.address,
             I_TickerRegistry.address,
             I_STVersion.address,
+            initRegFee,
             {
                 from: account_polymath
             });
@@ -161,8 +166,8 @@ contract('TickerRegistry', accounts => {
         );
 
         // Step 8: Set the STR in TickerRegistry
-        await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -178,7 +183,7 @@ contract('TickerRegistry', accounts => {
     describe("Test cases for the TickerRegistry public variable", async () => {
 
         it("verify the securityTokenRegistry address", async() => {
-            let str = await I_TickerRegistry.strAddress.call();
+            let str = await I_TickerRegistry.getAddress.call("SecurityTokenRegistry");
             assert.equal(str, I_SecurityTokenRegistry.address);
         });
 
@@ -190,65 +195,86 @@ contract('TickerRegistry', accounts => {
 
     describe("Test cases for the registerTicker function", async() => {
 
-        it("Should fail in regestering the ticker due to the symbol length is 0", async() => {
+        it("Should fail to register ticker if registrationFee not approved", async() => {
             let errorThrown = false;
             try {
-                let tx = await I_TickerRegistry.registerTicker(token_owner, "", name, swarmHash, { from: token_owner });
+                let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from: token_owner });
             } catch(error) {
-                console.log(`Tx get Failed. Because symbol Length is 0`);
+                console.log(`         tx revert -> POLY allowance not provided for registration fee`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in regestering the ticker due to the symbol length is greater than 10", async() => {
-            let errorThrown = false;
-            try {
-                let tx = await I_TickerRegistry.registerTicker(token_owner, "POLYMATHNET", name, swarmHash, { from: token_owner });
-            } catch(error) {
-                console.log(`Tx get Failed. Because symbol Length is 0`);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
-
-
-        it("Should successfully register the ticker", async() => {
+        it("Should successfully register ticker", async() => {
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
 
-        it("Should register the same symbol again", async() => {
+        it("Should fail to register ticker due to the symbol length is 0", async() => {
             let errorThrown = false;
             try {
-                let tx = await I_TickerRegistry.registerTicker(account_temp, symbol, name, swarmHash, { from: account_temp });
+                await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
+                let tx = await I_TickerRegistry.registerTicker(token_owner, "", name, swarmHash, { from: token_owner });
             } catch(error) {
-                console.log(`Tx get Failed.symbol is already alloted to someone else`);
+                console.log(`         tx revert -> Symbol Length is 0`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
             assert.ok(errorThrown, message);
         });
 
-        it("Should allot the pre registerd token if expiry get reached", async() => {
+        it("Should fail to register ticker due to the symbol length is greater than 10", async() => {
+            let errorThrown = false;
+            try {
+                await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
+                let tx = await I_TickerRegistry.registerTicker(token_owner, "POLYMATHNET", name, swarmHash, { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> Symbol Length is greater than 10`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+
+        it("Should fail to register same symbol again", async() => {
+            // Give POLY to token issuer
+            await I_PolyToken.getTokens(initRegFee, account_temp);
+
+            // Call registration function
+            let errorThrown = false;
+            try {
+                await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: account_temp});
+                let tx = await I_TickerRegistry.registerTicker(account_temp, symbol, name, swarmHash, { from: account_temp });
+            } catch(error) {
+                console.log(`         tx revert -> Symbol is already alloted to someone else`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully register pre registerd ticker if expiry is reached", async() => {
             await increaseTime(605000);
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: account_temp});
             let tx = await I_TickerRegistry.registerTicker(account_temp, symbol, name, swarmHash, { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
     });
 
-    describe("test cases for the expiry limit", async() => {
+    describe("Test cases for the expiry limit", async() => {
 
         it("Should fail to set the expiry limit because msg.sender is not owner", async() => {
             let errorThrown = false;
             try {
                 let tx = await I_TickerRegistry.changeExpiryLimit(duration.days(10), {from: account_temp});
             } catch(error) {
-                console.log(`Tx get Failed. Because msg.sender is not owner`);
+                console.log(`         tx revert -> msg.sender is not owner`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -269,22 +295,7 @@ contract('TickerRegistry', accounts => {
             try {
                 let tx = await I_TickerRegistry.changeExpiryLimit(duration.seconds(5000), {from: account_polymath});
             } catch(error) {
-                console.log(`Tx get Failed. Because new expiry limit is lesser than one day`);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
-    });
-
-    describe("Test cases for the setTokenRegistry", async() => {
-
-        it("Should fail to set the TokenRegistry", async() => {
-            let errorThrown = false;
-            try {
-                let tx = await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-            } catch(error) {
-                console.log(`Tx get Failed. Failed to set again`);
+                console.log(`         tx revert -> New expiry limit is lesser than one day`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -314,11 +325,126 @@ contract('TickerRegistry', accounts => {
             try {
                 await I_TickerRegistry.checkValidity(symbol, account_temp, name, {from: accounts[9]});
             } catch(error) {
-                console.log(`Tx get Failed. Failed the check the validity because msg.sender is not the STR`);
+                console.log(`         tx revert -> Failed checkValidity because msg.sender is not the STR`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
             assert.ok(errorThrown, message);
         });
     });
+
+    describe("Test cases for IRegistry functionality", async() => {
+
+        describe("Test cases for changePolyRegisterationFee", async() => {
+
+            it("Should successfully get the registration fee", async() => {
+                let fee = await I_TickerRegistry.registrationFee.call();
+                assert.equal(fee, initRegFee)
+            });
+
+            it("Should fail to change the registration fee if msg.sender not owner", async() => {
+                let errorThrown = false;
+                try {
+                    let tx = await I_TickerRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> Failed to change registrationFee`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully change the registration fee", async() => {
+                await I_TickerRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_polymath });
+                let fee = await I_TickerRegistry.registrationFee.call();
+                assert.equal(fee, 400 * Math.pow(10, 18));
+            });
+
+        });
+
+        describe("Test cases for reclaiming funds", async() => {
+
+            it("Should successfully reclaim POLY tokens", async() => {
+                I_PolyToken.transfer(I_TickerRegistry.address, 1 * Math.pow(10, 18), { from: token_owner });
+                let bal1 = await I_PolyToken.balanceOf.call(account_polymath);
+                await I_TickerRegistry.reclaimERC20(I_PolyToken.address);
+                let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
+                assert.isAbove(bal2, bal1);
+            });
+
+        });
+
+        describe("Test cases for changing contract address reference", async() => {
+
+            it("Should fail to change address if msg.sender is not owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, { from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully change address", async() => {
+                await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_PolyToken.address, { from: account_polymath });
+                assert.equal(
+                    (await I_TickerRegistry.getAddress.call("SecurityTokenRegistry")),
+                    I_PolyToken.address,
+                    "Failed in setting the address of the securityTokenRegistry"
+                );
+                await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, { from: account_polymath });
+                assert.equal(
+                    (await I_TickerRegistry.getAddress.call("SecurityTokenRegistry")),
+                    I_SecurityTokenRegistry.address,
+                    "Failed in setting the address of the securityTokenRegistry"
+                );
+            });
+
+        });
+
+        describe("Test cases for pausing the contract", async() => {
+
+            it("Should fail to pause if msg.sender is not owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_TickerRegistry.pause({ from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully pause the contract", async() => {
+                await I_TickerRegistry.pause({ from: account_polymath });
+                let status = await I_TickerRegistry.paused.call();
+                assert.isOk(status);
+            });
+
+            it("Should fail to unpause if msg.sender is not owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_TickerRegistry.unpause({ from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully unpause the contract", async() => {
+                await I_TickerRegistry.unpause({ from: account_polymath });
+                let status = await I_TickerRegistry.paused.call();
+                assert.isNotOk(status);
+            });
+
+        });
+
+    });
+
 });

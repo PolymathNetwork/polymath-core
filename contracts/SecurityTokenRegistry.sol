@@ -4,30 +4,34 @@ import "./interfaces/ITickerRegistry.sol";
 import "./tokens/SecurityToken.sol";
 import "./interfaces/ISTProxy.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
+import "./interfaces/IRegistry.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./helpers/Util.sol";
 
-
-contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
+contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, IRegistry {
 
     // Emit at the time of launching of new security token
     event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address _owner);
     event LogAddCustomSecurityToken(string _name, string _symbol, address _securityToken, uint256 _addedAt);
+
      /**
      * @dev Constructor used to set the essentials addresses to facilitate
      * the creation of the security token
      */
     constructor (
-        address _polyAddress,
+        address _polyToken,
         address _moduleRegistry,
         address _tickerRegistry,
-        address _stVersionProxy
+        address _stVersionProxy,
+        uint256 _registrationFee
     )
     public
     {
-        polyAddress = _polyAddress;
-        moduleRegistry = _moduleRegistry;
-        tickerRegistry = _tickerRegistry;
+        changeAddress("PolyToken", _polyToken);
+        changeAddress("ModuleRegistry", _moduleRegistry);
+        changeAddress("TickerRegistry", _tickerRegistry);
+        registrationFee = _registrationFee;
 
         // By default, the STR version is set to 0.0.1
         setProtocolVersion(_stVersionProxy, "0.0.1");
@@ -39,9 +43,11 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @param _symbol Ticker symbol of the security token
      * @param _tokenDetails off-chain details of the token
      */
-    function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) public {
+    function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) public whenNotPaused {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
-        require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
+        require(ITickerRegistry(getAddress("TickerRegistry")).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
+        if(registrationFee > 0)
+            require(ERC20(getAddress("PolyToken")).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = upper(_symbol);
         address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
             _name,
@@ -66,15 +72,16 @@ contract SecurityTokenRegistry is Ownable, ISecurityTokenRegistry, Util {
      * @param _tokenDetails off-chain details of the token
      * @param _swarmHash off-chain details about the issuer company
      */
-    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash) public onlyOwner {
+    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash) public onlyOwner whenNotPaused {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         require(_securityToken != address(0) && symbols[_symbol] == address(0), "Symbol is already at the polymath network or entered security token address is 0x");
         require(_owner != address(0));
-        require(!(ITickerRegistry(tickerRegistry).isReserved(_symbol, _owner, _name, _swarmHash)), "Trying to use non-valid symbol");
+        require(!(ITickerRegistry(getAddress("TickerRegistry")).isReserved(_symbol, _owner, _name, _swarmHash)), "Trying to use non-valid symbol");
         symbols[_symbol] = _securityToken;
         securityTokens[_securityToken] = SecurityTokenData(_symbol, _tokenDetails);
         emit LogAddCustomSecurityToken(_name, _symbol, _securityToken, now);
     }
+
     /**
     * @dev Changes the protocol version and the SecurityToken contract that the registry points to
     * Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions

@@ -71,6 +71,9 @@ contract('GeneralTransferManager', accounts => {
     const transferManagerKey = 2;
     const stoKey = 3;
 
+    // Initial fee for ticker registry and security token registry
+    const initRegFee = 250 * Math.pow(10, 18);
+
     // Dummy STO details
     const startTime = latestTime() + duration.seconds(5000);           // Start time will be 5000 seconds more than the latest time
     const endTime = startTime + duration.days(80);                     // Add 80 days more
@@ -93,7 +96,7 @@ contract('GeneralTransferManager', accounts => {
             name: '_someString'
         }
         ]
-    };   
+    };
 
     before(async() => {
         // Accounts setup
@@ -113,8 +116,9 @@ contract('GeneralTransferManager', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the Polytoken Contract
+        // Step 0: Deploy the token Faucet and Mint tokens for token_owner
         I_PolyToken = await PolyTokenFaucet.new();
+        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -172,7 +176,7 @@ contract('GeneralTransferManager', accounts => {
 
         // Step 6: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new({ from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, initRegFee, { from: account_polymath });
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -197,6 +201,7 @@ contract('GeneralTransferManager', accounts => {
             I_ModuleRegistry.address,
             I_TickerRegistry.address,
             I_STVersion.address,
+            initRegFee,
             {
                 from: account_polymath
             });
@@ -207,9 +212,9 @@ contract('GeneralTransferManager', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 8: Set the STR in TickerRegistry & ModuleRegistry
-        await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
+        // Step 8: Set the STR in TickerRegistry
+        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
 
         // Printing all the contract addresses
@@ -227,12 +232,14 @@ contract('GeneralTransferManager', accounts => {
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner });
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, contact, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol.toUpperCase());
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
+            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner });
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
 
             // Verify the successful generation of the security token
@@ -279,7 +286,7 @@ contract('GeneralTransferManager', accounts => {
                             gas: 6000000
                         });
             assert.equal(tx.logs[0].args._investor, account_affiliates1);
-            assert.equal(tx.logs[1].args._investor, account_affiliates2);            
+            assert.equal(tx.logs[1].args._investor, account_affiliates2);
         });
 
         it("Should mint the tokens to the affiliates", async () => {
@@ -322,7 +329,7 @@ contract('GeneralTransferManager', accounts => {
             try {
                 await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
             } catch(error) {
-                console.log(`Failed because investor isn't present in the whitelist`);
+                console.log(`         tx revert -> Investor isn't present in the whitelist`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -362,7 +369,7 @@ contract('GeneralTransferManager', accounts => {
             try {
                 await I_DummySTO.generateTokens(account_affiliates1, web3.utils.toWei('1', 'ether'), { from: token_owner });
             } catch(error) {
-                console.log(`Failed because investor is restricted investor`);
+                console.log(`         tx revert -> Investor is restricted investor`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -376,7 +383,7 @@ contract('GeneralTransferManager', accounts => {
             try {
                 await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
             } catch(error) {
-                console.log(`Failed because investor isn't present in the whitelist`);
+                console.log(`         tx revert -> Investor isn't present in the whitelist`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -392,7 +399,7 @@ contract('GeneralTransferManager', accounts => {
             try {
                 await I_DummySTO.generateTokens(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner });
             } catch(error) {
-                console.log(`Failed because investor isn't present in the whitelist`);
+                console.log(`         tx revert -> Investor isn't present in the whitelist`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -428,7 +435,7 @@ contract('GeneralTransferManager', accounts => {
                       gas: 6000000
                   });
             } catch(error) {
-                console.log(`Failed because incorrect sig data`);
+                console.log(`         tx revert -> Incorrect sig data`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -465,7 +472,7 @@ contract('GeneralTransferManager', accounts => {
                       gas: 6000000
                   });
             } catch(error) {
-                console.log(`Failed because incorrect sig data`);
+                console.log(`         tx revert -> Incorrect sig data`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -503,7 +510,7 @@ contract('GeneralTransferManager', accounts => {
                       gas: 6000000
                   });
             } catch(error) {
-                console.log(`Failed because incorrect sig data`);
+                console.log(`         tx revert -> Incorrect sig data`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -557,7 +564,7 @@ contract('GeneralTransferManager', accounts => {
             try {
                 await I_GeneralTransferManager.changeSigningAddress(account_polymath, {from: account_investor4});
             } catch(error) {
-                console.log(`Failed due to msg.sender is not token_owner`);
+                console.log(`         tx revert -> msg.sender is not token_owner`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -594,7 +601,7 @@ contract('GeneralTransferManager', accounts => {
             try {
                 await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('2','ether'), {from: account_investor2});
             } catch(error) {
-                console.log(`Failed because trasfer is paused`);
+                console.log(`         tx revert -> Transfer is paused`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -639,7 +646,7 @@ contract('GeneralTransferManager', accounts => {
                     }
                 );
             } catch(error) {
-                console.log(`Failed because msg.sender is not allowed to modify the whitelist`);
+                console.log(`         tx revert -> msg.sender is not allowed to modify the whitelist`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -664,7 +671,7 @@ contract('GeneralTransferManager', accounts => {
                     }
                 );
             } catch(error) {
-                console.log(`Failed because array length mismatch`);
+                console.log(`         tx revert -> Array length mismatch`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -689,7 +696,7 @@ contract('GeneralTransferManager', accounts => {
                     }
                 );
             } catch(error) {
-                console.log(`Failed because array length mismatch`);
+                console.log(`         tx revert -> Array length mismatch`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -714,7 +721,7 @@ contract('GeneralTransferManager', accounts => {
                     }
                 );
             } catch(error) {
-                console.log(`Failed because array length mismatch`);
+                console.log(`         tx revert -> Array length mismatch`.grey);
                 errorThrown = true;
                 ensureException(error);
             }

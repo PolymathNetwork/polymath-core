@@ -71,6 +71,9 @@ contract('ModuleRegistry', accounts => {
     const stoKey = 3;
     const budget = 0;
 
+    // Initial fee for ticker registry and security token registry
+    const initRegFee = 250 * Math.pow(10, 18);
+
     // delagate details
     const delegateDetails = "I am delegate ..";
     const TM_Perm = 'FLAGS';
@@ -119,8 +122,9 @@ contract('ModuleRegistry', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the Polytoken Contract
+        // Step 0: Deploy the token Faucet and Mint tokens for token_owner
         I_PolyToken = await PolyTokenFaucet.new();
+        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -134,7 +138,7 @@ contract('ModuleRegistry', accounts => {
 
         // Step 6: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new({ from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, initRegFee, { from: account_polymath });
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -238,7 +242,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
             } catch(error) {
-                console.log(`Tx get failed. Already Registered Module factory`);
+                console.log(`         tx revert -> Already Registered Module factory`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -250,7 +254,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.registerModule(I_MockFactory.address, { from: account_polymath });
             } catch(error) {
-                console.log(`Tx get failed. Module factory of 0 type`);
+                console.log(`         tx revert -> Module factory of 0 type`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -265,7 +269,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_temp });
             } catch(error) {
-                console.log(`Tx get failed. Because msg.sender should be account_polymath`);
+                console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -305,7 +309,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
             } catch(error) {
-                console.log(`Tx get failed. Because the module is not registered`);
+                console.log(`         tx revert -> Module is not registered`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -343,6 +347,7 @@ contract('ModuleRegistry', accounts => {
                 I_ModuleRegistry.address,
                 I_TickerRegistry.address,
                 I_STVersion.address,
+                initRegFee,
                 {
                     from: account_polymath
                 });
@@ -354,32 +359,11 @@ contract('ModuleRegistry', accounts => {
             );
 
             // Set the STR in TickerRegistry
-            await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-        });
-    })
+            await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+            await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
-    describe("Test cases for the setTokenRegistry", async() => {
-
-        it("Should fail in set the securityTokenRegistry. Because msg.sender is not the owner", async() => {
-            let errorThrown = false;
-            try {
-                await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, { from: account_temp });
-            } catch(error) {
-                console.log(`Tx get failed. Because msg.sender should be account_polymath`);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
         });
 
-        it("Should successfully set the STR address", async() => {
-            await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, { from: account_polymath });
-            assert.equal(
-                (await I_ModuleRegistry.securityTokenRegistry.call()),
-                I_SecurityTokenRegistry.address,
-                "Failed in setting the address of the securityTokenRegistry"
-            );
-        });
     });
 
     describe("Test cases for the tag functions", async() => {
@@ -389,7 +373,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.addTagByModuleType(3,["Non-Refundable","Capped","ETH","POLY"],{from: account_temp});
             } catch(error) {
-                console.log(`Tx get failed. Because msg.sender should be account_polymath`);
+                console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -407,7 +391,7 @@ contract('ModuleRegistry', accounts => {
             try {
                 await I_ModuleRegistry.removeTagByModuleType(3,["Capped", "ETH"], {from: account_investor1});
             } catch(error) {
-                console.log(`Tx get failed. Because msg.sender should be account_polymath`);
+                console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -419,17 +403,20 @@ contract('ModuleRegistry', accounts => {
             let tags = await I_ModuleRegistry.getTagByModuleType.call(3);
             assert.equal(web3.utils.toAscii(tags[1]).replace(/\u0000/g, ''),"");
         });
+
     });
 
-    describe("Launch of SecurityToken", async() => {
+    describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner });
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
+            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner });
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:85000000  });
 
             // Verify the successful generation of the security token
@@ -463,6 +450,7 @@ contract('ModuleRegistry', accounts => {
             );
 
         });
+
     });
 
     describe("test cases for useModule", async() => {
@@ -476,7 +464,7 @@ contract('ModuleRegistry', accounts => {
                 const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 60000000 });
             } catch(error) {
                 errorThrown = true;
-                console.log(`Tx get failed. Because module is un-verified`);
+                console.log(`         tx revert -> Module is un-verified`.grey);
                 ensureException(error);
             }
             assert.ok(errorThrown, message);
@@ -515,6 +503,121 @@ contract('ModuleRegistry', accounts => {
                 "CappedSTOFactory module was not added"
             );
         });
+
     });
 
-  });
+    describe("Test cases for IRegistry functionality", async() => {
+
+        describe("Test cases for the changePolyRegisterationFee", async() => {
+
+            it("Should successfully get the registration fee", async() => {
+                let fee = await I_ModuleRegistry.registrationFee.call();
+                assert.equal(fee, 0)
+            });
+
+            it("Should fail to change the registration fee if msg.sender not owner", async() => {
+                let errorThrown = false;
+                try {
+                    let tx = await I_ModuleRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> Failed to change registrationFee`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully change the registration fee", async() => {
+                await I_ModuleRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_polymath });
+                let fee = await I_ModuleRegistry.registrationFee.call();
+                assert.equal(fee, 400 * Math.pow(10, 18));
+            });
+
+        });
+
+        describe("Test cases for reclaiming funds", async() => {
+
+            it("Should successfully reclaim POLY tokens", async() => {
+                I_PolyToken.transfer(I_ModuleRegistry.address, 1 * Math.pow(10, 18), { from: token_owner });
+                let bal1 = await I_PolyToken.balanceOf.call(account_polymath);
+                await I_ModuleRegistry.reclaimERC20(I_PolyToken.address);
+                let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
+                assert.isAbove(bal2, bal1);
+            });
+
+        });
+
+        describe("Test cases for changing contract address reference", async() => {
+
+            it("Should fail to change address if msg.sender is not owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, { from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully change address", async() => {
+                await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_PolyToken.address, { from: account_polymath });
+                assert.equal(
+                    (await I_ModuleRegistry.getAddress.call("SecurityTokenRegistry")),
+                    I_PolyToken.address,
+                    "Failed in setting the address of the securityTokenRegistry"
+                );
+                await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, { from: account_polymath });
+                assert.equal(
+                    (await I_ModuleRegistry.getAddress.call("SecurityTokenRegistry")),
+                    I_SecurityTokenRegistry.address,
+                    "Failed in setting the address of the securityTokenRegistry"
+                );
+            });
+
+        });
+
+        describe("Test cases for pausing the contract", async() => {
+
+            it("Should fail to pause if msg.sender is not owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_ModuleRegistry.pause({ from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully pause the contract", async() => {
+                await I_ModuleRegistry.pause({ from: account_polymath });
+                let status = await I_ModuleRegistry.paused.call();
+                assert.isOk(status);
+            });
+
+            it("Should fail to unpause if msg.sender is not owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_ModuleRegistry.unpause({ from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully unpause the contract", async() => {
+                await I_ModuleRegistry.unpause({ from: account_polymath });
+                let status = await I_ModuleRegistry.paused.call();
+                assert.isNotOk(status);
+            });
+
+        });
+
+    });
+
+});

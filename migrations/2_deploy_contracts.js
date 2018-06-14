@@ -11,6 +11,7 @@ const TickerRegistry = artifacts.require('./TickerRegistry.sol')
 const STVersionProxy001 = artifacts.require('./tokens/STVersionProxy001.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyToken.sol')
 const cappedSTOSetupCost = 20000 * Math.pow(10,18);   // 20K POLY fee
+const initRegFee = 250 * Math.pow(10, 18);       // 250 POLY fee for registering ticker or security token in registry
 let PolyToken
 
 const Web3 = require('web3')
@@ -126,17 +127,17 @@ module.exports = function (deployer, network, accounts) {
     return deployer.deploy(STVersionProxy001, GeneralTransferManagerFactory.address, {from: PolymathAccount})
     }).then(() => {
       // I) Deploy the TickerRegistry Contract (It is used to store the information about the ticker)
-    return deployer.deploy(TickerRegistry, {from: PolymathAccount})
+    return deployer.deploy(TickerRegistry, PolyToken, initRegFee, {from: PolymathAccount})
     }).then(() => {
       // J) Deploy the SecurityTokenRegistry contract (Used to hold the deployed secuirtyToken details. It also act as the interface to deploy the SecurityToken)
-    return deployer.deploy(SecurityTokenRegistry, PolyToken, ModuleRegistry.address, TickerRegistry.address, STVersionProxy001.address, {from: PolymathAccount})
+    return deployer.deploy(SecurityTokenRegistry, PolyToken, ModuleRegistry.address, TickerRegistry.address, STVersionProxy001.address, initRegFee, {from: PolymathAccount})
     }).then(() => {
     return TickerRegistry.deployed().then((tickerRegistry) => {
       // K) SecurityTokenRegistry address make available to the TickerRegistry contract for accessing the securityTokenRegistry functions
-      return tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount})
+      return tickerRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
     }).then(() => {
       // L) SecurityTokenRegistry address make available to the TickerRegistry contract for accessing the securityTokenRegistry functions
-    return moduleRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount})
+    return moduleRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
     }).then(() => {
       // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
     return deployer.deploy(CappedSTOFactory, PolyToken, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})

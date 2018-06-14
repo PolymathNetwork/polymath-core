@@ -56,7 +56,7 @@ contract('SecurityTokenRegistry', accounts => {
     let I_STVersion;
     let I_SecurityToken;
     let I_DummySTO;
-    let I_PolyFaucet;
+    let I_PolyToken;
     let I_STVersion002;
     let I_SecurityToken002;
     let I_STVersion003;
@@ -78,6 +78,9 @@ contract('SecurityTokenRegistry', accounts => {
     const transferManagerKey = 2;
     const stoKey = 3;
     const budget = 0;
+
+    // Initial fee for ticker registry and security token registry
+    const initRegFee = 250 * Math.pow(10, 18);
 
      // Capped STO details
      const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
@@ -114,8 +117,9 @@ contract('SecurityTokenRegistry', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the token Faucet
-        I_PolyFaucet = await PolyTokenFaucet.new();
+        // Step 0: Deploy the token Faucet and Mint tokens for token_owner
+        I_PolyToken = await PolyTokenFaucet.new();
+        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
 
         // STEP 1: Deploy the ModuleRegistry
 
@@ -129,7 +133,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: account_polymath });
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
 
         assert.notEqual(
             I_GeneralTransferManagerFactory.address.valueOf(),
@@ -139,7 +143,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 3: Deploy the GeneralDelegateManagerFactory
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyFaucet.address, 0, 0, 0, { from: account_polymath });
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -160,7 +164,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // Step 5: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new({ from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, initRegFee, { from: account_polymath });
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -180,7 +184,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 8: Deploy the CappedSTOFactory
 
-        I_TestSTOFactory = await TestSTOFactory.new(I_PolyFaucet.address, 1000 * Math.pow(10, 18), 0, 0,{ from: token_owner });
+        I_TestSTOFactory = await TestSTOFactory.new(I_PolyToken.address, 1000 * Math.pow(10, 18), 0, 0,{ from: token_owner });
 
         assert.notEqual(
             I_TestSTOFactory.address.valueOf(),
@@ -194,10 +198,11 @@ contract('SecurityTokenRegistry', accounts => {
         // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolyFaucet.address,
+            I_PolyToken.address,
             I_ModuleRegistry.address,
             I_TickerRegistry.address,
             I_STVersion.address,
+            initRegFee,
             {
                 from: account_polymath
             });
@@ -209,8 +214,8 @@ contract('SecurityTokenRegistry', accounts => {
         );
 
         // Step 8: Set the STR in TickerRegistry
-        await I_TickerRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.setTokenRegistry(I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
 
 
@@ -226,15 +231,29 @@ contract('SecurityTokenRegistry', accounts => {
         `);
     });
 
-    describe("Generate the SecurityToken", async() => {
+    describe("Generate SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
 
+        it("Should fail to generate new security token if fee not provided", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
+            } catch(error) {
+                console.log(`         tx revert -> POLY allowance not provided for registration fee`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should generate the new security token with the same symbol as registered above", async () => {
+            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
@@ -257,7 +276,11 @@ contract('SecurityTokenRegistry', accounts => {
             LogAddModule.stopWatching();
         });
 
-        it("Should deploy the st vesrion 2", async() => {
+    });
+
+    describe("Generate SecurityToken v2", async() => {
+
+        it("Should deploy the st version 2", async() => {
             // Step 7: Deploy the STversionProxy contract
 
             I_STVersion002 = await STVersion002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
@@ -277,12 +300,14 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should register the ticker before the generation of the security token", async () => {
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol2, name2, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol2);
         });
 
         it("Should generate the new security token with version 2", async() => {
+            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, symbol2, tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
@@ -305,12 +330,16 @@ contract('SecurityTokenRegistry', accounts => {
             LogAddModule.stopWatching();
         });
 
+    });
+
+    describe("Generate custom tokens", async() => {
+
         it("Should fail in adding the new custom token in the polymath network", async() => {
             let errorThrown = false;
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_delegate});
             } catch(error) {
-                console.log(`Tx. get failed. Becuase msg.sender is not polymath account`);
+                console.log(`         tx revert -> msg.sender is not polymath account`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -322,7 +351,7 @@ contract('SecurityTokenRegistry', accounts => {
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, 0, "I am custom ST", "Swarm hash", {from: account_polymath});
             } catch(error) {
-                console.log(`Tx. get failed. Becuase security token address is 0`);
+                console.log(`         tx revert -> Security token address is 0`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -334,7 +363,7 @@ contract('SecurityTokenRegistry', accounts => {
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken("", "", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
             } catch(error) {
-                console.log(`Tx. get failed. Becuase symbol and name of zero length`);
+                console.log(`         tx revert -> Symbol and name of zero length`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -346,7 +375,7 @@ contract('SecurityTokenRegistry', accounts => {
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token,  "I am custom ST", "Swarm hash", {from: account_delegate});
             } catch(error) {
-                console.log(`Tx. get failed. Becuase msg.sender is not polymath account`);
+                console.log(`         tx revert -> msg.sender is not polymath account`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -358,7 +387,7 @@ contract('SecurityTokenRegistry', accounts => {
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken(name2, symbol2, account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
             } catch(error) {
-                console.log(`Tx. get failed. Becuase Symbol is already reserved`);
+                console.log(`         tx revert -> Symbol is already reserved`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -374,7 +403,13 @@ contract('SecurityTokenRegistry', accounts => {
             assert.equal(symbolDetails[2], "LOGAN");
         });
 
+    });
+
+    describe("Generate SecurityToken v3", async() => {
+
         it("Should add the new custom token in the polymath network", async() => {
+            await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), account_temp);
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: account_temp});
             await I_TickerRegistry.registerTicker(account_temp, "CUST", "custom", "I am swram hash", {from: account_temp});
             let tx = await I_SecurityTokenRegistry.addCustomSecurityToken("custom", "CUST", account_temp, accounts[2], "I am custom ST", "I am swram hash", {from: account_polymath});
             assert.equal(tx.logs[0].args._symbol, "CUST");
@@ -382,7 +417,7 @@ contract('SecurityTokenRegistry', accounts => {
             let symbolDetails = await I_TickerRegistry.getDetails("CUST");
             assert.equal(symbolDetails[0], account_temp);
             assert.equal(symbolDetails[2], "custom");
-        })
+        });
 
         it("Should deploy the st vesrion 3", async() => {
             // Step 7: Deploy the STversionProxy contract
@@ -404,12 +439,14 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should register the ticker before the generation of the security token", async () => {
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_TickerRegistry.registerTicker(token_owner, "DET3", name2, swarmHash, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, "DET3");
         });
 
         it("Should generate the new security token with version 3", async() => {
+            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, "DET3", tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
@@ -431,6 +468,10 @@ contract('SecurityTokenRegistry', accounts => {
             );
             LogAddModule.stopWatching();
         });
+
+    });
+
+    describe("Attach modules automatically", async() => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
@@ -468,7 +509,7 @@ contract('SecurityTokenRegistry', accounts => {
                         gas: 26000000
                     });
             } catch(error) {
-                console.log(`Tx. get failed. Becuase securityToken doesn't have sufficient POLY to pay`);
+                console.log(`         tx revert -> SecurityToken doesn't have sufficient POLY to pay`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -485,7 +526,7 @@ contract('SecurityTokenRegistry', accounts => {
                     someString,
                 ]);
 
-            await I_PolyFaucet.getTokens((1000 * Math.pow(10, 18)), I_SecurityToken.address);
+            await I_PolyToken.getTokens((1000 * Math.pow(10, 18)), I_SecurityToken.address);
 
             const tx = await I_SecurityToken.addModule(
                 I_TestSTOFactory.address,
@@ -509,6 +550,10 @@ contract('SecurityTokenRegistry', accounts => {
             I_DummySTO = DummySTO.at(tx.logs[3].args._module);
         });
 
+    });
+
+    describe("Test cases for getters", async() => {
+
         it("Should get the security token address", async() => {
            let address = await I_SecurityTokenRegistry.getSecurityTokenAddress.call("DET");
            assert.equal(address, I_SecurityToken.address);
@@ -522,6 +567,118 @@ contract('SecurityTokenRegistry', accounts => {
 
     });
 
+    describe("Test cases for IRegistry functionality", async() => {
 
+        describe("Test cases for changePolyRegisterationFee", async() => {
+
+            it("Should successfully get the registration fee", async() => {
+                let fee = await I_SecurityTokenRegistry.registrationFee.call();
+                assert.equal(fee, initRegFee)
+            });
+
+            it("Should fail to change the registration fee if msg.sender not owner", async() => {
+                let errorThrown = false;
+                try {
+                    let tx = await I_SecurityTokenRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> Failed to change registrationFee`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully change the registration fee", async() => {
+                await I_SecurityTokenRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_polymath });
+                let fee = await I_SecurityTokenRegistry.registrationFee.call();
+                assert.equal(fee, 400 * Math.pow(10, 18));
+            });
+
+        });
+
+        describe("Test cases for reclaiming funds", async() => {
+
+            it("Should successfully reclaim POLY tokens", async() => {
+                I_PolyToken.transfer(I_SecurityTokenRegistry.address, 1 * Math.pow(10, 18), { from: token_owner });
+                let bal1 = await I_PolyToken.balanceOf.call(account_polymath);
+                await I_SecurityTokenRegistry.reclaimERC20(I_PolyToken.address);
+                let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
+                assert.isAbove(bal2, bal1);
+            });
+
+        });
+
+        describe("Test cases for changing contract address reference", async() => {
+
+            it("Should fail to change address if msg.sender is not owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityTokenRegistry.changeAddress("TickerRegistry", I_TickerRegistry.address, { from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully change address", async() => {
+                await I_SecurityTokenRegistry.changeAddress("TickerRegistry", I_PolyToken.address, { from: account_polymath });
+                assert.equal(
+                    (await I_SecurityTokenRegistry.getAddress.call("TickerRegistry")),
+                    I_PolyToken.address,
+                    "Failed in setting the address of the securityTokenRegistry"
+                );
+                await I_SecurityTokenRegistry.changeAddress("TickerRegistry", I_TickerRegistry.address, { from: account_polymath });
+                assert.equal(
+                    (await I_SecurityTokenRegistry.getAddress.call("TickerRegistry")),
+                    I_TickerRegistry.address,
+                    "Failed in setting the address of the securityTokenRegistry"
+                );
+            });
+
+        });
+
+        describe("Test cases for pausing the contract", async() => {
+
+            it("Should fail to pause if msg.sender is not owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityTokenRegistry.pause({ from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully pause the contract", async() => {
+                await I_SecurityTokenRegistry.pause({ from: account_polymath });
+                let status = await I_SecurityTokenRegistry.paused.call();
+                assert.isOk(status);
+            });
+
+            it("Should fail to unpause if msg.sender is not owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityTokenRegistry.unpause({ from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully unpause the contract", async() => {
+                await I_SecurityTokenRegistry.unpause({ from: account_polymath });
+                let status = await I_SecurityTokenRegistry.paused.call();
+                assert.isNotOk(status);
+            });
+
+        });
+
+    });
 
 });

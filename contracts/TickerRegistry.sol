@@ -7,10 +7,9 @@ pragma solidity ^0.4.23;
 */
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./interfaces/ITickerRegistry.sol";
-import "./interfaces/IRegistry.sol";
+import "./Registry.sol";
 import "./helpers/Util.sol";
 
 /**
@@ -18,7 +17,7 @@ import "./helpers/Util.sol";
  * @dev Contract used to register the security token symbols
  */
 
-contract TickerRegistry is ITickerRegistry, Util, IRegistry {
+contract TickerRegistry is ITickerRegistry, Util, Registry {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
@@ -41,6 +40,11 @@ contract TickerRegistry is ITickerRegistry, Util, IRegistry {
     event LogRegisterTicker(address indexed _owner, string _symbol, string _name, bytes32 _swarmHash, uint256 indexed _timestamp);
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
+
+    // Registration fee in POLY base 18 decimals
+    uint256 public registrationFee;
+    // Emit when changePolyRegisterationFee is called
+    event LogChangePolyRegisterationFee(uint256 _oldFee, uint256 _newFee);
 
     constructor (address _polyToken, uint256 _registrationFee) public {
         changeAddress("PolyToken", _polyToken);
@@ -150,5 +154,15 @@ contract TickerRegistry is ITickerRegistry, Util, IRegistry {
                 return false;
         }
         return true;
+    }
+
+    /**
+     * @dev set the ticker registration fee in POLY tokens
+     * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
+     */
+    function changePolyRegisterationFee(uint256 _registrationFee) public onlyOwner {
+        require(registrationFee != _registrationFee);
+        emit LogChangePolyRegisterationFee(registrationFee, _registrationFee);
+        registrationFee = _registrationFee;
     }
 }

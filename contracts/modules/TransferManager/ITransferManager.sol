@@ -1,9 +1,9 @@
 pragma solidity ^0.4.23;
 
-import "../../interfaces/IPausable.sol";
+import "../../Pausable.sol";
 import "../../interfaces/IModule.sol";
 
-contract ITransferManager is IModule, IPausable {
+contract ITransferManager is IModule, Pausable {
 
     //If verifyTransfer returns:
     //  FORCE_VALID, the transaction will always be valid, regardless of other TM results

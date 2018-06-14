@@ -64,6 +64,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
      */
     function createDividend(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount) public onlyOwner {
         require(_expiry > _maturity);
+        require(_expiry > now);
         require(_token != address(0));
         require(_amount > 0);
         require(ERC20(_token).transferFrom(msg.sender, address(this), _amount), "Unable to transfer tokens for dividend");
@@ -93,6 +94,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
      */
     function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 _checkpointId) payable public onlyOwner {
         require(_expiry > _maturity);
+        require(_expiry > now);
         require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId());
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);

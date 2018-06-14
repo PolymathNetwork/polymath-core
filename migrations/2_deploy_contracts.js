@@ -107,10 +107,10 @@ module.exports = function (deployer, network, accounts) {
     }).then(() => {
     return TickerRegistry.deployed().then((tickerRegistry) => {
       // K) SecurityTokenRegistry address make available to the TickerRegistry contract for accessing the securityTokenRegistry functions
-      return tickerRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount})
+      return tickerRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
     }).then(() => {
       // L) SecurityTokenRegistry address make available to the TickerRegistry contract for accessing the securityTokenRegistry functions
-    return moduleRegistry.setTokenRegistry(SecurityTokenRegistry.address, {from: PolymathAccount})
+    return moduleRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
     }).then(() => {
       // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
     return deployer.deploy(CappedSTOFactory, PolyToken, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})

@@ -2,13 +2,51 @@ pragma solidity ^0.4.23;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
+import "./IPausable.sol";
 
-contract IRegistry is Ownable {
+contract IRegistry is Ownable, IPausable {
+
+    /*
+    Valid Address Keys
+    tickerRegistry = getAddress("TickerRegistry")
+    securityTokenRegistry = getAddress("SecurityTokenRegistry")
+    moduleRegistry = getAddress("ModuleRegistry")
+    polyToken = getAddress("PolyToken")
+    */
 
     // Registration fee in POLY base 18 decimals
     uint256 public registrationFee;
 
+    mapping (bytes32 => address) public storedAddresses;
+    mapping (bytes32 => bool) public validAddressKeys;
+
     event LogChangePolyRegisterationFee(uint256 _oldFee, uint256 _newFee);
+    event LogChangeAddress(string _nameKey, address indexed _oldAddress, address indexed _newAddress);
+
+    /**
+     * @dev get the contract address
+     * @param _nameKey is the key for the contract address mapping
+     */
+    function getAddress(string _nameKey) public returns(address) {
+        require(validAddressKeys[keccak256(_nameKey)]);
+        return storedAddresses[keccak256(_nameKey)];
+    }
+
+    /**
+     * @dev change the contract address
+     * @param _nameKey is the key for the contract address mapping
+     * @param _newAddress is the new contract address
+     */
+    function changeAddress(string _nameKey, address _newAddress) public onlyOwner {
+        address oldAddress;
+        if (validAddressKeys[keccak256(_nameKey)]) {
+            oldAddress = getAddress(_nameKey);
+        } else {
+            validAddressKeys[keccak256(_nameKey)] = true;
+        }
+        storedAddresses[keccak256(_nameKey)] = _newAddress;
+        emit LogChangeAddress(_nameKey, oldAddress, _newAddress);
+    }
 
     /**
     * @dev Reclaim all ERC20Basic compatible tokens
@@ -29,6 +67,20 @@ contract IRegistry is Ownable {
         require(registrationFee != _registrationFee);
         emit LogChangePolyRegisterationFee(registrationFee, _registrationFee);
         registrationFee = _registrationFee;
+    }
+
+    /**
+     * @dev pause (overridden function)
+     */
+    function unpause() public onlyOwner  {
+        super._unpause();
+    }
+
+    /**
+     * @dev unpause (overridden function)
+     */
+    function pause() public onlyOwner {
+        super._pause();
     }
 
 }

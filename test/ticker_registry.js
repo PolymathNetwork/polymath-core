@@ -265,6 +265,29 @@ contract('TickerRegistry', accounts => {
             assert.equal(tx.logs[0].args._owner, account_temp);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
+
+        it("Should fail to register ticker if registration is paused", async() => {
+            let errorThrown = false;
+            try {
+                await I_TickerRegistry.pause({ from: account_polymath});
+                await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
+                let tx = await I_TickerRegistry.registerTicker(token_owner, "AAA", name, swarmHash, { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> Registration is paused`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully register ticker if registration is unpaused", async() => {
+            await I_TickerRegistry.unpause({ from: account_polymath});
+            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
+            let tx = await I_TickerRegistry.registerTicker(token_owner, "AAA", name, swarmHash, { from: token_owner });
+            assert.equal(tx.logs[0].args._owner, token_owner);
+            assert.equal(tx.logs[0].args._symbol, "AAA");
+        });
+
     });
 
     describe("Test cases for the expiry limit", async() => {

@@ -1,11 +1,11 @@
 pragma solidity ^0.4.23;
 
-import "../../interfaces/IPausable.sol";
+import "../../Pausable.sol";
 import "../../interfaces/IModule.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-contract ISTO is IModule, IPausable {
+contract ISTO is IModule, Pausable {
 
     using SafeMath for uint256;
 
@@ -27,7 +27,7 @@ contract ISTO is IModule, IPausable {
     }
 
     /**
-     * @notice Return ETH raised by the STO 
+     * @notice Return ETH raised by the STO
      */
     function getRaisedEther() public view returns (uint256);
 
@@ -37,7 +37,7 @@ contract ISTO is IModule, IPausable {
     function getRaisedPOLY() public view returns (uint256);
 
     /**
-     * @notice Return the total no. of investors 
+     * @notice Return the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256);
 

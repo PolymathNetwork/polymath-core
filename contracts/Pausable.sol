@@ -1,12 +1,12 @@
 pragma solidity ^0.4.23;
 
-contract IPausable {
+contract Pausable {
 
     event Pause(uint256 _timestammp);
     event Unpause(uint256 _timestamp);
 
     bool public paused = false;
-   
+
     /**
     * @dev Modifier to make a function callable only when the contract is not paused.
     */

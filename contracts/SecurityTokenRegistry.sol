@@ -4,12 +4,15 @@ import "./interfaces/ITickerRegistry.sol";
 import "./tokens/SecurityToken.sol";
 import "./interfaces/ISTProxy.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
-import "./interfaces/IRegistry.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "./Registry.sol";
 import "./helpers/Util.sol";
 
-contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, IRegistry {
+contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
+
+    // Registration fee in POLY base 18 decimals
+    uint256 public registrationFee;
+    // Emit when changePolyRegisterationFee is called
+    event LogChangePolyRegisterationFee(uint256 _oldFee, uint256 _newFee);
 
     // Emit at the time of launching of new security token
     event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address _owner);
@@ -126,4 +129,15 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, IRegistry {
     function isSecurityToken(address _securityToken) public view returns (bool) {
         return (keccak256(securityTokens[_securityToken].symbol) != keccak256(""));
     }
+
+    /**
+     * @dev set the ticker registration fee in POLY tokens
+     * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
+     */
+    function changePolyRegisterationFee(uint256 _registrationFee) public onlyOwner {
+        require(registrationFee != _registrationFee);
+        emit LogChangePolyRegisterationFee(registrationFee, _registrationFee);
+        registrationFee = _registrationFee;
+    }
+
 }

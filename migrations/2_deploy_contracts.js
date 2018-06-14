@@ -8,8 +8,9 @@ const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
 const TickerRegistry = artifacts.require('./TickerRegistry.sol')
 const STVersionProxy001 = artifacts.require('./tokens/STVersionProxy001.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
-const cappedSTOSetupCost = 20000 * Math.pow(10,18);   // 20K POLY fee
-const initRegFee = 250 * Math.pow(10, 18);       // 250 POLY fee for registering ticker or security token in registry
+let BigNumber = require('bignumber.js');
+const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18));   // 20K POLY fee
+const initRegFee = new BigNumber(250).times(new BigNumber(10).pow(18));      // 250 POLY fee for registering ticker or security token in registry
 let PolyToken
 
 const Web3 = require('web3')

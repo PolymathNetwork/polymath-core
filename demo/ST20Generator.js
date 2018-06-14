@@ -238,9 +238,9 @@ async function step_approval(spender, fee) {
         }
       } else {
           let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);
-          console.log(chalk.red(`\n***************************************************************************************************************************************************`));
-          console.log(chalk.red(`Not enough balance to Pay the Fee, Require ${(new BigNumber(requiredBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(polyBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn\n`));
-          console.log(chalk.red(`****************************************************************************************************************************************************\n`));  
+          console.log(chalk.red(`\n*****************************************************************************************************************************************`));
+          console.log(chalk.red(`Not enough balance to Pay the Fee, Require ${(new BigNumber(requiredBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(polyBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
+          console.log(chalk.red(`******************************************************************************************************************************************\n`));  
           process.exit(0);        
       }
   }catch (err){

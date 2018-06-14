@@ -27,7 +27,7 @@ contract IRegistry is Ownable, IPausable {
      * @dev get the contract address
      * @param _nameKey is the key for the contract address mapping
      */
-    function getAddress(string _nameKey) public returns(address) {
+    function getAddress(string _nameKey) view public returns(address) {
         require(validAddressKeys[keccak256(_nameKey)]);
         return storedAddresses[keccak256(_nameKey)];
     }

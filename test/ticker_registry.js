@@ -316,6 +316,19 @@ contract('TickerRegistry', accounts => {
             );
             assert.equal(tx[4], false);
         });
+
+        it("Should get the details of unregistered token", async() => {
+            let tx = await I_TickerRegistry.getDetails.call("TORO");
+            assert.equal(tx[0], "0x0000000000000000000000000000000000000000");
+            assert.equal(tx[2], "");
+            assert.equal(
+                web3.utils.toAscii(tx[3])
+                .replace(/\u0000/g, ''),
+                ""
+            );
+            assert.equal(tx[4], false);
+        });
+
     });
 
     describe("Test cases for check validity", async() => {

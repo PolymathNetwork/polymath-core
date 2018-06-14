@@ -188,6 +188,17 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     }
 
     /**
+     * @dev Get the index according to the checkpoint id
+     */
+    function getDividendIndex(uint256 _checkpointId) public view returns(uint256, bool) {
+        for(uint256 i = 0; i < dividends.length; i++) {
+            if (dividends[i].checkpointId == _checkpointId)
+                return (i, true);
+        }
+        return (0, false);
+    }
+
+    /**
      * @notice Return the permissions flag that are associated with STO
      */
     function getPermissions() public view returns(bytes32[]) {

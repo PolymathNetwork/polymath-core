@@ -1,3 +1,12 @@
+
+const duration = {
+    seconds: function (val) { return val; },
+    minutes: function (val) { return val * this.seconds(60); },
+    hours: function (val) { return val * this.minutes(60); },
+    days: function (val) { return val * this.hours(24); },
+    weeks: function (val) { return val * this.days(7); },
+    years: function (val) { return val * this.days(365); },
+  };
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
 
@@ -5,6 +14,7 @@ var contracts = require("../helpers/contract_addresses");
 let tickerRegistryAddress = contracts.tickerRegistryAddress();
 let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
 let cappedSTOFactoryAddress = contracts.cappedSTOFactoryAddress();
+let etherDividendCheckpointFactoryAddress = contracts.etherDividendCheckpointFactoryAddress();
 
 let tickerRegistryABI;
 let securityTokenRegistryABI;
@@ -12,11 +22,12 @@ let securityTokenABI;
 let cappedSTOABI;
 let generalTransferManagerABI;
 try{
-  tickerRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
-  securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
-  securityTokenABI          = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
-  cappedSTOABI              = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
-  generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
+  tickerRegistryABI           = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
+  securityTokenRegistryABI    = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
+  securityTokenABI            = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
+  cappedSTOABI                = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
+  generalTransferManagerABI   = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
+  etherDividendCheckpointABI  = JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpoint.json').toString()).abi;
 }catch(err){
   console.log('\x1b[31m%s\x1b[0m',"Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
   return;
@@ -65,13 +76,15 @@ async function start_explorer(){
 
   let tokenDeployed = false;
   let tokenDeployedAddress;
-  tokenSymbol =  readlineSync.question('Enter the token symbol: ');
-  // Let's check if token has already been deployed, if it has, skip to STO
-  await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({from: Issuer}, function(error, result){
-    if(result != "0x0000000000000000000000000000000000000000"){
-      securityToken = new web3.eth.Contract(securityTokenABI,result);
-    }
-  });
+  if(!tokenSymbol){
+    tokenSymbol =  readlineSync.question('Enter the token symbol: ');
+    // Let's check if token has already been deployed, if it has, skip to STO
+    await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({from: Issuer}, function(error, result){
+      if(result != "0x0000000000000000000000000000000000000000"){
+        securityToken = new web3.eth.Contract(securityTokenABI,result);
+      }
+    });
+  }
 
   let checkpointNum = await securityToken.methods.currentCheckpointId().call({ from: Issuer });
   console.log("Token is at checkpoint:",checkpointNum);
@@ -83,7 +96,18 @@ async function start_explorer(){
   generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
   generalTransferManager.setProvider(web3.currentProvider);
 
-  let options = ['Mint tokens','Transfer tokens', 'Explore account at checkpoint', 'Explore total supply at checkpoint','Create checkpoint'];
+  await securityToken.methods.getModule(4, 0).call({ from: Issuer }, function (error, result) {
+    etherDividendCheckpointAddress = result[1];
+    console.log("Dividends module address is:",etherDividendCheckpointAddress);
+    if(etherDividendCheckpointAddress != "0x0000000000000000000000000000000000000000"){
+      etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
+      etherDividendCheckpoint.setProvider(web3.currentProvider);
+    }
+  });
+
+  let options = ['Mint tokens','Transfer tokens',
+   'Explore account at checkpoint', 'Explore total supply at checkpoint',
+   'Create checkpoint', 'Calculate Dividends', 'Push dividends to account', 'Explore ETH balance'];
   let index = readlineSync.keyInSelect(options, 'What do you want to do?');
   console.log("Selected:",options[index]);
   switch(index){
@@ -110,10 +134,99 @@ async function start_explorer(){
       //Create new checkpoint
       await securityToken.methods.createCheckpoint().send({ from: Issuer});
     break;
+    case 5:
+      //Create dividends
+      let ethDividend =  readlineSync.question('How much eth would you like to distribute to token holders?: ');
+      await createDividends(ethDividend);
+    break;
+    case 6:
+      //Create dividends
+      let _checkpoint3 =  readlineSync.question('Distribute dividends at checkpoint: ');
+      let _address2 =  readlineSync.question('Enter address to push dividends to: ');
+      await pushDividends(_checkpoint3,_address2);
+    break;
+    case 7:
+      //explore eth balance
+      let _checkpoint4 = readlineSync.question('Enter checkpoint to explore: ');
+      let _address3 =  readlineSync.question('Enter address to explore: ');
+      let divsAtCheckpoint = await etherDividendCheckpoint.methods.calculateDividend(_checkpoint4,_address3).call({ from: Issuer});
+      console.log(`
+         ETH Balance: ${web3.utils.fromWei(await web3.eth.getBalance(_address3),"ether")} ETH
+         Dividends owed at checkpoint ${_checkpoint4}: ${web3.utils.fromWei(divsAtCheckpoint,"ether")} ETH
+      `)
+    break;
   }
 
   //Restart
   start_explorer();
+
+}
+
+async function createDividends(ethDividend){
+  // Get the Dividends module
+  await securityToken.methods.getModule(4, 0).call({ from: Issuer }, function (error, result) {
+    etherDividendCheckpointAddress = result[1];
+  });
+  if(etherDividendCheckpointAddress != "0x0000000000000000000000000000000000000000"){
+    etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
+    etherDividendCheckpoint.setProvider(web3.currentProvider);
+  }else{
+    await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false).send({ from: Issuer, gas:2500000 })
+    .on('transactionHash', function(hash){
+      console.log(`
+        Your transaction is being processed. Please wait...
+        TxHash: ${hash}\n`
+      );
+    })
+    .on('receipt', function(receipt){
+      console.log(`
+        Congratulations! The transaction was successfully completed.
+        Module deployed at address: ${receipt.events.LogModuleAdded.returnValues._module}
+        Review it on Etherscan.
+        TxHash: ${receipt.transactionHash}\n`
+      );
+
+      etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, receipt.events.LogModuleAdded.returnValues._module);
+      etherDividendCheckpoint.setProvider(web3.currentProvider);
+    })
+    .on('error', console.error);
+  }
+
+  let time = (await web3.eth.getBlock('latest')).timestamp;
+
+  //Send eth dividends
+  await etherDividendCheckpoint.methods.createDividend(time,time + duration.days(1000))
+  .send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas:2500000 })
+  .on('transactionHash', function(hash){
+    console.log(`
+      Your transaction is being processed. Please wait...
+      TxHash: ${hash}\n`
+    );
+  })
+  .on('receipt', function(receipt){
+    console.log(`
+      ${receipt.events}
+      TxHash: ${receipt.transactionHash}\n`
+    );
+  })
+}
+
+async function pushDividends(checkpoint,account){
+  let accs = new Array(account);
+  await etherDividendCheckpoint.methods.pushDividendPaymentToAddresses(checkpoint,accs)
+  .send({ from: Issuer, gas:4500000 })
+  .on('transactionHash', function(hash){
+    console.log(`
+      Your transaction is being processed. Please wait...
+      TxHash: ${hash}\n`
+    );
+  })
+  .on('receipt', function(receipt){
+    console.log(`
+      ${receipt.events}
+      TxHash: ${receipt.transactionHash}\n`
+    );
+  })
 
 }
 

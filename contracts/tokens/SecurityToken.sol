@@ -47,7 +47,6 @@ contract SecurityToken is ISecurityToken {
 
     mapping (address => Checkpoint[]) public checkpointBalances;
     Checkpoint[] public checkpointTotalSupply;
-    uint256 public currentCheckpointId;
 
 
     bool public mintingFinished = false;
@@ -60,7 +59,6 @@ contract SecurityToken is ISecurityToken {
 
     uint8 public constant MAX_MODULES = 20;
 
-    address[] public investors;
     mapping (address => bool) public investorListed;
 
     // Emit at the time when module get added
@@ -87,6 +85,8 @@ contract SecurityToken is ISecurityToken {
     event LogCheckpointCreated(uint256 _checkpointId, uint256 _timestamp);
     // Emit when the minting get finished
     event LogFinishedMinting(uint256 _timestamp);
+    // Emit when a module type is locked
+    event LogModuleLocked(uint8 _moduleType, address _locker);
     // Change the STR address in the event of a upgrade
     event LogChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
 
@@ -138,6 +138,12 @@ contract SecurityToken is ISecurityToken {
         transferFunctions[bytes4(keccak256("transferFrom(address,address,uint256)"))] = true;
         transferFunctions[bytes4(keccak256("mint(address,uint256)"))] = true;
         transferFunctions[bytes4(keccak256("burn(uint256)"))] = true;
+    }
+
+    function lockModule(uint8 _moduleType) external onlyOwner {
+        require(!modulesLocked[_moduleType]);
+        modulesLocked[_moduleType] = true;
+        emit LogModuleLocked(_moduleType, msg.sender);
     }
 
     /**
@@ -571,6 +577,7 @@ contract SecurityToken is ISecurityToken {
         require(currentCheckpointId < 2**256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
         emit LogCheckpointCreated(currentCheckpointId, now);
+        return currentCheckpointId;
     }
 
     /**

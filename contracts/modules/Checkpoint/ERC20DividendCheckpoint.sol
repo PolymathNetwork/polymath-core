@@ -33,7 +33,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
         require(now >= dividends[_dividendIndex].maturity, "Dividend maturity is in the future");
         require(now < dividends[_dividendIndex].expiry, "Dividend expiry is in the past");
-        require(dividends[_dividendIndex].reclaimed == false, "Dividend has been reclaimed by issuer");
+        require(!dividends[_dividendIndex].reclaimed, "Dividend has been reclaimed by issuer");
         _;
     }
 
@@ -65,6 +65,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     function createDividend(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount) public onlyOwner {
         require(_expiry > _maturity);
         require(_token != address(0));
+        require(_amount > 0);
         require(ERC20(_token).transferFrom(msg.sender, address(this), _amount), "Unable to transfer tokens for dividend");
         uint256 dividendIndex = dividends.length;
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
@@ -150,7 +151,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
-        require(dividend.claimed[msg.sender] == false);
+        require(!dividend.claimed[msg.sender], "Dividend already reclaimed");
         _payDividend(msg.sender, dividend, _dividendIndex);
     }
 

@@ -26,12 +26,13 @@ contract EtherDividendCheckpoint is ICheckpoint {
     event EtherDividendDeposited(address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity, uint256 _expiry, uint256 _amount, uint256 _totalSupply, uint256 _dividendIndex);
     event EtherDividendClaimed(address indexed _payee, uint256 _dividendIndex, uint256 _amount);
     event EtherDividendReclaimed(address indexed _claimer, uint256 _dividendIndex, uint256 _claimedAmount);
+    event EtherDividendClaimFailed(address indexed _payee, uint256 _dividendIndex, uint256 _amount);
 
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
         require(now >= dividends[_dividendIndex].maturity, "Dividend maturity is in the future");
         require(now < dividends[_dividendIndex].expiry, "Dividend expiry is in the past");
-        require(dividends[_dividendIndex].reclaimed == false, "Dividend has been reclaimed by issuer");
+        require(!dividends[_dividendIndex].reclaimed, "Dividend has been reclaimed by issuer");
         _;
     }
 
@@ -60,6 +61,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
      */
     function createDividend(uint256 _maturity, uint256 _expiry) payable public onlyOwner {
         require(_expiry > _maturity);
+        require(msg.value > 0);
         uint256 dividendIndex = dividends.length;
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         uint256 currentSupply = ISecurityToken(securityToken).totalSupply();
@@ -141,7 +143,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
-        require(dividend.claimed[msg.sender] == false);
+        require(!dividend.claimed[msg.sender], "Dividend already reclaimed");
         _payDividend(msg.sender, dividend, _dividendIndex);
     }
 
@@ -150,8 +152,12 @@ contract EtherDividendCheckpoint is ICheckpoint {
         _dividend.claimed[_payee] = true;
         _dividend.claimedAmount = claim.add(_dividend.claimedAmount);
         if (claim > 0) {
-            _payee.transfer(claim);
-            emit EtherDividendClaimed(_payee, _dividendIndex, claim);
+            if (_payee.send(claim)) {
+              emit EtherDividendClaimed(_payee, _dividendIndex, claim);
+            } else {
+              _dividend.claimed[_payee] = false;
+              emit EtherDividendClaimFailed(_payee, _dividendIndex, claim);
+            }
         }
     }
 
@@ -163,8 +169,8 @@ contract EtherDividendCheckpoint is ICheckpoint {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
         require(now >= dividends[_dividendIndex].expiry, "Dividend expiry is in the future");
         require(!dividends[_dividendIndex].reclaimed, "Dividend already claimed");
-        dividends[_dividendIndex].reclaimed = true;
         Dividend storage dividend = dividends[_dividendIndex];
+        dividend.reclaimed = true;
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
         msg.sender.transfer(remainingAmount);
         emit EtherDividendReclaimed(msg.sender, _dividendIndex, remainingAmount);

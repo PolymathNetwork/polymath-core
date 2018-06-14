@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 
+* ERC20DividendCheckpoint module added for on-chain dividend ERC20 payments
+* EtherDividendCheckpoint module added for on-chain dividend ETH payments
 * Iterable list of investors available on-chain
 * STOs are pausable now. It is facilated by using the Pausable contract.
 * ManualApprovalTransferManager - allows approval or blocking of explicit address pairs for transfers.

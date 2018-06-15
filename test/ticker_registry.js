@@ -280,12 +280,36 @@ contract('TickerRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should fail to pause if already paused", async() => {
+            let errorThrown = false;
+            try {
+                await I_TickerRegistry.pause({ from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> Registration is already paused`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should successfully register ticker if registration is unpaused", async() => {
             await I_TickerRegistry.unpause({ from: account_polymath});
             await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_TickerRegistry.registerTicker(token_owner, "AAA", name, swarmHash, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, "AAA");
+        });
+
+        it("Should fail to unpause if already unpaused", async() => {
+            let errorThrown = false;
+            try {
+                await I_TickerRegistry.unpause({ from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> Registration is already unpaused`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
         });
 
     });
@@ -406,6 +430,30 @@ contract('TickerRegistry', accounts => {
                 await I_TickerRegistry.reclaimERC20(I_PolyToken.address);
                 let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
                 assert.isAbove(bal2, bal1);
+            });
+
+            it("Should fail to reclaim tokens if address provided is 0 address", async() => {
+                let errorThrown = false;
+                try {
+                    await I_TickerRegistry.reclaimERC20("0x0000000000000000000000000000000000000000");
+                } catch(error) {
+                    console.log(`         tx revert -> Address provided is address(0)`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should fail to reclaim tokens if token transfer fails", async() => {
+                let errorThrown = false;
+                try {
+                    await I_TickerRegistry.reclaimERC20("0x0000000000000000000000000000000000000001");
+                } catch(error) {
+                    console.log(`         tx revert -> Address provided is address(0)`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
             });
 
         });

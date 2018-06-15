@@ -358,6 +358,10 @@ contract SecurityToken is ISecurityToken {
         adjustCheckpoints(checkpointTotalSupply, totalSupply());
     }
 
+    function adjustBalanceCheckpoints(address _investor) internal {
+        adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor));
+    }
+
     function adjustCheckpoints(Checkpoint[] storage _checkpoints, uint256 _newValue) internal {
         //No checkpoints set yet
         if (currentCheckpointId == 0) {
@@ -384,10 +388,6 @@ contract SecurityToken is ISecurityToken {
                 value: _newValue
             })
         );
-    }
-
-    function adjustBalanceCheckpoints(address _investor) internal {
-        adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor));
     }
 
     /**

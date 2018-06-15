@@ -189,7 +189,7 @@ contract('TickerRegistry', accounts => {
 
         it("verify the expiry limit", async() => {
             let expiry = await I_TickerRegistry.expiryLimit.call();
-            assert.equal(expiry.toNumber(), 604800);
+            assert.equal(expiry.toNumber(), 1296000);
         });
     });
 
@@ -259,7 +259,7 @@ contract('TickerRegistry', accounts => {
         });
 
         it("Should successfully register pre registerd ticker if expiry is reached", async() => {
-            await increaseTime(605000);
+            await increaseTime(1300000);
             await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: account_temp});
             let tx = await I_TickerRegistry.registerTicker(account_temp, symbol, name, swarmHash, { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp);

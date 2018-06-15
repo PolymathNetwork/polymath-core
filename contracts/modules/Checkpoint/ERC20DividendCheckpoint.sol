@@ -183,6 +183,10 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     }
 
     function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256) {
+        Dividend storage dividend = dividends[_dividendIndex];
+        if (dividend.claimed[_payee]) {
+            return 0;
+        }
         uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividends[_dividendIndex].checkpointId);
         return balance.mul(dividends[_dividendIndex].amount).div(dividends[_dividendIndex].totalSupply);
     }
@@ -190,14 +194,25 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     /**
      * @dev Get the index according to the checkpoint id
      */
-    function getDividendIndex(uint256 _checkpointId) public view returns(uint256, bool) {
+    function getDividendIndex(uint256 _checkpointId) public view returns(uint256[]) {
+        uint256 counter = 0;
         for(uint256 i = 0; i < dividends.length; i++) {
-            if (dividends[i].checkpointId == _checkpointId)
-                return (i, true);
+            if (dividends[i].checkpointId == _checkpointId) {
+                counter++;
+            }
         }
-        return (0, false);
-    }
 
+       uint256[] memory index = new uint256[](counter);
+       counter = 0;
+       for(uint256 j = 0; j < dividends.length; j++) {
+           if (dividends[j].checkpointId == _checkpointId) {
+               index[counter] = j;
+               counter++;
+           }
+       }
+       return index;
+    }
+    
     /**
      * @notice Return the permissions flag that are associated with STO
      */

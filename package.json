@@ -15,7 +15,7 @@
     "lint:all": "npm run lint && npm run lint:sol",
     "lint:all:fix": "npm run lint:fix && npm run lint:sol:fix",
     "compile": "truffle compile --optimize-runs 200",
-    "ganache-cli": "node_modules/.bin/ganache-cli -i 15 --gasLimit 50000000000",
+    "ganache-cli": "node_modules/.bin/ganache-cli -i 15 --gasLimit 8900000",
     "migrate:local": "truffle migrate --network=development --reset --all",
     "migrate:ropsten": "truffle migrate --network=ropsten --reset --all",
     "migrate:mainnet": "truffle migrate --network=mainnet",

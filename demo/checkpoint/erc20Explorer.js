@@ -102,7 +102,7 @@ await securityToken.methods.getModule(2, 0).call({ from: Issuer }, function (err
 generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
 generalTransferManager.setProvider(web3.currentProvider);
 
-await securityToken.methods.getModule(4, 0).call({ from: Issuer }, function (error, result) {
+await securityToken.methods.getModuleByName(4, web3.utils.toHex("ERC20DividendCheckpoint")).call({ from: Issuer }, function (error, result) {
   erc20DividendCheckpointAddress = result[1];
   console.log("Dividends module address is:",erc20DividendCheckpointAddress);
   if(erc20DividendCheckpointAddress != "0x0000000000000000000000000000000000000000"){
@@ -192,7 +192,7 @@ switch(index){
     let _checkpoint4 = readlineSync.question('Enter checkpoint to explore: ');
     let _address3 =  readlineSync.question('Enter address to explore: ');
     let _dividendIndex = await erc20DividendCheckpoint.methods.getDividendIndex(_checkpoint4).call();
-    if (_dividendIndex.length = 1) {
+    if (_dividendIndex.length == 1) {
       let divsAtCheckpoint = await erc20DividendCheckpoint.methods.calculateDividend(_dividendIndex[0],_address3).call({ from: Issuer});
       console.log(`
         POLY Balance: ${web3.utils.fromWei((await polyToken.methods.balanceOf(_address3).call()).toString(), "ether")} POLY
@@ -385,7 +385,6 @@ let dividend = await erc20DividendCheckpoint.methods.getDividendIndex(checkpoint
 if(dividend.length == 1) {
   try {
       let _dividendData = await erc20DividendCheckpoint.methods.dividends(dividend[0]).call();
-
       if (parseInt(_dividendData[3]) >= parseInt((await web3.eth.getBlock('latest')).timestamp)) {
         await erc20DividendCheckpoint.methods.pullDividendPayment(dividend[0]).send({ from: Issuer, gas:5500000 })
         .on('transactionHash', function(hash){

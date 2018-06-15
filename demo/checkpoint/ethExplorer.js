@@ -96,7 +96,7 @@ async function start_explorer(){
   generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
   generalTransferManager.setProvider(web3.currentProvider);
 
-  await securityToken.methods.getModule(4, 0).call({ from: Issuer }, function (error, result) {
+  await securityToken.methods.getModuleByName(4, web3.utils.toHex("EtherDividendCheckpoint")).call({ from: Issuer }, function (error, result) {
     etherDividendCheckpointAddress = result[1];
     console.log("Dividends module address is:",etherDividendCheckpointAddress);
     if(etherDividendCheckpointAddress != "0x0000000000000000000000000000000000000000"){
@@ -309,8 +309,7 @@ async function pushDividends(checkpoint, account){
     })
     .on('receipt', function(receipt){
       console.log(`
-        Amount: ${web3.utils.fromWei(receipt.events.EtherDividendClaimed.returnValues._amount, "ether")} ETH
-        Payee: ${receipt.events.EtherDividendClaimed.returnValues._payee}
+        Congratulations! Dividends are pushed successfully
         TxHash: ${receipt.transactionHash}\n`
       );
     })

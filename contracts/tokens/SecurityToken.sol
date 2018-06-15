@@ -269,7 +269,7 @@ contract SecurityToken is ISecurityToken {
     /**
     * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
-    * @param _ammount amount of POLY to withdraw
+    * @param _amount amount of POLY to withdraw
     */
     function withdrawPoly(uint256 _amount) public onlyOwner {
         require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).transfer(owner, _amount), "In-sufficient balance");
@@ -277,9 +277,9 @@ contract SecurityToken is ISecurityToken {
 
     /**
     * @notice allows owner to approve more POLY to one of the modules
-    * @param _moduleType
-    * @param _moduleIndex
-    * @param _budget
+    * @param _moduleType module type
+    * @param _moduleIndex module index
+    * @param _budget new budget
     */
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0, "Module type cannot be zero");
@@ -290,7 +290,7 @@ contract SecurityToken is ISecurityToken {
 
     /**
      * @notice change the tokenDetails
-     * @param _newTokenDetails
+     * @param _newTokenDetails New token details
      */
     function updateTokenDetails(string _newTokenDetails) public onlyOwner {
         emit LogUpdateTokenDetails(tokenDetails, _newTokenDetails);
@@ -299,7 +299,7 @@ contract SecurityToken is ISecurityToken {
 
     /**
     * @notice allows owner to change token granularity
-    * @param _granularity
+    * @param _granularity granularity level of the token
     */
     function changeGranularity(uint256 _granularity) public onlyOwner {
         require(_granularity != 0, "Granularity can not be 0");
@@ -309,9 +309,9 @@ contract SecurityToken is ISecurityToken {
 
     /**
     * @notice keeps track of the number of non-zero token holders
-    * @param _from
-    * @param _to
-    * @param _value
+    * @param _from sender of transfer
+    * @param _to receiver of transfer
+    * @param _value value of transfer
     */
     function adjustInvestorCount(address _from, address _to, uint256 _value) internal {
         if ((_value == 0) || (_from == _to)) {
@@ -335,8 +335,8 @@ contract SecurityToken is ISecurityToken {
 
     /**
     * @notice removes addresses with zero balances from the investors list
-    * @param _start
-    * @param _iters
+    * @param _start Index in investor list at which to start removing zero balances
+    * @param _iters Max number of iterations of the for loop
     * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
     */
     function pruneInvestors(uint256 _start, uint256 _iters) public onlyOwner {
@@ -631,7 +631,7 @@ contract SecurityToken is ISecurityToken {
      * @notice Queries value at a defined checkpoint
      * @param checkpoints is array of Checkpoint objects
      * @param _checkpointId Checkpoint ID to query
-     * @param _currentValue
+     * @param _currentValue Current value of checkpoint
      * @return uint256
      */
     function getValueAt(Checkpoint[] storage checkpoints, uint256 _checkpointId, uint256 _currentValue) internal view returns(uint256) {

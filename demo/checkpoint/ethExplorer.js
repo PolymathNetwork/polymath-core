@@ -309,7 +309,7 @@ async function pushDividends(checkpoint, account){
     })
     .on('receipt', function(receipt){
       console.log(`
-        Amount: ${web3.util.fromWei(receipt.events.EtherDividendClaimed.returnValues._amount, "ether")}
+        Amount: ${web3.utils.fromWei(receipt.events.EtherDividendClaimed.returnValues._amount, "ether")} ETH
         Payee: ${receipt.events.EtherDividendClaimed.returnValues._payee}
         TxHash: ${receipt.transactionHash}\n`
       );
@@ -317,7 +317,7 @@ async function pushDividends(checkpoint, account){
   } else {
     console.log(`Checkpoint is not yet created. Please enter the pre-created checkpoint`);
   }
-  
+
 
 }
 
@@ -335,7 +335,7 @@ async function pullDividends(checkpointId) {
     })
     .on('receipt', function(receipt){
       console.log(`
-        Amount: ${web3.util.fromWei(receipt.events.EtherDividendClaimed.returnValues._amount, "ether")}
+        Amount: ${web3.utils.fromWei(receipt.events.EtherDividendClaimed.returnValues._amount, "ether")} ETH
         Payee:  ${receipt.events.EtherDividendClaimed.returnValues._payee}
         TxHash: ${receipt.transactionHash}\n`
       );

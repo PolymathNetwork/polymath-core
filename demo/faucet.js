@@ -43,7 +43,7 @@ async function executeApp() {
 
   accounts = await web3.eth.getAccounts();
   Issuer = accounts[0];
-  
+
   console.log("\n");
   console.log("***************************")
   console.log("Welcome to the POLY Faucet.");

@@ -355,59 +355,39 @@ contract SecurityToken is ISecurityToken {
     }
 
     function adjustTotalSupplyCheckpoints() internal {
-      //No checkpoints set yet
-      if (currentCheckpointId == 0) {
-          return;
-      }
-      //No previous checkpoint data - add current balance against checkpoint
-      if (checkpointTotalSupply.length == 0) {
-          checkpointTotalSupply.push(
-              Checkpoint({
-                  checkpointId: currentCheckpointId,
-                  value: totalSupply()
-              })
-          );
-          return;
-      }
-      //No new checkpoints since last update
-      if (checkpointTotalSupply[checkpointTotalSupply.length - 1].checkpointId == currentCheckpointId) {
-          return;
-      }
-      //New checkpoint, so record balance
-      checkpointTotalSupply.push(
-          Checkpoint({
-              checkpointId: currentCheckpointId,
-              value: totalSupply()
-          })
-      );
+        adjustCheckpoints(checkpointTotalSupply, totalSupply());
     }
 
-    function adjustBalanceCheckpoints(address _investor) internal {
+    function adjustCheckpoints(Checkpoint[] storage _checkpoints, uint256 _newValue) internal {
         //No checkpoints set yet
         if (currentCheckpointId == 0) {
             return;
         }
         //No previous checkpoint data - add current balance against checkpoint
-        if (checkpointBalances[_investor].length == 0) {
-            checkpointBalances[_investor].push(
+        if (_checkpoints.length == 0) {
+            _checkpoints.push(
                 Checkpoint({
                     checkpointId: currentCheckpointId,
-                    value: balanceOf(_investor)
+                    value: _newValue
                 })
             );
             return;
         }
         //No new checkpoints since last update
-        if (checkpointBalances[_investor][checkpointBalances[_investor].length - 1].checkpointId == currentCheckpointId) {
+        if (_checkpoints[_checkpoints.length - 1].checkpointId == currentCheckpointId) {
             return;
         }
         //New checkpoint, so record balance
-        checkpointBalances[_investor].push(
+        _checkpoints.push(
             Checkpoint({
                 checkpointId: currentCheckpointId,
-                value: balanceOf(_investor)
+                value: _newValue
             })
         );
+    }
+
+    function adjustBalanceCheckpoints(address _investor) internal {
+        adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor));
     }
 
     /**

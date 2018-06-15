@@ -22,6 +22,8 @@ All notable changes to this project will be documented in this file.
 * Added ReclaimTokens contract to handle retrieving ERC20 Tokens sent to our contracts.
 * Added Pausable feature to registry functions `registerTicker`, `generateSecurityToken`, `registerModule`, `addCustomSecurityToken`.
 * Added Registry contract to handle upgradability functionality with a function to change the reference address between registry contracts.
+* POLY faucet CLI is added in demo.  
+* `getDividendIndex()` is introduced in `ERC20DividendCheckpoint` & `EtherDividendCheckpoint` contract.
 
 ## Changed
 
@@ -32,6 +34,7 @@ All notable changes to this project will be documented in this file.
 * Change the `setupCost` of `cappedSTOFactory` from `0 POLY` to `20K POLY`.      
 * Add one more parameter called the `_owner` in the `addCustomSecurityToken()`.
 * Change `_addModule` in SecurityToken.sol to get MR address from STR contract.
+* Update CLI with POLY payments.  
 
 ## Removed
 

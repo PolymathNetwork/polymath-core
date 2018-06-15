@@ -192,7 +192,7 @@ switch(index){
     let _checkpoint4 = readlineSync.question('Enter checkpoint to explore: ');
     let _address3 =  readlineSync.question('Enter address to explore: ');
     let _dividendIndex = await erc20DividendCheckpoint.methods.getDividendIndex(_checkpoint4).call();
-    if (_dividendIndex[1]) {
+    if (_dividendIndex.length = 1) {
       let divsAtCheckpoint = await erc20DividendCheckpoint.methods.calculateDividend(_dividendIndex[0],_address3).call({ from: Issuer});
       console.log(`
         POLY Balance: ${web3.utils.fromWei((await polyToken.methods.balanceOf(_address3).call()).toString(), "ether")} POLY
@@ -315,7 +315,7 @@ async function createDividendWithCheckpoint(erc20Dividend, _checkpointId) {
   let expiryTime = readlineSync.question('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = '+(time+duration.minutes(10))+' ): ');
   if(expiryTime == "") expiryTime = time+duration.minutes(10);
   let _dividendStatus = await erc20DividendCheckpoint.methods.getDividendIndex(_checkpointId).call();
-  if (!_dividendStatus[1]) { 
+  if (_dividendStatus.length != 1) { 
 
     await polyToken.methods.approve(erc20DividendCheckpoint._address, web3.utils.toWei(erc20Dividend,"ether")).send({from: Issuer, gas: 350000})
     .on('receipt', function(receipt) {
@@ -350,7 +350,7 @@ async function createDividendWithCheckpoint(erc20Dividend, _checkpointId) {
 async function pushDividends(checkpoint, account){
 let accs = account.split(',');
 let dividend = await erc20DividendCheckpoint.methods.getDividendIndex(checkpoint).call();
-if(dividend[1]) {
+if(dividend.length == 1) {
   try {
     let _dividendData = await erc20DividendCheckpoint.methods.dividends(dividend[0]).call();
     if (parseInt(_dividendData[3]) >= parseInt((await web3.eth.getBlock('latest')).timestamp)) {
@@ -382,7 +382,7 @@ if(dividend[1]) {
 
 async function pullDividends(checkpointId) {
 let dividend = await erc20DividendCheckpoint.methods.getDividendIndex(checkpointId).call();
-if(dividend[1]) {
+if(dividend.length == 1) {
   try {
       let _dividendData = await erc20DividendCheckpoint.methods.dividends(dividend[0]).call();
 
@@ -499,7 +499,7 @@ try{
 
 async function reclaimedDividend(checkpointId) {
 let dividendIndex = await erc20DividendCheckpoint.methods.getDividendIndex(checkpointId).call();
-if (dividendIndex[1]) {
+if (dividendIndex.length == 1) {
   await erc20DividendCheckpoint.methods.reclaimDividend(dividendIndex[0]).send({from: Issuer, gas: 500000})
   .on("transactionHash", function(hash) {
     console.log(`

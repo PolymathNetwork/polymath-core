@@ -166,7 +166,7 @@ async function start_explorer(){
       let _checkpoint4 = readlineSync.question('Enter checkpoint to explore: ');
       let _address3 =  readlineSync.question('Enter address to explore: ');
       let _dividendIndex = await etherDividendCheckpoint.methods.getDividendIndex(_checkpoint4).call();
-      if (_dividendIndex[1]) {
+      if (_dividendIndex.length == 1) {
         let divsAtCheckpoint = await etherDividendCheckpoint.methods.calculateDividend(_dividendIndex[0],_address3).call({ from: Issuer});
         console.log(`
           ETH Balance: ${web3.utils.fromWei(await web3.eth.getBalance(_address3),"ether")} ETH
@@ -272,7 +272,7 @@ async function createDividendWithCheckpoint(ethDividend, _checkpointId) {
     let expiryTime = readlineSync.question('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = '+(time+duration.minutes(10))+' ): ');
     if(expiryTime == "") expiryTime = time+duration.minutes(10);
     let _dividendStatus = await etherDividendCheckpoint.methods.getDividendIndex(_checkpointId).call();
-    if (!_dividendStatus[1]) { 
+    if (_dividendStatus.length != 1) { 
     //Send eth dividends
       await etherDividendCheckpoint.methods.createDividendWithCheckpoint(time, expiryTime, _checkpointId)
       .send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas:2500000 })
@@ -298,7 +298,7 @@ async function createDividendWithCheckpoint(ethDividend, _checkpointId) {
 async function pushDividends(checkpoint, account){
   let accs = account.split(',');
   let dividend = await etherDividendCheckpoint.methods.getDividendIndex(checkpoint).call();
-  if(dividend[1]) {
+  if(dividend.length == 1) {
     await etherDividendCheckpoint.methods.pushDividendPaymentToAddresses(dividend[0], accs)
     .send({ from: Issuer, gas:4500000 })
     .on('transactionHash', function(hash){
@@ -323,7 +323,7 @@ async function pushDividends(checkpoint, account){
 
 async function pullDividends(checkpointId) {
   let dividend = await etherDividendCheckpoint.methods.getDividendIndex(checkpointId).call();
-  if(dividend[1]) {
+  if(dividend.length == 1) {
     try {
     await etherDividendCheckpoint.methods.pullDividendPayment(dividend[0])
     .send({ from: Issuer, gas:4500000 })
@@ -435,7 +435,7 @@ async function mintTokens(address, amount){
 
 async function reclaimedDividend(checkpointId) {
   let dividendIndex = await etherDividendCheckpoint.methods.getDividendIndex(checkpointId).call();
-  if (dividendIndex[1]) {
+  if (dividendIndex.length == 1) {
     await etherDividendCheckpoint.methods.reclaimDividend(dividendIndex[0]).send({from: Issuer, gas: 500000})
     .on("transactionHash", function(hash) {
       console.log(`

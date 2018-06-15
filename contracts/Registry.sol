@@ -2,8 +2,9 @@ pragma solidity ^0.4.23;
 
 import "./Pausable.sol";
 import "./ReclaimTokens.sol";
+import "./interfaces/IRegistry.sol";
 
-contract Registry is Pausable, ReclaimTokens {
+contract Registry is IRegistry, Pausable, ReclaimTokens {
 
     /*
     Valid Address Keys

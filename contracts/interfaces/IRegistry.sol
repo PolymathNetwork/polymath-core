@@ -6,7 +6,7 @@ contract IRegistry {
      * @dev get the contract address
      * @param _nameKey is the key for the contract address mapping
      */
-    function getAddress(string _nameKey) public returns(address);
+    function getAddress(string _nameKey) view public returns(address);
 
     /**
      * @dev change the contract address

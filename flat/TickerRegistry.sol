@@ -2,12 +2,12 @@ pragma solidity ^0.4.23;
 
 /**
  * @title SafeMath
- * @dev Math operations with safety checks that throw on error
+ * @notice Math operations with safety checks that throw on error
  */
 library SafeMath {
 
   /**
-  * @dev Multiplies two numbers, throws on overflow.
+  * @notice Multiplies two numbers, throws on overflow.
   */
   function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
     if (a == 0) {
@@ -19,7 +19,7 @@ library SafeMath {
   }
 
   /**
-  * @dev Integer division of two numbers, truncating the quotient.
+  * @notice Integer division of two numbers, truncating the quotient.
   */
   function div(uint256 a, uint256 b) internal pure returns (uint256) {
     // assert(b > 0); // Solidity automatically throws when dividing by 0
@@ -29,7 +29,7 @@ library SafeMath {
   }
 
   /**
-  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+  * @notice Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
   */
   function sub(uint256 a, uint256 b) internal pure returns (uint256) {
     assert(b <= a);
@@ -37,7 +37,7 @@ library SafeMath {
   }
 
   /**
-  * @dev Adds two numbers, throws on overflow.
+  * @notice Adds two numbers, throws on overflow.
   */
   function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
     c = a + b;
@@ -48,7 +48,7 @@ library SafeMath {
 
 /**
  * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * @notice The Ownable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
 contract Ownable {
@@ -59,7 +59,7 @@ contract Ownable {
 
 
   /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+   * @notice The Ownable constructor sets the original `owner` of the contract to the sender
    * account.
    */
   function Ownable() public {
@@ -67,7 +67,7 @@ contract Ownable {
   }
 
   /**
-   * @dev Throws if called by any account other than the owner.
+   * @notice Throws if called by any account other than the owner.
    */
   modifier onlyOwner() {
     require(msg.sender == owner);
@@ -75,7 +75,7 @@ contract Ownable {
   }
 
   /**
-   * @dev Allows the current owner to transfer control of the contract to a newOwner.
+   * @notice Allows the current owner to transfer control of the contract to a newOwner.
    * @param newOwner The address to transfer ownership to.
    */
   function transferOwnership(address newOwner) public onlyOwner {
@@ -88,7 +88,7 @@ contract Ownable {
 
 contract ITickerRegistry {
     /**
-    * @dev Check the validity of the symbol
+    * @notice Check the validity of the symbol
     * @param _symbol token symbol
     * @param _owner address of the owner
     * @param _tokenName Name of the token
@@ -97,7 +97,7 @@ contract ITickerRegistry {
     function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool);
 
     /**
-    * @dev Returns the owner and timestamp for a given symbol
+    * @notice Returns the owner and timestamp for a given symbol
     * @param _symbol symbol
     */
     function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool);
@@ -108,7 +108,7 @@ contract ITickerRegistry {
 contract Util {
 
    /**
-    * @dev changes a string to upper case
+    * @notice changes a string to upper case
     * @param _base string to change
     */
     function upper(string _base) internal pure returns (string) {
@@ -138,7 +138,7 @@ contract Util {
 
 /**
  * @title TickerRegistry
- * @dev Contract used to register the security token symbols
+ * @notice Contract used to register the security token symbols
  */
 
 contract TickerRegistry is ITickerRegistry, Ownable, Util {
@@ -173,7 +173,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     }
 
     /**
-     * @dev Register the token symbol for its particular owner
+     * @notice Register the token symbol for its particular owner
             Once the token symbol is registered to its owner then no other issuer can claim
             its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
      * @param _symbol token symbol
@@ -190,7 +190,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     }
 
      /**
-      * @dev Change the expiry time for the token symbol
+      * @notice Change the expiry time for the token symbol
       * @param _newExpiry new time period for token symbol expiry
       */
     function changeExpiryLimit(uint256 _newExpiry) public onlyOwner {
@@ -201,7 +201,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     }
 
     /**
-     * @dev set the address of the Security Token registry
+     * @notice set the address of the Security Token registry
      * @param _stRegistry contract address of the STR
      * @return bool
      */
@@ -212,7 +212,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     }
 
     /**
-     * @dev Check the validity of the symbol
+     * @notice Check the validity of the symbol
      * @param _symbol token symbol
      * @param _owner address of the owner
      * @param _tokenName Name of the token
@@ -230,7 +230,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     }
 
     /**
-     * @dev Returns the owner and timestamp for a given symbol
+     * @notice Returns the owner and timestamp for a given symbol
      * @param _symbol symbol
      */
     function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool) {
@@ -249,7 +249,7 @@ contract TickerRegistry is ITickerRegistry, Ownable, Util {
     }
 
     /**
-     * @dev To re-initialize the token symbol details if symbol validity expires
+     * @notice To re-initialize the token symbol details if symbol validity expires
      * @param _symbol token symbol
      */
     function expiryCheck(string _symbol) internal returns(bool) {

@@ -4,11 +4,13 @@ import "./CappedSTO.sol";
 import "../../interfaces/IModuleFactory.sol";
 import "../../interfaces/IModule.sol";
 
-
+/**
+ * @title Factory for deploying CappedSTO module
+ */
 contract CappedSTOFactory is IModuleFactory {
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
@@ -18,7 +20,7 @@ contract CappedSTOFactory is IModuleFactory {
     }
 
      /**
-     * @dev used to launch the Module with the help of factory
+     * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
@@ -34,42 +36,42 @@ contract CappedSTOFactory is IModuleFactory {
     }
 
     /**
-     * @dev Type of the Module factory
+     * @notice Type of the Module factory
      */
     function getType() public view returns(uint8) {
         return 3;
     }
 
     /**
-     * @dev Get the name of the Module
+     * @notice Get the name of the Module
      */
     function getName() public view returns(bytes32) {
         return "CappedSTO";
     }
 
     /**
-     * @dev Get the description of the Module 
+     * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
         return "Capped STO";
     }
 
     /**
-     * @dev Get the title of the Module
+     * @notice Get the title of the Module
      */
     function getTitle() public view returns(string) {
         return "Capped STO";
     }
 
     /**
-     * @dev Get the Instructions that helped to used the module
+     * @notice Get the Instructions that helped to used the module
      */
     function getInstructions() public view returns(string) {
         return "Initialises a capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY/ETH to token rate), _fundRaiseType (whether you are raising in POLY or ETH), _polyToken (address of POLY token), _fundsReceiver (address which will receive funds)";
     }
 
     /**
-     * @dev Get the tags related to the module factory
+     * @notice Get the tags related to the module factory
      */
     function getTags() public view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](4);

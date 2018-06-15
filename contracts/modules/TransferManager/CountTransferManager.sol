@@ -2,6 +2,9 @@ pragma solidity ^0.4.23;
 
 import "./ITransferManager.sol";
 
+/**
+ * @title Transfer Manager for limiting maximum number of token holders
+ */
 contract CountTransferManager is ITransferManager {
 
     // The maximum number of concurrent token holders
@@ -10,7 +13,7 @@ contract CountTransferManager is ITransferManager {
     event LogModifyHolderCount(uint256 _oldHolderCount, uint256 _newHolderCount);
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _securityToken Address of the security token
      * @param _polyAddress Address of the polytoken
      */
@@ -36,7 +39,7 @@ contract CountTransferManager is ITransferManager {
     }
 
     /**
-     * @dev Used to intialize the variables of the contract
+     * @notice Used to intialize the variables of the contract
      * @param _maxHolderCount Maximum no. of holders for the securityToken
      */
     function configure(uint256 _maxHolderCount) public onlyFactory {
@@ -44,14 +47,14 @@ contract CountTransferManager is ITransferManager {
     }
 
     /**
-     * @notice This function returns the signature of configure function 
+     * @notice This function returns the signature of configure function
      */
     function getInitFunction() public returns(bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
 
     /**
-    * @dev sets the maximum percentage that an individual token holder can hold
+    * @notice sets the maximum percentage that an individual token holder can hold
     * @param _maxHolderCount is the new maximum amount a holder can hold
     */
     function changeHolderCount(uint256 _maxHolderCount) public onlyOwner {

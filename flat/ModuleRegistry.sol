@@ -14,7 +14,7 @@ contract IModuleRegistry {
 
 /**
  * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * @notice The Ownable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
 contract Ownable {
@@ -25,7 +25,7 @@ contract Ownable {
 
 
   /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+   * @notice The Ownable constructor sets the original `owner` of the contract to the sender
    * account.
    */
   function Ownable() public {
@@ -33,7 +33,7 @@ contract Ownable {
   }
 
   /**
-   * @dev Throws if called by any account other than the owner.
+   * @notice Throws if called by any account other than the owner.
    */
   modifier onlyOwner() {
     require(msg.sender == owner);
@@ -41,7 +41,7 @@ contract Ownable {
   }
 
   /**
-   * @dev Allows the current owner to transfer control of the contract to a newOwner.
+   * @notice Allows the current owner to transfer control of the contract to a newOwner.
    * @param newOwner The address to transfer ownership to.
    */
   function transferOwnership(address newOwner) public onlyOwner {
@@ -54,8 +54,8 @@ contract Ownable {
 
 /**
  * @title ERC20Basic
- * @dev Simpler version of ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/179
+ * @notice Simpler version of ERC20 interface
+ * @notice see https://github.com/ethereum/EIPs/issues/179
  */
 contract ERC20Basic {
   function totalSupply() public view returns (uint256);
@@ -66,7 +66,7 @@ contract ERC20Basic {
 
 /**
  * @title ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/20
+ * @notice see https://github.com/ethereum/EIPs/issues/20
  */
 contract ERC20 is ERC20Basic {
   function allowance(address owner, address spender) public view returns (uint256);
@@ -114,12 +114,12 @@ contract IModuleFactory is Ownable {
 
 /**
  * @title SafeMath
- * @dev Math operations with safety checks that throw on error
+ * @notice Math operations with safety checks that throw on error
  */
 library SafeMath {
 
   /**
-  * @dev Multiplies two numbers, throws on overflow.
+  * @notice Multiplies two numbers, throws on overflow.
   */
   function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
     if (a == 0) {
@@ -131,7 +131,7 @@ library SafeMath {
   }
 
   /**
-  * @dev Integer division of two numbers, truncating the quotient.
+  * @notice Integer division of two numbers, truncating the quotient.
   */
   function div(uint256 a, uint256 b) internal pure returns (uint256) {
     // assert(b > 0); // Solidity automatically throws when dividing by 0
@@ -141,7 +141,7 @@ library SafeMath {
   }
 
   /**
-  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+  * @notice Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
   */
   function sub(uint256 a, uint256 b) internal pure returns (uint256) {
     assert(b <= a);
@@ -149,7 +149,7 @@ library SafeMath {
   }
 
   /**
-  * @dev Adds two numbers, throws on overflow.
+  * @notice Adds two numbers, throws on overflow.
   */
   function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
     c = a + b;
@@ -160,7 +160,7 @@ library SafeMath {
 
 /**
  * @title Basic token
- * @dev Basic version of StandardToken, with no allowances.
+ * @notice Basic version of StandardToken, with no allowances.
  */
 contract BasicToken is ERC20Basic {
   using SafeMath for uint256;
@@ -170,14 +170,14 @@ contract BasicToken is ERC20Basic {
   uint256 totalSupply_;
 
   /**
-  * @dev total number of tokens in existence
+  * @notice total number of tokens in existence
   */
   function totalSupply() public view returns (uint256) {
     return totalSupply_;
   }
 
   /**
-  * @dev transfer token for a specified address
+  * @notice transfer token for a specified address
   * @param _to The address to transfer to.
   * @param _value The amount to be transferred.
   */
@@ -192,7 +192,7 @@ contract BasicToken is ERC20Basic {
   }
 
   /**
-  * @dev Gets the balance of the specified address.
+  * @notice Gets the balance of the specified address.
   * @param _owner The address to query the the balance of.
   * @return An uint256 representing the amount owned by the passed address.
   */
@@ -205,9 +205,9 @@ contract BasicToken is ERC20Basic {
 /**
  * @title Standard ERC20 token
  *
- * @dev Implementation of the basic standard token.
- * @dev https://github.com/ethereum/EIPs/issues/20
- * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
+ * @notice Implementation of the basic standard token.
+ * @notice https://github.com/ethereum/EIPs/issues/20
+ * @notice Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
  */
 contract StandardToken is ERC20, BasicToken {
 
@@ -215,7 +215,7 @@ contract StandardToken is ERC20, BasicToken {
 
 
   /**
-   * @dev Transfer tokens from one address to another
+   * @notice Transfer tokens from one address to another
    * @param _from address The address which you want to send tokens from
    * @param _to address The address which you want to transfer to
    * @param _value uint256 the amount of tokens to be transferred
@@ -233,7 +233,7 @@ contract StandardToken is ERC20, BasicToken {
   }
 
   /**
-   * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
+   * @notice Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
    *
    * Beware that changing an allowance with this method brings the risk that someone may use both the old
    * and the new allowance by unfortunate transaction ordering. One possible solution to mitigate this
@@ -249,7 +249,7 @@ contract StandardToken is ERC20, BasicToken {
   }
 
   /**
-   * @dev Function to check the amount of tokens that an owner allowed to a spender.
+   * @notice Function to check the amount of tokens that an owner allowed to a spender.
    * @param _owner address The address which owns the funds.
    * @param _spender address The address which will spend the funds.
    * @return A uint256 specifying the amount of tokens still available for the spender.
@@ -259,7 +259,7 @@ contract StandardToken is ERC20, BasicToken {
   }
 
   /**
-   * @dev Increase the amount of tokens that an owner allowed to a spender.
+   * @notice Increase the amount of tokens that an owner allowed to a spender.
    *
    * approve should be called when allowed[_spender] == 0. To increment
    * allowed value is better to use this function to avoid 2 calls (and wait until
@@ -275,7 +275,7 @@ contract StandardToken is ERC20, BasicToken {
   }
 
   /**
-   * @dev Decrease the amount of tokens that an owner allowed to a spender.
+   * @notice Decrease the amount of tokens that an owner allowed to a spender.
    *
    * approve should be called when allowed[_spender] == 0. To decrement
    * allowed value is better to use this function to avoid 2 calls (and wait until
@@ -364,7 +364,7 @@ contract ISecurityTokenRegistry {
     mapping(string => address) symbols;
 
     /**
-     * @dev Creates a new Security Token and saves it to the registry
+     * @notice Creates a new Security Token and saves it to the registry
      * @param _name Name of the token
      * @param _symbol Ticker symbol of the security token
      * @param _tokenDetails off-chain details of the token
@@ -377,21 +377,21 @@ contract ISecurityTokenRegistry {
     ///////// Get Functions
     //////////////////////////////
     /**
-     * @dev Get security token address by ticker name
+     * @notice Get security token address by ticker name
      * @param _symbol Symbol of the Scurity token
      * @return address _symbol
      */
     function getSecurityTokenAddress(string _symbol) public view returns (address);
 
      /**
-     * @dev Get security token data by its address
+     * @notice Get security token data by its address
      * @param _securityToken Address of the Scurity token
      * @return string, address, bytes32
      */
     function getSecurityTokenData(address _securityToken) public view returns (string, address, string);
 
     /**
-    * @dev Check that Security Token is registered
+    * @notice Check that Security Token is registered
     * @param _securityToken Address of the Scurity token
     * @return bool
     */
@@ -419,7 +419,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     event LogModuleVerified(address indexed _moduleFactory, bool _verified);
 
     /**
-    * @dev Called by a security token to notify the registry it is using a module
+    * @notice Called by a security token to notify the registry it is using a module
     * @param _moduleFactory is the address of the relevant module factory
     */
     function useModule(address _moduleFactory) external {
@@ -434,7 +434,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     }
 
     /**
-    * @dev Called by moduleFactory owner to register new modules for SecurityToken to use
+    * @notice Called by moduleFactory owner to register new modules for SecurityToken to use
     * @param _moduleFactory is the address of the module factory to be registered
     */
     function registerModule(address _moduleFactory) external returns(bool) {
@@ -449,7 +449,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     }
 
     /**
-    * @dev Called by Polymath to verify modules for SecurityToken to use.
+    * @notice Called by Polymath to verify modules for SecurityToken to use.
     * A module can not be used by an ST unless first approved/verified by Polymath
     * (The only exception to this is that the author of the module is the owner of the ST)
     * @param _moduleFactory is the address of the module factory to be registered
@@ -463,7 +463,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     }
 
     /**
-    * @dev Called by owner to set the token registry address
+    * @notice Called by owner to set the token registry address
     * @param _securityTokenRegistry is the address of the token registry
     */
     function setTokenRegistry(address _securityTokenRegistry) public onlyOwner {
@@ -472,7 +472,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     }
 
     /**
-     * @dev Use to get all the tags releated to the functionality of the Module Factory.
+     * @notice Use to get all the tags releated to the functionality of the Module Factory.
      * @param _moduleType Type of module
      */
     function getTagByModuleType(uint8 _moduleType) public view returns(bytes32[]) {
@@ -480,7 +480,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
     }
 
     /**
-     * @dev Add the tag for specified Module Factory
+     * @notice Add the tag for specified Module Factory
      * @param _moduleType Type of module.
      * @param _tag List of tags
      */
@@ -491,7 +491,7 @@ contract ModuleRegistry is IModuleRegistry, Ownable {
      }
 
     /**
-     * @dev remove the tag for specified Module Factory
+     * @notice remove the tag for specified Module Factory
      * @param _moduleType Type of module.
      * @param _removedTags List of tags
      */

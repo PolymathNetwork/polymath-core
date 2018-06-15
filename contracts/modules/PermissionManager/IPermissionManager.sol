@@ -2,7 +2,9 @@ pragma solidity ^0.4.23;
 
 import "../../interfaces/IModule.sol";
 
-
+/**
+ * @title Interface to be implemented by all permission manager modules
+ */
 contract IPermissionManager is IModule {
 
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool);

@@ -5,6 +5,9 @@ import "../../interfaces/IModule.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
+/**
+ * @title Interface to be implemented by all STO modules
+ */
 contract ISTO is IModule, Pausable {
 
     using SafeMath for uint256;
@@ -18,7 +21,7 @@ contract ISTO is IModule, Pausable {
     uint256 public endTime;
 
     /**
-     * @dev use to verify the investment, whether the investor provide the allowance to the STO or not.
+     * @notice use to verify the investment, whether the investor provide the allowance to the STO or not.
      * @param _beneficiary Ethereum address of the beneficiary, who wants to buy the st-20
      * @param _fundsAmount Amount invested by the beneficiary
      */
@@ -42,7 +45,7 @@ contract ISTO is IModule, Pausable {
     function getNumberInvestors() public view returns (uint256);
 
     /**
-     * @dev pause (overridden function)
+     * @notice pause (overridden function)
      */
     function pause() public onlyOwner {
         require(now < endTime);
@@ -50,7 +53,7 @@ contract ISTO is IModule, Pausable {
     }
 
     /**
-     * @dev unpause (overridden function)
+     * @notice unpause (overridden function)
      */
     function unpause(uint256 _newEndDate) public onlyOwner {
         require(_newEndDate >= endTime);

@@ -1,10 +1,12 @@
 pragma solidity ^0.4.23;
 
-
+/**
+ * @title Utility contract for reusable code
+ */
 contract Util {
 
    /**
-    * @dev changes a string to upper case
+    * @notice changes a string to upper case
     * @param _base string to change
     */
     function upper(string _base) internal pure returns (string) {

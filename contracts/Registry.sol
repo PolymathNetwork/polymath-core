@@ -4,6 +4,9 @@ import "./Pausable.sol";
 import "./ReclaimTokens.sol";
 import "./interfaces/IRegistry.sol";
 
+/**
+ * @title Core functionality for registry upgradability
+ */
 contract Registry is IRegistry, Pausable, ReclaimTokens {
 
     /*
@@ -20,8 +23,9 @@ contract Registry is IRegistry, Pausable, ReclaimTokens {
     event LogChangeAddress(string _nameKey, address indexed _oldAddress, address indexed _newAddress);
 
     /**
-     * @dev get the contract address
+     * @notice Get the contract address
      * @param _nameKey is the key for the contract address mapping
+     * @return address
      */
     function getAddress(string _nameKey) view public returns(address) {
         require(validAddressKeys[keccak256(_nameKey)]);
@@ -29,7 +33,7 @@ contract Registry is IRegistry, Pausable, ReclaimTokens {
     }
 
     /**
-     * @dev change the contract address
+     * @notice change the contract address
      * @param _nameKey is the key for the contract address mapping
      * @param _newAddress is the new contract address
      */
@@ -45,14 +49,14 @@ contract Registry is IRegistry, Pausable, ReclaimTokens {
     }
 
     /**
-     * @dev pause (overridden function)
+     * @notice pause registration function
      */
     function unpause() public onlyOwner  {
         super._unpause();
     }
 
     /**
-     * @dev unpause (overridden function)
+     * @notice unpause registration function
      */
     function pause() public onlyOwner {
         super._pause();

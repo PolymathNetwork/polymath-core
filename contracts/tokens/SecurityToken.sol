@@ -111,7 +111,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _name Name of the SecurityToken
      * @param _symbol Symbol of the Token
      * @param _decimals Decimals for the securityToken
@@ -147,7 +147,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev Function used to attach the module in security token
+     * @notice Function used to attach the module in security token
      * @param _moduleFactory Contract address of the module factory that needs to be attached
      * @param _data Data used for the intialization of the module factory variables
      * @param _maxCost Maximum cost of the Module factory
@@ -199,7 +199,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-    * @dev removes a module attached to the SecurityToken
+    * @notice removes a module attached to the SecurityToken
     * @param _moduleType is which type of module we are trying to remove
     * @param _moduleIndex is the index of the module within the chosen type
     */
@@ -216,7 +216,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev returns module list for a module type
+     * @notice returns module list for a module type
      * @param _moduleType is which type of module we are trying to get
      * @param _moduleIndex is the index of the module within the chosen type
      */
@@ -234,7 +234,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev returns module list for a module name - will return first match
+     * @notice returns module list for a module name - will return first match
      * @param _moduleType is which type of module we are trying to get
      * @param _name is the name of the module within the chosen type
      */
@@ -256,7 +256,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-    * @dev allows the owner to withdraw unspent POLY stored by them on the ST.
+    * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
     * Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
     */
     function withdrawPoly(uint256 _amount) public onlyOwner {
@@ -264,7 +264,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-    * @dev allows owner to approve more POLY to one of the modules
+    * @notice allows owner to approve more POLY to one of the modules
     */
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0, "Module type cannot be zero");
@@ -274,7 +274,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev change the tokenDetails
+     * @notice change the tokenDetails
      */
     function updateTokenDetails(string _newTokenDetails) public onlyOwner {
         emit LogUpdateTokenDetails(tokenDetails, _newTokenDetails);
@@ -282,7 +282,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-    * @dev allows owner to change token granularity
+    * @notice allows owner to change token granularity
     */
     function changeGranularity(uint256 _granularity) public onlyOwner {
         require(_granularity != 0, "Granularity can not be 0");
@@ -291,7 +291,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-    * @dev keeps track of the number of non-zero token holders
+    * @notice keeps track of the number of non-zero token holders
     */
     function adjustInvestorCount(address _from, address _to, uint256 _value) internal {
         if ((_value == 0) || (_from == _to)) {
@@ -314,7 +314,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-    * @dev removes addresses with zero balances from the investors list
+    * @notice removes addresses with zero balances from the investors list
     * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
     */
     function pruneInvestors(uint256 _start, uint256 _iters) public onlyOwner {
@@ -328,7 +328,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev gets length of investors array
+     * @notice gets length of investors array
      * NB - this length may differ from investorCount if list has not been pruned of zero balance investors
      * @return length
      */
@@ -337,7 +337,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev freeze all the transfers
+     * @notice freeze all the transfers
      */
     function freezeTransfers() public onlyOwner {
         require(!freeze);
@@ -346,7 +346,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev un-freeze all the transfers
+     * @notice un-freeze all the transfers
      */
     function unfreezeTransfers() public onlyOwner {
         require(freeze);
@@ -391,7 +391,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev Overloaded version of the transfer function
+     * @notice Overloaded version of the transfer function
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
         adjustInvestorCount(msg.sender, _to, _value);
@@ -403,7 +403,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev Overloaded version of the transferFrom function
+     * @notice Overloaded version of the transferFrom function
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         adjustInvestorCount(_from, _to, _value);
@@ -446,7 +446,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev used to prevent forever minting only be called by the owner
+     * @notice used to prevent forever minting only be called by the owner
      */
     function finishMinting() public onlyOwner {
         mintingFinished = true;
@@ -454,7 +454,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev mints new tokens and assigns them to the target _investor.
+     * @notice mints new tokens and assigns them to the target _investor.
      * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
      * @param _investor Address to whom the minted tokens will be dilivered
      * @param _amount Number of tokens get minted
@@ -474,7 +474,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev mints new tokens and assigns them to the target _investor.
+     * @notice mints new tokens and assigns them to the target _investor.
      * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
      * @param _investors A list of addresses to whom the minted tokens will be dilivered
      * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
@@ -504,7 +504,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev used to set the token Burner address. It only be called by the owner
+     * @notice used to set the token Burner address. It only be called by the owner
      * @param _tokenBurner Address of the token burner contract
      */
     function setTokenBurner(address _tokenBurner) public onlyOwner {
@@ -512,7 +512,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev Burn function used to burn the securityToken
+     * @notice Burn function used to burn the securityToken
      * @param _value No. of token that get burned
      */
     function burn(uint256 _value) checkGranularity(_value) public {
@@ -541,7 +541,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev set a new Security Token Registry contract address in case of upgrade
+     * @notice set a new Security Token Registry contract address in case of upgrade
      * @param _newAddress is address of new contract
      */
      function changeSecurityTokenRegistryAddress(address _newAddress) public onlyOwner {
@@ -551,7 +551,7 @@ contract SecurityToken is ISecurityToken {
      }
 
     /**
-     * @dev Creates a checkpoint that can be used to query historical balances / totalSuppy
+     * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
      */
     function createCheckpoint() public onlyModule(CHECKPOINT_KEY, true) returns(uint256) {
         require(currentCheckpointId < 2**256 - 1);
@@ -561,7 +561,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev Queries totalSupply as of a defined checkpoint
+     * @notice Queries totalSupply as of a defined checkpoint
      * @param _checkpointId Checkpoint ID to query as of
      */
     function totalSupplyAt(uint256 _checkpointId) public view returns(uint256) {
@@ -604,7 +604,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @dev Queries balances as of a defined checkpoint
+     * @notice Queries balances as of a defined checkpoint
      * @param _investor Investor to query balance for
      * @param _checkpointId Checkpoint ID to query as of
      */

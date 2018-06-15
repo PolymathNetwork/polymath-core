@@ -30,7 +30,7 @@ contract PercentageTransferManager is ITransferManager {
     );
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _securityToken Address of the security token
      * @param _polyAddress Address of the polytoken
      */
@@ -57,7 +57,7 @@ contract PercentageTransferManager is ITransferManager {
     }
 
     /**
-     * @dev Used to intialize the variables of the contract
+     * @notice Used to intialize the variables of the contract
      * @param _maxHolderPercentage Maximum amount of ST20 tokens(in %) can hold by the investor 
      */
     function configure(uint256 _maxHolderPercentage) public onlyFactory {
@@ -72,7 +72,7 @@ contract PercentageTransferManager is ITransferManager {
     }
 
     /**
-    * @dev sets the maximum percentage that an individual token holder can hold
+    * @notice sets the maximum percentage that an individual token holder can hold
     * @param _maxHolderPercentage is the new maximum percentage (multiplied by 10**16)
     */
     function changeHolderPercentage(uint256 _maxHolderPercentage) public onlyOwner {
@@ -81,7 +81,7 @@ contract PercentageTransferManager is ITransferManager {
     }
 
     /**
-    * @dev adds or removes addresses from the whitelist.
+    * @notice adds or removes addresses from the whitelist.
     * @param _investor is the address to whitelist
     * @param _valid whether or not the address it to be added or removed from the whitelist
     */

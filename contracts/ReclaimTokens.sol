@@ -6,7 +6,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
 contract ReclaimTokens is Ownable {
 
     /**
-    * @dev Reclaim all ERC20Basic compatible tokens
+    * @notice Reclaim all ERC20Basic compatible tokens
     * @param _tokenContract The address of the token contract
     */
     function reclaimERC20(address _tokenContract) external onlyOwner {

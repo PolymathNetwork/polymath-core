@@ -31,7 +31,7 @@ contract GeneralPermissionManager is IPermissionManager {
     }
 
     /**
-    * @dev Init function i.e generalise function to maintain the structure of the module contract
+    * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */
     function getInitFunction() public returns(bytes4) {
@@ -39,7 +39,7 @@ contract GeneralPermissionManager is IPermissionManager {
     }
 
     /**
-    * @dev use to check the permission on delegate corresponds to module contract address
+    * @notice use to check the permission on delegate corresponds to module contract address
     * @param _delegate Ethereum address of the delegate
     * @param _module Ethereum contract address of the module
     * @param _perm Permission flag
@@ -53,7 +53,7 @@ contract GeneralPermissionManager is IPermissionManager {
     }
 
     /**
-    * @dev use to add the details of the delegate
+    * @notice use to add the details of the delegate
     * @param _delegate Ethereum address of the delegate
     * @param _details Details about the delegate i.e `Belongs to financial firm`
     */
@@ -63,7 +63,7 @@ contract GeneralPermissionManager is IPermissionManager {
     }
 
   /**
-    * @dev Use to provide/change the permission to the delegate corresponds to the module contract
+    * @notice Use to provide/change the permission to the delegate corresponds to the module contract
     * @param _delegate Ethereum address of the delegate
     * @param _module Ethereum contract address of the module
     * @param _perm Permission flag
@@ -87,7 +87,7 @@ contract GeneralPermissionManager is IPermissionManager {
     }
 
     /**
-    * @dev Use to get the details of the delegate
+    * @notice Use to get the details of the delegate
     * @param _delegate Ethereum address of the delegate
     * @return Details of the delegate
     */
@@ -96,7 +96,7 @@ contract GeneralPermissionManager is IPermissionManager {
     }
 
     /**
-    * @dev Use to get the Permission flag related the `this` contract
+    * @notice Use to get the Permission flag related the `this` contract
     * @return Array of permission flags
     */
     function getPermissions() public view returns(bytes32[]) {

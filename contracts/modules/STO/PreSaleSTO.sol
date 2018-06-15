@@ -19,7 +19,7 @@ contract PreSaleSTO is ISTO {
     uint256 public polyRaised;
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _securityToken Address of the security token
      * @param _polyAddress Address of the polytoken
      */
@@ -29,7 +29,7 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
-     * @dev Function used to intialize the differnet variables
+     * @notice Function used to intialize the differnet variables
      * @param _endTime Unix timestamp at which offering get ended
      */
     function configure(uint256 _endTime) public onlyFactory {
@@ -75,7 +75,7 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
-     * @dev Function used to allocate tokens to the investor
+     * @notice Function used to allocate tokens to the investor
      * @param _investor Address of the investor
      * @param _amount No. of tokens need to transfered to the investor
      * @param _etherContributed How much amount of ETH get contributed
@@ -94,7 +94,7 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
-     * @dev Function used to allocate tokens to the multiple investor
+     * @notice Function used to allocate tokens to the multiple investor
      * @param _investors Array of address of the investors
      * @param _amounts Array of no. of tokens need to transfered to the investors
      * @param _etherContributed Total amount of ETH get contributed

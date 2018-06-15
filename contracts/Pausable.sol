@@ -8,7 +8,7 @@ contract Pausable {
     bool public paused = false;
 
     /**
-    * @dev Modifier to make a function callable only when the contract is not paused.
+    * @notice Modifier to make a function callable only when the contract is not paused.
     */
     modifier whenNotPaused() {
         require(!paused);
@@ -16,7 +16,7 @@ contract Pausable {
     }
 
     /**
-    * @dev Modifier to make a function callable only when the contract is paused.
+    * @notice Modifier to make a function callable only when the contract is paused.
     */
     modifier whenPaused() {
         require(paused);
@@ -24,7 +24,7 @@ contract Pausable {
     }
 
    /**
-    * @dev called by the owner to pause, triggers stopped state
+    * @notice called by the owner to pause, triggers stopped state
     */
     function _pause() internal {
         require(!paused);
@@ -33,7 +33,7 @@ contract Pausable {
     }
 
     /**
-    * @dev called by the owner to unpause, returns to normal state
+    * @notice called by the owner to unpause, returns to normal state
     */
     function _unpause() internal {
         require(paused);

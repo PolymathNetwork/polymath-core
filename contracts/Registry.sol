@@ -20,7 +20,7 @@ contract Registry is IRegistry, Pausable, ReclaimTokens {
     event LogChangeAddress(string _nameKey, address indexed _oldAddress, address indexed _newAddress);
 
     /**
-     * @dev get the contract address
+     * @notice get the contract address
      * @param _nameKey is the key for the contract address mapping
      */
     function getAddress(string _nameKey) view public returns(address) {
@@ -29,7 +29,7 @@ contract Registry is IRegistry, Pausable, ReclaimTokens {
     }
 
     /**
-     * @dev change the contract address
+     * @notice change the contract address
      * @param _nameKey is the key for the contract address mapping
      * @param _newAddress is the new contract address
      */
@@ -45,14 +45,14 @@ contract Registry is IRegistry, Pausable, ReclaimTokens {
     }
 
     /**
-     * @dev pause (overridden function)
+     * @notice pause (overridden function)
      */
     function unpause() public onlyOwner  {
         super._unpause();
     }
 
     /**
-     * @dev unpause (overridden function)
+     * @notice unpause (overridden function)
      */
     function pause() public onlyOwner {
         super._pause();

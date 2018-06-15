@@ -12,13 +12,13 @@ contract IST20 is StandardToken, DetailedERC20 {
     function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool success);
 
     /**
-     * @dev mints new tokens and assigns them to the target _investor.
+     * @notice mints new tokens and assigns them to the target _investor.
      * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
      */
     function mint(address _investor, uint256 _amount) public returns (bool success);
 
     /**
-     * @dev Burn function used to burn the securityToken
+     * @notice Burn function used to burn the securityToken
      * @param _value No. of token that get burned     
      */
     function burn(uint256 _value) public;

@@ -19,7 +19,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     event LogAddCustomSecurityToken(string _name, string _symbol, address _securityToken, uint256 _addedAt);
 
      /**
-     * @dev Constructor used to set the essentials addresses to facilitate
+     * @notice Constructor used to set the essentials addresses to facilitate
      * the creation of the security token
      */
     constructor (
@@ -41,7 +41,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     }
 
     /**
-     * @dev Creates a new Security Token and saves it to the registry
+     * @notice Creates a new Security Token and saves it to the registry
      * @param _name Name of the token
      * @param _symbol Ticker symbol of the security token
      * @param _tokenDetails off-chain details of the token
@@ -67,7 +67,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     }
 
     /**
-     * @dev Add a new custom (Token should follow the ISecurityToken interface) Security Token and saves it to the registry
+     * @notice Add a new custom (Token should follow the ISecurityToken interface) Security Token and saves it to the registry
      * @param _name Name of the token
      * @param _symbol Ticker symbol of the security token
      * @param _owner Owner of the token
@@ -86,7 +86,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     }
 
     /**
-    * @dev Changes the protocol version and the SecurityToken contract that the registry points to
+    * @notice Changes the protocol version and the SecurityToken contract that the registry points to
     * Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
     * Changing versions does not affect existing tokens.
     */
@@ -99,7 +99,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     ///////// Get Functions
     //////////////////////////////
     /**
-     * @dev Get security token address by ticker name
+     * @notice Get security token address by ticker name
      * @param _symbol Symbol of the Scurity token
      * @return address _symbol
      */
@@ -109,7 +109,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     }
 
      /**
-     * @dev Get security token data by its address
+     * @notice Get security token data by its address
      * @param _securityToken Address of the Scurity token
      * @return string, address, string
      */
@@ -122,7 +122,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     }
 
     /**
-    * @dev Check that Security Token is registered
+    * @notice Check that Security Token is registered
     * @param _securityToken Address of the Scurity token
     * @return bool
     */
@@ -131,7 +131,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     }
 
     /**
-     * @dev set the ticker registration fee in POLY tokens
+     * @notice set the ticker registration fee in POLY tokens
      * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
      */
     function changePolyRegisterationFee(uint256 _registrationFee) public onlyOwner {

@@ -72,7 +72,7 @@ contract GeneralTransferManager is ITransferManager {
     );
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _securityToken Address of the security token
      * @param _polyAddress Address of the polytoken
      */
@@ -90,7 +90,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @dev Used to change the Issuance Address
+     * @notice Used to change the Issuance Address
      * @param _issuanceAddress new address for the issuance
      */
     function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
@@ -99,7 +99,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @dev Used to change the Sigining Address
+     * @notice Used to change the Sigining Address
      * @param _signingAddress new address for the signing
      */
     function changeSigningAddress(address _signingAddress) public withPerm(FLAGS) {
@@ -108,7 +108,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @dev Used to change the flag
+     * @notice Used to change the flag
             true - It refers there are no transfer restrictions, for any addresses
             false - It refers transfers are restricted for all addresses.
      * @param _allowAllTransfers flag value
@@ -119,7 +119,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @dev Used to change the flag
+     * @notice Used to change the flag
             true - It refers that time lock is ignored for transfers (address must still be on whitelist)
             false - It refers transfers are restricted for all addresses.
      * @param _allowAllWhitelistTransfers flag value
@@ -130,7 +130,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @dev Used to change the flag
+     * @notice Used to change the flag
             true - It refers that time lock is ignored for issuances (address must still be on whitelist)
             false - It refers transfers are restricted for all addresses.
      * @param _allowAllWhitelistIssuances flag value
@@ -141,7 +141,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @dev Used to change the flag
+     * @notice Used to change the flag
             true - It allow to burn the tokens
             false - It deactivate the burning mechanism.
      * @param _allowAllBurnTransfers flag value
@@ -152,7 +152,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @dev default implementation of verifyTransfer used by SecurityToken
+    * @notice default implementation of verifyTransfer used by SecurityToken
     * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
     * If the transfer request comes from a token holder, it checks that:
     * a) Both are on the whitelist
@@ -186,7 +186,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @dev adds or removes addresses from the whitelist.
+    * @notice adds or removes addresses from the whitelist.
     * @param _investor is the address to whitelist
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
@@ -200,7 +200,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @dev adds or removes addresses from the whitelist.
+    * @notice adds or removes addresses from the whitelist.
     * @param _investors List of the addresses to whitelist
     * @param _fromTimes An array of the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTimes An array of the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
@@ -224,7 +224,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @dev adds or removes addresses from the whitelist - can be called by anyone with a valid signature
+    * @notice adds or removes addresses from the whitelist - can be called by anyone with a valid signature
     * @param _investor is the address to whitelist
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
@@ -258,7 +258,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @dev used to verify the signature 
+     * @notice used to verify the signature 
      */
     function checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
         //Check that the signature is valid
@@ -278,7 +278,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @dev Internal function used to check whether the investor is in the whitelist or not 
+     * @notice Internal function used to check whether the investor is in the whitelist or not 
             & also checks whether the KYC of investor get expired or not
      * @param _investor Address of the investor 
      */
@@ -288,7 +288,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @dev Internal function use to know whether the STO is attached or not
+     * @notice Internal function use to know whether the STO is attached or not
      */
     function isSTOAttached() internal view returns(bool) {
         address _sto;

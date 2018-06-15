@@ -14,7 +14,7 @@ import "./helpers/Util.sol";
 
 /**
  * @title TickerRegistry
- * @dev Contract used to register the security token symbols
+ * @notice Contract used to register the security token symbols
  */
 
 contract TickerRegistry is ITickerRegistry, Util, Registry {
@@ -52,7 +52,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     }
 
     /**
-     * @dev Register the token symbol for its particular owner
+     * @notice Register the token symbol for its particular owner
             Once the token symbol is registered to its owner then no other issuer can claim
             its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
      * @param _symbol token symbol
@@ -71,7 +71,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     }
 
      /**
-      * @dev Change the expiry time for the token symbol
+      * @notice Change the expiry time for the token symbol
       * @param _newExpiry new time period for token symbol expiry
       */
     function changeExpiryLimit(uint256 _newExpiry) public onlyOwner {
@@ -82,7 +82,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     }
 
     /**
-     * @dev Check the validity of the symbol
+     * @notice Check the validity of the symbol
      * @param _symbol token symbol
      * @param _owner address of the owner
      * @param _tokenName Name of the token
@@ -100,7 +100,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     }
 
     /**
-     * @dev Check the symbol is reserved or not
+     * @notice Check the symbol is reserved or not
      * @param _symbol Symbol of the token
      * @param _owner Owner of the token
      * @param _tokenName Name of the token
@@ -123,7 +123,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
      }
 
     /**
-     * @dev Returns the owner and timestamp for a given symbol
+     * @notice Returns the owner and timestamp for a given symbol
      * @param _symbol symbol
      */
     function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool) {
@@ -142,7 +142,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     }
 
     /**
-     * @dev To re-initialize the token symbol details if symbol validity expires
+     * @notice To re-initialize the token symbol details if symbol validity expires
      * @param _symbol token symbol
      */
     function expiryCheck(string _symbol) internal returns(bool) {
@@ -157,7 +157,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     }
 
     /**
-     * @dev set the ticker registration fee in POLY tokens
+     * @notice set the ticker registration fee in POLY tokens
      * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
      */
     function changePolyRegisterationFee(uint256 _registrationFee) public onlyOwner {

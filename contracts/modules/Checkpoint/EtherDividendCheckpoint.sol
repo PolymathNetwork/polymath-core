@@ -37,7 +37,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _securityToken Address of the security token
      * @param _polyAddress Address of the polytoken
      */
@@ -47,7 +47,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     }
 
     /**
-    * @dev Init function i.e generalise function to maintain the structure of the module contract
+    * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */
     function getInitFunction() public returns(bytes4) {
@@ -55,7 +55,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Creates a dividend and checkpoint for the dividend
+     * @notice Creates a dividend and checkpoint for the dividend
      * @param _maturity Time from which dividend can be paid
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
      */
@@ -82,7 +82,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Creates a dividend with a provided checkpoint
+     * @notice Creates a dividend with a provided checkpoint
      * @param _maturity Time from which dividend can be paid
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
      */
@@ -108,7 +108,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Issuer can push dividends to provided addresses
+     * @notice Issuer can push dividends to provided addresses
      * @param _dividendIndex Dividend to push
      * @param _payees Addresses to which to push the dividend
      */
@@ -122,7 +122,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Issuer can push dividends using the investor list from the security token
+     * @notice Issuer can push dividends using the investor list from the security token
      * @param _dividendIndex Dividend to push
      * @param _start Index in investor list at which to start pushing dividends
      * @param _iterations Number of addresses to push dividends for
@@ -139,7 +139,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Investors can pull their own dividends
+     * @notice Investors can pull their own dividends
      * @param _dividendIndex Dividend to pull
      */
     function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
@@ -164,7 +164,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Issuer can reclaim remaining unclaimed dividend amounts, for expired dividends
+     * @notice Issuer can reclaim remaining unclaimed dividend amounts, for expired dividends
      * @param _dividendIndex Dividend to reclaim
      */
     function reclaimDividend(uint256 _dividendIndex) public onlyOwner {
@@ -188,7 +188,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Get the index according to the checkpoint id
+     * @notice Get the index according to the checkpoint id
      */
     function getDividendIndex(uint256 _checkpointId) public view returns(uint256[]) {
         uint256 counter = 0;

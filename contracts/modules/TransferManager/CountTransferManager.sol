@@ -10,7 +10,7 @@ contract CountTransferManager is ITransferManager {
     event LogModifyHolderCount(uint256 _oldHolderCount, uint256 _newHolderCount);
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _securityToken Address of the security token
      * @param _polyAddress Address of the polytoken
      */
@@ -36,7 +36,7 @@ contract CountTransferManager is ITransferManager {
     }
 
     /**
-     * @dev Used to intialize the variables of the contract
+     * @notice Used to intialize the variables of the contract
      * @param _maxHolderCount Maximum no. of holders for the securityToken
      */
     function configure(uint256 _maxHolderCount) public onlyFactory {
@@ -51,7 +51,7 @@ contract CountTransferManager is ITransferManager {
     }
 
     /**
-    * @dev sets the maximum percentage that an individual token holder can hold
+    * @notice sets the maximum percentage that an individual token holder can hold
     * @param _maxHolderCount is the new maximum amount a holder can hold
     */
     function changeHolderCount(uint256 _maxHolderCount) public onlyOwner {

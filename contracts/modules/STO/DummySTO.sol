@@ -18,7 +18,7 @@ contract DummySTO is ISTO {
     mapping (address => uint256) public investors;
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _securityToken Address of the security token
      * @param _polyAddress Address of the polytoken
      */
@@ -28,7 +28,7 @@ contract DummySTO is ISTO {
     }
 
     /**
-     * @dev Function used to intialize the differnet variables
+     * @notice Function used to intialize the differnet variables
      * @param _startTime Unix timestamp at which offering get started
      * @param _endTime Unix timestamp at which offering get ended
      * @param _cap Maximum No. of tokens for sale 
@@ -49,7 +49,7 @@ contract DummySTO is ISTO {
     }
 
     /**
-     * @dev Function used to generate the tokens 
+     * @notice Function used to generate the tokens 
      * @param _investor Address of the investor
      * @param _amount Amount of ETH or Poly invested by the investor
      */

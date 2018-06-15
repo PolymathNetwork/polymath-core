@@ -3,7 +3,9 @@ pragma solidity ^0.4.23;
 import "./GeneralTransferManager.sol";
 import "../../interfaces/IModuleFactory.sol";
 
-
+/**
+ * @title Factory for deploying GeneralTransferManager module
+ */
 contract GeneralTransferManagerFactory is IModuleFactory {
 
     /**
@@ -45,7 +47,7 @@ contract GeneralTransferManagerFactory is IModuleFactory {
     }
 
     /**
-     * @notice Get the description of the Module 
+     * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
         return "Manage transfers using a time based whitelist";

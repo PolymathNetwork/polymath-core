@@ -5,6 +5,9 @@ import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 
+/**
+ * @title Checkpoint module for issuing ether dividends
+ */
 contract EtherDividendCheckpoint is ICheckpoint {
     using SafeMath for uint256;
 

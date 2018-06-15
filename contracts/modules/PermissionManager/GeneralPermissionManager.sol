@@ -10,6 +10,9 @@ import "./IPermissionManager.sol";
 // changePermission           X               X
 //
 
+/**
+ * @title Permission Manager module for core permissioning functionality
+ */
 contract GeneralPermissionManager is IPermissionManager {
 
     // Mapping used to hold the permissions on the modules provided to delegate

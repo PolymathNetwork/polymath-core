@@ -2,6 +2,9 @@ pragma solidity ^0.4.23;
 
 import "./ITransferManager.sol";
 
+/**
+ * @title Transfer Manager for limiting maximum number of token holders
+ */
 contract CountTransferManager is ITransferManager {
 
     // The maximum number of concurrent token holders
@@ -44,7 +47,7 @@ contract CountTransferManager is ITransferManager {
     }
 
     /**
-     * @notice This function returns the signature of configure function 
+     * @notice This function returns the signature of configure function
      */
     function getInitFunction() public returns(bytes4) {
         return bytes4(keccak256("configure(uint256)"));

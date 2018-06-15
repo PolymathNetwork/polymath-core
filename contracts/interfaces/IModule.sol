@@ -5,7 +5,7 @@ import "./IModuleFactory.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 /**
- * @title Simple interface that any module contracts should implement
+ * @title Interface that any module contract should implement
  */
 contract IModule {
 

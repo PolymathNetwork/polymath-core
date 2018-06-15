@@ -3,7 +3,9 @@ pragma solidity ^0.4.23;
 import "./CountTransferManager.sol";
 import "../../interfaces/IModuleFactory.sol";
 
-
+/**
+ * @title Factory for deploying CountTransferManager module
+ */
 contract CountTransferManagerFactory is IModuleFactory {
 
     /**
@@ -46,7 +48,7 @@ contract CountTransferManagerFactory is IModuleFactory {
     }
 
     /**
-     * @notice Get the description of the Module 
+     * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
         return "Restrict the number of investors";

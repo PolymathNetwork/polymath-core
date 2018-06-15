@@ -3,6 +3,9 @@ pragma solidity ^0.4.23;
 import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 
+/**
+ * @title Interface for the ST20 token standard
+ */
 contract IST20 is StandardToken, DetailedERC20 {
 
     // off-chain hash
@@ -19,7 +22,7 @@ contract IST20 is StandardToken, DetailedERC20 {
 
     /**
      * @notice Burn function used to burn the securityToken
-     * @param _value No. of token that get burned     
+     * @param _value No. of token that get burned
      */
     function burn(uint256 _value) public;
 

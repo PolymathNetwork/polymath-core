@@ -5,6 +5,9 @@ import "../../interfaces/IModule.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
+/**
+ * @title Interface to be implemented by all STO modules
+ */
 contract ISTO is IModule, Pausable {
 
     using SafeMath for uint256;

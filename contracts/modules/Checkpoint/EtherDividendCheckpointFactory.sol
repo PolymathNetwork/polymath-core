@@ -3,7 +3,9 @@ pragma solidity ^0.4.23;
 import "./EtherDividendCheckpoint.sol";
 import "../../interfaces/IModuleFactory.sol";
 
-
+/**
+ * @title Factory for deploying EtherDividendCheckpoint module
+ */
 contract EtherDividendCheckpointFactory is IModuleFactory {
 
     /**

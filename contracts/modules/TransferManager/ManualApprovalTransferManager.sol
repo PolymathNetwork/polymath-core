@@ -12,6 +12,9 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 // revokeManualApproval                     X                 X
 // revokeManualBlocking                     X                 X
 
+/**
+ * @title Transfer Manager module for manually approving or blocking transactions between accounts
+ */
 contract ManualApprovalTransferManager is ITransferManager {
     using SafeMath for uint256;
 

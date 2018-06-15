@@ -3,7 +3,9 @@ pragma solidity ^0.4.23;
 import "./PercentageTransferManager.sol";
 import "../../interfaces/IModuleFactory.sol";
 
-
+/**
+ * @title Factory for deploying PercentageTransferManager module
+ */
 contract PercentageTransferManagerFactory is IModuleFactory {
 
     /**
@@ -47,7 +49,7 @@ contract PercentageTransferManagerFactory is IModuleFactory {
     }
 
     /**
-     * @notice Get the description of the Module 
+     * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
         return "Restrict the number of investors";

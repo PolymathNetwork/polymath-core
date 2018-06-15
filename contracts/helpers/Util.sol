@@ -1,6 +1,8 @@
 pragma solidity ^0.4.23;
 
-
+/**
+ * @title Utility contract for reusable code
+ */
 contract Util {
 
    /**

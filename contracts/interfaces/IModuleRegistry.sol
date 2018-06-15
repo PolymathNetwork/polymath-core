@@ -1,7 +1,8 @@
 pragma solidity ^0.4.23;
 
-
-//Simple interface that any module contracts should implement
+/**
+ * @title Interface for the polymath module registry contract
+ */
 contract IModuleRegistry {
 
     /**

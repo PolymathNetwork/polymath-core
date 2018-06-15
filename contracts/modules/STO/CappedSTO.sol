@@ -4,7 +4,9 @@ import "./ISTO.sol";
 import "../../interfaces/IST20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-
+/**
+ * @title STO module for standard capped crowdsale
+ */
 contract CappedSTO is ISTO {
     using SafeMath for uint256;
 
@@ -53,7 +55,7 @@ contract CappedSTO is ISTO {
      * @notice Function used to intialize the contract variables
      * @param _startTime Unix timestamp at which offering get started
      * @param _endTime Unix timestamp at which offering get ended
-     * @param _cap Maximum No. of tokens for sale 
+     * @param _cap Maximum No. of tokens for sale
      * @param _rate Token units a buyer gets per wei / base unit of POLY
      * @param _fundRaiseType Type of currency used to collect the funds
      * @param _fundsReceiver Ethereum account address to hold the funds
@@ -82,7 +84,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-     * @notice This function returns the signature of configure function 
+     * @notice This function returns the signature of configure function
      */
     function getInitFunction() public returns (bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8,address)"));
@@ -125,7 +127,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-     * @notice Return ETH raised by the STO 
+     * @notice Return ETH raised by the STO
      */
     function getRaisedEther() public view returns (uint256) {
         if (fundraiseType == FundraiseType.ETH)
@@ -145,7 +147,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-     * @notice Return the total no. of investors 
+     * @notice Return the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256) {
         return investorCount;
@@ -160,7 +162,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-     * @notice Return the STO details 
+     * @notice Return the STO details
      */
     function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
         return (

@@ -6,6 +6,9 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
+/**
+ * @title Checkpoint module for issuing ERC20 dividends
+ */
 contract ERC20DividendCheckpoint is ICheckpoint {
     using SafeMath for uint256;
 
@@ -212,7 +215,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
        }
        return index;
     }
-    
+
     /**
      * @notice Return the permissions flag that are associated with STO
      */

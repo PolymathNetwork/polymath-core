@@ -14,6 +14,9 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 // modifyWhitelist                          X             X
 // modifyWhitelistMulti                     X             X
 
+/**
+ * @title Transfer Manager module for core transfer validation functionality
+ */
 contract GeneralTransferManager is ITransferManager {
 
     using SafeMath for uint256;
@@ -83,7 +86,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @notice This function returns the signature of configure function 
+     * @notice This function returns the signature of configure function
      */
     function getInitFunction() public returns(bytes4) {
         return bytes4(0);
@@ -258,7 +261,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @notice used to verify the signature 
+     * @notice used to verify the signature
      */
     function checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
         //Check that the signature is valid
@@ -278,9 +281,9 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @notice Internal function used to check whether the investor is in the whitelist or not 
+     * @notice Internal function used to check whether the investor is in the whitelist or not
             & also checks whether the KYC of investor get expired or not
-     * @param _investor Address of the investor 
+     * @param _investor Address of the investor
      */
     function onWhitelist(address _investor) internal view returns(bool) {
         return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) &&
@@ -293,7 +296,7 @@ contract GeneralTransferManager is ITransferManager {
     function isSTOAttached() internal view returns(bool) {
         address _sto;
         (, _sto,) = ISecurityToken(securityToken).getModule(3, 0);
-        if (_sto == address(0)) 
+        if (_sto == address(0))
             return false;
         return true;
     }

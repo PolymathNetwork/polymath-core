@@ -4,7 +4,9 @@ import "./CappedSTO.sol";
 import "../../interfaces/IModuleFactory.sol";
 import "../../interfaces/IModule.sol";
 
-
+/**
+ * @title Factory for deploying CappedSTO module
+ */
 contract CappedSTOFactory is IModuleFactory {
 
     /**
@@ -48,7 +50,7 @@ contract CappedSTOFactory is IModuleFactory {
     }
 
     /**
-     * @notice Get the description of the Module 
+     * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
         return "Capped STO";

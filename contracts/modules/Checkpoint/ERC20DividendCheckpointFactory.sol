@@ -3,7 +3,9 @@ pragma solidity ^0.4.23;
 import "./ERC20DividendCheckpoint.sol";
 import "../../interfaces/IModuleFactory.sol";
 
-
+/**
+ * @title Factory for deploying ERC20DividendCheckpoint module
+ */
 contract ERC20DividendCheckpointFactory is IModuleFactory {
 
     /**

@@ -13,12 +13,12 @@ import "../interfaces/IRegistry.sol";
 import "../interfaces/ITokenBurner.sol";
 
 /**
-* @title SecurityToken
+* @title Security Token contract
 * @notice SecurityToken is an ERC20 token with added capabilities:
-* - Implements the ST-20 Interface
-* - Transfers are restricted
-* - Modules can be attached to it to control its behaviour
-* - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
+* @notice - Implements the ST-20 Interface
+* @notice - Transfers are restricted
+* @notice - Modules can be attached to it to control its behaviour
+* @notice - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
 */
 contract SecurityToken is ISecurityToken {
     using SafeMath for uint256;
@@ -78,6 +78,7 @@ contract SecurityToken is ISecurityToken {
     event LogGranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when Module get removed from the securityToken
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
+    // Emit when the budget allocated to a module is changed
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
     // Emit when all the transfers get freeze
     event LogFreezeTransfers(bool _freeze, uint256 _timestamp);

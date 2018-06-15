@@ -4,7 +4,9 @@ import "./SecurityToken.sol";
 import "../SecurityTokenRegistry.sol";
 import "../interfaces/ISTProxy.sol";
 
-
+/**
+ * @title Proxy for deploying Security Token v1
+ */
 contract STVersionProxy001 is ISTProxy {
 
     address public transferManagerFactory;
@@ -15,7 +17,7 @@ contract STVersionProxy001 is ISTProxy {
     constructor (address _transferManagerFactory) public {
         transferManagerFactory = _transferManagerFactory;
     }
-    
+
     /**
      * @notice deploys the token and adds default modules like permission manager and transfer manager.
      * Future versions of the proxy can attach different modules or pass some other paramters.

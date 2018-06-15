@@ -7,11 +7,9 @@ import "./interfaces/ISecurityTokenRegistry.sol";
 import "./Registry.sol";
 
 /**
-* @title ModuleRegistry
-* @notice Stores registered modules
-* Anyone can register modules, but only those "approved" by Polymath will be allowed to everyone.
+* @title Registry contract to store registered modules
+* @notice Anyone can register modules, but only those "approved" by Polymath will be available for issuers to add
 */
-
 contract ModuleRegistry is IModuleRegistry, Registry {
 
     // Mapping used to hold the type of module factory corresponds to the address of the Module factory contract

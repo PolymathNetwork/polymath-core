@@ -4,6 +4,9 @@ import "./Pausable.sol";
 import "./ReclaimTokens.sol";
 import "./interfaces/IRegistry.sol";
 
+/**
+ * @title Core functionality for registry upgradability
+ */
 contract Registry is IRegistry, Pausable, ReclaimTokens {
 
     /*

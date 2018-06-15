@@ -2,7 +2,9 @@ pragma solidity ^0.4.23;
 
 import "./ISecurityToken.sol";
 
-
+/**
+ * @title Interface for the polymath security token registry contract
+ */
 contract ISecurityTokenRegistry {
 
     bytes32 public protocolVersion = "0.0.1";

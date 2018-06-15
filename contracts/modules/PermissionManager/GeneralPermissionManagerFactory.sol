@@ -3,7 +3,9 @@ pragma solidity ^0.4.23;
 import "./GeneralPermissionManager.sol";
 import "../../interfaces/IModuleFactory.sol";
 
-
+/**
+ * @title Factory for deploying GeneralPermissionManager module
+ */
 contract GeneralPermissionManagerFactory is IModuleFactory {
 
     /**
@@ -43,7 +45,7 @@ contract GeneralPermissionManagerFactory is IModuleFactory {
     }
 
     /**
-     * @notice Get the description of the Module 
+     * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
         return "Manage permissions within the Security Token and attached modules";

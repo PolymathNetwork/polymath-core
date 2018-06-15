@@ -7,6 +7,9 @@ import "./interfaces/ISecurityTokenRegistry.sol";
 import "./Registry.sol";
 import "./helpers/Util.sol";
 
+/**
+ * @title Registry contract for issuers to register their security tokens
+ */
 contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
 
     // Registration fee in POLY base 18 decimals

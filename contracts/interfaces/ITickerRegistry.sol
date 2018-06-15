@@ -1,6 +1,8 @@
 pragma solidity ^0.4.23;
 
-
+/**
+ * @title Interface for the polymath ticker registry contract
+ */
 contract ITickerRegistry {
     /**
     * @notice Check the validity of the symbol
@@ -20,7 +22,7 @@ contract ITickerRegistry {
     /**
      * @notice Check the symbol is reserved or not
      * @param _symbol Symbol of the token
-     * @return bool 
+     * @return bool
      */
      function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) public returns(bool);
 

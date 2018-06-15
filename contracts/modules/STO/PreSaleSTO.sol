@@ -4,6 +4,9 @@ import "./ISTO.sol";
 import "../../interfaces/IST20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
+/**
+ * @title STO module for private presales
+ */
 contract PreSaleSTO is ISTO {
     using SafeMath for uint256;
 
@@ -38,14 +41,14 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
-     * @notice This function returns the signature of configure function 
+     * @notice This function returns the signature of configure function
      */
     function getInitFunction() public returns (bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
 
     /**
-     * @notice Return ETH raised by the STO 
+     * @notice Return ETH raised by the STO
      */
     function getRaisedEther() public view returns (uint256) {
         return etherRaised;
@@ -59,7 +62,7 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
-     * @notice Return the total no. of investors 
+     * @notice Return the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256) {
         return investorCount;

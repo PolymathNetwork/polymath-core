@@ -3,6 +3,9 @@ pragma solidity ^0.4.23;
 import "../../Pausable.sol";
 import "../../interfaces/IModule.sol";
 
+/**
+ * @title Interface to be implemented by all Transfer Manager modules
+ */
 contract ITransferManager is IModule, Pausable {
 
     //If verifyTransfer returns:

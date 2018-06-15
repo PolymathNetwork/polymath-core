@@ -1,11 +1,5 @@
 pragma solidity ^0.4.23;
 
-/*
-  Allows issuers to reserve their token symbols ahead of actually generating their security token.
-  SecurityTokenRegistry would reference this contract and ensure that a token symbol exists here and
-  only its owner can deploy the token with that symbol.
-*/
-
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./interfaces/ITickerRegistry.sol";
@@ -13,10 +7,10 @@ import "./Registry.sol";
 import "./helpers/Util.sol";
 
 /**
- * @title TickerRegistry
- * @notice Contract used to register the security token symbols
+ * @title Registry contract for issuers to reserve their security token symbols
+ * @notice Allows issuers to reserve their token symbols ahead of actually generating their security token.
+ * @dev SecurityTokenRegistry would reference this contract and ensure that a token symbol exists here and only its owner can deploy the token with that symbol.
  */
-
 contract TickerRegistry is ITickerRegistry, Util, Registry {
 
     using SafeMath for uint256;

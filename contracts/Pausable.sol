@@ -1,5 +1,8 @@
 pragma solidity ^0.4.23;
 
+/**
+ * @title Utility contract to allow pausing and unpausing of certain functions
+ */
 contract Pausable {
 
     event Pause(uint256 _timestammp);

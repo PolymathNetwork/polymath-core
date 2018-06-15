@@ -4,7 +4,9 @@ import "./SecurityTokenV2.sol";
 import "../SecurityTokenRegistry.sol";
 import "../interfaces/ISTProxy.sol";
 
-
+/**
+ * @title Proxy for deploying Security Token v2
+ */
 contract STVersionProxy002 is ISTProxy {
 
     address public transferManagerFactory;

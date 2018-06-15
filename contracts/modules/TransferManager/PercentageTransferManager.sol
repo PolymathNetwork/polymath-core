@@ -10,6 +10,9 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 // modifyWhitelist                          X             X
 // modifyWhitelistMulti                     X             X
 
+/**
+ * @title Transfer Manager module for limiting percentage of token supply a single address can hold
+ */
 contract PercentageTransferManager is ITransferManager {
     using SafeMath for uint256;
 
@@ -39,7 +42,7 @@ contract PercentageTransferManager is ITransferManager {
     IModule(_securityToken, _polyAddress)
     {
     }
-    
+
     /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
     function verifyTransfer(address /* _from */, address _to, uint256 _amount, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
@@ -58,14 +61,14 @@ contract PercentageTransferManager is ITransferManager {
 
     /**
      * @notice Used to intialize the variables of the contract
-     * @param _maxHolderPercentage Maximum amount of ST20 tokens(in %) can hold by the investor 
+     * @param _maxHolderPercentage Maximum amount of ST20 tokens(in %) can hold by the investor
      */
     function configure(uint256 _maxHolderPercentage) public onlyFactory {
         maxHolderPercentage = _maxHolderPercentage;
     }
 
     /**
-     * @notice This function returns the signature of configure function 
+     * @notice This function returns the signature of configure function
      */
     function getInitFunction() public returns(bytes4) {
         return bytes4(keccak256("configure(uint256)"));

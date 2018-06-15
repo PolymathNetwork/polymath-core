@@ -3,7 +3,9 @@ pragma solidity ^0.4.23;
 import "./IST20.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
-
+/**
+ * @title Interface for all security tokens
+ */
 contract ISecurityToken is IST20, Ownable {
 
     uint8 public constant PERMISSIONMANAGER_KEY = 1;

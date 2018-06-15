@@ -4,7 +4,9 @@ import "./PreSaleSTO.sol";
 import "../../interfaces/IModuleFactory.sol";
 import "../../interfaces/IModule.sol";
 
-
+/**
+ * @title Factory for deploying PreSaleSTO module
+ */
 contract PreSaleSTOFactory is IModuleFactory {
 
     /**
@@ -50,7 +52,7 @@ contract PreSaleSTOFactory is IModuleFactory {
     }
 
     /**
-     * @notice Get the description of the Module 
+     * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
         return "Allows Issuer to configure pre-sale token allocations";

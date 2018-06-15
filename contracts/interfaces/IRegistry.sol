@@ -1,5 +1,8 @@
 pragma solidity ^0.4.23;
 
+/**
+ * @title Interface for all polymath registry contracts
+ */
 contract IRegistry {
 
     /**

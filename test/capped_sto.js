@@ -339,7 +339,7 @@ contract('CappedSTO', accounts => {
 
         it("Should successfully attach the STO factory with the security token", async () => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 3500000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 45000000 });
 
             assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(

@@ -188,7 +188,7 @@ async function start_explorer(){
 
 async function createDividends(ethDividend){
   // Get the Dividends module
-  await securityToken.methods.getModule(4, 0).call({ from: Issuer }, function (error, result) {
+  await securityToken.methods.getModuleByName(4, web3.utils.toHex("EtherDividendCheckpoint")).call({ from: Issuer }, function (error, result) {
     etherDividendCheckpointAddress = result[1];
   });
   if(etherDividendCheckpointAddress != "0x0000000000000000000000000000000000000000"){
@@ -240,7 +240,7 @@ async function createDividends(ethDividend){
 async function createDividendWithCheckpoint(ethDividend, _checkpointId) {
 
     // Get the Dividends module
-    await securityToken.methods.getModule(4, 0).call({ from: Issuer }, function (error, result) {
+    await securityToken.methods.getModuleByName(4, web3.utils.toHex("EtherDividendCheckpoint")).call({ from: Issuer }, function (error, result) {
       etherDividendCheckpointAddress = result[1];
     });
     if(etherDividendCheckpointAddress != "0x0000000000000000000000000000000000000000"){

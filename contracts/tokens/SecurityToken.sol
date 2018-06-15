@@ -48,7 +48,6 @@ contract SecurityToken is ISecurityToken {
     mapping (address => Checkpoint[]) public checkpointBalances;
     Checkpoint[] public checkpointTotalSupply;
 
-
     bool public mintingFinished = false;
 
     mapping (bytes4 => bool) transferFunctions;
@@ -82,11 +81,11 @@ contract SecurityToken is ISecurityToken {
     // Emit when all the transfers get freeze
     event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
     // Emit when new checkpoint created
-    event LogCheckpointCreated(uint256 _checkpointId, uint256 _timestamp);
+    event LogCheckpointCreated(uint256 indexed _checkpointId, uint256 _timestamp);
     // Emit when the minting get finished
     event LogFinishedMinting(uint256 _timestamp);
     // Emit when a module type is locked
-    event LogModuleLocked(uint8 _moduleType, address _locker);
+    event LogModuleLocked(uint8 indexed _moduleType, address _locker);
     // Change the STR address in the event of a upgrade
     event LogChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
 

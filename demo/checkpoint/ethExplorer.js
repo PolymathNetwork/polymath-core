@@ -8,6 +8,7 @@ const duration = {
   };
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
+var chalk = require('chalk');
 
 var contracts = require("../helpers/contract_addresses");
 let tickerRegistryAddress = contracts.tickerRegistryAddress();
@@ -106,7 +107,7 @@ async function start_explorer(){
 
   let options = ['Mint tokens','Transfer tokens',
    'Explore account at checkpoint', 'Explore total supply at checkpoint',
-   'Create checkpoint', 'Calculate Dividends', 'Push dividends to account', 'Pull dividends to account', 'Explore ETH balance',
+   'Create checkpoint', 'Calculate Dividends', 'Calculate Dividends at a checkpoint', 'Push dividends to account', 'Pull dividends to account', 'Explore ETH balance',
    'Reclaimed dividends after expiry'];
   let index = readlineSync.keyInSelect(options, 'What do you want to do?');
   console.log("Selected:",options[index]);
@@ -141,15 +142,26 @@ async function start_explorer(){
     break;
     case 6:
       //Create dividends
+      let _ethDividend =  readlineSync.question('How much eth would you like to distribute to token holders?: ');
+      let _checkpointId = readlineSync.question(`Enter the checkpoint on which you want to distribute dividend: `);
+      let currentCheckpointId = await securityToken.methods.currentCheckpointId().call();
+      if (currentCheckpointId >= _checkpointId) { 
+        await createDividendWithCheckpoint(_ethDividend, _checkpointId);
+      } else {
+        console.log(`Future checkpoint are not allowed to create the dividends`);
+      }
+    break;
+    case 7:
+      //Create dividends
       let _checkpoint3 =  readlineSync.question('Distribute dividends at checkpoint: ');
       let _address2 =  readlineSync.question('Enter address to push dividends to (ex- add1,add2,add3,...): ');
       await pushDividends(_checkpoint3,_address2);
     break;
-    case 7:
+    case 8:
        let _checkpoint7 =  readlineSync.question('Distribute dividends at checkpoint: ');
        await pullDividends(_checkpoint7);
     break;
-    case 8:
+    case 9:
       //explore eth balance
       let _checkpoint4 = readlineSync.question('Enter checkpoint to explore: ');
       let _address3 =  readlineSync.question('Enter address to explore: ');
@@ -164,7 +176,7 @@ async function start_explorer(){
         console.log("Sorry Future checkpoints are not allowed");
       }
     break;
-    case 9:
+    case 10:
       let _checkpoint5 = readlineSync.question('Enter the checkpoint to explore: ');
       await reclaimedDividend(_checkpoint5);
   }
@@ -222,6 +234,65 @@ async function createDividends(ethDividend){
       TxHash: ${receipt.transactionHash}\n`
     );
   })
+}
+
+
+async function createDividendWithCheckpoint(ethDividend, _checkpointId) {
+
+    // Get the Dividends module
+    await securityToken.methods.getModule(4, 0).call({ from: Issuer }, function (error, result) {
+      etherDividendCheckpointAddress = result[1];
+    });
+    if(etherDividendCheckpointAddress != "0x0000000000000000000000000000000000000000"){
+      etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
+      etherDividendCheckpoint.setProvider(web3.currentProvider);
+    }else{
+      await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false).send({ from: Issuer, gas:2500000 })
+      .on('transactionHash', function(hash){
+        console.log(`
+          Your transaction is being processed. Please wait...
+          TxHash: ${hash}\n`
+        );
+      })
+      .on('receipt', function(receipt){
+        console.log(`
+          Congratulations! The transaction was successfully completed.
+          Module deployed at address: ${receipt.events.LogModuleAdded.returnValues._module}
+          Review it on Etherscan.
+          TxHash: ${receipt.transactionHash}\n`
+        );
+  
+        etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, receipt.events.LogModuleAdded.returnValues._module);
+        etherDividendCheckpoint.setProvider(web3.currentProvider);
+      })
+      .on('error', console.error);
+    }
+  
+    let time = (await web3.eth.getBlock('latest')).timestamp;
+    let expiryTime = readlineSync.question('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = '+(time+duration.minutes(10))+' ): ');
+    if(expiryTime == "") expiryTime = time+duration.minutes(10);
+    let _dividendStatus = await etherDividendCheckpoint.methods.getDividendIndex(_checkpointId).call();
+    if (!_dividendStatus[1]) { 
+    //Send eth dividends
+      await etherDividendCheckpoint.methods.createDividendWithCheckpoint(time, expiryTime, _checkpointId)
+      .send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas:2500000 })
+      .on('transactionHash', function(hash){
+        console.log(`
+          Your transaction is being processed. Please wait...
+          TxHash: ${hash}\n`
+        );
+      })
+      .on('receipt', function(receipt){
+        console.log(`
+          Congratulations! Dividend is created successfully.
+          CheckpointId: ${receipt.events.EtherDividendDeposited.returnValues._checkpointId}
+          TxHash: ${receipt.transactionHash}\n`
+        );
+      })
+      .on('error', console.error);
+    } else {
+      console.log(chalk.blue(`\nDividends are already distributed at checkpoint '${_checkpointId}'. Not allowed to re-create\n`));
+    }
 }
 
 async function pushDividends(checkpoint, account){

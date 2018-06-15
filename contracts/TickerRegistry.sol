@@ -47,8 +47,8 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
 
     /**
      * @notice Register the token symbol for its particular owner
-            Once the token symbol is registered to its owner then no other issuer can claim
-            its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
+     * @notice Once the token symbol is registered to its owner then no other issuer can claim
+     * @notice its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
      * @param _symbol token symbol
      * @param _tokenName Name of the token
      * @param _owner Address of the owner of the token
@@ -64,10 +64,10 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
         emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now);
     }
 
-     /**
-      * @notice Change the expiry time for the token symbol
-      * @param _newExpiry new time period for token symbol expiry
-      */
+    /**
+     * @notice Change the expiry time for the token symbol
+     * @param _newExpiry new time period for token symbol expiry
+     */
     function changeExpiryLimit(uint256 _newExpiry) public onlyOwner {
         require(_newExpiry >= 1 days, "Expiry should greater than or equal to 1 day");
         uint256 _oldExpiry = expiryLimit;
@@ -119,6 +119,11 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     /**
      * @notice Returns the owner and timestamp for a given symbol
      * @param _symbol symbol
+     * @return address
+     * @return uint256
+     * @return string
+     * @return bytes32
+     * @return bool
      */
     function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool) {
         string memory symbol = upper(_symbol);
@@ -138,6 +143,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     /**
      * @notice To re-initialize the token symbol details if symbol validity expires
      * @param _symbol token symbol
+     * @return bool
      */
     function expiryCheck(string _symbol) internal returns(bool) {
         if (registeredSymbols[_symbol].owner != address(0)) {

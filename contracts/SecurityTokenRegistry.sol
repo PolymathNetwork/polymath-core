@@ -21,10 +21,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address _owner);
     event LogAddCustomSecurityToken(string _name, string _symbol, address _securityToken, uint256 _addedAt);
 
-     /**
-     * @notice Constructor used to set the essentials addresses to facilitate
-     * the creation of the security token
-     */
     constructor (
         address _polyToken,
         address _moduleRegistry,
@@ -48,6 +44,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
      * @param _name Name of the token
      * @param _symbol Ticker symbol of the security token
      * @param _tokenDetails off-chain details of the token
+     * @param _divisible Set to true if token is divisible
      */
     function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) public whenNotPaused {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
@@ -89,9 +86,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     }
 
     /**
-    * @notice Changes the protocol version and the SecurityToken contract that the registry points to
-    * Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
-    * Changing versions does not affect existing tokens.
+    * @notice Changes the protocol version and the SecurityToken contract
+    * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
+    * @notice Changing versions does not affect existing tokens.
     */
     function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public onlyOwner {
         protocolVersion = _version;
@@ -104,7 +101,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     /**
      * @notice Get security token address by ticker name
      * @param _symbol Symbol of the Scurity token
-     * @return address _symbol
+     * @return address
      */
     function getSecurityTokenAddress(string _symbol) public view returns (address) {
         string memory __symbol = upper(_symbol);
@@ -114,7 +111,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
      /**
      * @notice Get security token data by its address
      * @param _securityToken Address of the Scurity token
-     * @return string, address, string
+     * @return string
+     * @return address
+     * @return string
      */
     function getSecurityTokenData(address _securityToken) public view returns (string, address, string) {
         return (

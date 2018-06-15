@@ -141,6 +141,10 @@ contract SecurityToken is ISecurityToken {
         transferFunctions[bytes4(keccak256("burn(uint256)"))] = true;
     }
 
+    /**
+     * @notice Function used by issuer to lock a specific module type
+     * @param _moduleType module type to be locked
+     */
     function lockModule(uint8 _moduleType) external onlyOwner {
         require(!modulesLocked[_moduleType]);
         modulesLocked[_moduleType] = true;
@@ -167,16 +171,16 @@ contract SecurityToken is ISecurityToken {
 
     /**
     * @notice _addModule handles the attachment (or replacement) of modules for the ST
-    * E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
-    * to control restrictions on transfers.
+    * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
+    * @dev to control restrictions on transfers.
+    * @dev You are allowed to add a new moduleType if:
+    * @dev - there is no existing module of that type yet added
+    * @dev - the last member of the module list is replacable
     * @param _moduleFactory is the address of the module factory to be added
     * @param _data is data packed into bytes used to further configure the module (See STO usage)
     * @param _maxCost max amount of POLY willing to pay to module. (WIP)
     * @param _locked whether or not the module is supposed to be locked
     */
-    //You are allowed to add a new moduleType if:
-    //  - there is no existing module of that type yet added
-    //  - the last member of the module list is replacable
     function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _locked) internal {
         //Check that module exists in registry - will throw otherwise
         IModuleRegistry(IRegistry(securityTokenRegistry).getAddress("ModuleRegistry")).useModule(_moduleFactory);
@@ -200,7 +204,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-    * @notice removes a module attached to the SecurityToken
+    * @notice Removes a module attached to the SecurityToken
     * @param _moduleType is which type of module we are trying to remove
     * @param _moduleIndex is the index of the module within the chosen type
     */
@@ -217,9 +221,12 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @notice returns module list for a module type
+     * @notice Returns module list for a module type
      * @param _moduleType is which type of module we are trying to get
      * @param _moduleIndex is the index of the module within the chosen type
+     * @return bytes32
+     * @return address
+     * @return bool
      */
     function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address, bool) {
         if (modules[_moduleType].length > 0) {
@@ -238,6 +245,9 @@ contract SecurityToken is ISecurityToken {
      * @notice returns module list for a module name - will return first match
      * @param _moduleType is which type of module we are trying to get
      * @param _name is the name of the module within the chosen type
+     * @return bytes32
+     * @return address
+     * @return bool
      */
     function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address, bool) {
         if (modules[_moduleType].length > 0) {
@@ -258,7 +268,8 @@ contract SecurityToken is ISecurityToken {
 
     /**
     * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
-    * Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
+    * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
+    * @param _ammount amount of POLY to withdraw
     */
     function withdrawPoly(uint256 _amount) public onlyOwner {
         require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).transfer(owner, _amount), "In-sufficient balance");
@@ -266,6 +277,9 @@ contract SecurityToken is ISecurityToken {
 
     /**
     * @notice allows owner to approve more POLY to one of the modules
+    * @param _moduleType
+    * @param _moduleIndex
+    * @param _budget
     */
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0, "Module type cannot be zero");
@@ -276,6 +290,7 @@ contract SecurityToken is ISecurityToken {
 
     /**
      * @notice change the tokenDetails
+     * @param _newTokenDetails
      */
     function updateTokenDetails(string _newTokenDetails) public onlyOwner {
         emit LogUpdateTokenDetails(tokenDetails, _newTokenDetails);
@@ -284,6 +299,7 @@ contract SecurityToken is ISecurityToken {
 
     /**
     * @notice allows owner to change token granularity
+    * @param _granularity
     */
     function changeGranularity(uint256 _granularity) public onlyOwner {
         require(_granularity != 0, "Granularity can not be 0");
@@ -293,6 +309,9 @@ contract SecurityToken is ISecurityToken {
 
     /**
     * @notice keeps track of the number of non-zero token holders
+    * @param _from
+    * @param _to
+    * @param _value
     */
     function adjustInvestorCount(address _from, address _to, uint256 _value) internal {
         if ((_value == 0) || (_from == _to)) {
@@ -316,6 +335,8 @@ contract SecurityToken is ISecurityToken {
 
     /**
     * @notice removes addresses with zero balances from the investors list
+    * @param _start
+    * @param _iters
     * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
     */
     function pruneInvestors(uint256 _start, uint256 _iters) public onlyOwner {
@@ -355,14 +376,26 @@ contract SecurityToken is ISecurityToken {
         emit LogFreezeTransfers(freeze, now);
     }
 
+    /**
+     * @notice adjust totalsupply at checkpoint after minting or burning tokens
+     */
     function adjustTotalSupplyCheckpoints() internal {
         adjustCheckpoints(checkpointTotalSupply, totalSupply());
     }
 
+    /**
+     * @notice adjust token holder balance at checkpoint after a token transfer
+     * @param _investor address of the token holder affected
+     */
     function adjustBalanceCheckpoints(address _investor) internal {
         adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor));
     }
 
+    /**
+     * @notice store the changes to the checkpoint objects
+     * @param _checkpoints the affected checkpoint object array
+     * @param _newValue the new value that needs to be stored
+     */
     function adjustCheckpoints(Checkpoint[] storage _checkpoints, uint256 _newValue) internal {
         //No checkpoints set yet
         if (currentCheckpointId == 0) {
@@ -393,6 +426,9 @@ contract SecurityToken is ISecurityToken {
 
     /**
      * @notice Overloaded version of the transfer function
+     * @param _to receiver of transfer
+     * @param _value value of transfer
+     * @return bool success
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
         adjustInvestorCount(msg.sender, _to, _value);
@@ -405,6 +441,10 @@ contract SecurityToken is ISecurityToken {
 
     /**
      * @notice Overloaded version of the transferFrom function
+     * @param _from sender of transfer
+     * @param _to receiver of transfer
+     * @param _value value of transfer
+     * @return bool success
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         adjustInvestorCount(_from, _to, _value);
@@ -415,8 +455,14 @@ contract SecurityToken is ISecurityToken {
         return true;
     }
 
-    // Permissions this to a TransferManager module, which has a key of 2
-    // If no TransferManager return true
+    /**
+     * @notice validate transfer with TransferManager module if it exists
+     * @dev TransferManager module has a key of 2
+     * @param _from sender of transfer
+     * @param _to receiver of transfer
+     * @param _amount value of transfer
+     * @return bool
+     */
     function verifyTransfer(address _from, address _to, uint256 _amount) public checkGranularity(_amount) returns (bool) {
         if (!freeze) {
             bool isTransfer = false;
@@ -447,7 +493,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @notice used to prevent forever minting only be called by the owner
+     * @notice End token minting period permanently
      */
     function finishMinting() public onlyOwner {
         mintingFinished = true;
@@ -456,7 +502,7 @@ contract SecurityToken is ISecurityToken {
 
     /**
      * @notice mints new tokens and assigns them to the target _investor.
-     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+     * @dev Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
      * @param _investor Address to whom the minted tokens will be dilivered
      * @param _amount Number of tokens get minted
      * @return success
@@ -489,9 +535,15 @@ contract SecurityToken is ISecurityToken {
         return true;
     }
 
-    // Permissions this to a Permission module, which has a key of 1
-    // If no Permission return false - note that IModule withPerm will allow ST owner all permissions anyway
-    // this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
+    /**
+     * @notice Validate permissions with PermissionManager if it exists, If no Permission return false
+     * @dev Note that IModule withPerm will allow ST owner all permissions anyway
+     * @dev this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
+     * @param _delegate address of delegate
+     * @param _module address of PermissionManager module
+     * @param _perm the permissions
+     * @return success
+     */
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
         if (modules[PERMISSIONMANAGER_KEY].length == 0) {
             return false;
@@ -533,7 +585,11 @@ contract SecurityToken is ISecurityToken {
         emit Transfer(msg.sender, address(0), _value);
     }
 
-    //Pull function sig from _data
+    /**
+     * @notice Get function signature from _data
+     * @param _data passed data
+     * @return bytes4 sig
+     */
     function getSig(bytes _data) internal pure returns (bytes4 sig) {
         uint len = _data.length < 4 ? _data.length : 4;
         for (uint i = 0; i < len; i++) {
@@ -553,6 +609,7 @@ contract SecurityToken is ISecurityToken {
 
     /**
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
+     * @return uint256
      */
     function createCheckpoint() public onlyModule(CHECKPOINT_KEY, true) returns(uint256) {
         require(currentCheckpointId < 2**256 - 1);
@@ -563,12 +620,20 @@ contract SecurityToken is ISecurityToken {
 
     /**
      * @notice Queries totalSupply as of a defined checkpoint
-     * @param _checkpointId Checkpoint ID to query as of
+     * @param _checkpointId Checkpoint ID to query
+     * @return uint256
      */
     function totalSupplyAt(uint256 _checkpointId) public view returns(uint256) {
         return getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
     }
 
+    /**
+     * @notice Queries value at a defined checkpoint
+     * @param checkpoints is array of Checkpoint objects
+     * @param _checkpointId Checkpoint ID to query
+     * @param _currentValue
+     * @return uint256
+     */
     function getValueAt(Checkpoint[] storage checkpoints, uint256 _checkpointId, uint256 _currentValue) internal view returns(uint256) {
         require(_checkpointId <= currentCheckpointId);
         //Checkpoint id 0 is when the token is first created - everyone has a zero balance

@@ -49,6 +49,7 @@ contract ModuleRegistry is IModuleRegistry, Registry {
     /**
     * @notice Called by moduleFactory owner to register new modules for SecurityToken to use
     * @param _moduleFactory is the address of the module factory to be registered
+    * @return bool
     */
     function registerModule(address _moduleFactory) external whenNotPaused returns(bool) {
         require(registry[_moduleFactory] == 0, "Module factory should not be pre-registered");
@@ -63,9 +64,10 @@ contract ModuleRegistry is IModuleRegistry, Registry {
 
     /**
     * @notice Called by Polymath to verify modules for SecurityToken to use.
-    * A module can not be used by an ST unless first approved/verified by Polymath
-    * (The only exception to this is that the author of the module is the owner of the ST)
+    * @notice A module can not be used by an ST unless first approved/verified by Polymath
+    * @notice (The only exception to this is that the author of the module is the owner of the ST)
     * @param _moduleFactory is the address of the module factory to be registered
+    * @return bool
     */
     function verifyModule(address _moduleFactory, bool _verified) external onlyOwner returns(bool) {
         //Must already have been registered
@@ -78,6 +80,7 @@ contract ModuleRegistry is IModuleRegistry, Registry {
     /**
      * @notice Use to get all the tags releated to the functionality of the Module Factory.
      * @param _moduleType Type of module
+     * @return bytes32 array
      */
     function getTagByModuleType(uint8 _moduleType) public view returns(bytes32[]) {
         return availableTags[_moduleType];

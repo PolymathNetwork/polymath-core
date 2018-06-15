@@ -88,6 +88,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
      * @notice Creates a dividend with a provided checkpoint
      * @param _maturity Time from which dividend can be paid
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
+     * @param _checkpointId Id of the checkpoint from which to issue dividend
      */
     function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, uint256 _checkpointId) payable public onlyOwner {
         require(_expiry > _maturity);
@@ -152,6 +153,12 @@ contract EtherDividendCheckpoint is ICheckpoint {
         _payDividend(msg.sender, dividend, _dividendIndex);
     }
 
+    /**
+     * @notice Internal function for paying dividends
+     * @param _payee address of investor
+     * @param _dividend storage with previously issued dividends
+     * @param _dividendIndex Dividend to pay
+     */
     function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
         uint256 claim = calculateDividend(_dividendIndex, _payee);
         _dividend.claimed[_payee] = true;
@@ -181,6 +188,12 @@ contract EtherDividendCheckpoint is ICheckpoint {
         emit EtherDividendReclaimed(msg.sender, _dividendIndex, remainingAmount);
     }
 
+    /**
+     * @notice Calculate amount of dividends claimable
+     * @param _dividendIndex Dividend to calculate
+     * @param _payee Affected investor address
+     * @return unit256
+     */
     function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256) {
         Dividend storage dividend = dividends[_dividendIndex];
         if (dividend.claimed[_payee]) {
@@ -192,6 +205,8 @@ contract EtherDividendCheckpoint is ICheckpoint {
 
     /**
      * @notice Get the index according to the checkpoint id
+     * @param _checkpointId Checkpoint id to query
+     * @return uint256
      */
     function getDividendIndex(uint256 _checkpointId) public view returns(uint256[]) {
         uint256 counter = 0;
@@ -214,6 +229,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
 
     /**
      * @notice Return the permissions flag that are associated with STO
+     * @return bytes32 array
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](0);

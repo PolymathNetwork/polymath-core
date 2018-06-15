@@ -2,8 +2,8 @@ pragma solidity ^0.4.23;
 
 /**
  * @title ERC20Basic
- * @dev Simpler version of ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/179
+ * @notice Simpler version of ERC20 interface
+ * @notice see https://github.com/ethereum/EIPs/issues/179
  */
 contract ERC20Basic {
   function totalSupply() public view returns (uint256);
@@ -14,12 +14,12 @@ contract ERC20Basic {
 
 /**
  * @title SafeMath
- * @dev Math operations with safety checks that throw on error
+ * @notice Math operations with safety checks that throw on error
  */
 library SafeMath {
 
   /**
-  * @dev Multiplies two numbers, throws on overflow.
+  * @notice Multiplies two numbers, throws on overflow.
   */
   function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
     if (a == 0) {
@@ -31,7 +31,7 @@ library SafeMath {
   }
 
   /**
-  * @dev Integer division of two numbers, truncating the quotient.
+  * @notice Integer division of two numbers, truncating the quotient.
   */
   function div(uint256 a, uint256 b) internal pure returns (uint256) {
     // assert(b > 0); // Solidity automatically throws when dividing by 0
@@ -41,7 +41,7 @@ library SafeMath {
   }
 
   /**
-  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+  * @notice Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
   */
   function sub(uint256 a, uint256 b) internal pure returns (uint256) {
     assert(b <= a);
@@ -49,7 +49,7 @@ library SafeMath {
   }
 
   /**
-  * @dev Adds two numbers, throws on overflow.
+  * @notice Adds two numbers, throws on overflow.
   */
   function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
     c = a + b;
@@ -60,7 +60,7 @@ library SafeMath {
 
 /**
  * @title Basic token
- * @dev Basic version of StandardToken, with no allowances.
+ * @notice Basic version of StandardToken, with no allowances.
  */
 contract BasicToken is ERC20Basic {
   using SafeMath for uint256;
@@ -70,14 +70,14 @@ contract BasicToken is ERC20Basic {
   uint256 totalSupply_;
 
   /**
-  * @dev total number of tokens in existence
+  * @notice total number of tokens in existence
   */
   function totalSupply() public view returns (uint256) {
     return totalSupply_;
   }
 
   /**
-  * @dev transfer token for a specified address
+  * @notice transfer token for a specified address
   * @param _to The address to transfer to.
   * @param _value The amount to be transferred.
   */
@@ -92,7 +92,7 @@ contract BasicToken is ERC20Basic {
   }
 
   /**
-  * @dev Gets the balance of the specified address.
+  * @notice Gets the balance of the specified address.
   * @param _owner The address to query the the balance of.
   * @return An uint256 representing the amount owned by the passed address.
   */
@@ -104,7 +104,7 @@ contract BasicToken is ERC20Basic {
 
 /**
  * @title ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/20
+ * @notice see https://github.com/ethereum/EIPs/issues/20
  */
 contract ERC20 is ERC20Basic {
   function allowance(address owner, address spender) public view returns (uint256);
@@ -116,9 +116,9 @@ contract ERC20 is ERC20Basic {
 /**
  * @title Standard ERC20 token
  *
- * @dev Implementation of the basic standard token.
- * @dev https://github.com/ethereum/EIPs/issues/20
- * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
+ * @notice Implementation of the basic standard token.
+ * @notice https://github.com/ethereum/EIPs/issues/20
+ * @notice Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
  */
 contract StandardToken is ERC20, BasicToken {
 
@@ -126,7 +126,7 @@ contract StandardToken is ERC20, BasicToken {
 
 
   /**
-   * @dev Transfer tokens from one address to another
+   * @notice Transfer tokens from one address to another
    * @param _from address The address which you want to send tokens from
    * @param _to address The address which you want to transfer to
    * @param _value uint256 the amount of tokens to be transferred
@@ -144,7 +144,7 @@ contract StandardToken is ERC20, BasicToken {
   }
 
   /**
-   * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
+   * @notice Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
    *
    * Beware that changing an allowance with this method brings the risk that someone may use both the old
    * and the new allowance by unfortunate transaction ordering. One possible solution to mitigate this
@@ -160,7 +160,7 @@ contract StandardToken is ERC20, BasicToken {
   }
 
   /**
-   * @dev Function to check the amount of tokens that an owner allowed to a spender.
+   * @notice Function to check the amount of tokens that an owner allowed to a spender.
    * @param _owner address The address which owns the funds.
    * @param _spender address The address which will spend the funds.
    * @return A uint256 specifying the amount of tokens still available for the spender.
@@ -170,7 +170,7 @@ contract StandardToken is ERC20, BasicToken {
   }
 
   /**
-   * @dev Increase the amount of tokens that an owner allowed to a spender.
+   * @notice Increase the amount of tokens that an owner allowed to a spender.
    *
    * approve should be called when allowed[_spender] == 0. To increment
    * allowed value is better to use this function to avoid 2 calls (and wait until
@@ -186,7 +186,7 @@ contract StandardToken is ERC20, BasicToken {
   }
 
   /**
-   * @dev Decrease the amount of tokens that an owner allowed to a spender.
+   * @notice Decrease the amount of tokens that an owner allowed to a spender.
    *
    * approve should be called when allowed[_spender] == 0. To decrement
    * allowed value is better to use this function to avoid 2 calls (and wait until
@@ -241,7 +241,7 @@ contract IST20 is StandardToken, DetailedERC20 {
 
 /**
  * @title Ownable
- * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * @notice The Ownable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
 contract Ownable {
@@ -252,7 +252,7 @@ contract Ownable {
 
 
   /**
-   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+   * @notice The Ownable constructor sets the original `owner` of the contract to the sender
    * account.
    */
   function Ownable() public {
@@ -260,7 +260,7 @@ contract Ownable {
   }
 
   /**
-   * @dev Throws if called by any account other than the owner.
+   * @notice Throws if called by any account other than the owner.
    */
   modifier onlyOwner() {
     require(msg.sender == owner);
@@ -268,7 +268,7 @@ contract Ownable {
   }
 
   /**
-   * @dev Allows the current owner to transfer control of the contract to a newOwner.
+   * @notice Allows the current owner to transfer control of the contract to a newOwner.
    * @param newOwner The address to transfer ownership to.
    */
   function transferOwnership(address newOwner) public onlyOwner {
@@ -422,7 +422,7 @@ contract GeneralPermissionManager is IPermissionManager {
     }
 
     /**
-    * @dev Init function i.e generalise function to maintain the structure of the module contract
+    * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */
     function getInitFunction() public returns(bytes4) {
@@ -430,7 +430,7 @@ contract GeneralPermissionManager is IPermissionManager {
     }
 
     /**
-    * @dev use to check the permission on delegate corresponds to module contract address
+    * @notice use to check the permission on delegate corresponds to module contract address
     * @param _delegate Ethereum address of the delegate
     * @param _module Ethereum contract address of the module
     * @param _perm Permission flag
@@ -444,7 +444,7 @@ contract GeneralPermissionManager is IPermissionManager {
     }
 
     /**
-    * @dev use to add the details of the delegate
+    * @notice use to add the details of the delegate
     * @param _delegate Ethereum address of the delegate
     * @param _details Details about the delegate i.e `Belongs to financial firm`
     */
@@ -454,7 +454,7 @@ contract GeneralPermissionManager is IPermissionManager {
     }
 
   /**
-    * @dev Use to provide/change the permission to the delegate corresponds to the module contract
+    * @notice Use to provide/change the permission to the delegate corresponds to the module contract
     * @param _delegate Ethereum address of the delegate
     * @param _module Ethereum contract address of the module
     * @param _perm Permission flag
@@ -478,7 +478,7 @@ contract GeneralPermissionManager is IPermissionManager {
     }
 
     /**
-    * @dev Use to get the details of the delegate
+    * @notice Use to get the details of the delegate
     * @param _delegate Ethereum address of the delegate
     * @return Details of the delegate
     */
@@ -487,7 +487,7 @@ contract GeneralPermissionManager is IPermissionManager {
     }
 
     /**
-    * @dev Use to get the Permission flag related the `this` contract
+    * @notice Use to get the Permission flag related the `this` contract
     * @return Array of permission flags
     */
     function getPermissions() public view returns(bytes32[]) {

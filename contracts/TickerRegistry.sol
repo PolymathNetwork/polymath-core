@@ -1,11 +1,5 @@
 pragma solidity ^0.4.23;
 
-/*
-  Allows issuers to reserve their token symbols ahead of actually generating their security token.
-  SecurityTokenRegistry would reference this contract and ensure that a token symbol exists here and
-  only its owner can deploy the token with that symbol.
-*/
-
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./interfaces/ITickerRegistry.sol";
@@ -13,10 +7,10 @@ import "./Registry.sol";
 import "./helpers/Util.sol";
 
 /**
- * @title TickerRegistry
- * @dev Contract used to register the security token symbols
+ * @title Registry contract for issuers to reserve their security token symbols
+ * @notice Allows issuers to reserve their token symbols ahead of actually generating their security token.
+ * @dev SecurityTokenRegistry would reference this contract and ensure that a token symbol exists here and only its owner can deploy the token with that symbol.
  */
-
 contract TickerRegistry is ITickerRegistry, Util, Registry {
 
     using SafeMath for uint256;
@@ -52,9 +46,9 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     }
 
     /**
-     * @dev Register the token symbol for its particular owner
-            Once the token symbol is registered to its owner then no other issuer can claim
-            its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
+     * @notice Register the token symbol for its particular owner
+     * @notice Once the token symbol is registered to its owner then no other issuer can claim
+     * @notice its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
      * @param _symbol token symbol
      * @param _tokenName Name of the token
      * @param _owner Address of the owner of the token
@@ -70,10 +64,10 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
         emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now);
     }
 
-     /**
-      * @dev Change the expiry time for the token symbol
-      * @param _newExpiry new time period for token symbol expiry
-      */
+    /**
+     * @notice Change the expiry time for the token symbol
+     * @param _newExpiry new time period for token symbol expiry
+     */
     function changeExpiryLimit(uint256 _newExpiry) public onlyOwner {
         require(_newExpiry >= 1 days, "Expiry should greater than or equal to 1 day");
         uint256 _oldExpiry = expiryLimit;
@@ -82,7 +76,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     }
 
     /**
-     * @dev Check the validity of the symbol
+     * @notice Check the validity of the symbol
      * @param _symbol token symbol
      * @param _owner address of the owner
      * @param _tokenName Name of the token
@@ -100,7 +94,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     }
 
     /**
-     * @dev Check the symbol is reserved or not
+     * @notice Check the symbol is reserved or not
      * @param _symbol Symbol of the token
      * @param _owner Owner of the token
      * @param _tokenName Name of the token
@@ -123,8 +117,13 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
      }
 
     /**
-     * @dev Returns the owner and timestamp for a given symbol
+     * @notice Returns the owner and timestamp for a given symbol
      * @param _symbol symbol
+     * @return address
+     * @return uint256
+     * @return string
+     * @return bytes32
+     * @return bool
      */
     function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool) {
         string memory symbol = upper(_symbol);
@@ -142,8 +141,9 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     }
 
     /**
-     * @dev To re-initialize the token symbol details if symbol validity expires
+     * @notice To re-initialize the token symbol details if symbol validity expires
      * @param _symbol token symbol
+     * @return bool
      */
     function expiryCheck(string _symbol) internal returns(bool) {
         if (registeredSymbols[_symbol].owner != address(0)) {
@@ -157,7 +157,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     }
 
     /**
-     * @dev set the ticker registration fee in POLY tokens
+     * @notice set the ticker registration fee in POLY tokens
      * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
      */
     function changePolyRegisterationFee(uint256 _registrationFee) public onlyOwner {

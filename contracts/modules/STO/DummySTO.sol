@@ -3,7 +3,9 @@ pragma solidity ^0.4.23;
 import "./ISTO.sol";
 import "../../interfaces/IST20.sol";
 
-
+/**
+ * @title STO module for sample implementation of a different crowdsale module
+ */
 contract DummySTO is ISTO {
 
     bytes32 public constant ADMIN = "ADMIN";
@@ -18,7 +20,7 @@ contract DummySTO is ISTO {
     mapping (address => uint256) public investors;
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _securityToken Address of the security token
      * @param _polyAddress Address of the polytoken
      */
@@ -28,10 +30,10 @@ contract DummySTO is ISTO {
     }
 
     /**
-     * @dev Function used to intialize the differnet variables
+     * @notice Function used to intialize the differnet variables
      * @param _startTime Unix timestamp at which offering get started
      * @param _endTime Unix timestamp at which offering get ended
-     * @param _cap Maximum No. of tokens for sale 
+     * @param _cap Maximum No. of tokens for sale
      * @param _someString Any string that contails the details
      */
     function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public onlyFactory {
@@ -42,14 +44,14 @@ contract DummySTO is ISTO {
     }
 
     /**
-     * @notice This function returns the signature of configure function 
+     * @notice This function returns the signature of configure function
      */
     function getInitFunction() public returns (bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256,string)"));
     }
 
     /**
-     * @dev Function used to generate the tokens 
+     * @notice Function used to generate the tokens
      * @param _investor Address of the investor
      * @param _amount Amount of ETH or Poly invested by the investor
      */
@@ -66,7 +68,7 @@ contract DummySTO is ISTO {
     }
 
     /**
-     * @notice Return ETH raised by the STO 
+     * @notice Return ETH raised by the STO
      */
     function getRaisedEther() public view returns (uint256) {
         return 0;
@@ -80,7 +82,7 @@ contract DummySTO is ISTO {
     }
 
     /**
-     * @notice Return the total no. of investors 
+     * @notice Return the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256) {
         return investorCount;

@@ -29,7 +29,7 @@ contract PolyTokenFaucet {
     }
 
     /**
-     * @dev send `_value` token to `_to` from `msg.sender`
+     * @notice send `_value` token to `_to` from `msg.sender`
      * @param _to The address of the recipient
      * @param _value The amount of token to be transferred
      * @return Whether the transfer was successful or not
@@ -42,7 +42,7 @@ contract PolyTokenFaucet {
     }
 
     /**
-     * @dev send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
+     * @notice send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
      * @param _from The address of the sender
      * @param _to The address of the recipient
      * @param _value The amount of token to be transferred
@@ -61,7 +61,7 @@ contract PolyTokenFaucet {
     }
 
     /**
-     * @dev `balanceOf` function to get the balance of token holders
+     * @notice `balanceOf` function to get the balance of token holders
      * @param _owner The address from which the balance will be retrieved
      * @return The balance
      */
@@ -70,7 +70,7 @@ contract PolyTokenFaucet {
     }
 
     /**
-     * @dev `msg.sender` approves `_spender` to spend `_value` tokens
+     * @notice `msg.sender` approves `_spender` to spend `_value` tokens
      * @param _spender The address of the account able to transfer the tokens
      * @param _value The amount of tokens to be approved for transfer
      * @return Whether the approval was successful or not

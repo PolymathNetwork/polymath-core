@@ -11,7 +11,7 @@ contract SecurityTokenV2 is SecurityToken {
     bytes32 public securityTokenVersion = "0.0.2";
 
      /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _name Name of the SecurityToken
      * @param _symbol Symbol of the Token
      * @param _decimals Decimals for the securityToken

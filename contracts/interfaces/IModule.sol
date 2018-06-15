@@ -4,7 +4,9 @@ import "./ISecurityToken.sol";
 import "./IModuleFactory.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
-//Simple interface that any module contracts should implement
+/**
+ * @title Interface that any module contract should implement
+ */
 contract IModule {
 
     address public factory;
@@ -16,7 +18,7 @@ contract IModule {
     ERC20 public polyToken;
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _securityToken Address of the security token
      * @param _polyAddress Address of the polytoken
      */
@@ -27,7 +29,7 @@ contract IModule {
     }
 
     /**
-     * @notice This function returns the signature of configure function 
+     * @notice This function returns the signature of configure function
      */
     function getInitFunction() public returns (bytes4);
 
@@ -60,7 +62,7 @@ contract IModule {
     function getPermissions() public view returns(bytes32[]);
 
     /**
-     * @dev used to withdraw the fee by the factory owner
+     * @notice used to withdraw the fee by the factory owner
      */
     function takeFee(uint256 _amount) public withPerm(FEE_ADMIN) returns(bool) {
         require(polyToken.transferFrom(address(this), IModuleFactory(factory).owner(), _amount), "Unable to take fee");

@@ -393,6 +393,22 @@ contract('TickerRegistry', accounts => {
         });
     });
 
+    describe("Test cases for isReserved", async() => {
+
+        it("Should fail to check if reserved because msg.sender is not STR", async() => {
+            let errorThrown = false;
+            try {
+                await I_TickerRegistry.isReserved(symbol, account_temp, name, swarmHash, {from: accounts[9]});
+            } catch(error) {
+                console.log(`         tx revert -> msg.sender is not the STR`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+    });
+
     describe("Test cases for IRegistry functionality", async() => {
 
         describe("Test cases for changePolyRegisterationFee", async() => {
@@ -406,6 +422,18 @@ contract('TickerRegistry', accounts => {
                 let errorThrown = false;
                 try {
                     let tx = await I_TickerRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> Failed to change registrationFee`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should fail to change the registration fee if fee is equivalent", async() => {
+                let errorThrown = false;
+                try {
+                    let tx = await I_TickerRegistry.changePolyRegisterationFee(initRegFee, { from: account_polymath });
                 } catch(error) {
                     console.log(`         tx revert -> Failed to change registrationFee`.grey);
                     errorThrown = true;

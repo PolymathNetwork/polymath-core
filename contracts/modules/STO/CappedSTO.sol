@@ -4,7 +4,9 @@ import "./ISTO.sol";
 import "../../interfaces/IST20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-
+/**
+ * @title STO module for standard capped crowdsale
+ */
 contract CappedSTO is ISTO {
     using SafeMath for uint256;
 
@@ -43,17 +45,17 @@ contract CappedSTO is ISTO {
 
     //////////////////////////////////
     /**
-    * @dev fallback function ***DO NOT OVERRIDE***
+    * @notice fallback function ***DO NOT OVERRIDE***
     */
     function () external payable {
         buyTokens(msg.sender);
     }
 
     /**
-     * @dev Function used to intialize the contract variables
+     * @notice Function used to intialize the contract variables
      * @param _startTime Unix timestamp at which offering get started
      * @param _endTime Unix timestamp at which offering get ended
-     * @param _cap Maximum No. of tokens for sale 
+     * @param _cap Maximum No. of tokens for sale
      * @param _rate Token units a buyer gets per wei / base unit of POLY
      * @param _fundRaiseType Type of currency used to collect the funds
      * @param _fundsReceiver Ethereum account address to hold the funds
@@ -82,14 +84,14 @@ contract CappedSTO is ISTO {
     }
 
     /**
-     * @notice This function returns the signature of configure function 
+     * @notice This function returns the signature of configure function
      */
     function getInitFunction() public returns (bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8,address)"));
     }
 
     /**
-      * @dev low level token purchase ***DO NOT OVERRIDE***
+      * @notice low level token purchase ***DO NOT OVERRIDE***
       * @param _beneficiary Address performing the token purchase
       */
     function buyTokens(address _beneficiary) public payable {
@@ -104,7 +106,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-      * @dev low level token purchase
+      * @notice low level token purchase
       * @param _investedPOLY Amount of POLY invested
       */
     function buyTokensWithPoly(uint256 _investedPOLY) public {
@@ -117,7 +119,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-    * @dev Checks whether the cap has been reached.
+    * @notice Checks whether the cap has been reached.
     * @return bool Whether the cap was reached
     */
     function capReached() public view returns (bool) {
@@ -125,7 +127,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-     * @notice Return ETH raised by the STO 
+     * @notice Return ETH raised by the STO
      */
     function getRaisedEther() public view returns (uint256) {
         if (fundraiseType == FundraiseType.ETH)
@@ -145,7 +147,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-     * @notice Return the total no. of investors 
+     * @notice Return the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256) {
         return investorCount;
@@ -160,7 +162,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-     * @notice Return the STO details 
+     * @notice Return the STO details
      */
     function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
         return (
@@ -200,7 +202,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-    * @dev Validation of an incoming purchase.
+    * @notice Validation of an incoming purchase.
       Use require statements to revert state when conditions are not met. Use super to concatenate validations.
     * @param _beneficiary Address performing the token purchase
     * @param _investedAmount Value in wei involved in the purchase
@@ -213,7 +215,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-    * @dev Validation of an executed purchase.
+    * @notice Validation of an executed purchase.
       Observe state and use revert statements to undo rollback when valid conditions are not met.
     */
     function _postValidatePurchase(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
@@ -221,7 +223,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-    * @dev Source of tokens.
+    * @notice Source of tokens.
       Override this method to modify the way in which the crowdsale ultimately gets and sends its tokens.
     * @param _beneficiary Address performing the token purchase
     * @param _tokenAmount Number of tokens to be emitted
@@ -231,7 +233,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-    * @dev Executed when a purchase has been validated and is ready to be executed. Not necessarily emits/sends tokens.
+    * @notice Executed when a purchase has been validated and is ready to be executed. Not necessarily emits/sends tokens.
     * @param _beneficiary Address receiving the tokens
     * @param _tokenAmount Number of tokens to be purchased
     */
@@ -245,7 +247,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-    * @dev Override for extensions that require an internal state to check for validity
+    * @notice Override for extensions that require an internal state to check for validity
       (current user contributions, etc.)
     */
     function _updatePurchasingState(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
@@ -253,7 +255,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-    * @dev Override to extend the way in which ether is converted to tokens.
+    * @notice Override to extend the way in which ether is converted to tokens.
     * @param _investedAmount Value in wei to be converted into tokens
     * @return Number of tokens that can be purchased with the specified _investedAmount
     */
@@ -262,14 +264,14 @@ contract CappedSTO is ISTO {
     }
 
     /**
-    * @dev Determines how ETH is stored/forwarded on purchases.
+    * @notice Determines how ETH is stored/forwarded on purchases.
     */
     function _forwardFunds() internal {
         wallet.transfer(msg.value);
     }
 
     /**
-     * @dev Internal function used to check the type of fund raise currency
+     * @notice Internal function used to check the type of fund raise currency
      * @param _fundraiseType Type of currency used to collect the funds
      */
     function _check(uint8 _fundraiseType) internal {
@@ -284,7 +286,7 @@ contract CappedSTO is ISTO {
     }
 
     /**
-     * @dev Internal function used to forward the POLY raised to beneficiary address
+     * @notice Internal function used to forward the POLY raised to beneficiary address
      * @param _beneficiary Address of the funds reciever
      * @param _to Address who wants to ST-20 tokens
      * @param _fundsAmount Amount invested by _to

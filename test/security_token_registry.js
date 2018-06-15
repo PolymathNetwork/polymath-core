@@ -252,7 +252,22 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should fail to generate token if registration is paused", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityTokenRegistry.pause({ from: account_polymath});
+                await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
+                await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
+            } catch(error) {
+                console.log(`         tx revert -> Registration is paused`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should generate the new security token with the same symbol as registered above", async () => {
+            await I_SecurityTokenRegistry.unpause({ from: account_polymath});
             await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
 
@@ -334,7 +349,7 @@ contract('SecurityTokenRegistry', accounts => {
 
     describe("Generate custom tokens", async() => {
 
-        it("Should fail in adding the new custom token in the polymath network", async() => {
+        it("Should fail if msg.sender is not polymath", async() => {
             let errorThrown = false;
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_delegate});
@@ -346,7 +361,30 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in adding the new custom token in the polymath network", async() => {
+        it("Should fail if registration is paused", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityTokenRegistry.pause({ from: account_polymath});
+                await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> Registration is paused`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully generate token if registration is unpaused", async() => {
+            await I_SecurityTokenRegistry.unpause({ from: account_polymath});
+            let tx = await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
+            assert.equal(tx.logs[0].args._symbol, "LOG2");
+            assert.equal(tx.logs[0].args._securityToken, dummy_token);
+            let symbolDetails = await I_TickerRegistry.getDetails("LOG2");
+            assert.equal(symbolDetails[0], account_temp);
+            assert.equal(symbolDetails[2], "LOGAN2");
+        });
+
+        it("Should fail if ST address is 0 address", async() => {
             let errorThrown = false;
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, 0, "I am custom ST", "Swarm hash", {from: account_polymath});
@@ -358,7 +396,7 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in adding the new custom token in the polymath network", async() => {
+        it("Should fail if symbol or name of length 0", async() => {
             let errorThrown = false;
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken("", "", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
@@ -370,19 +408,7 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in adding the new custom token in the polymath network", async() => {
-            let errorThrown = false;
-            try {
-                await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token,  "I am custom ST", "Swarm hash", {from: account_delegate});
-            } catch(error) {
-                console.log(`         tx revert -> msg.sender is not polymath account`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("Should fail in adding the new custom token in the polymath network", async() => {
+        it("Should fail if symbol is reserved", async() => {
             let errorThrown = false;
             try {
                 await I_SecurityTokenRegistry.addCustomSecurityToken(name2, symbol2, account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
@@ -394,7 +420,7 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should Add the new custom token in the polymath network", async() => {
+        it("Should successfully generate the custom token", async() => {
             let tx = await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
             assert.equal(tx.logs[0].args._symbol, "LOG");
             assert.equal(tx.logs[0].args._securityToken, dummy_token);

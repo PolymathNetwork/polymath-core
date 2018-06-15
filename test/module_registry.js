@@ -204,7 +204,21 @@ contract('ModuleRegistry', accounts => {
 
     describe("Test cases of register module", async() => {
 
-        it("Should succssfully registered the module", async() => {
+        it("Should fail to register module if registration is paused", async() => {
+            let errorThrown = false;
+            try {
+                await I_ModuleRegistry.pause({ from: account_polymath});
+                await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+            } catch(error) {
+                console.log(`         tx revert -> Registration is paused`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should succssfully register the module", async() => {
+            await I_ModuleRegistry.unpause({ from: account_polymath});
             let tx = await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
 
             assert.equal(

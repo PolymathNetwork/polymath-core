@@ -269,11 +269,7 @@ contract('SecurityToken', accounts => {
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._type.toNumber(), transferManagerKey);
-            assert.equal(
-                web3.utils.toAscii(log.args._name)
-                .replace(/\u0000/g, ''),
-                "GeneralTransferManager"
-            );
+            assert.equal(web3.utils.toUtf8(log.args._name),"GeneralTransferManager");
             LogAddModule.stopWatching();
         });
 
@@ -385,6 +381,38 @@ contract('SecurityToken', accounts => {
             await revertToSnapshot(id);
         });
 
+        it("Should fail to attach the STO factory because not enough poly in contract", async () => {
+            startTime = latestTime() + duration.seconds(5000);
+            endTime = startTime + duration.days(30);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+            let errorThrown = false;
+            try {
+                let tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 60000000 });
+            } catch (error) {
+                console.log(`         tx revert -> not enough poly in contract`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail to attach the STO factory because max cost too small", async () => {
+            startTime = latestTime() + duration.seconds(5000);
+            endTime = startTime + duration.days(30);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+            await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
+            await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
+            let errorThrown = false;
+            try {
+                let tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, web3.utils.toWei("1000","ether"), 0, true, { from: token_owner, gas: 60000000 });
+            } catch (error) {
+                console.log(`         tx revert -> max cost too small`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should successfully attach the STO factory with the security token", async () => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
@@ -396,14 +424,44 @@ contract('SecurityToken', accounts => {
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 60000000 });
 
             assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
-            assert.equal(
-                web3.utils.toAscii(tx.logs[3].args._name)
-                .replace(/\u0000/g, ''),
-                "CappedSTO",
-                "CappedSTOFactory module was not added"
-            );
+            assert.equal(web3.utils.toUtf8(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
             I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
         });
+
+    });
+
+    describe("Upgradability functions", async() => {
+
+        it("Should fail to change the security token registry address because address(0)", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_SecurityToken.changeSecurityTokenRegistryAddress("0x0000000000000000000000000000000000000000", { from: token_owner });
+            } catch (error) {
+                console.log(`         tx revert -> msg.sender should be the owner of the token`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail to change the security token registry address because same address", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_SecurityToken.changeSecurityTokenRegistryAddress(I_SecurityTokenRegistry.address, { from: token_owner });
+            } catch (error) {
+                console.log(`         tx revert -> msg.sender should be the owner of the token`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully change the STR address", async() => {
+            let tx = await I_SecurityToken.changeSecurityTokenRegistryAddress("0x0000000000000000000000000000000000000001", { from: token_owner });
+            assert.equal(tx.logs[0].args._newAddress, "0x0000000000000000000000000000000000000001")
+            await I_SecurityToken.changeSecurityTokenRegistryAddress(I_SecurityTokenRegistry.address, { from: token_owner });
+        });
+
     });
 
     describe("Module related functions", async() => {
@@ -447,7 +505,7 @@ contract('SecurityToken', accounts => {
             try {
                 let log = await I_SecurityToken.updateTokenDetails("new token details", {from: account_delegate});
             } catch (error) {
-                console.log(`msg.sender should be the owner of the token`);
+                console.log(`         tx revert -> msg.sender should be the owner of the token`);
                 errorThrown = true;
                 ensureException(error);
             }

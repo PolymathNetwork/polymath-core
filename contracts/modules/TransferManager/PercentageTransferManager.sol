@@ -10,6 +10,9 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 // modifyWhitelist                          X             X
 // modifyWhitelistMulti                     X             X
 
+/**
+ * @title Transfer Manager module for limiting percentage of token supply a single address can hold
+ */
 contract PercentageTransferManager is ITransferManager {
     using SafeMath for uint256;
 
@@ -30,7 +33,7 @@ contract PercentageTransferManager is ITransferManager {
     );
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _securityToken Address of the security token
      * @param _polyAddress Address of the polytoken
      */
@@ -39,7 +42,7 @@ contract PercentageTransferManager is ITransferManager {
     IModule(_securityToken, _polyAddress)
     {
     }
-    
+
     /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
     function verifyTransfer(address /* _from */, address _to, uint256 _amount, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
@@ -57,22 +60,22 @@ contract PercentageTransferManager is ITransferManager {
     }
 
     /**
-     * @dev Used to intialize the variables of the contract
-     * @param _maxHolderPercentage Maximum amount of ST20 tokens(in %) can hold by the investor 
+     * @notice Used to intialize the variables of the contract
+     * @param _maxHolderPercentage Maximum amount of ST20 tokens(in %) can hold by the investor
      */
     function configure(uint256 _maxHolderPercentage) public onlyFactory {
         maxHolderPercentage = _maxHolderPercentage;
     }
 
     /**
-     * @notice This function returns the signature of configure function 
+     * @notice This function returns the signature of configure function
      */
     function getInitFunction() public returns(bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
 
     /**
-    * @dev sets the maximum percentage that an individual token holder can hold
+    * @notice sets the maximum percentage that an individual token holder can hold
     * @param _maxHolderPercentage is the new maximum percentage (multiplied by 10**16)
     */
     function changeHolderPercentage(uint256 _maxHolderPercentage) public onlyOwner {
@@ -81,7 +84,7 @@ contract PercentageTransferManager is ITransferManager {
     }
 
     /**
-    * @dev adds or removes addresses from the whitelist.
+    * @notice adds or removes addresses from the whitelist.
     * @param _investor is the address to whitelist
     * @param _valid whether or not the address it to be added or removed from the whitelist
     */

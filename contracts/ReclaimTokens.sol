@@ -3,10 +3,13 @@ pragma solidity ^0.4.23;
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Basic.sol";
 
+/**
+ * @title Utility contract to allow owner to retreive any ERC20 sent to the contract
+ */
 contract ReclaimTokens is Ownable {
 
     /**
-    * @dev Reclaim all ERC20Basic compatible tokens
+    * @notice Reclaim all ERC20Basic compatible tokens
     * @param _tokenContract The address of the token contract
     */
     function reclaimERC20(address _tokenContract) external onlyOwner {

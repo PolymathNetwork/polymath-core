@@ -4,11 +4,13 @@ import "./PreSaleSTO.sol";
 import "../../interfaces/IModuleFactory.sol";
 import "../../interfaces/IModule.sol";
 
-
+/**
+ * @title Factory for deploying PreSaleSTO module
+ */
 contract PreSaleSTOFactory is IModuleFactory {
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
@@ -18,7 +20,7 @@ contract PreSaleSTOFactory is IModuleFactory {
     }
 
     /**
-     * @dev used to launch the Module with the help of factory
+     * @notice used to launch the Module with the help of factory
      * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
@@ -36,42 +38,42 @@ contract PreSaleSTOFactory is IModuleFactory {
     }
 
     /**
-     * @dev Type of the Module factory
+     * @notice Type of the Module factory
      */
     function getType() public view returns(uint8) {
         return 3;
     }
 
     /**
-     * @dev Get the name of the Module
+     * @notice Get the name of the Module
      */
     function getName() public view returns(bytes32) {
         return "PreSaleSTO";
     }
 
     /**
-     * @dev Get the description of the Module 
+     * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
         return "Allows Issuer to configure pre-sale token allocations";
     }
 
     /**
-     * @dev Get the title of the Module
+     * @notice Get the title of the Module
      */
     function getTitle() public view returns(string) {
         return "PreSale STO";
     }
 
     /**
-     * @dev Get the Instructions that helped to used the module
+     * @notice Get the Instructions that helped to used the module
      */
     function getInstructions() public view returns(string) {
         return "Configure and track pre-sale token allocations";
     }
 
     /**
-     * @dev Get the tags related to the module factory
+     * @notice Get the tags related to the module factory
      */
     function getTags() public view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](1);

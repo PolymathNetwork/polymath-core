@@ -6,6 +6,9 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
+/**
+ * @title Checkpoint module for issuing ERC20 dividends
+ */
 contract ERC20DividendCheckpoint is ICheckpoint {
     using SafeMath for uint256;
 
@@ -38,7 +41,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _securityToken Address of the security token
      * @param _polyAddress Address of the polytoken
      */
@@ -48,7 +51,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     }
 
     /**
-    * @dev Init function i.e generalise function to maintain the structure of the module contract
+    * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */
     function getInitFunction() public returns(bytes4) {
@@ -56,7 +59,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Creates a dividend and checkpoint for the dividend
+     * @notice Creates a dividend and checkpoint for the dividend
      * @param _maturity Time from which dividend can be paid
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
      * @param _token Address of ERC20 token in which dividend is to be denominated
@@ -88,9 +91,12 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Creates a dividend with a provided checkpoint
+     * @notice Creates a dividend with a provided checkpoint
      * @param _maturity Time from which dividend can be paid
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
+     * @param _token Address of ERC20 token in which dividend is to be denominated
+     * @param _amount Amount of specified token for dividend
+     * @param _checkpointId Checkpoint id from which to create dividends
      */
     function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 _checkpointId) payable public onlyOwner {
         require(_expiry > _maturity);
@@ -116,7 +122,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Issuer can push dividends to provided addresses
+     * @notice Issuer can push dividends to provided addresses
      * @param _dividendIndex Dividend to push
      * @param _payees Addresses to which to push the dividend
      */
@@ -130,7 +136,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Issuer can push dividends using the investor list from the security token
+     * @notice Issuer can push dividends using the investor list from the security token
      * @param _dividendIndex Dividend to push
      * @param _start Index in investor list at which to start pushing dividends
      * @param _iterations Number of addresses to push dividends for
@@ -147,7 +153,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Investors can pull their own dividends
+     * @notice Investors can pull their own dividends
      * @param _dividendIndex Dividend to pull
      */
     function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
@@ -157,6 +163,12 @@ contract ERC20DividendCheckpoint is ICheckpoint {
         _payDividend(msg.sender, dividend, _dividendIndex);
     }
 
+    /**
+     * @notice Internal function for paying dividends
+     * @param _payee address of investor
+     * @param _dividend storage with previously issued dividends
+     * @param _dividendIndex Dividend to pay
+     */
     function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
         uint256 claim = calculateDividend(_dividendIndex, _payee);
         _dividend.claimed[_payee] = true;
@@ -168,7 +180,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     }
 
     /**
-     * @dev Issuer can reclaim remaining unclaimed dividend amounts, for expired dividends
+     * @notice Issuer can reclaim remaining unclaimed dividend amounts, for expired dividends
      * @param _dividendIndex Dividend to reclaim
      */
     function reclaimDividend(uint256 _dividendIndex) public onlyOwner {
@@ -182,24 +194,48 @@ contract ERC20DividendCheckpoint is ICheckpoint {
         emit ERC20DividendReclaimed(msg.sender, _dividendIndex, dividend.token, remainingAmount);
     }
 
+    /**
+     * @notice Calculate amount of dividends claimable
+     * @param _dividendIndex Dividend to calculate
+     * @param _payee Affected investor address
+     * @return unit256
+     */
     function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256) {
+        Dividend storage dividend = dividends[_dividendIndex];
+        if (dividend.claimed[_payee]) {
+            return 0;
+        }
         uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividends[_dividendIndex].checkpointId);
         return balance.mul(dividends[_dividendIndex].amount).div(dividends[_dividendIndex].totalSupply);
     }
 
     /**
-     * @dev Get the index according to the checkpoint id
+     * @notice Get the index according to the checkpoint id
+     * @param _checkpointId Checkpoint id to query
+     * @return uint256
      */
-    function getDividendIndex(uint256 _checkpointId) public view returns(uint256, bool) {
+    function getDividendIndex(uint256 _checkpointId) public view returns(uint256[]) {
+        uint256 counter = 0;
         for(uint256 i = 0; i < dividends.length; i++) {
-            if (dividends[i].checkpointId == _checkpointId)
-                return (i, true);
+            if (dividends[i].checkpointId == _checkpointId) {
+                counter++;
+            }
         }
-        return (0, false);
+
+       uint256[] memory index = new uint256[](counter);
+       counter = 0;
+       for(uint256 j = 0; j < dividends.length; j++) {
+           if (dividends[j].checkpointId == _checkpointId) {
+               index[counter] = j;
+               counter++;
+           }
+       }
+       return index;
     }
 
     /**
      * @notice Return the permissions flag that are associated with STO
+     * @return bytes32 array
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](0);

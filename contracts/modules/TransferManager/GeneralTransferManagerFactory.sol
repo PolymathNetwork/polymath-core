@@ -3,11 +3,13 @@ pragma solidity ^0.4.23;
 import "./GeneralTransferManager.sol";
 import "../../interfaces/IModuleFactory.sol";
 
-
+/**
+ * @title Factory for deploying GeneralTransferManager module
+ */
 contract GeneralTransferManagerFactory is IModuleFactory {
 
     /**
-     * @dev Constructor
+     * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
@@ -18,7 +20,7 @@ contract GeneralTransferManagerFactory is IModuleFactory {
 
 
      /**
-     * @dev used to launch the Module with the help of factory
+     * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
@@ -31,42 +33,42 @@ contract GeneralTransferManagerFactory is IModuleFactory {
 
 
     /**
-     * @dev Type of the Module factory
+     * @notice Type of the Module factory
      */
     function getType() public view returns(uint8) {
         return 2;
     }
 
     /**
-     * @dev Get the name of the Module
+     * @notice Get the name of the Module
      */
     function getName() public view returns(bytes32) {
         return "GeneralTransferManager";
     }
 
     /**
-     * @dev Get the description of the Module 
+     * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
         return "Manage transfers using a time based whitelist";
     }
 
     /**
-     * @dev Get the title of the Module
+     * @notice Get the title of the Module
      */
     function getTitle() public view returns(string) {
         return "General Transfer Manager";
     }
 
     /**
-     * @dev Get the Instructions that helped to used the module
+     * @notice Get the Instructions that helped to used the module
      */
     function getInstructions() public view returns(string) {
         return "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist, and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.";
     }
 
     /**
-     * @dev Get the tags related to the module factory
+     * @notice Get the tags related to the module factory
      */
     function getTags() public view returns(bytes32[]) {
          bytes32[] memory availableTags = new bytes32[](2);

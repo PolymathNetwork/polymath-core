@@ -39,6 +39,8 @@ contract('PercentageTransferManager', accounts => {
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
+    let P_PercentageTransferManagerFactory;
+    let P_PercentageTransferManager;
     let I_GeneralTransferManagerFactory;
     let I_PercentageTransferManagerFactory;
     let I_GeneralPermissionManager;
@@ -127,6 +129,7 @@ contract('PercentageTransferManager', accounts => {
             "GeneralDelegateManagerFactory contract was not deployed"
         );
 
+        
         // STEP 4: Deploy the PercentageTransferManager
         I_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
         assert.notEqual(
@@ -134,6 +137,15 @@ contract('PercentageTransferManager', accounts => {
             "0x0000000000000000000000000000000000000000",
             "PercentageTransferManagerFactory contract was not deployed"
         );
+
+        // STEP 4: Deploy the PercentageTransferManager
+        P_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(I_PolyToken.address, web3.utils.toWei("500", "ether"), 0, 0, {from:account_polymath});
+        assert.notEqual(
+            P_PercentageTransferManagerFactory.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "PercentageTransferManagerFactory contract was not deployed"
+        );
+  
 
         // STEP 5: Register the Modules with the ModuleRegistry contract
 
@@ -148,6 +160,10 @@ contract('PercentageTransferManager', accounts => {
         // (C) : Register the PercentageTransferManagerFactory
         await I_ModuleRegistry.registerModule(I_PercentageTransferManagerFactory.address, { from: account_polymath });
         await I_ModuleRegistry.verifyModule(I_PercentageTransferManagerFactory.address, true, { from: account_polymath });
+
+        // (C) : Register the Paid PercentageTransferManagerFactory
+        await I_ModuleRegistry.registerModule(P_PercentageTransferManagerFactory.address, { from: account_polymath });
+        await I_ModuleRegistry.verifyModule(P_PercentageTransferManagerFactory.address, true, { from: account_polymath });
 
         // Step 6: Deploy the TickerRegistry
 
@@ -305,6 +321,34 @@ contract('PercentageTransferManager', accounts => {
             );
         });
 
+        it("Should successfully attach the PercentageTransferManagerr factory with the security token", async () => {
+            let errorThrown = false;
+            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            try {
+                const tx = await I_SecurityToken.addModule(P_PercentageTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
+            } catch(error) {
+                console.log(`       tx -> failed because Token is not paid`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully attach the PercentageTransferManager factory with the security token", async () => {
+            let snapId = await takeSnapshot();
+            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
+            const tx = await I_SecurityToken.addModule(P_PercentageTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
+            assert.equal(tx.logs[3].args._type.toNumber(), transferManagerKey, "PercentageTransferManagerFactory doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[3].args._name)
+                .replace(/\u0000/g, ''),
+                "PercentageTransferManager",
+                "PercentageTransferManagerFactory module was not added"
+            );
+            P_PercentageTransferManager = PercentageTransferManager.at(tx.logs[3].args._module);
+            await revertToSnapshot(snapId);
+        });
+
         it("Should successfully attach the PercentageTransferManager with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_PercentageTransferManagerFactory.address, bytesSTO, 0, 0, true, { from: token_owner });
             assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "PercentageTransferManager doesn't get deployed");
@@ -342,6 +386,10 @@ contract('PercentageTransferManager', accounts => {
             );
         });
 
+        it("Should pause the tranfers at transferManager level", async() => {
+            let tx = await I_PercentageTransferManager.pause({from: token_owner});
+        });
+
         it("Should still be able to transfer between existing token holders up to limit", async() => {
             // Add the Investor in to the whitelist
             // Mint some tokens
@@ -352,6 +400,10 @@ contract('PercentageTransferManager', accounts => {
                 web3.utils.toWei('2', 'ether')
             );
         });
+
+        it("Should unpause the tranfers at transferManager level", async() => {
+            await I_PercentageTransferManager.unpause({from: token_owner});
+        })
 
         it("Should not be able to transfer between existing token holders over limit", async() => {
             let errorThrown = false;

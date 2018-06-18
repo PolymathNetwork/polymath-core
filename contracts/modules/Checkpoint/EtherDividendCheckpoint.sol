@@ -93,6 +93,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, uint256 _checkpointId) payable public onlyOwner {
         require(_expiry > _maturity);
         require(_expiry > now);
+        require(msg.value > 0);
         require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId());
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);

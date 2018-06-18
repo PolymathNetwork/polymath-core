@@ -40,6 +40,8 @@ contract('CountTransferManager', accounts => {
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
+    let P_CountTransferManagerFactory;
+    let P_CountTransferManager;
     let I_GeneralTransferManagerFactory;
     let I_CountTransferManagerFactory;
     let I_GeneralPermissionManager;
@@ -137,6 +139,14 @@ contract('CountTransferManager', accounts => {
             "CountTransferManagerFactory contract was not deployed"
         );
 
+        // STEP 4: Deploy Paid the CountTransferManager
+        P_CountTransferManagerFactory = await CountTransferManagerFactory.new(I_PolyToken.address, web3.utils.toWei("500", "ether"), 0, 0, {from:account_polymath});
+        assert.notEqual(
+            P_CountTransferManagerFactory.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "CountTransferManagerFactory contract was not deployed"
+        );
+
         // STEP 5: Register the Modules with the ModuleRegistry contract
 
         // (A) :  Register the GeneralTransferManagerFactory
@@ -150,6 +160,10 @@ contract('CountTransferManager', accounts => {
         // (C) : Register the CountTransferManagerFactory
         await I_ModuleRegistry.registerModule(I_CountTransferManagerFactory.address, { from: account_polymath });
         await I_ModuleRegistry.verifyModule(I_CountTransferManagerFactory.address, true, { from: account_polymath });
+
+        // (C) : Register the Paid CountTransferManagerFactory
+        await I_ModuleRegistry.registerModule(P_CountTransferManagerFactory.address, { from: account_polymath });
+        await I_ModuleRegistry.verifyModule(P_CountTransferManagerFactory.address, true, { from: account_polymath });
 
         // Step 6: Deploy the TickerRegistry
 
@@ -248,6 +262,34 @@ contract('CountTransferManager', accounts => {
             "GeneralTransferManager contract was not deployed",
            );
 
+        });
+
+        it("Should successfully attach the CountTransferManager factory with the security token", async () => {
+            let errorThrown = false;
+            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            try {
+                const tx = await I_SecurityToken.addModule(P_CountTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
+            } catch(error) {
+                console.log(`       tx -> failed because Token is not paid`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully attach the CountTransferManager factory with the security token", async () => {
+            let snapId = await takeSnapshot();
+            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
+            const tx = await I_SecurityToken.addModule(P_CountTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
+            assert.equal(tx.logs[3].args._type.toNumber(), transferManagerKey, "CountTransferManagerFactory doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[3].args._name)
+                .replace(/\u0000/g, ''),
+                "CountTransferManager",
+                "CountTransferManagerFactory module was not added"
+            );
+            P_CountTransferManager = CountTransferManager.at(tx.logs[3].args._module);
+            await revertToSnapshot(snapId);
         });
 
         it("Should successfully attach the CountTransferManager with the security token", async () => {

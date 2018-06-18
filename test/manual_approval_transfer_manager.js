@@ -44,6 +44,8 @@ contract('ManualApprovalTransferManager', accounts => {
     let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
     let I_ManualApprovalTransferManagerFactory;
+    let P_ManualApprovalTransferManagerFactory;
+    let P_ManualApprovalTransferManager;
     let I_CountTransferManagerFactory;
     let I_GeneralPermissionManager;
     let I_ManualApprovalTransferManager;
@@ -128,6 +130,14 @@ contract('ManualApprovalTransferManager', accounts => {
             "ManualApprovalTransferManagerFactory contract was not deployed"
         );
 
+        // STEP 4: Deploy the Paid ManualApprovalTransferManagerFactory
+        P_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(I_PolyToken.address, web3.utils.toWei("500", "ether"), 0, 0, {from:account_polymath});
+        assert.notEqual(
+            P_ManualApprovalTransferManagerFactory.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "ManualApprovalTransferManagerFactory contract was not deployed"
+        );
+
         // STEP 4a: Deploy the CountTransferManagerFactory
         I_CountTransferManagerFactory = await CountTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
         assert.notEqual(
@@ -149,6 +159,10 @@ contract('ManualApprovalTransferManager', accounts => {
         // (C) : Register the ManualApprovalTransferManagerFactory
         await I_ModuleRegistry.registerModule(I_ManualApprovalTransferManagerFactory.address, { from: account_polymath });
         await I_ModuleRegistry.verifyModule(I_ManualApprovalTransferManagerFactory.address, true, { from: account_polymath });
+
+        // (C) : Register the ManualApprovalTransferManagerFactory
+        await I_ModuleRegistry.registerModule(P_ManualApprovalTransferManagerFactory.address, { from: account_polymath });
+        await I_ModuleRegistry.verifyModule(P_ManualApprovalTransferManagerFactory.address, true, { from: account_polymath });
 
         // (D) : Register the CountTransferManagerFactory
         await I_ModuleRegistry.registerModule(I_CountTransferManagerFactory.address, { from: account_polymath });
@@ -305,6 +319,34 @@ contract('ManualApprovalTransferManager', accounts => {
                 (await I_SecurityToken.balanceOf(account_investor2)).toNumber(),
                 web3.utils.toWei('1', 'ether')
             );
+        });
+
+        it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
+            let errorThrown = false;
+            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            try {
+                const tx = await I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
+            } catch(error) {
+                console.log(`       tx -> failed because Token is not paid`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully attach the General permission manager factory with the security token", async () => {
+            let snapId = await takeSnapshot();
+            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
+            const tx = await I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
+            assert.equal(tx.logs[3].args._type.toNumber(), transferManagerKey, "Manual Approval Transfer Manager doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[3].args._name)
+                .replace(/\u0000/g, ''),
+                "ManualApprovalTransferManager",
+                "ManualApprovalTransferManagerFactory module was not added"
+            );
+            P_ManualApprovalTransferManagerFactory = ManualApprovalTransferManager.at(tx.logs[3].args._module);
+            await revertToSnapshot(snapId);
         });
 
         it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
@@ -608,6 +650,11 @@ contract('ManualApprovalTransferManager', accounts => {
         //     await I_ManualApprovalTransferManager.addManualApproval(account_investor2, account_investor5, web3.utils.toWei('1', 'ether'), latestTime() + duration.days(1), { from: token_owner });
         //     await I_SecurityToken.transfer(account_investor5, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
         // });
+
+            it("Should get the init function", async() => {
+                let byte = await I_ManualApprovalTransferManager.getInitFunction.call();
+                assert.equal(web3.utils.toAscii(byte).replace(/\u0000/g, ''), 0);
+            });
 
     });
 

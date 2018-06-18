@@ -296,7 +296,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, someString]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [latestTime() + duration.seconds(1000), latestTime() + duration.days(40), cap, someString]);
             const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner });
             assert.equal(tx.logs[2].args._type.toNumber(), stoKey, "DummySTO doesn't get deployed");
             assert.equal(
@@ -410,7 +410,7 @@ contract('GeneralTransferManager', accounts => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
-            let validTo = latestTime() + (60 * 60);
+            let validTo = latestTime() + duration.days(5);
             const sig = signData(account_investor2, account_investor2, fromTime, toTime, expiryTime, true, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
@@ -522,17 +522,17 @@ contract('GeneralTransferManager', accounts => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
-            let validTo = latestTime() + (60 * 60);
-            const sig = signData(I_GeneralTransferManager.address, account_investor2, fromTime, toTime, expiryTime + duration.days(100), true, validFrom, validTo, token_owner_pk);
+            let validTo = latestTime() + duration.days(5);
+            const sig = signData(I_GeneralTransferManager.address, account_investor2, latestTime(), latestTime() + duration.days(80), expiryTime + duration.days(200), true, validFrom, validTo, token_owner_pk);
 
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
             const v = sig.v;
             let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
                 account_investor2,
-                fromTime,
-                toTime,
-                expiryTime + duration.days(100),
+                latestTime(),
+                latestTime() + duration.days(80),
+                expiryTime + duration.days(200),
                 true,
                 validFrom,
                 validTo,
@@ -547,9 +547,9 @@ contract('GeneralTransferManager', accounts => {
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Jump time
-            await increaseTime(5000);
-
+            await increaseTime(10000);
             // Mint some tokens
+
             await I_DummySTO.generateTokens(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner });
 
             assert.equal(

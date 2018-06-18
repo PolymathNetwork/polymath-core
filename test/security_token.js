@@ -67,7 +67,7 @@ contract('SecurityToken', accounts => {
     const symbol = "DET";
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
-
+    let snap_Id;
     // Module key
     const permissionManagerKey = 1;
     const transferManagerKey = 2;
@@ -285,6 +285,49 @@ contract('SecurityToken', accounts => {
 
         });
 
+        it("Should successfully attach the General permission manager factory with the security token", async () => {
+            snap_Id = await takeSnapshot();
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, false, { from: token_owner });
+            assert.equal(tx.logs[2].args._type.toNumber(), permissionManagerKey, "General Permission Manager doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name)
+                .replace(/\u0000/g, ''),
+                "GeneralPermissionManager",
+                "GeneralPermissionManagerFactory module was not added"
+            );
+            I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
+        });
+
+        it("Should lock the module which is already added in the security token", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.lockModule(permissionManagerKey, { from: account_temp});
+            } catch(error) {
+                console.log(`         tx revert -> lockModule only be called by the owner of the SecurityToken`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should lock the module which is already added in the security token", async() => {
+            let tx = await I_SecurityToken.lockModule(permissionManagerKey, { from: token_owner});
+            assert.equal(tx.logs[0].args._moduleType, permissionManagerKey);
+        });
+
+        it("Should lock the module which is already added in the security token", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.lockModule(permissionManagerKey, { from: token_owner});
+            } catch(error) {
+                console.log(`         tx revert -> Can't lock a already locked module`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+            await revertToSnapshot(snap_Id);
+        });
+
         it("Should mint the tokens before attaching the STO -- fail only be called by the owner", async() => {
             let errorThrown = false;
             let fromTime = latestTime();
@@ -345,6 +388,18 @@ contract('SecurityToken', accounts => {
             }
             assert.ok(errorThrown, message);
         });
+
+        it("Should mintMulti", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.mintMulti([account_affiliate1, account_affiliate2], [(100 * Math.pow(10, 18))], {from: token_owner, gas: 500000});
+            } catch(error) {
+                console.log(`         tx revert -> Array length are un-equal`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
 
         it("Should mint the tokens for multiple afiliated investors before attaching the STO", async() => {
             await I_SecurityToken.mintMulti([account_affiliate1, account_affiliate2], [(100 * Math.pow(10, 18)), (110 * Math.pow(10, 18))], {from: token_owner, gas: 500000});
@@ -541,6 +596,18 @@ contract('SecurityToken', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should successful remove the module", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_SecurityToken.removeModule(transferManagerKey, 6, { from : token_owner });
+            } catch (error) {
+                console.log(`       tx -> Failed because index doesn't exist`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
         it("Should successfully remove the general transfer manager module from the securityToken", async() => {
             let key = await takeSnapshot();
             let tx = await I_SecurityToken.removeModule(transferManagerKey, 0, { from : token_owner });
@@ -557,11 +624,37 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should change the budget of the module", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_SecurityToken.changeModuleBudget(0, 0, (100 * Math.pow(10, 18)),{ from : token_owner});
+            } catch(error) {
+                console.log(`       tx -> Failed because key type is 0`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+         });
+
+         it("Should change the budget of the module", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_SecurityToken.changeModuleBudget(stoKey, 5, (100 * Math.pow(10, 18)),{ from : token_owner});
+            } catch(error) {
+                console.log(`       tx -> Failed because module index is not valid`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+         }); 
+        
+
+        it("Should change the budget of the module", async() => {
            let tx = await I_SecurityToken.changeModuleBudget(stoKey, 0, (100 * Math.pow(10, 18)),{ from : token_owner});
            assert.equal(tx.logs[1].args._moduleType, stoKey);
            assert.equal(tx.logs[1].args._module, I_CappedSTO.address);
            assert.equal(tx.logs[1].args._budget.dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
         });
+        
     });
 
     describe("General Transfer manager Related test cases", async () => {
@@ -675,6 +768,18 @@ contract('SecurityToken', accounts => {
                 try {
                   await I_SecurityToken.transfer(accounts[7], Math.pow(10, 17), { from : account_investor1});
                 } catch (error) {
+                    console.log('         tx revert -> Incorrect token granularity - expected'.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should adjust granularity", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.changeGranularity(0, {from: token_owner });
+                } catch(error) {
                     console.log('         tx revert -> Incorrect token granularity - expected'.grey);
                     errorThrown = true;
                     ensureException(error);
@@ -863,8 +968,20 @@ contract('SecurityToken', accounts => {
            });
 
            it("Should freeze the transfers", async() => {
-               let tx = await I_SecurityToken.freezeTransfers({from: token_owner});
-                assert.isTrue(tx.logs[0].args._freeze);
+             let tx = await I_SecurityToken.freezeTransfers({from: token_owner});
+             assert.isTrue(tx.logs[0].args._freeze);
+            });
+
+           it("Should freeze the transfers", async() => {
+               let errorThrown = false;
+               try {
+                    await I_SecurityToken.freezeTransfers({from: token_owner});
+               } catch(error) {
+                    console.log(`       tx -> Revert because freeze is already true`);
+                    errorThrown = true;
+                    ensureException(error);
+            }
+            assert.ok(errorThrown, message);
            });
 
            it("Should fail in buying to tokens", async() => {
@@ -918,8 +1035,19 @@ contract('SecurityToken', accounts => {
                 assert.isFalse(tx.logs[0].args._freeze);
            });
 
+           it("Should freeze the transfers", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.unfreezeTransfers({from: token_owner});
+                } catch(error) {
+                    console.log(`       tx -> Revert because freeze is already false`);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
            it("Should able to transfers the tokens from one user to another", async() => {
-                console.log(await I_SecurityToken.balanceOf(account_investor1));
                 await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), {from: account_temp});
            });
 
@@ -966,7 +1094,21 @@ contract('SecurityToken', accounts => {
            });
 
            it("Should burn the tokens", async ()=> {
+                let errorThrown = false;
                 await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, {from : token_owner});
+                let currentInvestorCount = await I_SecurityToken.investorCount();
+                let currentBalance = await I_SecurityToken.balanceOf(account_temp);
+                try {
+                    let tx = await I_SecurityToken.burn(currentBalance + web3.utils.toWei("500", "ether"), { from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> value is greater than its current balance`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+           it("Should burn the tokens", async ()=> {
                 let currentInvestorCount = await I_SecurityToken.investorCount();
                 let currentBalance = await I_SecurityToken.balanceOf(account_temp);
                 // console.log(currentInvestorCount.toString(), currentBalance.toString());
@@ -990,6 +1132,57 @@ contract('SecurityToken', accounts => {
                   assert.equal(investor, expectedAccounts[i]);
                 }
            });
-    });
+
+           it("Should check the balance of investor at checkpoint", async() => {
+               let errorThrown = false;
+               try {
+                  await I_SecurityToken.balanceOfAt(account_investor1, 5);
+               } catch(error) {
+                    console.log(`       tx -> Revert checkpoint ID is greator than current checkpoint`);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+           });
+
+           it("Should check the balance of investor at checkpoint", async() => {
+                let balance = await I_SecurityToken.balanceOfAt(account_investor1, 0);
+                assert.equal(balance.toNumber(), 0);
+            });
+        });
+
+        describe("Withdraw Poly", async() => {
+
+            it("Should successfully withdraw the poly", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.withdrawPoly(web3.utils.toWei("20000", "ether"), {from: account_temp});
+                } catch (error) {
+                    console.log(`         tx revert -> withdrawPoly function can only be called by the owner of the seucrity token`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            })
+
+            it("Should successfully withdraw the poly", async() => {
+                let balanceBefore = await I_PolyToken.balanceOf(token_owner);
+                await I_SecurityToken.withdrawPoly(web3.utils.toWei("20000", "ether"), {from: token_owner});
+                let balanceAfter = await I_PolyToken.balanceOf(token_owner);
+                assert.equal((BigNumber(balanceAfter).sub(BigNumber(balanceBefore))).toNumber(), web3.utils.toWei("20000", "ether"));
+            });
+
+            it("Should successfully withdraw the poly", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.withdrawPoly(web3.utils.toWei("10", "ether"), {from: token_owner});
+                } catch (error) {
+                    console.log(`         tx revert -> token doesn't have any POLY`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+        });
 
   });

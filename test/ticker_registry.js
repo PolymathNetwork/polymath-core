@@ -556,7 +556,6 @@ contract('TickerRegistry', accounts => {
             });
 
         });
-
     });
 
 });

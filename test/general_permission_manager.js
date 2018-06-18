@@ -43,6 +43,8 @@ contract('GeneralPermissionManager', accounts => {
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
+    let P_GeneralPermissionManagerFactory;
+    let P_GeneralPermissionManager;
     let I_GeneralTransferManagerFactory;
     let I_GeneralPermissionManager;
     let I_GeneralTransferManager;
@@ -146,6 +148,16 @@ contract('GeneralPermissionManager', accounts => {
             "GeneralDelegateManagerFactory contract was not deployed"
         );
 
+        // STEP 3: Deploy the GeneralDelegateManagerFactory
+
+        P_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, web3.utils.toWei("500","ether"), 0, 0, {from:account_polymath});
+
+        assert.notEqual(
+            P_GeneralPermissionManagerFactory.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "GeneralDelegateManagerFactory contract was not deployed"
+        );
+
         // STEP 4: Deploy the DummySTOFactory
 
         I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
@@ -165,6 +177,10 @@ contract('GeneralPermissionManager', accounts => {
         // (B) :  Register the GeneralDelegateManagerFactory
         await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
         await I_ModuleRegistry.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+
+        // (B) :  Register the Paid GeneralDelegateManagerFactory
+        await I_ModuleRegistry.registerModule(P_GeneralPermissionManagerFactory.address, { from: account_polymath });
+        await I_ModuleRegistry.verifyModule(P_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_DummySTOFactory.address, { from: account_polymath });
@@ -236,7 +252,7 @@ contract('GeneralPermissionManager', accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner });
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 850000000 });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -268,6 +284,34 @@ contract('GeneralPermissionManager', accounts => {
             "GeneralTransferManager contract was not deployed",
            );
 
+        });
+
+        it("Should successfully attach the General permission manager factory with the security token", async () => {
+            let errorThrown = false;
+            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            try {
+                const tx = await I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
+            } catch(error) {
+                console.log(`       tx -> failed because Token is not paid`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully attach the General permission manager factory with the security token", async () => {
+            let snapId = await takeSnapshot();
+            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
+            const tx = await I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
+            assert.equal(tx.logs[3].args._type.toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[3].args._name)
+                .replace(/\u0000/g, ''),
+                "GeneralPermissionManager",
+                "GeneralPermissionManagerFactory module was not added"
+            );
+            P_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[3].args._module);
+            await revertToSnapshot(snapId);
         });
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {

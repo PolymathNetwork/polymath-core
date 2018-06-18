@@ -48,6 +48,7 @@ let startTime;
 let endTime;
 let wallet;
 let rate;
+let raiseType;
 let cap;
 let issuerTokens;
 let minContribution;
@@ -393,7 +394,7 @@ async function step_Wallet_Issuance(){
    }
   }
 
-  await step_STO_Launch();
+  await step_STO_Prep();
 }
 
 
@@ -411,26 +412,25 @@ async function multi_mint_tokens() {
 
 }
 
+async function step_STO_Prep(){
+    await securityToken.methods.getModule(3,0).call({from: Issuer}, function(error, result){
+        if(result[1] != "0x0000000000000000000000000000000000000000"){
+            console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address "+result[1]+". Skipping STO creation");
+            cappedSTO = new web3.eth.Contract(cappedSTOABI,result[1]);
+            step_STO_Status();
+        } else {
+            step_STO_Launch();
+        }
+    });
+}
 
-async function step_STO_Launch(){
-  let receipt;
-
-  let stoCreated = false;
-  await securityToken.methods.getModule(3,0).call({from: Issuer}, function(error, result){
-    if(result[1] != "0x0000000000000000000000000000000000000000"){
-
-      console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address "+result[1]+". Skipping STO creation");
-      stoCreated = true;
-      cappedSTO = new web3.eth.Contract(cappedSTOABI,result[1]);
-    }
-  });
-
-  if(stoCreated){
+async function step_STO_Status() {
     let displayStartTime;
     let displayEndTime;
     let displayRate;
     let displayCap;
     let displayWallet;
+    let displayRaiseType;
     let displayIssuerTokens;
     let displayFundsRaised;
     let displayTokensSold;
@@ -452,6 +452,9 @@ async function step_STO_Launch(){
     await cappedSTO.methods.wallet().call({from: Issuer}, function(error, result){
       displayWallet = result;
     });
+    await cappedSTO.methods.fundraiseType().call({from: Issuer}, function(error, result){
+      displayRaiseType = (result) ? 'POLY' : 'ETH';
+    });
     await cappedSTO.methods.fundsRaised().call({from: Issuer}, function(error, result){
       displayFundsRaised = result;
     });
@@ -461,13 +464,11 @@ async function step_STO_Launch(){
     await cappedSTO.methods.investorCount().call({from: Issuer}, function(error, result){
       displayInvestorCount = result;
     });
-
     await securityToken.methods.symbol().call({from: Issuer}, function(error, result){
       displayTokenSymbol = result;
     });
 
     let displayWalletBalance = web3.utils.fromWei(await web3.eth.getBalance(displayWallet),"ether");
-
     let formattedCap = BigNumber(web3.utils.fromWei(displayCap,"ether"));
     let formattedSold = BigNumber(web3.utils.fromWei(displayTokensSold,"ether"));
 
@@ -489,32 +490,46 @@ async function step_STO_Launch(){
       - Raise Cap:         ${web3.utils.fromWei(displayCap,"ether")} ${displayTokenSymbol.toUpperCase()}
       - Start Time:        ${new Date(displayStartTime * 1000)}
       - End Time:          ${new Date(displayEndTime * 1000)}
-      - Rate:              1 ETH = ${displayRate} ${displayTokenSymbol.toUpperCase()}
+      - Raise Type:        ${displayRaiseType}
+      - Rate:              1 ${displayRaiseType} = ${displayRate} ${displayTokenSymbol.toUpperCase()}
       - Wallet:            ${displayWallet}
-      - Wallet Balance:    ${displayWalletBalance} ETH
+      - Wallet Balance:    ${displayWalletBalance} ${displayRaiseType}
       --------------------------------------
       - ${timeTitle}    ${timeRemaining}
-      - Funds raised:      ${web3.utils.fromWei(displayFundsRaised,"ether")} ETH
+      - Funds raised:      ${web3.utils.fromWei(displayFundsRaised,"ether")} ${displayRaiseType}
       - Tokens sold:       ${web3.utils.fromWei(displayTokensSold,"ether")} ${displayTokenSymbol.toUpperCase()}
       - Tokens remaining:  ${formattedCap.minus(formattedSold).toNumber()} ${displayTokenSymbol.toUpperCase()}
       - Investor count:    ${displayInvestorCount}
     `);
 
-  }else{
+    console.log(chalk.green(`\n${(await currentBalance())} POLY balance remaining at issuer address ${Issuer}`));
+    console.log("FINISHED");
+}
+
+async function step_STO_Launch(){
+    let receipt;
+    let STO_Address;
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in No. of Tokens)");
 
     cap =  readlineSync.question('How many tokens do you plan to sell on the STO? (500.000): ');
     startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(5 minutes from now = '+(Math.floor(Date.now()/1000)+300)+' ): ');
     endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
-    rate =  readlineSync.question('Enter the rate (1 ETH = X ST) for the STO (1000): ');
     wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
+    raiseType = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise or leave empty for Ether raise (E):');
 
+    if(cap == "") cap = '500000';
     if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+300));
     if(endTime == "") endTime = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
-    if(cap == "") cap = '500000';
-    if(rate == "") rate = BigNumber(1000);
     if(wallet == "") wallet = Issuer;
+    (raiseType == "") ? raiseType = 0 : raiseType = 1;  // 0 = ETH raise, 1 = Poly raise
+
+    if (raiseType) {
+        rate =  readlineSync.question('Enter the rate (1 POLY = X ST) for the STO (1000): ');
+    } else {
+        rate =  readlineSync.question('Enter the rate (1 ETH = X ST) for the STO (1000): ');
+    }
+    if(rate == "") rate = BigNumber(1000);
 
     let bytesSTO = web3.eth.abi.encodeFunctionCall({
         name: 'configure',
@@ -539,7 +554,7 @@ async function step_STO_Launch(){
             name: '_fundsReceiver'
         }
         ]
-    }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate,0,wallet]);
+    }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate, raiseType, wallet]);
 
     try{
       let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call({from: Issuer});
@@ -580,9 +595,10 @@ async function step_STO_Launch(){
         );
       })
       .on('receipt', function(receipt){
+          STO_Address = receipt.events.LogModuleAdded.returnValues._module
         console.log(`
           Congratulations! The transaction was successfully completed.
-          STO deployed at address: ${receipt.events.LogModuleAdded.returnValues._module}
+          STO deployed at address: ${STO_Address}
           Review it on Etherscan.
           TxHash: ${receipt.transactionHash}\n`
         );
@@ -590,13 +606,13 @@ async function step_STO_Launch(){
       .on('error', console.error);
       //console.log("aaa",receipt.logs[1].args._securityTokenAddress);
 
+      cappedSTO = new web3.eth.Contract(cappedSTOABI,STO_Address);
+      await step_STO_Status()
+
     }catch (err){
       console.log(err.message);
       return;
     }
-  }
-  console.log(`Remaining POLY balance is ${(await currentBalance())}`);
-  console.log("FINISHED");
 }
 
 executeApp();

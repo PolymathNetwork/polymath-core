@@ -2,8 +2,8 @@ pragma solidity ^0.4.23;
 
 /**
  * @title ERC20Basic
- * @notice Simpler version of ERC20 interface
- * @notice see https://github.com/ethereum/EIPs/issues/179
+ * @dev Simpler version of ERC20 interface
+ * @dev see https://github.com/ethereum/EIPs/issues/179
  */
 contract ERC20Basic {
   function totalSupply() public view returns (uint256);
@@ -14,12 +14,12 @@ contract ERC20Basic {
 
 /**
  * @title SafeMath
- * @notice Math operations with safety checks that throw on error
+ * @dev Math operations with safety checks that throw on error
  */
 library SafeMath {
 
   /**
-  * @notice Multiplies two numbers, throws on overflow.
+  * @dev Multiplies two numbers, throws on overflow.
   */
   function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
     if (a == 0) {
@@ -31,7 +31,7 @@ library SafeMath {
   }
 
   /**
-  * @notice Integer division of two numbers, truncating the quotient.
+  * @dev Integer division of two numbers, truncating the quotient.
   */
   function div(uint256 a, uint256 b) internal pure returns (uint256) {
     // assert(b > 0); // Solidity automatically throws when dividing by 0
@@ -41,7 +41,7 @@ library SafeMath {
   }
 
   /**
-  * @notice Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+  * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
   */
   function sub(uint256 a, uint256 b) internal pure returns (uint256) {
     assert(b <= a);
@@ -49,7 +49,7 @@ library SafeMath {
   }
 
   /**
-  * @notice Adds two numbers, throws on overflow.
+  * @dev Adds two numbers, throws on overflow.
   */
   function add(uint256 a, uint256 b) internal pure returns (uint256 c) {
     c = a + b;
@@ -60,7 +60,7 @@ library SafeMath {
 
 /**
  * @title Basic token
- * @notice Basic version of StandardToken, with no allowances.
+ * @dev Basic version of StandardToken, with no allowances.
  */
 contract BasicToken is ERC20Basic {
   using SafeMath for uint256;
@@ -70,14 +70,14 @@ contract BasicToken is ERC20Basic {
   uint256 totalSupply_;
 
   /**
-  * @notice total number of tokens in existence
+  * @dev total number of tokens in existence
   */
   function totalSupply() public view returns (uint256) {
     return totalSupply_;
   }
 
   /**
-  * @notice transfer token for a specified address
+  * @dev transfer token for a specified address
   * @param _to The address to transfer to.
   * @param _value The amount to be transferred.
   */
@@ -92,7 +92,7 @@ contract BasicToken is ERC20Basic {
   }
 
   /**
-  * @notice Gets the balance of the specified address.
+  * @dev Gets the balance of the specified address.
   * @param _owner The address to query the the balance of.
   * @return An uint256 representing the amount owned by the passed address.
   */
@@ -104,7 +104,7 @@ contract BasicToken is ERC20Basic {
 
 /**
  * @title ERC20 interface
- * @notice see https://github.com/ethereum/EIPs/issues/20
+ * @dev see https://github.com/ethereum/EIPs/issues/20
  */
 contract ERC20 is ERC20Basic {
   function allowance(address owner, address spender) public view returns (uint256);
@@ -116,9 +116,9 @@ contract ERC20 is ERC20Basic {
 /**
  * @title Standard ERC20 token
  *
- * @notice Implementation of the basic standard token.
- * @notice https://github.com/ethereum/EIPs/issues/20
- * @notice Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
+ * @dev Implementation of the basic standard token.
+ * @dev https://github.com/ethereum/EIPs/issues/20
+ * @dev Based on code by FirstBlood: https://github.com/Firstbloodio/token/blob/master/smart_contract/FirstBloodToken.sol
  */
 contract StandardToken is ERC20, BasicToken {
 
@@ -126,7 +126,7 @@ contract StandardToken is ERC20, BasicToken {
 
 
   /**
-   * @notice Transfer tokens from one address to another
+   * @dev Transfer tokens from one address to another
    * @param _from address The address which you want to send tokens from
    * @param _to address The address which you want to transfer to
    * @param _value uint256 the amount of tokens to be transferred
@@ -144,7 +144,7 @@ contract StandardToken is ERC20, BasicToken {
   }
 
   /**
-   * @notice Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
+   * @dev Approve the passed address to spend the specified amount of tokens on behalf of msg.sender.
    *
    * Beware that changing an allowance with this method brings the risk that someone may use both the old
    * and the new allowance by unfortunate transaction ordering. One possible solution to mitigate this
@@ -160,7 +160,7 @@ contract StandardToken is ERC20, BasicToken {
   }
 
   /**
-   * @notice Function to check the amount of tokens that an owner allowed to a spender.
+   * @dev Function to check the amount of tokens that an owner allowed to a spender.
    * @param _owner address The address which owns the funds.
    * @param _spender address The address which will spend the funds.
    * @return A uint256 specifying the amount of tokens still available for the spender.
@@ -170,7 +170,7 @@ contract StandardToken is ERC20, BasicToken {
   }
 
   /**
-   * @notice Increase the amount of tokens that an owner allowed to a spender.
+   * @dev Increase the amount of tokens that an owner allowed to a spender.
    *
    * approve should be called when allowed[_spender] == 0. To increment
    * allowed value is better to use this function to avoid 2 calls (and wait until
@@ -186,7 +186,7 @@ contract StandardToken is ERC20, BasicToken {
   }
 
   /**
-   * @notice Decrease the amount of tokens that an owner allowed to a spender.
+   * @dev Decrease the amount of tokens that an owner allowed to a spender.
    *
    * approve should be called when allowed[_spender] == 0. To decrement
    * allowed value is better to use this function to avoid 2 calls (and wait until
@@ -220,18 +220,27 @@ contract DetailedERC20 is ERC20 {
   }
 }
 
+/**
+ * @title Interface for the ST20 token standard
+ */
 contract IST20 is StandardToken, DetailedERC20 {
 
     // off-chain hash
     string public tokenDetails;
 
     //transfer, transferFrom must respect use respect the result of verifyTransfer
-    function verifyTransfer(address _from, address _to, uint256 _amount) public view returns (bool success);
+    function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool success);
 
-    // used to create tokens
+    /**
+     * @notice mints new tokens and assigns them to the target _investor.
+     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+     */
     function mint(address _investor, uint256 _amount) public returns (bool success);
 
-    // used to burn the tokens
+    /**
+     * @notice Burn function used to burn the securityToken
+     * @param _value No. of token that get burned
+     */
     function burn(uint256 _value) public;
 
     event Minted(address indexed to, uint256 amount);
@@ -241,7 +250,7 @@ contract IST20 is StandardToken, DetailedERC20 {
 
 /**
  * @title Ownable
- * @notice The Ownable contract has an owner address, and provides basic authorization control
+ * @dev The Ownable contract has an owner address, and provides basic authorization control
  * functions, this simplifies the implementation of "user permissions".
  */
 contract Ownable {
@@ -252,7 +261,7 @@ contract Ownable {
 
 
   /**
-   * @notice The Ownable constructor sets the original `owner` of the contract to the sender
+   * @dev The Ownable constructor sets the original `owner` of the contract to the sender
    * account.
    */
   function Ownable() public {
@@ -260,7 +269,7 @@ contract Ownable {
   }
 
   /**
-   * @notice Throws if called by any account other than the owner.
+   * @dev Throws if called by any account other than the owner.
    */
   modifier onlyOwner() {
     require(msg.sender == owner);
@@ -268,7 +277,7 @@ contract Ownable {
   }
 
   /**
-   * @notice Allows the current owner to transfer control of the contract to a newOwner.
+   * @dev Allows the current owner to transfer control of the contract to a newOwner.
    * @param newOwner The address to transfer ownership to.
    */
   function transferOwnership(address newOwner) public onlyOwner {
@@ -279,48 +288,129 @@ contract Ownable {
 
 }
 
+/**
+ * @title Interface for all security tokens
+ */
 contract ISecurityToken is IST20, Ownable {
 
     uint8 public constant PERMISSIONMANAGER_KEY = 1;
     uint8 public constant TRANSFERMANAGER_KEY = 2;
     uint8 public constant STO_KEY = 3;
+    uint8 public constant CHECKPOINT_KEY = 4;
     uint256 public granularity;
+
+    // Value of current checkpoint
+    uint256 public currentCheckpointId;
+
     // Total number of non-zero token holders
     uint256 public investorCount;
 
-    //TODO: Factor out more stuff here
+    // List of token holders
+    address[] public investors;
+
+    // Permissions this to a Permission module, which has a key of 1
+    // If no Permission return false - note that IModule withPerm will allow ST owner all permissions anyway
+    // this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool);
 
+    /**
+     * @notice returns module list for a module type
+     * @param _moduleType is which type of module we are trying to remove
+     * @param _moduleIndex is the index of the module within the chosen type
+     */
     function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address, bool);
 
+    /**
+     * @notice returns module list for a module name - will return first match
+     * @param _moduleType is which type of module we are trying to remove
+     * @param _name is the name of the module within the chosen type
+     */
     function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address, bool);
+
+    /**
+     * @notice Queries totalSupply as of a defined checkpoint
+     * @param _checkpointId Checkpoint ID to query as of
+     */
+    function totalSupplyAt(uint256 _checkpointId) public view returns(uint256);
+
+    /**
+     * @notice Queries balances as of a defined checkpoint
+     * @param _investor Investor to query balance for
+     * @param _checkpointId Checkpoint ID to query as of
+     */
+    function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256);
+
+    /**
+     * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
+     */
+    function createCheckpoint() public returns(uint256);
+
+    /**
+     * @notice gets length of investors array
+     * NB - this length may differ from investorCount if list has not been pruned of zero balance investors
+     * @return length
+     */
+    function getInvestorsLength() public view returns(uint256);
+
 }
 
-//Simple interface that any module contracts should implement
+/**
+ * @title Interface that any module factory contract should implement
+ */
 contract IModuleFactory is Ownable {
 
     ERC20 public polyToken;
+    uint256 public setupCost;
+    uint256 public usageCost;
+    uint256 public monthlySubscriptionCost;
 
-    constructor (address _polyAddress) public {
+    event LogChangeFactorySetupFee(uint256 _oldSetupcost, uint256 _newSetupCost, address _moduleFactory);
+    event LogChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
+    event LogChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
+    event LogGenerateModuleFromFactory(address _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address _creator, uint256 _timestamp);
+
+    /**
+     * @notice Constructor
+     * @param _polyAddress Address of the polytoken
+     */
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public {
       polyToken = ERC20(_polyAddress);
+      setupCost = _setupCost;
+      usageCost = _usageCost;
+      monthlySubscriptionCost = _subscriptionCost;
     }
 
     //Should create an instance of the Module, or throw
     function deploy(bytes _data) external returns(address);
 
+    /**
+     * @notice Type of the Module factory
+     */
     function getType() public view returns(uint8);
 
+    /**
+     * @notice Get the name of the Module
+     */
     function getName() public view returns(bytes32);
 
-    //Return the cost (in POLY) to use this factory
-    function getCost() public view returns(uint256);
-
+    /**
+     * @notice Get the description of the Module
+     */
     function getDescription() public view returns(string);
 
+    /**
+     * @notice Get the title of the Module
+     */
     function getTitle() public view returns(string);
 
+    /**
+     * @notice Get the Instructions that helped to used the module
+     */
     function getInstructions() public view returns (string);
-    
+
+    /**
+     * @notice Get the tags related to the module factory
+     */
     function getTags() public view returns (bytes32[]);
 
     //Pull function sig from _data
@@ -331,9 +421,41 @@ contract IModuleFactory is Ownable {
         }
     }
 
+    /**
+     * @notice used to change the fee of the setup cost
+     * @param _newSetupCost new setup cost
+     */
+    function changeFactorySetupFee(uint256 _newSetupCost) public onlyOwner {
+        uint256 _oldSetupcost = setupCost;
+        setupCost = _newSetupCost;
+        emit LogChangeFactorySetupFee(_oldSetupcost, setupCost, address(this));
+    }
+
+    /**
+     * @notice used to change the fee of the usage cost
+     * @param _newUsageCost new usage cost
+     */
+    function changeFactoryUsageFee(uint256 _newUsageCost) public onlyOwner {
+        uint256 _oldUsageCost = usageCost;
+        usageCost = _newUsageCost;
+        emit LogChangeFactoryUsageFee(_oldUsageCost, usageCost, address(this));
+    }
+
+    /**
+     * @notice used to change the fee of the subscription cost
+     * @param _newSubscriptionCost new subscription cost
+     */
+    function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) public onlyOwner {
+        uint256 _oldSubscriptionCost = monthlySubscriptionCost;
+        monthlySubscriptionCost = _newSubscriptionCost;
+        emit LogChangeFactorySubscriptionFee(_oldSubscriptionCost, monthlySubscriptionCost, address(this));
+    }
+
 }
 
-//Simple interface that any module contracts should implement
+/**
+ * @title Interface that any module contract should implement
+ */
 contract IModule {
 
     address public factory;
@@ -344,12 +466,20 @@ contract IModule {
 
     ERC20 public polyToken;
 
+    /**
+     * @notice Constructor
+     * @param _securityToken Address of the security token
+     * @param _polyAddress Address of the polytoken
+     */
     constructor (address _securityToken, address _polyAddress) public {
         securityToken = _securityToken;
         factory = msg.sender;
         polyToken = ERC20(_polyAddress);
     }
 
+    /**
+     * @notice This function returns the signature of configure function
+     */
     function getInitFunction() public returns (bytes4);
 
     //Allows owner, factory or permissioned delegate
@@ -375,14 +505,23 @@ contract IModule {
         _;
     }
 
+    /**
+     * @notice Return the permissions flag that are associated with Module
+     */
     function getPermissions() public view returns(bytes32[]);
 
+    /**
+     * @notice used to withdraw the fee by the factory owner
+     */
     function takeFee(uint256 _amount) public withPerm(FEE_ADMIN) returns(bool) {
         require(polyToken.transferFrom(address(this), IModuleFactory(factory).owner(), _amount), "Unable to take fee");
         return true;
     }
 }
 
+/**
+ * @title Interface to be implemented by all permission manager modules
+ */
 contract IPermissionManager is IModule {
 
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool);
@@ -401,6 +540,9 @@ contract IPermissionManager is IModule {
 // changePermission           X               X
 //
 
+/**
+ * @title Permission Manager module for core permissioning functionality
+ */
 contract GeneralPermissionManager is IPermissionManager {
 
     // Mapping used to hold the permissions on the modules provided to delegate

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -253,7 +253,7 @@ contract GeneralTransferManager is ITransferManager {
     ) public {
         require(_validFrom <= now, "ValidFrom is too early");
         require(_validTo >= now, "ValidTo is too late");
-        bytes32 hash = keccak256(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo);
+        bytes32 hash = keccak256(abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo));
         checkSig(hash, _v, _r, _s);
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
@@ -266,7 +266,7 @@ contract GeneralTransferManager is ITransferManager {
     function checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
-        address signer = ecrecover(keccak256("\x19Ethereum Signed Message:\n32", _hash), _v, _r, _s);
+        address signer = ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash)), _v, _r, _s);
         require(signer == ISecurityToken(securityToken).owner() || signer == signingAddress, "Incorrect signer");
     }
 

@@ -55,14 +55,16 @@
     "coveralls": "^3.0.1",
     "ethereumjs-testrpc": "^6.0.3",
     "ethers": "^3.0.15",
-    "openzeppelin-solidity": "^1.9.0",
+    "openzeppelin-solidity": "1.10.0",
     "readline-sync": "^1.4.9",
     "shelljs": "^0.8.2",
+    "solc": "^0.4.24",
     "truffle-contract": "^3.0.4",
     "truffle-hdwallet-provider-privkey": "^0.1.0",
     "web3": "^1.0.0-beta.33"
   },
   "devDependencies": {
+    "@soldoc/soldoc": "^0.4.3",
     "eslint": "^4.19.1",
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.10.0",
@@ -74,7 +76,7 @@
     "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.5.0",
     "solium": "^1.1.6",
-    "truffle": "^4.1.7",
+    "truffle": "^4.1.11",
     "truffle-wallet-provider": "0.0.5"
   }
 }

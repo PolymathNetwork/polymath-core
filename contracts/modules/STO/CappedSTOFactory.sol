@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.24;
 
 import "./CappedSTO.sol";
 import "../../interfaces/IModuleFactory.sol";

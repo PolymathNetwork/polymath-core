@@ -17,7 +17,10 @@ module.exports = {
     return JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).networks[SELECTED_NETWORK].address;
   },
   polyTokenAddress: function() {
-    return JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).networks[SELECTED_NETWORK].address;
+    if(SELECTED_NETWORK == NETWORKS.KOVAN)
+      return "0x455Da7D06862Fa7d7639473F287f88bc7b35FF7F";
+    else
+      return JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).networks[SELECTED_NETWORK].address;
   },
   etherDividendCheckpointFactoryAddress: function() {
     return JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpointFactory.json').toString()).networks[SELECTED_NETWORK].address;

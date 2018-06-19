@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 import "./interfaces/ITickerRegistry.sol";
 import "./tokens/SecurityToken.sol";
@@ -129,7 +129,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     * @return bool
     */
     function isSecurityToken(address _securityToken) public view returns (bool) {
-        return (keccak256(securityTokens[_securityToken].symbol) != keccak256(""));
+        return (keccak256(bytes(securityTokens[_securityToken].symbol)) != keccak256(""));
     }
 
     /**

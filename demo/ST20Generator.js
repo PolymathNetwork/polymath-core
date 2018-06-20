@@ -453,7 +453,7 @@ async function step_STO_Status() {
       displayWallet = result;
     });
     await cappedSTO.methods.fundraiseType().call({from: Issuer}, function(error, result){
-      displayRaiseType = (result) ? 'POLY' : 'ETH';
+      displayRaiseType = (result == 0) ? 'POLY' : 'ETH';
     });
     await cappedSTO.methods.fundsRaised().call({from: Issuer}, function(error, result){
       displayFundsRaised = result;

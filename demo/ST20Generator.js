@@ -273,6 +273,7 @@ async function step_token_deploy(){
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Deployment");
     tokenName =  readlineSync.question('Enter the name for your new token: ');
+    if (tokenName == "") tokenName = 'default';
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Select the Token divisibility type");
     divisibile =  readlineSync.question('Press "N" for Non-divisible type token or hit Enter for divisible type token (Default):',{

@@ -11,7 +11,7 @@ contract STVersionProxy002 is ISTProxy {
 
     address public transferManagerFactory;
 
-    //Shoud be set to false when we have more TransferManager options
+    //Should be set to false when we have more TransferManager options
     bool addTransferManager = true;
 
     constructor (address _transferManagerFactory) public {

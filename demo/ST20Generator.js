@@ -514,13 +514,13 @@ async function step_STO_Launch(){
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration (Capped STO in No. of Tokens)");
 
     cap =  readlineSync.question('How many tokens do you plan to sell on the STO? (500.000): ');
-    startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(5 minutes from now = '+(Math.floor(Date.now()/1000)+300)+' ): ');
+    startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = '+(Math.floor(Date.now()/1000)+60)+' ): ');
     endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
     wallet =  readlineSync.question('Enter the address that will receive the funds from the STO ('+Issuer+'): ');
     raiseType = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise or leave empty for Ether raise (E):');
 
     if(cap == "") cap = '500000';
-    if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+300));
+    if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+60));
     if(endTime == "") endTime = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
     if(wallet == "") wallet = Issuer;
     (raiseType == "") ? raiseType = 0 : raiseType = 1;  // 0 = ETH raise, 1 = Poly raise

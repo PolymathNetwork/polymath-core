@@ -272,12 +272,12 @@ async function invest() {
             if (parseInt(userBalance) >= parseInt(cost)) {
                 let allowance = await polyToken.methods.allowance(STOAddress, User).call({from: User});
                 if (allowance < costWei) {
-                    await polyToken.methods.approve(STOAddress, costWei).send({from: User, gas:200000, gasPrice: 80000000000 })
+                    await polyToken.methods.approve(STOAddress, costWei).send({from: User, gas:2000000, gasPrice: 80000000000 })
                     .on('receipt', function(receipt) {
                     })
                     .on('error', console.error);
                 }
-                await cappedSTO.methods.buyTokensWithPoly(costWei).send({from: User, gas:200000, gasPrice: 80000000000 })
+                await cappedSTO.methods.buyTokensWithPoly(costWei).send({from: User, gas:2000000, gasPrice: 80000000000 })
                 .on('transactionHash', function(hash){
                     console.log(`
         Your transaction is being processed. Please wait...

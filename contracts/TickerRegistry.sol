@@ -15,7 +15,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
-    // For now it's value is 90 days;
+    // For now it's value is 15 days;
     uint256 public expiryLimit = 15 * 1 days;
 
     // Details of the symbol that get registered with the polymath platform

@@ -10,6 +10,8 @@ if (typeof web3 !== 'undefined') {
     web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 }
 
+let DEFAULT_GAS_PRICE = 80000000000;
+
 // Load contract artifacts
 var contracts = require("./helpers/contract_addresses");
 let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
@@ -326,7 +328,8 @@ async function removeModule() {
     }
     let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to remove?'), {cancel: false});
     console.log("Selected:",options[index]);
-    await securityToken.methods.removeModule(modules[index].module.type,modules[index].index).send({from: User, gas:2000000, gasPrice: 80000000000 });
+    console.log(chalk.red(`removeModule: ` + await securityToken.methods.removeModule(modules[index].module.type,modules[index].index).estimateGas({from: User})));
+    await securityToken.methods.removeModule(modules[index].module.type,modules[index].index).send({from: User, gas:60000, gasPrice: DEFAULT_GAS_PRICE });
 }
 
 async function changeBudget() {
@@ -340,7 +343,8 @@ async function mintTokens() {
     } else {
         let _investor = readlineSync.question(chalk.yellow(`Enter the address to receive the tokens: `));
         let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
-        let tx = await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).send({from: User});
+        console.log(chalk.red(`mint: ` + await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).estimateGas({from: User})));
+        let tx = await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).send({ from: User, gas:60000, gasPrice: DEFAULT_GAS_PRICE });
         (tx) ? console.log('Minting Successful') : console.log('Minting Failed');
     }
 }

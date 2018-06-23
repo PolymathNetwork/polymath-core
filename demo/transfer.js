@@ -1,7 +1,7 @@
 var fs = require('fs');
 // var BigNumber = require('bignumber.js');
 const Web3 = require('web3');
-
+var chalk = require('chalk');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require("./helpers/contract_addresses");
@@ -84,6 +84,7 @@ async function transfer() {
   });
 
   try{
+    console.log(chalk.red(`transfer: ` + await securityToken.methods.transfer(transferTo,web3.utils.toWei(transferAmount,"ether")).estimateGas({from: Issuer})));
     await securityToken.methods.transfer(transferTo,web3.utils.toWei(transferAmount,"ether")).send({ from: Issuer, gas:500000, gasPrice:DEFAULT_GAS_PRICE})
     .on('transactionHash', function(hash){
       console.log(`

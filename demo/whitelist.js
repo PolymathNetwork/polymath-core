@@ -2,7 +2,7 @@ var fs = require('fs');
 var csv = require('fast-csv');
 var BigNumber = require('bignumber.js');
 const Web3 = require('web3');
-
+var chalk = require('chalk');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require("./helpers/contract_addresses");
@@ -204,6 +204,7 @@ async function setInvestors() {
       //fromTimes is ability to sell coin FROM your account (2nd row in csv, 2nd parameter in modifyWhiteList() )
       //toTimes is ability to buy coins TOwards your account (3rd row in csv, 3rd parameter in modifyWhiteList() )
       //expiryTime is time at which KYC of investor get expired (4th row in csv, 4rd parameter in modifyWhiteList() )
+      console.log(chalk.red(`modifyWhitelistMulti: ` + await generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray).estimateGas({from: Issuer})));
       let r = await generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray).send({ from: Issuer, gas: 5000000, gasPrice: DEFAULT_GAS_PRICE })
       console.log(`Batch ${i} - Attempting to modifyWhitelist accounts:\n\n`, investorArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");

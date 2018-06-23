@@ -39,7 +39,7 @@ try {
   return;
 }
 
-// Init user variables
+// Init user address variables
 let Issuer;
 let User;
 
@@ -123,7 +123,7 @@ async function welcome() {
     User = readlineSync.question(chalk.yellow(`\nEnter your public address to log in as an investor. Otherwise, press 'Enter' to log in as the token issuer: `));
     if (User == "") User = Issuer;
 
-    await showUserInfo();
+    await showUserInfo(User);
 
     while (!validSymbol) {
         await inputSymbol();
@@ -159,17 +159,6 @@ async function inputSymbol() {
         await showTokenInfo()
         return;
     }
-}
-
-// Display user information
-async function showUserInfo() {
-    // User details
-    console.log(`
-        *******************    User Information    ********************
-        - Address:           ${User}
-        - POLY balance:      ${await polyBalance(User)}
-        - ETH balance:       ${web3.utils.fromWei(await web3.eth.getBalance(User))}
-    `);
 }
 
 // Display token and STO information
@@ -336,6 +325,15 @@ async function invest() {
 }
 
 // Helpers
+async function showUserInfo(_user) {
+    console.log(`
+        *******************    User Information    ********************
+        - Address:           ${_user}
+        - POLY balance:      ${await polyBalance(_user)}
+        - ETH balance:       ${web3.utils.fromWei(await web3.eth.getBalance(_user))}
+    `);
+}
+
 async function polyBalance(_user) {
     let balance = await polyToken.methods.balanceOf(_user).call();
     return web3.utils.fromWei(balance);

@@ -454,7 +454,7 @@ async function step_STO_Status() {
       displayWallet = result;
     });
     await cappedSTO.methods.fundraiseType().call({from: Issuer}, function(error, result){
-      displayRaiseType = (result == 0) ? 'POLY' : 'ETH';
+      displayRaiseType = (result == 0) ? 'ETH' : 'POLY';
     });
     await cappedSTO.methods.fundsRaised().call({from: Issuer}, function(error, result){
       displayFundsRaised = result;
@@ -588,7 +588,7 @@ async function step_STO_Launch(){
         .on('error', console.error);
       }
 
-      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0, true).send({from: Issuer, gas: 7900000, gasPrice:DEFAULT_GAS_PRICE})
+      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0, false).send({from: Issuer, gas: 7900000, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...

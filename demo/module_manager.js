@@ -256,7 +256,7 @@ async function iterateModules(_moduleType) {
 }
 
 async function selectAction() {
-    let options = ['Add a module','Pause / unpause a module','Remove a module','Change module budget','Whitelist an address for a year','Mint tokens','Permanentally end minting','Exit'];
+    let options = ['Add a module','Pause / unpause a module','Remove a module','Change module budget','Whitelist an address for a year','Mint tokens','Permanently end minting','Exit'];
     let index = readlineSync.keyInSelect(options, chalk.yellow('What do you want to do?'), {cancel: false});
     console.log("\nSelected:",options[index]);
     switch (index) {
@@ -381,7 +381,10 @@ async function whitelist() {
 async function mintTokens() {
     mintingFinished = await securityToken.methods.mintingFinished().call({from: User});
     if (mintingFinished) {
-        console.log(`Minting has been permanently disabled.`)
+        console.log(chalk.red(`
+    ***********************
+    Minting is not possible - Minting has been permanently disabled by issuer
+    ***********************`));
     } else {
         let _investor = readlineSync.question(chalk.yellow(`Enter the address to receive the tokens: `));
         let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
@@ -396,7 +399,7 @@ async function mintTokens() {
             console.log(e);
             console.log(chalk.red(`
     **************************
-    Minting was not successful - Please make sure beneficiary address has been whitelisted.
+    Minting was not successful - Please make sure beneficiary address has been whitelisted
     **************************`));
         }
     }
@@ -404,10 +407,12 @@ async function mintTokens() {
 }
 
 async function endMinting() {
-    console.log(chalk.red(`
-    *********************************
-    This option is not yet available.
-    *********************************`));
+    let GAS = Math.round(1.2 * (await securityToken.methods.finishMinting().estimateGas({from: User})));
+    console.log(chalk.black.bgYellowBright(`---- Transaction executed: finishMinting - Gas limit provided: ${GAS} ----`));
+    await securityToken.methods.finishMinting().send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+    .on('receipt', function(receipt){
+        console.log(chalk.green(`\nPermanently end minting successful.`));
+    });
     backToMenu();
 }
 

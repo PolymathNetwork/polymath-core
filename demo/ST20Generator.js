@@ -234,7 +234,7 @@ async function step_approval(spender, fee) {
           return approved;
         } else {
             let GAS = 1.2 * (await polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether")).estimateGas({ from: Issuer }));
-            console.log(chalk.red(`approve: ` + GAS));
+            console.log(chalk.bgYellowBright.bold(`---- Transaction executed: Approve - Gas used: ${GAS} ----`));
             await polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether")).send({from: Issuer, gas: Math.round(GAS), gasPrice: DEFAULT_GAS_PRICE })
             .on('receipt', function(receipt) {
                 approved = true;

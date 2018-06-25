@@ -111,8 +111,9 @@ async function send_poly() {
 
 async function transferTokens(to, amount) {
     try {
-        console.log(chalk.red(`getTokens: ` + await polyToken.methods.getTokens(amount, to).estimateGas({ from: Issuer })));
-        await polyToken.methods.getTokens(amount, to).send({from: Issuer, gas: 40000, gasPrice: DEFAULT_GAS_PRICE})
+        let GAS = 1.2 * (await polyToken.methods.getTokens(amount, to).estimateGas({ from: Issuer }));
+        console.log(chalk.red(`getTokens: ` + GAS));
+        await polyToken.methods.getTokens(amount, to).send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
         .on('transactionHash', function(hash) {
             console.log(`
             Your transaction is being processed. Please wait...

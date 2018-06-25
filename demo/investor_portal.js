@@ -263,14 +263,16 @@ async function invest() {
             if (parseInt(userBalance) >= parseInt(cost)) {
                 let allowance = await polyToken.methods.allowance(STOAddress, User).call({from: User});
                 if (allowance < costWei) {
-                    console.log(chalk.red(`approve: ` + await polyToken.methods.approve(STOAddress, costWei).estimateGas({from: User})));
-                    await polyToken.methods.approve(STOAddress, costWei).send({from: User, gas:50000, gasPrice: DEFAULT_GAS_PRICE })
+                    let GAS = 1.2 * (await polyToken.methods.approve(STOAddress, costWei).estimateGas({from: User}));
+                    console.log(chalk.red(`approve: ` + GAS));
+                    await polyToken.methods.approve(STOAddress, costWei).send({from: User, gas:GAS, gasPrice: DEFAULT_GAS_PRICE })
                     .on('receipt', function(receipt) {
                     })
                     .on('error', console.error);
                 }
-                console.log(chalk.red(`buyTokensWithPoly: ` + await cappedSTO.methods.buyTokensWithPoly(costWei).estimateGas({from: User})));
-                await cappedSTO.methods.buyTokensWithPoly(costWei).send({from: User, gas:160000, gasPrice: DEFAULT_GAS_PRICE })
+                let GAS = 1.2 * (await cappedSTO.methods.buyTokensWithPoly(costWei).estimateGas({from: User}));
+                console.log(chalk.red(`buyTokensWithPoly: ` + GAS));
+                await cappedSTO.methods.buyTokensWithPoly(costWei).send({from: User, gas:GAS, gasPrice: DEFAULT_GAS_PRICE })
                 .on('transactionHash', function(hash){
                     console.log(`
         Your transaction is being processed. Please wait...
@@ -302,8 +304,9 @@ async function invest() {
             return;
         }
     } else {
-        console.log(chalk.red(`buyTokens: ` + await cappedSTO.methods.buyTokens(User).estimateGas({from: User, value:web3.utils.toWei(cost.toString())})));
-        await cappedSTO.methods.buyTokens(User).send({ from: User, value:web3.utils.toWei(cost.toString()), gas:160000, gasPrice:DEFAULT_GAS_PRICE})
+        let GAS = 1.2 * (await cappedSTO.methods.buyTokens(User).estimateGas({from: User, value:web3.utils.toWei(cost.toString())}));
+        console.log(chalk.red(`buyTokens: ` + GAS));
+        await cappedSTO.methods.buyTokens(User).send({ from: User, value:web3.utils.toWei(cost.toString()), gas:GAS, gasPrice:DEFAULT_GAS_PRICE})
         .on('transactionHash', function(hash){
             console.log(`
         Your transaction is being processed. Please wait...

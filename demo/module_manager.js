@@ -321,30 +321,20 @@ async function removeModule() {
     let options = [];
     let modules = [];
 
-    if (numPM) {
-        for (i=0;i<numPM;i+=1) {
-            options.push(pmModules[i].name);
-            modules.push(new ModuleInfo(pmModules[i],i));
+    function pushModules(_numModules, _arrayModules) {
+        if (_numModules > 0) {
+            for (i=0;i<_numModules;i+=1) {
+                options.push(_arrayModules[i].name);
+                modules.push(new ModuleInfo(_arrayModules[i],i));
+            }
         }
     }
-    if (numTM) {
-        for (i=0;i<numTM;i+=1) {
-            options.push(tmModules[i].name);
-            modules.push(new ModuleInfo(tmModules[i],i));
-        }
-    }
-    if (numSTO) {
-        for (i=0;i<numSTO;i+=1) {
-            options.push(stoModules[i].name);
-            modules.push(new ModuleInfo(stoModules[i],i));
-        }
-    }
-    if (numCP) {
-        for (i=0;i<numCP;i+=1) {
-            options.push(cpModules[i].name);
-            modules.push(new ModuleInfo(cpModules[i],i));
-        }
-    }
+
+    pushModules(numPM,pmModules);
+    pushModules(numTM,tmModules);
+    pushModules(numSTO,stoModules);
+    pushModules(numCP,cpModules);
+
     let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to remove?'), {cancel: false});
     console.log("\nSelected:",options[index]);
     let GAS = Math.round(2 * (await securityToken.methods.removeModule(modules[index].module.type,modules[index].index).estimateGas({from: User})));

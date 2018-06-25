@@ -84,9 +84,9 @@ async function transfer() {
   });
 
   try{
-      let GAS = 1.2 * (await securityToken.methods.transfer(transferTo,web3.utils.toWei(transferAmount,"ether")).estimateGas({from: Issuer}));
-      console.log(chalk.red(`transfer: ` + GAS));
-    await securityToken.methods.transfer(transferTo,web3.utils.toWei(transferAmount,"ether")).send({ from: Issuer, gas:Math.round(GAS), gasPrice:DEFAULT_GAS_PRICE})
+      let GAS = Math.round(1.2 * (await securityToken.methods.transfer(transferTo,web3.utils.toWei(transferAmount,"ether")).estimateGas({from: Issuer})));
+      console.log(chalk.black.bgYellowBright(`---- Transaction executed: transfer - Gas limit provided: ${GAS} ----`));
+    await securityToken.methods.transfer(transferTo,web3.utils.toWei(transferAmount,"ether")).send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...

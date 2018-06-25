@@ -339,7 +339,10 @@ async function removeModule() {
     console.log("\nSelected:",options[index]);
     let GAS = Math.round(2 * (await securityToken.methods.removeModule(modules[index].module.type,modules[index].index).estimateGas({from: User})));
     console.log(chalk.black.bgYellowBright(`---- Transaction executed: removeModule - Gas limit provided: ${GAS} ----`));
-    await securityToken.methods.removeModule(modules[index].module.type,modules[index].index).send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE });
+    await securityToken.methods.removeModule(modules[index].module.type,modules[index].index).send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+    .on('receipt', function(receipt){
+        console.log(chalk.green(`\nSuccessfully removed ${modules[index].module.name}.`));
+    });
     backToMenu()
 }
 
@@ -360,8 +363,10 @@ async function mintTokens() {
         let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
         let GAS = Math.round(1.2 * (await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).estimateGas({from: User})));
         console.log(chalk.black.bgYellowBright(`---- Transaction executed: mint - Gas limit provided: ${GAS} ----`));
-        let tx = await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE });
-        (tx) ? console.log('Minting Successful') : console.log('Minting Failed');
+        await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+        .on('receipt', function(receipt){
+            console.log(chalk.green(`\nMinting Successful.`));
+        });
     }
     backToMenu()
 }

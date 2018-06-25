@@ -264,6 +264,36 @@ contract('WeightedVoteCheckpoint', accounts => {
 
     });
 
+    describe("Preparation", async() => {
+        it("Should successfully mint tokens for first investor account", async() => {
+            await I_GeneralTransferManager.modifyWhitelist(
+                account_investor1,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(30),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 500000
+                });
+            await I_SecurityToken.mint(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
+        });
+
+        it("Should successfully mint tokens for second investor account", async() => {
+            await I_GeneralTransferManager.modifyWhitelist(
+                account_investor2,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(30),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 500000
+                });
+            await I_SecurityToken.mint(account_investor2, web3.utils.toWei('2', 'ether'), { from: token_owner });
+        });
+    });
+
     describe("Create ballot", async() => {
 
         it("Should fail to create a new ballot if not owner", async() => {
@@ -341,7 +371,7 @@ contract('WeightedVoteCheckpoint', accounts => {
         it("Should fail to cast a vote if token balance is zero", async() => {
             let errorThrown = false;
             try {
-                let tx = await I_WeightedVoteCheckpoint.castVote(true,0, { from: account_investor1 });
+                let tx = await I_WeightedVoteCheckpoint.castVote(true,0, { from: account_investor3 });
             } catch(error) {
                 console.log(`       tx -> failed because token balance is zero`.grey);
                 ensureException(error);
@@ -351,18 +381,6 @@ contract('WeightedVoteCheckpoint', accounts => {
         });
 
         it("Should fail to cast a vote if voting period has not started", async() => {
-            await I_GeneralTransferManager.modifyWhitelist(
-                account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(30),
-                true,
-                {
-                    from: account_issuer,
-                    gas: 500000
-                });
-            await increaseTime(duration.seconds(30));
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
             let errorThrown = false;
             try {
                 let tx = await I_WeightedVoteCheckpoint.castVote(true,1, { from: account_investor1 });
@@ -389,6 +407,7 @@ contract('WeightedVoteCheckpoint', accounts => {
 
         it("Should successfully cast a vote from first investor", async() => {
             let tx = await I_WeightedVoteCheckpoint.castVote(false, 0, { from: account_investor1 });
+
             assert.equal(tx.logs[0].args._investor, account_investor1, "Failed to record vote");
             assert.equal(tx.logs[0].args._vote, false, "Failed to record vote");
             assert.equal(tx.logs[0].args._weight, web3.utils.toWei('1', 'ether'), "Failed to record vote");
@@ -397,22 +416,13 @@ contract('WeightedVoteCheckpoint', accounts => {
         });
 
         it("Should successfully cast a vote from second investor", async() => {
-            await I_GeneralTransferManager.modifyWhitelist(
-                account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(30),
-                true,
-                {
-                    from: account_issuer,
-                    gas: 500000
-                });
-            await increaseTime(duration.seconds(30));
-            await I_SecurityToken.mint(account_investor2, web3.utils.toWei('2', 'ether'), { from: token_owner });
-
             let tx = await I_WeightedVoteCheckpoint.castVote(true, 0, { from: account_investor2 });
+
             assert.equal(tx.logs[0].args._investor, account_investor2, "Failed to record vote");
+            assert.equal(tx.logs[0].args._vote, true, "Failed to record vote");
             assert.equal(tx.logs[0].args._weight, web3.utils.toWei('2', 'ether'), "Failed to record vote");
+            assert.equal(tx.logs[0].args._ballotId, 0, "Failed to record vote");
+            assert.equal(tx.logs[0].args._time, latestTime(), "Failed to record vote");
         });
 
         it("Should fail to cast a vote again", async() => {
@@ -432,9 +442,9 @@ contract('WeightedVoteCheckpoint', accounts => {
 
         it("Should successfully get the results", async() => {
             let tx = await I_WeightedVoteCheckpoint.getResults(0, { from: token_owner });
-            console.log(tx)
-            assert.equal(tx.cummulativeYes, web3.utils.toWei('2', 'ether'), "Failed to get results");
-            assert.equal(tx.cummulativeNo, web3.utils.toWei('1', 'ether'), "Failed to get results");
+            assert.equal(tx[0], web3.utils.toWei('2', 'ether'), "Failed to get results");
+            assert.equal(tx[1], web3.utils.toWei('1', 'ether'), "Failed to get results");
+            assert.equal(tx[2], 0, "Failed to get results");
         });
     });
 });

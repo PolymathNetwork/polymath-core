@@ -328,10 +328,9 @@ contract('WeightedVoteCheckpoint', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should successfully create a new custom ballot", async() => {
-            let startTime = latestTime() + duration.minutes(10);
-            let endTime = latestTime() + duration.minutes(15);
-            let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 1, { from: token_owner });
+        it("Should successfully create a new custom ballot" async() => {
+            let endTime = latestTime() + duration.minutes(2);
+            let tx = await I_WeightedVoteCheckpoint.createCustomBallot(latestTime(),endTime, 1, { from: token_owner });
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 1, "New ballot should be created at checkpoint 1");
         });
     });

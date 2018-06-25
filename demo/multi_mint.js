@@ -181,7 +181,7 @@ function readFile() {
 
       let GAS = 1.2 * (await securityToken.methods.mintMulti(affiliatesArray, tokensArray).estimateGas({from: Issuer}));
       console.log(chalk.red(`mintMulti: ` + GAS));
-      let r = await securityToken.methods.mintMulti(affiliatesArray, tokensArray).send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+      let r = await securityToken.methods.mintMulti(affiliatesArray, tokensArray).send({ from: Issuer, gas: Math.round(GAS), gasPrice: DEFAULT_GAS_PRICE })
       console.log(`Batch ${i} - Attempting to send the Minted tokens to affiliates accounts:\n\n`, affiliatesArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
       console.log("Multi Mint transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * DEFAULT_GAS_PRICE).toString(), "ether"), "Ether");

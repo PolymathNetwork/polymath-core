@@ -236,14 +236,14 @@ async function iterateModules(_moduleType) {
         try {
             details = await securityToken.methods.getModule(_moduleType,counter).call({from: User});
             if (details[1] != "0x0000000000000000000000000000000000000000") {
-                let nameT = web3.utils.hexToUtf8(details[0]);
-                let abiT = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameT}.json`).toString()).abi;
-                let contractT = new web3.eth.Contract(abiT, details[1]);
-                let pausedT = false;
+                let nameTemp = web3.utils.hexToUtf8(details[0]);
+                let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
+                let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
+                let pausedTemp = false;
                 if (_moduleType == 2 || _moduleType == 3) {
-                    let pausedT = await contractT.methods.paused().call({from: User});
+                    let pausedTemp = await contractTemp.methods.paused().call({from: User});
                 }
-                modules.push(new ModuleInfo(nameT,_moduleType,details[1],details[2],pausedT,abiT,contractT));
+                modules.push(new ModuleInfo(nameTemp,_moduleType,details[1],details[2],pausedTemp,abiTemp,contractTemp));
                 counter += 1;
             } else {
                 endModule = true;
@@ -256,7 +256,7 @@ async function iterateModules(_moduleType) {
 }
 
 async function selectAction() {
-    let options = ['Add a module','Pause / unpause a module','Remove a module','Change module budget','Mint tokens','Permanentally end minting','Exit'];
+    let options = ['Add a module','Pause / unpause a module','Remove a module','Change module budget','Whitelist an address for a year','Mint tokens','Permanentally end minting','Exit'];
     let index = readlineSync.keyInSelect(options, chalk.yellow('What do you want to do?'), {cancel: false});
     console.log("\nSelected:",options[index]);
     switch (index) {
@@ -273,12 +273,15 @@ async function selectAction() {
             await changeBudget();
             break;
         case 4:
-            await mintTokens();
+            await whitelist();
             break;
         case 5:
-            await endMinting();
+            await mintTokens();
             break;
         case 6:
+            await endMinting();
+            break;
+        case 7:
             process.exit();
     }
     displayModules()
@@ -354,19 +357,48 @@ async function changeBudget() {
     backToMenu();
 }
 
+async function whitelist() {
+    try {
+        let generalTransferManager = tmModules[0].contract;
+        let investor = readlineSync.question(chalk.yellow(`Enter the address to be whitelisted: `));
+        let now = await latestTime();
+        let GAS = Math.round(1.2 * (await generalTransferManager.methods.modifyWhitelist(investor, now, now, now + 31556952, true).estimateGas({from: User})));
+        console.log(chalk.black.bgYellowBright(`---- Transaction executed: modifyWhitelist - Gas limit provided: ${GAS} ----`));
+        await generalTransferManager.methods.modifyWhitelist(investor, now, now, now + 31556952, true).send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+        .on('receipt', function(receipt){
+            console.log(chalk.green(`\nWhitelisting successful for ${investor}.`));
+        });
+    } catch (e) {
+        console.log(e);
+        console.log(chalk.red(`
+    *************************
+    Whitelist is not possible - Please make sure GeneralTransferManager is attached
+    *************************`));
+    }
+    backToMenu();
+}
+
 async function mintTokens() {
     mintingFinished = await securityToken.methods.mintingFinished().call({from: User});
     if (mintingFinished) {
-        console.log(`Minting has been permanently dissabled.`)
+        console.log(`Minting has been permanently disabled.`)
     } else {
         let _investor = readlineSync.question(chalk.yellow(`Enter the address to receive the tokens: `));
         let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
-        let GAS = Math.round(1.2 * (await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).estimateGas({from: User})));
-        console.log(chalk.black.bgYellowBright(`---- Transaction executed: mint - Gas limit provided: ${GAS} ----`));
-        await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-        .on('receipt', function(receipt){
-            console.log(chalk.green(`\nMinting Successful.`));
-        });
+        try {
+            let GAS = Math.round(1.2 * (await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).estimateGas({from: User})));
+            console.log(chalk.black.bgYellowBright(`---- Transaction executed: mint - Gas limit provided: ${GAS} ----`));
+            await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+            .on('receipt', function(receipt){
+                console.log(chalk.green(`\nMinting Successful.`));
+            });
+        } catch (e) {
+            console.log(e);
+            console.log(chalk.red(`
+    **************************
+    Minting was not successful - Please make sure beneficiary address has been whitelisted.
+    **************************`));
+        }
     }
     backToMenu()
 }
@@ -380,6 +412,11 @@ async function endMinting() {
 }
 
 // Helpers
+async function latestTime() {
+    let block = await web3.eth.getBlock('latest')
+    return block.timestamp;
+}
+
 async function showUserInfo(_user) {
     console.log(`
     *******************    User Information    ********************
@@ -390,7 +427,7 @@ async function showUserInfo(_user) {
 }
 
 async function polyBalance(_user) {
-    let balance = await polyToken.methods.balanceOf(_user).call();
+    let balance = await polyToken.methods.balanceOf(_user).call(({from: User}));
     return web3.utils.fromWei(balance);
 }
 

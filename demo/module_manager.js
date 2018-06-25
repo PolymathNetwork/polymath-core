@@ -258,7 +258,7 @@ async function iterateModules(_moduleType) {
 async function selectAction() {
     let options = ['Add a module','Pause / unpause a module','Remove a module','Change module budget','Mint tokens','Permanentally end minting','Exit'];
     let index = readlineSync.keyInSelect(options, chalk.yellow('What do you want to do?'), {cancel: false});
-    console.log("Selected:",options[index]);
+    console.log("\nSelected:",options[index]);
     switch (index) {
         case 0:
             await addModule();
@@ -284,13 +284,32 @@ async function selectAction() {
     displayModules()
 }
 
+function backToMenu() {
+    let options = ['Return to Menu','Exit'];
+    let index = readlineSync.keyInSelect(options, chalk.yellow('What do you want to do?'), {cancel: false});
+    switch (index) {
+        case 0:
+            break;
+        case 1:
+            process.exit();
+    }
+}
+
 // Actions
 async function addModule() {
-    console.log(`This option is not yet available.`)
+    console.log(chalk.red(`
+    *********************************
+    This option is not yet available.
+    *********************************`));
+    backToMenu();
 }
 
 async function pauseModule() {
-    console.log(`This option is not yet available.`)
+    console.log(chalk.red(`
+    *********************************
+    This option is not yet available.
+    *********************************`));
+    backToMenu();
 }
 
 async function removeModule() {
@@ -327,14 +346,19 @@ async function removeModule() {
         }
     }
     let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to remove?'), {cancel: false});
-    console.log("Selected:",options[index]);
-    let GAS = Math.round(1.5 * (await securityToken.methods.removeModule(modules[index].module.type,modules[index].index).estimateGas({from: User})));
+    console.log("\nSelected:",options[index]);
+    let GAS = Math.round(2 * (await securityToken.methods.removeModule(modules[index].module.type,modules[index].index).estimateGas({from: User})));
     console.log(chalk.black.bgYellowBright(`---- Transaction executed: removeModule - Gas limit provided: ${GAS} ----`));
     await securityToken.methods.removeModule(modules[index].module.type,modules[index].index).send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE });
+    backToMenu()
 }
 
 async function changeBudget() {
-    console.log(`This option is not yet available.`)
+    console.log(chalk.red(`
+    *********************************
+    This option is not yet available.
+    *********************************`));
+    backToMenu();
 }
 
 async function mintTokens() {
@@ -349,10 +373,15 @@ async function mintTokens() {
         let tx = await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE });
         (tx) ? console.log('Minting Successful') : console.log('Minting Failed');
     }
+    backToMenu()
 }
 
 async function endMinting() {
-    console.log(`This option is not yet available.`)
+    console.log(chalk.red(`
+    *********************************
+    This option is not yet available.
+    *********************************`));
+    backToMenu();
 }
 
 // Helpers

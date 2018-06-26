@@ -26,10 +26,21 @@ contract EtherDividendCheckpoint is ICheckpoint {
     // List of all dividends
     Dividend[] public dividends;
 
+    // Mapping from address to withholding tax as a percentage * 10**16
+    mapping (address => uint256) public withholdingTax;
+
+    // Total amount of ETH withheld per dividend
+    mapping (uint256 => uint256) public dividendWithheld;
+    // Total amount of withheld ETH withdrawn by issuer per dividend
+    mapping (uint256 => uint256) public dividendWithheldReclaimed;
+    // Total amount of ETH withheld per investor
+    mapping (address => uint256) public investorWithheld;
+
     event EtherDividendDeposited(address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity, uint256 _expiry, uint256 _amount, uint256 _totalSupply, uint256 _dividendIndex);
-    event EtherDividendClaimed(address indexed _payee, uint256 _dividendIndex, uint256 _amount);
+    event EtherDividendClaimed(address indexed _payee, uint256 _dividendIndex, uint256 _amount, uint256 _withheld);
     event EtherDividendReclaimed(address indexed _claimer, uint256 _dividendIndex, uint256 _claimedAmount);
-    event EtherDividendClaimFailed(address indexed _payee, uint256 _dividendIndex, uint256 _amount);
+    event EtherDividendClaimFailed(address indexed _payee, uint256 _dividendIndex, uint256 _amount, uint256 _withheld);
+    event EtherDividendWithholdingWithdrawn(address indexed _claimer, uint256 _dividendIndex, uint256 _withheldAmount);
 
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
@@ -55,6 +66,31 @@ contract EtherDividendCheckpoint is ICheckpoint {
     */
     function getInitFunction() public returns(bytes4) {
         return bytes4(0);
+    }
+
+    /**
+     * @notice Function to set withholding tax rates for investors
+     * @param _investors addresses of investor
+     * @param _withholding withholding tax for individual investors (multiplied by 10**16)
+     */
+    function setWithholding(address[] _investors, uint256[] _withholding) public onlyOwner {
+        require(_investors.length == _withholding.length);
+        for (uint256 i = 0; i < _investors.length; i++) {
+            require(_withholding[i] <= 10**18);
+            withholdingTax[_investors[i]] = _withholding[i];
+        }
+    }
+
+    /**
+     * @notice Function to set withholding tax rates for investors
+     * @param _investors addresses of investor
+     * @param _withholding withholding tax for all investors (multiplied by 10**16)
+     */
+    function setWithholdingFixed(address[] _investors, uint256 _withholding) public onlyOwner {
+        require(_withholding <= 10**18);
+        for (uint256 i = 0; i < _investors.length; i++) {
+            withholdingTax[_investors[i]] = _withholding;
+        }
     }
 
     /**
@@ -161,15 +197,18 @@ contract EtherDividendCheckpoint is ICheckpoint {
      * @param _dividendIndex Dividend to pay
      */
     function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
-        uint256 claim = calculateDividend(_dividendIndex, _payee);
+        (uint256 claim, uint256 withheld) = calculateDividend(_dividendIndex, _payee);
         _dividend.claimed[_payee] = true;
         _dividend.claimedAmount = claim.add(_dividend.claimedAmount);
-        if (claim > 0) {
-            if (_payee.send(claim)) {
-              emit EtherDividendClaimed(_payee, _dividendIndex, claim);
+        uint256 claimAfterWithheld = claim.sub(withheld);
+        if (claimAfterWithheld > 0) {
+            if (_payee.send(claimAfterWithheld)) {
+              dividendWithheld[_dividendIndex] = dividendWithheld[_dividendIndex].add(withheld);
+              investorWithheld[_payee] = investorWithheld[_payee].add(withheld);
+              emit EtherDividendClaimed(_payee, _dividendIndex, claim, withheld);
             } else {
               _dividend.claimed[_payee] = false;
-              emit EtherDividendClaimFailed(_payee, _dividendIndex, claim);
+              emit EtherDividendClaimFailed(_payee, _dividendIndex, claim, withheld);
             }
         }
     }
@@ -195,13 +234,15 @@ contract EtherDividendCheckpoint is ICheckpoint {
      * @param _payee Affected investor address
      * @return unit256
      */
-    function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256) {
-        Dividend storage dividend = dividends[_dividendIndex];
-        if (dividend.claimed[_payee]) {
-            return 0;
-        }
-        uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividend.checkpointId);
-        return balance.mul(dividend.amount).div(dividend.totalSupply);
+    function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256, uint256) {
+      Dividend storage dividend = dividends[_dividendIndex];
+      if (dividend.claimed[_payee]) {
+          return (0, 0);
+      }
+      uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividend.checkpointId);
+      uint256 claim = balance.mul(dividend.amount).div(dividend.totalSupply);
+      uint256 withheld = claim.mul(withholdingTax[_payee]).div(uint256(10**18));
+      return (claim, withheld);
     }
 
     /**
@@ -226,6 +267,17 @@ contract EtherDividendCheckpoint is ICheckpoint {
            }
        }
        return index;
+    }
+
+    /**
+     * @notice Allows issuer to withdraw withheld tax
+     * @param _dividendIndex Dividend to withdraw from
+     */
+    function withdrawWithholding(uint256 _dividendIndex) public onlyOwner {
+        uint256 remainingWithheld = dividendWithheld[_dividendIndex].sub(dividendWithheldReclaimed[_dividendIndex]);
+        dividendWithheldReclaimed[_dividendIndex] = dividendWithheld[_dividendIndex];
+        msg.sender.transfer(remainingWithheld);
+        emit EtherDividendWithholdingWithdrawn(msg.sender, _dividendIndex, remainingWithheld);
     }
 
     /**

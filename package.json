@@ -22,6 +22,7 @@
     "coverage": "scripts/coverage.sh",
     "flatten-modules": "sol-merger './contracts/modules/*/*.sol' ./flat/modules",
     "flatten-token": "sol-merger './contracts/tokens/*.sol' ./flat/tokens",
+    "flatten-mocks": "sol-merger './contracts/mocks/*.sol' ./flat/mocks",
     "flatten": "sol-merger './contracts/*.sol' ./flat",
     "st20generator": "node demo/ST20Generator"
   },

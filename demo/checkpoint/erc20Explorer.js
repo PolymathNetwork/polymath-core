@@ -153,7 +153,7 @@ switch(index){
           Visit faucet to grab more POLY tokens\n`
       ));
       process.exit(0);
-    } 
+    }
   break;
   case 6:
     //Create dividends
@@ -163,7 +163,7 @@ switch(index){
     if(parseInt(web3.utils.fromWei(issuerBalance, "ether")) >= parseInt(_erc20Dividend)) {
       let _checkpointId = readlineSync.question(`Enter the checkpoint on which you want to distribute dividend: `);
       let currentCheckpointId = await securityToken.methods.currentCheckpointId().call();
-      if (parseInt(currentCheckpointId) >= parseInt(_checkpointId)) { 
+      if (parseInt(currentCheckpointId) >= parseInt(_checkpointId)) {
         await createDividendWithCheckpoint(_erc20Dividend, _checkpointId);
       } else {
         console.log(chalk.red(`Future checkpoint are not allowed to create the dividends`));
@@ -174,8 +174,8 @@ switch(index){
           Visit faucet to grab POLY tokens\n`
       ));
       process.exit(0);
-    } 
-    
+    }
+
   break;
   case 7:
     //Create dividends
@@ -315,7 +315,7 @@ async function createDividendWithCheckpoint(erc20Dividend, _checkpointId) {
   let expiryTime = readlineSync.question('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = '+(time+duration.minutes(10))+' ): ');
   if(expiryTime == "") expiryTime = time+duration.minutes(10);
   let _dividendStatus = await erc20DividendCheckpoint.methods.getDividendIndex(_checkpointId).call();
-  if (_dividendStatus.length != 1) { 
+  if (_dividendStatus.length != 1) {
 
     await polyToken.methods.approve(erc20DividendCheckpoint._address, web3.utils.toWei(erc20Dividend,"ether")).send({from: Issuer, gas: 350000})
     .on('receipt', function(receipt) {
@@ -435,7 +435,7 @@ console.log("totalSupply is:",totalSupplyAt,"(Using totalSupplyAt - checkpoint",
 
 async function transferTokens(address, amount){
 
-let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address, Math.floor(Date.now()/1000), Math.floor(Date.now()/1000), Math.floor(Date.now()/1000 + 31536000), false).send({ from: Issuer, gas:2500000});
+let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address, Math.floor(Date.now()/1000), Math.floor(Date.now()/1000), Math.floor(Date.now()/1000 + 31536000), true).send({ from: Issuer, gas:2500000});
 
 try{
   await securityToken.methods.transfer(address,web3.utils.toWei(amount,"ether")).send({ from: Issuer, gas:250000})
@@ -479,7 +479,7 @@ if (isSTOAttached || _flag) {
   console.log("***************************\n")
   return;
 }
-let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000),false).send({ from: Issuer, gas:2500000});
+let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000),true).send({ from: Issuer, gas:2500000});
 
 try{
   await securityToken.methods.mint(address,web3.utils.toWei(amount,"ether")).send({ from: Issuer, gas:250000})

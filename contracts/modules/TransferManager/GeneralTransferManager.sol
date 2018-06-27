@@ -295,7 +295,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function isSTOAttached() internal view returns(bool) {
         address _sto;
-        (, _sto,) = ISecurityToken(securityToken).getModule(3, 0);
+        (, _sto) = ISecurityToken(securityToken).getModule(3, 0);
         if (_sto == address(0))
             return false;
         return true;

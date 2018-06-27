@@ -243,9 +243,14 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
+<<<<<<< Updated upstream
             await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000  });
 
+=======
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, decimals, tokenDetails, { from: token_owner });
+            console.log(tx);
+>>>>>>> Stashed changes
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
@@ -266,6 +271,7 @@ contract('CappedSTO', accounts => {
             LogAddModule.stopWatching();
         });
 
+<<<<<<< Updated upstream
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
@@ -993,6 +999,544 @@ contract('CappedSTO', accounts => {
              });
 
          });
+=======
+    //     it("Should intialize the auto attached modules", async () => {
+    //        let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
+    //        I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+
+    //        assert.notEqual(
+    //         I_GeneralTransferManager.address.valueOf(),
+    //         "0x0000000000000000000000000000000000000000",
+    //         "GeneralTransferManager contract was not deployed",
+    //        );
+
+    //        moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
+    //        I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
+
+    //        assert.notEqual(
+    //         I_GeneralPermissionManager.address.valueOf(),
+    //         "0x0000000000000000000000000000000000000000",
+    //         "GeneralDelegateManager contract was not deployed",
+    //        );
+    //     });
+
+    //     it("Should fail to launch the STO due to rate is 0", async () => {
+    //         let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+    //         let errorThrown = false;
+    //         try {
+    //         const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
+    //         } catch(error) {
+    //             console.log(`Tx Failed because of rate is ${0}. Test Passed Successfully`);
+    //             errorThrown = true;
+    //             ensureException(error);
+    //         }
+    //         assert.ok(errorThrown, message);
+    //     });
+
+    //     it("Should fail to launch the STO due to startTime > endTime", async () => {
+    //         let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+    //         let errorThrown = false;
+    //         try {
+    //         const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
+    //         } catch(error) {
+    //             errorThrown = true;
+    //             console.log(`Tx Failed because of startTime is greater than endTime. Test Passed Successfully`);
+    //             ensureException(error);
+    //         }
+    //         assert.ok(errorThrown, message);
+    //     });
+
+    //     it("Should fail to launch the STO due to cap is of 0 securityToken", async () => {
+    //         let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+    //         let errorThrown = false;
+    //         try {
+    //         const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
+    //         } catch(error) {
+    //             console.log(`Tx Failed because the Cap is equal to ${0}. Test Passed Successfully`);
+    //             errorThrown = true;
+    //             ensureException(error);
+    //         }
+    //         assert.ok(errorThrown, message);
+    //     });
+
+
+    //     it("Should successfully attach the STO factory with the security token", async () => {
+    //         let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+    //         const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
+
+    //         assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
+    //         assert.equal(
+    //             web3.utils.toAscii(tx.logs[2].args._name)
+    //             .replace(/\u0000/g, ''),
+    //             "CappedSTO",
+    //             "CappedSTOFactory module was not added"
+    //         );
+    //         I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
+    //     });
+    // });
+
+    // describe("verify the data of STO", async () => {
+
+    //     it("Should verify the configuration of the STO", async() => {
+    //         assert.equal(
+    //             await I_CappedSTO.startTime.call(),
+    //             startTime,
+    //             "STO Configuration doesn't set as expected"
+    //         );
+    //         assert.equal(
+    //             await I_CappedSTO.endTime.call(),
+    //             endTime,
+    //             "STO Configuration doesn't set as expected"
+    //         );
+    //         assert.equal(
+    //             (await I_CappedSTO.cap.call()).toNumber(),
+    //             cap,
+    //             "STO Configuration doesn't set as expected"
+    //         );
+    //         assert.equal(
+    //             await I_CappedSTO.rate.call(),
+    //             rate,
+    //             "STO Configuration doesn't set as expected"
+    //         );
+    //         assert.equal(
+    //             await I_CappedSTO.fundraiseType.call(),
+    //             fundRaiseType,
+    //             "STO Configuration doesn't set as expected"
+    //         );
+    //     });
+>>>>>>> Stashed changes
     });
+    // describe("Buy tokens", async() => {
+
+    //     it("Should buy the tokens -- failed due to startTime is greater than Current time", async () => {
+    //         let errorThrown = false;
+    //         try {
+    //             await web3.eth.sendTransaction({
+    //                 from: account_investor1,
+    //                 to: I_CappedSTO.address,
+    //                 value: web3.utils.toWei('1', 'ether')
+    //               });
+    //         } catch(error) {
+    //             console.log(`Failed due to startTime is greater than Current time`);
+    //             errorThrown = true;
+    //             ensureException(error);
+    //         }
+    //         assert.ok(errorThrown, message);
+    //     });
+
+    //     it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
+    //         let errorThrown = false;
+    //         try {
+    //             await web3.eth.sendTransaction({
+    //                 from: account_investor1,
+    //                 to: I_CappedSTO.address,
+    //                 value: web3.utils.toWei('1', 'ether')
+    //               });
+    //         } catch(error) {
+    //             console.log(`Failed because investor doesn't present in the whitelist`);
+    //             ensureException(error);
+    //             errorThrown = true;
+    //         }
+    //         assert.ok(errorThrown, message);
+    //     });
+
+    //     it("Should Buy the tokens", async() => {
+    //         balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
+    //         // Add the Investor in to the whitelist
+
+    //         let tx = await I_GeneralTransferManager.modifyWhitelist(
+    //             account_investor1,
+    //             fromTime,
+    //             toTime,
+    //             {
+    //                 from: account_issuer,
+    //                 gas: 500000
+    //             });
+
+    //         assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
+
+    //         // Jump time
+    //         await increaseTime(duration.days(1));
+    //         // Fallback transaction
+    //         await web3.eth.sendTransaction({
+    //             from: account_investor1,
+    //             to: I_CappedSTO.address,
+    //             gas: 210000,
+    //             value: web3.utils.toWei('1', 'ether')
+    //           });
+
+    //         assert.equal(
+    //             (await I_CappedSTO.fundsRaised.call())
+    //             .dividedBy(new BigNumber(10).pow(18))
+    //             .toNumber(),
+    //             1
+    //         );
+
+    //         assert.equal(await I_CappedSTO.getNumberInvestors.call(), 1);
+
+    //         assert.equal(
+    //             (await I_SecurityToken.balanceOf(account_investor1))
+    //             .dividedBy(new BigNumber(10).pow(18))
+    //             .toNumber(),
+    //             1000
+    //         );
+    //     });
+
+    //     it("Verification of the event Token Purchase", async() => {
+    //         let TokenPurchase = I_CappedSTO.allEvents();
+    //         let log = await new Promise(function(resolve, reject) {
+    //             TokenPurchase.watch(function(error, log){ resolve(log);})
+    //         });
+
+    //         assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
+    //         assert.equal(
+    //             (log.args.amount)
+    //             .dividedBy(new BigNumber(10).pow(18))
+    //             .toNumber(),
+    //             1000,
+    //             "Wrong No. token get dilivered"
+    //         );
+    //         TokenPurchase.stopWatching();
+    //     });
+
+    //     it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async() => {
+    //         let tx = await I_GeneralTransferManager.modifyWhitelist(
+    //             account_investor2,
+    //             fromTime,
+    //             toTime + duration.days(20),
+    //             {
+    //                 from: account_issuer,
+    //                 gas: 500000
+    //             });
+
+    //         assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
+
+    //          // Fallback transaction
+    //          await web3.eth.sendTransaction({
+    //             from: account_investor2,
+    //             to: I_CappedSTO.address,
+    //             gas: 210000,
+    //             value: web3.utils.toWei('9', 'ether')
+    //           });
+
+    //           assert.equal(
+    //             (await I_CappedSTO.fundsRaised.call())
+    //             .dividedBy(new BigNumber(10).pow(18))
+    //             .toNumber(),
+    //             10
+    //         );
+
+    //         assert.equal(await I_CappedSTO.getNumberInvestors.call(), 2);
+
+    //         assert.equal(
+    //             (await I_SecurityToken.balanceOf(account_investor2))
+    //             .dividedBy(new BigNumber(10).pow(18))
+    //             .toNumber(),
+    //             9000
+    //         );
+    //         try {
+    //             // Fallback transaction
+    //          await web3.eth.sendTransaction({
+    //             from: account_investor2,
+    //             to: I_CappedSTO.address,
+    //             gas: 210000,
+    //             value: web3.utils.toWei('1', 'ether')
+    //           });
+    //         } catch(error) {
+    //             console.log(`failed Because of capped reached`);
+    //             ensureException(error);
+    //         }
+    //     });
+
+    //     it("Should failed at the time of buying the tokens -- Because STO get expired", async() => {
+    //         await increaseTime(duration.days(17)); // increased beyond the end time of the STO
+    //         let errorThrown = false;
+    //         try {
+    //             // Fallback transaction
+    //          await web3.eth.sendTransaction({
+    //             from: account_investor2,
+    //             to: I_CappedSTO.address,
+    //             gas: 210000,
+    //             value: web3.utils.toWei('1', 'ether')
+    //           });
+    //         } catch(error) {
+    //             console.log(`failed Because STO get expired reached`);
+    //             errorThrown = true;
+    //             ensureException(error);
+    //         }
+    //         assert.ok(errorThrown, message);
+    //     });
+
+    //     it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {
+    //         const newBalance = await web3.eth.getBalance(account_fundsReceiver);
+    //         //console.log("WWWW",newBalance,await I_CappedSTO.fundsRaised.call(),balanceOfReceiver);
+    //         let op = (BigNumber(newBalance).minus(balanceOfReceiver)).toNumber();
+    //         assert.equal(
+    //             (await I_CappedSTO.fundsRaised.call()).toNumber(),
+    //             op,
+    //             "Somewhere raised money get stolen or sent to wrong wallet"
+    //         );
+    //     });
+
+    // });
+
+    // describe("Test Cases for an STO of fundraise type POLY", async() => {
+
+    //     describe("Launch a new SecurityToken", async() => {
+
+    //         it("POLY: Should register the ticker before the generation of the security token", async () => {
+    //             let tx = await I_TickerRegistry.registerTicker(token_owner, P_symbol, P_name, swarmHash, { from : token_owner });
+    //             assert.equal(tx.logs[0].args._owner, token_owner);
+    //             assert.equal(tx.logs[0].args._symbol, P_symbol);
+    //         });
+
+    //         it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
+    //             let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_decimals, P_tokenDetails, { from: token_owner });
+
+    //             // Verify the successful generation of the security token
+    //             assert.equal(tx.logs[1].args._ticker, P_symbol, "SecurityToken doesn't get deployed");
+
+    //             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+
+    //             const LogAddModule = await I_SecurityToken.allEvents();
+    //             const log = await new Promise(function(resolve, reject) {
+    //                 LogAddModule.watch(function(error, log){ resolve(log);});
+    //             });
+
+    //             // Verify that GeneralPermissionManager module get added successfully or not
+    //             assert.equal(log.args._type.toNumber(), permissionManagerKey);
+    //             assert.equal(
+    //                 web3.utils.toAscii(log.args._name)
+    //                 .replace(/\u0000/g, ''),
+    //                 "GeneralPermissionManager"
+    //             );
+    //             LogAddModule.stopWatching();
+    //         });
+
+    //         it("POLY: Should intialize the auto attached modules", async () => {
+    //             let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
+    //             I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+
+    //             assert.notEqual(
+    //              I_GeneralTransferManager.address.valueOf(),
+    //              "0x0000000000000000000000000000000000000000",
+    //              "GeneralTransferManager contract was not deployed",
+    //             );
+
+    //             moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
+    //             I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
+
+    //             assert.notEqual(
+    //              I_GeneralPermissionManager.address.valueOf(),
+    //              "0x0000000000000000000000000000000000000000",
+    //              "GeneralDelegateManager contract was not deployed",
+    //             );
+    //          });
+
+    //          it("POLY: Should successfully attach the STO factory with the security token", async () => {
+    //             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [P_startTime, P_endTime, P_cap, P_rate, P_fundRaiseType, I_PolyFaucet.address, account_fundsReceiver]);
+
+    //             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 2500000 });
+
+    //             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
+    //             assert.equal(
+    //                 web3.utils.toAscii(tx.logs[2].args._name)
+    //                 .replace(/\u0000/g, ''),
+    //                 "CappedSTO",
+    //                 "CappedSTOFactory module was not added"
+    //             );
+    //             I_CappedSTO = CappedSTO.at(tx.logs[2].args._module);
+    //         });
+
+    //     });
+
+    //     describe("verify the data of STO", async () => {
+
+    //         it("Should verify the configuration of the STO", async() => {
+    //             assert.equal(
+    //                 (await I_CappedSTO.startTime.call()).toNumber(),
+    //                 P_startTime,
+    //                 "STO Configuration doesn't set as expected"
+    //             );
+    //             assert.equal(
+    //                 (await I_CappedSTO.endTime.call()).toNumber(),
+    //                 P_endTime,
+    //                 "STO Configuration doesn't set as expected"
+    //             );
+    //             assert.equal(
+    //                 (await I_CappedSTO.cap.call()).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+    //                 P_cap.dividedBy(new BigNumber(10).pow(18)),
+    //                 "STO Configuration doesn't set as expected"
+    //             );
+    //             assert.equal(
+    //                 await I_CappedSTO.rate.call(),
+    //                 P_rate,
+    //                 "STO Configuration doesn't set as expected"
+    //             );
+    //             assert.equal(
+    //                 await I_CappedSTO.fundraiseType.call(),
+    //                 P_fundRaiseType,
+    //                 "STO Configuration doesn't set as expected"
+    //             );
+    //         });
+    //     });
+
+    //     describe("Buy tokens", async() => {
+
+    //         it("Should Buy the tokens", async() => {
+    //             // Add the Investor in to the whitelist
+
+    //             await I_PolyFaucet.getTokens((10000 * Math.pow(10, 18)), account_investor1);
+
+    //             assert.equal(
+    //                 (await I_PolyFaucet.balanceOf(account_investor1))
+    //                 .dividedBy(new BigNumber(10).pow(18))
+    //                 .toNumber(),
+    //                 10000,
+    //                 "Tokens are not transfered properly"
+    //             );
+
+    //             let tx = await I_GeneralTransferManager.modifyWhitelist(
+    //                 account_investor1,
+    //                 P_fromTime,
+    //                 P_toTime,
+    //                 {
+    //                     from: account_issuer,
+    //                     gas: 500000
+    //                 });
+
+    //             assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
+
+    //             // Jump time
+    //             await increaseTime(duration.days(17));
+
+    //             await I_PolyFaucet.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
+
+    //             // buyTokensWithPoly transaction
+    //             await I_CappedSTO.buyTokensWithPoly(
+    //                 (1000 * Math.pow(10, 18)),
+    //                 {
+    //                     from : account_investor1,
+    //                     gas: 5000000
+    //                 }
+    //             );
+
+    //             assert.equal(
+    //                 (await I_CappedSTO.fundsRaised.call())
+    //                 .dividedBy(new BigNumber(10).pow(18))
+    //                 .toNumber(),
+    //                 1000
+    //             );
+
+    //             assert.equal(await I_CappedSTO.getNumberInvestors.call(), 1);
+
+    //             assert.equal(
+    //                 (await I_SecurityToken.balanceOf(account_investor1))
+    //                 .dividedBy(new BigNumber(10).pow(18))
+    //                 .toNumber(),
+    //                 5000
+    //             );
+    //         });
+
+    //         it("Verification of the event Token Purchase", async() => {
+    //             let TokenPurchase = I_CappedSTO.allEvents();
+    //             let log = await new Promise(function(resolve, reject) {
+    //                 TokenPurchase.watch(function(error, log){ resolve(log);})
+    //             });
+
+    //             assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
+    //             assert.equal(
+    //                 (log.args.amount)
+    //                 .dividedBy(new BigNumber(10).pow(18))
+    //                 .toNumber(),
+    //                 5000,
+    //                 "Wrong No. token get dilivered"
+    //             );
+    //             TokenPurchase.stopWatching();
+    //         });
+
+    //         it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async() => {
+    //             let tx = await I_GeneralTransferManager.modifyWhitelist(
+    //                 account_investor2,
+    //                 P_fromTime,
+    //                 P_toTime + duration.days(20),
+    //                 {
+    //                     from: account_issuer,
+    //                     gas: 500000
+    //                 });
+
+    //             assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
+
+    //             await I_PolyFaucet.getTokens((10000 * Math.pow(10, 18)), account_investor2);
+
+    //             await I_PolyFaucet.approve(I_CappedSTO.address, (9000 * Math.pow(10, 18)), { from: account_investor2});
+
+    //             // buyTokensWithPoly transaction
+    //             await I_CappedSTO.buyTokensWithPoly(
+    //                 (9000 * Math.pow(10, 18)),
+    //                 {from : account_investor2, gas: 5000000 }
+    //             );
+
+    //               assert.equal(
+    //                 (await I_CappedSTO.fundsRaised.call())
+    //                 .dividedBy(new BigNumber(10).pow(18))
+    //                 .toNumber(),
+    //                 10000
+    //             );
+
+    //             assert.equal(await I_CappedSTO.getNumberInvestors.call(), 2);
+
+    //             assert.equal(
+    //                 (await I_SecurityToken.balanceOf(account_investor2))
+    //                 .dividedBy(new BigNumber(10).pow(18))
+    //                 .toNumber(),
+    //                 45000
+    //             );
+    //             let errorThrown = false;
+    //             try {
+
+    //             await I_PolyFaucet.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
+    //             // buyTokensWithPoly transaction
+    //             await I_CappedSTO.buyTokensWithPoly(
+    //                 (1000 * Math.pow(10, 18)),
+    //                 {from : account_investor1, gas: 5000000 }
+    //             );
+    //             } catch(error) {
+    //                 console.log(`failed Because of capped reached`);
+    //                 errorThrown = true;
+    //                 ensureException(error);
+    //             }
+    //             assert.ok(errorThrown, message);
+    //         });
+
+    //         it("Should failed at the time of buying the tokens -- Because STO get expired", async() => {
+    //             await increaseTime(duration.days(31)); // increased beyond the end time of the STO
+    //             let errorThrown = false;
+    //             try {
+    //                 await I_PolyFaucet.approve(I_CappedSTO.address, (1000 * Math.pow(10, 18)), { from: account_investor1});
+    //                 // buyTokensWithPoly transaction
+    //                 await I_CappedSTO.buyTokensWithPoly(
+    //                     (1000 * Math.pow(10, 18)),
+    //                     {from : account_investor1, gas: 5000000 }
+    //                 );
+    //             } catch(error) {
+    //                 console.log(`failed Because STO get expired reached`);
+    //                 errorThrown = true;
+    //                 ensureException(error);
+    //             }
+    //             assert.ok(errorThrown, message);
+    //         });
+
+    //         it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {
+    //             const balanceRaised = await I_PolyFaucet.balanceOf.call(account_fundsReceiver);
+    //             assert.equal(
+    //                 (await I_CappedSTO.fundsRaised.call()).toNumber(),
+    //                 balanceRaised,
+    //                 "Somewhere raised money get stolen or sent to wrong wallet"
+    //             );
+    //         });
+
+    //      });
+    //});
 
 });

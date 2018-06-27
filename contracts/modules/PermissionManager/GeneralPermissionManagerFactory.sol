@@ -37,9 +37,12 @@ contract GeneralPermissionManagerFactory is IModuleFactory {
         return 1;
     }
 
+<<<<<<< Updated upstream
     /**
      * @notice Get the name of the Module
      */
+=======
+>>>>>>> Stashed changes
     function getName() public view returns(bytes32) {
         return "GeneralPermissionManager";
     }

@@ -467,6 +467,13 @@ contract('EtherDividendCheckpoint', accounts => {
             assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), web3.utils.toWei('0.2', 'ether'))
         });
 
+        it("No more withholding tax to withdraw", async() => {
+            let issuerBalance = BigNumber(await web3.eth.getBalance(token_owner));
+            await I_EtherDividendCheckpoint.withdrawWithholding(0, {from: token_owner, gasPrice: 0});
+            let issuerBalanceAfter = BigNumber(await web3.eth.getBalance(token_owner));
+            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), web3.utils.toWei('0', 'ether'))
+        });
+
         it("Buy some tokens for account_temp (1 ETH)", async() => {
             // Add the Investor in to the whitelist
 
@@ -524,6 +531,13 @@ contract('EtherDividendCheckpoint', accounts => {
                 errorThrown = true;
             }
             assert.ok(errorThrown, message);
+        });
+
+        it("Still no more withholding tax to withdraw", async() => {
+            let issuerBalance = BigNumber(await web3.eth.getBalance(token_owner));
+            await I_EtherDividendCheckpoint.withdrawWithholding(0, {from: token_owner, gasPrice: 0});
+            let issuerBalanceAfter = BigNumber(await web3.eth.getBalance(token_owner));
+            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), web3.utils.toWei('0', 'ether'))
         });
 
         it("Buy some tokens for account_investor3 (7 ETH)", async() => {
@@ -586,6 +600,13 @@ contract('EtherDividendCheckpoint', accounts => {
             assert.equal(investor3BalanceAfter1.sub(investor3Balance).toNumber(), web3.utils.toWei('7', 'ether'));
         });
 
+        it("Still no more withholding tax to withdraw", async() => {
+            let issuerBalance = BigNumber(await web3.eth.getBalance(token_owner));
+            await I_EtherDividendCheckpoint.withdrawWithholding(0, {from: token_owner, gasPrice: 0});
+            let issuerBalanceAfter = BigNumber(await web3.eth.getBalance(token_owner));
+            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), web3.utils.toWei('0', 'ether'))
+        });
+
         it("should investor 3 claims dividend", async() => {
             let errorThrown = false;
             try {
@@ -611,6 +632,13 @@ contract('EtherDividendCheckpoint', accounts => {
             assert.equal(investor3BalanceAfter2.sub(investor3BalanceAfter1).toNumber(), 0);
             //Check fully claimed
             assert.equal((await I_EtherDividendCheckpoint.dividends(2))[5].toNumber(), web3.utils.toWei('11', 'ether'));
+        });
+
+        it("Issuer withdraws new withholding tax", async() => {
+            let issuerBalance = BigNumber(await web3.eth.getBalance(token_owner));
+            await I_EtherDividendCheckpoint.withdrawWithholding(2, {from: token_owner, gasPrice: 0});
+            let issuerBalanceAfter = BigNumber(await web3.eth.getBalance(token_owner));
+            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), web3.utils.toWei('0.6', 'ether'))
         });
 
         it("Investor 2 transfers 1 ETH of his token balance to investor 1", async() => {

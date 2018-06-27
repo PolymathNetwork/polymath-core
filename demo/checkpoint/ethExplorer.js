@@ -195,7 +195,7 @@ async function createDividends(ethDividend){
     etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
     etherDividendCheckpoint.setProvider(web3.currentProvider);
   }else{
-    await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false).send({ from: Issuer, gas:2500000 })
+    await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0).send({ from: Issuer, gas:2500000 })
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -247,7 +247,7 @@ async function createDividendWithCheckpoint(ethDividend, _checkpointId) {
       etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
       etherDividendCheckpoint.setProvider(web3.currentProvider);
     }else{
-      await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false).send({ from: Issuer, gas:2500000 })
+      await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0).send({ from: Issuer, gas:2500000 })
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...
@@ -402,9 +402,19 @@ async function transferTokens(address, amount){
 }
 
 async function mintTokens(address, amount){
-
+  let isSTOAttached;
   let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000),false).send({ from: Issuer, gas:2500000});
-
+  let _flag = await securityToken.methods.finishedIssuerMinting().call();
+  await securityToken.methods.getModule(3, 0).call({from: Issuer}, function(error, result) {
+    isSTOAttached = result[1] == "0x0000000000000000000000000000000000000000"? false : true;
+  });
+  if (isSTOAttached || _flag) {
+    console.log("\n");
+    console.log("***************************")
+    console.log("Minting is Finished");
+    console.log("***************************\n")
+    return;
+  }
   try{
     await securityToken.methods.mint(address,web3.utils.toWei(amount,"ether")).send({ from: Issuer, gas:250000})
     .on('transactionHash', function(hash){

@@ -600,9 +600,9 @@ async function step_STO_Launch(){
         })
         .on('error', console.error);
       }
-      let GAS = Math.round(1.2 * (await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0, false).estimateGas({ from: Issuer })));
+      let GAS = Math.round(1.2 * (await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0).estimateGas({ from: Issuer })));
       console.log(chalk.black.bgYellowBright(`---- Transaction executed: addModule - Gas limit provided: ${GAS} ----`));
-      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0, false).send({from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0).send({from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...

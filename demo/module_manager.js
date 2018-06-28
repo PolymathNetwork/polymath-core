@@ -379,13 +379,17 @@ async function whitelist() {
 }
 
 async function mintTokens() {
-    mintingFinished = await securityToken.methods.mintingFinished().call({from: User});
-    if (mintingFinished) {
+    let isSTOAttached;
+    let _flag = await securityToken.methods.finishedIssuerMinting().call();
+    await securityToken.methods.getModule(3, 0).call({from: Issuer}, function(error, result) {
+        isSTOAttached = result[1] == "0x0000000000000000000000000000000000000000"? false : true;
+    });
+    if (isSTOAttached || _flag) {
         console.log(chalk.red(`
-    ***********************
-    Minting is not possible - Minting has been permanently disabled by issuer
-    ***********************`));
-    } else {
+        ***********************
+        Minting is not possible - Minting has been permanently disabled by issuer
+        ***********************`));
+    }else {
         let _investor = readlineSync.question(chalk.yellow(`Enter the address to receive the tokens: `));
         let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
         try {

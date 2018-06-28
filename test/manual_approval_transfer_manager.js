@@ -325,7 +325,7 @@ contract('ManualApprovalTransferManager', accounts => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             try {
-                const tx = await I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
+                const tx = await I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
             } catch(error) {
                 console.log(`       tx -> failed because Token is not paid`.grey);
                 ensureException(error);
@@ -337,7 +337,7 @@ contract('ManualApprovalTransferManager', accounts => {
         it("Should successfully attach the General permission manager factory with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
-            const tx = await I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
             assert.equal(tx.logs[3].args._type.toNumber(), transferManagerKey, "Manual Approval Transfer Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
@@ -350,7 +350,7 @@ contract('ManualApprovalTransferManager', accounts => {
         });
 
         it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, false, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "ManualApprovalTransferManager doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[2].args._name), "ManualApprovalTransferManager", "ManualApprovalTransferManager module was not added");
             I_ManualApprovalTransferManager = ManualApprovalTransferManager.at(tx.logs[2].args._module);
@@ -623,7 +623,7 @@ contract('ManualApprovalTransferManager', accounts => {
                 ]
             }, [1]);
 
-            const tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesCountTM, 0, 0, false, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesCountTM, 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
             let name = web3.utils.toUtf8(tx.logs[2].args._name);
             assert.equal(name, "CountTransferManager", "CountTransferManager module was not added");

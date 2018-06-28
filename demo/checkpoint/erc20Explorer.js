@@ -222,7 +222,7 @@ if(erc20DividendCheckpointAddress != "0x0000000000000000000000000000000000000000
   erc20DividendCheckpoint.setProvider(web3.currentProvider);
 }else{
   try {
-    await securityToken.methods.addModule(erc20DividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false).send({ from: Issuer, gas:2500000 })
+    await securityToken.methods.addModule(erc20DividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0).send({ from: Issuer, gas:2500000 })
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -287,7 +287,7 @@ async function createDividendWithCheckpoint(erc20Dividend, _checkpointId) {
     erc20DividendCheckpoint.setProvider(web3.currentProvider);
   }else{
     try {
-      await securityToken.methods.addModule(erc20DividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false).send({ from: Issuer, gas:2500000 })
+      await securityToken.methods.addModule(erc20DividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0).send({ from: Issuer, gas:2500000 })
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...
@@ -467,6 +467,18 @@ try{
 
 async function mintTokens(address, amount){
 
+let isSTOAttached;
+let _flag = await securityToken.methods.finishedIssuerMinting().call();
+await securityToken.methods.getModule(3, 0).call({from: Issuer}, function(error, result) {
+  isSTOAttached = result[1] == "0x0000000000000000000000000000000000000000"? false : true;
+});
+if (isSTOAttached || _flag) {
+  console.log("\n");
+  console.log("***************************")
+  console.log("Minting is Finished");
+  console.log("***************************\n")
+  return;
+}
 let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000),true).send({ from: Issuer, gas:2500000});
 
 try{

@@ -529,7 +529,6 @@ contract('SecurityTokenRegistry', accounts => {
                     bytesSTO,
                     (1000 * Math.pow(10, 18)),
                     (1000 * Math.pow(10, 18)),
-                    true,
                     {
                         from: token_owner,
                         gas: 26000000
@@ -559,7 +558,6 @@ contract('SecurityTokenRegistry', accounts => {
                 bytesSTO,
                 (1000 * Math.pow(10, 18)),
                 (1000 * Math.pow(10, 18)),
-                true,
                 {
                     from: token_owner,
                     gas: 2500000

@@ -11,6 +11,8 @@ if (typeof web3 !== 'undefined') {
   web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 }
 
+let DEFAULT_GAS_PRICE = 80000000000;
+
 // Load Contract artifacts
 var contracts = require("./helpers/contract_addresses");
 let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
@@ -39,7 +41,7 @@ try {
   return;
 }
 
-// Init user variables
+// Init user address variables
 let Issuer;
 let User;
 
@@ -123,7 +125,7 @@ async function welcome() {
     User = readlineSync.question(chalk.yellow(`\nEnter your public address to log in as an investor. Otherwise, press 'Enter' to log in as the token issuer: `));
     if (User == "") User = Issuer;
 
-    await showUserInfo();
+    await showUserInfo(User);
 
     while (!validSymbol) {
         await inputSymbol();
@@ -159,17 +161,6 @@ async function inputSymbol() {
         await showTokenInfo()
         return;
     }
-}
-
-// Display user information
-async function showUserInfo() {
-    // User details
-    console.log(`
-        *******************    User Information    ********************
-        - Address:           ${User}
-        - POLY balance:      ${await polyBalance(User)}
-        - ETH balance:       ${web3.utils.fromWei(await web3.eth.getBalance(User))}
-    `);
 }
 
 // Display token and STO information
@@ -272,12 +263,16 @@ async function invest() {
             if (parseInt(userBalance) >= parseInt(cost)) {
                 let allowance = await polyToken.methods.allowance(STOAddress, User).call({from: User});
                 if (allowance < costWei) {
-                    await polyToken.methods.approve(STOAddress, costWei).send({from: User, gas:2000000, gasPrice: 80000000000 })
+                    let GAS = Math.round(1.2 * (await polyToken.methods.approve(STOAddress, costWei).estimateGas({from: User})));
+                    console.log(chalk.black.bgYellowBright(`---- Transaction executed: approve - Gas limit provided: ${GAS} ----`));
+                    await polyToken.methods.approve(STOAddress, costWei).send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
                     .on('receipt', function(receipt) {
                     })
                     .on('error', console.error);
                 }
-                await cappedSTO.methods.buyTokensWithPoly(costWei).send({from: User, gas:2000000, gasPrice: 80000000000 })
+                let GAS = Math.round(1.2 * (await cappedSTO.methods.buyTokensWithPoly(costWei).estimateGas({from: User})));
+                console.log(chalk.black.bgYellowBright(`---- Transaction executed: buyTokensWithPoly - Gas limit provided: ${GAS} ----`));
+                await cappedSTO.methods.buyTokensWithPoly(costWei).send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
                 .on('transactionHash', function(hash){
                     console.log(`
         Your transaction is being processed. Please wait...
@@ -309,7 +304,9 @@ async function invest() {
             return;
         }
     } else {
-        await cappedSTO.methods.buyTokens(User).send({ from: User, value:web3.utils.toWei(cost.toString()), gas:2500000, gasPrice:80000000000})
+        let GAS = Math.round(1.2 * (await cappedSTO.methods.buyTokens(User).estimateGas({from: User, value:web3.utils.toWei(cost.toString())})));
+        console.log(chalk.black.bgYellowBright(`---- Transaction executed: buyTokens - Gas limit provided: ${GAS} ----`));
+        await cappedSTO.methods.buyTokens(User).send({ from: User, value:web3.utils.toWei(cost.toString()), gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
         .on('transactionHash', function(hash){
             console.log(`
         Your transaction is being processed. Please wait...
@@ -336,6 +333,15 @@ async function invest() {
 }
 
 // Helpers
+async function showUserInfo(_user) {
+    console.log(`
+        *******************    User Information    ********************
+        - Address:           ${_user}
+        - POLY balance:      ${await polyBalance(_user)}
+        - ETH balance:       ${web3.utils.fromWei(await web3.eth.getBalance(_user))}
+    `);
+}
+
 async function polyBalance(_user) {
     let balance = await polyToken.methods.balanceOf(_user).call();
     return web3.utils.fromWei(balance);

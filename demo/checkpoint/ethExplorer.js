@@ -145,7 +145,7 @@ async function start_explorer(){
       let _ethDividend =  readlineSync.question('How much eth would you like to distribute to token holders?: ');
       let _checkpointId = readlineSync.question(`Enter the checkpoint on which you want to distribute dividend: `);
       let currentCheckpointId = await securityToken.methods.currentCheckpointId().call();
-      if (currentCheckpointId >= _checkpointId) { 
+      if (currentCheckpointId >= _checkpointId) {
         await createDividendWithCheckpoint(_ethDividend, _checkpointId);
       } else {
         console.log(`Future checkpoint are not allowed to create the dividends`);
@@ -195,7 +195,7 @@ async function createDividends(ethDividend){
     etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
     etherDividendCheckpoint.setProvider(web3.currentProvider);
   }else{
-    await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false).send({ from: Issuer, gas:2500000 })
+    await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0).send({ from: Issuer, gas:2500000 })
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -247,7 +247,7 @@ async function createDividendWithCheckpoint(ethDividend, _checkpointId) {
       etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
       etherDividendCheckpoint.setProvider(web3.currentProvider);
     }else{
-      await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false).send({ from: Issuer, gas:2500000 })
+      await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0).send({ from: Issuer, gas:2500000 })
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...
@@ -261,18 +261,18 @@ async function createDividendWithCheckpoint(ethDividend, _checkpointId) {
           Review it on Etherscan.
           TxHash: ${receipt.transactionHash}\n`
         );
-  
+
         etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, receipt.events.LogModuleAdded.returnValues._module);
         etherDividendCheckpoint.setProvider(web3.currentProvider);
       })
       .on('error', console.error);
     }
-  
+
     let time = (await web3.eth.getBlock('latest')).timestamp;
     let expiryTime = readlineSync.question('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = '+(time+duration.minutes(10))+' ): ');
     if(expiryTime == "") expiryTime = time+duration.minutes(10);
     let _dividendStatus = await etherDividendCheckpoint.methods.getDividendIndex(_checkpointId).call();
-    if (_dividendStatus.length != 1) { 
+    if (_dividendStatus.length != 1) {
     //Send eth dividends
       await etherDividendCheckpoint.methods.createDividendWithCheckpoint(time, expiryTime, _checkpointId)
       .send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas:2500000 })
@@ -371,7 +371,7 @@ async function exploreTotalSupply(checkpoint){
 
 async function transferTokens(address, amount){
 
-  let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address, Math.floor(Date.now()/1000), Math.floor(Date.now()/1000), Math.floor(Date.now()/1000 + 31536000), false).send({ from: Issuer, gas:2500000});
+  let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address, Math.floor(Date.now()/1000), Math.floor(Date.now()/1000), Math.floor(Date.now()/1000 + 31536000), true).send({ from: Issuer, gas:2500000});
 
   try{
     await securityToken.methods.transfer(address,web3.utils.toWei(amount,"ether")).send({ from: Issuer, gas:250000})
@@ -402,9 +402,19 @@ async function transferTokens(address, amount){
 }
 
 async function mintTokens(address, amount){
-
-  let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000),false).send({ from: Issuer, gas:2500000});
-
+  let isSTOAttached;
+  let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000),true).send({ from: Issuer, gas:2500000});
+  let _flag = await securityToken.methods.finishedIssuerMinting().call();
+  await securityToken.methods.getModule(3, 0).call({from: Issuer}, function(error, result) {
+    isSTOAttached = result[1] == "0x0000000000000000000000000000000000000000"? false : true;
+  });
+  if (isSTOAttached || _flag) {
+    console.log("\n");
+    console.log("***************************")
+    console.log("Minting is Finished");
+    console.log("***************************\n")
+    return;
+  }
   try{
     await securityToken.methods.mint(address,web3.utils.toWei(amount,"ether")).send({ from: Issuer, gas:250000})
     .on('transactionHash', function(hash){

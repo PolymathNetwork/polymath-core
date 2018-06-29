@@ -48,13 +48,13 @@ contract SecurityToken is ISecurityToken {
     mapping (address => Checkpoint[]) public checkpointBalances;
     Checkpoint[] public checkpointTotalSupply;
 
-    bool public mintingFinished = false;
+    bool public finishedIssuerMinting = false;
+    bool public finishedSTOMinting = false;
 
     mapping (bytes4 => bool) transferFunctions;
 
     // Module list should be order agnostic!
     mapping (uint8 => ModuleData[]) public modules;
-    mapping (uint8 => bool) public modulesLocked;
 
     uint8 public constant MAX_MODULES = 20;
 
@@ -83,14 +83,15 @@ contract SecurityToken is ISecurityToken {
     event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
     // Emit when new checkpoint created
     event LogCheckpointCreated(uint256 indexed _checkpointId, uint256 _timestamp);
-    // Emit when the minting get finished
-    event LogFinishedMinting(uint256 _timestamp);
-    // Emit when a module type is locked
-    event LogModuleLocked(uint8 indexed _moduleType, address _locker);
+    // Emit when the minting get finished for the Issuer
+    event LogFinishMintingIssuer(uint256 _timestamp);
+    // Emit when the minting get finished for the STOs
+    event LogFinishMintingSTO(uint256 _timestamp);
     // Change the STR address in the event of a upgrade
     event LogChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
 
-    //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
+    // If _fallback is true, then for STO module type we only allow the module if it is set, if it is not set we only allow the owner 
+    // for other _moduleType we allow both issuer and module. 
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
       //Loop over all modules of type _moduleType
         bool isModuleType = false;
@@ -98,7 +99,10 @@ contract SecurityToken is ISecurityToken {
             isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
         }
         if (_fallback && !isModuleType) {
-            require(msg.sender == owner, "Sender is not owner");
+            if (_moduleType == STO_KEY)
+                require(modules[_moduleType].length == 0 && msg.sender == owner, "Sender is not owner or STO module is attached");
+            else
+                require(msg.sender == owner, "Sender is not owner");
         } else {
             require(isModuleType, "Sender is not correct module type");
         }
@@ -107,6 +111,17 @@ contract SecurityToken is ISecurityToken {
 
     modifier checkGranularity(uint256 _amount) {
         require(_amount.div(granularity).mul(granularity) == _amount, "Unable to modify token balances at this granularity");
+        _;
+    }
+
+    // Checks whether the minting is allowed or not, check for the owner if owner is no the msg.sender then check
+    // for the finishedSTOMinting flag because only STOs and owner are allowed for minting
+    modifier isMintingAllowed() {
+        if (msg.sender == owner) {
+            require(!finishedIssuerMinting, "Minting is finished for Issuer");
+        } else {
+            require(!finishedSTOMinting, "Minting is finished for STOs");
+        }
         _;
     }
 
@@ -141,31 +156,19 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @notice Function used by issuer to lock a specific module type
-     * @param _moduleType module type to be locked
-     */
-    function lockModule(uint8 _moduleType) external onlyOwner {
-        require(!modulesLocked[_moduleType]);
-        modulesLocked[_moduleType] = true;
-        emit LogModuleLocked(_moduleType, msg.sender);
-    }
-
-    /**
      * @notice Function used to attach the module in security token
      * @param _moduleFactory Contract address of the module factory that needs to be attached
      * @param _data Data used for the intialization of the module factory variables
      * @param _maxCost Maximum cost of the Module factory
      * @param _budget Budget of the Module factory
-     * @param _locked whether or not the module is supposed to be locked
      */
     function addModule(
         address _moduleFactory,
         bytes _data,
         uint256 _maxCost,
-        uint256 _budget,
-        bool _locked
+        uint256 _budget
     ) external onlyOwner {
-        _addModule(_moduleFactory, _data, _maxCost, _budget, _locked);
+        _addModule(_moduleFactory, _data, _maxCost, _budget);
     }
 
     event LogA(uint256 _a);
@@ -179,43 +182,25 @@ contract SecurityToken is ISecurityToken {
     * @param _moduleFactory is the address of the module factory to be added
     * @param _data is data packed into bytes used to further configure the module (See STO usage)
     * @param _maxCost max amount of POLY willing to pay to module. (WIP)
-    * @param _locked whether or not the module is supposed to be locked
     */
-    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _locked) internal {
+    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget) internal {
         //Check that module exists in registry - will throw otherwise
-<<<<<<< Updated upstream
-        IModuleRegistry(IRegistry(securityTokenRegistry).getAddress("ModuleRegistry")).useModule(_moduleFactory);
-=======
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         LogA(1);
->>>>>>> Stashed changes
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         LogA(2);
         require(modules[moduleFactory.getType()].length < MAX_MODULES, "Limit of MAX MODULES is reached");
-<<<<<<< Updated upstream
-        uint256 moduleCost = moduleFactory.setupCost();
-=======
         uint256 moduleCost = moduleFactory.getCost();
         LogA(3);
->>>>>>> Stashed changes
         require(moduleCost <= _maxCost, "Max Cost is always be greater than module cost");
-        //Check that this module has not already been set as locked
-        LogA(4);
-        require(!modulesLocked[moduleFactory.getType()], "Module has already been set as locked");
         //Approve fee for module
         require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
         //Approve ongoing budget
-<<<<<<< Updated upstream
-        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(module, _budget), "Not able to approve the budget");
-        //Add to SecurityToken module map
-=======
         require(polyToken.approve(module, _budget), "Not able to approve the budget");
         // //Add to SecurityToken module map
->>>>>>> Stashed changes
         modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module));
-        modulesLocked[moduleFactory.getType()] = _locked;
         //Emit log event
         emit LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
     }
@@ -230,7 +215,6 @@ contract SecurityToken is ISecurityToken {
         "Module index doesn't exist as per the choosen module type");
         require(modules[_moduleType][_moduleIndex].moduleAddress != address(0),
         "Module contract address should not be 0x");
-        require(!modulesLocked[_moduleType], "Module should not be locked");
         //Take the last member of the list, and replace _moduleIndex with this, then shorten the list by one
         emit LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
         modules[_moduleType][_moduleIndex] = modules[_moduleType][modules[_moduleType].length - 1];
@@ -243,17 +227,15 @@ contract SecurityToken is ISecurityToken {
      * @param _moduleIndex is the index of the module within the chosen type
      * @return bytes32
      * @return address
-     * @return bool
      */
-    function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address, bool) {
+    function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address) {
         if (modules[_moduleType].length > 0) {
             return (
                 modules[_moduleType][_moduleIndex].name,
-                modules[_moduleType][_moduleIndex].moduleAddress,
-                modulesLocked[_moduleType]
+                modules[_moduleType][_moduleIndex].moduleAddress
             );
         } else {
-            return ("", address(0), false);
+            return ("", address(0));
         }
 
     }
@@ -264,22 +246,20 @@ contract SecurityToken is ISecurityToken {
      * @param _name is the name of the module within the chosen type
      * @return bytes32
      * @return address
-     * @return bool
      */
-    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address, bool) {
+    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address) {
         if (modules[_moduleType].length > 0) {
             for (uint256 i = 0; i < modules[_moduleType].length; i++) {
                 if (modules[_moduleType][i].name == _name) {
                   return (
                       modules[_moduleType][i].name,
-                      modules[_moduleType][i].moduleAddress,
-                      modulesLocked[_moduleType]
+                      modules[_moduleType][i].moduleAddress
                   );
                 }
             }
-            return ("", address(0), false);
+            return ("", address(0));
         } else {
-            return ("", address(0), false);
+            return ("", address(0));
         }
     }
 
@@ -510,11 +490,19 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @notice End token minting period permanently
+     * @notice End token minting period permanently for Issuer
      */
-    function finishMinting() public onlyOwner {
-        mintingFinished = true;
-        emit LogFinishedMinting(now);
+    function finishMintingIssuer() public onlyOwner {
+        finishedIssuerMinting = true;
+        emit LogFinishMintingIssuer(now);
+    }
+
+    /**
+     * @notice End token minting period permanently for STOs
+     */
+    function finishMintingSTO() public onlyOwner {
+        finishedSTOMinting = true;
+        emit LogFinishMintingSTO(now);
     }
 
     /**
@@ -524,8 +512,7 @@ contract SecurityToken is ISecurityToken {
      * @param _amount Number of tokens get minted
      * @return success
      */
-    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) returns (bool success) {
-        require(!mintingFinished, "Minting is finished, not able to mint additional tokens");
+    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) isMintingAllowed() returns (bool success) {
         adjustInvestorCount(address(0), _investor, _amount);
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
         adjustBalanceCheckpoints(_investor);

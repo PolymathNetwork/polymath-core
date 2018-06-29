@@ -286,48 +286,48 @@ contract('SecurityToken', accounts => {
 
         });
 
-        it("Should successfully attach the General permission manager factory with the security token", async () => {
-            snap_Id = await takeSnapshot();
-            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, false, { from: token_owner });
-            assert.equal(tx.logs[2].args._type.toNumber(), permissionManagerKey, "General Permission Manager doesn't get deployed");
-            assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name)
-                .replace(/\u0000/g, ''),
-                "GeneralPermissionManager",
-                "GeneralPermissionManagerFactory module was not added"
-            );
-            I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
-        });
+        // it("Should successfully attach the General permission manager factory with the security token", async () => {
+        //     snap_Id = await takeSnapshot();
+        //     const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
+        //     assert.equal(tx.logs[2].args._type.toNumber(), permissionManagerKey, "General Permission Manager doesn't get deployed");
+        //     assert.equal(
+        //         web3.utils.toAscii(tx.logs[2].args._name)
+        //         .replace(/\u0000/g, ''),
+        //         "GeneralPermissionManager",
+        //         "GeneralPermissionManagerFactory module was not added"
+        //     );
+        //     I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
+        // });
 
-        it("Should lock the module which is already added in the security token", async() => {
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.lockModule(permissionManagerKey, { from: account_temp});
-            } catch(error) {
-                console.log(`         tx revert -> lockModule only be called by the owner of the SecurityToken`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
+        // it("Should lock the module which is already added in the security token", async() => {
+        //     let errorThrown = false;
+        //     try {
+        //         await I_SecurityToken.lockModule(permissionManagerKey, { from: account_temp});
+        //     } catch(error) {
+        //         console.log(`         tx revert -> lockModule only be called by the owner of the SecurityToken`.grey);
+        //         errorThrown = true;
+        //         ensureException(error);
+        //     }
+        //     assert.ok(errorThrown, message);
+        // });
 
-        it("Should lock the module which is already added in the security token", async() => {
-            let tx = await I_SecurityToken.lockModule(permissionManagerKey, { from: token_owner});
-            assert.equal(tx.logs[0].args._moduleType, permissionManagerKey);
-        });
+        // it("Should lock the module which is already added in the security token", async() => {
+        //     let tx = await I_SecurityToken.lockModule(permissionManagerKey, { from: token_owner});
+        //     assert.equal(tx.logs[0].args._moduleType, permissionManagerKey);
+        // });
 
-        it("Should lock the module which is already added in the security token", async() => {
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.lockModule(permissionManagerKey, { from: token_owner});
-            } catch(error) {
-                console.log(`         tx revert -> Can't lock a already locked module`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-            await revertToSnapshot(snap_Id);
-        });
+        // it("Should lock the module which is already added in the security token", async() => {
+        //     let errorThrown = false;
+        //     try {
+        //         await I_SecurityToken.lockModule(permissionManagerKey, { from: token_owner});
+        //     } catch(error) {
+        //         console.log(`         tx revert -> Can't lock a already locked module`.grey);
+        //         errorThrown = true;
+        //         ensureException(error);
+        //     }
+        //     assert.ok(errorThrown, message);
+        //     await revertToSnapshot(snap_Id);
+        // });
 
         it("Should mint the tokens before attaching the STO -- fail only be called by the owner", async() => {
             let errorThrown = false;
@@ -413,9 +413,9 @@ contract('SecurityToken', accounts => {
         it("Should finish the minting -- fail because msg.sender is not the owner", async() => {
             let errorThrown = false;
             try {
-                await I_SecurityToken.finishMinting({from: account_temp});
+                await I_SecurityToken.finishMintingIssuer({from: account_temp});
             } catch(error) {
-                console.log(`         tx revert -> finishMinting only be called by the owner of the SecurityToken`.grey);
+                console.log(`         tx revert -> finishMintingIssuer only be called by the owner of the SecurityToken`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -424,7 +424,7 @@ contract('SecurityToken', accounts => {
 
         it("Should finish minting & rstrict the further minting", async() => {
             let id = await takeSnapshot();
-            await I_SecurityToken.finishMinting({from: account_issuer});
+            await I_SecurityToken.finishMintingIssuer({from: account_issuer});
             let errorThrown = false;
             try {
                 await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
@@ -437,13 +437,25 @@ contract('SecurityToken', accounts => {
             await revertToSnapshot(id);
         });
 
+        it("Should finish the minting -- fail because msg.sender is not the owner", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.finishMintingSTO({from: account_temp});
+            } catch(error) {
+                console.log(`         tx revert -> finishMintingSTO only be called by the owner of the SecurityToken`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should fail to attach the STO factory because not enough poly in contract", async () => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
-                let tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 60000000 });
+                let tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 60000000 });
             } catch (error) {
                 console.log(`         tx revert -> not enough poly in contract`);
                 errorThrown = true;
@@ -460,7 +472,7 @@ contract('SecurityToken', accounts => {
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
             let errorThrown = false;
             try {
-                let tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, web3.utils.toWei("1000","ether"), 0, true, { from: token_owner, gas: 60000000 });
+                let tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, web3.utils.toWei("1000","ether"), 0, { from: token_owner, gas: 60000000 });
             } catch (error) {
                 console.log(`         tx revert -> max cost too small`);
                 errorThrown = true;
@@ -477,7 +489,7 @@ contract('SecurityToken', accounts => {
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
 
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, true, { from: token_owner, gas: 60000000 });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 60000000 });
 
             assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
@@ -525,35 +537,30 @@ contract('SecurityToken', accounts => {
             let moduleData = await I_SecurityToken.getModule.call(stoKey, 0);
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "CappedSTO");
             assert.equal(moduleData[1], I_CappedSTO.address);
-            assert.isTrue(moduleData[2]);
         });
 
         it("Should get the modules of the securityToken by index (not added into the security token yet)", async () => {
             let moduleData = await I_SecurityToken.getModule.call(permissionManagerKey, 0);
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "");
             assert.equal(moduleData[1], "0x0000000000000000000000000000000000000000");
-            assert.isFalse(moduleData[2]);
         });
 
         it("Should get the modules of the securityToken by name", async () => {
             let moduleData = await I_SecurityToken.getModuleByName.call(stoKey, "CappedSTO");
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "CappedSTO");
             assert.equal(moduleData[1], I_CappedSTO.address);
-            assert.isTrue(moduleData[2]);
         });
 
         it("Should get the modules of the securityToken by name (not added into the security token yet)", async () => {
             let moduleData = await I_SecurityToken.getModuleByName.call(permissionManagerKey, "GeneralPermissionManager");
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "");
             assert.equal(moduleData[1], "0x0000000000000000000000000000000000000000");
-            assert.isFalse(moduleData[2]);
         });
 
         it("Should get the modules of the securityToken by name (not added into the security token yet)", async () => {
             let moduleData = await I_SecurityToken.getModuleByName.call(transferManagerKey, "CountTransferManager");
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "");
             assert.equal(moduleData[1], "0x0000000000000000000000000000000000000000");
-            assert.isFalse(moduleData[2]);
         });
 
         it("Should fail in updating the token details", async() => {
@@ -571,18 +578,6 @@ contract('SecurityToken', accounts => {
         it("Should update the token details", async() => {
             let log = await I_SecurityToken.updateTokenDetails("new token details", {from: token_owner});
             assert.equal(log.logs[0].args._newDetails, "new token details");
-        });
-
-        it("Should fails in removing the module from the securityToken", async() => {
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.removeModule(stoKey, 0, { from : token_owner });
-            } catch (error) {
-                console.log(`Test case passed by restricting the removal of non replacable module`);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
         });
 
         it("Should successfully remove the general transfer manager module from the securityToken -- fails msg.sender should be Owner", async() => {
@@ -621,7 +616,6 @@ contract('SecurityToken', accounts => {
             let moduleData = await I_SecurityToken.getModule.call(transferManagerKey, 0);
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "GeneralTransferManager");
             assert.equal(moduleData[1], I_GeneralTransferManager.address);
-            assert.isFalse(moduleData[2]);
         });
 
         it("Should change the budget of the module", async() => {
@@ -706,6 +700,27 @@ contract('SecurityToken', accounts => {
                 );
             });
 
+            it("Should finish minting & rstrict the further minting", async() => {
+                let id = await takeSnapshot();
+                await I_SecurityToken.finishMintingSTO({from: account_issuer});
+                let errorThrown = false;
+                try {
+                     // Fallback transaction
+                await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_CappedSTO.address,
+                    gas: 2100000,
+                    value: web3.utils.toWei('2', 'ether')
+                    });
+                } catch(error) {
+                    console.log(`         tx revert -> Minting is finished`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+                await revertToSnapshot(id);
+            });
+
             it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async() => {
                 let errorThrown = false;
                 try {
@@ -721,7 +736,7 @@ contract('SecurityToken', accounts => {
             it("Should fail to provide the permission to the delegate to change the transfer bools", async () => {
                 let errorThrown = false;
                 // Add permission to the deletgate (A regesteration process)
-                await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, false, {from: token_owner});
+                await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, {from: token_owner});
                 let moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
                 I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
                 try {
@@ -878,12 +893,36 @@ contract('SecurityToken', accounts => {
                 try {
                     await I_SecurityToken.transfer(account_temp, (10 *  Math.pow(10, 18)), { from : account_investor1, gas: 2500000});
                 } catch(error) {
-                    console.log(`non-whitelist investor is not allowed`);
+                    console.log(`non-whitelist investor is not allowed`.grey);
                     errorThrown = true;
                     ensureException(error);
                 }
                 assert.ok(errorThrown, message);
                 await revertToSnapshot(ID_snap);
+            });
+
+            it("Should fail in minting the tokens from Issuer", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.mint(account_investor1, (10 *  Math.pow(10, 18)), { from : token_owner, gas: 2500000});
+                } catch(error) {
+                    console.log(`       Tx-> revert because Issuer is not allowed to mint after attaching the STO`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should fail in minting the tokens from Issuer", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.mintMulti([account_investor1, account_investor2], [web3.utils.toWei("10"), web3.utils.toWei("10")], { from : token_owner, gas: 2500000});
+                } catch(error) {
+                    console.log(`       Tx-> revert because Issuer is not allowed to mint after attaching the STO`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
             });
 
             it("Should provide more permissions to the delegate", async() => {

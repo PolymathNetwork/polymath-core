@@ -1,7 +1,22 @@
 # Changelog
 All notable changes to this project will be documented in this file.   
 
-# v1.2.0 - Unreleased
+# v1.2.1 - Unreleased
+
+[__1.2.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __27-06-18__
+
+## Added
+* Further minting can be forbids on the Issuer level and the STO level using the functions `finishMintingIssuer()`,`finishMintingSTO()`.
+
+##Changed
+
+
+## Removed
+* Logic of module locking is removed and also removes the `_locked` parameter.    
+* Remove `finishMinting()` function from the `SecurityToken` contract.
+
+
+# v1.2.0 
 
 [__1.2.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __22-05-18__
 

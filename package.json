@@ -58,9 +58,13 @@
     "ethers": "^3.0.15",
     "openzeppelin-solidity": "1.10.0",
     "readline-sync": "^1.4.9",
+<<<<<<< Updated upstream
     "shelljs": "^0.8.2",
     "solc": "^0.4.24",
     "truffle-contract": "^3.0.4",
+=======
+    "truffle-contract": "^3.0.5",
+>>>>>>> Stashed changes
     "truffle-hdwallet-provider-privkey": "^0.1.0",
     "web3": "^1.0.0-beta.33"
   },
@@ -77,7 +81,11 @@
     "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.5.0",
     "solium": "^1.1.6",
+<<<<<<< Updated upstream
     "truffle": "^4.1.11",
+=======
+    "truffle": "^4.1.7",
+>>>>>>> Stashed changes
     "truffle-wallet-provider": "0.0.5"
   }
 }

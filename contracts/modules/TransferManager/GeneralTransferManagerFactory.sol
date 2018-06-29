@@ -39,9 +39,12 @@ contract GeneralTransferManagerFactory is IModuleFactory {
         return 2;
     }
 
+<<<<<<< Updated upstream
     /**
      * @notice Get the name of the Module
      */
+=======
+>>>>>>> Stashed changes
     function getName() public view returns(bytes32) {
         return "GeneralTransferManager";
     }

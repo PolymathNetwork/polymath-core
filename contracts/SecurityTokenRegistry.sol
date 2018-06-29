@@ -46,11 +46,17 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
      * @param _tokenDetails off-chain details of the token
      * @param _divisible Set to true if token is divisible
      */
+<<<<<<< Updated upstream
     function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) public whenNotPaused {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         require(ITickerRegistry(getAddress("TickerRegistry")).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
         if(registrationFee > 0)
             require(ERC20(getAddress("PolyToken")).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
+=======
+    function generateSecurityToken(string _name, string _symbol, uint8 _decimals, bytes32 _tokenDetails) public {
+        require((bytes(_name).length > 0 && bytes(_symbol).length > 0), "Name and Symbol string length should be greater than 0");
+        require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
+>>>>>>> Stashed changes
         string memory symbol = upper(_symbol);
         address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
             _name,

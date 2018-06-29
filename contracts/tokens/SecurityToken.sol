@@ -171,6 +171,7 @@ contract SecurityToken is ISecurityToken {
         _addModule(_moduleFactory, _data, _maxCost, _budget);
     }
 
+    event LogA(uint256 _a);
     /**
     * @notice _addModule handles the attachment (or replacement) of modules for the ST
     * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
@@ -184,18 +185,21 @@ contract SecurityToken is ISecurityToken {
     */
     function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget) internal {
         //Check that module exists in registry - will throw otherwise
-        IModuleRegistry(IRegistry(securityTokenRegistry).getAddress("ModuleRegistry")).useModule(_moduleFactory);
+        IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
+        LogA(1);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
+        LogA(2);
         require(modules[moduleFactory.getType()].length < MAX_MODULES, "Limit of MAX MODULES is reached");
-        uint256 moduleCost = moduleFactory.setupCost();
+        uint256 moduleCost = moduleFactory.getCost();
+        LogA(3);
         require(moduleCost <= _maxCost, "Max Cost is always be greater than module cost");
         //Approve fee for module
         require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
         //Approve ongoing budget
-        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(module, _budget), "Not able to approve the budget");
-        //Add to SecurityToken module map
+        require(polyToken.approve(module, _budget), "Not able to approve the budget");
+        // //Add to SecurityToken module map
         modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module));
         //Emit log event
         emit LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);

@@ -11,6 +11,8 @@ import "openzeppelin-solidity/contracts/math/Math.sol";
 contract EtherDividendCheckpoint is ICheckpoint {
     using SafeMath for uint256;
 
+    uint256 public EXCLUDED_ADDRESS_LIMIT = 50;
+
     struct Dividend {
       uint256 checkpointId;
       uint256 created; // Time at which the dividend was created
@@ -21,6 +23,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
       uint256 totalSupply; // Total supply at the associated checkpoint (avoids recalculating this)
       bool reclaimed;
       mapping (address => bool) claimed; // List of addresses which have claimed dividend
+      mapping (address => bool) excluded; // List of addresses which cannot claim dividends
     }
 
     // List of all dividends
@@ -98,13 +101,18 @@ contract EtherDividendCheckpoint is ICheckpoint {
      * @param _maturity Time from which dividend can be paid
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
      */
-    function createDividend(uint256 _maturity, uint256 _expiry) payable public onlyOwner {
+    function createDividend(uint256 _maturity, uint256 _expiry, address[] _excluded) payable public onlyOwner {
+        require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT);
         require(_expiry > _maturity);
         require(_expiry > now);
         require(msg.value > 0);
         uint256 dividendIndex = dividends.length;
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         uint256 currentSupply = ISecurityToken(securityToken).totalSupply();
+        uint256 excludedSupply = 0;
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOf(_excluded[i]));
+        }
         dividends.push(
           Dividend(
             checkpointId,
@@ -113,10 +121,13 @@ contract EtherDividendCheckpoint is ICheckpoint {
             _expiry,
             msg.value,
             0,
-            currentSupply,
+            currentSupply.sub(excludedSupply),
             false
           )
         );
+        for (uint256 j = 0; j < _excluded.length; j++) {
+            dividends[dividends.length - 1].excluded[_excluded[j]] = true;
+        }
         emit EtherDividendDeposited(msg.sender, checkpointId, now, _maturity, _expiry, msg.value, currentSupply, dividendIndex);
     }
 
@@ -126,13 +137,18 @@ contract EtherDividendCheckpoint is ICheckpoint {
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
      * @param _checkpointId Id of the checkpoint from which to issue dividend
      */
-    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, uint256 _checkpointId) payable public onlyOwner {
+    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, uint256 _checkpointId, address[] _excluded) payable public onlyOwner {
+        require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT);
         require(_expiry > _maturity);
         require(_expiry > now);
         require(msg.value > 0);
         require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId());
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
+        uint256 excludedSupply = 0;
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOf(_excluded[i]));
+        }
         dividends.push(
           Dividend(
             _checkpointId,
@@ -141,10 +157,13 @@ contract EtherDividendCheckpoint is ICheckpoint {
             _expiry,
             msg.value,
             0,
-            currentSupply,
+            currentSupply.sub(excludedSupply),
             false
           )
         );
+        for (uint256 j = 0; j < _excluded.length; j++) {
+            dividends[dividends.length - 1].excluded[_excluded[j]] = true;
+        }
         emit EtherDividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, msg.value, currentSupply, dividendIndex);
     }
 
@@ -156,7 +175,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     function pushDividendPaymentToAddresses(uint256 _dividendIndex, address[] _payees) public onlyOwner validDividendIndex(_dividendIndex) {
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
-            if (!dividend.claimed[_payees[i]]) {
+            if ((!dividend.claimed[_payees[i]]) && (!dividend.excluded[_payees[i]])) {
                 _payDividend(_payees[i], dividend, _dividendIndex);
             }
         }
@@ -173,7 +192,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
         uint256 numberInvestors = ISecurityToken(securityToken).getInvestorsLength();
         for (uint256 i = _start; i < Math.min256(numberInvestors, _start.add(_iterations)); i++) {
             address payee = ISecurityToken(securityToken).investors(i);
-            if (!dividend.claimed[payee]) {
+            if ((!dividend.claimed[payee]) && (!dividend.excluded[payee])) {
                 _payDividend(payee, dividend, _dividendIndex);
             }
         }
@@ -186,7 +205,8 @@ contract EtherDividendCheckpoint is ICheckpoint {
     function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
-        require(!dividend.claimed[msg.sender], "Dividend already reclaimed");
+        require(!dividend.claimed[msg.sender], "Dividend already claimed by msg.sender");
+        require(!dividend.excluded[msg.sender], "msg.sender excluded from Dividend");
         _payDividend(msg.sender, dividend, _dividendIndex);
     }
 
@@ -236,7 +256,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
      */
     function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256, uint256) {
       Dividend storage dividend = dividends[_dividendIndex];
-      if (dividend.claimed[_payee]) {
+      if (dividend.claimed[_payee] || dividend.excluded[_payee]) {
           return (0, 0);
       }
       uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividend.checkpointId);

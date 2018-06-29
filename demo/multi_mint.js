@@ -3,7 +3,7 @@ var csv = require('fast-csv');
 var BigNumber = require('bignumber.js');
 const Web3 = require('web3');
 const chalk = require('chalk');
-
+var common = require('./common/common_functions');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require("./helpers/contract_addresses");
@@ -178,10 +178,9 @@ function readFile() {
         let tokenAmount = web3.utils.toWei((distribData[i][j][1]).toString(),"ether")
         tokensArray.push(tokenAmount);
       }
-
-      let GAS = Math.round(1.2 * (await securityToken.methods.mintMulti(affiliatesArray, tokensArray).estimateGas({from: Issuer})));
-      console.log(chalk.black.bgYellowBright(`---- Transaction executed: mintMulti - Gas limit provided: ${GAS} ----`));
-      let r = await securityToken.methods.mintMulti(affiliatesArray, tokensArray).send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+      let mintMultiAction = securityToken.methods.mintMulti(affiliatesArray, tokensArray);
+      let GAS = await common.estimateGas(mintMultiAction, Issuer, 1.2);
+      let r = await mintMultiAction.send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
       console.log(`Batch ${i} - Attempting to send the Minted tokens to affiliates accounts:\n\n`, affiliatesArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
       console.log("Multi Mint transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * DEFAULT_GAS_PRICE).toString(), "ether"), "Ether");

@@ -1,5 +1,6 @@
 var readlineSync = require('readline-sync');
-var BigNumber = require('bignumber.js')
+var BigNumber = require('bignumber.js');
+var common = require('./common/common_functions');
 var contracts = require("./helpers/contract_addresses");
 var chalk = require('chalk');
 const shell = require('shelljs');
@@ -111,9 +112,9 @@ async function send_poly() {
 
 async function transferTokens(to, amount) {
     try {
-        let GAS = Math.round(1.2 * (await polyToken.methods.getTokens(amount, to).estimateGas({ from: Issuer })));
-        console.log(chalk.black.bgYellowBright(`---- Transaction executed: getTokens - Gas limit provided: ${GAS} ----`));
-        await polyToken.methods.getTokens(amount, to).send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+        let getTokensAction = polyToken.methods.getTokens(amount, to);
+        let GAS = await common.estimateGas(getTokensAction, Issuer, 1.2);
+        await getTokensAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
         .on('transactionHash', function(hash) {
             console.log(`
             Your transaction is being processed. Please wait...

@@ -10,15 +10,17 @@ contract PolyOracle is usingOraclize, Ownable {
     string public oracleURL = "json(https://api.coinmarketcap.com/v2/ticker/2496/?convert=USD).data.quotes.USD.price";
     uint256 public sanityBounds = 20*10**16;
     uint256 public gasLimit = 100000;
+    uint256 public oraclizeTimeTolerance = 5 minutes;
 
     uint256 public POLYUSD;
     uint256 public latestUpdate;
     mapping (bytes32 => uint256) requestIds;
+    mapping (bytes32 => bool) ignoreRequestIds;
 
     bool public freezeOracle;
 
     event LogPriceUpdated(uint256 _price, uint256 _oldPrice, uint256 _time);
-    event LogNewOraclizeQuery(uint256 _time, string _query);
+    event LogNewOraclizeQuery(uint256 _time, bytes32 _queryId, string _query);
 
     constructor() payable public {
         // Use 50 gwei for now
@@ -28,8 +30,9 @@ contract PolyOracle is usingOraclize, Ownable {
     function __callback(bytes32 _requestId, string _result) public {
         require(msg.sender == oraclize_cbAddress(), "Only Oraclize can access this method");
         require(!freezeOracle, "Oracle is frozen");
+        require(!ignoreRequestIds[_requestId], "Ignoring requestId");
         require(requestIds[_requestId] >= latestUpdate, "Result is stale");
-        require(requestIds[_requestId] <= now, "Result is early");
+        require(requestIds[_requestId] <= now + oraclizeTimeTolerance, "Result is early");
         uint256 newPOLYUSD = parseInt(_result, 18);
         uint256 bound = POLYUSD.mul(sanityBounds).div(10**18);
         if (latestUpdate != 0) {
@@ -42,20 +45,31 @@ contract PolyOracle is usingOraclize, Ownable {
         POLYUSD = newPOLYUSD;
     }
 
-    function updatePrice(uint256[] _times) payable onlyOwner public {
+    function schedulePriceUpdatesFixed(uint256[] _times) payable onlyOwner public {
         bytes32 requestId;
         if (_times.length == 0) {
             require(oraclize_getPrice("URL") <= address(this).balance, "Insufficient Funds");
             requestId = oraclize_query("URL", oracleURL, gasLimit);
             requestIds[requestId] = now;
-            emit LogNewOraclizeQuery(now, oracleURL);
+            emit LogNewOraclizeQuery(now, requestId, oracleURL);
         } else {
             require(oraclize_getPrice("URL") * _times.length <= address(this).balance, "Insufficient Funds");
             for (uint256 i = 0; i < _times.length; i++) {
                 requestId = oraclize_query(_times[i], "URL", oracleURL, gasLimit);
                 requestIds[requestId] = _times[i];
-                emit LogNewOraclizeQuery(_times[i], oracleURL);
+                emit LogNewOraclizeQuery(_times[i], requestId, oracleURL);
             }
+        }
+    }
+
+    function schedulePriceUpdatesRolling(uint256 _startTime, uint256 _interval, uint256 _iters) onlyOwner public {
+        bytes32 requestId;
+        require(oraclize_getPrice("URL") * _iters <= address(this).balance, "Insufficient Funds");
+        for (uint256 i = 0; i < _iters; i++) {
+            uint256 scheduledTime = _startTime + (i * _interval);
+            requestId = oraclize_query(scheduledTime, "URL", oracleURL, gasLimit);
+            requestIds[requestId] = scheduledTime;
+            emit LogNewOraclizeQuery(scheduledTime, requestId, oracleURL);
         }
     }
 
@@ -88,5 +102,15 @@ contract PolyOracle is usingOraclize, Ownable {
         gasLimit = _gasLimit;
     }
 
+    function setIgnoreRequestIds(bytes32[] _requestIds, bool[] _ignore) onlyOwner public {
+        require(_requestIds.length == _ignore.length, "Incorrect parameter lengths");
+        for (uint256 i = 0; i < _requestIds.length; i++) {
+            ignoreRequestIds[_requestIds[i]] = _ignore[i];
+        }
+    }
+
+    function setOraclizeTimeTolerance(uint256 _oraclizeTimeTolerance) onlyOwner public {
+        oraclizeTimeTolerance = _oraclizeTimeTolerance;
+    }
 
 }

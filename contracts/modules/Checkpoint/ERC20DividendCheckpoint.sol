@@ -6,6 +6,16 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
+/////////////////////
+// Module permissions
+/////////////////////
+//                                        Owner       DISTRIBUTE
+// pushDividendPaymentToAddresses           X               X
+// pushDividendPayment                      X               X
+// createDividend                           X
+// createDividendWithCheckpoint             X
+// reclaimDividend                          X
+
 /**
  * @title Checkpoint module for issuing ERC20 dividends
  */

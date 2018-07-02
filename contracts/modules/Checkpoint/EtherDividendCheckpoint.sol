@@ -5,6 +5,16 @@ import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 
+/////////////////////
+// Module permissions
+/////////////////////
+//                                        Owner       DISTRIBUTE
+// pushDividendPaymentToAddresses           X               X
+// pushDividendPayment                      X               X
+// createDividend                           X
+// createDividendWithCheckpoint             X
+// reclaimDividend                          X
+
 /**
  * @title Checkpoint module for issuing ether dividends
  */
@@ -236,7 +246,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);
-        allPermissions[1] = DISTRIBUTE;
+        allPermissions[0] = DISTRIBUTE;
         return allPermissions;
     }
 

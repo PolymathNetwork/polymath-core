@@ -9,6 +9,7 @@ const duration = {
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js')
 var chalk = require('chalk');
+var common = require('../common/common_functions');
 
 var contracts = require("../helpers/contract_addresses");
 let tickerRegistryAddress = contracts.tickerRegistryAddress();
@@ -195,7 +196,9 @@ async function createDividends(ethDividend){
     etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
     etherDividendCheckpoint.setProvider(web3.currentProvider);
   }else{
-    await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0).send({ from: Issuer, gas:2500000 })
+    let addModuleAction = securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
+    let GAS = await common.estimateGas(addModuleAction, Issuer, 1.2);
+    await addModuleAction.send({ from: Issuer, gas: GAS })
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -220,8 +223,9 @@ async function createDividends(ethDividend){
   let expiryTime = readlineSync.question('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = '+(time+duration.minutes(10))+' ): ');
   if(expiryTime == "") expiryTime = time+duration.minutes(10);
   //Send eth dividends
-  await etherDividendCheckpoint.methods.createDividend(time, expiryTime)
-  .send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas:2500000 })
+  let createDividendAction = etherDividendCheckpoint.methods.createDividend(time, expiryTime);
+  GAS = await common.estimateGas(createDividendAction, Issuer, 1.2, web3.utils.toWei(ethDividend,"ether"));
+  await createDividendAction.send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas: GAS })
   .on('transactionHash', function(hash){
     console.log(`
       Your transaction is being processed. Please wait...
@@ -247,7 +251,9 @@ async function createDividendWithCheckpoint(ethDividend, _checkpointId) {
       etherDividendCheckpoint = new web3.eth.Contract(etherDividendCheckpointABI, etherDividendCheckpointAddress);
       etherDividendCheckpoint.setProvider(web3.currentProvider);
     }else{
-      await securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0).send({ from: Issuer, gas:2500000 })
+      let addModuleAction = securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
+      let GAS = await common.estimateGas(addModuleAction, Issuer, 1.2);
+      await addModuleAction.send({ from: Issuer, gas: GAS })
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...
@@ -273,9 +279,10 @@ async function createDividendWithCheckpoint(ethDividend, _checkpointId) {
     if(expiryTime == "") expiryTime = time+duration.minutes(10);
     let _dividendStatus = await etherDividendCheckpoint.methods.getDividendIndex(_checkpointId).call();
     if (_dividendStatus.length != 1) {
-    //Send eth dividends
-      await etherDividendCheckpoint.methods.createDividendWithCheckpoint(time, expiryTime, _checkpointId)
-      .send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas:2500000 })
+      //Send eth dividends
+      let createDividendWithCheckpointAction = etherDividendCheckpoint.methods.createDividendWithCheckpoint(time, expiryTime, _checkpointId);
+      let GAS = await common.estimateGas(createDividendWithCheckpointAction, Issuer, 1.2, web3.utils.toWei(ethDividend,"ether"));
+      await createDividendWithCheckpointAction.send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas: GAS })
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...
@@ -299,8 +306,9 @@ async function pushDividends(checkpoint, account){
   let accs = account.split(',');
   let dividend = await etherDividendCheckpoint.methods.getDividendIndex(checkpoint).call();
   if(dividend.length == 1) {
-    await etherDividendCheckpoint.methods.pushDividendPaymentToAddresses(dividend[0], accs)
-    .send({ from: Issuer, gas:4500000 })
+    let pushDividendPaymentToAddressesAction = etherDividendCheckpoint.methods.pushDividendPaymentToAddresses(dividend[0], accs);
+    let GAS = await common.estimateGas(pushDividendPaymentToAddressesAction, Issuer, 1.2);  
+    await pushDividendPaymentToAddressesAction.send({ from: Issuer, gas: GAS })
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -324,8 +332,9 @@ async function pullDividends(checkpointId) {
   let dividend = await etherDividendCheckpoint.methods.getDividendIndex(checkpointId).call();
   if(dividend.length == 1) {
     try {
-    await etherDividendCheckpoint.methods.pullDividendPayment(dividend[0])
-    .send({ from: Issuer, gas:4500000 })
+    let pullDividendPaymentAction = etherDividendCheckpoint.methods.pullDividendPayment(dividend[0]);
+    let GAS = await common.estimateGas(pullDividendPaymentAction, Issuer, 1.2);  
+    await pullDividendPaymentAction.send({ from: Issuer, gas: GAS })
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -371,10 +380,14 @@ async function exploreTotalSupply(checkpoint){
 
 async function transferTokens(address, amount){
 
-  let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address, Math.floor(Date.now()/1000), Math.floor(Date.now()/1000), Math.floor(Date.now()/1000 + 31536000), true).send({ from: Issuer, gas:2500000});
+  let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(address, Math.floor(Date.now()/1000), Math.floor(Date.now()/1000), Math.floor(Date.now()/1000 + 31536000), true);
+  let GAS = await common.estimateGas(modifyWhitelistAction, Issuer, 1.2);  
+  let whitelistTransaction = await modifyWhitelistAction.send({ from: Issuer, gas: GAS});
 
   try{
-    await securityToken.methods.transfer(address,web3.utils.toWei(amount,"ether")).send({ from: Issuer, gas:250000})
+    let transferAction = securityToken.methods.transfer(address,web3.utils.toWei(amount,"ether"));
+    GAS = await common.estimateGas(transferAction, Issuer, 1.2);
+    await transferAction.send({ from: Issuer, gas: GAS})
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -403,7 +416,9 @@ async function transferTokens(address, amount){
 
 async function mintTokens(address, amount){
   let isSTOAttached;
-  let whitelistTransaction = await generalTransferManager.methods.modifyWhitelist(address,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000),true).send({ from: Issuer, gas:2500000});
+  let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(address,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000),true);
+  let GAS = await common.estimateGas(modifyWhitelistAction, Issuer, 1.2);
+  let whitelistTransaction = await modifyWhitelistAction.send({ from: Issuer, gas: GAS});
   let _flag = await securityToken.methods.finishedIssuerMinting().call();
   await securityToken.methods.getModule(3, 0).call({from: Issuer}, function(error, result) {
     isSTOAttached = result[1] == "0x0000000000000000000000000000000000000000"? false : true;
@@ -416,7 +431,9 @@ async function mintTokens(address, amount){
     return;
   }
   try{
-    await securityToken.methods.mint(address,web3.utils.toWei(amount,"ether")).send({ from: Issuer, gas:250000})
+    let mintAction = securityToken.methods.mint(address,web3.utils.toWei(amount,"ether"));
+    GAS = await common.estimateGas(mintAction, Issuer, 1.2);
+    await mintAction.send({ from: Issuer, gas: GAS})
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -445,7 +462,9 @@ async function mintTokens(address, amount){
 async function reclaimedDividend(checkpointId) {
   let dividendIndex = await etherDividendCheckpoint.methods.getDividendIndex(checkpointId).call();
   if (dividendIndex.length == 1) {
-    await etherDividendCheckpoint.methods.reclaimDividend(dividendIndex[0]).send({from: Issuer, gas: 500000})
+    let reclaimDividendAction = etherDividendCheckpoint.methods.reclaimDividend(dividendIndex[0]);
+    let GAS = await common.estimateGas(reclaimDividendAction, Issuer, 1.2);  
+    await reclaimDividendAction.send({from: Issuer, gas: GAS})
     .on("transactionHash", function(hash) {
       console.log(`
       Your transaction is being processed. Please wait...

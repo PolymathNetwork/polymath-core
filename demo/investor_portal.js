@@ -1,6 +1,7 @@
 // Libraries for terminal prompts
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
+var common = require('./common/common_functions');
 
 // Generate web3 instance
 const Web3 = require('web3');
@@ -263,16 +264,16 @@ async function invest() {
             if (parseInt(userBalance) >= parseInt(cost)) {
                 let allowance = await polyToken.methods.allowance(STOAddress, User).call({from: User});
                 if (allowance < costWei) {
-                    let GAS = Math.round(1.2 * (await polyToken.methods.approve(STOAddress, costWei).estimateGas({from: User})));
-                    console.log(chalk.black.bgYellowBright(`---- Transaction executed: approve - Gas limit provided: ${GAS} ----`));
-                    await polyToken.methods.approve(STOAddress, costWei).send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+                    let approveAction = polyToken.methods.approve(STOAddress, costWei);
+                    let GAS = await common.estimateGas(approveAction, User, 1.2);
+                    await approveAction.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
                     .on('receipt', function(receipt) {
                     })
                     .on('error', console.error);
                 }
-                let GAS = Math.round(1.2 * (await cappedSTO.methods.buyTokensWithPoly(costWei).estimateGas({from: User})));
-                console.log(chalk.black.bgYellowBright(`---- Transaction executed: buyTokensWithPoly - Gas limit provided: ${GAS} ----`));
-                await cappedSTO.methods.buyTokensWithPoly(costWei).send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+                let actionBuyTokensWithPoly = cappedSTO.methods.buyTokensWithPoly(costWei);
+                let GAS = await common.estimateGas(actionBuyTokensWithPoly, User, 1.2);
+                await actionBuyTokensWithPoly.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
                 .on('transactionHash', function(hash){
                     console.log(`
         Your transaction is being processed. Please wait...
@@ -304,9 +305,9 @@ async function invest() {
             return;
         }
     } else {
-        let GAS = Math.round(1.2 * (await cappedSTO.methods.buyTokens(User).estimateGas({from: User, value:web3.utils.toWei(cost.toString())})));
-        console.log(chalk.black.bgYellowBright(`---- Transaction executed: buyTokens - Gas limit provided: ${GAS} ----`));
-        await cappedSTO.methods.buyTokens(User).send({ from: User, value:web3.utils.toWei(cost.toString()), gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+        let actionBuyTokens = cappedSTO.methods.buyTokens(User);
+        let GAS = await common.estimateGas(actionBuyTokens, User, 1.2, web3.utils.toWei(cost.toString()));
+        await actionBuyTokens.send({ from: User, value:web3.utils.toWei(cost.toString()), gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
         .on('transactionHash', function(hash){
             console.log(`
         Your transaction is being processed. Please wait...

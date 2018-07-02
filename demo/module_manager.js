@@ -1,6 +1,7 @@
 // Libraries for terminal prompts
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
+var common = require('./common/common_functions');
 
 // Generate web3 instance
 const Web3 = require('web3');
@@ -256,7 +257,7 @@ async function iterateModules(_moduleType) {
 }
 
 async function selectAction() {
-    let options = ['Add a module','Pause / unpause a module','Remove a module','Change module budget','Whitelist an address for a year','Mint tokens','Permanently end minting','Exit'];
+    let options = ['Add a module','Pause / unpause a module','Remove a module','Change module budget','Whitelist an address for a year','Mint tokens','End minting for Issuer','End minting for STO','Exit'];
     let index = readlineSync.keyInSelect(options, chalk.yellow('What do you want to do?'), {cancel: false});
     console.log("\nSelected:",options[index]);
     switch (index) {
@@ -279,9 +280,12 @@ async function selectAction() {
             await mintTokens();
             break;
         case 6:
-            await endMinting();
+            await endMintingForIssuer();
             break;
         case 7:
+            await endMintingForSTO();
+            break;
+        case 8:
             process.exit();
     }
     displayModules()
@@ -340,9 +344,9 @@ async function removeModule() {
 
     let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to remove?'), {cancel: false});
     console.log("\nSelected:",options[index]);
-    let GAS = Math.round(2 * (await securityToken.methods.removeModule(modules[index].module.type,modules[index].index).estimateGas({from: User})));
-    console.log(chalk.black.bgYellowBright(`---- Transaction executed: removeModule - Gas limit provided: ${GAS} ----`));
-    await securityToken.methods.removeModule(modules[index].module.type,modules[index].index).send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+    let removeModuleAction = securityToken.methods.removeModule(modules[index].module.type,modules[index].index);
+    let GAS = await common.estimateGas(removeModuleAction, User, 2);
+    await removeModuleAction.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
     .on('receipt', function(receipt){
         console.log(chalk.green(`\nSuccessfully removed ${modules[index].module.name}.`));
     });
@@ -362,9 +366,9 @@ async function whitelist() {
         let generalTransferManager = tmModules[0].contract;
         let investor = readlineSync.question(chalk.yellow(`Enter the address to be whitelisted: `));
         let now = await latestTime();
-        let GAS = Math.round(1.2 * (await generalTransferManager.methods.modifyWhitelist(investor, now, now, now + 31556952, true).estimateGas({from: User})));
-        console.log(chalk.black.bgYellowBright(`---- Transaction executed: modifyWhitelist - Gas limit provided: ${GAS} ----`));
-        await generalTransferManager.methods.modifyWhitelist(investor, now, now, now + 31556952, true).send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+        let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(investor, now, now, now + 31556952, true);
+        let GAS = await common.estimateGas(modifyWhitelistAction, User, 1.2);
+        await modifyWhitelistAction.send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
         .on('receipt', function(receipt){
             console.log(chalk.green(`\nWhitelisting successful for ${investor}.`));
         });
@@ -393,9 +397,9 @@ async function mintTokens() {
         let _investor = readlineSync.question(chalk.yellow(`Enter the address to receive the tokens: `));
         let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
         try {
-            let GAS = Math.round(1.2 * (await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).estimateGas({from: User})));
-            console.log(chalk.black.bgYellowBright(`---- Transaction executed: mint - Gas limit provided: ${GAS} ----`));
-            await securityToken.methods.mint(_investor, web3.utils.toWei(_amount)).send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+            let mintAction = securityToken.methods.mint(_investor, web3.utils.toWei(_amount));
+            let GAS = await common.estimateGas(mintAction, User, 1.2);
+            await mintAction.send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
             .on('receipt', function(receipt){
                 console.log(chalk.green(`\nMinting Successful.`));
             });
@@ -410,12 +414,22 @@ async function mintTokens() {
     backToMenu()
 }
 
-async function endMinting() {
-    let GAS = Math.round(1.2 * (await securityToken.methods.finishMinting().estimateGas({from: User})));
-    console.log(chalk.black.bgYellowBright(`---- Transaction executed: finishMinting - Gas limit provided: ${GAS} ----`));
-    await securityToken.methods.finishMinting().send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+async function endMintingForSTO() {
+    let finishMintingSTOAction = securityToken.methods.finishMintingSTO();
+    let GAS = await common.estimateGas(finishMintingSTOAction, User, 1.2);
+    await finishMintingSTOAction.send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
     .on('receipt', function(receipt){
-        console.log(chalk.green(`\nPermanently end minting successful.`));
+        console.log(chalk.green(`\nEnd minting for STO was successful.`));
+    });
+    backToMenu();
+}
+
+async function endMintingForIssuer() {
+    let finishMintingIssuerAction = securityToken.methods.finishMintingIssuer();
+    let GAS = await common.estimateGas(finishMintingIssuerAction, User, 1.2);
+    await finishMintingIssuerAction.send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+    .on('receipt', function(receipt){
+        console.log(chalk.green(`\nEnd minting for Issuer was successful.`));
     });
     backToMenu();
 }

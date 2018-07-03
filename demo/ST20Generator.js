@@ -1,6 +1,7 @@
 var readlineSync = require('readline-sync');
-var BigNumber = require('bignumber.js')
+var BigNumber = require('bignumber.js');
 var contracts = require("./helpers/contract_addresses");
+var common = require('./common/common_functions');
 var chalk = require('chalk');
 const shell = require('shelljs');
 
@@ -196,9 +197,9 @@ async function step_ticker_reg(){
   if(!alreadyRegistered){
     try {
       await step_approval(tickerRegistryAddress, regFee);
-      let GAS = Math.round(1.2 * (await tickerRegistry.methods.registerTicker(Issuer,tokenSymbol,"",web3.utils.asciiToHex("")).estimateGas({ from: Issuer })));
-      console.log(chalk.black.bgYellowBright(`---- Transaction executed: registerTicker - Gas limit provided: ${GAS} ----`));
-      await tickerRegistry.methods.registerTicker(Issuer,tokenSymbol,"",web3.utils.asciiToHex("")).send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+      let registerTickerAction = tickerRegistry.methods.registerTicker(Issuer,tokenSymbol,"",web3.utils.asciiToHex(""));
+      let GAS = await common.estimateGas(registerTickerAction, Issuer, 1.2);
+      await registerTickerAction.send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Congrats! Your Ticker Registeration tx populated successfully
@@ -233,9 +234,9 @@ async function step_approval(spender, fee) {
           approved = true;
           return approved;
         } else {
-            let GAS = Math.round(1.2 * (await polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether")).estimateGas({ from: Issuer })));
-            console.log(chalk.black.bgYellowBright(`---- Transaction executed: approve - Gas limit provided: ${GAS} ----`));
-            await polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether")).send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+            let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
+            let GAS = await common.estimateGas(approveAction, Issuer, 1.2);
+            await approveAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
             .on('receipt', function(receipt) {
                 approved = true;
                 return approved;
@@ -291,9 +292,9 @@ async function step_token_deploy(){
 
     try{
       await step_approval(securityTokenRegistryAddress, regFee);
-      let GAS = Math.round(1.2 * (await securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, web3.utils.fromAscii(tokenDetails), divisibility).estimateGas({ from: Issuer })));
-      console.log(chalk.black.bgYellowBright(`---- Transaction executed: generateSecurityToken - Gas limit provided: ${GAS} ----`));
-      await securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, web3.utils.fromAscii(tokenDetails), divisibility).send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+      let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, web3.utils.fromAscii(tokenDetails), divisibility);
+      let GAS = await common.estimateGas(generateSecurityTokenAction, Issuer, 1.2);
+      await generateSecurityTokenAction.send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...
@@ -358,9 +359,9 @@ async function step_Wallet_Issuance(){
       });
 
       let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
-      let GAS = Math.round(1.2 * (await generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO).estimateGas({ from: Issuer })));
-      console.log(chalk.black.bgYellowBright(`---- Transaction executed: modifyWhitelist - Gas limit provided: ${GAS} ----`));
-      await generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO).send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+      let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
+      let GAS = await common.estimateGas(modifyWhitelistAction, Issuer, 1.2);
+      await modifyWhitelistAction.send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Adding wallet to whitelist. Please wait...
@@ -380,9 +381,9 @@ async function step_Wallet_Issuance(){
 
       issuerTokens =  readlineSync.question('How many tokens do you plan to mint for the wallet you entered? (500.000): ');
       if(issuerTokens == "") issuerTokens = '500000';
-      GAS = Math.round(1.2 * (await securityToken.methods.mint(mintWallet, web3.utils.toWei(issuerTokens,"ether")).estimateGas({ from: Issuer })));
-      console.log(chalk.black.bgYellowBright(`---- Transaction executed: mint - Gas limit provided: ${GAS} ----`));
-      await securityToken.methods.mint(mintWallet, web3.utils.toWei(issuerTokens,"ether")).send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+      let mintAction = securityToken.methods.mint(mintWallet, web3.utils.toWei(issuerTokens,"ether"));
+      GAS = await common.estimateGas(mintAction, Issuer, 1.2);
+      await mintAction.send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Minting tokens. Please wait...
@@ -579,9 +580,9 @@ async function step_STO_Launch(){
           console.log(chalk.red(`**************************************************************************************************************************************************\n`));
           return;
         }
-        let GAS = Math.round(1.5 * (await polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount)).estimateGas({ from: Issuer })));
-        console.log(chalk.black.bgYellowBright(`---- Transaction executed: transfer - Gas limit provided: ${GAS} ----`));
-        await polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount)).send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+        let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
+        let GAS = await common.estimateGas(transferAction, Issuer, 1.5);
+        await transferAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
         .on('transactionHash', function(hash) {
           console.log(`
             Transfer ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY to ${tokenSymbol} security token
@@ -600,9 +601,9 @@ async function step_STO_Launch(){
         })
         .on('error', console.error);
       }
-      let GAS = Math.round(1.2 * (await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0, false).estimateGas({ from: Issuer })));
-      console.log(chalk.black.bgYellowBright(`---- Transaction executed: addModule - Gas limit provided: ${GAS} ----`));
-      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0, false).send({from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+      let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
+      let GAS = await common.estimateGas(addModuleAction, Issuer, 1.2);
+      await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0).send({from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
       .on('transactionHash', function(hash){
         console.log(`
           Your transaction is being processed. Please wait...

@@ -297,7 +297,7 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should successfully attach the STO factory with the security token", async () => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [latestTime() + duration.seconds(1000), latestTime() + duration.days(40), cap, someString]);
-            const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._type.toNumber(), stoKey, "DummySTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
@@ -309,7 +309,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should successfully attach the permission manager factory with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, 0, 0, 0, true, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, 0, 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._type.toNumber(), delegateManagerKey, "GeneralPermissionManager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)

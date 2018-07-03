@@ -2,6 +2,7 @@ var fs = require('fs');
 // var BigNumber = require('bignumber.js');
 const Web3 = require('web3');
 var chalk = require('chalk');
+var common = require('./common/common_functions');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require("./helpers/contract_addresses");
@@ -84,9 +85,9 @@ async function transfer() {
   });
 
   try{
-      let GAS = Math.round(1.2 * (await securityToken.methods.transfer(transferTo,web3.utils.toWei(transferAmount,"ether")).estimateGas({from: Issuer})));
-      console.log(chalk.black.bgYellowBright(`---- Transaction executed: transfer - Gas limit provided: ${GAS} ----`));
-    await securityToken.methods.transfer(transferTo,web3.utils.toWei(transferAmount,"ether")).send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+    let transferAction = securityToken.methods.transfer(transferTo,web3.utils.toWei(transferAmount,"ether"));
+    let GAS = await common.estimateGas(transferAction, Issuer, 1.2);
+    await transferAction.send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...

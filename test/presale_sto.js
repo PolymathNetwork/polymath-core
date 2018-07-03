@@ -256,7 +256,7 @@ contract('PreSaleSTO', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [0]);
             let errorThrown = false;
             try {
-                const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 26000000 });
+                const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner, gas: 26000000 });
             } catch(error) {
                 console.log(`         tx revert -> Rate is ${0}. Test Passed Successfully`.grey);
                 errorThrown = true;
@@ -269,7 +269,7 @@ contract('PreSaleSTO', accounts => {
             endTime = latestTime() + duration.days(30);           // Start time will be 5000 seconds more than the latest time
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [endTime]);
 
-            const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, true, { from: token_owner, gas: 26000000 });
+            const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner, gas: 26000000 });
 
             assert.equal(tx.logs[2].args._type, stoKey, "PreSaleSTO doesn't get deployed");
             assert.equal(

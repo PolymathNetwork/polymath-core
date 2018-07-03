@@ -3,7 +3,7 @@ var csv = require('fast-csv');
 var BigNumber = require('bignumber.js');
 const Web3 = require('web3');
 const chalk = require('chalk');
-
+var common = require('./common/common_functions');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require("./helpers/contract_addresses");
@@ -167,25 +167,32 @@ function readFile() {
     -------------------------------------------------------
   `);
 
+  let affiliatesFailedArray = [];
   //this for loop will do the batches, so it should run 75, 75, 50 with 200
   for (let i = 0; i < distribData.length; i++) {
     try {
-      let affiliatesArray = [];
-      let tokensArray = [];
+      let affiliatesVerifiedArray = [];
+      let tokensVerifiedArray = [];
       //splitting the user arrays to be organized by input
       for (let j = 0; j < distribData[i].length; j++) {
-        affiliatesArray.push(distribData[i][j][0]);
-        let tokenAmount = web3.utils.toWei((distribData[i][j][1]).toString(),"ether")
-        tokensArray.push(tokenAmount);
+        let investorAccount = distribData[i][j][0];
+        let tokenAmount = web3.utils.toWei((distribData[i][j][1]).toString(),"ether");
+        let verifiedTransaction = await securityToken.methods.verifyTransfer("0x0000000000000000000000000000000000000000", investorAccount, tokenAmount).call({from : Issuer});
+        if (verifiedTransaction) {
+          affiliatesVerifiedArray.push(investorAccount);
+          tokensVerifiedArray.push(tokenAmount);
+        } else {
+          affiliatesFailedArray.push(investorAccount);
+        }
       }
-
-      let GAS = Math.round(1.2 * (await securityToken.methods.mintMulti(affiliatesArray, tokensArray).estimateGas({from: Issuer})));
-      console.log(chalk.black.bgYellowBright(`---- Transaction executed: mintMulti - Gas limit provided: ${GAS} ----`));
-      let r = await securityToken.methods.mintMulti(affiliatesArray, tokensArray).send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-      console.log(`Batch ${i} - Attempting to send the Minted tokens to affiliates accounts:\n\n`, affiliatesArray, "\n\n");
+      let mintMultiAction = securityToken.methods.mintMulti(affiliatesVerifiedArray, tokensVerifiedArray);
+      let GAS = await common.estimateGas(mintMultiAction, Issuer, 1.2);
+      let r = await mintMultiAction.send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+      console.log(`Batch ${i} - Attempting to send the Minted tokens to affiliates accounts:\n\n`, affiliatesVerifiedArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
       console.log("Multi Mint transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * DEFAULT_GAS_PRICE).toString(), "ether"), "Ether");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
+
 
     } catch (err) {
       console.log("ERROR:", err);
@@ -242,8 +249,9 @@ function readFile() {
 
     console.log(`******************** EVENT LOGS ANALYSIS COMPLETE ********************\n`);
     console.log(`A total of ${totalInvestors} affiliated investors get the token\n`);
-    console.log(`This script in total sent ${fullFileData.length - badData.length} new investors and updated investors to the blockchain.\n`);
+    console.log(`This script in total sent ${fullFileData.length - badData.length - affiliatesFailedArray.length} new investors and updated investors to the blockchain.\n`);
     console.log(`There were ${badData.length} bad entries that didnt get sent to the blockchain in the script.\n`);
+    console.log(`There were ${affiliatesFailedArray.length} accounts that didnt get sent to the blockchain as they would fail.\n`);
 
 
     console.log("************************************************************************************************");
@@ -252,20 +260,30 @@ function readFile() {
     console.log("LIST OF ALL INVESTORS WHO GOT THE MINTED TOKENS: \n\n", investorAddress_Events)
 
     let missingDistribs = [];
+    let failedVerificationDistribs = [];
     for (let l = 0; l < fullFileData.length; l++) {
-      if (!investorObjectLookup.hasOwnProperty(fullFileData[l][0])) {
-        missingDistribs.push(fullFileData[l])
+      if (affiliatesFailedArray.includes(fullFileData[l][0])) {
+        failedVerificationDistribs.push(fullFileData[l]);
+      } else if (!investorObjectLookup.hasOwnProperty(fullFileData[l][0])) {
+        missingDistribs.push(fullFileData[l]);
       }
     }
 
+    if (failedVerificationDistribs.length > 0) {
+      console.log("************************************************************************************************");
+      console.log("-- The following data arrays failed at verifyTransfer. Please review if these accounts are whitelisted --");
+      console.log(failedVerificationDistribs);
+      console.log("************************************************************************************************");
+    }
     if (missingDistribs.length > 0) {
       console.log("************************************************************************************************");
-      console.log("-- No Minted event was found for the following data arrays. Please review them manually --")
-      console.log(missingDistribs)
+      console.log("-- No Minted event was found for the following data arrays. Please review them manually --");
+      console.log(missingDistribs);
       console.log("************************************************************************************************");
-    } else {
+    } 
+    if (missingDistribs.length == 0 && failedVerificationDistribs.length == 0) {
       console.log("\n**************************************************************************************************************************");
-      console.log("All accounts passed through from the CSV were successfully get the tokens, because we were able to read them all from events")
+      console.log("All accounts passed through from the CSV were successfully get the tokens, because we were able to read them all from events");
       console.log("****************************************************************************************************************************");
     }
   }

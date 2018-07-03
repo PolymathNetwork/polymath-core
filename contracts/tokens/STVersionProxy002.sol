@@ -35,7 +35,7 @@ contract STVersionProxy002 is ISTProxy {
         );
 
         if (addTransferManager) {
-            SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, 0, false);
+            SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, 0);
         }
 
         SecurityToken(newSecurityTokenAddress).transferOwnership(_issuer);

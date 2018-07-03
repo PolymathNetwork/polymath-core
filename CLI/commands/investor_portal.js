@@ -63,15 +63,18 @@ let displayRaiseType;
 let displayTokenSymbol;
 
 // Start Script
-(async () => {
+async function executeApp() {
     // Init user accounts
-    let accounts = await web3.eth.getAccounts();
-    Issuer = accounts[0];
-
-    welcome();
-})().catch(err => {
-    console.error(err);
-});
+    try {
+        let accounts = await web3.eth.getAccounts();
+        Issuer = accounts[0];
+    
+        welcome();
+    }
+    catch(err) {
+        console.error(err);
+    }
+};
 
 // Welcome Message
 async function welcome() {
@@ -357,4 +360,10 @@ function convertToDaysRemaining(timeRemaining){
     var mnts = Math.floor(seconds / 60);
     seconds  -= mnts*60;
     return (days+" days, "+hrs+" Hrs, "+mnts+" Minutes, "+seconds+" Seconds");
+}
+
+module.exports = {
+    executeApp: async function() {
+          return executeApp();
+      }
 }

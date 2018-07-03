@@ -138,4 +138,8 @@ async function transferTokens(to, amount) {
     console.log(chalk.green(`Congratulations! balance of ${to} address is ${balanceInPoly.toNumber()} POLY`));
 }
 
-executeApp();
+module.exports = {
+  executeApp: async function() {
+        return executeApp();
+    }
+}

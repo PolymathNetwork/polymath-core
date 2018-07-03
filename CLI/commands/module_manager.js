@@ -68,7 +68,7 @@ let numSTO;
 let numCP;
 
 // Start function
-(async () => {
+async function executeApp() {
     console.log(`
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(@(&&@@@@@@@@@@@@@@@@@@@@@@@@@@(((@&&&&(/@@
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(#(((((((#%%%#@@@@@@@@@@@@@@@@@@@@%##(((/@@@@@@
@@ -115,8 +115,7 @@ let numCP;
     while (!validSymbol) {
         await getSecurityToken();
     }
-
-})();
+};
 
 // get token contract based on input symbol
 async function getSecurityToken() {
@@ -463,4 +462,10 @@ function convertToDaysRemaining(timeRemaining){
     var mnts = Math.floor(seconds / 60);
     seconds  -= mnts*60;
     return (days+" days, "+hrs+" Hrs, "+mnts+" Minutes, "+seconds+" Seconds");
+}
+
+module.exports = {
+    executeApp: async function() {
+          return executeApp();
+      }
 }

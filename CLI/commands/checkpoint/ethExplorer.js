@@ -488,4 +488,8 @@ async function reclaimedDividend(checkpointId) {
   }
 }
 
-executeApp();
+module.exports = {
+  executeApp: async function() {
+        return executeApp();
+    }
+}

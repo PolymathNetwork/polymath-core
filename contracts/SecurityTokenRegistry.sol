@@ -20,6 +20,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     // Emit at the time of launching of new security token
     event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address _owner);
     event LogAddCustomSecurityToken(string _name, string _symbol, address _securityToken, uint256 _addedAt);
+    event LogChangePOLYUSDOracle(address _newPOLYUSDOracle, address _oldPOLYUSDOracle, uint256 _now);
 
     constructor (
         address _polyToken,
@@ -140,6 +141,11 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
         require(registrationFee != _registrationFee);
         emit LogChangePolyRegisterationFee(registrationFee, _registrationFee);
         registrationFee = _registrationFee;
+    }
+
+    function changePOLYUSDOracle(address _POLYUSDOracle) public onlyOwner {
+        emit LogChangePOLYUSDOracle(_POLYUSDOracle, POLYUSDOracle, now);
+        POLYUSDOracle = _POLYUSDOracle;
     }
 
 }

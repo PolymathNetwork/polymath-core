@@ -24,11 +24,19 @@ contract PolyOracle is usingOraclize, Ownable {
     event LogPriceUpdated(uint256 _price, uint256 _oldPrice, uint256 _time);
     event LogNewOraclizeQuery(uint256 _time, bytes32 _queryId, string _query);
 
+    /**
+    * @notice Constructor - accepts ETH to initialise a balance for subsequent Oraclize queries
+    */
     constructor() payable public {
         // Use 50 gwei for now
         oraclize_setCustomGasPrice(50*10**9);
     }
 
+    /**
+    * @notice Oraclize callback (triggered by Oraclize)
+    * @param _requestId requestId corresponding to Oraclize query
+    * @param _result data returned by Oraclize URL query
+    */
     function __callback(bytes32 _requestId, string _result) public {
         require(msg.sender == oraclize_cbAddress(), "Only Oraclize can access this method");
         require(!freezeOracle, "Oracle is frozen");
@@ -47,6 +55,10 @@ contract PolyOracle is usingOraclize, Ownable {
         POLYUSD = newPOLYUSD;
     }
 
+    /**
+    * @notice Allows owner to schedule future Oraclize calls
+    * @param _times UNIX timestamps to schedule Oraclize calls as of. Empty list means trigger an immediate query.
+    */
     function schedulePriceUpdatesFixed(uint256[] _times) payable onlyOwner public {
         bytes32 requestId;
         if (_times.length == 0) {
@@ -70,6 +82,12 @@ contract PolyOracle is usingOraclize, Ownable {
         }
     }
 
+    /**
+    * @notice Allows owner to schedule future Oraclize calls on a rolling schedule
+    * @param _startTime UNIX timestamp for the first scheduled Oraclize query
+    * @param _interval how long (in seconds) between each subsequent Oraclize query
+    * @param _iters the number of Oraclize queries to schedule.
+    */
     function schedulePriceUpdatesRolling(uint256 _startTime, uint256 _interval, uint256 _iters) onlyOwner public {
         bytes32 requestId;
         require(oraclize_getPrice("URL") * _iters <= address(this).balance, "Insufficient Funds");
@@ -84,35 +102,71 @@ contract PolyOracle is usingOraclize, Ownable {
         }
     }
 
+    /**
+    * @notice Allows owner to manually set POLYUSD price
+    * @param _price POLYUSD price
+    */
     function setPOLYUSD(uint256 _price) onlyOwner public {
         POLYUSD = _price;
         latestUpdate = now;
     }
 
+    /**
+    * @notice Allows owner to set oracle to ignore all Oraclize pricce updates
+    * @param _frozen true to freeze updates, false to reenable updates
+    */
     function setFreezeOracle(bool _frozen) onlyOwner public {
         freezeOracle = _frozen;
     }
 
+    /**
+    * @notice Allows owner to set URL used in Oraclize queries
+    * @param _oracleURL URL to use
+    */
     function setOracleURL(string _oracleURL) onlyOwner public {
         oracleURL = _oracleURL;
     }
 
+    /**
+    * @notice Allows owner to set new sanity bounds for price updates
+    * @param _sanityBounds sanity bounds as a percentage * 10**16
+    */
     function setSanityBounds(uint256 _sanityBounds) onlyOwner public {
         sanityBounds = _sanityBounds;
     }
 
+    /**
+    * @notice Allows owner to set new gas price for future Oraclize queries
+    * @notice NB - this will only impact newly scheduled Oraclize queries, not future queries which have already been scheduled
+    * @param _gasPrice gas price to use for Oraclize callbacks
+    */
     function setGasPrice(uint256 _gasPrice) onlyOwner public {
         oraclize_setCustomGasPrice(_gasPrice);
     }
 
+    /**
+    * @notice Returns price and corresponding update time
+    * @return latest POLYUSD price
+    * @return timestamp of latest price update
+    */
     function getPrice() view public returns(uint256, uint256) {
         return (POLYUSD, latestUpdate);
     }
 
+    /**
+    * @notice Allows owner to set new gas limit on Oraclize queries
+    * @notice NB - this will only impact newly scheduled Oraclize queries, not future queries which have already been scheduled
+    * @param _gasLimit gas limit to use for Oraclize callbacks
+    */
     function setGasLimit(uint256 _gasLimit) onlyOwner public {
         gasLimit = _gasLimit;
     }
 
+    /**
+    * @notice Allows owner to ignore specific requestId results from Oraclize
+    * @param _requestIds Oraclize queryIds (as logged out when Oraclize query is scheduled)
+    * @param _ignore whether or not they should be ignored
+    */
     function setIgnoreRequestIds(bytes32[] _requestIds, bool[] _ignore) onlyOwner public {
         require(_requestIds.length == _ignore.length, "Incorrect parameter lengths");
         for (uint256 i = 0; i < _requestIds.length; i++) {
@@ -120,6 +174,10 @@ contract PolyOracle is usingOraclize, Ownable {
         }
     }
 
+    /**
+    * @notice Allows owner to set new time tolerance on Oraclize queries
+    * @param _oraclizeTimeTolerance amount of time in seconds that an Oraclize query can be early
+    */
     function setOraclizeTimeTolerance(uint256 _oraclizeTimeTolerance) onlyOwner public {
         oraclizeTimeTolerance = _oraclizeTimeTolerance;
     }

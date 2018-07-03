@@ -314,6 +314,7 @@ contract('SecurityToken addModule Cap', accounts => {
     describe("Add STO and verify transfer", async() => {
 
         it("Should attach STO modules up to the max number, then fail", async() => {
+            const MAX_MODULES = await I_SecurityToken.MAX_MODULES.call({ from: account_issuer });
             const startTime = latestTime() + duration.days(1);
             const endTime = latestTime() + duration.days(90);
             const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
@@ -325,7 +326,7 @@ contract('SecurityToken addModule Cap', accounts => {
             const dummyBytesSig = web3.eth.abi.encodeFunctionCall(dummyFuncSig, [startTime, endTime, cap, 'Hello']);
             const presaleBytesSig = web3.eth.abi.encodeFunctionCall(presaleFuncSig, [endTime]);
 
-            for (var STOIndex = 0; STOIndex < 20; STOIndex++) {
+            for (var STOIndex = 0; STOIndex < MAX_MODULES; STOIndex++) {
                 await I_PolyToken.getTokens(STOSetupCost, account_issuer);
                 await I_PolyToken.transfer(I_SecurityToken.address, STOSetupCost, { from: account_issuer });
                 switch (STOIndex % 3) {
@@ -365,9 +366,9 @@ contract('SecurityToken addModule Cap', accounts => {
         });
 
         it("Should successfully invest in all modules attached", async() => {
+            const MAX_MODULES = await I_SecurityToken.MAX_MODULES.call({ from: account_issuer });
             await increaseTime(duration.days(2));
-
-            for (var STOIndex = 0; STOIndex < 20; STOIndex++) {
+            for (var STOIndex = 0; STOIndex < MAX_MODULES; STOIndex++) {
                 switch (STOIndex % 3) {
                     case 0:
                         // Capped STO ETH

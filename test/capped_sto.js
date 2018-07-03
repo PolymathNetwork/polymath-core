@@ -776,6 +776,7 @@ contract('CappedSTO', accounts => {
     describe("Test cases for reaching limit number of STO modules", async() => {
 
         it("Should successfully attach STO modules up to the limit and fail at the limit", async () => {
+            const MAX_MODULES = await I_SecurityToken_ETH.MAX_MODULES.call({ from: token_owner });
             let startTime = latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
 
@@ -783,7 +784,7 @@ contract('CappedSTO', accounts => {
             await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCost*19, { from: token_owner});
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
-            for (var STOIndex = 2; STOIndex < 20; STOIndex++) {
+            for (var STOIndex = 2; STOIndex < MAX_MODULES; STOIndex++) {
                 const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
                 assert.equal(tx.logs[3].args._type, stoKey, `Wrong module type added at index ${STOIndex}`);
                 assert.equal(web3.utils.hexToString(tx.logs[3].args._name),"CappedSTO",`Wrong STO module added at index ${STOIndex}`);
@@ -802,8 +803,9 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should successfully invest in all STO modules attached", async () => {
+            const MAX_MODULES = await I_SecurityToken_ETH.MAX_MODULES.call({ from: token_owner });
             await increaseTime(duration.days(2));
-            for (var STOIndex = 2; STOIndex < 20; STOIndex++) {
+            for (var STOIndex = 2; STOIndex < MAX_MODULES; STOIndex++) {
                 await I_CappedSTO_Array_ETH[STOIndex].buyTokens(account_investor3, { from : account_investor3, value: web3.utils.toWei('1', 'ether') });
                 assert.equal(
                     (await I_CappedSTO_Array_ETH[STOIndex].fundsRaised.call())

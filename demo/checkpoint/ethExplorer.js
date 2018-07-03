@@ -34,7 +34,7 @@ try{
 }
 
 
-
+const DEFAULT_GAS_PRICE = 80000000000;
 const Web3 = require('web3');
 
 if (typeof web3 !== 'undefined') {
@@ -105,11 +105,11 @@ async function start_explorer(){
     }
   });
 
-  let options = ['Mint tokens','Transfer tokens',
-   'Explore account at checkpoint', 'Explore total supply at checkpoint',
-   'Create checkpoint', 'Calculate Dividends', 'Calculate Dividends at a checkpoint', 'Push dividends to account', 'Pull dividends to account', 'Explore ETH balance',
-   'Reclaimed dividends after expiry'];
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?');
+  let options = ['Mint tokens', 'Transfer tokens', 'Explore account at checkpoint',
+    'Explore total supply at checkpoint', 'Create checkpoint', 'Issue Dividends',
+    'Issue Dividends at a checkpoint', 'Tax Withholding', 'Push dividends to account',
+    'Pull dividends to account', 'Explore ETH balance', 'Reclaimed dividends after expiry', 'Exit'];
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', {cancel: false});
   console.log("Selected:",options[index]);
   switch(index){
     case 0:
@@ -152,16 +152,19 @@ async function start_explorer(){
       }
     break;
     case 7:
+        await withholdingTax();
+    break;
+    case 8:
       //Create dividends
       let _checkpoint3 =  readlineSync.question('Distribute dividends at checkpoint: ');
       let _address2 =  readlineSync.question('Enter address to push dividends to (ex- add1,add2,add3,...): ');
       await pushDividends(_checkpoint3,_address2);
     break;
-    case 8:
+    case 9:
        let _checkpoint7 =  readlineSync.question('Distribute dividends at checkpoint: ');
        await pullDividends(_checkpoint7);
     break;
-    case 9:
+    case 10:
       //explore eth balance
       let _checkpoint4 = readlineSync.question('Enter checkpoint to explore: ');
       let _address3 =  readlineSync.question('Enter address to explore: ');
@@ -176,9 +179,12 @@ async function start_explorer(){
         console.log("Sorry Future checkpoints are not allowed");
       }
     break;
-    case 10:
+    case 11:
       let _checkpoint5 = readlineSync.question('Enter the checkpoint to explore: ');
       await reclaimedDividend(_checkpoint5);
+    break;
+    case 12:
+        process.exit();
   }
 
   //Restart
@@ -220,7 +226,7 @@ async function createDividends(ethDividend){
   let expiryTime = readlineSync.question('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = '+(time+duration.minutes(10))+' ): ');
   if(expiryTime == "") expiryTime = time+duration.minutes(10);
   //Send eth dividends
-  await etherDividendCheckpoint.methods.createDividend(time, expiryTime)
+  await etherDividendCheckpoint.methods.createDividend(time, expiryTime,[])
   .send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas:2500000 })
   .on('transactionHash', function(hash){
     console.log(`
@@ -236,6 +242,39 @@ async function createDividends(ethDividend){
   })
 }
 
+async function withholdingTax() {
+    let GAS
+    let options = ['Set a % to withhold from the dividends sent to an address', 'Withdraw all withheld dividends', 'Return to main menu'];
+    let index = readlineSync.keyInSelect(options, 'What do you want to do?', {cancel: false});
+    console.log("Selected:",options[index]);
+    switch (index) {
+        case 0:
+            let addressT = readlineSync.question('Enter the address of the investor for which to withhold dividends: ');
+            let percentT = readlineSync.question('Enter the percentage of dividends to withhold (number between 0-100): ');
+            percentT = web3.utils.toWei((percentT * 10).toString(), 'milli');
+            GAS = Math.round(1.2 * (await etherDividendCheckpoint.methods.setWithholdingFixed([addressT], percentT).estimateGas({from: Issuer})));
+            console.log(chalk.black.bgYellowBright(`---- Transaction executed: setWithholdingFixed - Gas limit provided: ${GAS} ----`));
+            await etherDividendCheckpoint.methods.setWithholdingFixed([addressT], percentT).send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+            .on('receipt', function(receipt){
+                console.log(chalk.green(`\nSuccessfully set tax withholding of ${web3.utils.fromWei(percentT, 'milli')/10}% for ${addressT}.`));
+            });
+            break;
+        case 1:
+            // Withdraw
+            let divIndexT = readlineSync.question('Enter the index of the dividend to withdraw: ');
+            GAS = Math.round(1.2 * (await etherDividendCheckpoint.methods.withdrawWithholding(divIndexT).estimateGas({from: Issuer})));
+            console.log(chalk.black.bgYellowBright(`---- Transaction executed: withdrawWithholding - Gas limit provided: ${GAS} ----`));
+            await etherDividendCheckpoint.methods.withdrawWithholding(divIndexT).send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+            .on('receipt', function(receipt){
+                let val = receipt.events.EtherDividendWithholdingWithdrawn.returnValues._withheldAmount;
+                console.log(chalk.green(`\nSuccessfully withdrew ${val} ETH from dividend ${divIndexT} tax withholding to ${Issuer}.`));
+            });
+            break;
+        case 2:
+            return;
+            break;
+    }
+}
 
 async function createDividendWithCheckpoint(ethDividend, _checkpointId) {
 
@@ -274,7 +313,7 @@ async function createDividendWithCheckpoint(ethDividend, _checkpointId) {
     let _dividendStatus = await etherDividendCheckpoint.methods.getDividendIndex(_checkpointId).call();
     if (_dividendStatus.length != 1) { 
     //Send eth dividends
-      await etherDividendCheckpoint.methods.createDividendWithCheckpoint(time, expiryTime, _checkpointId)
+      await etherDividendCheckpoint.methods.createDividendWithCheckpoint(time, expiryTime, _checkpointId, [])
       .send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas:2500000 })
       .on('transactionHash', function(hash){
         console.log(`

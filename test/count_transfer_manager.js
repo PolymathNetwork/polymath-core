@@ -483,7 +483,7 @@ contract('CountTransferManager', accounts => {
 
         it("Should get the permission list", async() => {
             let perm = await I_CountTransferManager.getPermissions.call();
-            assert.equal(perm.length, 0);
+            assert.equal(perm.length, 1);
         });
 
         describe("Test cases for the factory", async() => {

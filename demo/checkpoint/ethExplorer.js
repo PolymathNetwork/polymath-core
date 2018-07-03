@@ -172,9 +172,10 @@ async function start_explorer(){
       let _dividendIndex = await etherDividendCheckpoint.methods.getDividendIndex(_checkpoint4).call();
       if (_dividendIndex.length == 1) {
         let divsAtCheckpoint = await etherDividendCheckpoint.methods.calculateDividend(_dividendIndex[0],_address3).call({ from: Issuer});
+        //console.log(divsAtCheckpoint);
         console.log(`
           ETH Balance: ${web3.utils.fromWei(await web3.eth.getBalance(_address3),"ether")} ETH
-          Dividends owed at checkpoint ${_checkpoint4}: ${web3.utils.fromWei(divsAtCheckpoint,"ether")} ETH
+          Dividends owed at checkpoint ${_checkpoint4}: ${web3.utils.fromWei(divsAtCheckpoint[0],"ether")} ETH
         `)
       } else {
         console.log("Sorry Future checkpoints are not allowed");

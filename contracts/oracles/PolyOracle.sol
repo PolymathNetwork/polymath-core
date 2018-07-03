@@ -1,16 +1,18 @@
 pragma solidity ^0.4.24;
 
-import "./oraclize/oraclizeAPI.sol";
+import "../external/oraclizeAPI.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import '../interfaces/IOracle.sol';
 
-contract PolyOracle is usingOraclize, Ownable {
+contract PolyOracle is usingOraclize, IOracle, Ownable {
     using SafeMath for uint256;
 
     string public oracleURL = "json(https://api.coinmarketcap.com/v2/ticker/2496/?convert=USD).data.quotes.USD.price";
     uint256 public sanityBounds = 20*10**16;
     uint256 public gasLimit = 100000;
     uint256 public oraclizeTimeTolerance = 5 minutes;
+    uint256 public staleTime = 6 hours;
 
     uint256 public POLYUSD;
     uint256 public latestUpdate;
@@ -149,7 +151,7 @@ contract PolyOracle is usingOraclize, Ownable {
     * @return latest POLYUSD price
     * @return timestamp of latest price update
     */
-    function getPrice() view public returns(uint256, uint256) {
+    function getPriceAndTime() view public returns(uint256, uint256) {
         return (POLYUSD, latestUpdate);
     }
 
@@ -160,6 +162,10 @@ contract PolyOracle is usingOraclize, Ownable {
     */
     function setGasLimit(uint256 _gasLimit) onlyOwner public {
         gasLimit = _gasLimit;
+    }
+
+    function setStaleTime(uint256 _staleTime) onlyOwner public {
+        staleTime = _staleTime;
     }
 
     /**
@@ -180,6 +186,35 @@ contract PolyOracle is usingOraclize, Ownable {
     */
     function setOraclizeTimeTolerance(uint256 _oraclizeTimeTolerance) onlyOwner public {
         oraclizeTimeTolerance = _oraclizeTimeTolerance;
+    }
+
+    /**
+    * @notice Returns address of oracle currency (0x0 for ETH)
+    */
+    function getCurrencyAddress() external view returns(address) {
+        return 0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC;
+    }
+
+    /**
+    * @notice Returns symbol of oracle currency (0x0 for ETH)
+    */
+    function getCurrencySymbol() external view returns(bytes32) {
+        return bytes32("POLY");
+    }
+
+    /**
+    * @notice Returns denomination of price
+    */
+    function getCurrencyDenominated() external view returns(bytes32) {
+        return bytes32("USD");
+    }
+
+    /**
+    * @notice Returns price - should throw if not valid
+    */
+    function getPrice() external returns(uint256) {
+        require(latestUpdate >= now - staleTime);
+        return POLYUSD;
     }
 
 }

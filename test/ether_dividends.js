@@ -833,7 +833,7 @@ contract('EtherDividendCheckpoint', accounts => {
 
         it("Should get the listed permissions", async() => {
             let tx = await I_EtherDividendCheckpoint.getPermissions.call();
-            assert.equal(tx.length,0);
+            assert.equal(tx.length,1);
         });
 
         describe("Test cases for the EtherDividendCheckpointFactory", async() => {
@@ -854,7 +854,7 @@ contract('EtherDividendCheckpoint', accounts => {
                             "Create a dividend which will be paid out to token holders proportional to their balances at the point the dividend is created",
                             "Wrong Module added");
                 let tags = await I_EtherDividendCheckpointFactory.getTags.call();
-                assert.equal(tags.length, 0);
+                assert.equal(tags.length, 3);
 
             });
         });

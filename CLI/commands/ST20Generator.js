@@ -323,6 +323,11 @@ async function step_token_deploy(){
 
 async function step_Wallet_Issuance(){
 
+  let result = await securityToken.methods.getModule(3,0).call({from: Issuer});
+  let STOAddress = result[1] 
+  if (STOAddress != "0x0000000000000000000000000000000000000000") {
+    console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address " + result[1] + ". Skipping initial minting");
+  } else { 
     let initialMint;
     await securityToken.getPastEvents('Transfer', {
       filter: {from: "0x0000000000000000000000000000000000000000"}, // Using an array means OR: e.g. 20 or 23
@@ -401,6 +406,7 @@ async function step_Wallet_Issuance(){
         }
       }
     }
+  }
   await step_STO_Prep();
 }
 

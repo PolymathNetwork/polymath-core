@@ -14,6 +14,8 @@ contract PolyOracle is usingOraclize, Ownable {
 
     uint256 public POLYUSD;
     uint256 public latestUpdate;
+    uint256 public latestScheduledUpdate;
+
     mapping (bytes32 => uint256) requestIds;
     mapping (bytes32 => bool) ignoreRequestIds;
 
@@ -51,6 +53,9 @@ contract PolyOracle is usingOraclize, Ownable {
             require(oraclize_getPrice("URL") <= address(this).balance, "Insufficient Funds");
             requestId = oraclize_query("URL", oracleURL, gasLimit);
             requestIds[requestId] = now;
+            if (latestScheduledUpdate < requestIds[requestId]) {
+                latestScheduledUpdate = requestIds[requestId];
+            }
             emit LogNewOraclizeQuery(now, requestId, oracleURL);
         } else {
             require(oraclize_getPrice("URL") * _times.length <= address(this).balance, "Insufficient Funds");
@@ -58,6 +63,9 @@ contract PolyOracle is usingOraclize, Ownable {
                 requestId = oraclize_query(_times[i], "URL", oracleURL, gasLimit);
                 requestIds[requestId] = _times[i];
                 emit LogNewOraclizeQuery(_times[i], requestId, oracleURL);
+            }
+            if (latestScheduledUpdate < requestIds[requestId]) {
+                latestScheduledUpdate = requestIds[requestId];
             }
         }
     }
@@ -70,6 +78,9 @@ contract PolyOracle is usingOraclize, Ownable {
             requestId = oraclize_query(scheduledTime, "URL", oracleURL, gasLimit);
             requestIds[requestId] = scheduledTime;
             emit LogNewOraclizeQuery(scheduledTime, requestId, oracleURL);
+        }
+        if (latestScheduledUpdate < requestIds[requestId]) {
+            latestScheduledUpdate = requestIds[requestId];
         }
     }
 

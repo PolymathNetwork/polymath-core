@@ -4,6 +4,7 @@ import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
 const USDTieredSTO = artifacts.require('./USDTieredSTO.sol');
+const MockOracle = artifacts.require('./MockOracle.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
@@ -23,10 +24,16 @@ contract('USDTieredSTO', accounts => {
     // Accounts Variable declaration
     let account_polymath;
     let account_investor1;
+    let account_investor2;
+    let account_investor3;
+    let account_investor4;
+    let account_investor5;
+    let account_investor6;
+    let account_investor7;
+    let account_investor8;
     let account_issuer;
     let token_owner;
-    let account_investor2;
-    let account_fundsReceiver;
+    let wallet;
 
     let balanceOfReceiver;
     let message = "Transaction Should Fail!";
@@ -34,9 +41,6 @@ contract('USDTieredSTO', accounts => {
     let fromTime = latestTime();
     let toTime = latestTime() + duration.days(15);
     let expiryTime = toTime + duration.days(100);
-    let P_fromTime = fromTime + duration.days(1);
-    let P_toTime = P_fromTime + duration.days(50);
-    let P_expiryTime = toTime + duration.days(100);
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -47,6 +51,8 @@ contract('USDTieredSTO', accounts => {
     let I_TickerRegistry;
     let I_SecurityTokenRegistry;
     let I_USDTieredSTOFactory;
+    let I_USDOracle;
+    let I_POLYOracle;
     let I_STVersion;
     let I_SecurityToken;
     let I_USDTieredSTO;
@@ -73,19 +79,21 @@ contract('USDTieredSTO', accounts => {
     // Initial fee for ticker registry and security token registry
     const initRegFee = 250 * Math.pow(10, 18);
 
-    // Capped STO details
+    // USDTieredSTO details
     let startTime;           // Start time will be 5000 seconds more than the latest time
-    let endTime;                     // Add 30 days more
-    const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
-    const rate = 1000;
-    const fundRaiseType = 0;
-    const P_cap = new BigNumber(50000).times(new BigNumber(10).pow(18));
-    const P_fundRaiseType = 1;
-    const P_rate = 5;
-    const cappedSTOSetupCost= web3.utils.toWei("20000","ether");
-    const maxCost = cappedSTOSetupCost;
-    let P_startTime = endTime + duration.days(2);
-    let P_endTime = P_startTime + duration.days(30);
+    let endTime;             // Add 30 days more
+    /* function configure(
+        uint256 _startTime,
+        uint256 _endTime,
+        uint256[] _ratePerTier,
+        uint256[] _tokensPerTier,
+        address _securityTokenRegistry,
+        uint256 _nonAccreditedLimitUSD,
+        uint256 _minimumInvestmentUSD,
+        uint8 _startingTier,
+        uint8[] _fundRaiseTypes,
+        address _wallet
+    ) */
     const functionSignature = {
         name: 'configure',
         type: 'function',
@@ -96,17 +104,32 @@ contract('USDTieredSTO', accounts => {
             type: 'uint256',
             name: '_endTime'
         },{
-            type: 'uint256',
-            name: '_cap'
+            type: 'uint256[]',
+            name: '_ratePerTier'
         },{
-            type: 'uint256',
-            name: '_rate'
-        },{
-            type: 'uint8',
-            name: '_fundRaiseType',
+            type: 'uint256[]',
+            name: '_tokensPerTier'
         },{
             type: 'address',
-            name: '_fundsReceiver'
+            name: '_securityTokenRegistry'
+        },{
+            type: 'uint256',
+            name: '_nonAccreditedLimitUSD'
+        },{
+            type: 'uint256',
+            name: '_minimumInvestmentUSD'
+        },{
+            type: 'uint8',
+            name: '_startingTier'
+        },{
+            type: 'uint8[]',
+            name: '_fundRaiseTypes'
+        },{
+            type: 'address',
+            name: '_wallet'
+        },{
+            type: 'address',
+            name: '_reserveWallet'
         }
         ]
     };
@@ -115,9 +138,13 @@ contract('USDTieredSTO', accounts => {
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
-        account_investor1 = accounts[4];
-        account_investor2 = accounts[3];
-        account_fundsReceiver = accounts[2];
+        wallet = accounts[2];
+        account_investor1 = accounts[3];
+        account_investor2 = accounts[4];
+        account_investor3 = accounts[5];
+        account_investor4 = accounts[6];
+        account_investor5 = accounts[7];
+        account_investor6 = accounts[8];
         token_owner = account_issuer;
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -158,7 +185,7 @@ contract('USDTieredSTO', accounts => {
 
         // STEP 4: Deploy the USDTieredSTOFactory
 
-        I_USDTieredSTOFactory = await USDTieredSTOFactory.new(I_PolyToken.address, cappedSTOSetupCost, 0, 0, { from: token_owner });
+        I_USDTieredSTOFactory = await USDTieredSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: token_owner });
 
         assert.notEqual(
             I_USDTieredSTOFactory.address.valueOf(),
@@ -221,6 +248,12 @@ contract('USDTieredSTO', accounts => {
         await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
         await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
+        // Step 9: Deploy & Register Mock Oracles
+        I_USDOracle = await MockOracle.new(0, "ETH", "USD", BigNumber(500).mul(10**18), { from: account_polymath });
+        I_POLYOracle = await MockOracle.new(I_PolyToken.address, "POLY", "USD", BigNumber(25).mul(10**16), { from: account_polymath });//25 cents per POLY
+        await I_SecurityTokenRegistry.changeOracle("ETH", "USD", I_USDOracle.address, { from: account_polymath })
+        await I_SecurityTokenRegistry.changeOracle("POLY", "USD", I_POLYOracle.address, { from: account_polymath })
+
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
             ModuleRegistry: ${I_ModuleRegistry.address}\n
@@ -230,6 +263,8 @@ contract('USDTieredSTO', accounts => {
             TickerRegistry: ${I_TickerRegistry.address}\n
             STVersionProxy_001: ${I_STVersion.address}\n
             SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
+            USDOracle: ${I_USDOracle.address}\n
+            POLYOracle: ${I_POLYOracle.address}\n
         `);
     });
 
@@ -244,7 +279,7 @@ contract('USDTieredSTO', accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000  });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, true, { from: token_owner, gas: 85000000  });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -278,178 +313,28 @@ contract('USDTieredSTO', accounts => {
 
         });
 
-        it("Should fail to launch the STO due to security token doesn't have the sufficeint POLY", async () => {
+        it("Should successfully attach the STO factory with the security token", async () => {
             startTime = latestTime() + duration.days(1);           // Start time will be 5000 seconds more than the latest time
             endTime = startTime + duration.days(30);
-            await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
+            console.log([startTime, endTime, [BigNumber(10*10**16), BigNumber(15*10**16)], [BigNumber(100000000).mul(BigNumber(10**18)), BigNumber(200000000).mul(BigNumber(10**18))], I_SecurityTokenRegistry.address, BigNumber(10000).mul(BigNumber(10**18)), 0, 0, [0, 1], wallet]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, [BigNumber(10*10**16), BigNumber(15*10**16)], [BigNumber(100000000).mul(BigNumber(10**18)), BigNumber(200000000).mul(BigNumber(10**18))], I_SecurityTokenRegistry.address, BigNumber(10000).mul(BigNumber(10**18)), 0, 0, [0, 1], wallet, wallet]);
+            const tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: token_owner, gas: 4500000 });
 
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, account_fundsReceiver]);
-            let errorThrown = false;
-            try {
-            const tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
-            } catch(error) {
-                console.log(`         tx revert -> Rate is ${0}. Test Passed Successfully`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("Should fail to launch the STO due to rate is 0", async () => {
-            await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
-
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, account_fundsReceiver]);
-            let errorThrown = false;
-            try {
-            const tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
-            } catch(error) {
-                console.log(`Tx Failed because of rate is ${0}. Test Passed Successfully`);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("Should fail to launch the STO due to startTime > endTime", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, fundRaiseType, account_fundsReceiver]);
-            let errorThrown = false;
-            try {
-            const tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
-            } catch(error) {
-                errorThrown = true;
-                console.log(`         tx revert -> StartTime is greater than endTime. Test Passed Successfully`.grey);
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("Should fail to launch the STO due to cap is of 0 securityToken", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, fundRaiseType, account_fundsReceiver]);
-            let errorThrown = false;
-            try {
-            const tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
-            } catch(error) {
-                console.log(`Tx Failed because the Cap is equal to ${0}. Test Passed Successfully`);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
-
-
-        it("Should successfully attach the STO factory with the security token", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-            const tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 45000000 });
-
-            assert.equal(tx.logs[3].args._type, stoKey, "USDTieredSTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._type, stoKey, "USDTieredSTO doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[3].args._name)
+                web3.utils.toAscii(tx.logs[2].args._name)
                 .replace(/\u0000/g, ''),
                 "USDTieredSTO",
                 "USDTieredSTOFactory module was not added"
             );
-            I_USDTieredSTO = USDTieredSTO.at(tx.logs[3].args._module);
+            I_USDTieredSTO = USDTieredSTO.at(tx.logs[2].args._module);
         });
     });
 
-    describe("verify the data of STO", async () => {
-
-        it("Should verify the configuration of the STO", async() => {
-            assert.equal(
-                await I_USDTieredSTO.startTime.call(),
-                startTime,
-                "STO Configuration doesn't set as expected"
-            );
-            assert.equal(
-                await I_USDTieredSTO.endTime.call(),
-                endTime,
-                "STO Configuration doesn't set as expected"
-            );
-            assert.equal(
-                (await I_USDTieredSTO.cap.call()).toNumber(),
-                cap,
-                "STO Configuration doesn't set as expected"
-            );
-            assert.equal(
-                await I_USDTieredSTO.rate.call(),
-                rate,
-                "STO Configuration doesn't set as expected"
-            );
-            assert.equal(
-                await I_USDTieredSTO.fundraiseType.call(),
-                fundRaiseType,
-                "STO Configuration doesn't set as expected"
-            );
-        });
-    });
     describe("Buy tokens", async() => {
 
-        it("Should buy the tokens -- failed due to startTime is greater than Current time", async () => {
-            let errorThrown = false;
-            try {
-                await web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_USDTieredSTO.address,
-                    value: web3.utils.toWei('1', 'ether')
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> startTime is greater than Current time`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("Should buy the tokens -- failed due to invested amount is zero", async () => {
-            let errorThrown = false;
-            try {
-                await web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_USDTieredSTO.address,
-                    value: web3.utils.toWei('0', 'ether')
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> Invested amount is zero`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
-            let errorThrown = false;
-            try {
-                await web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_USDTieredSTO.address,
-                    value: web3.utils.toWei('1', 'ether')
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> Investor doesn't present in the whitelist`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("Should buy the tokens -- Failed due to wrong granularity", async () => {
-            let errorThrown = false;
-            try {
-                await web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_USDTieredSTO.address,
-                    value: web3.utils.toWei('0.1111', 'ether')
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> Wrong purchase granularity`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("Should Buy the tokens", async() => {
-            balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
+        it("Should Buy the tokens using ETH", async() => {
+            balanceOfReceiver = await web3.eth.getBalance(wallet);
             // Add the Investor in to the whitelist
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
@@ -467,16 +352,21 @@ contract('USDTieredSTO', accounts => {
 
             // Jump time
             await increaseTime(duration.days(1));
+
+            // Check rates
+            // console.log((await I_USDTieredSTO.convertToUSD("ETH", web3.utils.toWei('1', 'ether'))));
+            // console.log((await I_USDTieredSTO.convertToUSD("POLY", web3.utils.toWei('1', 'ether'))));
+
             // Fallback transaction
             await web3.eth.sendTransaction({
                 from: account_investor1,
                 to: I_USDTieredSTO.address,
                 gas: 2100000,
                 value: web3.utils.toWei('1', 'ether')
-              });
+            });
 
             assert.equal(
-                (await I_USDTieredSTO.fundsRaised.call())
+                (await I_USDTieredSTO.fundsRaisedETH.call())
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 1
@@ -488,10 +378,57 @@ contract('USDTieredSTO', accounts => {
                 (await I_SecurityToken.balanceOf(account_investor1))
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
-                1000
+                5000
             );
+
+            assert.equal(
+                BigNumber(await web3.eth.getBalance(wallet))
+                .sub(balanceOfReceiver)
+                .toNumber(),
+                web3.utils.toWei('1', 'ether')
+            );
+
         });
 
+        it("Should Buy the tokens using POLY", async() => {
+            balanceOfReceiver = await I_PolyToken.balanceOf(wallet);
+
+            // Mint & approve some tokens for the investor
+            await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), account_investor1);
+            await I_PolyToken.approve(I_USDTieredSTO.address, (10000 * 10**18), {from: account_investor1});
+
+            // Check rates
+            // console.log((await I_USDTieredSTO.convertToUSD("ETH", web3.utils.toWei('1', 'ether'))));
+            // console.log((await I_USDTieredSTO.convertToUSD("POLY", web3.utils.toWei('1', 'ether'))));
+
+            await I_USDTieredSTO.buyWithPoly(account_investor1, 1000 * 10**18, {from: account_investor1});
+
+            assert.equal(
+                (await I_USDTieredSTO.fundsRaisedPOLY.call())
+                .dividedBy(new BigNumber(10).pow(18))
+                .toNumber(),
+                1000
+            );
+
+            assert.equal(await I_USDTieredSTO.getNumberInvestors.call(), 1);
+
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor1))
+                .dividedBy(new BigNumber(10).pow(18))
+                .toNumber(),
+                5000+2500
+            );
+
+
+            assert.equal(
+                BigNumber(await I_PolyToken.balanceOf(wallet))
+                .sub(balanceOfReceiver)
+                .toNumber(),
+                web3.utils.toWei('1000', 'ether')
+            );
+
+        });
+/*
         it("Verification of the event Token Purchase", async() => {
             let TokenPurchase = I_USDTieredSTO.allEvents();
             let log = await new Promise(function(resolve, reject) {
@@ -731,8 +668,8 @@ contract('USDTieredSTO', accounts => {
              });
 
              it("POLY: Should successfully attach the STO factory with the security token", async () => {
-                await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
-                await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
+                await I_PolyToken.getTokens(USDTieredSTOSetupCost, token_owner);
+                await I_PolyToken.transfer(I_SecurityToken.address, USDTieredSTOSetupCost, { from: token_owner});
 
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [P_startTime, P_endTime, P_cap, P_rate, P_fundRaiseType, account_fundsReceiver]);
 
@@ -774,8 +711,8 @@ contract('USDTieredSTO', accounts => {
                     "STO Configuration doesn't set as expected"
                 );
                 assert.equal(
-                    await I_USDTieredSTO.fundraiseType.call(),
-                    P_fundRaiseType,
+                    await I_USDTieredSTO.fundRaiseType(P_fundRaiseType),
+                    true,
                     "STO Configuration doesn't set as expected"
                 );
             });
@@ -944,7 +881,7 @@ contract('USDTieredSTO', accounts => {
 
          describe("Test cases for the USDTieredSTOFactory", async() => {
             it("should get the exact details of the factory", async() => {
-                assert.equal((await I_USDTieredSTOFactory.setupCost.call()).toNumber(), cappedSTOSetupCost);
+                assert.equal((await I_USDTieredSTOFactory.setupCost.call()).toNumber(), USDTieredSTOSetupCost);
                 assert.equal(await I_USDTieredSTOFactory.getType.call(),3);
                 assert.equal(web3.utils.toAscii(await I_USDTieredSTOFactory.getName.call())
                             .replace(/\u0000/g, ''),
@@ -992,7 +929,7 @@ contract('USDTieredSTO', accounts => {
                 assert.isTrue(metrics[7]);
              });
 
-         });
+         }); */
     });
 
 });

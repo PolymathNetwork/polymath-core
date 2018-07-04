@@ -15,6 +15,9 @@ contract USDTieredSTO is ISTO {
     // Address where ETH & POLY funds are delivered
     address public wallet;
 
+    // Address of issuer reserve wallet for unsold tokens
+    address public reserveWallet;
+
     // Address of Polymath Security Token Registry
     address public securityTokenRegistry;
 
@@ -60,8 +63,12 @@ contract USDTieredSTO is ISTO {
     // Minimum investable amount in USD
     uint256 public minimumInvestmentUSD;
 
+    // Whether or not the STO has been finalized
+    bool isFinalized;
+
     event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint8 _tier);
     event FundsReceived(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _etherAmount, uint256 _polyAmount, uint256 _rate);
+    event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _tier);
 
     modifier validETH {
         require(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
@@ -110,17 +117,19 @@ contract USDTieredSTO is ISTO {
         uint256 _minimumInvestmentUSD,
         uint8 _startingTier,
         uint8[] _fundRaiseTypes,
-        address _wallet
+        address _wallet,
+        address _reserveWallet
     )
     public
     onlyFactory
     {
         require(_ratePerTier.length == _tokensPerTier.length, "Mismatch between rates and tokens per tier");
-        //TODO - check a sensible number of tiers since we loop over them
-        for (uint256 i = 0; i < _ratePerTier.length; i++) {
+        for (uint8 i = 0; i < _ratePerTier.length; i++) {
             require(_ratePerTier[i] > 0, "Rate of token should be greater than 0");
+            mintedPerTier.push(0);
         }
         require(_wallet != address(0), "Zero address is not permitted for wallet");
+        require(_reserveWallet != address(0), "Zero address is not permitted for wallet");
         require(_startTime >= now && _endTime > _startTime, "Date parameters are not valid");
         require(_securityTokenRegistry != address(0), "Zero address is not permitted for security token registry");
         require(_startingTier < _ratePerTier.length, "Invalid starting tier");
@@ -131,6 +140,7 @@ contract USDTieredSTO is ISTO {
         tokensPerTier = _tokensPerTier;
         minimumInvestmentUSD = _minimumInvestmentUSD;
         wallet = _wallet;
+        reserveWallet = _reserveWallet;
         securityTokenRegistry = _securityTokenRegistry;
         nonAccreditedLimitUSD = _nonAccreditedLimitUSD;
         for (uint8 j = 0; j < _fundRaiseTypes.length; j++) {
@@ -142,20 +152,28 @@ contract USDTieredSTO is ISTO {
      * @notice This function returns the signature of configure function
      */
     function getInitFunction() public returns (bytes4) {
-        return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],address,address)"));
+        return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],address,uint256,uint256,uint8,uint8[],address,address)"));
     }
 
     function isOpen() public view returns(bool) {
+        if (isFinalized) {
+            return false;
+        }
         if (now < startTime) {
             return false;
         }
         if (now >= endTime) {
             return false;
         }
-        if ((currentTier == ratePerTier.length) && mintedPerTier[currentTier] == tokensPerTier[currentTier]) {
+        if (mintedPerTier[ratePerTier.length - 1] == tokensPerTier[tokensPerTier.length - 1]) {
             return false;
         }
         return true;
+    }
+
+    function convertToUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
+        uint256 rate = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(_currency, bytes32("USD"))).getPrice();
+        return wmul(rate, _amount);
     }
 
     /**
@@ -233,7 +251,7 @@ contract USDTieredSTO is ISTO {
     function buyWithPoly(address _beneficiary, uint256 _investedPOLY) public validPOLY {
         require(!paused);
         require(isOpen());
-        uint256 POLYUSD = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
+        uint256 POLYUSD = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
         /* uint256 investedPOLY = msg.value; */
         uint256 investedUSD = wmul(POLYUSD, _investedPOLY);
         require(investedUSD >= minimumInvestmentUSD);
@@ -277,6 +295,20 @@ contract USDTieredSTO is ISTO {
 
     function transferPOLY(address _beneficiary, uint256 _polyAmount) internal {
         require(polyToken.transferFrom(_beneficiary, wallet, _polyAmount));
+    }
+
+    //TODO - check whether this can only be called when STO has completed
+    function finalize() public onlyOwner {
+        require(!isFinalized);
+        isFinalized = true;
+        for (uint8 i = 0; i < tokensPerTier.length; i++) {
+            if (mintedPerTier[i] < tokensPerTier[i]) {
+                uint256 remainingTokens = tokensPerTier[i].sub(mintedPerTier[i]);
+                mintedPerTier[i] = tokensPerTier[i];
+                require(IST20(securityToken).mint(reserveWallet, remainingTokens), "Error in minting the tokens");
+                emit ReserveTokenMint(msg.sender, reserveWallet, remainingTokens, i);
+            }
+        }
     }
 
     /**

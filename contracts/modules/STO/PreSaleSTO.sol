@@ -21,6 +21,8 @@ contract PreSaleSTO is ISTO {
     uint256 public etherRaised;
     uint256 public polyRaised;
 
+    uint256 public tokensSold;
+
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
@@ -69,6 +71,13 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
+     * @notice Return the total no. of tokens sold
+     */
+    function getTokensSold() public view returns (uint256) {
+        return tokensSold;
+    }
+
+    /**
      * @notice Return the permissions flag that are associated with STO
      */
     function getPermissions() public view returns(bytes32[]) {
@@ -93,6 +102,7 @@ contract PreSaleSTO is ISTO {
         investorCount = investorCount.add(1);
         etherRaised = etherRaised.add(_etherContributed);
         polyRaised = polyRaised.add(_polyContributed);
+        tokensSold = tokensSold.add(_amount);
         emit TokensAllocated(_investor, _amount);
     }
 

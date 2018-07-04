@@ -39,7 +39,7 @@ contract MakerDAOOracle is IOracle, Ownable {
     /**
     * @notice Returns price - should throw if not valid
     */
-    function getPrice() external returns(uint256) {
+    function getPrice() external view returns(uint256) {
         (bytes32 price, bool valid) = Medianizer(makerDAO).peek();
         require(valid, "MakerDAO Oracle returning invalid value");
         return uint256(price);

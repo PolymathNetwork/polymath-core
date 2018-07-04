@@ -13,7 +13,7 @@ contract ISTO is IModule, Pausable {
     using SafeMath for uint256;
 
     enum FundRaiseType { ETH, POLY }
-    mapping (uint8 => bool) fundRaiseType;
+    mapping (uint8 => bool) public fundRaiseType;
 
     // Start time of the STO
     uint256 public startTime;

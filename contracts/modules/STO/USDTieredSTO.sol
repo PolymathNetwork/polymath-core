@@ -60,14 +60,8 @@ contract USDTieredSTO is ISTO {
     // Minimum investable amount in USD
     uint256 public minimumInvestmentUSD;
 
-    /**
-    * Event for token purchase logging
-    * @param purchaser who paid for the tokens
-    * @param beneficiary who got the tokens
-    * @param value weis paid for purchase
-    * @param amount amount of tokens purchased
-    */
-    event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
+    event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint8 _tier);
+    event FundsReceived(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _etherAmount, uint256 _polyAmount, uint256 _rate);
 
     modifier validETH {
         require(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
@@ -211,6 +205,7 @@ contract USDTieredSTO is ISTO {
         fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
         wallet.transfer(spentETH);
         _beneficiary.transfer(investedETH.sub(spentETH));
+        emit FundsReceived(msg.sender, _beneficiary, spentUSD, spentETH, 0, ETHUSD);
     }
 
     function purchaseTier(address _beneficiary, uint8 _tier, uint256 _investedUSD) internal returns(uint256) {
@@ -221,10 +216,12 @@ contract USDTieredSTO is ISTO {
             spentUSD = wmul(remainingTokens, ratePerTier[_tier]);
             mintedPerTier[_tier] = tokensPerTier[_tier];
             require(IST20(securityToken).mint(_beneficiary, remainingTokens), "Error in minting the tokens");
+            emit TokenPurchase(msg.sender, _beneficiary, remainingTokens, spentUSD, _tier);
         } else {
             spentUSD = _investedUSD;
             mintedPerTier[_tier] = mintedPerTier[_tier].add(maximumTokens);
             require(IST20(securityToken).mint(_beneficiary, maximumTokens), "Error in minting the tokens");
+            emit TokenPurchase(msg.sender, _beneficiary, maximumTokens, spentUSD, _tier);
         }
         return spentUSD;
     }
@@ -275,6 +272,7 @@ contract USDTieredSTO is ISTO {
         fundsRaisedPOLY = fundsRaisedPOLY.add(spentPOLY);
         fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
         transferPOLY(msg.sender, spentPOLY);
+        emit FundsReceived(msg.sender, _beneficiary, spentUSD, 0, spentPOLY, POLYUSD);
     }
 
     function transferPOLY(address _beneficiary, uint256 _polyAmount) internal {

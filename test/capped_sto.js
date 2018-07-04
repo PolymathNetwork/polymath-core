@@ -376,8 +376,8 @@ contract('CappedSTO', accounts => {
                 "STO Configuration doesn't set as expected"
             );
             assert.equal(
-                await I_CappedSTO.fundraiseType.call(),
-                fundRaiseType,
+                await I_CappedSTO.fundRaiseType(fundRaiseType),
+                true,
                 "STO Configuration doesn't set as expected"
             );
         });
@@ -774,8 +774,8 @@ contract('CappedSTO', accounts => {
                     "STO Configuration doesn't set as expected"
                 );
                 assert.equal(
-                    await I_CappedSTO.fundraiseType.call(),
-                    P_fundRaiseType,
+                    await I_CappedSTO.fundRaiseType(P_fundRaiseType),
+                    true,
                     "STO Configuration doesn't set as expected"
                 );
             });

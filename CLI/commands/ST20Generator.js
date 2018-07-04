@@ -74,49 +74,25 @@ async function executeApp() {
   accounts = await web3.eth.getAccounts();
   Issuer = accounts[0];
 
-  await setup();
+  setup();
 
-  console.log(`
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(@(&&@@@@@@@@@@@@@@@@@@@@@@@@@@(((@&&&&(/@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(#(((((((#%%%#@@@@@@@@@@@@@@@@@@@@%##(((/@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(%(((((((((((#%%%%%@#@@@@@@@@@@@@(&#####@@@@@@@@%&
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&#((((((((((((((##%%%%%%%&&&%%##@%#####%(@@@@@@@#%#&
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(%((((((((((((((((((###%%%%%((#####%%%####@@@@@@@###((@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(#(((((((((((((((((((((####%%%#((((######%&%@@(##&###(@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(#((((((((((((((((((((((((####%%#(((((((#((((((((((((#(@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(%(((((((((((((((((((((((((((######%(((((((((((((#&(/@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&#(((((((((((((((((((((((((((((((###############(##%%#@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@(#((((##############(((((((((((((((((###################%@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@(&#((#(##################((((((((((((((((((##%%##############@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@@/%#(((((((##%((((##############((((((((((((((((((##%%#############%%@@@@@@@@@@
-@@@@@@@@@@@@@@@@@@@@((((((((((###%%((((((##########(((((((((((((((((((#%%%############%%%#@@@@@@@@@
-@@@@@@@@@@@@@@@@@@%((((((((((####%%%((((((((#######(((((((((((####(((((@%%############%%%#@@@@@@@@@
-@@@@@@@@@####%%%%%#(((((((((#####%%%%(((((((((((###((((#######(((((((((&@@(&#########%%%%&@@@@@@@@@
-@@@@@@@@&(((#####%###(((((((#####%%%%%((((((((####%%%%%%%%&%@%#((((((((@@@@@@(#(####%%%%%%@@@@@@@@@
-@@@@@@@&(((@@@@@@@####(((((######%%%%%%##&########%%%%%#@@@@###(((((#(@@@@@@@@@@@###%%#@@@@@@@@@@@@
-@@@#%&%(((@@@@@@@@#####(((#######%%%%@@@@@@@@@@@((##@@@@@@@@%###((((/@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@#%%&%#@@@@@@@@@@############%%%%@@@@@@@@@@@@@@@@@@@@(@&&&&#####(#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@#%%%%%#((%%%%%%#@@@@@@@@@@@@@@@@@@@@(####%((((%#(@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@@&%%%#((((((%%&@@@@@@@@@@@@@@@@@@@@@@###%%#((@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@%%%%((((((((& @@@@@@@@@@@@@@@@@@@@@@@%%&%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@@%%(((((&#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@&((###@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@@#####@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@@&####@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@&&%##@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@&&&%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@@@@%##%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@@@@@@@@@@#%####%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-`);
-
+  common.logAsciiBull();
   console.log("********************************************");
   console.log("Welcome to the Command-Line ST-20 Generator.");
   console.log("********************************************");
-
-  createST20();
+  console.log("The following script will create a new ST-20 according to the parameters you enter.");
+  if(_DEBUG){
+    console.log('\x1b[31m%s\x1b[0m',"Warning: Debugging is activated. Start and End dates will be adjusted for easier testing.");
+  }
+  let start = readlineSync.question('Press enter to continue or exit (CTRL + C): ', {
+    defaultInput: 'Y'
+  });
+  if(start != 'Y' && start != 'y') return;
+  
+  step_ticker_reg();
 };
 
-async function setup(){
+function setup(){
   try {
     tickerRegistry = new web3.eth.Contract(tickerRegistryABI,tickerRegistryAddress);
     tickerRegistry.setProvider(web3.currentProvider);
@@ -132,23 +108,6 @@ async function setup(){
     return;
   }
 }
-
-async function createST20() {
-  console.log("The following script will create a new ST-20 according to the parameters you enter.");
-
-  if(_DEBUG){
-    console.log('\x1b[31m%s\x1b[0m',"Warning: Debugging is activated. Start and End dates will be adjusted for easier testing.");
-  }
-
-  let start = readlineSync.question('Press enter to continue or exit (CTRL + C): ', {
-    defaultInput: 'Y'
-  });
-
-  if(start != "Y") return;
-
-  //step_STO_Launch();
-  step_ticker_reg();
-};
 
 async function step_ticker_reg(){
   console.log("\n");
@@ -204,22 +163,19 @@ async function step_ticker_reg(){
 }
 
 async function step_approval(spender, fee) {
-  let approved = false;
   try {
     polyBalance = await polyToken.methods.balanceOf(Issuer).call({from: Issuer});
     let requiredAmount = web3.utils.toWei(fee.toString(), "ether");
     if (parseInt(polyBalance) >= parseInt(requiredAmount)) {
       let allowance = await polyToken.methods.allowance(spender, Issuer).call({from: Issuer});
       if (allowance == web3.utils.toWei(fee.toString(), "ether")) {
-        approved = true;
-        return approved;
+        return true;
       } else {
         let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
         let GAS = await common.estimateGas(approveAction, Issuer, 1.2);
         await approveAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
         .on('receipt', function(receipt) {
-            approved = true;
-            return approved;
+          return true;
         })
         .on('error', console.error);
       }
@@ -237,20 +193,11 @@ async function step_approval(spender, fee) {
 }
 
 async function step_token_deploy(){
-  let tokenDeployed = false;
-  let tokenDeployedAddress;
-
   // Let's check if token has already been deployed, if it has, skip to STO
-  await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({from: Issuer}, function(error, result){
-    if(result != "0x0000000000000000000000000000000000000000"){
-      console.log('\x1b[32m%s\x1b[0m',"Token has already been deployed at address "+result+". Skipping registration");
-      tokenDeployedAddress = result;
-      tokenDeployed = true;
-    }
-  });
-
-  if (tokenDeployed) {
-    securityToken = new web3.eth.Contract(securityTokenABI,tokenDeployedAddress);
+  let tokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({from: Issuer});
+  if (tokenAddress != "0x0000000000000000000000000000000000000000") {
+    console.log('\x1b[32m%s\x1b[0m',"Token has already been deployed at address " + tokenAddress + ". Skipping registration");
+    securityToken = new web3.eth.Contract(securityTokenABI, tokenAddress);
   } else {
     console.log("\n");
     console.log(chalk.green(`Current balance in POLY is ${(await currentBalance())}`));
@@ -436,7 +383,7 @@ async function step_STO_Status() {
     timeRemaining = displayEndTime - now;
   }
 
-  timeRemaining = convertToDaysRemaining(timeRemaining);
+  timeRemaining = common.convertToDaysRemaining(timeRemaining);
 
   console.log(`
     ***** STO Information *****
@@ -519,28 +466,29 @@ async function step_STO_Launch(){
         console.log(chalk.red(`\n**************************************************************************************************************************************************`));
         console.log(chalk.red(`Not enough balance to pay the CappedSTO fee, Requires ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(ownerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
         console.log(chalk.red(`**************************************************************************************************************************************************\n`));
-        return;
+        process.exit(0);
+      } else {
+        let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
+        let GAS = await common.estimateGas(transferAction, Issuer, 1.5);
+        await transferAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+        .on('transactionHash', function(hash) {
+          console.log(`
+            Transfer ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY to ${tokenSymbol} security token
+            Your transaction is being processed. Please wait...
+            TxHash: ${hash}\n`
+          );
+        })
+        .on('receipt', function(receipt){
+          console.log(`
+            Congratulations! The transaction was successfully completed.
+            Number of POLY sent: ${(new BigNumber(receipt.events.Transfer.returnValues._value).dividedBy(new BigNumber(10).pow(18))).toNumber()}
+            Review it on Etherscan.
+            TxHash: ${receipt.transactionHash}
+            gasUsed: ${receipt.gasUsed}\n`
+          );
+        })
+        .on('error', console.error);
       }
-      let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      let GAS = await common.estimateGas(transferAction, Issuer, 1.5);
-      await transferAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
-      .on('transactionHash', function(hash) {
-        console.log(`
-          Transfer ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY to ${tokenSymbol} security token
-          Your transaction is being processed. Please wait...
-          TxHash: ${hash}\n`
-        );
-      })
-      .on('receipt', function(receipt){
-        console.log(`
-          Congratulations! The transaction was successfully completed.
-          Number of POLY sent: ${(new BigNumber(receipt.events.Transfer.returnValues._value).dividedBy(new BigNumber(10).pow(18))).toNumber()}
-          Review it on Etherscan.
-          TxHash: ${receipt.transactionHash}
-          gasUsed: ${receipt.gasUsed}\n`
-        );
-      })
-      .on('error', console.error);
     }
     let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
     let GAS = await common.estimateGas(addModuleAction, Issuer, 1.2);
@@ -574,18 +522,6 @@ async function step_STO_Launch(){
 ///////
 // HELPER FUNCTIONS
 //////
-function convertToDaysRemaining(timeRemaining){
-  var seconds = parseInt(timeRemaining, 10);
-
-  var days = Math.floor(seconds / (3600 * 24));
-  seconds  -= days * 3600 * 24;
-  var hrs   = Math.floor(seconds / 3600);
-  seconds  -= hrs * 3600;
-  var mnts = Math.floor(seconds / 60);
-  seconds  -= mnts * 60;
-  return (days + " days, " + hrs + " Hrs, " + mnts + " Minutes, " + seconds + " Seconds");
-}
-
 async function currentBalance() {
     let balance = await polyToken.methods.balanceOf(Issuer).call();
     let balanceInPoly = new BigNumber(balance).dividedBy(new BigNumber(10).pow(18));

@@ -234,9 +234,10 @@ async function createDividends(ethDividend){
 
   let time = (await web3.eth.getBlock('latest')).timestamp;
   let expiryTime = readlineSync.question('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = '+(time+duration.minutes(10))+' ): ');
+  let blacklist = readlineSync.question('Enter an address to blacklist from dividend distribution: ');
   if(expiryTime == "") expiryTime = time+duration.minutes(10);
   //Send eth dividends
-  let createDividendAction = etherDividendCheckpoint.methods.createDividend(time, expiryTime, []);
+  let createDividendAction = etherDividendCheckpoint.methods.createDividend(time, expiryTime, [blacklist]);
   GAS = await common.estimateGas(createDividendAction, Issuer, 1.2, web3.utils.toWei(ethDividend,"ether"));
   await createDividendAction.send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas: GAS })
   .on('transactionHash', function(hash){
@@ -272,14 +273,19 @@ async function withholdingTax() {
             break;
         case 1:
             // Withdraw
-            let divIndexT = readlineSync.question('Enter the index of the dividend to withdraw: ');
-            GAS = Math.round(1.2 * (await etherDividendCheckpoint.methods.withdrawWithholding(divIndexT).estimateGas({from: Issuer})));
-            console.log(chalk.black.bgYellowBright(`---- Transaction executed: withdrawWithholding - Gas limit provided: ${GAS} ----`));
-            await etherDividendCheckpoint.methods.withdrawWithholding(divIndexT).send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-            .on('receipt', function(receipt){
-                let val = receipt.events.EtherDividendWithholdingWithdrawn.returnValues._withheldAmount;
-                console.log(chalk.green(`\nSuccessfully withdrew ${val} ETH from dividend ${divIndexT} tax withholding to ${Issuer}.`));
-            });
+            let checkpointId = readlineSync.question('Enter the checkpoint at which to withdraw: ');
+            let dividendIndex = await etherDividendCheckpoint.methods.getDividendIndex(checkpointId).call();
+            if (dividendIndex.length == 1) {
+                GAS = Math.round(1.2 * (await etherDividendCheckpoint.methods.withdrawWithholding(dividendIndex[0]).estimateGas({from: Issuer})));
+                console.log(chalk.black.bgYellowBright(`---- Transaction executed: withdrawWithholding - Gas limit provided: ${GAS} ----`));
+                await etherDividendCheckpoint.methods.withdrawWithholding(dividendIndex[0]).send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+                .on('receipt', function(receipt){
+                    let val = receipt.events.EtherDividendWithholdingWithdrawn.returnValues._withheldAmount;
+                    console.log(chalk.green(`\nSuccessfully withdrew ${val} ETH from checkpoint ${checkpointId} and dividend ${dividendIndex[0]} tax withholding to ${Issuer}.`));
+                });
+            }else{
+                console.log(`\nCheckpoint doesn't exist`);
+            }
             break;
         case 2:
             return;

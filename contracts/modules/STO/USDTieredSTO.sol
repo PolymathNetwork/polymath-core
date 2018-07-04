@@ -319,6 +319,13 @@ contract USDTieredSTO is ISTO {
         return ((currentTier == ratePerTier.length) && (mintedPerTier[currentTier] == tokensPerTier[currentTier]));
     }
 
+    function changeAccredited(address[] _investors, bool[] _accredited) public onlyOwner {
+        require(_investors.length == _accredited.length);
+        for (uint256 i = 0; i < _investors.length; i++) {
+            accredited[_investors[i]] = _accredited[i];            
+        }
+    }
+
     /**
      * @notice Return ETH raised by the STO
      */

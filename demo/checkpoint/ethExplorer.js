@@ -171,10 +171,17 @@ async function start_explorer(){
       let _address3 =  readlineSync.question('Enter address to explore: ');
       let _dividendIndex = await etherDividendCheckpoint.methods.getDividendIndex(_checkpoint4).call();
       if (_dividendIndex.length == 1) {
-        let divsAtCheckpoint = await etherDividendCheckpoint.methods.calculateDividend(_dividendIndex[0],_address3).call({ from: Issuer});
+        let div = await etherDividendCheckpoint.methods.dividends(_dividendIndex[0]).call();
+        let res = await etherDividendCheckpoint.methods.calculateDividend(_dividendIndex[0],_address3).call({ from: Issuer});
+        let claim = new BigNumber(res[0]);
+        let withheld = new BigNumber(res[1]);
+        let percent = withheld.dividedBy(claim).times(100);
         console.log(`
-          ETH Balance: ${web3.utils.fromWei(await web3.eth.getBalance(_address3),"ether")} ETH
-          Dividends owed at checkpoint ${_checkpoint4}: ${web3.utils.fromWei(divsAtCheckpoint,"ether")} ETH
+          ETH Balance: ${web3.utils.fromWei((await web3.eth.getBalance(_address3)).toString(),"ether")} ETH
+          Dividend total size: ${web3.utils.fromWei((div.amount).toString(),"ether")} ETH
+          Dividends owed to investor at checkpoint ${_checkpoint4}: ${web3.utils.fromWei((claim).toString(),"ether")} ETH
+          Dividends withheld at checkpoint ${_checkpoint4}: ${web3.utils.fromWei((withheld).toString(),"ether")} ETH
+          Tax withholding percentage: ${percent}%
         `)
       } else {
         console.log("Sorry Future checkpoints are not allowed");

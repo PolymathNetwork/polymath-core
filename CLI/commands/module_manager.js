@@ -102,9 +102,9 @@ async function executeApp() {
 @@@@@@@@@@#%####%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
     `);
 
-    console.log(chalk.yellow(`    *******************************************`));
-    console.log(chalk.yellow(`    Welcome to the Command-Line Investor Portal`));
-    console.log(chalk.yellow(`    *******************************************`));
+    console.log(chalk.yellow(`    ******************************************`));
+    console.log(chalk.yellow(`    Welcome to the Command-Line Module Manager`));
+    console.log(chalk.yellow(`    ******************************************`));
 
     // Init user accounts
     let accounts = await web3.eth.getAccounts();

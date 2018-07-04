@@ -69,6 +69,15 @@ You can run Parity with the following command to get started (make sure the node
 ```bash
 parity --chain ropsten  --rpcapi "eth,net,web3,personal,parity" --unlock YOUR_ETH_ACCOUNT --password $HOME/password.file
 ```
+
+## Poly Faucet
+
+If you are working on a local private network, you should run the faucet command to get Poly necessary to pay fees for the other commands.
+
+```bash
+node CLI/polymath-cli faucet
+```
+
 ## Generating ST-20 token
 
 The ST-20 Generator command is a wizard-like script that will guide technical users in the creation and deployment of an ST-20 token.
@@ -98,6 +107,18 @@ The command takes 2 parameters:
 node CLI/polymath-cli whitelist TOKEN_SYMBOL [BATCH_SIZE]
 ```
 
+## Initial minting
+
+Before starting the STO you can run a command to distribute tokens to previously whitelisted investors.
+Make sure the `multi_mint_data` file is present in the data folder.
+The command takes 2 parameters:
+- The token symbol for the STO you want to invest in
+- (Optional) The size of each batch 
+
+```bash
+node CLI/polymath-cli multi_mint TOKEN_SYMBOL [BATCH_SIZE]
+```
+
 ## Investing in the STO
 
 You can run the invest command to participate in any STO you have been whitelisted for.
@@ -111,6 +132,7 @@ node CLI/polymath-cli invest TOKEN_SYMBOL BENEFICIARY ETHER
 ```
 
 ## Transferring tokens
+
 You can run the transfer command to transfer ST tokens to another account (as long as both are whitelisted and have been cleared of any lockup periods).
 - The token symbol of the ST you want to transfer
 - The account that will receive the tokens
@@ -120,6 +142,14 @@ You can run the transfer command to transfer ST tokens to another account (as lo
 node CLI/polymath-cli transfer TOKEN_SYMBOL ACCOUNT_TO AMOUNT
 ```
 
+## Managing modules
+
+You can run the module manager command to view all the modules attached to a token and their status.
+You will be asked for a token symbol.
+
+```bash
+node CLI/polymath-cli module_manager
+```
 
 # Setting up Polymath Core
 ## KOVAN

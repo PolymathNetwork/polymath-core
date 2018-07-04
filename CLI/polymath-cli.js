@@ -17,7 +17,7 @@ program
 program
   .command('st20generator')
   .alias('st')
-  .description('Runs ST20Generator')
+  .description('Wizard-like script that will guide technical users in the creation and deployment of an ST-20 token')
   .action(async function() {
     await st20generator.executeApp();
   });
@@ -25,7 +25,7 @@ program
 program
   .command('faucet')
   .alias('f')
-  .description('Runs faucet')
+  .description('Poly faucet for local private netwtorks')
   .action(async function() {
     await faucet.executeApp();
   });
@@ -33,7 +33,7 @@ program
 program
   .command('investor_portal')
   .alias('i')
-  .description('Runs investor_portal')
+  .description('Participate in any STO you have been whitelisted for')
   .action(async function() {
     await investor_portal.executeApp();
   });
@@ -41,7 +41,7 @@ program
 program
   .command('module_manager')
   .alias('mm')
-  .description('Runs module_manager')
+  .description('View modules attached to a token and their status')
   .action(async function() {
     await module_manager.executeApp();
   });
@@ -49,7 +49,7 @@ program
 program
   .command('multi_mint <tokenSymbol> [batchSize]')
   .alias('mi')
-  .description('Runs multi_mint')
+  .description('Distribute tokens to previously whitelisted investors')
   .action(async function(tokenSymbol, batchSize) {
     shell.exec(`${__dirname}/commands/scripts/minting.sh Multimint ${tokenSymbol} ${batchSize}`);;
   });
@@ -57,7 +57,7 @@ program
 program
   .command('transfer <tokenSymbol> <transferTo> <transferAmount>')
   .alias('t')
-  .description('Runs transfer')
+  .description('Transfer ST tokens to another account')
   .action(async function(tokenSymbol, transferTo, transferAmount) {
     await transfer.executeApp(tokenSymbol, transferTo, transferAmount);
   });
@@ -65,7 +65,7 @@ program
 program
   .command('whitelist <tokenSymbol> [batchSize]')
   .alias('w')
-  .description('Runs whitelist')
+  .description('Mass-update a whitelist of allowed/known investors')
   .action(async function(tokenSymbol, batchSize) {
     shell.exec(`${__dirname}/commands/scripts/minting.sh Whitelist ${tokenSymbol} ${batchSize}`);;
   });

@@ -2,6 +2,7 @@ var fs = require('fs');
 // var BigNumber = require('bignumber.js');
 const Web3 = require('web3');
 var chalk = require('chalk');
+var common = require('./common/common_functions');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require("./helpers/contract_addresses");
@@ -34,14 +35,10 @@ if (typeof web3 !== 'undefined') {
   web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 }
 
-
-
-////////////////////////////USER INPUTS//////////////////////////////////////////
-let tokenSymbol = process.argv.slice(2)[0]; //token symbol
-let transferTo = process.argv.slice(2)[1]; //investment beneficiary
-let transferAmount = process.argv.slice(2)[2]; //ETH investment
-
 /////////////////////////GLOBAL VARS//////////////////////////////////////////
+let _tokenSymbol; //token symbol
+let _transferTo; //investment beneficiary
+let _transferAmount; //ETH investment
 
 let Issuer;
 let accounts;
@@ -53,9 +50,11 @@ let DEFAULT_GAS_PRICE = 80000000000;
 
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
-startScript();
 
-async function startScript() {
+async function startScript(tokenSymbol, transferTo, transferAmount) {
+  _tokenSymbol = tokenSymbol;
+  _transferTo = transferTo;
+  _transferAmount = transferAmount;
 
   accounts = await web3.eth.getAccounts();
   Issuer = accounts[0];
@@ -76,7 +75,7 @@ async function startScript() {
 async function transfer() {
 
   // Let's check if token has already been deployed, if it has, skip to STO
-  await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({ from: Issuer }, function (error, result) {
+  await securityTokenRegistry.methods.getSecurityTokenAddress(_tokenSymbol).call({ from: Issuer }, function (error, result) {
     if (result != "0x0000000000000000000000000000000000000000") {
       console.log('\x1b[32m%s\x1b[0m', "Token deployed at address " + result + ".");
       securityToken = new web3.eth.Contract(securityTokenABI, result);
@@ -84,9 +83,9 @@ async function transfer() {
   });
 
   try{
-      let GAS = Math.round(1.2 * (await securityToken.methods.transfer(transferTo,web3.utils.toWei(transferAmount,"ether")).estimateGas({from: Issuer})));
-      console.log(chalk.black.bgYellowBright(`---- Transaction executed: transfer - Gas limit provided: ${GAS} ----`));
-    await securityToken.methods.transfer(transferTo,web3.utils.toWei(transferAmount,"ether")).send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+    let transferAction = securityToken.methods.transfer(_transferTo,web3.utils.toWei(_transferAmount,"ether"));
+    let GAS = await common.estimateGas(transferAction, Issuer, 1.2);
+    await transferAction.send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -114,3 +113,9 @@ async function transfer() {
 
 
 };
+
+module.exports = {
+  executeApp: async function(tokenSymbol, transferTo, transferAmount) {
+        return startScript(tokenSymbol, transferTo, transferAmount);
+    }
+}

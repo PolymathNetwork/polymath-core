@@ -1,0 +1,14 @@
+{
+  "name": "polymath-cli",
+  "version": "1.0.0",
+  "description": "CLI for Polymath-core",
+  "main": "polymath-cli.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Polymath Inc",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^2.16.0"
+  }
+}

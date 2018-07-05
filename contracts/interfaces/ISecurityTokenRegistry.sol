@@ -19,7 +19,7 @@ contract ISecurityTokenRegistry {
     mapping(string => address) symbols;
 
     // Address of POLYUSD Oracle
-    address public POLYUSDOracle;
+    mapping (bytes32 => mapping (bytes32 => address)) oracles;
 
     /**
      * @notice Creates a new Security Token and saves it to the registry
@@ -51,4 +51,12 @@ contract ISecurityTokenRegistry {
     * @return bool
     */
     function isSecurityToken(address _securityToken) public view returns (bool);
+
+    /**
+    * @notice Get oracle for currency pair
+    * @param _currency Symbol of currency
+    * @param _denominatedCurrency Symbol of denominated currency
+    * @return address of IOracle
+    */
+    function getOracle(bytes32 _currency, bytes32 _denominatedCurrency) public view returns (address);
 }

@@ -12,8 +12,8 @@ contract ISTO is IModule, Pausable {
 
     using SafeMath for uint256;
 
-    enum FundraiseType { ETH, POLY }
-    FundraiseType public fundraiseType;
+    enum FundRaiseType { ETH, POLY }
+    mapping (uint8 => bool) public fundRaiseType;
 
     // Start time of the STO
     uint256 public startTime;
@@ -43,6 +43,11 @@ contract ISTO is IModule, Pausable {
      * @notice Return the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256);
+
+    /**
+     * @notice Return the total no. of tokens sold
+     */
+    function getTokensSold() public view returns (uint256);
 
     /**
      * @notice pause (overridden function)

@@ -176,6 +176,11 @@ contract USDTieredSTO is ISTO {
         return wmul(rate, _amount);
     }
 
+    function convertFromUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
+        uint256 rate = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(_currency, bytes32("USD"))).getPrice();
+        return wdiv(rate, _amount);
+    }
+
     /**
       * @notice low level token purchase ***DO NOT OVERRIDE***
       * @param _beneficiary Address performing the token purchase

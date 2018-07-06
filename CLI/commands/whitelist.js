@@ -89,7 +89,7 @@ async function startScript() {
 
 ///////////////////////////FUNCTION READING THE CSV FILE
 function readFile() {
-  var stream = fs.createReadStream("./demo/whitelist_data.csv");
+  var stream = fs.createReadStream("./CLI/data/whitelist_data.csv");
 
   let index = 0;
   let batch = 0;

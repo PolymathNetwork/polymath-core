@@ -562,7 +562,11 @@ if (dividendIndex.length == 1) {
 }
 }
 
-executeApp();
+module.exports = {
+  executeApp: async function() {
+        return executeApp();
+    }
+}
 
 // Amount: ${web3.util.fromWei(receipt.events.ERC20DividendClaimed.returnValues._amount, "ether")} POLY
 // Payee:  ${receipt.events.ERC20DividendClaimed.returnValues._payee}

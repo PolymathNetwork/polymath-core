@@ -84,7 +84,7 @@ async function startScript() {
 }
 
 function readFile() {
-    var stream = fs.createReadStream("./demo/multi_mint_data.csv");
+    var stream = fs.createReadStream("./CLI/data/multi_mint_data.csv");
 
     let index = 0;
     let batch = 0;

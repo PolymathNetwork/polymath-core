@@ -5,7 +5,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import '../interfaces/IOracle.sol';
 
-contract PolyOracle is usingOraclize, IOracle, Ownable {
+contract MockPolyOracle is usingOraclize, IOracle, Ownable {
     using SafeMath for uint256;
 
     string public oracleURL = "json(https://api.coinmarketcap.com/v2/ticker/2496/?convert=USD).data.quotes.USD.price";
@@ -30,6 +30,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @notice Constructor - accepts ETH to initialise a balance for subsequent Oraclize queries
     */
     constructor() payable public {
+        OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
         // Use 50 gwei for now
         oraclize_setCustomGasPrice(50*10**9);
     }

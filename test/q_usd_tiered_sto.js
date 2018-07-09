@@ -1374,15 +1374,15 @@ contract('USDTieredSTO', accounts => {
         describe("convertToUSD", async() => {
 
             it("should get the right conversion for ETH to USD", async() => {
-                // 1 ETH to 500 USD
-                let ethInWei = BigNumber(web3.utils.toWei('1', 'ether'));
+                // 20 ETH to 10000 USD
+                let ethInWei = BigNumber(web3.utils.toWei('20', 'ether'));
                 let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD("ETH", ethInWei);
                 assert.equal(usdInWei.div(10**18).toNumber(), ethInWei.div(10**18).mul(USDETH.div(10**18)).toNumber());
             });
 
             it("should get the right conversion for POLY to USD", async() => {
-                // 1 POLY to 0.25 USD
-                let polyInWei = BigNumber(web3.utils.toWei('1', 'ether'));
+                // 40000 POLY to 10000 USD
+                let polyInWei = BigNumber(web3.utils.toWei('40000', 'ether'));
                 let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD("POLY", polyInWei);
                 assert.equal(usdInWei.div(10**18).toNumber(), polyInWei.div(10**18).mul(USDPOLY.div(10**18)).toNumber());
             });
@@ -1391,15 +1391,15 @@ contract('USDTieredSTO', accounts => {
         describe("convertFromUSD", async() => {
 
             it("should get the right conversion for USD to ETH", async() => {
-                // 500 USD to 1 ETH
-                let usdInWei = BigNumber(web3.utils.toWei('500', 'ether'));
+                // 10000 USD to 20 ETH
+                let usdInWei = BigNumber(web3.utils.toWei('10000', 'ether'));
                 let ethInWei = await I_USDTieredSTO_Array[0].convertFromUSD("ETH", usdInWei);
                 assert.equal(ethInWei.div(10**18).toNumber(), usdInWei.div(10**18).div(USDETH.div(10**18)).toNumber());
             });
 
             it("should get the right conversion for USD to POLY", async() => {
-                // 0.25 USD to 1 POLY
-                let usdInWei = BigNumber(web3.utils.toWei('250', 'milli'));
+                // 10000 USD to 40000 POLY
+                let usdInWei = BigNumber(web3.utils.toWei('10000', 'ether'));
                 let polyInWei = await I_USDTieredSTO_Array[0].convertFromUSD("POLY", usdInWei);
                 assert.equal(polyInWei.div(10**18).toNumber(), usdInWei.div(10**18).div(USDPOLY.div(10**18)).toNumber());
             });

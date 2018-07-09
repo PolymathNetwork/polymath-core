@@ -189,6 +189,7 @@ contract USDTieredSTO is ISTO {
             _wallet,
             _reserveWallet
         );
+        emit ConfigChanged(_startTime, _endTime, _ratePerTier, _tokensPerTier, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet);
     }
 
     /**
@@ -233,7 +234,6 @@ contract USDTieredSTO is ISTO {
             require(_fundRaiseTypes[j] < 2);
             fundRaiseType[_fundRaiseTypes[j]] = true;
         }
-        emit ConfigChanged(_startTime, _endTime, _ratePerTier, _tokensPerTier, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet);
     }
 
     /**

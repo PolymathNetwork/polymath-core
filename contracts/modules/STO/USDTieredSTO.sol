@@ -157,8 +157,6 @@ contract USDTieredSTO is ISTO {
         return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],address,uint256,uint256,uint8,uint8[],address,address)"));
     }
 
-)
-
     /**
      * @notice This function returns whether or not the STO is in fundraising mode (open)
      */

@@ -96,7 +96,7 @@ let requestIds = new Array();
         it("Should schedule the timing of the call", async() => {
             let blockNo = await web3.eth.getBlock('latest').number;
             let timeScheduling = [latestTime()+duration.seconds(30), latestTime()+duration.seconds(60), latestTime()+duration.seconds(90)]
-            await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: owner, value:web3.utils.toWei("1")});
+            await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: owner, value:web3.utils.toWei("1.5")});
             
             let event_data = await assertEvent(I_PolyOracle, {event: 'LogNewOraclizeQuery'});
 
@@ -225,7 +225,7 @@ let requestIds = new Array();
             await I_PolyOracle.setGasPrice(new BigNumber(60).times(new BigNumber(10).pow(9)),{from : owner});
             let blockNo = await web3.eth.getBlock('latest').number;
             let timeScheduling = [latestTime()+duration.seconds(30), latestTime()+duration.seconds(60), latestTime()+duration.seconds(90)]
-            await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: owner, value:web3.utils.toWei("1.5")});
+            await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: owner, value:web3.utils.toWei("2")});
             
             let event_data = await assertEvent(I_PolyOracle, {event: 'LogNewOraclizeQuery'});
 

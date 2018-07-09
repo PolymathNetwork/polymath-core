@@ -14,12 +14,12 @@ contract MockPolyOracle is usingOraclize, IOracle, Ownable {
     uint256 public oraclizeTimeTolerance = 5 minutes;
     uint256 public staleTime = 6 hours;
 
-    uint256 public POLYUSD;
+    uint256 private POLYUSD;
     uint256 public latestUpdate;
     uint256 public latestScheduledUpdate;
 
     mapping (bytes32 => uint256) requestIds;
-    mapping (bytes32 => bool) ignoreRequestIds;
+    mapping (bytes32 => bool) public ignoreRequestIds;
 
     bool public freezeOracle;
 

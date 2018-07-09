@@ -64,7 +64,7 @@ contract USDTieredSTO is ISTO {
     uint256 public minimumInvestmentUSD;
 
     // Whether or not the STO has been finalized
-    bool isFinalized;
+    bool public isFinalized;
 
     event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint8 _tier);
     event FundsReceived(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _etherAmount, uint256 _polyAmount, uint256 _rate);
@@ -218,6 +218,7 @@ contract USDTieredSTO is ISTO {
         require(_startTime >= now.add(86400) && _endTime > _startTime, "Date parameters are not valid");
         require(_securityTokenRegistry != address(0), "Zero address is not permitted for security token registry");
         require(_startingTier < _ratePerTier.length, "Invalid starting tier");
+        require(_fundRaiseTypes.length > 0, "No fund raising currencies specified");
         currentTier = _startingTier;
         startTime = _startTime;
         endTime = _endTime;
@@ -229,6 +230,7 @@ contract USDTieredSTO is ISTO {
         securityTokenRegistry = _securityTokenRegistry;
         nonAccreditedLimitUSD = _nonAccreditedLimitUSD;
         for (uint8 j = 0; j < _fundRaiseTypes.length; j++) {
+            require(_fundRaiseTypes[j] < 2);
             fundRaiseType[_fundRaiseTypes[j]] = true;
         }
         emit ConfigChanged(_startTime, _endTime, _ratePerTier, _tokensPerTier, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet);
@@ -296,7 +298,7 @@ contract USDTieredSTO is ISTO {
       * @notice low level token purchase
       * @param _investedPOLY Amount of POLY invested
       */
-    function buyWithPoly(address _beneficiary, uint256 _investedPOLY) public validPOLY {
+    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY {
         require(!paused);
         require(isOpen());
         uint256 POLYUSD = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();

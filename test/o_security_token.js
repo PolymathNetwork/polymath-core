@@ -14,7 +14,7 @@ const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManage
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
-const TokenBurner = artifacts.require('./TokenBurner.sol');
+const TokenBurner = artifacts.require('./MockTokenBurner.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');

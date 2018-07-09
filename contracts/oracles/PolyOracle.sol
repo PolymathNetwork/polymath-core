@@ -19,7 +19,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     uint256 public latestScheduledUpdate;
 
     mapping (bytes32 => uint256) requestIds;
-    mapping (bytes32 => bool) ignoreRequestIds;
+    mapping (bytes32 => bool) public ignoreRequestIds;
 
     bool public freezeOracle;
 

@@ -401,7 +401,7 @@ contract('USDTieredSTO', accounts => {
             // console.log((await I_USDTieredSTO.convertToUSD("ETH", web3.utils.toWei('1', 'ether'))));
             // console.log((await I_USDTieredSTO.convertToUSD("POLY", web3.utils.toWei('1', 'ether'))));
 
-            await I_USDTieredSTO.buyWithPoly(account_investor1, 1000 * 10**18, {from: account_investor1});
+            await I_USDTieredSTO.buyWithPOLY(account_investor1, 1000 * 10**18, {from: account_investor1});
 
             assert.equal(
                 (await I_USDTieredSTO.fundsRaisedPOLY.call())

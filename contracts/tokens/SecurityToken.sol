@@ -23,7 +23,7 @@ import "../interfaces/ITokenBurner.sol";
 contract SecurityToken is ISecurityToken {
     using SafeMath for uint256;
 
-    bytes32 public securityTokenVersion = "0.0.1";
+    bytes32 public constant securityTokenVersion = "0.0.1";
 
     // Reference to token burner contract
     ITokenBurner public tokenBurner;
@@ -110,7 +110,7 @@ contract SecurityToken is ISecurityToken {
     }
 
     modifier checkGranularity(uint256 _amount) {
-        require(_amount.div(granularity).mul(granularity) == _amount, "Unable to modify token balances at this granularity");
+        require(_amount % granularity == 0, "Unable to modify token balances at this granularity");
         _;
     }
 

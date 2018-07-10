@@ -13,7 +13,7 @@ contract IModule {
 
     address public securityToken;
 
-    bytes32 public FEE_ADMIN = "FEE_ADMIN";
+    bytes32 public constant FEE_ADMIN = "FEE_ADMIN";
 
     ERC20 public polyToken;
 

@@ -51,7 +51,7 @@ contract PercentageTransferManager is ITransferManager {
                 return Result.NA;
             }
             uint256 newBalance = ISecurityToken(securityToken).balanceOf(_to).add(_amount);
-            if (newBalance.mul(10**18).div(ISecurityToken(securityToken).totalSupply()) > maxHolderPercentage) {
+            if (newBalance.mul(10**uint256(ISecurityToken(securityToken).decimals())).div(ISecurityToken(securityToken).totalSupply()) > maxHolderPercentage) {
                 return Result.INVALID;
             }
             return Result.NA;

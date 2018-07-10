@@ -16,6 +16,9 @@ module.exports = {
   cappedSTOFactoryAddress: function() {
     return JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).networks[SELECTED_NETWORK].address;
   },
+  usdTieredSTOFactoryAddress: function() {
+    return JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTOFactory.json').toString()).networks[SELECTED_NETWORK].address;
+  },
   polyTokenAddress: function() {
     if(SELECTED_NETWORK == NETWORKS.KOVAN)
       return "0xd8568c6535f1bbd82f84d981bf8ea5ca2336052e";

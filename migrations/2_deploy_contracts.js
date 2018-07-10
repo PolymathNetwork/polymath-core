@@ -6,12 +6,16 @@ const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFac
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
+const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
 const TickerRegistry = artifacts.require('./TickerRegistry.sol')
 const STVersionProxy001 = artifacts.require('./tokens/STVersionProxy001.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
+const MarkerDAOOracle = artifacts.require('./oracles/MarkerDAOOracle.sol')
+const PolyOracle = artifacts.require('./oracles/MarkerDAOOracle.sol')
 let BigNumber = require('bignumber.js');
 const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18));   // 20K POLY fee
+const usdTieredSTOSetupCost = new BigNumber(10000).times(new BigNumber(10).pow(18));   // 100K POLY fee
 const initRegFee = new BigNumber(250).times(new BigNumber(10).pow(18));      // 250 POLY fee for registering ticker or security token in registry
 let PolyToken
 
@@ -150,7 +154,19 @@ module.exports = function (deployer, network, accounts) {
       // G) Once the CappedSTOFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-      return moduleRegistry.verifyModule(CappedSTOFactory.address, true, {from: PolymathAccount})
+    return moduleRegistry.verifyModule(CappedSTOFactory.address, true, {from: PolymathAccount})
+    }).then(() => {
+      // H) Deploy the USDTieredSTOFactory (Use to generate the USDTieredSTOFactory contract which will used to collect the funds ).
+    return deployer.deploy(USDTieredSTOFactory, PolyToken, usdTieredSTOSetupCost, 0, 0, {from: PolymathAccount})
+    }).then(() => {
+      // I) Register the USDTieredSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
+      // So any securityToken can use that factory to generate the USDTieredSTOFactory contract.
+    return moduleRegistry.registerModule(USDTieredSTOFactory.address, {from: PolymathAccount})
+    }).then(()=>{
+      // J) Once the USDTieredSTOFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+      // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+      return moduleRegistry.verifyModule(USDTieredSTOFactory.address, true, {from: PolymathAccount})
     }).then(() => {
         console.log('\n')
         console.log('----- Polymath Core Contracts -----')
@@ -158,6 +174,7 @@ module.exports = function (deployer, network, accounts) {
         console.log('*** Module Registry Address: ', ModuleRegistry.address, '***')
         console.log('*** Security Token Registry Address: ', SecurityTokenRegistry.address, '***')
         console.log('*** Capped STO Factory Address: ', CappedSTOFactory.address, '***')
+        console.log('*** USD Tiered STO Factory Address: ', USDTieredSTOFactory.address, '***')
         console.log('*** General Permission Manager Factory: ', GeneralPermissionManagerFactory.address, '***')
         console.log('*** Count Transfer Manager Factory: ', CountTransferManagerFactory.address, '***')
         console.log('*** Percentage Transfer Manager Factory: ', PercentageTransferManagerFactory.address, '***')

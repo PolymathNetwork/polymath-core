@@ -207,8 +207,21 @@ contract('TickerRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should fail to register ticker if owner is 0x", async() => {
+            let errorThrown = false;
+            try {
+                await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
+                let tx = await I_TickerRegistry.registerTicker("0x0000000000000000000000000000000000000000", symbol, name, swarmHash, { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> owner should not be 0x`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should successfully register ticker", async() => {
-            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
+            
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);

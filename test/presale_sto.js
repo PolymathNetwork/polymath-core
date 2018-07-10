@@ -392,7 +392,7 @@ contract('PreSaleSTO', accounts => {
 
             assert.equal(tx2.logs[0].args._investor, account_investor3, "Failed in adding the investor in whitelist");
 
-            await I_PreSaleSTO.allocateTokensMulti([account_investor2, account_investor3], [web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether')], 0, web3.utils.toWei('1000', 'ether'), {from: account_issuer, gas: 60000000});
+            await I_PreSaleSTO.allocateTokensMulti([account_investor2, account_investor3], [web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether')], [0,0], [web3.utils.toWei('1000', 'ether'), web3.utils.toWei('1000', 'ether')], {from: account_issuer, gas: 60000000});
 
             assert.equal(
                 (await I_PreSaleSTO.getRaisedPOLY.call())

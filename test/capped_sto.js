@@ -284,6 +284,18 @@ contract('CappedSTO', accounts => {
 
         });
 
+        it("Should mint the tokens before attaching the STO", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityToken_ETH.mint("0x0000000000000000000000000000000000000000", web3.utils.toWei("1"), {from: token_owner});
+            } catch (error) {
+                console.log(`       tx -> revert 0x address is not allowed as investor`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should fail to launch the STO due to security token doesn't have the sufficient POLY", async () => {
             let startTime = latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
+import "../interfaces/IERC20.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
@@ -190,11 +190,11 @@ contract SecurityToken is ISecurityToken {
         uint256 moduleCost = moduleFactory.setupCost();
         require(moduleCost <= _maxCost, "Max Cost is always be greater than module cost");
         //Approve fee for module
-        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
+        require(IERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
         //Approve ongoing budget
-        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(module, _budget), "Not able to approve the budget");
+        require(IERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(module, _budget), "Not able to approve the budget");
         //Add to SecurityToken module map
         modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module));
         //Emit log event
@@ -265,19 +265,24 @@ contract SecurityToken is ISecurityToken {
     * @param _amount amount of POLY to withdraw
     */
     function withdrawPoly(uint256 _amount) public onlyOwner {
-        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).transfer(owner, _amount), "In-sufficient balance");
+        require(IERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).transfer(owner, _amount), "In-sufficient balance");
     }
 
     /**
     * @notice allows owner to approve more POLY to one of the modules
     * @param _moduleType module type
     * @param _moduleIndex module index
-    * @param _budget new budget
+    * @param _budget new budget 
     */
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0, "Module type cannot be zero");
         require(_moduleIndex < modules[_moduleType].length, "Incorrrect module index");
-        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(modules[_moduleType][_moduleIndex].moduleAddress, _budget), "Insufficient balance to approve");
+        uint256 _currentAllowance = IERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).allowance(address(this), modules[_moduleType][_moduleIndex].moduleAddress);
+        if (_budget < _currentAllowance) {
+            require(IERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).decreaseApproval(modules[_moduleType][_moduleIndex].moduleAddress, _currentAllowance.sub(_budget)), "Insufficient balance to decreaseApproval");
+        } else {
+            require(IERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).increaseApproval(modules[_moduleType][_moduleIndex].moduleAddress, _budget.sub(_currentAllowance)), "Insufficient balance to increaseApproval");
+        }
         emit LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
     }
 

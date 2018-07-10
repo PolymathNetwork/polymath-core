@@ -2,12 +2,13 @@ pragma solidity ^0.4.24;
 
 import "./ISTO.sol";
 import "../../interfaces/IST20.sol";
+import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title STO module for standard capped crowdsale
  */
-contract CappedSTO is ISTO {
+contract CappedSTO is ISTO, ReentrancyGuard {
     using SafeMath for uint256;
 
     // Address where funds are collected and tokens are issued to
@@ -94,7 +95,7 @@ contract CappedSTO is ISTO {
       * @notice low level token purchase ***DO NOT OVERRIDE***
       * @param _beneficiary Address performing the token purchase
       */
-    function buyTokens(address _beneficiary) public payable {
+    function buyTokens(address _beneficiary) public payable nonReentrant {
         require(!paused);
         require(fundraiseType == FundraiseType.ETH, "ETH should be the mode of investment");
 
@@ -109,7 +110,7 @@ contract CappedSTO is ISTO {
       * @notice low level token purchase
       * @param _investedPOLY Amount of POLY invested
       */
-    function buyTokensWithPoly(uint256 _investedPOLY) public {
+    function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant{
         require(!paused);
         require(fundraiseType == FundraiseType.POLY, "POLY should be the mode of investment");
         require(verifyInvestment(msg.sender, _investedPOLY), "Not valid Investment");

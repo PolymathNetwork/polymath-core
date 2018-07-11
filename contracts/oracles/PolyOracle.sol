@@ -90,7 +90,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @param _interval how long (in seconds) between each subsequent Oraclize query
     * @param _iters the number of Oraclize queries to schedule.
     */
-    function schedulePriceUpdatesRolling(uint256 _startTime, uint256 _interval, uint256 _iters) onlyOwner public {
+    function schedulePriceUpdatesRolling(uint256 _startTime, uint256 _interval, uint256 _iters) onlyOwner payable public {
         bytes32 requestId;
         require(oraclize_getPrice("URL") * _iters <= address(this).balance, "Insufficient Funds");
         for (uint256 i = 0; i < _iters; i++) {

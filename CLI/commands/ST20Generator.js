@@ -561,18 +561,21 @@ async function usdTieredSTO_launch() {
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - USD Tiered STO");
 
   let tiers =  readlineSync.questionInt('Enter the number of tiers for the STO? (3): ', {limit: function(input) { return input > 0; }, defaultInput: 3});
+  
+  let defaultTokensPerTier = [190000000, 100000000, 200000000];
+  let defaultRatePerTier = ['0.05', '0.10', '0.15'];
   let tokensPerTier = [];
   let ratePerTier = [];
   for (let i = 0; i < tiers; i++) {
-    tokensPerTier[i] = web3.utils.toWei(readlineSync.question(`How many tokens do you plan to sell on the tier No. ${i+1}? (500000): `, {defaultInput: 500000}));
-    ratePerTier[i] = web3.utils.toWei(readlineSync.question(`What is the USD per token rate for the tier No. ${i+1}? (0.10): `, {defaultInput: "0.10"}), 'ether');
+    tokensPerTier[i] = web3.utils.toWei(readlineSync.question(`How many tokens do you plan to sell on the tier No. ${i+1}? (${defaultTokensPerTier[i]}): `, {defaultInput: defaultTokensPerTier[i]}));
+    ratePerTier[i] = web3.utils.toWei(readlineSync.question(`What is the USD per token rate for the tier No. ${i+1}? (${defaultRatePerTier[i]}): `, {defaultInput: defaultRatePerTier[i]}));
   }
-  let minimumInvestmentUSD = web3.utils.toWei(readlineSync.question(`What is the minimum investment in USD? (100): `, {defaultInput: 100}));
+  let minimumInvestmentUSD = web3.utils.toWei(readlineSync.question(`What is the minimum investment in USD? (1000): `, {defaultInput: 1000}));
   let nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the limit for non accredited insvestors in USD? (10000): `, {defaultInput: 10000}));
   let startingTier = readlineSync.questionInt(`Which is the starting tier? (1): `, {limit: function(input) { return input <= tiers; }, defaultInput: 1}) - 1;
   let raiseType = [];
-  if (readlineSync.keyInYNStrict('Funds can be raised in ETH?: ')) raiseType.push(0);
-  if (readlineSync.keyInYNStrict('Funds can be raised in POLY?: ')) raiseType.push(1);
+  if (readlineSync.keyInYN('Funds can be raised in ETH?: ') !== false) raiseType.push(0);
+  if (readlineSync.keyInYN('Funds can be raised in POLY?: ') !== false) raiseType.push(1);
   
   let oneMinuteFromNow = Math.floor(Date.now()/1000)+60;
   let startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ', {defaultInput: oneMinuteFromNow});

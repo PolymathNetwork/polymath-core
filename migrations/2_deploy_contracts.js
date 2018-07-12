@@ -11,13 +11,14 @@ const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
 const TickerRegistry = artifacts.require('./TickerRegistry.sol')
 const STVersionProxy001 = artifacts.require('./tokens/STVersionProxy001.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
-const MarkerDAOOracle = artifacts.require('./oracles/MakerDAOOracle.sol')
-const PolyOracle = artifacts.require('./oracles/MakerDAOOracle.sol')
+const MockOracle = artifacts.require('./MockOracle.sol')
 let BigNumber = require('bignumber.js');
 const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18));   // 20K POLY fee
 const usdTieredSTOSetupCost = new BigNumber(10000).times(new BigNumber(10).pow(18));   // 100K POLY fee
 const initRegFee = new BigNumber(250).times(new BigNumber(10).pow(18));      // 250 POLY fee for registering ticker or security token in registry
 let PolyToken
+let ETHOracle
+let PolyOracle
 
 const Web3 = require('web3')
 
@@ -29,6 +30,16 @@ module.exports = function (deployer, network, accounts) {
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
     PolymathAccount = accounts[0]
     PolyToken = DevPolyToken.address // Development network polytoken address
+    deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
+      MockOracle.deployed().then((mockedOracle) => {
+        PolyOracle = mockedOracle.address;
+      });
+    }); 
+    deployer.deploy(MockOracle, 0, "ETH", "USD", new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
+      MockOracle.deployed().then((mockedOracle) => {
+        ETHOracle = mockedOracle.address;
+      });
+    });
   } else if (network === 'ropsten') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://ropsten.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
@@ -168,6 +179,12 @@ module.exports = function (deployer, network, accounts) {
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
       return moduleRegistry.verifyModule(USDTieredSTOFactory.address, true, {from: PolymathAccount})
     }).then(() => {
+      return SecurityTokenRegistry.deployed().then((securityTokenRegistry) => {
+        return securityTokenRegistry.changeOracle("ETH", "USD", ETHOracle, { from: PolymathAccount }).then(() => {
+          return securityTokenRegistry.changeOracle("POLY", "USD", PolyOracle, { from: PolymathAccount });
+        });
+      });
+    }).then(() => {
         console.log('\n')
         console.log('----- Polymath Core Contracts -----')
         console.log('*** Ticker Registry Address: ', TickerRegistry.address, '***')
@@ -180,6 +197,8 @@ module.exports = function (deployer, network, accounts) {
         console.log('*** Percentage Transfer Manager Factory: ', PercentageTransferManagerFactory.address, '***')
         console.log('*** ETH Dividends Checkpoint Factory: ', EtherDividendCheckpointFactory.address, '***')
         console.log('*** ERC20 Dividends Checkpoint Factory: ', ERC20DividendCheckpointFactory.address, '***')
+        console.log('*** ETH Oracle: ', ETHOracle, '***')
+        console.log('*** POLY Oracle: ', PolyOracle, '***')
         console.log('-----------------------------------')
         console.log('\n')
         // -------- END OF POLYMATH NETWORK Configuration -------//

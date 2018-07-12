@@ -16,6 +16,10 @@ contract MockOracle is IOracle {
         price = _price;
     }
 
+    function changePrice(uint256 _price) external {
+        price = _price;
+    }
+
     /**
     * @notice Returns address of oracle currency (0x0 for ETH)
     */

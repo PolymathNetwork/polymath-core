@@ -163,6 +163,16 @@ node CLI/polymath-cli module_manager
 | ModuleRegistry:                                               | [0x719287e2f1dfc7d953d0c1f05fdf27934d9c6f30](https://kovan.etherscan.io/address/0x719287e2f1dfc7d953d0c1f05fdf27934d9c6f30)                                              |
 | CappedSTOFactory:                                               | [0x30e2c3fa3297808a2e9f176be6cc587cb76259c4](https://kovan.etherscan.io/address/0x30e2c3fa3297808a2e9f176be6cc587cb76259c4)                                              |
 
+## Package version requirements for your machine:
+
+Homebrew v1.6.7
+node v9.11.1
+npm v5.6.0
+yarn v1.7.0
+Truffle v4.1.11 (core: 4.1.11)
+Solidity v0.4.24 (solc-js)
+Ganache CLI v6.1.3 (ganache-core: 2.1.2)
+
 ## Setup
 
 The smart contracts are written in [Solidity](https://github.com/ethereum/solidity) and tested/deployed using [Truffle](https://github.com/trufflesuite/truffle) version 4.1.0. The new version of Truffle doesn't require testrpc to be installed separately so you can just run the following:

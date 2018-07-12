@@ -182,9 +182,9 @@ async function showTokenInfo() {
 async function showUSDTieredSTOInfo() {
     let displayStartTime = await currentSTO.methods.startTime().call({from: User});
     let displayEndTime = await currentSTO.methods.endTime().call({from: User});
-    let displayCurrentTier = await currentSTO.methods.currentTier().call({from: User});
-    let displayNonAccreditedLimitUSD = await currentSTO.methods.nonAccreditedLimitUSD().call({from: User});
-    let displayMinimumInvestmentUSD = await currentSTO.methods.minimumInvestmentUSD().call({from: User});
+    let displayCurrentTier = parseInt(await currentSTO.methods.currentTier().call({from: User})) + 1;
+    let displayNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call({from: User}));
+    let displayMinimumInvestmentUSD = web3.utils.fromWei(await currentSTO.methods.minimumInvestmentUSD().call({from: User}));
     let ethRaise = await currentSTO.methods.fundRaiseType(0).call({from: User});
     let polyRaise = await currentSTO.methods.fundRaiseType(1).call({from: User});
     let displayInvestorCount = await currentSTO.methods.investorCount().call({from: User});
@@ -200,16 +200,28 @@ async function showUSDTieredSTOInfo() {
         let tokensPerTier = await currentSTO.methods.tokensPerTier(t).call({from: User});
         let mintedPerTier = await currentSTO.methods.mintedPerTier(t).call({from: User});
         displayTiers = displayTiers + `
-      - Tier ${t+1}: 
-        Tokens:               ${web3.utils.fromWei(tokensPerTier, 'ether')} ${displayTokenSymbol}
-        Rate:                 ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`;
+        - Tier ${t+1}: 
+          Tokens:                 ${web3.utils.fromWei(tokensPerTier, 'ether')} ${displayTokenSymbol}
+          Rate:                   ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`;
         displayMintedPerTier = displayMintedPerTier + `
-    - Tokens Sold in Tier ${t+1}:  ${web3.utils.fromWei(mintedPerTier)}  ${displayTokenSymbol}`
+        - Tokens Sold in Tier ${t+1}:  ${web3.utils.fromWei(mintedPerTier)}  ${displayTokenSymbol}`
     }
 
-    let displayFundsRaisedUSD = await currentSTO.methods.fundsRaisedUSD().call({from: User});
-    let displayFundsRaisedETH = await currentSTO.methods.fundsRaisedETH().call({from: User});
-    let displayFundsRaisedPOLY = await currentSTO.methods.fundsRaisedPOLY().call({from: User});
+    let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call({from: Issuer}));
+
+    let displayFundsRaisedETH = '';
+    if (ethRaise) {
+      let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaisedETH().call({from: Issuer}));
+      displayFundsRaisedETH = `
+            ETH:                  ${fundsRaisedETH} ETH`;
+    }
+  
+    let displayFundsRaisedPOLY = '';
+    if (polyRaise) {
+      let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaisedPOLY().call({from: Issuer}));
+      displayFundsRaisedPOLY = `
+            POLY:                 ${fundsRaisedPOLY} POLY`;
+    }
 
     displayRaiseType;
     if (ethRaise && polyRaise) {
@@ -249,13 +261,13 @@ async function showUSDTieredSTOInfo() {
         - Minimum Investment:     ${displayMinimumInvestmentUSD} USD
         - Non Accredited Limit:   ${displayNonAccreditedLimitUSD} USD
         --------------------------------------
-        - ${timeTitle}          ${timeRemaining}
+        - ${timeTitle}         ${timeRemaining}
         - Current Tier:           ${displayCurrentTier}`
         + displayMintedPerTier + `
         - Investor count:         ${displayInvestorCount}
-        - Funds Raised 
-            ETH:                  ${displayFundsRaisedETH} ETH
-            POLY:                 ${displayFundsRaisedPOLY} POLY
+        - Funds Raised`
+        + displayFundsRaisedETH
+        + displayFundsRaisedPOLY + `  
             USD:                  ${displayFundsRaisedUSD} USD
     `);
 
@@ -342,7 +354,7 @@ async function investUsdTieredSTO() {
         raiseType = displayRaiseType;
     }
 
-    let cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit. `));
+    let cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `));
     if (cost == "") {
         process.exit();
     };

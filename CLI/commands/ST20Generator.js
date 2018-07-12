@@ -436,9 +436,9 @@ async function cappedSTO_status() {
 async function usdTieredSTO_status() {
   let displayStartTime = await currentSTO.methods.startTime().call({from: Issuer});
   let displayEndTime = await currentSTO.methods.endTime().call({from: Issuer});
-  let displayCurrentTier = await currentSTO.methods.currentTier().call({from: Issuer});
-  let displayNonAccreditedLimitUSD = await currentSTO.methods.nonAccreditedLimitUSD().call({from: Issuer});
-  let displayMinimumInvestmentUSD = await currentSTO.methods.minimumInvestmentUSD().call({from: Issuer});
+  let displayCurrentTier = parseInt(await currentSTO.methods.currentTier().call({from: Issuer})) + 1;
+  let displayNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call({from: Issuer}));
+  let displayMinimumInvestmentUSD = web3.utils.fromWei(await currentSTO.methods.minimumInvestmentUSD().call({from: Issuer}));
   let ethRaise = await currentSTO.methods.fundRaiseType(0).call({from: Issuer});
   let polyRaise = await currentSTO.methods.fundRaiseType(1).call({from: Issuer});
   let displayWallet = await currentSTO.methods.wallet().call({from: Issuer});
@@ -462,20 +462,43 @@ async function usdTieredSTO_status() {
     - Tokens Sold in Tier ${t+1}:  ${web3.utils.fromWei(mintedPerTier)}  ${displayTokenSymbol}`
   }
 
-  let displayFundsRaisedUSD = await currentSTO.methods.fundsRaisedUSD().call({from: Issuer});
-  let displayFundsRaisedETH = await currentSTO.methods.fundsRaisedETH().call({from: Issuer});
-  let displayFundsRaisedPOLY = await currentSTO.methods.fundsRaisedPOLY().call({from: Issuer});
+  let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call({from: Issuer}));
 
-  let balance = await web3.eth.getBalance(displayWallet);
-  let displayWalletBalanceETH = web3.utils.fromWei(balance, "ether");
-  let displayWalletBalanceETH_USD = 0;//await currentSTO.methods.convertToUSD(web3.utils.fromAscii('ETH'), balance).call({from: Issuer});
-  let displayWalletBalancePOLY = await currentBalance(displayWallet);
-  let displayWalletBalancePOLY_USD = 0;//await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(displayWalletBalancePOLY)).call({from: Issuer});
-  balance = await web3.eth.getBalance(displayReserveWallet);
-  let displayReserveWalletBalanceETH = web3.utils.fromWei(balance,"ether");
-  let displayReserveWalletBalanceETH_USD = 0;//await currentSTO.methods.convertToUSD(web3.utils.fromAscii('ETH'), balance).call({from: Issuer});
-  let displayReserveWalletBalancePOLY = await currentBalance(displayReserveWallet);
-  let displayReserveWalletBalancePOLY_USD = 0;//await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(displayWalletBalancePOLY)).call({from: Issuer});
+  let displayWalletBalanceETH = '';
+  let displayReserveWalletBalanceETH = '';
+  let displayFundsRaisedETH = '';
+  if (ethRaise) {
+    let balance = await web3.eth.getBalance(displayWallet);
+    let walletBalanceETH = web3.utils.fromWei(balance, "ether");
+    let walletBalanceETH_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('ETH'), balance).call({from: Issuer}));
+    displayWalletBalanceETH = `
+        Balance ETH:          ${walletBalanceETH} ETH (${walletBalanceETH_USD} USD)`;
+    balance = await web3.eth.getBalance(displayReserveWallet);
+    let reserveWalletBalanceETH = web3.utils.fromWei(balance,"ether");
+    let reserveWalletBalanceETH_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('ETH'), balance).call({from: Issuer}));  
+    displayReserveWalletBalanceETH = `
+        Balance ETH:          ${reserveWalletBalanceETH} ETH (${reserveWalletBalanceETH_USD} USD)`;
+    let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaisedETH().call({from: Issuer}));
+    displayFundsRaisedETH = `
+        ETH:                  ${fundsRaisedETH} ETH`;
+  }
+
+  let displayWalletBalancePOLY = '';
+  let displayReserveWalletBalancePOLY = '';
+  let displayFundsRaisedPOLY = '';
+  if (polyRaise) {
+    let walletBalancePOLY = await currentBalance(displayWallet);
+    let walletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(walletBalancePOLY.toString())).call({from: Issuer}));
+    displayWalletBalancePOLY = `
+        Balance POLY          ${walletBalancePOLY} POLY (${walletBalancePOLY_USD} USD)`;
+    let reserveWalletBalancePOLY = await currentBalance(displayReserveWallet);
+    let reserveWalletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(reserveWalletBalancePOLY.toString())).call({from: Issuer}));
+    displayReserveWalletBalancePOLY = `
+        Balance POLY          ${reserveWalletBalancePOLY} POLY (${reserveWalletBalancePOLY_USD} USD)`;
+    let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaisedPOLY().call({from: Issuer}));
+    displayFundsRaisedPOLY = `
+        POLY:                 ${fundsRaisedPOLY} POLY`;
+  }
 
   let displayRaiseType;
   if (ethRaise && polyRaise) {
@@ -487,7 +510,6 @@ async function usdTieredSTO_status() {
   } else {
     displayRaiseType = "NONE"
   }
-
 
   let now = Math.floor(Date.now()/1000);
   let timeTitle;
@@ -511,22 +533,22 @@ async function usdTieredSTO_status() {
     + displayTiers + `
     - Minimum Investment:     ${displayMinimumInvestmentUSD} USD
     - Non Accredited Limit:   ${displayNonAccreditedLimitUSD} USD
-    - Wallet:                 ${displayWallet}
-        Balance ETH:          ${displayWalletBalanceETH} ETH (${displayWalletBalanceETH_USD} USD)
-        Balance POLY          ${displayWalletBalancePOLY} POLY (${displayWalletBalancePOLY_USD} USD)
-    - Reserve Wallet:         ${displayReserveWallet}
-        Balance ETH:          ${displayReserveWalletBalanceETH} ETH (${displayReserveWalletBalanceETH_USD} USD)
-        Balance POLY:         ${displayReserveWalletBalancePOLY} POLY (${displayReserveWalletBalancePOLY_USD} USD)
+    - Wallet:                 ${displayWallet}` 
+    + displayWalletBalanceETH 
+    + displayWalletBalancePOLY + `
+    - Reserve Wallet:         ${displayReserveWallet}`
+    + displayReserveWalletBalanceETH
+    + displayReserveWalletBalancePOLY + `
 
     --------------------------------------
-    - ${timeTitle}        ${timeRemaining}
+    - ${timeTitle}         ${timeRemaining}
     - Is Finalized:           ${displayIsFinalized}
     - Current Tier:           ${displayCurrentTier}`
     + displayMintedPerTier + `
     - Investor count:         ${displayInvestorCount}
-    - Funds Raised 
-        ETH:                  ${displayFundsRaisedETH} ETH
-        POLY:                 ${displayFundsRaisedPOLY} POLY
+    - Funds Raised`
+    + displayFundsRaisedETH
+    + displayFundsRaisedPOLY + `  
         USD:                  ${displayFundsRaisedUSD} USD
   `);
 
@@ -651,9 +673,9 @@ async function usdTieredSTO_launch() {
     tokensPerTier[i] = web3.utils.toWei(readlineSync.question(`How many tokens do you plan to sell on the tier No. ${i+1}? (500000): `, {defaultInput: 500000}));
     ratePerTier[i] = web3.utils.toWei(readlineSync.question(`What is the USD per token rate for the tier No. ${i+1}? (0.10): `, {defaultInput: "0.10"}), 'ether');
   }
-  let minimumInvestmentUSD = readlineSync.question(`What is the minimum investment in USD? (100): `, {defaultInput: 100});
-  let nonAccreditedLimitUSD = readlineSync.question(`What is the limit for non accredited insvestors in USD? (10000): `, {defaultInput: 10000});
-  let startingTier = readlineSync.questionInt(`Which is the starting tier? (1): `, {limit: function(input) { return input < tiers; }, defaultInput: 1});
+  let minimumInvestmentUSD = web3.utils.toWei(readlineSync.question(`What is the minimum investment in USD? (100): `, {defaultInput: 100}));
+  let nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the limit for non accredited insvestors in USD? (10000): `, {defaultInput: 10000}));
+  let startingTier = readlineSync.questionInt(`Which is the starting tier? (1): `, {limit: function(input) { return input <= tiers; }, defaultInput: 1}) - 1;
   let raiseType = [];
   if (readlineSync.keyInYNStrict('Funds can be raised in ETH?: ')) raiseType.push(0);
   if (readlineSync.keyInYNStrict('Funds can be raised in POLY?: ')) raiseType.push(1);

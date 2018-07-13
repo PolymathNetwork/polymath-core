@@ -3,7 +3,6 @@ var BigNumber = require('bignumber.js');
 var common = require('./common/common_functions');
 var contracts = require("./helpers/contract_addresses");
 var chalk = require('chalk');
-const shell = require('shelljs');
 
 let polytokenAddress = contracts.polyTokenAddress();
 
@@ -16,8 +15,6 @@ try{
   return;
 }
 
-
-
 const Web3 = require('web3');
 
 if (typeof web3 !== 'undefined') {
@@ -28,20 +25,14 @@ if (typeof web3 !== 'undefined') {
 }
 
 ////////////////////////
-
 let polyToken;
 
 // App flow
-
 let accounts;
 let Issuer;
-
-let _DEBUG = false;
-
 let DEFAULT_GAS_PRICE = 80000000000;
 
 async function executeApp() {
-
   accounts = await web3.eth.getAccounts();
   Issuer = accounts[0];
 
@@ -51,63 +42,67 @@ async function executeApp() {
   console.log("***************************\n")
 
   setup();
-
 };
 
 async function setup(){
   try {
     polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
     polyToken.setProvider(web3.currentProvider);
-  }catch(err){
+  } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
     return;
   }
 
   send_poly();
-
 }
 
 async function send_poly() {
-    let issuerBalance = await polyToken.methods.balanceOf(Issuer).call({from : Issuer});
-    console.log(chalk.blue(`Hello user you have '${(new BigNumber(issuerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()}POLY'\n`))
+  let issuerBalance = await polyToken.methods.balanceOf(Issuer).call({from : Issuer});
+  console.log(chalk.blue(`Hello user you have '${(new BigNumber(issuerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()}POLY'\n`))
 
-    let options = ['250 POLY for ticker registeration','500 POLY for token launch + ticker reg', '20K POLY for CappedSTO Module', '20.5K POLY for Ticker + Token + CappedSTO','As many POLY as you want'];
-    let index = readlineSync.keyInSelect(options, 'What do you want to do?');
-    console.log("Selected:",options[index]);
-  switch(index){
+  let options = ['250 POLY for ticker registeration','500 POLY for token launch + ticker reg', '20K POLY for CappedSTO Module', '20.5K POLY for Ticker + Token + CappedSTO', '100.5K POLY for Ticker + Token + USDTieredSTO','As many POLY as you want'];
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?');
+  console.log("Selected:",options[index]);
+  switch (index) {
     case 0:
-        let _to =  readlineSync.question(`Enter beneficiary of 250 POLY ('${Issuer}'): `);
-        if (_to == "") _to = Issuer;
-        let _amount =  web3.utils.toWei("250","ether");
-        console.log()
-        await transferTokens(_to,_amount);
-    break;
+      let _to =  readlineSync.question(`Enter beneficiary of 250 POLY ('${Issuer}'): `);
+      if (_to == "") _to = Issuer;
+      let _amount =  web3.utils.toWei("250","ether");
+      console.log()
+      await transferTokens(_to,_amount);
+      break;
     case 1:
-        let _to2 =  readlineSync.question(`Enter beneficiary of 500 POLY ('${Issuer}'): `);
-        if (_to2 == "") _to2 = Issuer;
-        let _amount2 =  web3.utils.toWei("500","ether");
-        await transferTokens(_to2,_amount2);
-    break;
+      let _to2 =  readlineSync.question(`Enter beneficiary of 500 POLY ('${Issuer}'): `);
+      if (_to2 == "") _to2 = Issuer;
+      let _amount2 =  web3.utils.toWei("500","ether");
+      await transferTokens(_to2,_amount2);
+      break;
     case 2:
-        let _to3 =  readlineSync.question(`Enter beneficiary of 20K POLY ('${Issuer}'): `);
-        if (_to3 == "") _to3 = Issuer;
-        let _amount3 =  web3.utils.toWei("20000","ether");
-        await transferTokens(_to3,_amount3);
-    break;
+      let _to3 =  readlineSync.question(`Enter beneficiary of 20K POLY ('${Issuer}'): `);
+      if (_to3 == "") _to3 = Issuer;
+      let _amount3 =  web3.utils.toWei("20000","ether");
+      await transferTokens(_to3,_amount3);
+      break;
     case 3:
-        let _to4 =  readlineSync.question(`Enter beneficiary of 20.5K POLY ('${Issuer}'): `);
-        if (_to4 == "") _to4 = Issuer;
-        let _amount4 =  web3.utils.toWei("20500","ether");
-        await transferTokens(_to4,_amount4);
-    break;
+      let _to4 =  readlineSync.question(`Enter beneficiary of 20.5K POLY ('${Issuer}'): `);
+      if (_to4 == "") _to4 = Issuer;
+      let _amount4 =  web3.utils.toWei("20500","ether");
+      await transferTokens(_to4,_amount4);
+      break;
     case 4:
-        let _to5 =  readlineSync.question(`Enter beneficiary of transfer ('${Issuer}'): `);
-        if (_to5 == "") _to5 = Issuer;
-        let _amount5 = readlineSync.question(`Enter the no. of POLY Tokens:`);
-        await transferTokens(_to5, web3.utils.toWei(_amount5, "ether"));
-    break;
-}
+      let _to5 =  readlineSync.question(`Enter beneficiary of 100.5K POLY ('${Issuer}'): `);
+      if (_to5 == "") _to5 = Issuer;
+      let _amount5 =  web3.utils.toWei("100500","ether");
+      await transferTokens(_to5,_amount5);
+      break;
+    case 5:
+      let _to6 =  readlineSync.question(`Enter beneficiary of transfer ('${Issuer}'): `);
+      if (_to6 == "") _to6 = Issuer;
+      let _amount6 = readlineSync.question(`Enter the no. of POLY Tokens: `);
+      await transferTokens(_to6, web3.utils.toWei(_amount6, "ether"));
+      break;
+  }
 }
 
 async function transferTokens(to, amount) {

@@ -51,7 +51,7 @@ program
   .alias('mi')
   .description('Distribute tokens to previously whitelisted investors')
   .action(async function(tokenSymbol, batchSize) {
-    shell.exec(`${__dirname}/commands/scripts/minting.sh Multimint ${tokenSymbol} ${batchSize}`);;
+    shell.exec(`${__dirname}/commands/scripts/script.sh Multimint ${tokenSymbol} ${batchSize}`);;
   });
 
 program
@@ -67,7 +67,7 @@ program
   .alias('w')
   .description('Mass-update a whitelist of allowed/known investors')
   .action(async function(tokenSymbol, batchSize) {
-    shell.exec(`${__dirname}/commands/scripts/minting.sh Whitelist ${tokenSymbol} ${batchSize}`);;
+    shell.exec(`${__dirname}/commands/scripts/script.sh Whitelist ${tokenSymbol} ${batchSize}`);;
   });
 
 program
@@ -84,6 +84,14 @@ program
   .description('Runs ethExplorer')
   .action(async function() {
     await ethExplorer.executeApp();
+  });
+
+program
+  .command('accredit <tokenSymbol> [batchSize]')
+  .alias('a')
+  .description('Runs accredit')
+  .action(async function(tokenSymbol, batchSize) {
+    shell.exec(`${__dirname}/commands/scripts/script.sh Accredit ${tokenSymbol} ${batchSize}`);;
   });
 
 program.parse(process.argv);

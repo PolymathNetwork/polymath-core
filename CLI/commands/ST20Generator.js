@@ -329,11 +329,11 @@ async function step_Wallet_Issuance(){
 
 async function multi_mint_tokens() {
   //await whitelist.startWhitelisting(tokenSymbol);
-  shell.exec(`${__dirname}/scripts/minting.sh Whitelist ${tokenSymbol} 75`);
+  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75`);
   console.log(chalk.green(`\nCongrats! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
 
-  shell.exec(`${__dirname}/scripts//minting.sh Multimint ${tokenSymbol} 75`);
+  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75`);
   console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transfered to token holders`));
 }
 
@@ -819,71 +819,70 @@ async function usdTieredSTO_configure() {
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"STO Configuration - USD Tiered STO");
 
-  let options = ['Finalize STO', 'Change accredited', 'Show STO status','Exit'];
-  let configure = true;
-  while (configure) { 
-    let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: false });
-    switch (index) {
-      case 0:
+  let options = ['Finalize STO', 'Change accredited account', 'Change accredited in batch', 'Show STO status'];
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: false });
+  switch (index) {
+    case 0:
         let isFinalized = await currentSTO.methods.isFinalized().call({from: Issuer});
         if (!isFinalized) {
-          let finalizeAction = currentSTO.methods.finalize();
-          let GAS = await common.estimateGas(finalizeAction, Issuer, 1.2);
-          await finalizeAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
-          .on('transactionHash', function(hash) {
-            console.log(`
-              Finalizing STO
-              Your transaction is being processed. Please wait...
-              TxHash: ${hash}\n`
-            );
-          })
-          .on('receipt', function(receipt) {
-            console.log(`
-              Congratulations! The transaction was successfully completed.
-              Review it on Etherscan.
+          if (readlineSync.keyInYNStrict())
+          {
+            let finalizeAction = currentSTO.methods.finalize();
+            let GAS = await common.estimateGas(finalizeAction, Issuer, 1.2);
+            await finalizeAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+            .on('transactionHash', function(hash) {
+              console.log(`
+                Finalizing STO
+                Your transaction is being processed. Please wait...
+                TxHash: ${hash}\n`
+              );
+            })
+            .on('receipt', function(receipt) {
+              console.log(`
+                Congratulations! The transaction was successfully completed.
+                Review it on Etherscan.
 
-              TxHash: ${receipt.transactionHash}
-              gasUsed: ${receipt.gasUsed}\n`
-            );
-          })
-        } 
+                TxHash: ${receipt.transactionHash}
+                gasUsed: ${receipt.gasUsed}\n`
+              );
+            })
+          } 
+        }
         else {
           console.log(`STO is already finalized`);
-        }
-        break;
-      case 1:
-        let investor = readlineSync.question('Enter the address to change accreditation: ');
-        let isAccredited = readlineSync.keyInYNStrict(`Is ${investor} accredited?`);
-        let investors = [investor];
-        let accredited = [isAccredited];
-        let changeAccreditedAction = currentSTO.methods.changeAccredited(investors, accredited);
-        let GAS2 = await common.estimateGas(changeAccreditedAction, Issuer, 2);
-        await changeAccreditedAction.send({from: Issuer, gas: GAS2, gasPrice: DEFAULT_GAS_PRICE})
-        .on('transactionHash', function(hash) {
-          console.log(`
-            Changing accreditation
-            Your transaction is being processed. Please wait...
-            TxHash: ${hash}\n`
-          );
-        })
-        .on('receipt', function(receipt) {
-          console.log(`
-            Congratulations! The transaction was successfully completed.
-            Review it on Etherscan.
+        } 
+      break;
+    case 1:
+      let investor = readlineSync.question('Enter the address to change accreditation: ');
+      let isAccredited = readlineSync.keyInYNStrict(`Is ${investor} accredited?`);
+      let investors = [investor];
+      let accredited = [isAccredited];
+      let changeAccreditedAction = currentSTO.methods.changeAccredited(investors, accredited);
+      let GAS2 = await common.estimateGas(changeAccreditedAction, Issuer, 2);
+      await changeAccreditedAction.send({from: Issuer, gas: GAS2, gasPrice: DEFAULT_GAS_PRICE})
+      .on('transactionHash', function(hash) {
+        console.log(`
+          Changing accreditation
+          Your transaction is being processed. Please wait...
+          TxHash: ${hash}\n`
+        );
+      })
+      .on('receipt', function(receipt) {
+        console.log(`
+          Congratulations! The transaction was successfully completed.
+          Review it on Etherscan.
 
-            TxHash: ${receipt.transactionHash}
-            gasUsed: ${receipt.gasUsed}\n`
-          );
-        })
-        break;
-      case 2:
-        await usdTieredSTO_status();
-        break;
-      case 3:
-        configure = false;
-        console.log("FINISHED");
-        break;
-    }
+          TxHash: ${receipt.transactionHash}
+          gasUsed: ${receipt.gasUsed}\n`
+        );
+      })
+      break;
+    case 2:
+      shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75`);
+      break;
+    case 3:
+      await usdTieredSTO_status();
+      break;
   }
 }
 

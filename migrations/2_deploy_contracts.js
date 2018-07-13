@@ -14,7 +14,7 @@ const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
 const MockOracle = artifacts.require('./MockOracle.sol')
 let BigNumber = require('bignumber.js');
 const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18));   // 20K POLY fee
-const usdTieredSTOSetupCost = new BigNumber(10000).times(new BigNumber(10).pow(18));   // 100K POLY fee
+const usdTieredSTOSetupCost = new BigNumber(100000).times(new BigNumber(10).pow(18));   // 100K POLY fee
 const initRegFee = new BigNumber(250).times(new BigNumber(10).pow(18));      // 250 POLY fee for registering ticker or security token in registry
 let PolyToken
 let ETHOracle
@@ -197,8 +197,6 @@ module.exports = function (deployer, network, accounts) {
         console.log('*** Percentage Transfer Manager Factory: ', PercentageTransferManagerFactory.address, '***')
         console.log('*** ETH Dividends Checkpoint Factory: ', EtherDividendCheckpointFactory.address, '***')
         console.log('*** ERC20 Dividends Checkpoint Factory: ', ERC20DividendCheckpointFactory.address, '***')
-        console.log('*** ETH Oracle: ', ETHOracle, '***')
-        console.log('*** POLY Oracle: ', PolyOracle, '***')
         console.log('-----------------------------------')
         console.log('\n')
         // -------- END OF POLYMATH NETWORK Configuration -------//

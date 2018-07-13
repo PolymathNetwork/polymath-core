@@ -42,12 +42,13 @@ The diagram below depicts a high-level view of the various modules, registries, 
 ## Components
 ### SecurityToken
 `SecurityToken` is an implementation of the ST-20 protocol that allows the addition of different modules to control its behavior. Different modules can be attached to `SecurityToken`:
-- `TransferManager` modules: These control the logic behind transfers and how they are allowed or disallowed.
+- [TransferManager modules](contracts/modules/TransferManager): These control the logic behind transfers and how they are allowed or disallowed.
 By default, the ST (Security Token) gets a `GeneralTransferManager` module attached in order to determine if transfers should be allowed based on a whitelist approach. The `GeneralTransferManager` behaves differently depending who is trying to transfer the tokens.
 a) In an offering setting (investors buying tokens from the issuer) the investor's address should be present on an internal whitelist managed by the issuer within the `GeneralTransferManager`.
 b) In a peer to peer transfer, restrictions apply based on real-life lockups that are enforced on-chain. For example, if a particular holder has a 1-year sale restriction for the token, the transaction will fail until that year passes.
-- Security Token Offering (STO) modules: A `SecurityToken` can be attached to one (and only one) STO module that will dictate the logic of how those tokens will be sold/distributed. An STO is the equivalent to the Crowdsale contracts often found present in traditional ICOs.
-- Permission Manager modules: These modules manage permissions on different aspects of the issuance process. The issuer can use this module to manage permissions and designate administrators on his token. For example, the issuer might give a KYC firm permissions to add investors to the whitelist.
+- [Security Token Offering (STO) modules](contracts/modules/STO): A `SecurityToken` can be attached to one (and only one) STO module that will dictate the logic of how those tokens will be sold/distributed. An STO is the equivalent to the Crowdsale contracts often found present in traditional ICOs.
+- [Permission Manager modules](contracts/modules/PermissionManager): These modules manage permissions on different aspects of the issuance process. The issuer can use this module to manage permissions and designate administrators on his token. For example, the issuer might give a KYC firm permissions to add investors to the whitelist.   
+- [Checkpoint Modules](contracts/modules/Checkpoint): These modules allow the issuer to define checkpoints at which token balances and the total supply of a token can be consistently queried. This functionality is useful for dividend payment mechanisms and on-chain governance, both of which need to be able to determine token balances consistently as of a specified point in time.
 
 ### TickerRegistry
 The ticker registry manages the sign up process to the Polymath platform. Issuers can use this contract to register a token symbol (which are unique within the Polymath network). Token Symbol registrations have an expiration period (7 days by default) in which the issuer has to complete the process of deploying their SecurityToken. If they do not complete the process in time, their ticker symbol will be made available for someone else to register.
@@ -155,17 +156,18 @@ node CLI/polymath-cli module_manager
 # Setting up Polymath Core
 ## KOVAN
 
-+### v1.2.2 (TORO Release)
-+
-+Contract | Address
-+- | -
-+TickerRegistry: | [0xf1b64cd44f8da99b518ec530bf8c0d5a04c7dbda](https://kovan.etherscan.io/address/0xf1b64cd44f8da99b518ec530bf8c0d5a04c7dbda)
-+SecurityTokenRegistry: | [0x26142ca417b712379f0e52ffa906492515db891a](https://kovan.etherscan.io/address/0x26142ca417b712379f0e52ffa906492515db891a)
-+ModuleRegistry: | [0x4785fbc411af7afc407c1182ac1b67594af62afa](https://kovan.etherscan.io/address/0x4785fbc411af7afc407c1182ac1b67594af62afa)
-+CappedSTOFactory: | [0xb9e520dc268fd4af75b2aeab37b5e6eef810f872](https://kovan.etherscan.io/address/0xb9e520dc268fd4af75b2aeab37b5e6eef810f872)
-+EthDividendsCheckpointFactory: | [0xe8300d08eb5022d60ee6ff0947367cebc9f6b63c](https://kovan.etherscan.io/address/0xe8300d08eb5022d60ee6ff0947367cebc9f6b63c)
-+TORO V1.2.0 Token: | [0x2573D0946810da2C95B3A63cB4c8cc3aF0E95723](https://kovan.etherscan.io/address/0x2573D0946810da2C95B3A63cB4c8cc3aF0E95723)
-+TORO V1.2.0 CappedSTO: | [0xCB1F57bf24b32466116eD5f359595a5BEba7A166](https://kovan.etherscan.io/address/0xCB1F57bf24b32466116eD5f359595a5BEba7A166)
+### v1.2.2 (TORO Release)
+
+| Contract                                                         | Address                                                                                                                       |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| TickerRegistry:                                               | [0xf1b64cd44f8da99b518ec530bf8c0d5a04c7dbda](https://kovan.etherscan.io/address/0xf1b64cd44f8da99b518ec530bf8c0d5a04c7dbda)                                              |
+| SecurityTokenRegistry:                                        | [0x26142ca417b712379f0e52ffa906492515db891a](https://kovan.etherscan.io/address/0x26142ca417b712379f0e52ffa906492515db891a)                                              |
+| ModuleRegistry:                                               | [0x4785fbc411af7afc407c1182ac1b67594af62afa](https://kovan.etherscan.io/address/0x4785fbc411af7afc407c1182ac1b67594af62afa)                                              |
+| CappedSTOFactory:                                               | [0xb9e520dc268fd4af75b2aeab37b5e6eef810f872](https://kovan.etherscan.io/address/0xb9e520dc268fd4af75b2aeab37b5e6eef810f872)                                              |
+| EthDividendsCheckpointFactory:                                               | [0xe8300d08eb5022d60ee6ff0947367cebc9f6b63c](https://kovan.etherscan.io/address/0xe8300d08eb5022d60ee6ff0947367cebc9f6b63c)                                              |
+| TORO V1.2.0 Token:                                               | [0x2573D0946810da2C95B3A63cB4c8cc3aF0E95723](https://kovan.etherscan.io/address/0x2573D0946810da2C95B3A63cB4c8cc3aF0E95723)                                              |
+| TORO V1.2.0 CappedSTO:                                               | [0xCB1F57bf24b32466116eD5f359595a5BEba7A166](https://kovan.etherscan.io/address/0xCB1F57bf24b32466116eD5f359595a5BEba7A166)                                              |
+
 
 ## Package version requirements for your machine:
 

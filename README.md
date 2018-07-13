@@ -154,14 +154,17 @@ node CLI/polymath-cli module_manager
 # Setting up Polymath Core
 ## KOVAN
 
-### v1.1.0 (TORO Release)
-
-| Contract                                                         | Address                                                                                                                       |
-| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| TickerRegistry:                                               | [0xcf82d3f2abdf777f559e98d85f976283595f0d30](https://kovan.etherscan.io/address/0xcf82d3f2abdf777f559e98d85f976283595f0d30)                                              |
-| SecurityTokenRegistry:                                        | [0x00d4671f8c00fcfc2256e008242f07c1428b5836](https://kovan.etherscan.io/address/0x00d4671f8c00fcfc2256e008242f07c1428b5836)                                              |
-| ModuleRegistry:                                               | [0x719287e2f1dfc7d953d0c1f05fdf27934d9c6f30](https://kovan.etherscan.io/address/0x719287e2f1dfc7d953d0c1f05fdf27934d9c6f30)                                              |
-| CappedSTOFactory:                                               | [0x30e2c3fa3297808a2e9f176be6cc587cb76259c4](https://kovan.etherscan.io/address/0x30e2c3fa3297808a2e9f176be6cc587cb76259c4)                                              |
++### v1.2.2 (TORO Release)
++
++Contract | Address
++- | -
++TickerRegistry: | [0xf1b64cd44f8da99b518ec530bf8c0d5a04c7dbda](https://kovan.etherscan.io/address/0xf1b64cd44f8da99b518ec530bf8c0d5a04c7dbda)
++SecurityTokenRegistry: | [0x26142ca417b712379f0e52ffa906492515db891a](https://kovan.etherscan.io/address/0x26142ca417b712379f0e52ffa906492515db891a)
++ModuleRegistry: | [0x4785fbc411af7afc407c1182ac1b67594af62afa](https://kovan.etherscan.io/address/0x4785fbc411af7afc407c1182ac1b67594af62afa)
++CappedSTOFactory: | [0xb9e520dc268fd4af75b2aeab37b5e6eef810f872](https://kovan.etherscan.io/address/0xb9e520dc268fd4af75b2aeab37b5e6eef810f872)
++EthDividendsCheckpointFactory: | [0xe8300d08eb5022d60ee6ff0947367cebc9f6b63c](https://kovan.etherscan.io/address/0xe8300d08eb5022d60ee6ff0947367cebc9f6b63c)
++TORO V1.2.0 Token: | [0x2573D0946810da2C95B3A63cB4c8cc3aF0E95723](https://kovan.etherscan.io/address/0x2573D0946810da2C95B3A63cB4c8cc3aF0E95723)
++TORO V1.2.0 CappedSTO: | [0xCB1F57bf24b32466116eD5f359595a5BEba7A166](https://kovan.etherscan.io/address/0xCB1F57bf24b32466116eD5f359595a5BEba7A166)
 
 ## Package version requirements for your machine:
 

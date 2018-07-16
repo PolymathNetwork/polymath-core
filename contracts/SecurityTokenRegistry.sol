@@ -18,7 +18,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     event LogChangePolyRegisterationFee(uint256 _oldFee, uint256 _newFee);
 
     // Emit at the time of launching of new security token
-    event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address _owner);
+    event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address indexed _owner);
     event LogAddCustomSecurityToken(string _name, string _symbol, address _securityToken, uint256 _addedAt);
 
     constructor (

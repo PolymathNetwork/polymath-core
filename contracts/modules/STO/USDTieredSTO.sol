@@ -135,6 +135,7 @@ contract USDTieredSTO is ISTO {
      * @param _tokensPerTier Tokens available in each tier
      * @param _securityTokenRegistry Address of Security Token Registry used to reference oracles
      * @param _nonAccreditedLimitUSD Limit in USD (* 10**18) for non-accredited investors
+     * @param _minimumInvestmentUSD Minimun investment in USD (* 10**18)
      * @param _startingTier Starting tier for the STO
      * @param _fundRaiseTypes Types of currency used to collect the funds
      * @param _wallet Ethereum account address to hold the funds
@@ -159,7 +160,7 @@ contract USDTieredSTO is ISTO {
         _configureAddresses(_securityTokenRegistry, _wallet, _reserveWallet);
         _configureTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _startingTier);
         _configureTimes(_startTime, _endTime);
-        _configureLimits(_minimumInvestmentUSD, _nonAccreditedLimitUSD);
+        _configureLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
     function modifyFunding(uint8[] _fundRaiseTypes) public onlyOwner {

@@ -216,7 +216,7 @@ contract USDTieredSTO is ISTO {
         }
         require(_wallet != address(0), "Zero address is not permitted for wallet");
         require(_reserveWallet != address(0), "Zero address is not permitted for wallet");
-        require(_startTime >= now.add(86400) && _endTime > _startTime, "Date parameters are not valid");
+        require(_endTime > _startTime, "Date parameters are not valid");
         require(_securityTokenRegistry != address(0), "Zero address is not permitted for security token registry");
         require(_startingTier < _ratePerTier.length, "Invalid starting tier");
         require(_fundRaiseTypes.length > 0, "No fund raising currencies specified");

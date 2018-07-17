@@ -556,34 +556,88 @@ async function cappedSTO_status() {
 ////////////////////
 // USD Tiered STO //
 ////////////////////
+function fundingConfigUSDTieredSTO() {
+  let funding = {};
+
+  funding.raiseType = [];
+  if (readlineSync.keyInYNStrict('Funds can be raised in ETH? ')) funding.raiseType.push(0);
+  if (readlineSync.keyInYNStrict('Funds can be raised in POLY? ')) funding.raiseType.push(1);
+
+  return funding;
+}
+
+function addressesConfigUSDTieredSTO() {
+  let addresses = {};
+
+  addresses.wallet =  readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer + '): ', {defaultInput: Issuer});
+  addresses.reserveWallet =  readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer + '): ', {defaultInput: Issuer});
+  addresses.securityTokenRegistryAddress = securityTokenRegistryAddress;
+ 
+  return addresses;
+}
+
+function tiersConfigUSDTieredSTO(polyRaise) {
+  let tiers = {};
+
+  tiers.tiers =  readlineSync.questionInt('Enter the number of tiers for the STO? (3): ', {limit: function(input) { return input > 0; }, defaultInput: 3});
+  
+  let defaultTokensPerTier = [190000000, 100000000, 200000000];
+  let defaultRatePerTier = ['0.05', '0.10', '0.15'];
+  let defaultTokensPerTierDiscountPoly = [90000000, 50000000, 100000000];
+  let defaultRatePerTierDiscountPoly = ['0.025', '0.05', '0.075'];
+  tiers.tokensPerTier = [];
+  tiers.ratePerTier = [];
+  tiers.tokensPerTierDiscountPoly = [];
+  tiers.ratePerTierDiscountPoly = [];
+  for (let i = 0; i < tiers.tiers; i++) {
+    tiers.tokensPerTier[i] = web3.utils.toWei(readlineSync.question(`How many tokens do you plan to sell on tier No. ${i+1}? (${defaultTokensPerTier[i]}): `, {defaultInput: defaultTokensPerTier[i]}));
+    tiers.ratePerTier[i] = web3.utils.toWei(readlineSync.question(`What is the USD per token rate for tier No. ${i+1}? (${defaultRatePerTier[i]}): `, {defaultInput: defaultRatePerTier[i]}));
+    
+    //If funds can be raised in POLY
+    if (polyRaise && readlineSync.keyInYNStrict(`Do you plan to have a discounted rate for POLY investments for tier No. ${i+1}? `)) {
+      tiers.tokensPerTierDiscountPoly[i] = web3.utils.toWei(readlineSync.question(`How many tokens do you plan to sell at discounted rate on tier No. ${i+1}? (${defaultTokensPerTierDiscountPoly[i]}): `, {limit: function(input) { return input < tiers.tokensPerTier[i]; }, defaultInput: defaultTokensPerTierDiscountPoly[i]}));
+      tiers.ratePerTierDiscountPoly[i] = web3.utils.toWei(readlineSync.question(`What is the discounted rate for tier No. ${i+1}? (${defaultRatePerTierDiscountPoly[i]}): `, {limit: function(input) { return input < tiers.ratePerTier[i]; }, defaultInput: defaultRatePerTierDiscountPoly[i]}));
+    } else {
+      tiers.tokensPerTierDiscountPoly[i] = 0;  
+      tiers.ratePerTierDiscountPoly[i] = 0;  
+    }
+  }
+  tiers.startingTier = readlineSync.questionInt(`Which is the starting tier? (1): `, {limit: function(input) { return input <= tiers; }, defaultInput: 1}) - 1;
+  
+
+  return tiers;
+}
+
+function timesConfigUSDTieredSTO() {
+  let times = {};
+
+  let oneMinuteFromNow = Math.floor(Date.now()/1000)+60;
+  times.startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ', {defaultInput: oneMinuteFromNow});
+  let oneMonthFromNow = Math.floor(Date.now()/1000) + (30 * 24 * 60 * 60);
+  times.endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = ' + oneMonthFromNow + ' ): ', {defaultInput: oneMonthFromNow});
+  
+  return times;
+}
+
+function limitsConfigUSDTieredSTO() {
+  let limits = {};
+
+  limits.minimumInvestmentUSD = web3.utils.toWei(readlineSync.question(`What is the minimum investment in USD? (1000): `, {defaultInput: 1000}));
+  limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the limit for non accredited insvestors in USD? (10000): `, {defaultInput: 10000}));
+ 
+  return limits;
+}
+
 async function usdTieredSTO_launch() {
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - USD Tiered STO");
 
-  let tiers =  readlineSync.questionInt('Enter the number of tiers for the STO? (3): ', {limit: function(input) { return input > 0; }, defaultInput: 3});
+  let funding = fundingConfigUSDTieredSTO();
+  let addresses = addressesConfigUSDTieredSTO();
+  let tiers = tiersConfigUSDTieredSTO(funding.raiseType.includes(1));
+  let limits = limitsConfigUSDTieredSTO();
+  let times = timesConfigUSDTieredSTO();
   
-  let defaultTokensPerTier = [190000000, 100000000, 200000000];
-  let defaultRatePerTier = ['0.05', '0.10', '0.15'];
-  let tokensPerTier = [];
-  let ratePerTier = [];
-  for (let i = 0; i < tiers; i++) {
-    tokensPerTier[i] = web3.utils.toWei(readlineSync.question(`How many tokens do you plan to sell on the tier No. ${i+1}? (${defaultTokensPerTier[i]}): `, {defaultInput: defaultTokensPerTier[i]}));
-    ratePerTier[i] = web3.utils.toWei(readlineSync.question(`What is the USD per token rate for the tier No. ${i+1}? (${defaultRatePerTier[i]}): `, {defaultInput: defaultRatePerTier[i]}));
-  }
-  let minimumInvestmentUSD = web3.utils.toWei(readlineSync.question(`What is the minimum investment in USD? (1000): `, {defaultInput: 1000}));
-  let nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the limit for non accredited insvestors in USD? (10000): `, {defaultInput: 10000}));
-  let startingTier = readlineSync.questionInt(`Which is the starting tier? (1): `, {limit: function(input) { return input <= tiers; }, defaultInput: 1}) - 1;
-  let raiseType = [];
-  if (readlineSync.keyInYN('Funds can be raised in ETH?: ') !== false) raiseType.push(0);
-  if (readlineSync.keyInYN('Funds can be raised in POLY?: ') !== false) raiseType.push(1);
-  
-  let oneMinuteFromNow = Math.floor(Date.now()/1000)+60;
-  let startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ', {defaultInput: oneMinuteFromNow});
-  let oneMonthFromNow = Math.floor(Date.now()/1000) + (30 * 24 * 60 * 60);
-  let endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = ' + oneMonthFromNow + ' ): ', {defaultInput: oneMonthFromNow});
-  let wallet =  readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer + '): ', {defaultInput: Issuer});
-  let reserveWallet =  readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer + '): ', {defaultInput: Issuer});
-
   let bytesSTO = web3.eth.abi.encodeFunctionCall( {
     name: 'configure',
     type: 'function',
@@ -599,7 +653,13 @@ async function usdTieredSTO_launch() {
         name: '_ratePerTier'
       },{
         type: 'uint256[]',
+        name: '_ratePerTierDiscountPoly'
+      },{
+        type: 'uint256[]',
         name: '_tokensPerTier'
+      },{
+        type: 'uint256[]',
+        name: '_tokensPerTierDiscountPoly'
       },{
         type: 'address',
         name: '_securityTokenRegistry'
@@ -623,17 +683,19 @@ async function usdTieredSTO_launch() {
         name: '_reserveWallet'
       }
     ]
-  }, [startTime, 
-    endTime, 
-    ratePerTier, 
-    tokensPerTier, 
-    securityTokenRegistryAddress, 
-    nonAccreditedLimitUSD, 
-    minimumInvestmentUSD, 
-    startingTier, 
-    raiseType,
-    wallet,
-    reserveWallet
+  }, [times.startTime, 
+    times.endTime, 
+    tiers.ratePerTier, 
+    tiers.ratePerTierDiscountPoly, 
+    tiers.tokensPerTier, 
+    tiers.tokensPerTierDiscountPoly, 
+    addresses.securityTokenRegistryAddress, 
+    limits.nonAccreditedLimitUSD, 
+    limits.minimumInvestmentUSD, 
+    tiers.startingTier, 
+    funding.raiseType,
+    addresses.wallet,
+    addresses.reserveWallet
   ]);
 
   let stoFee = usdTieredSTOFee;
@@ -714,12 +776,28 @@ async function usdTieredSTO_status() {
     let ratePerTier = await currentSTO.methods.ratePerTier(t).call({from: Issuer});
     let tokensPerTier = await currentSTO.methods.tokensPerTier(t).call({from: Issuer});
     let mintedPerTier = await currentSTO.methods.mintedPerTier(t).call({from: Issuer});
+    
+    let displayDiscountTokens = "";
+    let displayDiscountMinted = "";
+    let tokensPerTierDiscountPoly = await currentSTO.methods.tokensPerTierDiscountPoly(t).call({from: Issuer});
+    if (tokensPerTierDiscountPoly > 0) {
+      let ratePerTierDiscountPoly = await currentSTO.methods.ratePerTierDiscountPoly(t).call({from: Issuer});
+      let mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call({from: Issuer});
+
+      displayDiscountTokens = `
+        Tokens for discouted rate: ${web3.utils.fromWei(tokensPerTierDiscountPoly)} ${displayTokenSymbol}
+        Discounted rate:      ${web3.utils.fromWei(ratePerTierDiscountPoly, 'ether')} USD per Token`;
+
+      displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
+    }
+
     displayTiers = displayTiers + `
     - Tier ${t+1}: 
         Tokens:               ${web3.utils.fromWei(tokensPerTier, 'ether')} ${displayTokenSymbol}
-        Rate:                 ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`;
+        Rate:                 ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`
+        + displayDiscountTokens;
     displayMintedPerTier = displayMintedPerTier + `
-    - Tokens Sold in Tier ${t+1}:  ${web3.utils.fromWei(mintedPerTier)}  ${displayTokenSymbol}`
+    - Tokens Sold in Tier ${t+1}:  ${web3.utils.fromWei(mintedPerTier)}  ${displayTokenSymbol} ${displayDiscountMinted}`;
   }
 
   let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call({from: Issuer}));
@@ -819,40 +897,61 @@ async function usdTieredSTO_configure() {
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"STO Configuration - USD Tiered STO");
 
-  let options = ['Finalize STO', 'Change accredited account', 'Change accredited in batch', 'Show STO status'];
+  let options = ['Modify times configuration', 'Modify tiers configuration', 'Modify addresses configuration', 'Modify limits configuration', 
+    'Modify funding configuration', 'Finalize STO', 'Change accredited account', 'Change accredited in batch', 'Show STO status'];
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: false });
   switch (index) {
     case 0:
-        let isFinalized = await currentSTO.methods.isFinalized().call({from: Issuer});
-        if (!isFinalized) {
-          if (readlineSync.keyInYNStrict())
-          {
-            let finalizeAction = currentSTO.methods.finalize();
-            let GAS = await common.estimateGas(finalizeAction, Issuer, 1.2);
-            await finalizeAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
-            .on('transactionHash', function(hash) {
-              console.log(`
-                Finalizing STO
-                Your transaction is being processed. Please wait...
-                TxHash: ${hash}\n`
-              );
-            })
-            .on('receipt', function(receipt) {
-              console.log(`
-                Congratulations! The transaction was successfully completed.
-                Review it on Etherscan.
-
-                TxHash: ${receipt.transactionHash}
-                gasUsed: ${receipt.gasUsed}\n`
-              );
-            })
-          } 
-        }
-        else {
-          console.log(`STO is already finalized`);
-        } 
+      await modfifyTimes();
+      await usdTieredSTO_status();
       break;
     case 1:
+      await modfifyTiers();
+      await usdTieredSTO_status();
+      break;
+    case 2:
+      await modfifyAddresses();
+      await usdTieredSTO_status();
+      break;
+    case 3:
+      await modfifyLimits();
+      await usdTieredSTO_status();
+      break;
+    case 4:
+      await modfifyFunding();
+      await usdTieredSTO_status();
+      break;
+    case 5:
+      let isFinalized = await currentSTO.methods.isFinalized().call({from: Issuer});
+      if (!isFinalized) {
+        if (readlineSync.keyInYNStrict())
+        {
+          let finalizeAction = currentSTO.methods.finalize();
+          let GAS = await common.estimateGas(finalizeAction, Issuer, 1.2);
+          await finalizeAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+          .on('transactionHash', function(hash) {
+            console.log(`
+              Finalizing STO
+              Your transaction is being processed. Please wait...
+              TxHash: ${hash}\n`
+            );
+          })
+          .on('receipt', function(receipt) {
+            console.log(`
+              Congratulations! The transaction was successfully completed.
+              Review it on Etherscan.
+
+              TxHash: ${receipt.transactionHash}
+              gasUsed: ${receipt.gasUsed}\n`
+            );
+          })
+        } 
+      }
+      else {
+        console.log(`STO is already finalized`);
+      } 
+      break;
+    case 6:
       let investor = readlineSync.question('Enter the address to change accreditation: ');
       let isAccredited = readlineSync.keyInYNStrict(`Is ${investor} accredited?`);
       let investors = [investor];
@@ -877,13 +976,134 @@ async function usdTieredSTO_configure() {
         );
       })
       break;
-    case 2:
+    case 7:
       shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75`);
       break;
-    case 3:
+    case 8:
       await usdTieredSTO_status();
       break;
   }
+}
+
+async function modfifyTimes() {
+  let times = timesConfigUSDTieredSTO();
+  let modifyTimesAction = currentSTO.methods.modifyTimes(times.startTime, times.endTime);
+  let GAS = await common.estimateGas(modifyTimesAction, Issuer, 1.2);
+  await modifyTimesAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+  .on('transactionHash', function(hash) {
+    console.log(`
+      Modifying start and end times
+      Your transaction is being processed. Please wait...
+      TxHash: ${hash}\n`
+    );
+  })
+  .on('receipt', function(receipt) {
+    console.log(`
+      Congratulations! The transaction was successfully completed.
+      Review it on Etherscan.
+
+      TxHash: ${receipt.transactionHash}
+      gasUsed: ${receipt.gasUsed}\n`
+    );
+  })
+}
+
+async function modfifyLimits() {
+  let limits = limitsConfigUSDTieredSTO();
+  let modifyLimitsAction = currentSTO.methods.modifyLimits(limits.nonAccreditedLimitUSD, limits.minimumInvestmentUSD);
+  let GAS = await common.estimateGas(modifyLimitsAction, Issuer, 1.2);
+  await modifyLimitsAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+  .on('transactionHash', function(hash) {
+    console.log(`
+      Modifying limits
+      Your transaction is being processed. Please wait...
+      TxHash: ${hash}\n`
+    );
+  })
+  .on('receipt', function(receipt) {
+    console.log(`
+      Congratulations! The transaction was successfully completed.
+      Review it on Etherscan.
+
+      TxHash: ${receipt.transactionHash}
+      gasUsed: ${receipt.gasUsed}\n`
+    );
+  })
+}
+
+async function modfifyFunding() {
+  let funding = fundingConfigUSDTieredSTO();
+  let modifyFundingAction = currentSTO.methods.modifyFunding(funding.raiseType);
+  let GAS = await common.estimateGas(modifyFundingAction, Issuer, 1.2);
+  await modifyFundingAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+  .on('transactionHash', function(hash) {
+    console.log(`
+      Modifying funding raise types
+      Your transaction is being processed. Please wait...
+      TxHash: ${hash}\n`
+    );
+  })
+  .on('receipt', function(receipt) {
+    console.log(`
+      Congratulations! The transaction was successfully completed.
+      Review it on Etherscan.
+
+      TxHash: ${receipt.transactionHash}
+      gasUsed: ${receipt.gasUsed}\n`
+    );
+  })
+}
+
+async function modfifyAddresses() {
+  let addresses = addressesConfigUSDTieredSTO();
+  let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.securityTokenRegistryAddress, addresses.wallet, addresses.reserveWallet);
+  let GAS = await common.estimateGas(modifyAddressesAction, Issuer, 1.2);
+  await modifyAddressesAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+  .on('transactionHash', function(hash) {
+    console.log(`
+      Modifying addresses
+      Your transaction is being processed. Please wait...
+      TxHash: ${hash}\n`
+    );
+  })
+  .on('receipt', function(receipt) {
+    console.log(`
+      Congratulations! The transaction was successfully completed.
+      Review it on Etherscan.
+
+      TxHash: ${receipt.transactionHash}
+      gasUsed: ${receipt.gasUsed}\n`
+    );
+  })
+}
+
+async function modfifyTiers() {
+  let tiers = tiersConfigUSDTieredSTO();
+  let modifyTiersAction = currentSTO.methods.modifyTiers(
+    tiers.ratePerTier, 
+    tiers.ratePerTierDiscountPoly, 
+    tiers.tokensPerTier,
+    tiers.tokensPerTierDiscountPoly,
+    tiers.startingTier
+  );
+  let GAS = await common.estimateGas(modifyTiersAction, Issuer, 1.2);
+  await modifyTiersAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+  .on('transactionHash', function(hash) {
+    console.log(`
+      Modifying tiers
+      Your transaction is being processed. Please wait...
+      TxHash: ${hash}\n`
+    );
+  })
+  .on('receipt', function(receipt) {
+    console.log(`
+      Congratulations! The transaction was successfully completed.
+      Review it on Etherscan.
+
+      TxHash: ${receipt.transactionHash}
+      gasUsed: ${receipt.gasUsed}\n`
+    );
+  })
 }
 
 //////////////////////

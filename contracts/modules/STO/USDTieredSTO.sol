@@ -24,11 +24,20 @@ contract USDTieredSTO is ISTO {
     // How many token units a buyer gets per USD per tier (multiplied by 10**18)
     uint256[] public ratePerTier;
 
+    // How many token units a buyer gets per USD per tier (multiplied by 10**18) when investing in POLY up to tokensPerTierDiscountPoly
+    uint256[] public ratePerTierDiscountPoly;
+
+    // How many token units are available in each tier (relative to totalSupply) at the ratePerTierDiscountPoly rate
+    uint256[] public tokensPerTierDiscountPoly;
+
     // How many tokens are available in each tier (relative to totalSupply)
     uint256[] public tokensPerTier;
 
     // How many tokens have been minted in each tier (relative to totalSupply)
     uint256[] public mintedPerTier;
+
+    // How many tokens have been minted in each tier (relative to totalSupply) at the discounted rate
+    uint256[] public mintedPerTierDiscountPoly;
 
     // Current tier
     uint8 public currentTier;
@@ -66,14 +75,16 @@ contract USDTieredSTO is ISTO {
     // Whether or not the STO has been finalized
     bool public isFinalized;
 
-    event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint8 _tier);
+    event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint256 _tierPrice);
     event FundsReceived(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _etherAmount, uint256 _polyAmount, uint256 _rate);
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _tier);
     event ConfigChanged(
         uint256 _startTime,
         uint256 _endTime,
         uint256[] _ratePerTier,
+        uint256[] _ratePerTierDiscountPoly,
         uint256[] _tokensPerTier,
+        uint256[] _tokensPerTierDiscountPoly,
         address indexed _securityTokenRegistry,
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD,
@@ -125,7 +136,9 @@ contract USDTieredSTO is ISTO {
         uint256 _startTime,
         uint256 _endTime,
         uint256[] _ratePerTier,
+        uint256[] _ratePerTierDiscountPoly,
         uint256[] _tokensPerTier,
+        uint256[] _tokensPerTierDiscountPoly,
         address _securityTokenRegistry,
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD,
@@ -138,7 +151,9 @@ contract USDTieredSTO is ISTO {
             _startTime,
             _endTime,
             _ratePerTier,
+            _ratePerTierDiscountPoly,
             _tokensPerTier,
+            _tokensPerTierDiscountPoly,
             _securityTokenRegistry,
             _nonAccreditedLimitUSD,
             _minimumInvestmentUSD,
@@ -166,7 +181,9 @@ contract USDTieredSTO is ISTO {
         uint256 _startTime,
         uint256 _endTime,
         uint256[] _ratePerTier,
+        uint256[] _ratePerTierDiscountPoly,
         uint256[] _tokensPerTier,
+        uint256[] _tokensPerTierDiscountPoly,
         address _securityTokenRegistry,
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD,
@@ -180,7 +197,9 @@ contract USDTieredSTO is ISTO {
             _startTime,
             _endTime,
             _ratePerTier,
+            _ratePerTierDiscountPoly,
             _tokensPerTier,
+            _tokensPerTierDiscountPoly,
             _securityTokenRegistry,
             _nonAccreditedLimitUSD,
             _minimumInvestmentUSD,
@@ -189,7 +208,6 @@ contract USDTieredSTO is ISTO {
             _wallet,
             _reserveWallet
         );
-        emit ConfigChanged(_startTime, _endTime, _ratePerTier, _tokensPerTier, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet);
     }
 
     /**
@@ -199,7 +217,9 @@ contract USDTieredSTO is ISTO {
         uint256 _startTime,
         uint256 _endTime,
         uint256[] _ratePerTier,
+        uint256[] _ratePerTierDiscountPoly,
         uint256[] _tokensPerTier,
+        uint256[] _tokensPerTierDiscountPoly,
         address _securityTokenRegistry,
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD,
@@ -210,13 +230,20 @@ contract USDTieredSTO is ISTO {
     ) private {
         require(_ratePerTier.length > 0);
         require(_ratePerTier.length == _tokensPerTier.length, "Mismatch between rates and tokens per tier");
+        require(_ratePerTierDiscountPoly.length == _tokensPerTier.length, "Mismatch between discount rates and tokens per tier");
+        require(_tokensPerTierDiscountPoly.length == _tokensPerTier.length, "Mismatch between discount tokens per tier and tokens per tier");
         for (uint8 i = 0; i < _ratePerTier.length; i++) {
             require(_ratePerTier[i] > 0, "Rate of token should be greater than 0");
+            require(_tokensPerTier[i] > 0, "Tokens per tier should be greater than 0");
+            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTier[i], "Discounted tokens per tier should be less than or equal to tokens per tier");
+            require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Discounted rate per tier should be less than or equal to rate per tier");
             mintedPerTier.push(0);
+            mintedPerTierDiscountPoly.push(0);
         }
         require(_wallet != address(0), "Zero address is not permitted for wallet");
         require(_reserveWallet != address(0), "Zero address is not permitted for wallet");
         require(_endTime > _startTime, "Date parameters are not valid");
+        require(_startTime > now, "Start Time must be in the future");
         require(_securityTokenRegistry != address(0), "Zero address is not permitted for security token registry");
         require(_startingTier < _ratePerTier.length, "Invalid starting tier");
         require(_fundRaiseTypes.length > 0, "No fund raising currencies specified");
@@ -224,7 +251,9 @@ contract USDTieredSTO is ISTO {
         startTime = _startTime;
         endTime = _endTime;
         ratePerTier = _ratePerTier;
+        ratePerTierDiscountPoly = _ratePerTierDiscountPoly;
         tokensPerTier = _tokensPerTier;
+        tokensPerTierDiscountPoly = _tokensPerTierDiscountPoly;
         minimumInvestmentUSD = _minimumInvestmentUSD;
         wallet = _wallet;
         reserveWallet = _reserveWallet;
@@ -234,6 +263,7 @@ contract USDTieredSTO is ISTO {
             require(_fundRaiseTypes[j] < 2);
             fundRaiseType[_fundRaiseTypes[j]] = true;
         }
+        /* emit ConfigChanged(_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet); */
     }
 
     /**
@@ -241,7 +271,7 @@ contract USDTieredSTO is ISTO {
      * @return bytes4 Configure function signature
      */
     function getInitFunction() public returns (bytes4) {
-        return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],address,uint256,uint256,uint8,uint8[],address,address)"));
+        return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],address,uint256,uint256,uint8,uint8[],address,address)"));
     }
 
     /**
@@ -271,7 +301,7 @@ contract USDTieredSTO is ISTO {
                 currentTier = i;
             }
             if (mintedPerTier[i] < tokensPerTier[i]) {
-                spentUSD = spentUSD.add(_purchaseTier(_beneficiary, i, investedUSD.sub(spentUSD)));
+                spentUSD = spentUSD.add(_calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), false));
                 /* investedUSD = investedUSD.sub(spentUSD)); */
                 if (investedUSD == spentUSD) {
                     break;
@@ -321,7 +351,7 @@ contract USDTieredSTO is ISTO {
                 currentTier = i;
             }
             if (mintedPerTier[i] < tokensPerTier[i]) {
-                spentUSD = spentUSD.add(_purchaseTier(_beneficiary, i, investedUSD.sub(spentUSD)));
+                spentUSD = spentUSD.add(_calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), true));
                 /* investedUSD = investedUSD.sub(spentUSD)); */
                 if (investedUSD == spentUSD) {
                     break;
@@ -381,20 +411,42 @@ contract USDTieredSTO is ISTO {
         require(polyToken.transferFrom(_beneficiary, wallet, _polyAmount));
     }
 
-    function _purchaseTier(address _beneficiary, uint8 _tier, uint256 _investedUSD) internal returns(uint256) {
-        uint256 maximumTokens = wdiv(_investedUSD, ratePerTier[_tier]);
-        uint256 remainingTokens = tokensPerTier[_tier].sub(mintedPerTier[_tier]);
+    function _purchaseTier(address _beneficiary, uint256 _tierPrice, uint256 _tierCap, uint256 _tierMinted, uint256 _investedUSD) internal returns(uint256, uint256) {
+        uint256 maximumTokens = wdiv(_investedUSD, _tierPrice);
+        uint256 remainingTokens = _tierCap.sub(_tierMinted);
         uint256 spentUSD;
+        uint256 purchasedTokens;
         if (maximumTokens > remainingTokens) {
-            spentUSD = wmul(remainingTokens, ratePerTier[_tier]);
-            mintedPerTier[_tier] = tokensPerTier[_tier];
-            require(IST20(securityToken).mint(_beneficiary, remainingTokens), "Error in minting the tokens");
-            emit TokenPurchase(msg.sender, _beneficiary, remainingTokens, spentUSD, _tier);
+            spentUSD = wmul(remainingTokens, _tierPrice);
+            purchasedTokens = remainingTokens;
         } else {
             spentUSD = _investedUSD;
-            mintedPerTier[_tier] = mintedPerTier[_tier].add(maximumTokens);
-            require(IST20(securityToken).mint(_beneficiary, maximumTokens), "Error in minting the tokens");
-            emit TokenPurchase(msg.sender, _beneficiary, maximumTokens, spentUSD, _tier);
+            purchasedTokens = maximumTokens;
+        }
+        require(IST20(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting the tokens");
+        emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice);
+        return (spentUSD, purchasedTokens);
+    }
+
+    function _calculateTier(address _beneficiary, uint8 _tier, uint256 _investedUSD, bool _isPOLY) internal returns(uint256) {
+        // First purchase any discounted tokens if POLY investment
+        uint256 spentUSD;
+        uint256 tierSpentUSD;
+        uint256 tierPurchasedTokens;
+        if (_isPOLY) {
+            // Check whether there are any remaining discounted tokens
+            if (tokensPerTierDiscountPoly[_tier].sub(mintedPerTierDiscountPoly[_tier]) > 0) {
+                (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], tokensPerTierDiscountPoly[_tier], mintedPerTierDiscountPoly[_tier], _investedUSD);
+                spentUSD = spentUSD.add(tierSpentUSD);
+                _investedUSD = _investedUSD.sub(spentUSD);
+                mintedPerTierDiscountPoly[_tier] = mintedPerTierDiscountPoly[_tier].add(tierPurchasedTokens);
+            }
+        }
+        // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
+        if (_investedUSD > 0) {
+            (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTier[_tier], tokensPerTier[_tier], mintedPerTier[_tier], _investedUSD);
+            spentUSD = spentUSD.add(tierSpentUSD);
+            mintedPerTier[_tier] = mintedPerTier[_tier].add(tierPurchasedTokens);
         }
         return spentUSD;
     }

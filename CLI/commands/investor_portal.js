@@ -136,6 +136,7 @@ async function inputSymbol() {
                   break;
                 case 'USDTieredSTO':
                   currentSTO = new web3.eth.Contract(usdTieredSTOABI, STOAddress);
+                  await showUserInfoForUSDTieredSTO();
                   await showUSDTieredSTOInfo();
                   break;
             }
@@ -203,7 +204,6 @@ async function investUsdTieredSTO() {
         TxHash: ${receipt.transactionHash}\n`
                     );
                 });
-                showTokenInfo()
             } else {
                 console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} POLY but have ${userBalance} POLY.`));
                 console.log(chalk.red(`Please purchase a smaller amount of tokens or access the POLY faucet to get the POLY to complete this txn.`));
@@ -237,9 +237,9 @@ async function investUsdTieredSTO() {
         TxHash: ${receipt.transactionHash}\n`
             );
         });
-        showTokenInfo()
     }
-
+    await showTokenInfo();
+    await showUserInfoForUSDTieredSTO();
 }
 
 // Allow investor to buy tokens.
@@ -344,12 +344,31 @@ async function showTokenInfo() {
     let displayUserTokens = await securityToken.methods.balanceOf(User).call({from: User});
 
     console.log(`
-    **************    Security Token Information    ***************
-    - Address:           ${STAddress}
-    - Token symbol:      ${displayTokenSymbol.toUpperCase()}
-    - Total supply:      ${web3.utils.fromWei(displayTokenSupply)} ${displayTokenSymbol.toUpperCase()}
-    - User balance:      ${web3.utils.fromWei(displayUserTokens)} ${displayTokenSymbol.toUpperCase()}
-    `);
+    ****************    Security Token Information    *****************
+    - Address:               ${STAddress}
+    - Token symbol:          ${displayTokenSymbol.toUpperCase()}
+    - Total supply:          ${web3.utils.fromWei(displayTokenSupply)} ${displayTokenSymbol.toUpperCase()}
+    - User balance:          ${web3.utils.fromWei(displayUserTokens)} ${displayTokenSymbol.toUpperCase()}`
+    );
+}
+
+async function showUserInfoForUSDTieredSTO()
+{
+    if (await currentSTO.methods.fundRaiseType(0).call({from: User})) {
+        let displayInvestorInvestedETH = web3.utils.fromWei(await currentSTO.methods.investorInvestedETH(User).call({from: User}));
+        console.log(`    - Invested in ETH:       ${displayInvestorInvestedETH} ETH`);
+    }
+    if (await currentSTO.methods.fundRaiseType(1).call({from: User})) {
+        let displayInvestorInvestedPOLY = web3.utils.fromWei(await currentSTO.methods.investorInvestedPOLY(User).call({from: User}));
+        console.log(`    - Invested in POLY:      ${displayInvestorInvestedPOLY} POLY`);
+    }
+    let displayInvestorInvestedUSD = web3.utils.fromWei(await currentSTO.methods.investorInvestedUSD(User).call({from: User}));
+    console.log(`    - Invested in USD:       ${displayInvestorInvestedUSD} USD`);
+    if (!await currentSTO.methods.accredited(User).call({from: User})) {
+        let displayNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call({from: User}));
+        console.log(`    - Remaining allocation:  ${displayNonAccreditedLimitUSD - displayInvestorInvestedUSD} USD`);
+    }
+    console.log('\n');
 }
 
 async function showUSDTieredSTOInfo() {
@@ -374,8 +393,8 @@ async function showUSDTieredSTOInfo() {
         let mintedPerTier = await currentSTO.methods.mintedPerTier(t).call({from: User});
         displayTiers = displayTiers + `
     - Tier ${t+1}: 
-        Tokens:                 ${web3.utils.fromWei(tokensPerTier, 'ether')} ${displayTokenSymbol}
-        Rate:                   ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`;
+        Tokens:               ${web3.utils.fromWei(tokensPerTier, 'ether')} ${displayTokenSymbol}
+        Rate:                 ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`;
         displayMintedPerTier = displayMintedPerTier + `
     - Tokens Sold in Tier ${t+1}:  ${web3.utils.fromWei(mintedPerTier)}  ${displayTokenSymbol}`
     }
@@ -423,7 +442,7 @@ async function showUSDTieredSTOInfo() {
         timeRemaining = displayEndTime - now;
     }
 
-    let displayIsUserAccredited = await currentSTO.methods.accredited(User).call({from: User}) ? "YES" : "NO";
+    let displayIsUserAccredited = await currentSTO.methods.accredited(User).call({from: User});
 
     timeRemaining = common.convertToDaysRemaining(timeRemaining);
 
@@ -431,7 +450,7 @@ async function showUSDTieredSTOInfo() {
     ***********************   STO Information   **********************
     - Address:                ${STOAddress}
     - Can user invest?        ${(displayCanBuy)?'YES':'NO'}
-    - Is user accredited?     ${displayIsUserAccredited}
+    - Is user accredited?     ${(displayIsUserAccredited)?"YES":"NO"}
     - Start Time:             ${new Date(displayStartTime * 1000)}
     - End Time:               ${new Date(displayEndTime * 1000)}
     - Raise Type:             ${displayRaiseType}

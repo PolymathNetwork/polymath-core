@@ -69,7 +69,6 @@ async function send_poly() {
       let _to =  readlineSync.question(`Enter beneficiary of 250 POLY ('${Issuer}'): `);
       if (_to == "") _to = Issuer;
       let _amount =  web3.utils.toWei("250","ether");
-      console.log()
       await transferTokens(_to,_amount);
       break;
     case 1:

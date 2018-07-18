@@ -72,7 +72,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     function schedulePriceUpdatesFixed(uint256[] _times) payable isAdminOrOwner public {
         bytes32 requestId;
         if (_times.length == 0) {
-            require(oraclize_getPrice("URL") <= address(this).balance, "Insufficient Funds");
+            require(oraclize_getPrice("URL", gasLimit) <= address(this).balance, "Insufficient Funds");
             requestId = oraclize_query("URL", oracleURL, gasLimit);
             requestIds[requestId] = now;
             if (latestScheduledUpdate < requestIds[requestId]) {
@@ -80,7 +80,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
             }
             emit LogNewOraclizeQuery(now, requestId, oracleURL);
         } else {
-            require(oraclize_getPrice("URL") * _times.length <= address(this).balance, "Insufficient Funds");
+            require(oraclize_getPrice("URL", gasLimit) * _times.length <= address(this).balance, "Insufficient Funds");
             for (uint256 i = 0; i < _times.length; i++) {
                 requestId = oraclize_query(_times[i], "URL", oracleURL, gasLimit);
                 requestIds[requestId] = _times[i];
@@ -100,7 +100,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     */
     function schedulePriceUpdatesRolling(uint256 _startTime, uint256 _interval, uint256 _iters) payable isAdminOrOwner public {
         bytes32 requestId;
-        require(oraclize_getPrice("URL") * _iters <= address(this).balance, "Insufficient Funds");
+        require(oraclize_getPrice("URL", gasLimit) * _iters <= address(this).balance, "Insufficient Funds");
         for (uint256 i = 0; i < _iters; i++) {
             uint256 scheduledTime = _startTime + (i * _interval);
             requestId = oraclize_query(scheduledTime, "URL", oracleURL, gasLimit);

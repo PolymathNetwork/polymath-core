@@ -539,7 +539,7 @@ contract USDTieredSTO is ISTO {
 
     /**
      * @notice Return the total no. of tokens sold
-     * @return bool Total number of tokens sold
+     * @return uint256 Total number of tokens sold
      */
     function getTokensSold() public view returns (uint256) {
         uint256 tokensSold;
@@ -547,6 +547,14 @@ contract USDTieredSTO is ISTO {
             tokensSold = tokensSold.add(mintedPerTier[i]);
         }
         return tokensSold;
+    }
+
+    /**
+     * @notice Return the total no. of tiers
+     * @return uint256 Total number of tiers
+     */
+    function getNumberOfTiers() public view returns (uint256) {
+        return tokensPerTier.length;
     }
 
     /**

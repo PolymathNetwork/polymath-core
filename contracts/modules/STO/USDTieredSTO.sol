@@ -279,7 +279,7 @@ contract USDTieredSTO is ISTO {
      * @notice This function returns the signature of configure function
      * @return bytes4 Configure function signature
      */
-    function getInitFunction() public view returns (bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],address,uint256,uint256,uint8,uint8[],address,address)"));
     }
 

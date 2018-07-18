@@ -22,16 +22,15 @@ contract STVersionProxy002 is ISTProxy {
      * @notice deploys the token and adds default modules like permission manager and transfer manager.
      * Future versions of the proxy can attach different modules or pass some other paramters.
      */
-    function deployToken(string _name, string _symbol, uint8 _decimals, string _tokenDetails, address _issuer, bool _divisible)
-    public returns (address)
-    {
-        address newSecurityTokenAddress = new SecurityTokenV2(
+    function deployToken(string _name, string _symbol, uint8 _decimals, string _tokenDetails, address _issuer, bool _divisible, address _polymathRegistry)
+    public returns (address) {
+        address newSecurityTokenAddress = new SecurityToken(
         _name,
         _symbol,
         _decimals,
         _divisible ? 1 : uint256(10)**_decimals,
         _tokenDetails,
-        msg.sender
+        _polymathRegistry
         );
 
         if (addTransferManager) {

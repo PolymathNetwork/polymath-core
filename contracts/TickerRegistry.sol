@@ -3,15 +3,17 @@ pragma solidity ^0.4.24;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./interfaces/ITickerRegistry.sol";
-import "./Registry.sol";
 import "./helpers/Util.sol";
+import "./Pausable.sol";
+import "./RegistryUpdater.sol";
+import "./ReclaimTokens.sol";
 
 /**
  * @title Registry contract for issuers to reserve their security token symbols
  * @notice Allows issuers to reserve their token symbols ahead of actually generating their security token.
  * @dev SecurityTokenRegistry would reference this contract and ensure that a token symbol exists here and only its owner can deploy the token with that symbol.
  */
-contract TickerRegistry is ITickerRegistry, Util, Registry {
+contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, ReclaimTokens {
 
     using SafeMath for uint256;
     // constant variable to check the validity to use the symbol
@@ -40,8 +42,9 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
     // Emit when changePolyRegisterationFee is called
     event LogChangePolyRegisterationFee(uint256 _oldFee, uint256 _newFee);
 
-    constructor (address _polyToken, uint256 _registrationFee) public {
-        changeAddress("PolyToken", _polyToken);
+    constructor (address _polymathRegistry, uint256 _registrationFee) public
+    RegistryUpdater(_polymathRegistry)
+    {
         registrationFee = _registrationFee;
     }
 
@@ -58,7 +61,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         if(registrationFee > 0)
-            require(ERC20(getAddress("PolyToken")).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(ERC20(polyToken).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol), "Ticker is already reserved");
         registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, _swarmHash, false);
@@ -85,7 +88,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
      */
     function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool) {
         string memory symbol = upper(_symbol);
-        require(msg.sender == getAddress("SecurityTokenRegistry"), "msg.sender should be SecurityTokenRegistry contract");
+        require(msg.sender == securityTokenRegistry, "msg.sender should be SecurityTokenRegistry contract");
         require(registeredSymbols[symbol].status != true, "Symbol status should not equal to true");
         require(registeredSymbols[symbol].owner == _owner, "Owner of the symbol should matched with the requested issuer address");
         require(registeredSymbols[symbol].timestamp.add(expiryLimit) >= now, "Ticker should not be expired");
@@ -104,7 +107,7 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
      */
      function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) public returns(bool) {
         string memory symbol = upper(_symbol);
-        require(msg.sender == getAddress("SecurityTokenRegistry"), "msg.sender should be SecurityTokenRegistry contract");
+        require(msg.sender == securityTokenRegistry, "msg.sender should be SecurityTokenRegistry contract");
         if (registeredSymbols[symbol].owner == _owner && !expiryCheck(_symbol)) {
             registeredSymbols[symbol].status = true;
             return false;
@@ -166,4 +169,19 @@ contract TickerRegistry is ITickerRegistry, Util, Registry {
         emit LogChangePolyRegisterationFee(registrationFee, _registrationFee);
         registrationFee = _registrationFee;
     }
+
+     /**
+     * @notice pause registration function
+     */
+    function unpause() public onlyOwner  {
+        _unpause();
+    }
+
+    /**
+     * @notice unpause registration function
+     */
+    function pause() public onlyOwner {
+        _pause();
+    }
+
 }

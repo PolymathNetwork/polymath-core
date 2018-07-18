@@ -66,7 +66,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */
-    function getInitFunction() public returns(bytes4) {
+    function getInitFunction() public view returns (bytes4) {
         return bytes4(0);
     }
 

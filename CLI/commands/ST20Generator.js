@@ -871,19 +871,19 @@ async function usdTieredSTO_status() {
       let mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call({from: Issuer});
 
       displayDiscountTokens = `
-        Tokens at discouted rate: ${web3.utils.fromWei(tokensPerTierDiscountPoly)} ${displayTokenSymbol}
-        Discounted rate:          ${web3.utils.fromWei(ratePerTierDiscountPoly, 'ether')} USD per Token`;
+        Tokens at discounted rate: ${web3.utils.fromWei(tokensPerTierDiscountPoly)} ${displayTokenSymbol}
+        Discounted rate:           ${web3.utils.fromWei(ratePerTierDiscountPoly, 'ether')} USD per Token`;
 
       displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
     }
 
     displayTiers = displayTiers + `
     - Tier ${t+1}: 
-        Tokens:                   ${web3.utils.fromWei(tokensPerTier, 'ether')} ${displayTokenSymbol}
-        Rate:                     ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`
+        Tokens:                    ${web3.utils.fromWei(tokensPerTier, 'ether')} ${displayTokenSymbol}
+        Rate:                      ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`
         + displayDiscountTokens;
     displayMintedPerTier = displayMintedPerTier + `
-    - Tokens Sold in Tier ${t+1}:      ${web3.utils.fromWei(mintedPerTier)}  ${displayTokenSymbol} ${displayDiscountMinted}`;
+    - Tokens Sold in Tier ${t+1}:       ${web3.utils.fromWei(mintedPerTier)}  ${displayTokenSymbol} ${displayDiscountMinted}`;
   }
 
   let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call({from: Issuer}));
@@ -896,15 +896,15 @@ async function usdTieredSTO_status() {
     let walletBalanceETH = web3.utils.fromWei(balance, "ether");
     let walletBalanceETH_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('ETH'), balance).call({from: Issuer}));
     displayWalletBalanceETH = `
-        Balance ETH:              ${walletBalanceETH} ETH (${walletBalanceETH_USD} USD)`;
+        Balance ETH:               ${walletBalanceETH} ETH (${walletBalanceETH_USD} USD)`;
     balance = await web3.eth.getBalance(displayReserveWallet);
     let reserveWalletBalanceETH = web3.utils.fromWei(balance,"ether");
     let reserveWalletBalanceETH_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('ETH'), balance).call({from: Issuer}));  
     displayReserveWalletBalanceETH = `
-        Balance ETH:              ${reserveWalletBalanceETH} ETH (${reserveWalletBalanceETH_USD} USD)`;
+        Balance ETH:               ${reserveWalletBalanceETH} ETH (${reserveWalletBalanceETH_USD} USD)`;
     let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaisedETH().call({from: Issuer}));
     displayFundsRaisedETH = `
-        ETH:                      ${fundsRaisedETH} ETH`;
+        ETH:                       ${fundsRaisedETH} ETH`;
   }
 
   let displayWalletBalancePOLY = '';
@@ -914,14 +914,14 @@ async function usdTieredSTO_status() {
     let walletBalancePOLY = await currentBalance(displayWallet);
     let walletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(walletBalancePOLY.toString())).call({from: Issuer}));
     displayWalletBalancePOLY = `
-        Balance POLY              ${walletBalancePOLY} POLY (${walletBalancePOLY_USD} USD)`;
+        Balance POLY               ${walletBalancePOLY} POLY (${walletBalancePOLY_USD} USD)`;
     let reserveWalletBalancePOLY = await currentBalance(displayReserveWallet);
     let reserveWalletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(reserveWalletBalancePOLY.toString())).call({from: Issuer}));
     displayReserveWalletBalancePOLY = `
-        Balance POLY              ${reserveWalletBalancePOLY} POLY (${reserveWalletBalancePOLY_USD} USD)`;
+        Balance POLY               ${reserveWalletBalancePOLY} POLY (${reserveWalletBalancePOLY_USD} USD)`;
     let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaisedPOLY().call({from: Issuer}));
     displayFundsRaisedPOLY = `
-        POLY:                     ${fundsRaisedPOLY} POLY`;
+        POLY:                      ${fundsRaisedPOLY} POLY`;
   }
 
   let displayRaiseType;
@@ -950,30 +950,30 @@ async function usdTieredSTO_status() {
 
   console.log(`
     ****************** STO Information ******************
-    - Start Time:                 ${new Date(displayStartTime * 1000)}
-    - End Time:                   ${new Date(displayEndTime * 1000)}
-    - Raise Type:                 ${displayRaiseType}
-    - Tiers:                      ${tiersLength}`
+    - Start Time:                  ${new Date(displayStartTime * 1000)}
+    - End Time:                    ${new Date(displayEndTime * 1000)}
+    - Raise Type:                  ${displayRaiseType}
+    - Tiers:                       ${tiersLength}`
     + displayTiers + `
-    - Minimum Investment:         ${displayMinimumInvestmentUSD} USD
-    - Non Accredited Limit:       ${displayNonAccreditedLimitUSD} USD
-    - Wallet:                     ${displayWallet}` 
+    - Minimum Investment:          ${displayMinimumInvestmentUSD} USD
+    - Non Accredited Limit:        ${displayNonAccreditedLimitUSD} USD
+    - Wallet:                      ${displayWallet}` 
     + displayWalletBalanceETH 
     + displayWalletBalancePOLY + `
-    - Reserve Wallet:             ${displayReserveWallet}`
+    - Reserve Wallet:              ${displayReserveWallet}`
     + displayReserveWalletBalanceETH
     + displayReserveWalletBalancePOLY + `
 
     --------------------------------------
-    - ${timeTitle}             ${timeRemaining}
-    - Is Finalized:               ${displayIsFinalized}
-    - Current Tier:               ${displayCurrentTier}`
+    - ${timeTitle}              ${timeRemaining}
+    - Is Finalized:                ${displayIsFinalized}
+    - Current Tier:                ${displayCurrentTier}`
     + displayMintedPerTier + `
-    - Investor count:             ${displayInvestorCount}
+    - Investor count:              ${displayInvestorCount}
     - Funds Raised`
     + displayFundsRaisedETH
     + displayFundsRaisedPOLY + `  
-        USD:                      ${displayFundsRaisedUSD} USD
+        USD:                       ${displayFundsRaisedUSD} USD
   `);
 
   console.log(chalk.green(`\n${(await currentBalance(Issuer))} POLY balance remaining at issuer address ${Issuer}`));

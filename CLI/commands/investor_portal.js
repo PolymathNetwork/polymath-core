@@ -344,7 +344,7 @@ async function showTokenInfo() {
     let displayUserTokens = await securityToken.methods.balanceOf(User).call({from: User});
 
     console.log(`
-    ****************    Security Token Information    *****************
+    ******************    Security Token Information    *******************
     - Address:               ${STAddress}
     - Token symbol:          ${displayTokenSymbol.toUpperCase()}
     - Total supply:          ${web3.utils.fromWei(displayTokenSupply)} ${displayTokenSymbol.toUpperCase()}
@@ -384,19 +384,36 @@ async function showUSDTieredSTOInfo() {
     let displayIsOpen = await currentSTO.methods.isOpen().call({from: User});
     let displayTokenSymbol = await securityToken.methods.symbol().call({from: User});
 
-    let tiersLength = 3;
+    let tiersLength = await currentSTO.methods.getNumberOfTiers().call({from: Issuer});;
+
     let displayTiers = "";
     let displayMintedPerTier = "";
     for (let t = 0; t < tiersLength; t++) {
         let ratePerTier = await currentSTO.methods.ratePerTier(t).call({from: User});
         let tokensPerTier = await currentSTO.methods.tokensPerTier(t).call({from: User});
         let mintedPerTier = await currentSTO.methods.mintedPerTier(t).call({from: User});
+        
+        let displayDiscountTokens = "";
+        let displayDiscountMinted = "";
+        let tokensPerTierDiscountPoly = await currentSTO.methods.tokensPerTierDiscountPoly(t).call({from: Issuer});
+        if (tokensPerTierDiscountPoly > 0) {
+          let ratePerTierDiscountPoly = await currentSTO.methods.ratePerTierDiscountPoly(t).call({from: Issuer});
+          let mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call({from: Issuer});
+    
+          displayDiscountTokens = `
+        Tokens at discounted rate: ${web3.utils.fromWei(tokensPerTierDiscountPoly)} ${displayTokenSymbol}
+        Discounted rate:           ${web3.utils.fromWei(ratePerTierDiscountPoly, 'ether')} USD per Token`;
+    
+          displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
+        }
+
         displayTiers = displayTiers + `
     - Tier ${t+1}: 
-        Tokens:               ${web3.utils.fromWei(tokensPerTier, 'ether')} ${displayTokenSymbol}
-        Rate:                 ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`;
-        displayMintedPerTier = displayMintedPerTier + `
-    - Tokens Sold in Tier ${t+1}:  ${web3.utils.fromWei(mintedPerTier)}  ${displayTokenSymbol}`
+        Tokens:                    ${web3.utils.fromWei(tokensPerTier, 'ether')} ${displayTokenSymbol}
+        Rate:                      ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`
+        + displayDiscountTokens;
+    displayMintedPerTier = displayMintedPerTier + `
+    - Tokens Sold in Tier ${t+1}:       ${web3.utils.fromWei(mintedPerTier)}  ${displayTokenSymbol} ${displayDiscountMinted}`;
     }
 
     let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call({from: Issuer}));
@@ -405,14 +422,14 @@ async function showUSDTieredSTOInfo() {
     if (ethRaise) {
       let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaisedETH().call({from: Issuer}));
       displayFundsRaisedETH = `
-        ETH:                  ${fundsRaisedETH} ETH`;
+        ETH:                       ${fundsRaisedETH} ETH`;
     }
   
     let displayFundsRaisedPOLY = '';
     if (polyRaise) {
       let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaisedPOLY().call({from: Issuer}));
       displayFundsRaisedPOLY = `
-        POLY:                 ${fundsRaisedPOLY} POLY`;
+        POLY:                      ${fundsRaisedPOLY} POLY`;
     }
 
     let displayCanBuy;
@@ -447,26 +464,26 @@ async function showUSDTieredSTOInfo() {
     timeRemaining = common.convertToDaysRemaining(timeRemaining);
 
     console.log(`
-    ***********************   STO Information   **********************
-    - Address:                ${STOAddress}
-    - Can user invest?        ${(displayCanBuy)?'YES':'NO'}
-    - Is user accredited?     ${(displayIsUserAccredited)?"YES":"NO"}
-    - Start Time:             ${new Date(displayStartTime * 1000)}
-    - End Time:               ${new Date(displayEndTime * 1000)}
-    - Raise Type:             ${displayRaiseType}
-    - Tiers:                  ${tiersLength}`
+    **************************   STO Information   ************************
+    - Address:                     ${STOAddress}
+    - Can user invest?             ${(displayCanBuy)?'YES':'NO'}
+    - Is user accredited?          ${(displayIsUserAccredited)?"YES":"NO"}
+    - Start Time:                  ${new Date(displayStartTime * 1000)}
+    - End Time:                    ${new Date(displayEndTime * 1000)}
+    - Raise Type:                  ${displayRaiseType}
+    - Tiers:                       ${tiersLength}`
     + displayTiers + `
-    - Minimum Investment:     ${displayMinimumInvestmentUSD} USD
-    - Non Accredited Limit:   ${displayNonAccreditedLimitUSD} USD
-    --------------------------------------
-    - ${timeTitle}         ${timeRemaining}
-    - Current Tier:           ${displayCurrentTier}`
+    - Minimum Investment:          ${displayMinimumInvestmentUSD} USD
+    - Non Accredited Limit:        ${displayNonAccreditedLimitUSD} USD
+    -----------------------------------------------------------------------
+    - ${timeTitle}              ${timeRemaining}
+    - Current Tier:                ${displayCurrentTier}`
     + displayMintedPerTier + `
-    - Investor count:         ${displayInvestorCount}
+    - Investor count:              ${displayInvestorCount}
     - Funds Raised`
     + displayFundsRaisedETH
     + displayFundsRaisedPOLY + `  
-        USD:                  ${displayFundsRaisedUSD} USD
+        USD:                       ${displayFundsRaisedUSD} USD
     `);
 
     if (!displayCanBuy) {

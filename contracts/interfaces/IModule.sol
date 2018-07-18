@@ -31,7 +31,7 @@ contract IModule {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public view returns (bytes4);
+    function getInitFunction() public pure returns (bytes4);
 
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {

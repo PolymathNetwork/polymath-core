@@ -21,7 +21,7 @@ import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 * @notice - Modules can be attached to it to control its behaviour
 * @notice - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
 */
-contract SecurityToken is ISecurityToken {
+contract SecurityToken is ISecurityToken, ReentrancyGuard {
     using SafeMath for uint256;
 
     bytes32 public constant securityTokenVersion = "0.0.1";

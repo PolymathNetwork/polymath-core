@@ -240,4 +240,11 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
         return POLYUSD;
     }
 
+    /**
+    * @notice Returns balance to owner
+    */
+    function drainContract() external onlyOwner {
+        msg.sender.transfer(address(this).balance);
+    }
+
 }

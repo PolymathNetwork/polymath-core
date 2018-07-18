@@ -11,6 +11,7 @@ import "../modules/TransferManager/ITransferManager.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "../interfaces/IRegistry.sol";
 import "../interfaces/ITokenBurner.sol";
+import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 
 /**
 * @title Security Token contract
@@ -167,7 +168,7 @@ contract SecurityToken is ISecurityToken {
         bytes _data,
         uint256 _maxCost,
         uint256 _budget
-    ) external onlyOwner {
+    ) external onlyOwner nonReentrant {
         _addModule(_moduleFactory, _data, _maxCost, _budget);
     }
 

@@ -556,12 +556,22 @@ async function cappedSTO_status() {
 ////////////////////
 // USD Tiered STO //
 ////////////////////
-function fundingConfigUSDTieredSTO() {
+function fundingConfigUSDTieredSTO(selectedFunding) {
   let funding = {};
 
-  funding.raiseType = [];
-  if (readlineSync.keyInYNStrict('Funds can be raised in ETH? ')) funding.raiseType.push(0);
-  if (readlineSync.keyInYNStrict('Funds can be raised in POLY? ')) funding.raiseType.push(1);
+  if (!selectedFunding) {
+    selectedFunding = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise,' + chalk.green(` E `) + 'for Ether raise or' + chalk.green(` B `) + 'for both (B): ').toUpperCase();
+  }
+
+  if (selectedFunding == 'E') {
+    funding.raiseType = [0];
+  }
+  else if (selectedFunding == 'P') {
+    funding.raiseType = [1];
+  }
+  else {
+    funding.raiseType = [0, 1];
+  } 
 
   return funding;
 }
@@ -569,8 +579,21 @@ function fundingConfigUSDTieredSTO() {
 function addressesConfigUSDTieredSTO() {
   let addresses = {};
 
-  addresses.wallet =  readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer + '): ', {defaultInput: Issuer});
-  addresses.reserveWallet =  readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer + '): ', {defaultInput: Issuer});
+  addresses.wallet =  readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer + '): ', { 
+    limit: function(input) {
+      return web3.utils.isAddress(input);
+    },
+    limitMessage: "Must be a valid address", 
+    defaultInput: Issuer
+  });
+  addresses.reserveWallet =  readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer + '): ', { 
+    limit: function(input) {
+      return web3.utils.isAddress(input);
+    },
+    limitMessage: "Must be a valid address", 
+    defaultInput: Issuer
+  });
+
   addresses.securityTokenRegistryAddress = securityTokenRegistryAddress;
  
   return addresses;
@@ -595,8 +618,20 @@ function tiersConfigUSDTieredSTO(polyRaise) {
     
     //If funds can be raised in POLY
     if (polyRaise && readlineSync.keyInYNStrict(`Do you plan to have a discounted rate for POLY investments for tier No. ${i+1}? `)) {
-      tiers.tokensPerTierDiscountPoly[i] = web3.utils.toWei(readlineSync.question(`How many tokens do you plan to sell at discounted rate on tier No. ${i+1}? (${defaultTokensPerTierDiscountPoly[i]}): `, {limit: function(input) { return input < tiers.tokensPerTier[i]; }, defaultInput: defaultTokensPerTierDiscountPoly[i]}));
-      tiers.ratePerTierDiscountPoly[i] = web3.utils.toWei(readlineSync.question(`What is the discounted rate for tier No. ${i+1}? (${defaultRatePerTierDiscountPoly[i]}): `, {limit: function(input) { return input < tiers.ratePerTier[i]; }, defaultInput: defaultRatePerTierDiscountPoly[i]}));
+      tiers.tokensPerTierDiscountPoly[i] = web3.utils.toWei(readlineSync.question(`How many tokens do you plan to sell at discounted rate on tier No. ${i+1}? (${defaultTokensPerTierDiscountPoly[i]}): `, {
+        limit: function(input) { 
+          return new BigNumber(web3.utils.toWei(input)).lte(tiers.tokensPerTier[i]) 
+        }, 
+        limitMessage: 'Must be less than the No. of tokens of the tier',
+        defaultInput: defaultTokensPerTierDiscountPoly[i]
+      }));
+      tiers.ratePerTierDiscountPoly[i] = web3.utils.toWei(readlineSync.question(`What is the discounted rate for tier No. ${i+1}? (${defaultRatePerTierDiscountPoly[i]}): `, {
+        limit: function(input) { 
+          return new BigNumber(web3.utils.toWei(input)).lte(tiers.ratePerTier[i]) 
+        }, 
+        limitMessage: 'Must be less than the rate of the tier',
+        defaultInput: defaultRatePerTierDiscountPoly[i]
+      }));
     } else {
       tiers.tokensPerTierDiscountPoly[i] = 0;  
       tiers.ratePerTierDiscountPoly[i] = 0;  
@@ -611,10 +646,22 @@ function tiersConfigUSDTieredSTO(polyRaise) {
 function timesConfigUSDTieredSTO() {
   let times = {};
 
-  let oneMinuteFromNow = Math.floor(Date.now()/1000)+60;
-  times.startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ', {defaultInput: oneMinuteFromNow});
-  let oneMonthFromNow = Math.floor(Date.now()/1000) + (30 * 24 * 60 * 60);
-  times.endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = ' + oneMonthFromNow + ' ): ', {defaultInput: oneMonthFromNow});
+  let oneMinuteFromNow = Math.floor(Date.now() / 1000) + 60;
+  times.startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ', { 
+    limit: function(input) {
+      return input > Math.floor(Date.now() / 1000);
+    },
+    limitMessage: "Must be a future time", 
+    defaultInput: oneMinuteFromNow
+  });
+  let oneMonthFromNow = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60);
+  times.endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = ' + oneMonthFromNow + ' ): ', { 
+    limit: function(input) {
+      return (input > times.startTime);
+    },
+    limitMessage: "Must be greater than Start Time", 
+    defaultInput: oneMonthFromNow
+  });
   
   return times;
 }
@@ -622,8 +669,22 @@ function timesConfigUSDTieredSTO() {
 function limitsConfigUSDTieredSTO() {
   let limits = {};
 
-  limits.minimumInvestmentUSD = web3.utils.toWei(readlineSync.question(`What is the minimum investment in USD? (1000): `, {defaultInput: 1000}));
-  limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the limit for non accredited insvestors in USD? (10000): `, {defaultInput: 10000}));
+  let defaultMinimumInvestment = 1000;
+  limits.minimumInvestmentUSD = web3.utils.toWei(readlineSync.questionInt(`What is the minimum investment in USD? (${defaultMinimumInvestment}): `, { 
+    limit: function(input) {
+      return input > 0;
+    },
+    limitMessage: "Must be greater than zero", 
+    defaultInput: defaultMinimumInvestment
+  }));
+  let nonAccreditedLimit = 10000;
+  limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the limit for non accredited insvestors in USD? (${nonAccreditedLimit}): `, { 
+    limit: function(input) {
+      return input > limits.minimumInvestmentUSD;
+    },
+    limitMessage: "Must be greater than minimumInvestment", 
+    defaultInput: nonAccreditedLimit
+  }));
  
   return limits;
 }
@@ -1078,7 +1139,7 @@ async function modfifyAddresses() {
 }
 
 async function modfifyTiers() {
-  let tiers = tiersConfigUSDTieredSTO();
+  let tiers = tiersConfigUSDTieredSTO(await currentSTO.methods.fundRaiseType(1).call({from: Issuer}));
   let modifyTiersAction = currentSTO.methods.modifyTiers(
     tiers.ratePerTier, 
     tiers.ratePerTierDiscountPoly, 

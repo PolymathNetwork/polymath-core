@@ -21,10 +21,18 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     mapping (bytes32 => uint256) requestIds;
     mapping (bytes32 => bool) public ignoreRequestIds;
 
+    mapping (address => bool) public admin;
+
     bool public freezeOracle;
 
     event LogPriceUpdated(uint256 _price, uint256 _oldPrice, uint256 _time);
     event LogNewOraclizeQuery(uint256 _time, bytes32 _queryId, string _query);
+    event LogAdminSet(address _admin, bool _valid, uint256 _time);
+
+    modifier isAdminOrOwner {
+        require(admin[msg.sender] || msg.sender == owner, "Address is not admin or owner");
+        _;
+    }
 
     /**
     * @notice Constructor - accepts ETH to initialise a balance for subsequent Oraclize queries
@@ -61,7 +69,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @notice Allows owner to schedule future Oraclize calls
     * @param _times UNIX timestamps to schedule Oraclize calls as of. Empty list means trigger an immediate query.
     */
-    function schedulePriceUpdatesFixed(uint256[] _times) payable onlyOwner public {
+    function schedulePriceUpdatesFixed(uint256[] _times) payable isAdminOrOwner public {
         bytes32 requestId;
         if (_times.length == 0) {
             require(oraclize_getPrice("URL") <= address(this).balance, "Insufficient Funds");
@@ -90,7 +98,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @param _interval how long (in seconds) between each subsequent Oraclize query
     * @param _iters the number of Oraclize queries to schedule.
     */
-    function schedulePriceUpdatesRolling(uint256 _startTime, uint256 _interval, uint256 _iters) onlyOwner payable public {
+    function schedulePriceUpdatesRolling(uint256 _startTime, uint256 _interval, uint256 _iters) payable isAdminOrOwner public {
         bytes32 requestId;
         require(oraclize_getPrice("URL") * _iters <= address(this).balance, "Insufficient Funds");
         for (uint256 i = 0; i < _iters; i++) {
@@ -165,6 +173,10 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
         gasLimit = _gasLimit;
     }
 
+    /**
+    * @notice Allows owner to set time after which price is considered stale
+    * @param _staleTime elapsed time after which price is considered stale
+    */
     function setStaleTime(uint256 _staleTime) onlyOwner public {
         staleTime = _staleTime;
     }
@@ -179,6 +191,16 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
         for (uint256 i = 0; i < _requestIds.length; i++) {
             ignoreRequestIds[_requestIds[i]] = _ignore[i];
         }
+    }
+
+    /**
+    * @notice Allows owner to set up admin addresses that can schedule updates
+    * @param _admin Admin address
+    * @param _valid Whether address should be added or removed from admin list
+    */
+    function setAdmin(address _admin, bool _valid) onlyOwner public {
+        admin[_admin] = _valid;
+        emit LogAdminSet(_admin, _valid, now);
     }
 
     /**

@@ -5,11 +5,12 @@ import "../../interfaces/IST20.sol";
 import "../../interfaces/IOracle.sol";
 import "../../interfaces/ISecurityTokenRegistry.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 
 /**
  * @title STO module for standard capped crowdsale
  */
-contract USDTieredSTO is ISTO {
+contract USDTieredSTO is ISTO, ReentrancyGuard {
     using SafeMath for uint256;
 
     // Address where ETH & POLY funds are delivered
@@ -287,7 +288,7 @@ contract USDTieredSTO is ISTO {
       * @notice low level token purchase ***DO NOT OVERRIDE***
       * @param _beneficiary Address performing the token purchase
       */
-    function buyWithETH(address _beneficiary) public payable validETH {
+    function buyWithETH(address _beneficiary) public payable validETH nonReentrant {
         require(!paused);
         require(isOpen());
         uint256 ETHUSD = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
@@ -333,7 +334,7 @@ contract USDTieredSTO is ISTO {
       * @notice low level token purchase
       * @param _investedPOLY Amount of POLY invested
       */
-    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY {
+    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY nonReentrant {
         require(!paused);
         require(isOpen());
         uint256 POLYUSD = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();

@@ -293,7 +293,7 @@ contract USDTieredSTO is ISTO {
         uint256 ETHUSD = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
         uint256 investedETH = msg.value;
         uint256 investedUSD = wmul(ETHUSD, investedETH);
-        require(investedUSD >= minimumInvestmentUSD);
+        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD);
         //Refund any excess for non-accredited investors
         if ((!accredited[_beneficiary]) && (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD)) {
             uint256 refundUSD = investedUSD.add(investorInvestedUSD[_beneficiary]).sub(nonAccreditedLimitUSD);

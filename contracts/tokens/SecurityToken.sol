@@ -11,6 +11,7 @@ import "../modules/TransferManager/ITransferManager.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "../interfaces/ITokenBurner.sol";
 import "../RegistryUpdater.sol";
+import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 
 /**
 * @title Security Token contract
@@ -20,7 +21,7 @@ import "../RegistryUpdater.sol";
 * @notice - Modules can be attached to it to control its behaviour
 * @notice - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
 */
-contract SecurityToken is ISecurityToken, RegistryUpdater {
+contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
     bytes32 public constant securityTokenVersion = "0.0.1";
@@ -87,8 +88,8 @@ contract SecurityToken is ISecurityToken, RegistryUpdater {
     // Change the STR address in the event of a upgrade
     event LogChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
 
-    // If _fallback is true, then for STO module type we only allow the module if it is set, if it is not set we only allow the owner 
-    // for other _moduleType we allow both issuer and module. 
+    // If _fallback is true, then for STO module type we only allow the module if it is set, if it is not set we only allow the owner
+    // for other _moduleType we allow both issuer and module.
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
       //Loop over all modules of type _moduleType
         bool isModuleType = false;
@@ -165,7 +166,7 @@ contract SecurityToken is ISecurityToken, RegistryUpdater {
         bytes _data,
         uint256 _maxCost,
         uint256 _budget
-    ) external onlyOwner {
+    ) external onlyOwner nonReentrant {
         _addModule(_moduleFactory, _data, _maxCost, _budget);
     }
 
@@ -184,7 +185,8 @@ contract SecurityToken is ISecurityToken, RegistryUpdater {
         //Check that module exists in registry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        require(modules[moduleFactory.getType()].length < MAX_MODULES, "Limit of MAX MODULES is reached");
+        uint8 moduleType = moduleFactory.getType();
+        require(modules[moduleType].length < MAX_MODULES, "Limit of MAX MODULES is reached");
         uint256 moduleCost = moduleFactory.setupCost();
         require(moduleCost <= _maxCost, "Max Cost is always be greater than module cost");
         //Approve fee for module
@@ -194,9 +196,10 @@ contract SecurityToken is ISecurityToken, RegistryUpdater {
         //Approve ongoing budget
         require(ERC20(polyToken).approve(module, _budget), "Not able to approve the budget");
         //Add to SecurityToken module map
-        modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module));
+        bytes32 moduleName = moduleFactory.getName();
+        modules[moduleType].push(ModuleData(moduleName, module));
         //Emit log event
-        emit LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
+        emit LogModuleAdded(moduleType, moduleName, _moduleFactory, module, moduleCost, _budget, now);
     }
 
     /**
@@ -270,7 +273,7 @@ contract SecurityToken is ISecurityToken, RegistryUpdater {
     * @notice allows owner to approve more POLY to one of the modules
     * @param _moduleType module type
     * @param _moduleIndex module index
-    * @param _budget new budget 
+    * @param _budget new budget
     */
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0, "Module type cannot be zero");

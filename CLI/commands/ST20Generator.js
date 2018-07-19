@@ -992,7 +992,7 @@ async function usdTieredSTO_configure() {
 
     // If STO is not started, you can modify configuration
     let now = Math.floor(Date.now() / 1000);
-    let startTime = currentSTO.methods.startTime().call.call({from: Issuer});
+    let startTime = await currentSTO.methods.startTime().call.call({from: Issuer});
     if (now < startTime) {
       options.push('Modify times configuration', 'Modify tiers configuration', 'Modify addresses configuration', 
         'Modify limits configuration', 'Modify funding configuration');

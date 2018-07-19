@@ -339,7 +339,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(isOpen());
         uint256 POLYUSD = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
         uint256 investedUSD = wmul(POLYUSD, _investedPOLY);
-        require(investedUSD >= minimumInvestmentUSD);
+        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD);
         //Refund any excess for non-accredited investors
         if ((!accredited[_beneficiary]) && (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD)) {
             uint256 refundUSD = investedUSD.add(investorInvestedUSD[_beneficiary]).sub(nonAccreditedLimitUSD);

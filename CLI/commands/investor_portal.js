@@ -25,6 +25,8 @@ let cappedSTOABI;
 let usdTieredSTOABI;
 let polytokenABI;
 let generalTransferManagerABI;
+let polyOracleABI;
+let ethOracleABI;
 
 let securityTokenRegistry;
 let securityToken;
@@ -32,6 +34,8 @@ let selectedSTO;
 let currentSTO;
 let polyToken;
 let generalTransferManager;
+let polyOracle;
+let ethOracle;
 
 try {
   securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
@@ -40,6 +44,8 @@ try {
   usdTieredSTOABI           = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTO.json').toString()).abi;
   polytokenABI              = JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).abi;
   generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
+  polyOracleABI             = getPolyOracleABI();
+  ethOracleABI              = getEthOracleABI();
 } catch (err) {
   console.log(chalk.red(`Couldn't find contracts' artifacts. Make sure you ran truffle compile first`));
   return;
@@ -69,7 +75,7 @@ async function executeApp() {
     try {
         let accounts = await web3.eth.getAccounts();
         Issuer = accounts[0];
-    
+
         welcome();
     }
     catch(err) {
@@ -136,6 +142,10 @@ async function inputSymbol() {
                   break;
                 case 'USDTieredSTO':
                   currentSTO = new web3.eth.Contract(usdTieredSTOABI, STOAddress);
+                  let polyOracleAddress = await securityTokenRegistry.methods.getOracle(web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD")).call({from: User});
+                  polyOracle = new web3.eth.Contract(polyOracleABI, polyOracleAddress);
+                  let ethOracleAddress = await securityTokenRegistry.methods.getOracle(web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD")).call({from: User});
+                  ethOracle = new web3.eth.Contract(ethOracleABI, ethOracleAddress);
                   await showUserInfoForUSDTieredSTO();
                   await showUSDTieredSTOInfo();
                   break;
@@ -152,6 +162,10 @@ async function inputSymbol() {
 async function investUsdTieredSTO() {
     let raiseType;
     if (displayRaiseType == "ETH and POLY") {
+        let displayPolyPrice = web3.utils.fromWei(await polyOracle.methods.getPrice().call({from: User}));
+        let displayEthPrice = web3.utils.fromWei(await ethOracle.methods.getPrice().call({from: User}));
+        console.log(chalk.green(`   Current POLY price:             ${displayPolyPrice} USD`));
+        console.log(chalk.green(`   Current ETH price:              ${displayEthPrice} USD\n`));
         let type = readlineSync.question(chalk.yellow('Enter' + chalk.green(` P `) + 'to buy tokens with POLY or' + chalk.green(` E `) + 'to use ETH instead (E): '));
         if (type.toUpperCase() == 'P') {
             raiseType = "POLY";
@@ -160,6 +174,13 @@ async function investUsdTieredSTO() {
         }
     } else {
         raiseType = displayRaiseType;
+        if (raiseType == "POLY") {
+            let displayPolyPrice = web3.utils.fromWei(await polyOracle.methods.getPrice().call({from: User}));
+            console.log(chalk.green(`   Current POLY price:             ${displayPolyPrice} USD\n`));
+        } else {
+            let displayEthPrice = web3.utils.fromWei(await ethOracle.methods.getPrice().call({from: User}));
+            console.log(chalk.green(`   Current ETH price:              ${displayEthPrice} USD\n`));
+        }
     }
 
     let cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `));
@@ -463,8 +484,7 @@ async function showUSDTieredSTOInfo() {
 
     timeRemaining = common.convertToDaysRemaining(timeRemaining);
 
-    console.log(`
-    **************************   STO Information   ************************
+    console.log(`    **************************   STO Information   ************************
     - Address:                     ${STOAddress}
     - Can user invest?             ${(displayCanBuy)?'YES':'NO'}
     - Is user accredited?          ${(displayIsUserAccredited)?"YES":"NO"}
@@ -559,6 +579,34 @@ async function showCappedSTOInfo() {
 async function polyBalance(_user) {
     let balance = await polyToken.methods.balanceOf(_user).call();
     return web3.utils.fromWei(balance);
+}
+
+function getPolyOracleABI() {
+    /*
+    GANACHE: 15,
+    MAINNET: 1,
+    ROPSTEN: 3,
+    KOVAN:   42
+    */
+    if (web3.eth.net.getId() == 15) {
+        return JSON.parse(require('fs').readFileSync('./build/contracts/MockOracle.json').toString()).abi;
+    } else {
+        return JSON.parse(require('fs').readFileSync('./build/contracts/PolyOracle.json').toString()).abi;
+    }
+}
+
+function getEthOracleABI() {
+    /*
+    GANACHE: 15,
+    MAINNET: 1,
+    ROPSTEN: 3,
+    KOVAN:   42
+    */
+    if (web3.eth.net.getId() == 15) {
+        return JSON.parse(require('fs').readFileSync('./build/contracts/MockOracle.json').toString()).abi;
+    } else {
+        return JSON.parse(require('fs').readFileSync('./build/contracts/MakerDAOOracle.json').toString()).abi;
+    }
 }
 
 module.exports = {

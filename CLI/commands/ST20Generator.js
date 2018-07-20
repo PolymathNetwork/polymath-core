@@ -695,7 +695,7 @@ function timesConfigUSDTieredSTO() {
 function limitsConfigUSDTieredSTO() {
   let limits = {};
 
-  let defaultMinimumInvestment = 1000;
+  let defaultMinimumInvestment = 5;
   limits.minimumInvestmentUSD = web3.utils.toWei(readlineSync.question(`What is the minimum investment in USD? (${defaultMinimumInvestment}): `, { 
     limit: function(input) {
       return parseInt(input) > 0;

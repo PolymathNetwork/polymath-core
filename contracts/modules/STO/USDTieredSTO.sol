@@ -28,16 +28,22 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // How many token units a buyer gets per USD per tier (multiplied by 10**18) when investing in POLY up to tokensPerTierDiscountPoly
     uint256[] public ratePerTierDiscountPoly;
 
+    // How many tokens are available in each tier (relative to totalSupply)
+    uint256[] public tokensPerTierTotal;
+
     // How many token units are available in each tier (relative to totalSupply) at the ratePerTierDiscountPoly rate
     uint256[] public tokensPerTierDiscountPoly;
 
-    // How many tokens are available in each tier (relative to totalSupply)
-    uint256[] public tokensPerTier;
-
     // How many tokens have been minted in each tier (relative to totalSupply)
-    uint256[] public mintedPerTier;
+    uint256[] public mintedPerTierTotal;
 
-    // How many tokens have been minted in each tier (relative to totalSupply) at the discounted rate
+    // How many tokens have been minted in each tier (relative to totalSupply) at ETH rate
+    uint256[] public mintedPerTierETH;
+
+    // How many tokens have been minted in each tier (relative to totalSupply) at regular POLY rate
+    uint256[] public mintedPerTierRegularPoly;
+
+    // How many tokens have been minted in each tier (relative to totalSupply) at discounted POLY rate
     uint256[] public mintedPerTierDiscountPoly;
 
     // Current tier
@@ -98,7 +104,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     event SetTiers(
         uint256[] _ratePerTier,
         uint256[] _ratePerTierDiscountPoly,
-        uint256[] _tokensPerTier,
+        uint256[] _tokensPerTierTotal,
         uint256[] _tokensPerTierDiscountPoly,
         uint8 _startingTier
     );
@@ -133,7 +139,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @param _startTime Unix timestamp at which offering get started
      * @param _endTime Unix timestamp at which offering get ended
      * @param _ratePerTier Rate (in USD) per tier (* 10**18)
-     * @param _tokensPerTier Tokens available in each tier
+     * @param _tokensPerTierTotal Tokens available in each tier
      * @param _securityTokenRegistry Address of Security Token Registry used to reference oracles
      * @param _nonAccreditedLimitUSD Limit in USD (* 10**18) for non-accredited investors
      * @param _minimumInvestmentUSD Minimun investment in USD (* 10**18)
@@ -147,7 +153,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _endTime,
         uint256[] _ratePerTier,
         uint256[] _ratePerTierDiscountPoly,
-        uint256[] _tokensPerTier,
+        uint256[] _tokensPerTierTotal,
         uint256[] _tokensPerTierDiscountPoly,
         address _securityTokenRegistry,
         uint256 _nonAccreditedLimitUSD,
@@ -159,7 +165,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     ) public onlyFactory {
         _configureFunding(_fundRaiseTypes);
         _configureAddresses(_securityTokenRegistry, _wallet, _reserveWallet);
-        _configureTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _startingTier);
+        _configureTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly, _startingTier);
         _configureTimes(_startTime, _endTime);
         _configureLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
@@ -198,40 +204,42 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     function modifyTiers(
         uint256[] _ratePerTier,
         uint256[] _ratePerTierDiscountPoly,
-        uint256[] _tokensPerTier,
+        uint256[] _tokensPerTierTotal,
         uint256[] _tokensPerTierDiscountPoly,
         uint8 _startingTier
     ) public onlyOwner {
         require(now < startTime);
-        _configureTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _startingTier);
+        _configureTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly, _startingTier);
     }
 
     function _configureTiers(
         uint256[] _ratePerTier,
         uint256[] _ratePerTierDiscountPoly,
-        uint256[] _tokensPerTier,
+        uint256[] _tokensPerTierTotal,
         uint256[] _tokensPerTierDiscountPoly,
         uint8 _startingTier
     ) internal {
-        require(_tokensPerTier.length > 0);
-        require(_ratePerTier.length == _tokensPerTier.length, "Mismatch between rates and tokens per tier");
-        require(_ratePerTierDiscountPoly.length == _tokensPerTier.length, "Mismatch between discount rates and tokens per tier");
-        require(_tokensPerTierDiscountPoly.length == _tokensPerTier.length, "Mismatch between discount tokens per tier and tokens per tier");
+        require(_tokensPerTierTotal.length > 0);
+        require(_ratePerTier.length == _tokensPerTierTotal.length, "Mismatch between rates and tokens per tier");
+        require(_ratePerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch between discount rates and tokens per tier");
+        require(_tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch between discount tokens per tier and tokens per tier");
         require(_startingTier < _ratePerTier.length, "Invalid starting tier");
         for (uint8 i = 0; i < _ratePerTier.length; i++) {
             require(_ratePerTier[i] > 0, "Rate of token should be greater than 0");
-            require(_tokensPerTier[i] > 0, "Tokens per tier should be greater than 0");
-            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTier[i], "Discounted tokens per tier should be less than or equal to tokens per tier");
+            require(_tokensPerTierTotal[i] > 0, "Tokens per tier should be greater than 0");
+            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Discounted tokens per tier should be less than or equal to tokens per tier");
             require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Discounted rate per tier should be less than or equal to rate per tier");
         }
-        mintedPerTier = new uint256[](_ratePerTier.length);
+        mintedPerTierTotal = new uint256[](_ratePerTier.length);
+        mintedPerTierETH = new uint256[](_ratePerTier.length);
+        mintedPerTierRegularPoly = new uint256[](_ratePerTier.length);
         mintedPerTierDiscountPoly = new uint256[](_ratePerTier.length);
         currentTier = _startingTier;
         ratePerTier = _ratePerTier;
         ratePerTierDiscountPoly = _ratePerTierDiscountPoly;
-        tokensPerTier = _tokensPerTier;
+        tokensPerTierTotal = _tokensPerTierTotal;
         tokensPerTierDiscountPoly = _tokensPerTierDiscountPoly;
-        emit SetTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _startingTier);
+        emit SetTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly, _startingTier);
     }
 
     function modifyTimes(
@@ -308,7 +316,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             if (currentTier != i) {
                 currentTier = i;
             }
-            if (mintedPerTier[i] < tokensPerTier[i]) {
+            if (mintedPerTierTotal[i] < tokensPerTierTotal[i]) {
                 spentUSD = spentUSD.add(_calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), false));
                 if (investedUSD == spentUSD) {
                     break;
@@ -353,7 +361,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             if (currentTier != i) {
                 currentTier = i;
             }
-            if (mintedPerTier[i] < tokensPerTier[i]) {
+            if (mintedPerTierTotal[i] < tokensPerTierTotal[i]) {
                 spentUSD = spentUSD.add(_calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), true));
                 if (investedUSD == spentUSD) {
                     break;
@@ -382,10 +390,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     function finalize() public onlyOwner {
         require(!isFinalized);
         isFinalized = true;
-        for (uint8 i = 0; i < tokensPerTier.length; i++) {
-            if (mintedPerTier[i] < tokensPerTier[i]) {
-                uint256 remainingTokens = tokensPerTier[i].sub(mintedPerTier[i]);
-                mintedPerTier[i] = tokensPerTier[i];
+        for (uint8 i = 0; i < tokensPerTierTotal.length; i++) {
+            if (mintedPerTierTotal[i] < tokensPerTierTotal[i]) {
+                uint256 remainingTokens = tokensPerTierTotal[i].sub(mintedPerTierTotal[i]);
+                mintedPerTierTotal[i] = tokensPerTierTotal[i];
                 require(IST20(securityToken).mint(reserveWallet, remainingTokens), "Error in minting the tokens");
                 emit ReserveTokenMint(msg.sender, reserveWallet, remainingTokens, i);
             }
@@ -436,18 +444,24 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 tierPurchasedTokens;
         if (_isPOLY) {
             // Check whether there are any remaining discounted tokens
-            if (tokensPerTierDiscountPoly[_tier].sub(mintedPerTierDiscountPoly[_tier]) > 0) {
+            if (tokensPerTierDiscountPoly[_tier] > mintedPerTierDiscountPoly[_tier]) {
                 (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], tokensPerTierDiscountPoly[_tier], mintedPerTierDiscountPoly[_tier], _investedUSD);
                 spentUSD = spentUSD.add(tierSpentUSD);
                 _investedUSD = _investedUSD.sub(spentUSD);
                 mintedPerTierDiscountPoly[_tier] = mintedPerTierDiscountPoly[_tier].add(tierPurchasedTokens);
+                mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
             }
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
         if (_investedUSD > 0) {
-            (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTier[_tier], tokensPerTier[_tier], mintedPerTier[_tier], _investedUSD);
+            (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTier[_tier], tokensPerTierTotal[_tier], mintedPerTierTotal[_tier], _investedUSD);
             spentUSD = spentUSD.add(tierSpentUSD);
-            mintedPerTier[_tier] = mintedPerTier[_tier].add(tierPurchasedTokens);
+            if (_isPOLY) {
+                mintedPerTierRegularPoly[_tier] = mintedPerTierRegularPoly[_tier].add(tierPurchasedTokens);
+            } else {
+                mintedPerTierETH[_tier] = mintedPerTierETH[_tier].add(tierPurchasedTokens);
+            }
+            mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
         }
         return spentUSD;
     }
@@ -470,7 +484,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         if (now >= endTime) {
             return false;
         }
-        if (mintedPerTier[ratePerTier.length - 1] == tokensPerTier[tokensPerTier.length - 1]) {
+        if (mintedPerTierTotal[mintedPerTierTotal.length - 1] == tokensPerTierTotal[tokensPerTierTotal.length - 1]) {
             return false;
         }
         return true;
@@ -503,7 +517,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return bool Whether the cap was reached
      */
     function capReached() public view returns (bool) {
-        return ((currentTier == ratePerTier.length) && (mintedPerTier[currentTier] == tokensPerTier[currentTier]));
+        return (mintedPerTierTotal[mintedPerTierTotal.length - 1] == tokensPerTierTotal[tokensPerTierTotal.length - 1]);
     }
 
     /**
@@ -544,8 +558,32 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function getTokensSold() public view returns (uint256) {
         uint256 tokensSold;
-        for (uint8 i = 0; i < currentTier; i++) {
-            tokensSold = tokensSold.add(mintedPerTier[i]);
+        for (uint8 i = 0; i < mintedPerTierTotal.length; i++) {
+            tokensSold = tokensSold.add(mintedPerTierTotal[i]);
+        }
+        return tokensSold;
+    }
+
+    /**
+     * @notice Return the total no. of tokens sold for ETH
+     * @return uint256 Total number of tokens sold for ETH
+     */
+    function getTokensSoldForETH() public view returns (uint256) {
+        uint256 tokensSold;
+        for (uint8 i = 0; i < mintedPerTierETH.length; i++) {
+            tokensSold = tokensSold.add(mintedPerTierETH[i]);
+        }
+        return tokensSold;
+    }
+
+    /**
+     * @notice Return the total no. of tokens sold for POLY
+     * @return uint256 Total number of tokens sold for POLY
+     */
+    function getTokensSoldForPOLY() public view returns (uint256) {
+        uint256 tokensSold;
+        for (uint8 i = 0; i < mintedPerTierRegularPoly.length; i++) {
+            tokensSold = tokensSold.add(mintedPerTierRegularPoly[i]).add(mintedPerTierDiscountPoly[i]);
         }
         return tokensSold;
     }
@@ -555,7 +593,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return uint256 Total number of tiers
      */
     function getNumberOfTiers() public view returns (uint256) {
-        return tokensPerTier.length;
+        return tokensPerTierTotal.length;
     }
 
     /**

@@ -124,7 +124,7 @@ async function inputSymbol() {
     } else {
         validSymbol = true;
         securityToken = new web3.eth.Contract(securityTokenABI, STAddress);
-        
+
         await showTokenInfo();
 
         let res = await securityToken.methods.getModule(2,0).call({from: User});
@@ -411,25 +411,25 @@ async function showUSDTieredSTOInfo() {
     let displayMintedPerTier = "";
     for (let t = 0; t < tiersLength; t++) {
         let ratePerTier = await currentSTO.methods.ratePerTier(t).call({from: User});
-        let tokensPerTier = await currentSTO.methods.tokensPerTier(t).call({from: User});
-        let mintedPerTier = await currentSTO.methods.mintedPerTier(t).call({from: User});
-        
+        let tokensPerTier = await currentSTO.methods.tokensPerTierTotal(t).call({from: User});
+        let mintedPerTier = await currentSTO.methods.mintedPerTierTotal(t).call({from: User});
+
         let displayDiscountTokens = "";
         let displayDiscountMinted = "";
         let tokensPerTierDiscountPoly = await currentSTO.methods.tokensPerTierDiscountPoly(t).call({from: Issuer});
         if (tokensPerTierDiscountPoly > 0) {
           let ratePerTierDiscountPoly = await currentSTO.methods.ratePerTierDiscountPoly(t).call({from: Issuer});
           let mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call({from: Issuer});
-    
+
           displayDiscountTokens = `
         Tokens at discounted rate: ${web3.utils.fromWei(tokensPerTierDiscountPoly)} ${displayTokenSymbol}
         Discounted rate:           ${web3.utils.fromWei(ratePerTierDiscountPoly, 'ether')} USD per Token`;
-    
+
           displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
         }
 
         displayTiers = displayTiers + `
-    - Tier ${t+1}: 
+    - Tier ${t+1}:
         Tokens:                    ${web3.utils.fromWei(tokensPerTier, 'ether')} ${displayTokenSymbol}
         Rate:                      ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`
         + displayDiscountTokens;
@@ -445,7 +445,7 @@ async function showUSDTieredSTOInfo() {
       displayFundsRaisedETH = `
         ETH:                       ${fundsRaisedETH} ETH`;
     }
-  
+
     let displayFundsRaisedPOLY = '';
     if (polyRaise) {
       let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaisedPOLY().call({from: Issuer}));
@@ -502,7 +502,7 @@ async function showUSDTieredSTOInfo() {
     - Investor count:              ${displayInvestorCount}
     - Funds Raised`
     + displayFundsRaisedETH
-    + displayFundsRaisedPOLY + `  
+    + displayFundsRaisedPOLY + `
         USD:                       ${displayFundsRaisedUSD} USD
     `);
 

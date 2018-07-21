@@ -297,45 +297,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _beneficiary Address performing the token purchase
       */
     function buyWithETH(address _beneficiary) public payable validETH nonReentrant {
-        require(!paused);
-        require(isOpen());
-        uint256 ETHUSD = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
-        uint256 investedETH = msg.value;
-        uint256 investedUSD = wmul(ETHUSD, investedETH);
-        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD);
-        //Refund any excess for non-accredited investors
-        if ((!accredited[_beneficiary]) && (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD)) {
-            uint256 refundUSD = investedUSD.add(investorInvestedUSD[_beneficiary]).sub(nonAccreditedLimitUSD);
-            uint256 refundETH = wdiv(refundUSD, ETHUSD);
-            msg.sender.transfer(refundETH);
-            investedETH = investedETH.sub(refundETH);
-            investedUSD = investedUSD.sub(refundUSD);
-        }
-        uint256 spentUSD;
-        for (uint8 i = currentTier; i < ratePerTier.length; i++) {
-            if (currentTier != i) {
-                currentTier = i;
-            }
-            if (mintedPerTierTotal[i] < tokensPerTierTotal[i]) {
-                spentUSD = spentUSD.add(_calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), false));
-                if (investedUSD == spentUSD) {
-                    break;
-                }
-            }
-        }
-        uint256 spentETH = wdiv(spentUSD, ETHUSD);
-        if (spentUSD > 0) {
-            if (investorInvestedUSD[_beneficiary] == 0) {
-                investorCount = investorCount + 1;
-            }
-        }
-        investorInvestedUSD[_beneficiary] = investorInvestedUSD[_beneficiary].add(spentUSD);
-        investorInvestedETH[_beneficiary] = investorInvestedETH[_beneficiary].add(spentETH);
-        fundsRaisedETH = fundsRaisedETH.add(spentETH);
-        fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
-        wallet.transfer(spentETH);
-        _beneficiary.transfer(investedETH.sub(spentETH));
-        emit FundsReceived(msg.sender, _beneficiary, spentUSD, spentETH, 0, ETHUSD);
+        _buyTokens(_beneficiary, 0);
     }
 
     /**
@@ -343,19 +305,50 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY nonReentrant {
+
+        _buyTokens(_beneficiary, _investedPOLY);
+    }
+
+    function _buyTokens(address _beneficiary, uint256 _investedPOLY) internal {
+        require(_investedPOLY > 0 && msg.value == 0 || _investedPOLY == 0 && msg.value > 0, "Only invest in one currency at a time");
         require(!paused);
         require(isOpen());
-        uint256 POLYUSD = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
-        uint256 investedUSD = wmul(POLYUSD, _investedPOLY);
+
+        uint8 investmentMethod = 0; // ETH = 1; POLY = 2;
+        uint investmentValue = 0;
+
+        // If investment is done in ETH
+        if(msg.value > 0){
+            investmentMethod = 1;
+            investmentValue = msg.value;
+        }
+
+        // If investment is done in POLY
+        if(_investedPOLY > 0){
+            investmentMethod = 2;
+            investmentValue = _investedPOLY;
+        }
+
+        uint256 USDOraclePrice = 0;
+        if(investmentMethod == 1)
+            USDOraclePrice = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
+        else if(investmentMethod == 2)
+            USDOraclePrice = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
+
+        uint256 investedUSD = wmul(USDOraclePrice, investmentValue);
+
         require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD);
         //Refund any excess for non-accredited investors
         if ((!accredited[_beneficiary]) && (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD)) {
             uint256 refundUSD = investedUSD.add(investorInvestedUSD[_beneficiary]).sub(nonAccreditedLimitUSD);
-            uint256 refundPOLY = wdiv(refundUSD, POLYUSD);
-            _investedPOLY = _investedPOLY.sub(refundPOLY);
+            uint256 refundInvestment = wdiv(refundUSD, USDOraclePrice);
+            investmentValue = investmentValue.sub(refundInvestment);
             investedUSD = investedUSD.sub(refundUSD);
         }
-        require(verifyInvestment(msg.sender, _investedPOLY));
+
+        if(investmentMethod == 2)
+          require(verifyInvestment(msg.sender, investmentValue));
+
         uint256 spentUSD;
         for (uint8 i = currentTier; i < ratePerTier.length; i++) {
             if (currentTier != i) {
@@ -373,13 +366,23 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
                 investorCount = investorCount + 1;
             }
         }
-        uint256 spentPOLY = wdiv(spentUSD, POLYUSD);
+        uint256 spentValue = wdiv(spentUSD, USDOraclePrice);
         investorInvestedUSD[_beneficiary] = investorInvestedUSD[_beneficiary].add(spentUSD);
-        investorInvestedPOLY[_beneficiary] = investorInvestedPOLY[_beneficiary].add(spentPOLY);
-        fundsRaisedPOLY = fundsRaisedPOLY.add(spentPOLY);
+
+        // Transfer the funds to the issuer, refund the investor for excess
+        if(investmentMethod == 1) {
+            investorInvestedETH[_beneficiary] = investorInvestedETH[_beneficiary].add(spentValue);
+            fundsRaisedETH = fundsRaisedETH.add(spentValue);
+            wallet.transfer(spentValue);
+            _beneficiary.transfer(investmentValue.sub(spentValue));
+        } else if(investmentMethod == 2) {
+          investorInvestedPOLY[_beneficiary] = investorInvestedPOLY[_beneficiary].add(spentValue);
+          fundsRaisedPOLY = fundsRaisedPOLY.add(spentValue);
+          _transferPOLY(msg.sender, spentValue);
+        }
+
         fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
-        _transferPOLY(msg.sender, spentPOLY);
-        emit FundsReceived(msg.sender, _beneficiary, spentUSD, 0, spentPOLY, POLYUSD);
+        emit FundsReceived(msg.sender, _beneficiary, spentUSD, 0, spentValue, USDOraclePrice);
     }
 
     ///////////////
@@ -484,9 +487,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         if (now >= endTime) {
             return false;
         }
-        /* if (mintedPerTierTotal[mintedPerTierTotal.length - 1] == tokensPerTierTotal[tokensPerTierTotal.length - 1]) {
+        if (capReached()) {
             return false;
-        } */
+        }
         return true;
     }
 
@@ -496,10 +499,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @param _amount Value to convert to USD
      * @return uint256 Value in USD
      */
-    /* function convertToUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
+    function convertToUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
         uint256 rate = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(_currency, bytes32("USD"))).getPrice();
         return wmul(_amount, rate);
-    } */
+    }
 
     /**
      * @notice This function converts from USD to ETH or POLY
@@ -507,90 +510,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @param _amount Value to convert from USD
      * @return uint256 Value in ETH or POLY
      */
-    /* function convertFromUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
+    function convertFromUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
         uint256 rate = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(_currency, bytes32("USD"))).getPrice();
         return wdiv(_amount, rate);
-    } */
-
-    /**
-     * @notice Estimate the conversion between currency pairs at the current rates (POLY, ETH, TOKEN, USD)
-     * @notice The rates are susceptible to change due to delay in transaction settlement
-     * @param _currencyFrom Currency key
-     * @param _currencyTo Currency key
-     * @param _amount Value to convert
-     * @return uint256 Value converted
-     */
-    function estimateCurrentCurrencyConversion(bytes32 _currencyFrom, bytes32 _currencyTo, uint256 _amount) public view returns(uint256) {
-        if (tokensPerTierDiscountPoly[currentTier] == mintedPerTierDiscountPoly[currentTier]) {
-            estimateCurrencyConversion(_currencyFrom, _currencyFrom, _amount, currentTier, false);
-        }
-        estimateCurrencyConversion(_currencyFrom, _currencyFrom, _amount, currentTier, true);
-    }
-
-    /**
-     * @notice Estimate the conversion between currency pairs (POLY, ETH, TOKEN, USD)
-     * @notice The rates are susceptible to change due to delay in transaction settlement
-     * @param _currencyFrom Currency key
-     * @param _currencyTo Currency key
-     * @param _amount Value to convert
-     * @param _tier Tier at which to convert
-     * @param _discount If conversion to the discount rate desired
-     * @return uint256 Value converted
-     */
-    function estimateCurrencyConversion(bytes32 _currencyFrom, bytes32 _currencyTo, uint256 _amount, uint256 _tier, bool _discount) public view returns(uint256) {
-        if (_currencyFrom == bytes32("TOKEN")) {
-            uint256 tokenToUSD;
-            if (_discount && _currencyTo == bytes32("POLY")) {
-                tokenToUSD = wmul(_amount, ratePerTierDiscountPoly[_tier]); // TOKEN * USD/TOKEN = USD
-            } else {
-                tokenToUSD = wmul(_amount, ratePerTier[_tier]); // TOKEN * USD/TOKEN = USD
-            }
-            // TOKEN -> USD
-            if (_currencyTo == bytes32("USD")) {
-                return tokenToUSD;
-            }
-            // TOKEN -> ETH or POLY
-            if (_currencyTo == bytes32("ETH") || _currencyTo == bytes32("POLY")) {
-                uint256 rate1 = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(_currencyTo, bytes32("USD"))).getPrice();
-                return wdiv(tokenToUSD, rate1); // USD / USD/ETH = ETH
-            }
-        }
-        if (_currencyFrom == bytes32("USD")) {
-            // USD -> TOKEN
-            if (_currencyTo == bytes32("TOKEN")) {
-                uint256 usdToToken;
-                if (_discount) {
-                    usdToToken = wdiv(_amount, ratePerTierDiscountPoly[_tier]); // USD / USD/TOKEN = TOKEN
-                } else {
-                    usdToToken = wdiv(_amount, ratePerTier[_tier]); // USD / USD/TOKEN = TOKEN
-                }
-                return usdToToken;
-            }
-            // USD -> ETH or POLY
-            if (_currencyTo == bytes32("ETH") || _currencyTo == bytes32("POLY")) {
-                uint256 rate2 = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(_currencyTo, bytes32("USD"))).getPrice();
-                return wdiv(_amount, rate2); // USD / USD/ETH = ETH
-            }
-        }
-        if (_currencyFrom == bytes32("ETH") || _currencyFrom == bytes32("POLY")) {
-            uint256 rate3 = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(_currencyFrom, bytes32("USD"))).getPrice();
-            uint256 ethToUSD = wmul(_amount, rate3); // ETH * USD/ETH = USD
-            // ETH or POLY -> USD
-            if (_currencyTo == bytes32("USD")) {
-                return ethToUSD;
-            }
-            // ETH or POLY -> TOKEN
-            if (_currencyTo == bytes32("TOKEN")) {
-                uint256 ethToToken;
-                if (_discount && _currencyFrom == bytes32("POLY")) {
-                    ethToToken = wdiv(_amount, ratePerTierDiscountPoly[_tier]); // USD / USD/TOKEN = TOKEN
-                } else {
-                    ethToToken = wdiv(_amount, ratePerTier[_tier]); // USD / USD/TOKEN = TOKEN
-                }
-                return ethToToken;
-            }
-        }
-        return 0;
     }
 
     /**

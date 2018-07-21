@@ -484,9 +484,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         if (now >= endTime) {
             return false;
         }
-        if (mintedPerTierTotal[mintedPerTierTotal.length - 1] == tokensPerTierTotal[tokensPerTierTotal.length - 1]) {
+        /* if (mintedPerTierTotal[mintedPerTierTotal.length - 1] == tokensPerTierTotal[tokensPerTierTotal.length - 1]) {
             return false;
-        }
+        } */
         return true;
     }
 

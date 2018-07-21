@@ -306,7 +306,7 @@ contract('USDTieredSTO', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_SecurityTokenRegistry.address, REGFEE, { from: ISSUER });
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, { from: ISSUER, gas: 85000000 });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, { from: ISSUER});
             assert.equal(tx.logs[1].args._ticker, SYMBOL, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);

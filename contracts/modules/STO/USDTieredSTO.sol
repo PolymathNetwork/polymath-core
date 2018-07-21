@@ -297,7 +297,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _beneficiary Address performing the token purchase
       */
     function buyWithETH(address _beneficiary) public payable validETH nonReentrant {
-        _buyTokens(_beneficiary, 0);
+        _buyTokens(_beneficiary, msg.value, 1);
     }
 
     /**
@@ -306,48 +306,33 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       */
     function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY nonReentrant {
 
-        _buyTokens(_beneficiary, _investedPOLY);
+        _buyTokens(_beneficiary, _investedPOLY, 2);
     }
 
-    function _buyTokens(address _beneficiary, uint256 _investedPOLY) internal {
-        require(_investedPOLY > 0 && msg.value == 0 || _investedPOLY == 0 && msg.value > 0, "Only invest in one currency at a time");
+    //_investmentMethod --> ETH = 1; POLY = 2;
+    function _buyTokens(address _beneficiary, uint256 _investmentValue, uint8 _investmentMethod) internal {
         require(!paused);
         require(isOpen());
 
-        uint8 investmentMethod = 0; // ETH = 1; POLY = 2;
-        uint investmentValue = 0;
-
-        // If investment is done in ETH
-        if(msg.value > 0){
-            investmentMethod = 1;
-            investmentValue = msg.value;
-        }
-
-        // If investment is done in POLY
-        if(_investedPOLY > 0){
-            investmentMethod = 2;
-            investmentValue = _investedPOLY;
-        }
-
         uint256 USDOraclePrice = 0;
-        if(investmentMethod == 1)
+        if(_investmentMethod == 1)
             USDOraclePrice = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
-        else if(investmentMethod == 2)
+        else if(_investmentMethod == 2)
             USDOraclePrice = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
 
-        uint256 investedUSD = wmul(USDOraclePrice, investmentValue);
+        uint256 investedUSD = wmul(USDOraclePrice, _investmentValue);
 
         require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD);
         //Refund any excess for non-accredited investors
         if ((!accredited[_beneficiary]) && (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD)) {
             uint256 refundUSD = investedUSD.add(investorInvestedUSD[_beneficiary]).sub(nonAccreditedLimitUSD);
             uint256 refundInvestment = wdiv(refundUSD, USDOraclePrice);
-            investmentValue = investmentValue.sub(refundInvestment);
+            _investmentValue = _investmentValue.sub(refundInvestment);
             investedUSD = investedUSD.sub(refundUSD);
         }
 
-        if(investmentMethod == 2)
-          require(verifyInvestment(msg.sender, investmentValue));
+        if(_investmentMethod == 2)
+          require(verifyInvestment(msg.sender, _investmentValue));
 
         uint256 spentUSD;
         for (uint8 i = currentTier; i < ratePerTier.length; i++) {
@@ -370,12 +355,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         investorInvestedUSD[_beneficiary] = investorInvestedUSD[_beneficiary].add(spentUSD);
 
         // Transfer the funds to the issuer, refund the investor for excess
-        if(investmentMethod == 1) {
+        if(_investmentMethod == 1) {
             investorInvestedETH[_beneficiary] = investorInvestedETH[_beneficiary].add(spentValue);
             fundsRaisedETH = fundsRaisedETH.add(spentValue);
             wallet.transfer(spentValue);
-            _beneficiary.transfer(investmentValue.sub(spentValue));
-        } else if(investmentMethod == 2) {
+            _beneficiary.transfer(_investmentValue.sub(spentValue));
+        } else if(_investmentMethod == 2) {
           investorInvestedPOLY[_beneficiary] = investorInvestedPOLY[_beneficiary].add(spentValue);
           fundsRaisedPOLY = fundsRaisedPOLY.add(spentValue);
           _transferPOLY(msg.sender, spentValue);

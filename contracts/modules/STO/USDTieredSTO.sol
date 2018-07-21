@@ -496,10 +496,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @param _amount Value to convert to USD
      * @return uint256 Value in USD
      */
-    function convertToUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
+    /* function convertToUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
         uint256 rate = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(_currency, bytes32("USD"))).getPrice();
         return wmul(_amount, rate);
-    }
+    } */
 
     /**
      * @notice This function converts from USD to ETH or POLY
@@ -507,9 +507,90 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @param _amount Value to convert from USD
      * @return uint256 Value in ETH or POLY
      */
-    function convertFromUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
+    /* function convertFromUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
         uint256 rate = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(_currency, bytes32("USD"))).getPrice();
         return wdiv(_amount, rate);
+    } */
+
+    /**
+     * @notice Estimate the conversion between currency pairs at the current rates (POLY, ETH, TOKEN, USD)
+     * @notice The rates are susceptible to change due to delay in transaction settlement
+     * @param _currencyFrom Currency key
+     * @param _currencyTo Currency key
+     * @param _amount Value to convert
+     * @return uint256 Value converted
+     */
+    function estimateCurrentCurrencyConversion(bytes32 _currencyFrom, bytes32 _currencyTo, uint256 _amount) public view returns(uint256) {
+        if (tokensPerTierDiscountPoly[currentTier] == mintedPerTierDiscountPoly[currentTier]) {
+            estimateCurrencyConversion(_currencyFrom, _currencyFrom, _amount, currentTier, false);
+        }
+        estimateCurrencyConversion(_currencyFrom, _currencyFrom, _amount, currentTier, true);
+    }
+
+    /**
+     * @notice Estimate the conversion between currency pairs (POLY, ETH, TOKEN, USD)
+     * @notice The rates are susceptible to change due to delay in transaction settlement
+     * @param _currencyFrom Currency key
+     * @param _currencyTo Currency key
+     * @param _amount Value to convert
+     * @param _tier Tier at which to convert
+     * @param _discount If conversion to the discount rate desired
+     * @return uint256 Value converted
+     */
+    function estimateCurrencyConversion(bytes32 _currencyFrom, bytes32 _currencyTo, uint256 _amount, uint256 _tier, bool _discount) public view returns(uint256) {
+        if (_currencyFrom == bytes32("TOKEN")) {
+            uint256 tokenToUSD;
+            if (_discount && _currencyTo == bytes32("POLY")) {
+                tokenToUSD = wmul(_amount, ratePerTierDiscountPoly[_tier]); // TOKEN * USD/TOKEN = USD
+            } else {
+                tokenToUSD = wmul(_amount, ratePerTier[_tier]); // TOKEN * USD/TOKEN = USD
+            }
+            // TOKEN -> USD
+            if (_currencyTo == bytes32("USD")) {
+                return tokenToUSD;
+            }
+            // TOKEN -> ETH or POLY
+            if (_currencyTo == bytes32("ETH") || _currencyTo == bytes32("POLY")) {
+                uint256 rate1 = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(_currencyTo, bytes32("USD"))).getPrice();
+                return wdiv(tokenToUSD, rate1); // USD / USD/ETH = ETH
+            }
+        }
+        if (_currencyFrom == bytes32("USD")) {
+            // USD -> TOKEN
+            if (_currencyTo == bytes32("TOKEN")) {
+                uint256 usdToToken;
+                if (_discount) {
+                    usdToToken = wdiv(_amount, ratePerTierDiscountPoly[_tier]); // USD / USD/TOKEN = TOKEN
+                } else {
+                    usdToToken = wdiv(_amount, ratePerTier[_tier]); // USD / USD/TOKEN = TOKEN
+                }
+                return usdToToken;
+            }
+            // USD -> ETH or POLY
+            if (_currencyTo == bytes32("ETH") || _currencyTo == bytes32("POLY")) {
+                uint256 rate2 = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(_currencyTo, bytes32("USD"))).getPrice();
+                return wdiv(_amount, rate2); // USD / USD/ETH = ETH
+            }
+        }
+        if (_currencyFrom == bytes32("ETH") || _currencyFrom == bytes32("POLY")) {
+            uint256 rate3 = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(_currencyFrom, bytes32("USD"))).getPrice();
+            uint256 ethToUSD = wmul(_amount, rate3); // ETH * USD/ETH = USD
+            // ETH or POLY -> USD
+            if (_currencyTo == bytes32("USD")) {
+                return ethToUSD;
+            }
+            // ETH or POLY -> TOKEN
+            if (_currencyTo == bytes32("TOKEN")) {
+                uint256 ethToToken;
+                if (_discount && _currencyFrom == bytes32("POLY")) {
+                    ethToToken = wdiv(_amount, ratePerTierDiscountPoly[_tier]); // USD / USD/TOKEN = TOKEN
+                } else {
+                    ethToToken = wdiv(_amount, ratePerTier[_tier]); // USD / USD/TOKEN = TOKEN
+                }
+                return ethToToken;
+            }
+        }
+        return 0;
     }
 
     /**

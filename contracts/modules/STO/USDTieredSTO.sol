@@ -125,14 +125,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     {
     }
 
-    //////////////////////////////////
-    /**
-    * @notice fallback function - assumes ETH being invested
-    */
-    function () external payable {
-        buyWithETH(msg.sender);
-    }
-
     /**
      * @notice Function used to intialize the contract variables
      * @param _startTime Unix timestamp at which offering get started
@@ -285,25 +277,41 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],address,uint256,uint256,uint8[],address,address)"));
     }
 
+    //////////////////////////
+    // Investment Functions //
+    //////////////////////////
+
     /**
-      * @notice low level token purchase ***DO NOT OVERRIDE***
-      * @param _beneficiary Address performing the token purchase
+    * @notice fallback function - assumes ETH being invested
+    */
+    function () external payable validETH {
+        _buyTokens(msg.sender, msg.value, 1);
+    }
+
+    /**
+      * @notice Purchase tokens using ETH
+      * @param _beneficiary Address where security tokens will be sent
       */
-    function buyWithETH(address _beneficiary) public payable validETH nonReentrant {
+    function buyWithETH(address _beneficiary) public payable validETH {
         _buyTokens(_beneficiary, msg.value, 1);
     }
 
     /**
-      * @notice low level token purchase
+      * @notice Purchase tokens using POLY
+      * @param _beneficiary Address where security tokens will be sent
       * @param _investedPOLY Amount of POLY invested
       */
-    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY nonReentrant {
-
+    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY {
         _buyTokens(_beneficiary, _investedPOLY, 2);
     }
 
-    //_investmentMethod --> ETH = 1; POLY = 2;
-    function _buyTokens(address _beneficiary, uint256 _investmentValue, uint8 _investmentMethod) internal {
+    /**
+      * @notice Low level token purchase
+      * @param _beneficiary Address where security tokens will be sent
+      * @param _investmentValue Amount of POLY or ETH invested
+      * @param _investmentMethod ID of investment method: ETH = 1; POLY = 2;
+      */
+    function _buyTokens(address _beneficiary, uint256 _investmentValue, uint8 _investmentMethod) internal nonReentrant {
         require(!paused);
         require(isOpen());
 

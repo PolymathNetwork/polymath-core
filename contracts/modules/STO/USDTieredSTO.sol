@@ -13,6 +13,10 @@ import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 contract USDTieredSTO is ISTO, ReentrancyGuard {
     using SafeMath for uint256;
 
+    /////////////
+    // Storage //
+    /////////////
+
     // Address where ETH & POLY funds are delivered
     address public wallet;
 
@@ -82,6 +86,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Whether or not the STO has been finalized
     bool public isFinalized;
 
+    ////////////
+    // Events //
+    ////////////
+
     event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint256 _tierPrice);
     event FundsReceived(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _etherAmount, uint256 _polyAmount, uint256 _rate);
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _tier);
@@ -108,6 +116,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256[] _tokensPerTierDiscountPoly
     );
 
+    ///////////////
+    // Modifiers //
+    ///////////////
+
     modifier validETH {
         require(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
         require(fundRaiseType[uint8(FundRaiseType.ETH)]);
@@ -120,10 +132,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         _;
     }
 
-    constructor (address _securityToken, address _polyAddress) public
-    IModule(_securityToken, _polyAddress)
-    {
-    }
+    ///////////////////////
+    // STO Configuration //
+    ///////////////////////
+
+    constructor (address _securityToken, address _polyAddress) public IModule(_securityToken, _polyAddress) { }
 
     /**
      * @notice Function used to intialize the contract variables
@@ -164,30 +177,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         _configureFunding(_fundRaiseTypes);
     }
 
-    function _configureFunding(uint8[] _fundRaiseTypes) internal {
-        require(_fundRaiseTypes.length > 0, "No fund raising currencies specified");
-        for (uint8 j = 0; j < _fundRaiseTypes.length; j++) {
-            require(_fundRaiseTypes[j] < 2);
-            fundRaiseType[_fundRaiseTypes[j]] = true;
-        }
-        emit SetFunding(_fundRaiseTypes);
-    }
-
     function modifyLimits(
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD
     ) public onlyOwner {
         require(now < startTime);
         _configureLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
-    }
-
-    function _configureLimits(
-        uint256 _nonAccreditedLimitUSD,
-        uint256 _minimumInvestmentUSD
-    ) internal {
-        minimumInvestmentUSD = _minimumInvestmentUSD;
-        nonAccreditedLimitUSD = _nonAccreditedLimitUSD;
-        emit SetLimits(minimumInvestmentUSD, nonAccreditedLimitUSD);
     }
 
     function modifyTiers(
@@ -198,6 +193,41 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     ) public onlyOwner {
         require(now < startTime);
         _configureTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
+    }
+
+    function modifyTimes(
+        uint256 _startTime,
+        uint256 _endTime
+    ) public onlyOwner {
+        require(now < startTime);
+        _configureTimes(_startTime, _endTime);
+    }
+
+    function modifyAddresses(
+      address _securityTokenRegistry,
+      address _wallet,
+      address _reserveWallet
+    ) public onlyOwner {
+        require(now < startTime);
+        _configureAddresses(_securityTokenRegistry, _wallet, _reserveWallet);
+    }
+
+    function _configureFunding(uint8[] _fundRaiseTypes) internal {
+        require(_fundRaiseTypes.length > 0, "No fund raising currencies specified");
+        for (uint8 j = 0; j < _fundRaiseTypes.length; j++) {
+            require(_fundRaiseTypes[j] < 2);
+            fundRaiseType[_fundRaiseTypes[j]] = true;
+        }
+        emit SetFunding(_fundRaiseTypes);
+    }
+
+    function _configureLimits(
+        uint256 _nonAccreditedLimitUSD,
+        uint256 _minimumInvestmentUSD
+    ) internal {
+        minimumInvestmentUSD = _minimumInvestmentUSD;
+        nonAccreditedLimitUSD = _nonAccreditedLimitUSD;
+        emit SetLimits(minimumInvestmentUSD, nonAccreditedLimitUSD);
     }
 
     function _configureTiers(
@@ -227,14 +257,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         emit SetTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
     }
 
-    function modifyTimes(
-        uint256 _startTime,
-        uint256 _endTime
-    ) public onlyOwner {
-        require(now < startTime);
-        _configureTimes(_startTime, _endTime);
-    }
-
     function _configureTimes(
         uint256 _startTime,
         uint256 _endTime
@@ -244,15 +266,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         startTime = _startTime;
         endTime = _endTime;
         emit SetTimes(_startTime, _endTime);
-    }
-
-    function modifyAddresses(
-      address _securityTokenRegistry,
-      address _wallet,
-      address _reserveWallet
-    ) public onlyOwner {
-        require(now < startTime);
-        _configureAddresses(_securityTokenRegistry, _wallet, _reserveWallet);
     }
 
     function _configureAddresses(
@@ -269,12 +282,38 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         emit SetAddresses(_securityTokenRegistry, _wallet, _reserveWallet);
     }
 
+    ////////////////////
+    // STO Management //
+    ////////////////////
+
+    //TODO - check whether this can only be called when STO has completed
     /**
-     * @notice This function returns the signature of configure function
-     * @return bytes4 Configure function signature
+     * @notice Finalize the STO and mint remaining tokens to reserve address
+     * @notice Reserve address must be whitelisted to successfully finalize
      */
-    function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],address,uint256,uint256,uint8[],address,address)"));
+    function finalize() public onlyOwner {
+        require(!isFinalized);
+        isFinalized = true;
+        for (uint8 i = 0; i < tokensPerTierTotal.length; i++) {
+            if (mintedPerTierTotal[i] < tokensPerTierTotal[i]) {
+                uint256 remainingTokens = tokensPerTierTotal[i].sub(mintedPerTierTotal[i]);
+                mintedPerTierTotal[i] = tokensPerTierTotal[i];
+                require(IST20(securityToken).mint(reserveWallet, remainingTokens), "Error in minting the tokens");
+                emit ReserveTokenMint(msg.sender, reserveWallet, remainingTokens, i);
+            }
+        }
+    }
+
+    /**
+     * @notice Modify the list of accredited addresses
+     * @param _investors Array of investor addresses to modify
+     * @param _accredited Array of bools specifying accreditation status
+     */
+    function changeAccredited(address[] _investors, bool[] _accredited) public onlyOwner {
+        require(_investors.length == _accredited.length);
+        for (uint256 i = 0; i < _investors.length; i++) {
+            accredited[_investors[i]] = _accredited[i];
+        }
     }
 
     //////////////////////////
@@ -364,49 +403,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         } else if(_investmentMethod == 2) {
           investorInvestedPOLY[_beneficiary] = investorInvestedPOLY[_beneficiary].add(spentValue);
           fundsRaisedPOLY = fundsRaisedPOLY.add(spentValue);
-          _transferPOLY(msg.sender, spentValue);
+          require(polyToken.transferFrom(msg.sender, wallet, spentValue));
         }
-
         fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, 0, spentValue, USDOraclePrice);
-    }
-
-    ///////////////
-    // onlyOwner //
-    ///////////////
-
-    //TODO - check whether this can only be called when STO has completed
-    function finalize() public onlyOwner {
-        require(!isFinalized);
-        isFinalized = true;
-        for (uint8 i = 0; i < tokensPerTierTotal.length; i++) {
-            if (mintedPerTierTotal[i] < tokensPerTierTotal[i]) {
-                uint256 remainingTokens = tokensPerTierTotal[i].sub(mintedPerTierTotal[i]);
-                mintedPerTierTotal[i] = tokensPerTierTotal[i];
-                require(IST20(securityToken).mint(reserveWallet, remainingTokens), "Error in minting the tokens");
-                emit ReserveTokenMint(msg.sender, reserveWallet, remainingTokens, i);
-            }
-        }
-    }
-
-    /**
-     * @notice Modify the list of accredited addresses
-     * @param _investors Array of investor addresses to modify
-     * @param _accredited Array of bools specifying accreditation status
-     */
-    function changeAccredited(address[] _investors, bool[] _accredited) public onlyOwner {
-        require(_investors.length == _accredited.length);
-        for (uint256 i = 0; i < _investors.length; i++) {
-            accredited[_investors[i]] = _accredited[i];
-        }
-    }
-
-    //////////////
-    // Internal //
-    //////////////
-
-    function _transferPOLY(address _beneficiary, uint256 _polyAmount) internal {
-        require(polyToken.transferFrom(_beneficiary, wallet, _polyAmount));
     }
 
     function _purchaseTier(address _beneficiary, uint256 _tierPrice, uint256 _tierCap, uint256 _tierMinted, uint256 _investedUSD) internal returns(uint256, uint256) {
@@ -591,6 +591,14 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
+    }
+
+    /**
+     * @notice This function returns the signature of configure function
+     * @return bytes4 Configure function signature
+     */
+    function getInitFunction() public pure returns (bytes4) {
+        return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],address,uint256,uint256,uint8[],address,address)"));
     }
 
     //Below from DSMath

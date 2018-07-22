@@ -87,7 +87,6 @@ contract('USDTieredSTO', accounts => {
     let _securityTokenRegistry;
     const _nonAccreditedLimitUSD = BigNumber(10000).mul(BigNumber(10**18));   // 10k USD
     const _minimumInvestmentUSD = 0;
-    const _startingTier = 0;
     const _fundRaiseTypes = [0, 1];
     let _wallet;
     let _reserveWallet;
@@ -105,7 +104,6 @@ contract('USDTieredSTO', accounts => {
         address _securityTokenRegistry,
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD,
-        uint8 _startingTier,
         uint8[] _fundRaiseTypes,
         address _wallet,
         address _reserveWallet
@@ -140,9 +138,6 @@ contract('USDTieredSTO', accounts => {
         },{
             type: 'uint256',
             name: '_minimumInvestmentUSD'
-        },{
-            type: 'uint8',
-            name: '_startingTier'
         },{
             type: 'uint8[]',
             name: '_fundRaiseTypes'
@@ -385,10 +380,10 @@ contract('USDTieredSTO', accounts => {
             let tokensPerTier = [10];
             let tokensPerTierDiscountPoly = [10];
             let config = [
-                [_startTime, _endTime, ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet],
-                [_startTime, _endTime, _ratePerTier, ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet],
-                [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet],
-                [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet]
+                [_startTime, _endTime, ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, _wallet, _reserveWallet],
+                [_startTime, _endTime, _ratePerTier, ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, _wallet, _reserveWallet],
+                [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, _wallet, _reserveWallet],
+                [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, _wallet, _reserveWallet]
             ];
             for (var i = 0; i < config.length; i++) {
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config[i]);
@@ -405,7 +400,7 @@ contract('USDTieredSTO', accounts => {
 
         it("Should fail because rate of token should be greater than 0", async() => {
             let ratePerTier = [BigNumber(10*10**16), 0];
-            let config = [_startTime, _endTime, ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet];
+            let config = [_startTime, _endTime, ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, _wallet, _reserveWallet];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let errorThrown = false;
             try {
@@ -419,7 +414,7 @@ contract('USDTieredSTO', accounts => {
 
         it("Should fail because Zero address is not permitted for wallet", async() => {
             let wallet = "0x0000000000000000000000000000000000000000";
-            let config = [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, wallet, _reserveWallet];
+            let config = [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, wallet, _reserveWallet];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let errorThrown = false;
             try {
@@ -433,7 +428,7 @@ contract('USDTieredSTO', accounts => {
 
         it("Should fail because Zero address is not permitted for reserveWallet", async() => {
             let reserveWallet = "0x0000000000000000000000000000000000000000";
-            let config = [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, reserveWallet];
+            let config = [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, _wallet, reserveWallet];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let errorThrown = false;
             try {
@@ -448,7 +443,7 @@ contract('USDTieredSTO', accounts => {
         it("Should fail because end time before start time", async() => {
             let startTime = latestTime() + duration.days(35);
             let endTime  = latestTime() + duration.days(1);
-            let config = [startTime, endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet];
+            let config = [startTime, endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, _wallet, _reserveWallet];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let errorThrown = false;
             try {
@@ -463,7 +458,7 @@ contract('USDTieredSTO', accounts => {
         it("Should fail because start time is in the past", async() => {
             let startTime = latestTime() - duration.days(35);
             let endTime  = startTime + duration.days(50);
-            let config = [startTime, endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet];
+            let config = [startTime, endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, _wallet, _reserveWallet];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let errorThrown = false;
             try {
@@ -477,21 +472,7 @@ contract('USDTieredSTO', accounts => {
 
         it("Should fail because Zero address is not permitted for security token registry", async() => {
             let securityTokenRegistry = "0x0000000000000000000000000000000000000000";
-            let config = [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet];
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gas: 4500000 });
-            } catch(error) {
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, MESSAGE);
-        });
-
-        it("Should fail because invalid starting tier index", async() => {
-            let startingTier = 10;
-            let config = [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, startingTier, _fundRaiseTypes, _wallet, _reserveWallet];
+            let config = [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, _wallet, _reserveWallet];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let errorThrown = false;
             try {
@@ -504,7 +485,8 @@ contract('USDTieredSTO', accounts => {
         });
 
         it("Should successfully attach the first STO module to the security token", async () => {
-            let config = [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet];
+            console.log('ISSUER ETH Balance: '+BigNumber(await web3.eth.getBalance(ISSUER)).div(10**18));
+            let config = [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier, _tokensPerTierDiscountPoly, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, _wallet, _reserveWallet];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gas: 5000000, gasPrice: GAS_PRICE });
             console.log("             Gas addModule: ".grey+tx.receipt.gasUsed.toString().grey);
@@ -514,7 +496,8 @@ contract('USDTieredSTO', accounts => {
         });
 
         it("Should successfully attach the second STO module to the security token", async () => {
-            let config = [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier_LOW, _tokensPerTierDiscountPoly_LOW, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet];
+            console.log('ISSUER ETH Balance: '+BigNumber(await web3.eth.getBalance(ISSUER)).div(10**18));
+            let config = [_startTime, _endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier_LOW, _tokensPerTierDiscountPoly_LOW, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, _wallet, _reserveWallet];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gas: 5000000, gasPrice: GAS_PRICE });
             console.log("             Gas addModule: ".grey+tx.receipt.gasUsed.toString().grey);
@@ -524,8 +507,9 @@ contract('USDTieredSTO', accounts => {
         });
 
         it("Should successfully attach the third STO module to the security token", async () => {
+            console.log('ISSUER ETH Balance: '+BigNumber(await web3.eth.getBalance(ISSUER)).div(10**18));
             let endTime = latestTime() + duration.days(2);
-            let config = [_startTime, endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier_LOW, _tokensPerTierDiscountPoly_LOW, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _startingTier, _fundRaiseTypes, _wallet, _reserveWallet];
+            let config = [_startTime, endTime, _ratePerTier, _ratePerTierDiscountPoly, _tokensPerTier_LOW, _tokensPerTierDiscountPoly_LOW, _securityTokenRegistry, _nonAccreditedLimitUSD, _minimumInvestmentUSD, _fundRaiseTypes, _wallet, _reserveWallet];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gas: 5000000, gasPrice: GAS_PRICE });
             console.log("             Gas addModule: ".grey+tx.receipt.gasUsed.toString().grey);
@@ -1367,6 +1351,11 @@ contract('USDTieredSTO', accounts => {
                     let investment_ETH = await convert("TOKEN", "ETH", investment_Token, 0, false, 0);
                     let investment_POLY = await convert("TOKEN", "POLY", investment_Token, 0, false, 0);
 
+                    console.log("investment_Token: "+investment_Token);
+                    console.log("investment_USD: "+investment_USD);
+                    console.log("investment_ETH: "+investment_ETH);
+                    console.log("investment_POLY: "+investment_POLY);
+
                     await I_PolyToken.getTokens(investment_POLY, NONACCREDITED1);
                     await I_PolyToken.approve(I_USDTieredSTO_Array[0].address, investment_POLY, {from: NONACCREDITED1});
 
@@ -1403,6 +1392,11 @@ contract('USDTieredSTO', accounts => {
                     let final_RaisedPOLY = await I_USDTieredSTO_Array[0].fundsRaisedPOLY.call();
                     let final_WalletETHBal = BigNumber(await web3.eth.getBalance(_wallet));
                     let final_WalletPOLYBal = await I_PolyToken.balanceOf(_wallet);
+
+                    console.log("final_InvestorETHBal: "+final_InvestorETHBal);
+                    console.log("init_InvestorETHBal: "+init_InvestorETHBal);
+                    console.log("gasCost1: "+gasCost1);
+                    console.log("gasCost2: "+gasCost2);
 
                     assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.toNumber(), "Token Supply not changed as expected");
                     assert.equal(final_InvestorTokenBal.toNumber(), init_InvestorTokenBal.toNumber(), "Investor Token Balance not changed as expected");

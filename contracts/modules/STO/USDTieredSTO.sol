@@ -105,8 +105,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256[] _ratePerTier,
         uint256[] _ratePerTierDiscountPoly,
         uint256[] _tokensPerTierTotal,
-        uint256[] _tokensPerTierDiscountPoly,
-        uint8 _startingTier
+        uint256[] _tokensPerTierDiscountPoly
     );
 
     modifier validETH {
@@ -143,7 +142,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @param _securityTokenRegistry Address of Security Token Registry used to reference oracles
      * @param _nonAccreditedLimitUSD Limit in USD (* 10**18) for non-accredited investors
      * @param _minimumInvestmentUSD Minimun investment in USD (* 10**18)
-     * @param _startingTier Starting tier for the STO
      * @param _fundRaiseTypes Types of currency used to collect the funds
      * @param _wallet Ethereum account address to hold the funds
      * @param _reserveWallet Ethereum account address to receive unsold tokens
@@ -158,14 +156,13 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _securityTokenRegistry,
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD,
-        uint8 _startingTier,
         uint8[] _fundRaiseTypes,
         address _wallet,
         address _reserveWallet
     ) public onlyFactory {
         _configureFunding(_fundRaiseTypes);
         _configureAddresses(_securityTokenRegistry, _wallet, _reserveWallet);
-        _configureTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly, _startingTier);
+        _configureTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
         _configureTimes(_startTime, _endTime);
         _configureLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
@@ -205,25 +202,22 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256[] _ratePerTier,
         uint256[] _ratePerTierDiscountPoly,
         uint256[] _tokensPerTierTotal,
-        uint256[] _tokensPerTierDiscountPoly,
-        uint8 _startingTier
+        uint256[] _tokensPerTierDiscountPoly
     ) public onlyOwner {
         require(now < startTime);
-        _configureTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly, _startingTier);
+        _configureTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
     }
 
     function _configureTiers(
         uint256[] _ratePerTier,
         uint256[] _ratePerTierDiscountPoly,
         uint256[] _tokensPerTierTotal,
-        uint256[] _tokensPerTierDiscountPoly,
-        uint8 _startingTier
+        uint256[] _tokensPerTierDiscountPoly
     ) internal {
         require(_tokensPerTierTotal.length > 0);
         require(_ratePerTier.length == _tokensPerTierTotal.length, "Mismatch between rates and tokens per tier");
         require(_ratePerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch between discount rates and tokens per tier");
         require(_tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch between discount tokens per tier and tokens per tier");
-        require(_startingTier < _ratePerTier.length, "Invalid starting tier");
         for (uint8 i = 0; i < _ratePerTier.length; i++) {
             require(_ratePerTier[i] > 0, "Rate of token should be greater than 0");
             require(_tokensPerTierTotal[i] > 0, "Tokens per tier should be greater than 0");
@@ -234,12 +228,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         mintedPerTierETH = new uint256[](_ratePerTier.length);
         mintedPerTierRegularPoly = new uint256[](_ratePerTier.length);
         mintedPerTierDiscountPoly = new uint256[](_ratePerTier.length);
-        currentTier = _startingTier;
         ratePerTier = _ratePerTier;
         ratePerTierDiscountPoly = _ratePerTierDiscountPoly;
         tokensPerTierTotal = _tokensPerTierTotal;
         tokensPerTierDiscountPoly = _tokensPerTierDiscountPoly;
-        emit SetTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly, _startingTier);
+        emit SetTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
     }
 
     function modifyTimes(
@@ -289,7 +282,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return bytes4 Configure function signature
      */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],address,uint256,uint256,uint8,uint8[],address,address)"));
+        return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],address,uint256,uint256,uint8[],address,address)"));
     }
 
     /**

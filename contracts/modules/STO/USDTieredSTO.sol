@@ -324,7 +324,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     * @notice fallback function - assumes ETH being invested
     */
     function () external payable validETH {
-        _buyTokens(msg.sender, msg.value, 1);
+        _buyTokens(msg.sender, msg.value, false);
     }
 
     /**
@@ -332,7 +332,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _beneficiary Address where security tokens will be sent
       */
     function buyWithETH(address _beneficiary) public payable validETH {
-        _buyTokens(_beneficiary, msg.value, 1);
+        _buyTokens(_beneficiary, msg.value, false);
     }
 
     /**
@@ -341,89 +341,84 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY {
-        _buyTokens(_beneficiary, _investedPOLY, 2);
+        _buyTokens(_beneficiary, _investedPOLY, true);
     }
 
     /**
       * @notice Low level token purchase
       * @param _beneficiary Address where security tokens will be sent
       * @param _investmentValue Amount of POLY or ETH invested
-      * @param _investmentMethod ID of investment method: ETH = 1; POLY = 2;
+      * @param _isPOLY Investment method
       */
-    function _buyTokens(address _beneficiary, uint256 _investmentValue, uint8 _investmentMethod) internal nonReentrant {
-        require(!paused);
-        require(isOpen());
+    function _buyTokens(address _beneficiary, uint256 _investmentValue, bool _isPOLY) internal nonReentrant {
+        require(!paused, "STO is paused");
+        require(isOpen(), "STO is not open");
+        require(_investmentValue > 0, "No funds were sent to buy tokens");
 
-        uint256 USDOraclePrice = 0;
-        if(_investmentMethod == 1)
-            USDOraclePrice = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
-        else if(_investmentMethod == 2)
+        uint256 USDOraclePrice;
+        if (_isPOLY)
             USDOraclePrice = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
+        else
+            USDOraclePrice = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
 
         uint256 investedUSD = wmul(USDOraclePrice, _investmentValue);
 
-        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD);
-        //Refund any excess for non-accredited investors
-        if ((!accredited[_beneficiary]) && (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD)) {
-            uint256 refundUSD = investedUSD.add(investorInvestedUSD[_beneficiary]).sub(nonAccreditedLimitUSD);
-            uint256 refundInvestment = wdiv(refundUSD, USDOraclePrice);
-            _investmentValue = _investmentValue.sub(refundInvestment);
-            investedUSD = investedUSD.sub(refundUSD);
+        // Check for minimum investment
+        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment less than minimumInvestmentUSD");
+
+        // Check for non-accredited cap
+        if (!accredited[_beneficiary]) {
+            /* require(investorInvestedUSD[_beneficiary] < nonAccreditedLimitUSD, "Non-accredited investor has already reached nonAccreditedLimitUSD"); */
+            if (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD) {
+                uint256 refundUSD = investedUSD.add(investorInvestedUSD[_beneficiary]).sub(nonAccreditedLimitUSD);
+                investedUSD = investedUSD.sub(refundUSD);
+                uint256 refundInvestment = wdiv(refundUSD, USDOraclePrice);
+                _investmentValue = _investmentValue.sub(refundInvestment);
+            }
         }
 
-        if(_investmentMethod == 2)
-          require(verifyInvestment(msg.sender, _investmentValue));
+        // Check if sufficient approval is given for POLY investment
+        if(_isPOLY)
+            require(verifyInvestment(msg.sender, _investmentValue));
 
         uint256 spentUSD;
+        // Iterate over each tier and process payment
         for (uint8 i = currentTier; i < ratePerTier.length; i++) {
-            if (currentTier != i) {
-                currentTier = i;
-            }
-            if (mintedPerTierTotal[i] < tokensPerTierTotal[i]) {
-                spentUSD = spentUSD.add(_calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), true));
-                if (investedUSD == spentUSD) {
-                    break;
-                }
-            }
-        }
-        if (spentUSD > 0) {
-            if (investorInvestedUSD[_beneficiary] == 0) {
-                investorCount = investorCount + 1;
+            // If there are tokens remaining, process investment
+            if (mintedPerTierTotal[i] < tokensPerTierTotal[i])
+                spentUSD = spentUSD.add(_calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), _isPOLY));
+            // If all funds have been spent, exit the loop
+            if (investedUSD == spentUSD) {
+                if (currentTier != i)
+                    currentTier = i;
+                break;
             }
         }
-        uint256 spentValue = wdiv(spentUSD, USDOraclePrice);
+
+        // Modify storage
+        if (investorInvestedUSD[_beneficiary] == 0)
+            investorCount = investorCount + 1;
         investorInvestedUSD[_beneficiary] = investorInvestedUSD[_beneficiary].add(spentUSD);
 
         // Transfer the funds to the issuer, refund the investor for excess
-        if(_investmentMethod == 1) {
+        uint256 spentValue = wdiv(spentUSD, USDOraclePrice);
+        if (_isPOLY) {
+            // Modify storage
+            investorInvestedPOLY[_beneficiary] = investorInvestedPOLY[_beneficiary].add(spentValue);
+            fundsRaisedPOLY = fundsRaisedPOLY.add(spentValue);
+            // Forward POLY to issuer wallet
+            require(polyToken.transferFrom(msg.sender, wallet, spentValue));
+        } else {
+            // Modify storage
             investorInvestedETH[_beneficiary] = investorInvestedETH[_beneficiary].add(spentValue);
             fundsRaisedETH = fundsRaisedETH.add(spentValue);
+            // Forward ETH to issuer wallet
             wallet.transfer(spentValue);
-            _beneficiary.transfer(_investmentValue.sub(spentValue));
-        } else if(_investmentMethod == 2) {
-          investorInvestedPOLY[_beneficiary] = investorInvestedPOLY[_beneficiary].add(spentValue);
-          fundsRaisedPOLY = fundsRaisedPOLY.add(spentValue);
-          require(polyToken.transferFrom(msg.sender, wallet, spentValue));
+            // Refund excess ETH to investor wallet
+            msg.sender.transfer(_investmentValue.sub(spentValue));
         }
         fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, 0, spentValue, USDOraclePrice);
-    }
-
-    function _purchaseTier(address _beneficiary, uint256 _tierPrice, uint256 _tierCap, uint256 _tierMinted, uint256 _investedUSD) internal returns(uint256, uint256) {
-        uint256 maximumTokens = wdiv(_investedUSD, _tierPrice);
-        uint256 remainingTokens = _tierCap.sub(_tierMinted);
-        uint256 spentUSD;
-        uint256 purchasedTokens;
-        if (maximumTokens > remainingTokens) {
-            spentUSD = wmul(remainingTokens, _tierPrice);
-            purchasedTokens = remainingTokens;
-        } else {
-            spentUSD = _investedUSD;
-            purchasedTokens = maximumTokens;
-        }
-        require(IST20(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting the tokens");
-        emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice);
-        return (spentUSD, purchasedTokens);
     }
 
     function _calculateTier(address _beneficiary, uint8 _tier, uint256 _investedUSD, bool _isPOLY) internal returns(uint256) {
@@ -453,6 +448,23 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
         }
         return spentUSD;
+    }
+
+    function _purchaseTier(address _beneficiary, uint256 _tierPrice, uint256 _tierCap, uint256 _tierMinted, uint256 _investedUSD) internal returns(uint256, uint256) {
+        uint256 maximumTokens = wdiv(_investedUSD, _tierPrice);
+        uint256 remainingTokens = _tierCap.sub(_tierMinted);
+        uint256 spentUSD;
+        uint256 purchasedTokens;
+        if (maximumTokens > remainingTokens) {
+            spentUSD = wmul(remainingTokens, _tierPrice);
+            purchasedTokens = remainingTokens;
+        } else {
+            spentUSD = _investedUSD;
+            purchasedTokens = maximumTokens;
+        }
+        require(IST20(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting the tokens");
+        emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice);
+        return (spentUSD, purchasedTokens);
     }
 
     /////////////

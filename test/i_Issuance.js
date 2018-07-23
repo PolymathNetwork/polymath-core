@@ -72,8 +72,8 @@ contract('Issuance', accounts => {
     const initRegFee = 250 * Math.pow(10, 18);
 
     // Capped STO details
-    const startTime = latestTime() + duration.seconds(5000);           // Start time will be 5000 seconds more than the latest time
-    const endTime = startTime + duration.days(30);                     // Add 30 days more
+    //let startTime;           // Start time will be 5000 seconds more than the latest time
+    //let endTime;                    // Add 30 days more
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
     const fundRaiseType = 0;
@@ -311,6 +311,11 @@ contract('Issuance', accounts => {
 
         describe("Transfer Manager operations by the polymath_account", async() => {
             it("Should modify the whitelist", async () => {
+
+                fromTime = latestTime();
+                toTime = latestTime() + duration.days(15);
+                expiryTime = toTime + duration.days(100);
+
                 let tx = await I_GeneralTransferManager.modifyWhitelist(
                     account_investor1,
                     fromTime + duration.days(70),

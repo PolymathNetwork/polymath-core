@@ -91,7 +91,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     ////////////
 
     event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint256 _tierPrice);
-    event FundsReceived(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _etherAmount, uint256 _polyAmount, uint256 _rate);
+    event FundsReceivedETH(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
+    event FundsReceivedPOLY(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _tier);
     event SetAddresses(
         address indexed _securityTokenRegistry,
@@ -204,9 +205,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     function modifyAddresses(
-      address _securityTokenRegistry,
-      address _wallet,
-      address _reserveWallet
+        address _securityTokenRegistry,
+        address _wallet,
+        address _reserveWallet
     ) public onlyOwner {
         require(now < startTime);
         _configureAddresses(_securityTokenRegistry, _wallet, _reserveWallet);
@@ -269,9 +270,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     function _configureAddresses(
-      address _securityTokenRegistry,
-      address _wallet,
-      address _reserveWallet
+        address _securityTokenRegistry,
+        address _wallet,
+        address _reserveWallet
     ) internal {
         require(_wallet != address(0), "Zero address is not permitted for wallet");
         require(_reserveWallet != address(0), "Zero address is not permitted for wallet");
@@ -324,7 +325,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     * @notice fallback function - assumes ETH being invested
     */
     function () external payable {
-        _buyTokens(msg.sender, msg.value, false);
+        buyWithETH(msg.sender);
     }
 
     /**
@@ -332,7 +333,16 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _beneficiary Address where security tokens will be sent
       */
     function buyWithETH(address _beneficiary) public payable validETH {
-        _buyTokens(_beneficiary, msg.value, false);
+        uint256 rate = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
+        (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, msg.value, rate, false);
+        // Modify storage
+        investorInvestedETH[_beneficiary] = investorInvestedETH[_beneficiary].add(spentValue);
+        fundsRaisedETH = fundsRaisedETH.add(spentValue);
+        // Forward ETH to issuer wallet
+        wallet.transfer(spentValue);
+        // Refund excess ETH to investor wallet
+        msg.sender.transfer(msg.value.sub(spentValue));
+        emit FundsReceivedETH(msg.sender, _beneficiary, spentUSD, msg.value, spentValue, rate);
     }
 
     /**
@@ -341,7 +351,14 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY {
-        _buyTokens(_beneficiary, _investedPOLY, true);
+        uint256 rate = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
+        (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _investedPOLY, rate, true);
+        // Modify storage
+        investorInvestedPOLY[_beneficiary] = investorInvestedPOLY[_beneficiary].add(spentValue);
+        fundsRaisedPOLY = fundsRaisedPOLY.add(spentValue);
+        // Forward POLY to issuer wallet
+        require(polyToken.transferFrom(msg.sender, wallet, spentValue));
+        emit FundsReceivedPOLY(msg.sender, _beneficiary, spentUSD, _investedPOLY, spentValue, rate);
     }
 
     /**
@@ -350,19 +367,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _investmentValue Amount of POLY or ETH invested
       * @param _isPOLY Investment method
       */
-    function _buyTokens(address _beneficiary, uint256 _investmentValue, bool _isPOLY) internal nonReentrant {
+    function _buyTokens(address _beneficiary, uint256 _investmentValue, uint256 _rate, bool _isPOLY) internal nonReentrant returns(uint256, uint256) {
         require(!paused, "STO is paused");
         require(isOpen(), "STO is not open");
         require(_investmentValue > 0, "No funds were sent to buy tokens");
 
-        uint256 USDOraclePrice;
-        if (_isPOLY)
-            USDOraclePrice = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
-        else
-            USDOraclePrice = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
-
-        uint256 investedUSD = wmul(USDOraclePrice, _investmentValue);
-        uint256 refundValue;
+        uint256 investedUSD = wmul(_rate, _investmentValue);
 
         // Check for minimum investment
         require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment less than minimumInvestmentUSD");
@@ -371,16 +381,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         if (!accredited[_beneficiary]) {
             require(investorInvestedUSD[_beneficiary] < nonAccreditedLimitUSD, "Non-accredited investor has already reached nonAccreditedLimitUSD");
             if (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD) {
-                uint256 refundUSD = investedUSD.add(investorInvestedUSD[_beneficiary]).sub(nonAccreditedLimitUSD);
-                investedUSD = investedUSD.sub(refundUSD);
-                refundValue = wdiv(refundUSD, USDOraclePrice);
-                _investmentValue = _investmentValue.sub(refundValue);
+                investedUSD = nonAccreditedLimitUSD.sub(investorInvestedUSD[_beneficiary]);
             }
         }
-
-        // Check if sufficient approval is given for POLY investment
-        if(_isPOLY)
-            require(verifyInvestment(msg.sender, _investmentValue));
 
         uint256 spentUSD;
         // Iterate over each tier and process payment
@@ -397,33 +400,18 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         }
 
         // Modify storage
-        if (investorInvestedUSD[_beneficiary] == 0)
-            investorCount = investorCount + 1;
-        investorInvestedUSD[_beneficiary] = investorInvestedUSD[_beneficiary].add(spentUSD);
+        if (spentUSD > 0) {
+            if (investorInvestedUSD[_beneficiary] == 0)
+                investorCount = investorCount + 1;
+            investorInvestedUSD[_beneficiary] = investorInvestedUSD[_beneficiary].add(spentUSD);
+            fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
+        }
 
-        // Transfer the funds to the issuer, refund the investor for excess
-        uint256 spentValue = wdiv(spentUSD, USDOraclePrice);
-        if (_isPOLY) {
-            // Modify storage
-            investorInvestedPOLY[_beneficiary] = investorInvestedPOLY[_beneficiary].add(spentValue);
-            fundsRaisedPOLY = fundsRaisedPOLY.add(spentValue);
-            // Forward POLY to issuer wallet
-            require(polyToken.transferFrom(msg.sender, wallet, spentValue));
-        } else {
-            // Modify storage
-            investorInvestedETH[_beneficiary] = investorInvestedETH[_beneficiary].add(spentValue);
-            fundsRaisedETH = fundsRaisedETH.add(spentValue);
-            // Forward ETH to issuer wallet
-            wallet.transfer(spentValue);
-            // Refund excess ETH to investor wallet
-            msg.sender.transfer(_investmentValue.sub(spentValue).add(refundValue));
-        }
-        fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
-        if (_isPOLY) {
-            emit FundsReceived(msg.sender, _beneficiary, spentUSD, 0, spentValue, USDOraclePrice);
-        } else {
-            emit FundsReceived(msg.sender, _beneficiary, spentUSD, spentValue, 0, USDOraclePrice);
-        }
+        // Calculate spent in base currency (ETH or POLY)
+        uint256 spentValue = wdiv(spentUSD, _rate);
+
+        // Return calculated amounts
+        return (spentUSD, spentValue);
     }
 
     function _calculateTier(address _beneficiary, uint8 _tier, uint256 _investedUSD, bool _isPOLY) internal returns(uint256) {

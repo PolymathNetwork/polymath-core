@@ -323,7 +323,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     /**
     * @notice fallback function - assumes ETH being invested
     */
-    function () external payable validETH {
+    function () external payable {
         _buyTokens(msg.sender, msg.value, false);
     }
 
@@ -369,7 +369,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
         // Check for non-accredited cap
         if (!accredited[_beneficiary]) {
-            /* require(investorInvestedUSD[_beneficiary] < nonAccreditedLimitUSD, "Non-accredited investor has already reached nonAccreditedLimitUSD"); */
+            require(investorInvestedUSD[_beneficiary] < nonAccreditedLimitUSD, "Non-accredited investor has already reached nonAccreditedLimitUSD");
             if (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD) {
                 uint256 refundUSD = investedUSD.add(investorInvestedUSD[_beneficiary]).sub(nonAccreditedLimitUSD);
                 investedUSD = investedUSD.sub(refundUSD);
@@ -385,15 +385,15 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 spentUSD;
         // Iterate over each tier and process payment
         for (uint8 i = currentTier; i < ratePerTier.length; i++) {
+            // Update current tier if needed
+            if (currentTier != i)
+                currentTier = i;
             // If there are tokens remaining, process investment
             if (mintedPerTierTotal[i] < tokensPerTierTotal[i])
                 spentUSD = spentUSD.add(_calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), _isPOLY));
             // If all funds have been spent, exit the loop
-            if (investedUSD == spentUSD) {
-                if (currentTier != i)
-                    currentTier = i;
+            if (investedUSD == spentUSD)
                 break;
-            }
         }
 
         // Modify storage
@@ -419,7 +419,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             msg.sender.transfer(_investmentValue.sub(spentValue).add(refundValue));
         }
         fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
-        emit FundsReceived(msg.sender, _beneficiary, spentUSD, 0, spentValue, USDOraclePrice);
+        if (_isPOLY) {
+            emit FundsReceived(msg.sender, _beneficiary, spentUSD, 0, spentValue, USDOraclePrice);
+        } else {
+            emit FundsReceived(msg.sender, _beneficiary, spentUSD, spentValue, 0, USDOraclePrice);
+        }
     }
 
     function _calculateTier(address _beneficiary, uint8 _tier, uint256 _investedUSD, bool _isPOLY) internal returns(uint256) {

@@ -579,15 +579,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return uint256 Total number of tokens minted
      */
     function getTokensMinted() public view returns (uint256) {
-        if (isFinalized)
-            return finalAmountMinted;
-        else {
-            uint256 tokensMinted;
-            for (uint8 i = 0; i < mintedPerTierTotal.length; i++) {
-                tokensMinted = tokensMinted.add(mintedPerTierTotal[i]);
-            }
-            return tokensMinted;
+        uint256 tokensMinted;
+        for (uint8 i = 0; i < mintedPerTierTotal.length; i++) {
+            tokensMinted = tokensMinted.add(mintedPerTierTotal[i]);
         }
+        return tokensMinted;
     }
 
     /**

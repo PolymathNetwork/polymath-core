@@ -60,7 +60,6 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
           require(newPOLYUSD >= POLYUSD.sub(bound), "Result is too small");
         }
         latestUpdate = requestIds[_requestId];
-        delete requestIds[_requestId];
         emit LogPriceUpdated(newPOLYUSD, POLYUSD, _requestId, latestUpdate);
         POLYUSD = newPOLYUSD;
     }

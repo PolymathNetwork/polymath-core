@@ -1,5 +1,6 @@
 // Libraries for terminal prompts
 var readlineSync = require('readline-sync');
+var BigNumber = require('bignumber.js');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
 
@@ -400,7 +401,7 @@ async function showUSDTieredSTOInfo() {
     let displayMinimumInvestmentUSD = web3.utils.fromWei(await currentSTO.methods.minimumInvestmentUSD().call({from: User}));
     let ethRaise = await currentSTO.methods.fundRaiseType(0).call({from: User});
     let polyRaise = await currentSTO.methods.fundRaiseType(1).call({from: User});
-    let displayTokensSold = await currentSTO.methods.getTokensSold().call({from: Issuer});
+    let displayTokensSold = web3.utils.fromWei(await currentSTO.methods.getTokensSold().call({from: Issuer}));
     let displayInvestorCount = await currentSTO.methods.investorCount().call({from: User});
     let displayIsFinalized = await currentSTO.methods.isFinalized().call({from: User});
     let displayIsOpen = await currentSTO.methods.isOpen().call({from: User});
@@ -412,46 +413,80 @@ async function showUSDTieredSTOInfo() {
     let displayMintedPerTier = "";
     for (let t = 0; t < tiersLength; t++) {
         let ratePerTier = await currentSTO.methods.ratePerTier(t).call({from: User});
-        let tokensPerTier = await currentSTO.methods.tokensPerTierTotal(t).call({from: User});
-        let mintedPerTier = await currentSTO.methods.mintedPerTierTotal(t).call({from: User});
+        let tokensPerTierTotal = await currentSTO.methods.tokensPerTierTotal(t).call({from: User});
+        let mintedPerTierTotal = await currentSTO.methods.mintedPerTierTotal(t).call({from: User});
 
+        let displayMintedPerTierETH = "";
+        if (ethRaise) {
+          let mintedPerTierETH = await currentSTO.methods.mintedPerTierETH(t).call({from: Issuer});
+    
+          displayMintedPerTierETH = `
+        Sold for ETH:              ${web3.utils.fromWei(mintedPerTierETH)}`
+        }
+
+        let displayMintedPerTierPOLY = "";
         let displayDiscountTokens = "";
-        let displayDiscountMinted = "";
-        let tokensPerTierDiscountPoly = await currentSTO.methods.tokensPerTierDiscountPoly(t).call({from: Issuer});
-        if (tokensPerTierDiscountPoly > 0) {
-          let ratePerTierDiscountPoly = await currentSTO.methods.ratePerTierDiscountPoly(t).call({from: Issuer});
-          let mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call({from: Issuer});
+        if (polyRaise) {
+            let displayDiscountMinted = "";
+            let mintedPerTierDiscountPoly = "0";
+            let tokensPerTierDiscountPoly = await currentSTO.methods.tokensPerTierDiscountPoly(t).call({from: Issuer});
+            if (tokensPerTierDiscountPoly > 0) {
+                let ratePerTierDiscountPoly = await currentSTO.methods.ratePerTierDiscountPoly(t).call({from: Issuer});
+                let mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call({from: Issuer});
 
-          displayDiscountTokens = `
+                displayDiscountTokens = `
         Tokens at discounted rate: ${web3.utils.fromWei(tokensPerTierDiscountPoly)} ${displayTokenSymbol}
         Discounted rate:           ${web3.utils.fromWei(ratePerTierDiscountPoly, 'ether')} USD per Token`;
 
-          displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
+                displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
+            }
+
+            let mintedPerTierRegularPOLY = await currentSTO.methods.mintedPerTierRegularPoly(t).call({from: Issuer});
+            let mintedPerTierPOLYTotal = new BigNumber(web3.utils.fromWei(mintedPerTierRegularPOLY)).add(new BigNumber(web3.utils.fromWei(mintedPerTierDiscountPoly)));
+            displayMintedPerTierPOLY = `
+        Sold for POLY:             ${mintedPerTierPOLYTotal} ${displayDiscountMinted}`
         }
 
         displayTiers = displayTiers + `
     - Tier ${t+1}:
-        Tokens:                    ${web3.utils.fromWei(tokensPerTier, 'ether')} ${displayTokenSymbol}
+        Tokens:                    ${web3.utils.fromWei(tokensPerTierTotal, 'ether')} ${displayTokenSymbol}
         Rate:                      ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`
         + displayDiscountTokens;
     displayMintedPerTier = displayMintedPerTier + `
-    - Tokens Sold in Tier ${t+1}:       ${web3.utils.fromWei(mintedPerTier)}  ${displayTokenSymbol} ${displayDiscountMinted}`;
-    }
+    - Tokens Sold in Tier ${t+1}:       ${web3.utils.fromWei(mintedPerTierTotal)}` 
+    + displayMintedPerTierETH
+    + displayMintedPerTierPOLY;}
 
     let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call({from: Issuer}));
 
     let displayFundsRaisedETH = '';
+    let displayTokensSoldETH = '';
     if (ethRaise) {
-      let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaisedETH().call({from: Issuer}));
-      displayFundsRaisedETH = `
+        let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaisedETH().call({from: Issuer}));
+        displayFundsRaisedETH = `
         ETH:                       ${fundsRaisedETH} ETH`;
+        
+        //Only show sold for ETH if POLY raise is allowed too
+        if (polyRaise) {
+            let tokensSoldETH = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForETH().call({from: Issuer}));
+            displayTokensSoldETH = `
+        For ETH:                   ${tokensSoldETH} ${displayTokenSymbol}`;
+        }
     }
 
     let displayFundsRaisedPOLY = '';
+    let displayTokensSoldPOLY = '';
     if (polyRaise) {
-      let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaisedPOLY().call({from: Issuer}));
-      displayFundsRaisedPOLY = `
+        let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaisedPOLY().call({from: Issuer}));
+        displayFundsRaisedPOLY = `
         POLY:                      ${fundsRaisedPOLY} POLY`;
+
+        //Only show sold for POLY if ETH raise is allowed too
+        if (ethRaise) {
+            let tokensSoldPOLY = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForPOLY().call({from: Issuer}));
+            displayTokensSoldPOLY = `
+        For POLY:                  ${tokensSoldPOLY} ${displayTokenSymbol}`;
+        }
     }
 
     let displayCanBuy;
@@ -498,7 +533,9 @@ async function showUSDTieredSTOInfo() {
     - Non Accredited Limit:        ${displayNonAccreditedLimitUSD} USD
     -----------------------------------------------------------------------
     - ${timeTitle}              ${timeRemaining}
-    - Tokens Sold:                 ${displayTokensSold}
+    - Tokens Sold:                 ${displayTokensSold}`
+    + displayTokensSoldETH
+    + displayTokensSoldPOLY + `
     - Current Tier:                ${displayCurrentTier}`
     + displayMintedPerTier + `
     - Investor count:              ${displayInvestorCount}

@@ -657,15 +657,6 @@ function tiersConfigUSDTieredSTO(polyRaise) {
     }
   }
 
-  let defaultStartingTier = 1;
-  tiers.startingTier = readlineSync.questionInt(`Which is the starting tier? (${defaultStartingTier}): `, {
-    limit: function(input) {
-      return (0 < input <= tiers);
-    },
-    limitMessage: 'Must be greater than the zero and less than the No. of tiers',
-    defaultInput: defaultStartingTier
-  }) - 1;
-
   return tiers;
 }
 
@@ -757,9 +748,6 @@ async function usdTieredSTO_launch() {
         type: 'uint256',
         name: '_minimumInvestmentUSD'
       },{
-        type: 'uint8',
-        name: '_startingTier'
-      },{
         type: 'uint8[]',
         name: '_fundRaiseTypes'
       },{
@@ -779,7 +767,6 @@ async function usdTieredSTO_launch() {
     addresses.securityTokenRegistryAddress,
     limits.nonAccreditedLimitUSD,
     limits.minimumInvestmentUSD,
-    tiers.startingTier,
     funding.raiseType,
     addresses.wallet,
     addresses.reserveWallet
@@ -850,7 +837,7 @@ async function usdTieredSTO_status() {
   let polyRaise = await currentSTO.methods.fundRaiseType(1).call({from: Issuer});
   let displayWallet = await currentSTO.methods.wallet().call({from: Issuer});
   let displayReserveWallet = await currentSTO.methods.reserveWallet().call({from: Issuer});
-  let displayTokensSold = await currentSTO.methods.getTokensSold().call({from: Issuer});
+  let displayTokensSold = web3.utils.fromWei(await currentSTO.methods.getTokensSold().call({from: Issuer}));
   let displayInvestorCount = await currentSTO.methods.investorCount().call({from: Issuer});
   let displayIsFinalized = await currentSTO.methods.isFinalized().call({from: Issuer}) ? "YES" : "NO";
   let displayTokenSymbol = await securityToken.methods.symbol().call({from: Issuer});
@@ -861,30 +848,49 @@ async function usdTieredSTO_status() {
   let displayMintedPerTier = "";
   for (let t = 0; t < tiersLength; t++) {
     let ratePerTier = await currentSTO.methods.ratePerTier(t).call({from: Issuer});
-    let tokensPerTier = await currentSTO.methods.tokensPerTierTotal(t).call({from: Issuer});
-    let mintedPerTier = await currentSTO.methods.mintedPerTierTotal(t).call({from: Issuer});
+    let tokensPerTierTotal = await currentSTO.methods.tokensPerTierTotal(t).call({from: Issuer});
+    let mintedPerTierTotal = await currentSTO.methods.mintedPerTierTotal(t).call({from: Issuer});
+    
+    let displayMintedPerTierETH = "";
+    if (ethRaise) {
+      let mintedPerTierETH = await currentSTO.methods.mintedPerTierETH(t).call({from: Issuer});
 
+      displayMintedPerTierETH = `
+        Sold for ETH:              ${web3.utils.fromWei(mintedPerTierETH)}`
+    }
+      
+    let displayMintedPerTierPOLY = "";
     let displayDiscountTokens = "";
-    let displayDiscountMinted = "";
-    let tokensPerTierDiscountPoly = await currentSTO.methods.tokensPerTierDiscountPoly(t).call({from: Issuer});
-    if (tokensPerTierDiscountPoly > 0) {
-      let ratePerTierDiscountPoly = await currentSTO.methods.ratePerTierDiscountPoly(t).call({from: Issuer});
-      let mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call({from: Issuer});
+    if (polyRaise) {
+      let displayDiscountMinted = "";
+      let mintedPerTierDiscountPoly = "0";
+      let tokensPerTierDiscountPoly = await currentSTO.methods.tokensPerTierDiscountPoly(t).call({from: Issuer});
+      if (tokensPerTierDiscountPoly > 0) {
+        let ratePerTierDiscountPoly = await currentSTO.methods.ratePerTierDiscountPoly(t).call({from: Issuer});
+        mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call({from: Issuer});
 
-      displayDiscountTokens = `
+        displayDiscountTokens = `
         Tokens at discounted rate: ${web3.utils.fromWei(tokensPerTierDiscountPoly)} ${displayTokenSymbol}
         Discounted rate:           ${web3.utils.fromWei(ratePerTierDiscountPoly, 'ether')} USD per Token`;
 
-      displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
+        displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
+      }
+
+      let mintedPerTierRegularPOLY = await currentSTO.methods.mintedPerTierRegularPoly(t).call({from: Issuer});
+      let mintedPerTierPOLYTotal = new BigNumber(web3.utils.fromWei(mintedPerTierRegularPOLY)).add(new BigNumber(web3.utils.fromWei(mintedPerTierDiscountPoly)));
+      displayMintedPerTierPOLY = `
+        Sold for POLY:             ${mintedPerTierPOLYTotal} ${displayDiscountMinted}`
     }
 
     displayTiers = displayTiers + `
     - Tier ${t+1}:
-        Tokens:                    ${web3.utils.fromWei(tokensPerTier, 'ether')} ${displayTokenSymbol}
+        Tokens:                    ${web3.utils.fromWei(tokensPerTierTotal, 'ether')} ${displayTokenSymbol}
         Rate:                      ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`
         + displayDiscountTokens;
     displayMintedPerTier = displayMintedPerTier + `
-    - Tokens Sold in Tier ${t+1}:       ${web3.utils.fromWei(mintedPerTier)}  ${displayTokenSymbol} ${displayDiscountMinted}`;
+    - Tokens Sold in Tier ${t+1}:       ${web3.utils.fromWei(mintedPerTierTotal)}` 
+    + displayMintedPerTierETH
+    + displayMintedPerTierPOLY;
   }
 
   let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call({from: Issuer}));
@@ -892,6 +898,7 @@ async function usdTieredSTO_status() {
   let displayWalletBalanceETH = '';
   let displayReserveWalletBalanceETH = '';
   let displayFundsRaisedETH = '';
+  let displayTokensSoldETH = '';
   if (ethRaise) {
     let balance = await web3.eth.getBalance(displayWallet);
     let walletBalanceETH = web3.utils.fromWei(balance, "ether");
@@ -906,11 +913,19 @@ async function usdTieredSTO_status() {
     let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaisedETH().call({from: Issuer}));
     displayFundsRaisedETH = `
         ETH:                       ${fundsRaisedETH} ETH`;
+   
+    //Only show sold for ETH if POLY raise is allowed too
+    if (polyRaise) {
+      let tokensSoldETH = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForETH().call({from: Issuer}));
+      displayTokensSoldETH = `
+        For ETH:                   ${tokensSoldETH} ${displayTokenSymbol}`;
+    }
   }
 
   let displayWalletBalancePOLY = '';
   let displayReserveWalletBalancePOLY = '';
   let displayFundsRaisedPOLY = '';
+  let displayTokensSoldPOLY = '';
   if (polyRaise) {
     let walletBalancePOLY = await currentBalance(displayWallet);
     let walletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(walletBalancePOLY.toString())).call({from: Issuer}));
@@ -923,6 +938,13 @@ async function usdTieredSTO_status() {
     let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaisedPOLY().call({from: Issuer}));
     displayFundsRaisedPOLY = `
         POLY:                      ${fundsRaisedPOLY} POLY`;
+    
+    //Only show sold for POLY if ETH raise is allowed too
+    if (ethRaise) {
+      let tokensSoldPOLY = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForPOLY().call({from: Issuer}));
+      displayTokensSoldPOLY = `
+        For POLY:                  ${tokensSoldPOLY} ${displayTokenSymbol}`;
+    }
   }
 
   let displayRaiseType;
@@ -968,7 +990,9 @@ async function usdTieredSTO_status() {
     --------------------------------------
     - ${timeTitle}              ${timeRemaining}
     - Is Finalized:                ${displayIsFinalized}
-    - Tokens Sold:                 ${displayTokensSold}
+    - Tokens Sold:                 ${displayTokensSold}`
+    + displayTokensSoldETH
+    + displayTokensSoldPOLY + `
     - Current Tier:                ${displayCurrentTier}`
     + displayMintedPerTier + `
     - Investor count:              ${displayInvestorCount}
@@ -1176,7 +1200,6 @@ async function modfifyTiers() {
     tiers.ratePerTierDiscountPoly,
     tiers.tokensPerTier,
     tiers.tokensPerTierDiscountPoly,
-    tiers.startingTier
   );
   let GAS = await common.estimateGas(modifyTiersAction, Issuer, 1.2);
   await modifyTiersAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})

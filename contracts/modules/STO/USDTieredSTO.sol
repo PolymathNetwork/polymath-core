@@ -86,6 +86,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Whether or not the STO has been finalized
     bool public isFinalized;
 
+    // Final amount of tokens sold
+    uint256 public finalAmountSold;
+
+    // Final amount of tokens returned to issuer
+    uint256 public finalAmountReturned;
+
     ////////////
     // Events //
     ////////////
@@ -295,14 +301,20 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     function finalize() public onlyOwner {
         require(!isFinalized);
         isFinalized = true;
+        uint256 tempReturned;
+        uint256 tempSold;
         for (uint8 i = 0; i < tokensPerTierTotal.length; i++) {
             if (mintedPerTierTotal[i] < tokensPerTierTotal[i]) {
+                tempReturned = tempReturned.add(tokensPerTierTotal[i]);
                 uint256 remainingTokens = tokensPerTierTotal[i].sub(mintedPerTierTotal[i]);
                 mintedPerTierTotal[i] = tokensPerTierTotal[i];
+                tempSold = tempSold.add(remainingTokens);
                 require(IST20(securityToken).mint(reserveWallet, remainingTokens), "Error in minting the tokens");
                 emit ReserveTokenMint(msg.sender, reserveWallet, remainingTokens, i);
             }
         }
+        finalAmountReturned = tempReturned;
+        finalAmountSold = tempSold;
     }
 
     /**
@@ -551,11 +563,15 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return uint256 Total number of tokens sold
      */
     function getTokensSold() public view returns (uint256) {
-        uint256 tokensSold;
-        for (uint8 i = 0; i < mintedPerTierTotal.length; i++) {
-            tokensSold = tokensSold.add(mintedPerTierTotal[i]);
+        if (isFinalized)
+            return finalAmountSold;
+        else {
+            uint256 tokensSold;
+            for (uint8 i = 0; i < mintedPerTierTotal.length; i++) {
+                tokensSold = tokensSold.add(mintedPerTierTotal[i]);
+            }
+            return tokensSold;
         }
-        return tokensSold;
     }
 
     /**

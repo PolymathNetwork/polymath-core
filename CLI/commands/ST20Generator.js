@@ -637,7 +637,7 @@ function tiersConfigUSDTieredSTO(polyRaise) {
     
     //If funds can be raised in POLY
     if (polyRaise && readlineSync.keyInYNStrict(`Do you plan to have a discounted rate for POLY investments for tier No. ${i+1}? `)) {
-      tiers.tokensPerTierDiscountPoly[i] = web3.utils.toWei(readlineSync.question(`How many tokens do you plan to sell at discounted rate on tier No. ${i+1}? (${defaultTokensPerTierDiscountPoly[i]}): `, {
+      tiers.tokensPerTierDiscountPoly[i] = web3.utils.toWei(readlineSync.question(`How many of those tokens do you plan to sell at discounted rate on tier No. ${i+1}? (${defaultTokensPerTierDiscountPoly[i]}): `, {
         limit: function(input) { 
           return new BigNumber(web3.utils.toWei(input)).lte(tiers.tokensPerTier[i]) 
         }, 
@@ -850,6 +850,7 @@ async function usdTieredSTO_status() {
   let polyRaise = await currentSTO.methods.fundRaiseType(1).call({from: Issuer});
   let displayWallet = await currentSTO.methods.wallet().call({from: Issuer});
   let displayReserveWallet = await currentSTO.methods.reserveWallet().call({from: Issuer});
+  let displayTokensSold = await currentSTO.methods.getTokensSold().call({from: Issuer});
   let displayInvestorCount = await currentSTO.methods.investorCount().call({from: Issuer});
   let displayIsFinalized = await currentSTO.methods.isFinalized().call({from: Issuer}) ? "YES" : "NO"; 
   let displayTokenSymbol = await securityToken.methods.symbol().call({from: Issuer});
@@ -967,6 +968,7 @@ async function usdTieredSTO_status() {
     --------------------------------------
     - ${timeTitle}              ${timeRemaining}
     - Is Finalized:                ${displayIsFinalized}
+    - Tokens Sold:                 ${displayTokensSold}
     - Current Tier:                ${displayCurrentTier}`
     + displayMintedPerTier + `
     - Investor count:              ${displayInvestorCount}

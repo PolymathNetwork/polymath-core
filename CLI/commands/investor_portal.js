@@ -400,6 +400,7 @@ async function showUSDTieredSTOInfo() {
     let displayMinimumInvestmentUSD = web3.utils.fromWei(await currentSTO.methods.minimumInvestmentUSD().call({from: User}));
     let ethRaise = await currentSTO.methods.fundRaiseType(0).call({from: User});
     let polyRaise = await currentSTO.methods.fundRaiseType(1).call({from: User});
+    let displayTokensSold = await currentSTO.methods.getTokensSold().call({from: Issuer});
     let displayInvestorCount = await currentSTO.methods.investorCount().call({from: User});
     let displayIsFinalized = await currentSTO.methods.isFinalized().call({from: User});
     let displayIsOpen = await currentSTO.methods.isOpen().call({from: User});
@@ -497,6 +498,7 @@ async function showUSDTieredSTOInfo() {
     - Non Accredited Limit:        ${displayNonAccreditedLimitUSD} USD
     -----------------------------------------------------------------------
     - ${timeTitle}              ${timeRemaining}
+    - Tokens Sold:                 ${displayTokensSold}
     - Current Tier:                ${displayCurrentTier}`
     + displayMintedPerTier + `
     - Investor count:              ${displayInvestorCount}

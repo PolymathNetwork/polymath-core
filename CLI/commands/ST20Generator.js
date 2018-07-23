@@ -856,14 +856,14 @@ async function usdTieredSTO_status() {
       let mintedPerTierETH = await currentSTO.methods.mintedPerTierETH(t).call({from: Issuer});
 
       displayMintedPerTierETH = `
-        Sold for ETH:              ${web3.utils.fromWei(mintedPerTierETH)}`
+        Sold for ETH:              ${web3.utils.fromWei(mintedPerTierETH)} ${displayTokenSymbol}`
     }
       
     let displayMintedPerTierPOLY = "";
     let displayDiscountTokens = "";
+    let mintedPerTierDiscountPoly = "0";
     if (polyRaise) {
       let displayDiscountMinted = "";
-      let mintedPerTierDiscountPoly = "0";
       let tokensPerTierDiscountPoly = await currentSTO.methods.tokensPerTierDiscountPoly(t).call({from: Issuer});
       if (tokensPerTierDiscountPoly > 0) {
         let ratePerTierDiscountPoly = await currentSTO.methods.ratePerTierDiscountPoly(t).call({from: Issuer});
@@ -879,7 +879,7 @@ async function usdTieredSTO_status() {
       let mintedPerTierRegularPOLY = await currentSTO.methods.mintedPerTierRegularPoly(t).call({from: Issuer});
       let mintedPerTierPOLYTotal = new BigNumber(web3.utils.fromWei(mintedPerTierRegularPOLY)).add(new BigNumber(web3.utils.fromWei(mintedPerTierDiscountPoly)));
       displayMintedPerTierPOLY = `
-        Sold for POLY:             ${mintedPerTierPOLYTotal} ${displayDiscountMinted}`
+        Sold for POLY:             ${mintedPerTierPOLYTotal} ${displayTokenSymbol} ${displayDiscountMinted}`
     }
 
     displayTiers = displayTiers + `
@@ -888,7 +888,7 @@ async function usdTieredSTO_status() {
         Rate:                      ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`
         + displayDiscountTokens;
     displayMintedPerTier = displayMintedPerTier + `
-    - Tokens Sold in Tier ${t+1}:       ${web3.utils.fromWei(mintedPerTierTotal)}` 
+    - Tokens minted in Tier ${t+1}:     ${web3.utils.fromWei(mintedPerTierTotal)} ${displayTokenSymbol}` 
     + displayMintedPerTierETH
     + displayMintedPerTierPOLY;
   }
@@ -918,7 +918,7 @@ async function usdTieredSTO_status() {
     if (polyRaise) {
       let tokensSoldETH = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForETH().call({from: Issuer}));
       displayTokensSoldETH = `
-        For ETH:                   ${tokensSoldETH} ${displayTokenSymbol}`;
+        Sold for ETH:              ${tokensSoldETH} ${displayTokenSymbol}`;
     }
   }
 
@@ -943,7 +943,7 @@ async function usdTieredSTO_status() {
     if (ethRaise) {
       let tokensSoldPOLY = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForPOLY().call({from: Issuer}));
       displayTokensSoldPOLY = `
-        For POLY:                  ${tokensSoldPOLY} ${displayTokenSymbol}`;
+        Sold for POLY:             ${tokensSoldPOLY} ${displayTokenSymbol}`;
     }
   }
 
@@ -990,7 +990,7 @@ async function usdTieredSTO_status() {
     --------------------------------------
     - ${timeTitle}              ${timeRemaining}
     - Is Finalized:                ${displayIsFinalized}
-    - Tokens Sold:                 ${displayTokensSold}`
+    - Tokens Sold:                 ${displayTokensSold} ${displayTokenSymbol}`
     + displayTokensSoldETH
     + displayTokensSoldPOLY + `
     - Current Tier:                ${displayCurrentTier}`

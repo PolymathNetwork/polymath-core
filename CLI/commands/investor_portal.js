@@ -184,39 +184,45 @@ async function investUsdTieredSTO() {
         }
     }
 
-    let cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `));
-    if (cost == "") {
-        process.exit();
-    };
+    let minimumInvestmentUSD = await currentSTO.methods.minimumInvestmentUSD().call({from: User});
+    let minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(web3.utils.fromAscii(raiseType), minimumInvestmentUSD).call({from: User});      
+    let cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `), {   
+        limit: function(input) {
+            return true; //input > web3.utils.fromWei(minimumInvestmentRaiseType);
+        },
+        limitMessage: `Amount must be greater than minimum investment (${web3.utils.fromWei(minimumInvestmentRaiseType)} ${raiseType} = ${web3.utils.fromWei(minimumInvestmentUSD)} USD)`
+    });
+    if (cost == "") process.exit();
+
+    let costWei = web3.utils.toWei(cost.toString());
 
     if (raiseType == 'POLY') {
-        try {
-            let userBalance = await polyBalance(User);
-            let costWei = web3.utils.toWei(cost.toString());
-            if (parseInt(userBalance) >= parseInt(cost)) {
-                let allowance = await polyToken.methods.allowance(STOAddress, User).call({from: User});
-                if (allowance < costWei) {
-                    let approveAction = polyToken.methods.approve(STOAddress, costWei);
-                    let GAS = await common.estimateGas(approveAction, User, 1.2);
-                    await approveAction.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-                    .on('receipt', function(receipt) {
-                    })
-                    .on('error', console.error);
-                }
-                let actionBuyWithPoly = currentSTO.methods.buyWithPOLY(User, costWei);
-                let GAS = await common.estimateGas(actionBuyWithPoly, User, 1.2);
-                await actionBuyWithPoly.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-                .on('transactionHash', function(hash){
-                    console.log(`
+        let userBalance = await polyBalance(User);
+
+        if (parseInt(userBalance) >= parseInt(cost)) {
+            let allowance = await polyToken.methods.allowance(STOAddress, User).call({from: User});
+            if (allowance < costWei) {
+                let approveAction = polyToken.methods.approve(STOAddress, costWei);
+                let GAS = await common.estimateGas(approveAction, User, 1.2);
+                await approveAction.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+                .on('receipt', function(receipt) {
+                })
+                .on('error', console.error);
+            }
+            let actionBuyWithPoly = currentSTO.methods.buyWithPOLY(User, costWei);
+            let GAS = await common.estimateGas(actionBuyWithPoly, User, 1.2);
+            await actionBuyWithPoly.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+            .on('transactionHash', function(hash){
+                console.log(`
         Your transaction is being processed. Please wait...
         TxHash: ${hash}\n`
-                    );
-                })
-                .on('receipt', function(receipt){
-                    console.log(chalk.green(`
+                );
+            })
+            .on('receipt', function(receipt){
+                console.log(chalk.green(`
         Congratulations! The token purchase was successfully completed.
-                    `));
-                    console.log(`
+                `));
+                console.log(`
         Account ${receipt.events.TokenPurchase.returnValues._purchaser}
         invested ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues._usdAmount)} USD
         purchasing ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues._tokens)} ${displayTokenSymbol.toUpperCase()}
@@ -224,21 +230,17 @@ async function investUsdTieredSTO() {
 
         Review it on Etherscan.
         TxHash: ${receipt.transactionHash}\n`
-                    );
-                });
-            } else {
-                console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} POLY but have ${userBalance} POLY.`));
-                console.log(chalk.red(`Please purchase a smaller amount of tokens or access the POLY faucet to get the POLY to complete this txn.`));
-                process.exit();
-            }
-        }catch (err){
-            console.log(err.message);
-            return;
+                );
+            });
+        } else {
+            console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} POLY but have ${userBalance} POLY.`));
+            console.log(chalk.red(`Please purchase a smaller amount of tokens or access the POLY faucet to get the POLY to complete this txn.`));
+            process.exit();
         }
     } else {
         let actionBuyWithETH = currentSTO.methods.buyWithETH(User);
         let GAS = await common.estimateGas(actionBuyWithETH, User, 1.2, web3.utils.toWei(cost.toString()));
-        await actionBuyWithETH.send({ from: User, value:web3.utils.toWei(cost.toString()), gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+        await actionBuyWithETH.send({ from: User, value:costWei, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
         .on('transactionHash', function(hash){
             console.log(`
         Your transaction is being processed. Please wait...
@@ -388,7 +390,8 @@ async function showUserInfoForUSDTieredSTO()
     console.log(`    - Invested in USD:       ${displayInvestorInvestedUSD} USD`);
     if (!await currentSTO.methods.accredited(User).call({from: User})) {
         let displayNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call({from: User}));
-        console.log(`    - Remaining allocation:  ${displayNonAccreditedLimitUSD - displayInvestorInvestedUSD} USD`);
+        let displayTokensRemainingAllocation = displayNonAccreditedLimitUSD - displayInvestorInvestedUSD;
+        console.log(`    - Remaining allocation:  ${(displayTokensRemainingAllocation > 0 ? displayTokensRemainingAllocation : 0)} USD`);
     }
     console.log('\n');
 }
@@ -421,18 +424,18 @@ async function showUSDTieredSTOInfo() {
           let mintedPerTierETH = await currentSTO.methods.mintedPerTierETH(t).call({from: Issuer});
     
           displayMintedPerTierETH = `
-        Sold for ETH:              ${web3.utils.fromWei(mintedPerTierETH)}`
+        Sold for ETH:              ${web3.utils.fromWei(mintedPerTierETH)} ${displayTokenSymbol}`
         }
 
         let displayMintedPerTierPOLY = "";
         let displayDiscountTokens = "";
+        let mintedPerTierDiscountPoly = "0";
         if (polyRaise) {
             let displayDiscountMinted = "";
-            let mintedPerTierDiscountPoly = "0";
             let tokensPerTierDiscountPoly = await currentSTO.methods.tokensPerTierDiscountPoly(t).call({from: Issuer});
             if (tokensPerTierDiscountPoly > 0) {
                 let ratePerTierDiscountPoly = await currentSTO.methods.ratePerTierDiscountPoly(t).call({from: Issuer});
-                let mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call({from: Issuer});
+                mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call({from: Issuer});
 
                 displayDiscountTokens = `
         Tokens at discounted rate: ${web3.utils.fromWei(tokensPerTierDiscountPoly)} ${displayTokenSymbol}
@@ -444,7 +447,7 @@ async function showUSDTieredSTOInfo() {
             let mintedPerTierRegularPOLY = await currentSTO.methods.mintedPerTierRegularPoly(t).call({from: Issuer});
             let mintedPerTierPOLYTotal = new BigNumber(web3.utils.fromWei(mintedPerTierRegularPOLY)).add(new BigNumber(web3.utils.fromWei(mintedPerTierDiscountPoly)));
             displayMintedPerTierPOLY = `
-        Sold for POLY:             ${mintedPerTierPOLYTotal} ${displayDiscountMinted}`
+        Sold for POLY:             ${mintedPerTierPOLYTotal} ${displayTokenSymbol} ${displayDiscountMinted}`
         }
 
         displayTiers = displayTiers + `
@@ -453,7 +456,7 @@ async function showUSDTieredSTOInfo() {
         Rate:                      ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`
         + displayDiscountTokens;
     displayMintedPerTier = displayMintedPerTier + `
-    - Tokens Sold in Tier ${t+1}:       ${web3.utils.fromWei(mintedPerTierTotal)}` 
+    - Tokens minted in Tier ${t+1}:     ${web3.utils.fromWei(mintedPerTierTotal)} ${displayTokenSymbol}` 
     + displayMintedPerTierETH
     + displayMintedPerTierPOLY;}
 
@@ -470,7 +473,7 @@ async function showUSDTieredSTOInfo() {
         if (polyRaise) {
             let tokensSoldETH = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForETH().call({from: Issuer}));
             displayTokensSoldETH = `
-        For ETH:                   ${tokensSoldETH} ${displayTokenSymbol}`;
+        Sold for ETH:              ${tokensSoldETH} ${displayTokenSymbol}`;
         }
     }
 
@@ -485,7 +488,7 @@ async function showUSDTieredSTOInfo() {
         if (ethRaise) {
             let tokensSoldPOLY = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForPOLY().call({from: Issuer}));
             displayTokensSoldPOLY = `
-        For POLY:                  ${tokensSoldPOLY} ${displayTokenSymbol}`;
+        Sold for POLY:             ${tokensSoldPOLY} ${displayTokenSymbol}`;
         }
     }
 
@@ -533,7 +536,7 @@ async function showUSDTieredSTOInfo() {
     - Non Accredited Limit:        ${displayNonAccreditedLimitUSD} USD
     -----------------------------------------------------------------------
     - ${timeTitle}              ${timeRemaining}
-    - Tokens Sold:                 ${displayTokensSold}`
+    - Tokens Sold:                 ${displayTokensSold} ${displayTokenSymbol}`
     + displayTokensSoldETH
     + displayTokensSoldPOLY + `
     - Current Tier:                ${displayCurrentTier}`

@@ -31,12 +31,12 @@ contract('CappedSTO', accounts => {
     let balanceOfReceiver;
     let message = "Transaction Should Fail!";
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime() + duration.days(15);
-    let expiryTime = toTime + duration.days(100);
-    let P_fromTime = fromTime + duration.days(1);
-    let P_toTime = P_fromTime + duration.days(50);
-    let P_expiryTime = toTime + duration.days(100);
+    let fromTime;
+    let toTime;
+    let expiryTime;
+    let P_fromTime;
+    let P_toTime;
+    let P_expiryTime;
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -449,6 +449,14 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should Buy the tokens", async() => {
+
+            fromTime = latestTime();
+            toTime = latestTime() + duration.days(15);
+            expiryTime = toTime + duration.days(100);
+            P_fromTime = fromTime + duration.days(1);
+            P_toTime = P_fromTime + duration.days(50);
+            P_expiryTime = toTime + duration.days(100);
+
             balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
             // Add the Investor in to the whitelist
 

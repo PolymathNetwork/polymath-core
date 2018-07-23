@@ -78,8 +78,8 @@ contract('USDTieredSTO', accounts => {
     // USDETH.mul(value).div(_ratePerTier[0])
 
     // USDTieredSTO details
-    const _startTime = latestTime() + duration.days(2);
-    const _endTime  = _startTime + duration.days(100);
+    let _startTime = latestTime() + duration.days(2);
+    let _endTime  = _startTime + duration.days(100);
     const _ratePerTier = [BigNumber(10*10**16), BigNumber(15*10**16)];                                                   // [ 0.10 USD/Token, 0.15 USD/Token ]
     const _ratePerTierDiscountPoly = [BigNumber(10*10**16), BigNumber(12*10**16)];                                       // [ 0.10 USD/Token, 0.12 USD/Token ]
     const _tokensPerTier = [BigNumber(100000000).mul(BigNumber(10**18)), BigNumber(200000000).mul(BigNumber(10**18))];   // [ 100m token, 200m token ]
@@ -375,6 +375,10 @@ contract('USDTieredSTO', accounts => {
     describe("Test sto deployment", async() => {
 
         it("Should fail because rates and tier array of different length", async() => {
+
+            _startTime = latestTime() + duration.days(2);
+            _endTime  = _startTime + duration.days(100);
+
             let ratePerTier = [10];
             let ratePerTierDiscountPoly = [10];
             let tokensPerTier = [10];

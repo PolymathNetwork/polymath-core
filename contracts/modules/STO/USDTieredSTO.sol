@@ -362,6 +362,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             USDOraclePrice = IOracle(ISecurityTokenRegistry(securityTokenRegistry).getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
 
         uint256 investedUSD = wmul(USDOraclePrice, _investmentValue);
+        uint256 refundValue;
 
         // Check for minimum investment
         require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment less than minimumInvestmentUSD");
@@ -372,8 +373,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             if (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD) {
                 uint256 refundUSD = investedUSD.add(investorInvestedUSD[_beneficiary]).sub(nonAccreditedLimitUSD);
                 investedUSD = investedUSD.sub(refundUSD);
-                uint256 refundInvestment = wdiv(refundUSD, USDOraclePrice);
-                _investmentValue = _investmentValue.sub(refundInvestment);
+                refundValue = wdiv(refundUSD, USDOraclePrice);
+                _investmentValue = _investmentValue.sub(refundValue);
             }
         }
 
@@ -415,7 +416,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             // Forward ETH to issuer wallet
             wallet.transfer(spentValue);
             // Refund excess ETH to investor wallet
-            msg.sender.transfer(_investmentValue.sub(spentValue));
+            msg.sender.transfer(_investmentValue.sub(spentValue).add(refundValue));
         }
         fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, 0, spentValue, USDOraclePrice);

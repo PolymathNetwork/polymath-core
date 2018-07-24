@@ -1,7 +1,7 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
-
+const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const PreSaleSTOFactory = artifacts.require('./PreSaleSTOFactory.sol');
 const PreSaleSTO = artifacts.require('./PreSaleSTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
@@ -49,6 +49,7 @@ contract('PreSaleSTO', accounts => {
     let I_SecurityToken;
     let I_PreSaleSTO;
     let I_PolyToken;
+    let I_PolymathRegistry;
 
     // SecurityToken Details for funds raise Type ETH
     const swarmHash = "dagwrgwgvwergwrvwrg";
@@ -95,13 +96,18 @@ contract('PreSaleSTO', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the token Faucet and Mint tokens for token_owner
+        // Step 0: Deploy the PolymathRegistry
+        I_PolymathRegistry = await PolymathRegistry.new({from: account_polymath});
+
+        // Step 1: Deploy the token Faucet and Mint tokens for token_owner
         I_PolyToken = await PolyTokenFaucet.new();
         await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
+        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
 
-        // STEP 1: Deploy the ModuleRegistry
+        // STEP 2: Deploy the ModuleRegistry
 
-        I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
+        I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:account_polymath});
+        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: account_polymath});
 
         assert.notEqual(
             I_ModuleRegistry.address.valueOf(),
@@ -154,7 +160,8 @@ contract('PreSaleSTO', accounts => {
 
         // Step 6: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, initRegFee, { from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolymathRegistry.address, initRegFee, { from: account_polymath });
+        await I_PolymathRegistry.changeAddress("TickerRegistry", I_TickerRegistry.address, {from: account_polymath});
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -175,14 +182,13 @@ contract('PreSaleSTO', accounts => {
         // Step 8: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolyToken.address,
-            I_ModuleRegistry.address,
-            I_TickerRegistry.address,
+            I_PolymathRegistry.address,
             I_STVersion.address,
             initRegFee,
             {
                 from: account_polymath
             });
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
@@ -190,9 +196,11 @@ contract('PreSaleSTO', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 8: Set the STR in TickerRegistry
-        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        // Step 10: update the registries addresses from the PolymathRegistry contract
+        await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
+        await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
+        await I_TickerRegistry.updateFromRegistry({from: account_polymath});
+
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -392,7 +400,7 @@ contract('PreSaleSTO', accounts => {
 
             assert.equal(tx2.logs[0].args._investor, account_investor3, "Failed in adding the investor in whitelist");
 
-            await I_PreSaleSTO.allocateTokensMulti([account_investor2, account_investor3], [web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether')], 0, web3.utils.toWei('1000', 'ether'), {from: account_issuer, gas: 60000000});
+            await I_PreSaleSTO.allocateTokensMulti([account_investor2, account_investor3], [web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether')], [0,0], [web3.utils.toWei('1000', 'ether'), web3.utils.toWei('1000', 'ether')], {from: account_issuer, gas: 60000000});
 
             assert.equal(
                 (await I_PreSaleSTO.getRaisedPOLY.call())
@@ -417,6 +425,39 @@ contract('PreSaleSTO', accounts => {
             assert.ok(errorThrown, message);
         });
 
+    });
+
+    describe("Reclaim poly sent to STO by mistake", async() => {
+
+        it("Should fail to reclaim POLY because token contract address is 0 address", async() => {
+            let value = web3.utils.toWei('100','ether');
+            await I_PolyToken.getTokens(value, account_investor1);
+            await I_PolyToken.transfer(I_PreSaleSTO.address, value, { from: account_investor1 });
+
+            let errorThrown = false;
+            try {
+                 await I_PreSaleSTO.reclaimERC20('0x0000000000000000000000000000000000000000', { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> token contract address is 0 address`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully reclaim POLY", async() => {
+            let initInvestorBalance = await I_PolyToken.balanceOf(account_investor1);
+            let initOwnerBalance = await I_PolyToken.balanceOf(token_owner);
+            let initContractBalance = await I_PolyToken.balanceOf(I_PreSaleSTO.address);
+            let value = web3.utils.toWei('100','ether');
+
+            await I_PolyToken.getTokens(value, account_investor1);
+            await I_PolyToken.transfer(I_PreSaleSTO.address, value, { from: account_investor1 });
+            await I_PreSaleSTO.reclaimERC20(I_PolyToken.address, { from: token_owner });
+            assert.equal((await I_PolyToken.balanceOf(account_investor3)).toNumber(), initInvestorBalance.toNumber(), "tokens are not transfered out from investor account");
+            assert.equal((await I_PolyToken.balanceOf(token_owner)).toNumber(), initOwnerBalance.add(value).add(initContractBalance).toNumber(), "tokens are not added to the owner account");
+            assert.equal((await I_PolyToken.balanceOf(I_PreSaleSTO.address)).toNumber(), 0, "tokens are not trandfered out from STO contract");
+        });
     });
 
     describe("Test cases for the PresaleSTOFactory", async() => {

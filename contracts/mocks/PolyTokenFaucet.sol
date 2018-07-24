@@ -25,6 +25,7 @@ contract PolyTokenFaucet {
     function getTokens(uint256 _amount, address _recipient) public returns (bool) {
         balances[_recipient] += _amount;
         totalSupply_ += _amount;
+        emit Transfer(address(0), _recipient, _amount);
         return true;
     }
 

@@ -29,7 +29,8 @@ contract PercentageTransferManager is ITransferManager {
     event LogModifyWhitelist(
         address _investor,
         uint256 _dateAdded,
-        address _addedBy
+        address _addedBy,
+        bool    _valid
     );
 
     /**
@@ -90,7 +91,7 @@ contract PercentageTransferManager is ITransferManager {
     */
     function modifyWhitelist(address _investor, bool _valid) public withPerm(WHITELIST) {
         whitelist[_investor] = _valid;
-        emit LogModifyWhitelist(_investor, now, msg.sender);
+        emit LogModifyWhitelist(_investor, now, msg.sender, _valid);
     }
 
     /**

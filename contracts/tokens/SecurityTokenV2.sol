@@ -8,7 +8,7 @@ import "./SecurityToken.sol";
 * @notice Mockup of how an upgrade of SecurityToken would look like
 */
 contract SecurityTokenV2 is SecurityToken {
-    bytes32 public securityTokenVersion = "0.0.2";
+    bytes32 public constant securityTokenVersion = "0.0.2";
 
      /**
      * @notice Constructor

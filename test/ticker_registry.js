@@ -2,6 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 
+const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
@@ -46,6 +47,7 @@ contract('TickerRegistry', accounts => {
     let I_STVersion;
     let I_SecurityToken;
     let I_PolyToken;
+    let I_PolymathRegistry;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const swarmHash = "dagwrgwgvwergwrvwrg";
@@ -83,13 +85,19 @@ contract('TickerRegistry', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the token Faucet and Mint tokens for token_owner
-        I_PolyToken = await PolyTokenFaucet.new();
-        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
+         // Step 0: Deploy the PolymathRegistry
+         I_PolymathRegistry = await PolymathRegistry.new({from: account_polymath});
 
-        // STEP 1: Deploy the ModuleRegistry
-
-        I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
+         // Step 1: Deploy the token Faucet and Mint tokens for token_owner
+         I_PolyToken = await PolyTokenFaucet.new();
+         await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
+         await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
+ 
+         // STEP 2: Deploy the ModuleRegistry
+ 
+         I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:account_polymath});
+         await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: account_polymath});
+ 
 
         assert.notEqual(
             I_ModuleRegistry.address.valueOf(),
@@ -129,7 +137,8 @@ contract('TickerRegistry', accounts => {
 
         // Step 6: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, initRegFee, { from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolymathRegistry.address, initRegFee, { from: account_polymath });
+        await I_PolymathRegistry.changeAddress("TickerRegistry", I_TickerRegistry.address, {from: account_polymath});
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -150,14 +159,13 @@ contract('TickerRegistry', accounts => {
         // Step 8: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolyToken.address,
-            I_ModuleRegistry.address,
-            I_TickerRegistry.address,
+            I_PolymathRegistry.address,
             I_STVersion.address,
             initRegFee,
             {
                 from: account_polymath
             });
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
@@ -166,8 +174,10 @@ contract('TickerRegistry', accounts => {
         );
 
         // Step 8: Set the STR in TickerRegistry
-        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+         // Step 10: update the registries addresses from the PolymathRegistry contract
+         await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
+         await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
+         await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -183,7 +193,7 @@ contract('TickerRegistry', accounts => {
     describe("Test cases for the TickerRegistry public variable", async () => {
 
         it("verify the securityTokenRegistry address", async() => {
-            let str = await I_TickerRegistry.getAddress.call("SecurityTokenRegistry");
+            let str = await I_TickerRegistry.securityTokenRegistry.call();
             assert.equal(str, I_SecurityTokenRegistry.address);
         });
 
@@ -207,8 +217,21 @@ contract('TickerRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should fail to register ticker if owner is 0x", async() => {
+            let errorThrown = false;
+            try {
+                await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
+                let tx = await I_TickerRegistry.registerTicker("0x0000000000000000000000000000000000000000", symbol, name, swarmHash, { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> owner should not be 0x`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should successfully register ticker", async() => {
-            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
+            
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
@@ -486,36 +509,6 @@ contract('TickerRegistry', accounts => {
 
         });
 
-        describe("Test cases for changing contract address reference", async() => {
-
-            it("Should fail to change address if msg.sender is not owner", async() => {
-                let errorThrown = false;
-                try {
-                    await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, { from: account_temp });
-                } catch(error) {
-                    console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
-            });
-
-            it("Should successfully change address", async() => {
-                await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_PolyToken.address, { from: account_polymath });
-                assert.equal(
-                    (await I_TickerRegistry.getAddress.call("SecurityTokenRegistry")),
-                    I_PolyToken.address,
-                    "Failed in setting the address of the securityTokenRegistry"
-                );
-                await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, { from: account_polymath });
-                assert.equal(
-                    (await I_TickerRegistry.getAddress.call("SecurityTokenRegistry")),
-                    I_SecurityTokenRegistry.address,
-                    "Failed in setting the address of the securityTokenRegistry"
-                );
-            });
-
-        });
 
         describe("Test cases for pausing the contract", async() => {
 

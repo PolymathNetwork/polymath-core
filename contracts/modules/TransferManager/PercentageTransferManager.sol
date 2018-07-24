@@ -51,7 +51,7 @@ contract PercentageTransferManager is ITransferManager {
                 return Result.NA;
             }
             uint256 newBalance = ISecurityToken(securityToken).balanceOf(_to).add(_amount);
-            if (newBalance.mul(10**18).div(ISecurityToken(securityToken).totalSupply()) > maxHolderPercentage) {
+            if (newBalance.mul(10**uint256(ISecurityToken(securityToken).decimals())).div(ISecurityToken(securityToken).totalSupply()) > maxHolderPercentage) {
                 return Result.INVALID;
             }
             return Result.NA;
@@ -70,7 +70,7 @@ contract PercentageTransferManager is ITransferManager {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
 

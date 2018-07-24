@@ -2,6 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 
+const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO = artifacts.require('./CappedSTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
@@ -54,6 +55,7 @@ contract('CappedSTO', accounts => {
     let I_CappedSTO_Array_ETH = [];
     let I_CappedSTO_Array_POLY = [];
     let I_PolyToken;
+    let I_PolymathRegistry;
 
     // SecurityToken Details for funds raise Type ETH
     const swarmHash = "dagwrgwgvwergwrvwrg";
@@ -132,13 +134,18 @@ contract('CappedSTO', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the token Faucet and Mint tokens for token_owner
+        // Step 0: Deploy the PolymathRegistry
+        I_PolymathRegistry = await PolymathRegistry.new({from: account_polymath});
+
+        // Step 1: Deploy the token Faucet and Mint tokens for token_owner
         I_PolyToken = await PolyTokenFaucet.new();
         await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
+        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
 
-        // STEP 1: Deploy the ModuleRegistry
+        // STEP 2: Deploy the ModuleRegistry
 
-        I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
+        I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:account_polymath});
+        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: account_polymath});
 
         assert.notEqual(
             I_ModuleRegistry.address.valueOf(),
@@ -146,7 +153,7 @@ contract('CappedSTO', accounts => {
             "ModuleRegistry contract was not deployed"
         );
 
-        // STEP 2: Deploy the GeneralTransferManagerFactory
+        // STEP 3: Deploy the GeneralTransferManagerFactory
 
         I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
@@ -156,7 +163,7 @@ contract('CappedSTO', accounts => {
             "GeneralTransferManagerFactory contract was not deployed"
         );
 
-        // STEP 3: Deploy the GeneralDelegateManagerFactory
+        // STEP 4: Deploy the GeneralDelegateManagerFactory
 
         I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
@@ -166,7 +173,7 @@ contract('CappedSTO', accounts => {
             "GeneralDelegateManagerFactory contract was not deployed"
         );
 
-        // STEP 4: Deploy the CappedSTOFactory
+        // STEP 5: Deploy the CappedSTOFactory
 
         I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, cappedSTOSetupCost, 0, 0, { from: token_owner });
 
@@ -176,7 +183,7 @@ contract('CappedSTO', accounts => {
             "CappedSTOFactory contract was not deployed"
         );
 
-        // STEP 5: Register the Modules with the ModuleRegistry contract
+        // STEP 6: Register the Modules with the ModuleRegistry contract
 
         // (A) :  Register the GeneralTransferManagerFactory
         await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
@@ -189,9 +196,10 @@ contract('CappedSTO', accounts => {
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: token_owner });
 
-        // Step 6: Deploy the TickerRegistry
+        // Step 7: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, initRegFee, { from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolymathRegistry.address, initRegFee, { from: account_polymath });
+        await I_PolymathRegistry.changeAddress("TickerRegistry", I_TickerRegistry.address, {from: account_polymath});
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -199,7 +207,7 @@ contract('CappedSTO', accounts => {
             "TickerRegistry contract was not deployed",
         );
 
-        // Step 7: Deploy the STversionProxy contract
+        // Step 8: Deploy the STversionProxy contract
 
         I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
@@ -209,17 +217,16 @@ contract('CappedSTO', accounts => {
             "STVersion contract was not deployed",
         );
 
-        // Step 8: Deploy the SecurityTokenRegistry
+        // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolyToken.address,
-            I_ModuleRegistry.address,
-            I_TickerRegistry.address,
+            I_PolymathRegistry.address,
             I_STVersion.address,
             initRegFee,
             {
                 from: account_polymath
             });
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
@@ -227,9 +234,10 @@ contract('CappedSTO', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 8: Set the STR in TickerRegistry
-        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        // Step 10: update the registries addresses from the PolymathRegistry contract
+        await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
+        await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
+        await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n
@@ -282,6 +290,18 @@ contract('CappedSTO', accounts => {
             "GeneralTransferManager contract was not deployed",
            );
 
+        });
+
+        it("Should mint the tokens before attaching the STO", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityToken_ETH.mint("0x0000000000000000000000000000000000000000", web3.utils.toWei("1"), {from: token_owner});
+            } catch (error) {
+                console.log(`       tx -> revert 0x address is not allowed as investor`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
         });
 
         it("Should fail to launch the STO due to security token doesn't have the sufficient POLY", async () => {

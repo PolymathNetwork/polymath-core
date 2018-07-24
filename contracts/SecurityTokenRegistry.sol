@@ -4,13 +4,15 @@ import "./interfaces/ITickerRegistry.sol";
 import "./tokens/SecurityToken.sol";
 import "./interfaces/ISTProxy.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
-import "./Registry.sol";
+import "./Pausable.sol";
+import "./RegistryUpdater.sol";
+import "./ReclaimTokens.sol";
 import "./helpers/Util.sol";
 
 /**
  * @title Registry contract for issuers to register their security tokens
  */
-contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
+contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, RegistryUpdater, ReclaimTokens {
 
     // Registration fee in POLY base 18 decimals
     uint256 public registrationFee;
@@ -22,19 +24,14 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
     event LogAddCustomSecurityToken(string _name, string _symbol, address _securityToken, uint256 _addedAt);
 
     constructor (
-        address _polyToken,
-        address _moduleRegistry,
-        address _tickerRegistry,
+        address _polymathRegistry,
         address _stVersionProxy,
         uint256 _registrationFee
     )
     public
+    RegistryUpdater(_polymathRegistry)
     {
-        changeAddress("PolyToken", _polyToken);
-        changeAddress("ModuleRegistry", _moduleRegistry);
-        changeAddress("TickerRegistry", _tickerRegistry);
         registrationFee = _registrationFee;
-
         // By default, the STR version is set to 0.0.1
         setProtocolVersion(_stVersionProxy, "0.0.1");
     }
@@ -48,9 +45,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
      */
     function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) public whenNotPaused {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
-        require(ITickerRegistry(getAddress("TickerRegistry")).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
+        require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
         if(registrationFee > 0)
-            require(ERC20(getAddress("PolyToken")).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(ERC20(polyToken).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = upper(_symbol);
         address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
             _name,
@@ -58,7 +55,8 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
             18,
             _tokenDetails,
             msg.sender,
-            _divisible
+            _divisible,
+            polymathRegistry
         );
 
         securityTokens[newSecurityTokenAddress] = SecurityTokenData(symbol, _tokenDetails);
@@ -77,12 +75,13 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
      */
     function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash) public onlyOwner whenNotPaused {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
-        require(_securityToken != address(0) && symbols[_symbol] == address(0), "Symbol is already at the polymath network or entered security token address is 0x");
+        string memory symbol = upper(_symbol);
+        require(_securityToken != address(0) && symbols[symbol] == address(0), "Symbol is already at the polymath network or entered security token address is 0x");
         require(_owner != address(0));
-        require(!(ITickerRegistry(getAddress("TickerRegistry")).isReserved(_symbol, _owner, _name, _swarmHash)), "Trying to use non-valid symbol");
-        symbols[_symbol] = _securityToken;
-        securityTokens[_securityToken] = SecurityTokenData(_symbol, _tokenDetails);
-        emit LogAddCustomSecurityToken(_name, _symbol, _securityToken, now);
+        require(!(ITickerRegistry(tickerRegistry).isReserved(symbol, _owner, _name, _swarmHash)), "Trying to use non-valid symbol");
+        symbols[symbol] = _securityToken;
+        securityTokens[_securityToken] = SecurityTokenData(symbol, _tokenDetails);
+        emit LogAddCustomSecurityToken(_name, symbol, _securityToken, now);
     }
 
     /**
@@ -140,6 +139,20 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Registry {
         require(registrationFee != _registrationFee);
         emit LogChangePolyRegisterationFee(registrationFee, _registrationFee);
         registrationFee = _registrationFee;
+    }
+
+     /**
+     * @notice pause registration function
+     */
+    function unpause() public onlyOwner  {
+        _unpause();
+    }
+
+    /**
+     * @notice unpause registration function
+     */
+    function pause() public onlyOwner {
+        _pause();
     }
 
 }

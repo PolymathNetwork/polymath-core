@@ -75,9 +75,8 @@ contract IModuleFactory is Ownable {
      * @param _newSetupCost new setup cost
      */
     function changeFactorySetupFee(uint256 _newSetupCost) public onlyOwner {
-        uint256 _oldSetupcost = setupCost;
+        emit LogChangeFactorySetupFee(setupCost, _newSetupCost, address(this));
         setupCost = _newSetupCost;
-        emit LogChangeFactorySetupFee(_oldSetupcost, setupCost, address(this));
     }
 
     /**
@@ -85,9 +84,8 @@ contract IModuleFactory is Ownable {
      * @param _newUsageCost new usage cost
      */
     function changeFactoryUsageFee(uint256 _newUsageCost) public onlyOwner {
-        uint256 _oldUsageCost = usageCost;
+        emit LogChangeFactoryUsageFee(usageCost, _newUsageCost, address(this));
         usageCost = _newUsageCost;
-        emit LogChangeFactoryUsageFee(_oldUsageCost, usageCost, address(this));
     }
 
     /**
@@ -95,9 +93,9 @@ contract IModuleFactory is Ownable {
      * @param _newSubscriptionCost new subscription cost
      */
     function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) public onlyOwner {
-        uint256 _oldSubscriptionCost = monthlySubscriptionCost;
+        emit LogChangeFactorySubscriptionFee(monthlySubscriptionCost, _newSubscriptionCost, address(this));
         monthlySubscriptionCost = _newSubscriptionCost;
-        emit LogChangeFactorySubscriptionFee(_oldSubscriptionCost, monthlySubscriptionCost, address(this));
+        
     }
 
 }

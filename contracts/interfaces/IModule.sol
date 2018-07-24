@@ -13,7 +13,7 @@ contract IModule {
 
     address public securityToken;
 
-    bytes32 public FEE_ADMIN = "FEE_ADMIN";
+    bytes32 public constant FEE_ADMIN = "FEE_ADMIN";
 
     ERC20 public polyToken;
 
@@ -31,7 +31,7 @@ contract IModule {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public returns (bytes4);
+    function getInitFunction() public pure returns (bytes4);
 
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {

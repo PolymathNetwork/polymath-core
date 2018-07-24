@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 * Further minting can be forbids on the Issuer level and the STO level using the functions `finishMintingIssuer()`,`finishMintingSTO()`.
+* `modifyWhitelistMulti` added in `PercentageTransferManager` contract.    
 
 ##Changed
 

@@ -94,6 +94,18 @@ contract PercentageTransferManager is ITransferManager {
     }
 
     /**
+    * @notice adds or removes addresses from the whitelist.
+    * @param _investors Array of the addresses to whitelist
+    * @param _valids Array of boolean value to decide whether or not the address it to be added or removed from the whitelist
+    */
+    function modifyWhitelistMulti(address[] _investors, bool[] _valids) public withPerm(WHITELIST) {
+        require(_investors.length == _valids.length, "Input array length mis-match");
+        for (uint i = 0; i < _investors.length; i++) {
+            modifyWhitelist(_investors[i], _valids[i]);
+        }
+    }
+
+    /**
      * @notice Return the permissions flag that are associated with Percentage transfer Manager
      */
     function getPermissions() public view returns(bytes32[]) {

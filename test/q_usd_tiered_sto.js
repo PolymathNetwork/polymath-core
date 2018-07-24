@@ -2,6 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 
+const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
 const USDTieredSTO = artifacts.require('./USDTieredSTO.sol');
 const MockOracle = artifacts.require('./MockOracle.sol');
@@ -53,6 +54,7 @@ contract('USDTieredSTO', accounts => {
     let I_SecurityToken;
     let I_USDTieredSTO_Array = [];
     let I_PolyToken;
+    let I_PolymathRegistry;
 
     // SecurityToken Details for funds raise Type ETH
     const SWARMHASH = "dagwrgwgvwergwrvwrg";
@@ -67,6 +69,7 @@ contract('USDTieredSTO', accounts => {
 
     // Initial fee for ticker registry and security token registry
     const REGFEE = 250 * Math.pow(10, 18);
+    const STOSetupCost = 0;
 
     // MockOracle USD prices
     const USDETH = BigNumber(500).mul(10**18); // 500 USD/ETH
@@ -80,7 +83,6 @@ contract('USDTieredSTO', accounts => {
     let _tokensPerTierTotal = [];
     let _tokensPerTierDiscountPoly = [];
     let _nonAccreditedLimitUSD = [];
-    let _securityTokenRegistry = [];
     let _minimumInvestmentUSD = [];
     let _fundRaiseTypes = [];
     let _wallet = [];
@@ -93,7 +95,6 @@ contract('USDTieredSTO', accounts => {
         uint256[] _ratePerTierDiscountPoly,
         uint256[] _tokensPerTier,
         uint256[] _tokensPerTierDiscountPoly,
-        address _securityTokenRegistry,
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD,
         uint8[] _fundRaiseTypes,
@@ -121,9 +122,6 @@ contract('USDTieredSTO', accounts => {
         },{
             type: 'uint256[]',
             name: '_tokensPerTierDiscountPoly'
-        },{
-            type: 'address',
-            name: '_securityTokenRegistry'
         },{
             type: 'uint256',
             name: '_nonAccreditedLimitUSD'
@@ -188,12 +186,16 @@ contract('USDTieredSTO', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the token Faucet and Mint tokens for ISSUER
+        // Step 0: Deploy the PolymathRegistry
+        I_PolymathRegistry = await PolymathRegistry.new({from: POLYMATH});
+
+        // Step 1: Deploy the token Faucet
         I_PolyToken = await PolyTokenFaucet.new();
+        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: POLYMATH})
 
-        // STEP 1: Deploy the ModuleRegistry
-
-        I_ModuleRegistry = await ModuleRegistry.new({ from: POLYMATH });
+        // STEP 2: Deploy the ModuleRegistry
+        I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:POLYMATH});
+        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: POLYMATH});
 
         assert.notEqual(
             I_ModuleRegistry.address.valueOf(),
@@ -201,7 +203,7 @@ contract('USDTieredSTO', accounts => {
             "ModuleRegistry contract was not deployed"
         );
 
-        // STEP 2: Deploy the GeneralTransferManagerFactory
+        // STEP 3: Deploy the GeneralTransferManagerFactory
 
         I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: POLYMATH });
 
@@ -211,7 +213,7 @@ contract('USDTieredSTO', accounts => {
             "GeneralTransferManagerFactory contract was not deployed"
         );
 
-        // STEP 3: Deploy the GeneralDelegateManagerFactory
+        // STEP 4: Deploy the GeneralDelegateManagerFactory
 
         I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: POLYMATH });
 
@@ -221,9 +223,9 @@ contract('USDTieredSTO', accounts => {
             "GeneralDelegateManagerFactory contract was not deployed"
         );
 
-        // STEP 4: Deploy the USDTieredSTOFactory
+        // STEP 5: Deploy the USDTieredSTOFactory
 
-        I_USDTieredSTOFactory = await USDTieredSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: ISSUER });
+        I_USDTieredSTOFactory = await USDTieredSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, { from: ISSUER });
 
         assert.notEqual(
             I_USDTieredSTOFactory.address.valueOf(),
@@ -231,7 +233,7 @@ contract('USDTieredSTO', accounts => {
             "USDTieredSTOFactory contract was not deployed"
         );
 
-        // STEP 5: Register the Modules with the ModuleRegistry contract
+        // STEP 6: Register the Modules with the ModuleRegistry contract
 
         // (A) :  Register the GeneralTransferManagerFactory
         await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: POLYMATH });
@@ -244,9 +246,10 @@ contract('USDTieredSTO', accounts => {
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_USDTieredSTOFactory.address, { from: ISSUER });
 
-        // Step 6: Deploy the TickerRegistry
+        // Step 7: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, REGFEE, { from: POLYMATH });
+        I_TickerRegistry = await TickerRegistry.new(I_PolymathRegistry.address, REGFEE, { from: POLYMATH });
+        await I_PolymathRegistry.changeAddress("TickerRegistry", I_TickerRegistry.address, {from: POLYMATH});
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -254,7 +257,7 @@ contract('USDTieredSTO', accounts => {
             "TickerRegistry contract was not deployed",
         );
 
-        // Step 7: Deploy the STversionProxy contract
+        // Step 8: Deploy the STversionProxy contract
 
         I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : POLYMATH });
 
@@ -264,17 +267,16 @@ contract('USDTieredSTO', accounts => {
             "STVersion contract was not deployed",
         );
 
-        // Step 8: Deploy the SecurityTokenRegistry
+        // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolyToken.address,
-            I_ModuleRegistry.address,
-            I_TickerRegistry.address,
+            I_PolymathRegistry.address,
             I_STVersion.address,
             REGFEE,
             {
                 from: POLYMATH
             });
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: POLYMATH});
 
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
@@ -282,11 +284,12 @@ contract('USDTieredSTO', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 8: Set the STR in TickerRegistry
-        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, { from: POLYMATH });
-        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, { from: POLYMATH });
+        // Step 10: update the registries addresses from the PolymathRegistry contract
+        await I_SecurityTokenRegistry.updateFromRegistry({from: POLYMATH});
+        await I_ModuleRegistry.updateFromRegistry({from: POLYMATH});
+        await I_TickerRegistry.updateFromRegistry({from: POLYMATH});
 
-        // Step 9: Deploy & Register Mock Oracles
+        // Step 11: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY
         I_POLYOracle = await MockOracle.new(I_PolyToken.address, "POLY", "USD", USDPOLY, { from: POLYMATH }); // 25 cents per POLY
         await I_SecurityTokenRegistry.changeOracle("ETH", "USD", I_USDOracle.address, { from: POLYMATH });
@@ -362,14 +365,13 @@ contract('USDTieredSTO', accounts => {
             _tokensPerTierDiscountPoly.push([BigNumber(0),BigNumber(50000000).mul(BigNumber(10**18))]);                             // [ 0, 50m Token ]
             _nonAccreditedLimitUSD.push(BigNumber(10000).mul(BigNumber(10**18)));                                                   // 10k USD
             _minimumInvestmentUSD.push(BigNumber(5*10**16));                                                                        // 5 USD
-            _securityTokenRegistry.push(I_SecurityTokenRegistry.address);
             _fundRaiseTypes.push([0, 1]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
 
             let config = [
                 _startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId],
-                _tokensPerTierDiscountPoly[stoId], _securityTokenRegistry[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId],
+                _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]
             ];
 
@@ -389,7 +391,6 @@ contract('USDTieredSTO', accounts => {
                 assert.equal((await I_USDTieredSTO_Array[stoId].tokensPerTierDiscountPoly.call(i)).toNumber(), _tokensPerTierDiscountPoly[stoId][i].toNumber(), "Incorrect _tokensPerTierDiscountPoly in config");
             }
             assert.equal((await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSD.call()).toNumber(), _nonAccreditedLimitUSD[stoId].toNumber(), "Incorrect _nonAccreditedLimitUSD in config");
-            assert.equal((await I_USDTieredSTO_Array[stoId].securityTokenRegistry.call()), _securityTokenRegistry[stoId], "Incorrect _securityTokenRegistry in config");
             assert.equal((await I_USDTieredSTO_Array[stoId].minimumInvestmentUSD.call()).toNumber(), _minimumInvestmentUSD[stoId].toNumber(), "Incorrect _minimumInvestmentUSD in config");
             assert.equal((await I_USDTieredSTO_Array[stoId].wallet.call()), _wallet[stoId], "Incorrect _wallet in config");
             assert.equal((await I_USDTieredSTO_Array[stoId].reserveWallet.call()), _reserveWallet[stoId], "Incorrect _reserveWallet in config");
@@ -407,7 +408,6 @@ contract('USDTieredSTO', accounts => {
             _tokensPerTierTotal.push([BigNumber(5*10**18), BigNumber(10*10**18), BigNumber(10*10**18), BigNumber(10*10**18), BigNumber(50*10**18)]);         // [ 100 Token, 200 Token ]
             _tokensPerTierDiscountPoly.push([BigNumber(0), BigNumber(0), BigNumber(0), BigNumber(0), BigNumber(0)]);           // [ 0, 50 Token ]
             _nonAccreditedLimitUSD.push(BigNumber(10000).mul(BigNumber(10**18)));           // [ 10k USD ]
-            _securityTokenRegistry.push(I_SecurityTokenRegistry.address);
             _minimumInvestmentUSD.push(BigNumber(0));
             _fundRaiseTypes.push([0, 1]);
             _wallet.push(WALLET);
@@ -415,7 +415,7 @@ contract('USDTieredSTO', accounts => {
 
             let config = [
                 _startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId],
-                _tokensPerTierDiscountPoly[stoId], _securityTokenRegistry[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId],
+                _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]
             ];
 
@@ -435,7 +435,6 @@ contract('USDTieredSTO', accounts => {
                 assert.equal((await I_USDTieredSTO_Array[stoId].tokensPerTierDiscountPoly.call(i)).toNumber(), _tokensPerTierDiscountPoly[stoId][i].toNumber(), "Incorrect _tokensPerTierDiscountPoly in config");
             }
             assert.equal((await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSD.call()).toNumber(), _nonAccreditedLimitUSD[stoId].toNumber(), "Incorrect _nonAccreditedLimitUSD in config");
-            assert.equal((await I_USDTieredSTO_Array[stoId].securityTokenRegistry.call()), _securityTokenRegistry[stoId], "Incorrect _securityTokenRegistry in config");
             assert.equal((await I_USDTieredSTO_Array[stoId].minimumInvestmentUSD.call()).toNumber(), _minimumInvestmentUSD[stoId].toNumber(), "Incorrect _minimumInvestmentUSD in config");
             assert.equal((await I_USDTieredSTO_Array[stoId].wallet.call()), _wallet[stoId], "Incorrect _wallet in config");
             assert.equal((await I_USDTieredSTO_Array[stoId].reserveWallet.call()), _reserveWallet[stoId], "Incorrect _reserveWallet in config");
@@ -453,7 +452,6 @@ contract('USDTieredSTO', accounts => {
             _tokensPerTierTotal.push([BigNumber(100*10**18), BigNumber(200*10**18)]);       // [ 100m Token, 200m Token ]
             _tokensPerTierDiscountPoly.push([BigNumber(0),BigNumber(50*10**18)]);           // [ 0, 50m Token ]
             _nonAccreditedLimitUSD.push(BigNumber(10000).mul(BigNumber(10**18)));           // [ 10k USD ]
-            _securityTokenRegistry.push(I_SecurityTokenRegistry.address);
             _minimumInvestmentUSD.push(BigNumber(0));
             _fundRaiseTypes.push([0, 1]);
             _wallet.push(WALLET);
@@ -461,7 +459,7 @@ contract('USDTieredSTO', accounts => {
 
             let config = [
                 _startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId],
-                _tokensPerTierDiscountPoly[stoId], _securityTokenRegistry[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId],
+                _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]
             ];
 
@@ -481,10 +479,10 @@ contract('USDTieredSTO', accounts => {
             let tokensPerTierTotal = [10];
             let tokensPerTierDiscountPoly = [10];
             let config = [
-                [_startTime[stoId], _endTime[stoId], ratePerTier, _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _securityTokenRegistry[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]],
-                [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], ratePerTierDiscountPoly, _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _securityTokenRegistry[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]],
-                [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], tokensPerTierTotal, _tokensPerTierDiscountPoly[stoId], _securityTokenRegistry[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]],
-                [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], tokensPerTierDiscountPoly, _securityTokenRegistry[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]]
+                [_startTime[stoId], _endTime[stoId], ratePerTier, _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]],
+                [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], ratePerTierDiscountPoly, _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]],
+                [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], tokensPerTierTotal, _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]],
+                [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], tokensPerTierDiscountPoly, _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]]
             ];
             for (var i = 0; i < config.length; i++) {
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config[i]);
@@ -503,7 +501,7 @@ contract('USDTieredSTO', accounts => {
             let stoId = 0;
 
             let ratePerTier = [BigNumber(10*10**16), BigNumber(0)];
-            let config = [_startTime[stoId], _endTime[stoId], ratePerTier, _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _securityTokenRegistry[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]];
+            let config = [_startTime[stoId], _endTime[stoId], ratePerTier, _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let errorThrown = false;
             try {
@@ -519,7 +517,7 @@ contract('USDTieredSTO', accounts => {
             let stoId = 0;
 
             let wallet = "0x0000000000000000000000000000000000000000";
-            let config = [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _securityTokenRegistry[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], wallet, _reserveWallet[stoId]];
+            let config = [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], wallet, _reserveWallet[stoId]];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let errorThrown = false;
             try {
@@ -535,7 +533,7 @@ contract('USDTieredSTO', accounts => {
             let stoId = 0;
 
             let reserveWallet = "0x0000000000000000000000000000000000000000";
-            let config = [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _securityTokenRegistry[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], reserveWallet];
+            let config = [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], reserveWallet];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let errorThrown = false;
             try {
@@ -552,7 +550,7 @@ contract('USDTieredSTO', accounts => {
 
             let startTime = latestTime() + duration.days(35);
             let endTime  = latestTime() + duration.days(1);
-            let config = [startTime, endTime, _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _securityTokenRegistry[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]];
+            let config = [startTime, endTime, _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let errorThrown = false;
             try {
@@ -569,23 +567,7 @@ contract('USDTieredSTO', accounts => {
 
             let startTime = latestTime() - duration.days(35);
             let endTime  = startTime + duration.days(50);
-            let config = [startTime, endTime, _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _securityTokenRegistry[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]];
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gas: 4500000 });
-            } catch(error) {
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, MESSAGE);
-        });
-
-        it("Should fail because Zero address is not permitted for security token registry", async() => {
-            let stoId = 0;
-
-            let securityTokenRegistry = "0x0000000000000000000000000000000000000000";
-            let config = [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], securityTokenRegistry, _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]];
+            let config = [startTime, endTime, _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let errorThrown = false;
             try {

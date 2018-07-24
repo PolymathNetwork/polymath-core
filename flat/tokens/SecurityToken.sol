@@ -1,27 +1,4 @@
-pragma solidity ^0.4.23;
-
-/**
- * @title ERC20Basic
- * @dev Simpler version of ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/179
- */
-contract ERC20Basic {
-  function totalSupply() public view returns (uint256);
-  function balanceOf(address who) public view returns (uint256);
-  function transfer(address to, uint256 value) public returns (bool);
-  event Transfer(address indexed from, address indexed to, uint256 value);
-}
-
-/**
- * @title ERC20 interface
- * @dev see https://github.com/ethereum/EIPs/issues/20
- */
-contract ERC20 is ERC20Basic {
-  function allowance(address owner, address spender) public view returns (uint256);
-  function transferFrom(address from, address to, uint256 value) public returns (bool);
-  function approve(address spender, uint256 value) public returns (bool);
-  event Approval(address indexed owner, address indexed spender, uint256 value);
-}
+pragma solidity ^0.4.24;
 
 /**
  * @title Math
@@ -46,6 +23,54 @@ library Math {
 }
 
 /**
+ * @title ERC20Basic
+ * @dev Simpler version of ERC20 interface
+ * @dev see https://github.com/ethereum/EIPs/issues/179
+ */
+contract ERC20Basic {
+  function totalSupply() public view returns (uint256);
+  function balanceOf(address who) public view returns (uint256);
+  function transfer(address to, uint256 value) public returns (bool);
+  event Transfer(address indexed from, address indexed to, uint256 value);
+}
+
+/**
+ * @title ERC20 interface
+ * @dev see https://github.com/ethereum/EIPs/issues/20
+ */
+contract ERC20 is ERC20Basic {
+  function allowance(address owner, address spender)
+    public view returns (uint256);
+
+  function transferFrom(address from, address to, uint256 value)
+    public returns (bool);
+
+  function approve(address spender, uint256 value) public returns (bool);
+  event Approval(
+    address indexed owner,
+    address indexed spender,
+    uint256 value
+  );
+}
+
+contract IERC20 is ERC20 {
+
+    function decreaseApproval(
+    address _spender,
+    uint _subtractedValue
+  )
+    public
+    returns (bool);
+
+    function increaseApproval(
+    address _spender,
+    uint _addedValue
+  )
+    public
+    returns (bool);
+}
+
+/**
  * @title SafeMath
  * @dev Math operations with safety checks that throw on error
  */
@@ -55,9 +80,13 @@ library SafeMath {
   * @dev Multiplies two numbers, throws on overflow.
   */
   function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    // Gas optimization: this is cheaper than asserting 'a' not being zero, but the
+    // benefit is lost if 'b' is also tested.
+    // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
     if (a == 0) {
       return 0;
     }
+
     c = a * b;
     assert(c / a == b);
     return c;
@@ -153,7 +182,14 @@ contract StandardToken is ERC20, BasicToken {
    * @param _to address The address which you want to transfer to
    * @param _value uint256 the amount of tokens to be transferred
    */
-  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+  function transferFrom(
+    address _from,
+    address _to,
+    uint256 _value
+  )
+    public
+    returns (bool)
+  {
     require(_to != address(0));
     require(_value <= balances[_from]);
     require(_value <= allowed[_from][msg.sender]);
@@ -187,7 +223,14 @@ contract StandardToken is ERC20, BasicToken {
    * @param _spender address The address which will spend the funds.
    * @return A uint256 specifying the amount of tokens still available for the spender.
    */
-  function allowance(address _owner, address _spender) public view returns (uint256) {
+  function allowance(
+    address _owner,
+    address _spender
+   )
+    public
+    view
+    returns (uint256)
+  {
     return allowed[_owner][_spender];
   }
 
@@ -201,8 +244,15 @@ contract StandardToken is ERC20, BasicToken {
    * @param _spender The address which will spend the funds.
    * @param _addedValue The amount of tokens to increase the allowance by.
    */
-  function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
-    allowed[msg.sender][_spender] = allowed[msg.sender][_spender].add(_addedValue);
+  function increaseApproval(
+    address _spender,
+    uint _addedValue
+  )
+    public
+    returns (bool)
+  {
+    allowed[msg.sender][_spender] = (
+      allowed[msg.sender][_spender].add(_addedValue));
     emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
     return true;
   }
@@ -217,7 +267,13 @@ contract StandardToken is ERC20, BasicToken {
    * @param _spender The address which will spend the funds.
    * @param _subtractedValue The amount of tokens to decrease the allowance by.
    */
-  function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
+  function decreaseApproval(
+    address _spender,
+    uint _subtractedValue
+  )
+    public
+    returns (bool)
+  {
     uint oldValue = allowed[msg.sender][_spender];
     if (_subtractedValue > oldValue) {
       allowed[msg.sender][_spender] = 0;
@@ -230,12 +286,18 @@ contract StandardToken is ERC20, BasicToken {
 
 }
 
+/**
+ * @title DetailedERC20 token
+ * @dev The decimals are only for visualization purposes.
+ * All the operations are done using the smallest and indivisible token unit,
+ * just as on Ethereum all the operations are done in wei.
+ */
 contract DetailedERC20 is ERC20 {
   string public name;
   string public symbol;
   uint8 public decimals;
 
-  function DetailedERC20(string _name, string _symbol, uint8 _decimals) public {
+  constructor(string _name, string _symbol, uint8 _decimals) public {
     name = _name;
     symbol = _symbol;
     decimals = _decimals;
@@ -279,14 +341,18 @@ contract Ownable {
   address public owner;
 
 
-  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+  event OwnershipRenounced(address indexed previousOwner);
+  event OwnershipTransferred(
+    address indexed previousOwner,
+    address indexed newOwner
+  );
 
 
   /**
    * @dev The Ownable constructor sets the original `owner` of the contract to the sender
    * account.
    */
-  function Ownable() public {
+  constructor() public {
     owner = msg.sender;
   }
 
@@ -299,15 +365,30 @@ contract Ownable {
   }
 
   /**
-   * @dev Allows the current owner to transfer control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
+   * @dev Allows the current owner to relinquish control of the contract.
    */
-  function transferOwnership(address newOwner) public onlyOwner {
-    require(newOwner != address(0));
-    emit OwnershipTransferred(owner, newOwner);
-    owner = newOwner;
+  function renounceOwnership() public onlyOwner {
+    emit OwnershipRenounced(owner);
+    owner = address(0);
   }
 
+  /**
+   * @dev Allows the current owner to transfer control of the contract to a newOwner.
+   * @param _newOwner The address to transfer ownership to.
+   */
+  function transferOwnership(address _newOwner) public onlyOwner {
+    _transferOwnership(_newOwner);
+  }
+
+  /**
+   * @dev Transfers control of the contract to a newOwner.
+   * @param _newOwner The address to transfer ownership to.
+   */
+  function _transferOwnership(address _newOwner) internal {
+    require(_newOwner != address(0));
+    emit OwnershipTransferred(owner, _newOwner);
+    owner = _newOwner;
+  }
 }
 
 /**
@@ -340,14 +421,14 @@ contract ISecurityToken is IST20, Ownable {
      * @param _moduleType is which type of module we are trying to remove
      * @param _moduleIndex is the index of the module within the chosen type
      */
-    function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address, bool);
+    function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address);
 
     /**
      * @notice returns module list for a module name - will return first match
      * @param _moduleType is which type of module we are trying to remove
      * @param _name is the name of the module within the chosen type
      */
-    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address, bool);
+    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address);
 
     /**
      * @notice Queries totalSupply as of a defined checkpoint
@@ -448,9 +529,8 @@ contract IModuleFactory is Ownable {
      * @param _newSetupCost new setup cost
      */
     function changeFactorySetupFee(uint256 _newSetupCost) public onlyOwner {
-        uint256 _oldSetupcost = setupCost;
+        emit LogChangeFactorySetupFee(setupCost, _newSetupCost, address(this));
         setupCost = _newSetupCost;
-        emit LogChangeFactorySetupFee(_oldSetupcost, setupCost, address(this));
     }
 
     /**
@@ -458,9 +538,8 @@ contract IModuleFactory is Ownable {
      * @param _newUsageCost new usage cost
      */
     function changeFactoryUsageFee(uint256 _newUsageCost) public onlyOwner {
-        uint256 _oldUsageCost = usageCost;
+        emit LogChangeFactoryUsageFee(usageCost, _newUsageCost, address(this));
         usageCost = _newUsageCost;
-        emit LogChangeFactoryUsageFee(_oldUsageCost, usageCost, address(this));
     }
 
     /**
@@ -468,9 +547,9 @@ contract IModuleFactory is Ownable {
      * @param _newSubscriptionCost new subscription cost
      */
     function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) public onlyOwner {
-        uint256 _oldSubscriptionCost = monthlySubscriptionCost;
+        emit LogChangeFactorySubscriptionFee(monthlySubscriptionCost, _newSubscriptionCost, address(this));
         monthlySubscriptionCost = _newSubscriptionCost;
-        emit LogChangeFactorySubscriptionFee(_oldSubscriptionCost, monthlySubscriptionCost, address(this));
+        
     }
 
 }
@@ -484,7 +563,7 @@ contract IModule {
 
     address public securityToken;
 
-    bytes32 public FEE_ADMIN = "FEE_ADMIN";
+    bytes32 public constant FEE_ADMIN = "FEE_ADMIN";
 
     ERC20 public polyToken;
 
@@ -502,7 +581,7 @@ contract IModule {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public returns (bytes4);
+    function getInitFunction() public pure returns (bytes4);
 
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
@@ -649,41 +728,114 @@ contract IPermissionManager is IModule {
 }
 
 /**
- * @title Interface for all polymath registry contracts
+ * @title Interface for the token burner contract
  */
-contract IRegistry {
+interface ITokenBurner {
+
+    function burn(address _burner, uint256  _value ) external returns(bool);
+
+}
+
+/**
+ * @title Utility contract to allow owner to retreive any ERC20 sent to the contract
+ */
+contract ReclaimTokens is Ownable {
 
     /**
-     * @notice get the contract address
+    * @notice Reclaim all ERC20Basic compatible tokens
+    * @param _tokenContract The address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) external onlyOwner {
+        require(_tokenContract != address(0));
+        ERC20Basic token = ERC20Basic(_tokenContract);
+        uint256 balance = token.balanceOf(address(this));
+        require(token.transfer(owner, balance));
+    }
+}
+
+/**
+ * @title Core functionality for registry upgradability
+ */
+contract PolymathRegistry is ReclaimTokens {
+
+    mapping (bytes32 => address) public storedAddresses;
+
+    event LogChangeAddress(string _nameKey, address indexed _oldAddress, address indexed _newAddress);
+
+    /**
+     * @notice Get the contract address
      * @param _nameKey is the key for the contract address mapping
+     * @return address
      */
-    function getAddress(string _nameKey) view public returns(address);
+    function getAddress(string _nameKey) view public returns(address) {
+        bytes32 key = keccak256(bytes(_nameKey));
+        require(storedAddresses[key] != address(0), "Invalid address key");
+        return storedAddresses[key];
+    }
 
     /**
      * @notice change the contract address
      * @param _nameKey is the key for the contract address mapping
      * @param _newAddress is the new contract address
      */
-    function changeAddress(string _nameKey, address _newAddress) public;
+    function changeAddress(string _nameKey, address _newAddress) public onlyOwner {
+        bytes32 key = keccak256(bytes(_nameKey));
+        emit LogChangeAddress(_nameKey, storedAddresses[key], _newAddress);
+        storedAddresses[key] = _newAddress;
+    }
 
-    /**
-     * @notice pause (overridden function)
-     */
-    function unpause() public;
 
-    /**
-     * @notice unpause (overridden function)
-     */
-    function pause() public;
+}
+
+contract RegistryUpdater is Ownable {
+
+    address public polymathRegistry;
+    address public moduleRegistry;
+    address public securityTokenRegistry;
+    address public tickerRegistry;
+    address public polyToken;
+
+    constructor (address _polymathRegistry) public {
+        require(_polymathRegistry != address(0));
+        polymathRegistry = _polymathRegistry;
+    }
+
+    function updateFromRegistry() onlyOwner public {
+        moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
+        securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
+        tickerRegistry = PolymathRegistry(polymathRegistry).getAddress("TickerRegistry");
+        polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
+    }
 
 }
 
 /**
- * @title Interface for the token burner contract
+ * @title Helps contracts guard agains reentrancy attacks.
+ * @author Remco Bloemen <remco@2π.com>
+ * @notice If you mark a function `nonReentrant`, you should also
+ * mark it `external`.
  */
-interface ITokenBurner {
+contract ReentrancyGuard {
 
-    function burn(address _burner, uint256  _value ) external returns(bool);
+  /**
+   * @dev We use a single lock for the whole contract.
+   */
+  bool private reentrancyLock = false;
+
+  /**
+   * @dev Prevents a contract from calling itself, directly or indirectly.
+   * @notice If you mark a function `nonReentrant`, you should also
+   * mark it `external`. Calling one nonReentrant function from
+   * another is not supported. Instead, you can implement a
+   * `private` function doing the actual work, and a `external`
+   * wrapper marked as `nonReentrant`.
+   */
+  modifier nonReentrant() {
+    require(!reentrancyLock);
+    reentrancyLock = true;
+    _;
+    reentrancyLock = false;
+  }
 
 }
 
@@ -695,19 +847,16 @@ interface ITokenBurner {
 * @notice - Modules can be attached to it to control its behaviour
 * @notice - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
 */
-contract SecurityToken is ISecurityToken {
+contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
-    bytes32 public securityTokenVersion = "0.0.1";
+    bytes32 public constant securityTokenVersion = "0.0.1";
 
     // Reference to token burner contract
     ITokenBurner public tokenBurner;
 
     // Use to halt all the transactions
     bool public freeze = false;
-
-    // Reference to STR contract
-    address public securityTokenRegistry;
 
     struct ModuleData {
         bytes32 name;
@@ -723,13 +872,13 @@ contract SecurityToken is ISecurityToken {
     mapping (address => Checkpoint[]) public checkpointBalances;
     Checkpoint[] public checkpointTotalSupply;
 
-    bool public mintingFinished = false;
+    bool public finishedIssuerMinting = false;
+    bool public finishedSTOMinting = false;
 
     mapping (bytes4 => bool) transferFunctions;
 
     // Module list should be order agnostic!
     mapping (uint8 => ModuleData[]) public modules;
-    mapping (uint8 => bool) public modulesLocked;
 
     uint8 public constant MAX_MODULES = 20;
 
@@ -758,14 +907,15 @@ contract SecurityToken is ISecurityToken {
     event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
     // Emit when new checkpoint created
     event LogCheckpointCreated(uint256 indexed _checkpointId, uint256 _timestamp);
-    // Emit when the minting get finished
-    event LogFinishedMinting(uint256 _timestamp);
-    // Emit when a module type is locked
-    event LogModuleLocked(uint8 indexed _moduleType, address _locker);
+    // Emit when the minting get finished for the Issuer
+    event LogFinishMintingIssuer(uint256 _timestamp);
+    // Emit when the minting get finished for the STOs
+    event LogFinishMintingSTO(uint256 _timestamp);
     // Change the STR address in the event of a upgrade
     event LogChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
 
-    //if _fallback is true, then we only allow the module if it is set, if it is not set we only allow the owner
+    // If _fallback is true, then for STO module type we only allow the module if it is set, if it is not set we only allow the owner
+    // for other _moduleType we allow both issuer and module.
     modifier onlyModule(uint8 _moduleType, bool _fallback) {
       //Loop over all modules of type _moduleType
         bool isModuleType = false;
@@ -773,7 +923,10 @@ contract SecurityToken is ISecurityToken {
             isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
         }
         if (_fallback && !isModuleType) {
-            require(msg.sender == owner, "Sender is not owner");
+            if (_moduleType == STO_KEY)
+                require(modules[_moduleType].length == 0 && msg.sender == owner, "Sender is not owner or STO module is attached");
+            else
+                require(msg.sender == owner, "Sender is not owner");
         } else {
             require(isModuleType, "Sender is not correct module type");
         }
@@ -781,7 +934,18 @@ contract SecurityToken is ISecurityToken {
     }
 
     modifier checkGranularity(uint256 _amount) {
-        require(_amount.div(granularity).mul(granularity) == _amount, "Unable to modify token balances at this granularity");
+        require(_amount % granularity == 0, "Unable to modify token balances at this granularity");
+        _;
+    }
+
+    // Checks whether the minting is allowed or not, check for the owner if owner is no the msg.sender then check
+    // for the finishedSTOMinting flag because only STOs and owner are allowed for minting
+    modifier isMintingAllowed() {
+        if (msg.sender == owner) {
+            require(!finishedIssuerMinting, "Minting is finished for Issuer");
+        } else {
+            require(!finishedSTOMinting, "Minting is finished for STOs");
+        }
         _;
     }
 
@@ -792,7 +956,7 @@ contract SecurityToken is ISecurityToken {
      * @param _decimals Decimals for the securityToken
      * @param _granularity granular level of the token
      * @param _tokenDetails Details of the token that are stored off-chain (IPFS hash)
-     * @param _securityTokenRegistry Contract address of the security token registry
+     * @param _polymathRegistry Contract address of the polymath registry
      */
     constructor (
         string _name,
@@ -800,13 +964,14 @@ contract SecurityToken is ISecurityToken {
         uint8 _decimals,
         uint256 _granularity,
         string _tokenDetails,
-        address _securityTokenRegistry
+        address _polymathRegistry
     )
     public
     DetailedERC20(_name, _symbol, _decimals)
+    RegistryUpdater(_polymathRegistry)
     {
         //When it is created, the owner is the STR
-        securityTokenRegistry = _securityTokenRegistry;
+        updateFromRegistry();
         tokenDetails = _tokenDetails;
         granularity = _granularity;
         transferFunctions[bytes4(keccak256("transfer(address,uint256)"))] = true;
@@ -816,31 +981,19 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @notice Function used by issuer to lock a specific module type
-     * @param _moduleType module type to be locked
-     */
-    function lockModule(uint8 _moduleType) external onlyOwner {
-        require(!modulesLocked[_moduleType]);
-        modulesLocked[_moduleType] = true;
-        emit LogModuleLocked(_moduleType, msg.sender);
-    }
-
-    /**
      * @notice Function used to attach the module in security token
      * @param _moduleFactory Contract address of the module factory that needs to be attached
      * @param _data Data used for the intialization of the module factory variables
      * @param _maxCost Maximum cost of the Module factory
      * @param _budget Budget of the Module factory
-     * @param _locked whether or not the module is supposed to be locked
      */
     function addModule(
         address _moduleFactory,
         bytes _data,
         uint256 _maxCost,
-        uint256 _budget,
-        bool _locked
-    ) external onlyOwner {
-        _addModule(_moduleFactory, _data, _maxCost, _budget, _locked);
+        uint256 _budget
+    ) external onlyOwner nonReentrant {
+        _addModule(_moduleFactory, _data, _maxCost, _budget);
     }
 
     /**
@@ -853,28 +1006,26 @@ contract SecurityToken is ISecurityToken {
     * @param _moduleFactory is the address of the module factory to be added
     * @param _data is data packed into bytes used to further configure the module (See STO usage)
     * @param _maxCost max amount of POLY willing to pay to module. (WIP)
-    * @param _locked whether or not the module is supposed to be locked
     */
-    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget, bool _locked) internal {
+    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget) internal {
         //Check that module exists in registry - will throw otherwise
-        IModuleRegistry(IRegistry(securityTokenRegistry).getAddress("ModuleRegistry")).useModule(_moduleFactory);
+        IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        require(modules[moduleFactory.getType()].length < MAX_MODULES, "Limit of MAX MODULES is reached");
+        uint8 moduleType = moduleFactory.getType();
+        require(modules[moduleType].length < MAX_MODULES, "Limit of MAX MODULES is reached");
         uint256 moduleCost = moduleFactory.setupCost();
         require(moduleCost <= _maxCost, "Max Cost is always be greater than module cost");
-        //Check that this module has not already been set as locked
-        require(!modulesLocked[moduleFactory.getType()], "Module has already been set as locked");
         //Approve fee for module
-        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
+        require(ERC20(polyToken).approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
         //Approve ongoing budget
-        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(module, _budget), "Not able to approve the budget");
+        require(ERC20(polyToken).approve(module, _budget), "Not able to approve the budget");
         //Add to SecurityToken module map
-        modules[moduleFactory.getType()].push(ModuleData(moduleFactory.getName(), module));
-        modulesLocked[moduleFactory.getType()] = _locked;
+        bytes32 moduleName = moduleFactory.getName();
+        modules[moduleType].push(ModuleData(moduleName, module));
         //Emit log event
-        emit LogModuleAdded(moduleFactory.getType(), moduleFactory.getName(), _moduleFactory, module, moduleCost, _budget, now);
+        emit LogModuleAdded(moduleType, moduleName, _moduleFactory, module, moduleCost, _budget, now);
     }
 
     /**
@@ -887,7 +1038,6 @@ contract SecurityToken is ISecurityToken {
         "Module index doesn't exist as per the choosen module type");
         require(modules[_moduleType][_moduleIndex].moduleAddress != address(0),
         "Module contract address should not be 0x");
-        require(!modulesLocked[_moduleType], "Module should not be locked");
         //Take the last member of the list, and replace _moduleIndex with this, then shorten the list by one
         emit LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
         modules[_moduleType][_moduleIndex] = modules[_moduleType][modules[_moduleType].length - 1];
@@ -900,17 +1050,15 @@ contract SecurityToken is ISecurityToken {
      * @param _moduleIndex is the index of the module within the chosen type
      * @return bytes32
      * @return address
-     * @return bool
      */
-    function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address, bool) {
+    function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address) {
         if (modules[_moduleType].length > 0) {
             return (
                 modules[_moduleType][_moduleIndex].name,
-                modules[_moduleType][_moduleIndex].moduleAddress,
-                modulesLocked[_moduleType]
+                modules[_moduleType][_moduleIndex].moduleAddress
             );
         } else {
-            return ("", address(0), false);
+            return ("", address(0));
         }
 
     }
@@ -921,22 +1069,20 @@ contract SecurityToken is ISecurityToken {
      * @param _name is the name of the module within the chosen type
      * @return bytes32
      * @return address
-     * @return bool
      */
-    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address, bool) {
+    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address) {
         if (modules[_moduleType].length > 0) {
             for (uint256 i = 0; i < modules[_moduleType].length; i++) {
                 if (modules[_moduleType][i].name == _name) {
                   return (
                       modules[_moduleType][i].name,
-                      modules[_moduleType][i].moduleAddress,
-                      modulesLocked[_moduleType]
+                      modules[_moduleType][i].moduleAddress
                   );
                 }
             }
-            return ("", address(0), false);
+            return ("", address(0));
         } else {
-            return ("", address(0), false);
+            return ("", address(0));
         }
     }
 
@@ -946,7 +1092,7 @@ contract SecurityToken is ISecurityToken {
     * @param _amount amount of POLY to withdraw
     */
     function withdrawPoly(uint256 _amount) public onlyOwner {
-        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).transfer(owner, _amount), "In-sufficient balance");
+        require(ERC20(polyToken).transfer(owner, _amount), "In-sufficient balance");
     }
 
     /**
@@ -958,7 +1104,12 @@ contract SecurityToken is ISecurityToken {
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
         require(_moduleType != 0, "Module type cannot be zero");
         require(_moduleIndex < modules[_moduleType].length, "Incorrrect module index");
-        require(ERC20(IRegistry(securityTokenRegistry).getAddress("PolyToken")).approve(modules[_moduleType][_moduleIndex].moduleAddress, _budget), "Insufficient balance to approve");
+        uint256 _currentAllowance = IERC20(polyToken).allowance(address(this), modules[_moduleType][_moduleIndex].moduleAddress);
+        if (_budget < _currentAllowance) {
+            require(IERC20(polyToken).decreaseApproval(modules[_moduleType][_moduleIndex].moduleAddress, _currentAllowance.sub(_budget)), "Insufficient balance to decreaseApproval");
+        } else {
+            require(IERC20(polyToken).increaseApproval(modules[_moduleType][_moduleIndex].moduleAddress, _budget.sub(_currentAllowance)), "Insufficient balance to increaseApproval");
+        }
         emit LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
     }
 
@@ -1167,11 +1318,19 @@ contract SecurityToken is ISecurityToken {
     }
 
     /**
-     * @notice End token minting period permanently
+     * @notice End token minting period permanently for Issuer
      */
-    function finishMinting() public onlyOwner {
-        mintingFinished = true;
-        emit LogFinishedMinting(now);
+    function finishMintingIssuer() public onlyOwner {
+        finishedIssuerMinting = true;
+        emit LogFinishMintingIssuer(now);
+    }
+
+    /**
+     * @notice End token minting period permanently for STOs
+     */
+    function finishMintingSTO() public onlyOwner {
+        finishedSTOMinting = true;
+        emit LogFinishMintingSTO(now);
     }
 
     /**
@@ -1181,8 +1340,8 @@ contract SecurityToken is ISecurityToken {
      * @param _amount Number of tokens get minted
      * @return success
      */
-    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) returns (bool success) {
-        require(!mintingFinished, "Minting is finished, not able to mint additional tokens");
+    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) isMintingAllowed() returns (bool success) {
+        require(_investor != address(0), "Investor address should not be 0x");
         adjustInvestorCount(address(0), _investor, _amount);
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
         adjustBalanceCheckpoints(_investor);
@@ -1270,16 +1429,6 @@ contract SecurityToken is ISecurityToken {
             sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
         }
     }
-
-    /**
-     * @notice set a new Security Token Registry contract address in case of upgrade
-     * @param _newAddress is address of new contract
-     */
-     function changeSecurityTokenRegistryAddress(address _newAddress) public onlyOwner {
-         require(_newAddress != securityTokenRegistry && _newAddress != address(0));
-         emit LogChangeSTRAddress(securityTokenRegistry, _newAddress);
-         securityTokenRegistry = _newAddress;
-     }
 
     /**
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy

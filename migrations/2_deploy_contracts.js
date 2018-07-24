@@ -34,7 +34,7 @@ module.exports = function (deployer, network, accounts) {
   } else if (network === 'kovan') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
-    PolyToken = '0xd8568c6535f1bbd82f84d981bf8ea5ca2336052e' // PolyToken Kovan Faucet Address
+    PolyToken = '0xb06d72a24df50d4e2cac133b320c5e7de3ef94cb' // PolyToken Kovan Faucet Address
   } else if (network === 'mainnet') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolyToken = '0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC' // Mainnet PolyToken Address
@@ -43,7 +43,7 @@ module.exports = function (deployer, network, accounts) {
     PolymathAccount = accounts[0]
     PolyToken = DevPolyToken.address // Development network polytoken address
   }
-  
+
 
   // POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
   // A) Deploy the PolymathRegistry contract
@@ -145,13 +145,13 @@ module.exports = function (deployer, network, accounts) {
       // I) Deploy the TickerRegistry Contract (It is used to store the information about the ticker)
       return deployer.deploy(TickerRegistry, PolymathRegistry.address, initRegFee, {from: PolymathAccount});
     }).then(() => {
-      // Assign the address into the TickerRegistry key 
+      // Assign the address into the TickerRegistry key
       return polymathRegistry.changeAddress("TickerRegistry", TickerRegistry.address, {from: PolymathAccount});
     }).then(() => {
       // J) Deploy the SecurityTokenRegistry contract (Used to hold the deployed secuirtyToken details. It also act as the interface to deploy the SecurityToken)
       return deployer.deploy(SecurityTokenRegistry, PolymathRegistry.address, STVersionProxy001.address, initRegFee, {from: PolymathAccount})
     }).then(() => {
-       // Assign the address into the SecurityTokenRegistry key 
+       // Assign the address into the SecurityTokenRegistry key
       return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
     }).then(() => {
       // Update all addresses into the registry contract by calling the function updateFromregistry

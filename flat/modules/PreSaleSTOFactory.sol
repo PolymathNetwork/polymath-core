@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 /**
  * @title Utility contract to allow pausing and unpausing of certain functions
@@ -68,9 +68,13 @@ library SafeMath {
   * @dev Multiplies two numbers, throws on overflow.
   */
   function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
+    // Gas optimization: this is cheaper than asserting 'a' not being zero, but the
+    // benefit is lost if 'b' is also tested.
+    // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
     if (a == 0) {
       return 0;
     }
+
     c = a * b;
     assert(c / a == b);
     return c;
@@ -153,10 +157,18 @@ contract BasicToken is ERC20Basic {
  * @dev see https://github.com/ethereum/EIPs/issues/20
  */
 contract ERC20 is ERC20Basic {
-  function allowance(address owner, address spender) public view returns (uint256);
-  function transferFrom(address from, address to, uint256 value) public returns (bool);
+  function allowance(address owner, address spender)
+    public view returns (uint256);
+
+  function transferFrom(address from, address to, uint256 value)
+    public returns (bool);
+
   function approve(address spender, uint256 value) public returns (bool);
-  event Approval(address indexed owner, address indexed spender, uint256 value);
+  event Approval(
+    address indexed owner,
+    address indexed spender,
+    uint256 value
+  );
 }
 
 /**
@@ -177,7 +189,14 @@ contract StandardToken is ERC20, BasicToken {
    * @param _to address The address which you want to transfer to
    * @param _value uint256 the amount of tokens to be transferred
    */
-  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+  function transferFrom(
+    address _from,
+    address _to,
+    uint256 _value
+  )
+    public
+    returns (bool)
+  {
     require(_to != address(0));
     require(_value <= balances[_from]);
     require(_value <= allowed[_from][msg.sender]);
@@ -211,7 +230,14 @@ contract StandardToken is ERC20, BasicToken {
    * @param _spender address The address which will spend the funds.
    * @return A uint256 specifying the amount of tokens still available for the spender.
    */
-  function allowance(address _owner, address _spender) public view returns (uint256) {
+  function allowance(
+    address _owner,
+    address _spender
+   )
+    public
+    view
+    returns (uint256)
+  {
     return allowed[_owner][_spender];
   }
 
@@ -225,8 +251,15 @@ contract StandardToken is ERC20, BasicToken {
    * @param _spender The address which will spend the funds.
    * @param _addedValue The amount of tokens to increase the allowance by.
    */
-  function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
-    allowed[msg.sender][_spender] = allowed[msg.sender][_spender].add(_addedValue);
+  function increaseApproval(
+    address _spender,
+    uint _addedValue
+  )
+    public
+    returns (bool)
+  {
+    allowed[msg.sender][_spender] = (
+      allowed[msg.sender][_spender].add(_addedValue));
     emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
     return true;
   }
@@ -241,7 +274,13 @@ contract StandardToken is ERC20, BasicToken {
    * @param _spender The address which will spend the funds.
    * @param _subtractedValue The amount of tokens to decrease the allowance by.
    */
-  function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
+  function decreaseApproval(
+    address _spender,
+    uint _subtractedValue
+  )
+    public
+    returns (bool)
+  {
     uint oldValue = allowed[msg.sender][_spender];
     if (_subtractedValue > oldValue) {
       allowed[msg.sender][_spender] = 0;
@@ -254,12 +293,18 @@ contract StandardToken is ERC20, BasicToken {
 
 }
 
+/**
+ * @title DetailedERC20 token
+ * @dev The decimals are only for visualization purposes.
+ * All the operations are done using the smallest and indivisible token unit,
+ * just as on Ethereum all the operations are done in wei.
+ */
 contract DetailedERC20 is ERC20 {
   string public name;
   string public symbol;
   uint8 public decimals;
 
-  function DetailedERC20(string _name, string _symbol, uint8 _decimals) public {
+  constructor(string _name, string _symbol, uint8 _decimals) public {
     name = _name;
     symbol = _symbol;
     decimals = _decimals;
@@ -303,14 +348,18 @@ contract Ownable {
   address public owner;
 
 
-  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+  event OwnershipRenounced(address indexed previousOwner);
+  event OwnershipTransferred(
+    address indexed previousOwner,
+    address indexed newOwner
+  );
 
 
   /**
    * @dev The Ownable constructor sets the original `owner` of the contract to the sender
    * account.
    */
-  function Ownable() public {
+  constructor() public {
     owner = msg.sender;
   }
 
@@ -323,15 +372,30 @@ contract Ownable {
   }
 
   /**
-   * @dev Allows the current owner to transfer control of the contract to a newOwner.
-   * @param newOwner The address to transfer ownership to.
+   * @dev Allows the current owner to relinquish control of the contract.
    */
-  function transferOwnership(address newOwner) public onlyOwner {
-    require(newOwner != address(0));
-    emit OwnershipTransferred(owner, newOwner);
-    owner = newOwner;
+  function renounceOwnership() public onlyOwner {
+    emit OwnershipRenounced(owner);
+    owner = address(0);
   }
 
+  /**
+   * @dev Allows the current owner to transfer control of the contract to a newOwner.
+   * @param _newOwner The address to transfer ownership to.
+   */
+  function transferOwnership(address _newOwner) public onlyOwner {
+    _transferOwnership(_newOwner);
+  }
+
+  /**
+   * @dev Transfers control of the contract to a newOwner.
+   * @param _newOwner The address to transfer ownership to.
+   */
+  function _transferOwnership(address _newOwner) internal {
+    require(_newOwner != address(0));
+    emit OwnershipTransferred(owner, _newOwner);
+    owner = _newOwner;
+  }
 }
 
 /**
@@ -364,14 +428,14 @@ contract ISecurityToken is IST20, Ownable {
      * @param _moduleType is which type of module we are trying to remove
      * @param _moduleIndex is the index of the module within the chosen type
      */
-    function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address, bool);
+    function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address);
 
     /**
      * @notice returns module list for a module name - will return first match
      * @param _moduleType is which type of module we are trying to remove
      * @param _name is the name of the module within the chosen type
      */
-    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address, bool);
+    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address);
 
     /**
      * @notice Queries totalSupply as of a defined checkpoint
@@ -472,9 +536,8 @@ contract IModuleFactory is Ownable {
      * @param _newSetupCost new setup cost
      */
     function changeFactorySetupFee(uint256 _newSetupCost) public onlyOwner {
-        uint256 _oldSetupcost = setupCost;
+        emit LogChangeFactorySetupFee(setupCost, _newSetupCost, address(this));
         setupCost = _newSetupCost;
-        emit LogChangeFactorySetupFee(_oldSetupcost, setupCost, address(this));
     }
 
     /**
@@ -482,9 +545,8 @@ contract IModuleFactory is Ownable {
      * @param _newUsageCost new usage cost
      */
     function changeFactoryUsageFee(uint256 _newUsageCost) public onlyOwner {
-        uint256 _oldUsageCost = usageCost;
+        emit LogChangeFactoryUsageFee(usageCost, _newUsageCost, address(this));
         usageCost = _newUsageCost;
-        emit LogChangeFactoryUsageFee(_oldUsageCost, usageCost, address(this));
     }
 
     /**
@@ -492,9 +554,9 @@ contract IModuleFactory is Ownable {
      * @param _newSubscriptionCost new subscription cost
      */
     function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) public onlyOwner {
-        uint256 _oldSubscriptionCost = monthlySubscriptionCost;
+        emit LogChangeFactorySubscriptionFee(monthlySubscriptionCost, _newSubscriptionCost, address(this));
         monthlySubscriptionCost = _newSubscriptionCost;
-        emit LogChangeFactorySubscriptionFee(_oldSubscriptionCost, monthlySubscriptionCost, address(this));
+        
     }
 
 }
@@ -508,7 +570,7 @@ contract IModule {
 
     address public securityToken;
 
-    bytes32 public FEE_ADMIN = "FEE_ADMIN";
+    bytes32 public constant FEE_ADMIN = "FEE_ADMIN";
 
     ERC20 public polyToken;
 
@@ -526,7 +588,7 @@ contract IModule {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public returns (bytes4);
+    function getInitFunction() public pure returns (bytes4);
 
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
@@ -621,6 +683,17 @@ contract ISTO is IModule, Pausable {
         endTime = _newEndDate;
     }
 
+    /**
+    * @notice Reclaim ERC20Basic compatible tokens
+    * @param _tokenContract The address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) external onlyOwner {
+        require(_tokenContract != address(0));
+        ERC20Basic token = ERC20Basic(_tokenContract);
+        uint256 balance = token.balanceOf(address(this));
+        require(token.transfer(msg.sender, balance));
+    }
+
 }
 
 /**
@@ -655,14 +728,14 @@ contract PreSaleSTO is ISTO {
      * @param _endTime Unix timestamp at which offering get ended
      */
     function configure(uint256 _endTime) public onlyFactory {
-        require(_endTime != 0);
+        require(_endTime != 0, "endTime should not be 0");
         endTime = _endTime;
     }
 
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public returns (bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
 
@@ -705,8 +778,8 @@ contract PreSaleSTO is ISTO {
      */
     function allocateTokens(address _investor, uint256 _amount, uint256 _etherContributed, uint256 _polyContributed) public withPerm(PRE_SALE_ADMIN)
     {
-        require(now <= endTime);
-        require(_amount > 0);
+        require(now <= endTime, "Current time should less than the endTime");
+        require(_amount > 0, "No. of tokens provided should be greater the zero");
         IST20(securityToken).mint(_investor, _amount);
         investors[_investor] = investors[_investor].add(_amount);
         investorCount = investorCount.add(1);
@@ -719,14 +792,16 @@ contract PreSaleSTO is ISTO {
      * @notice Function used to allocate tokens to the multiple investor
      * @param _investors Array of address of the investors
      * @param _amounts Array of no. of tokens need to transfered to the investors
-     * @param _etherContributed Total amount of ETH get contributed
-     * @param _polyContributed Total amount of POLY get contributed
+     * @param _etherContributed Array of amount of ETH contributed by each investor
+     * @param _polyContributed Array of amount of POLY contributed by each investor
      */
-    function allocateTokensMulti(address[] _investors, uint256[] _amounts, uint256 _etherContributed, uint256 _polyContributed) public withPerm(PRE_SALE_ADMIN)
+    function allocateTokensMulti(address[] _investors, uint256[] _amounts, uint256[] _etherContributed, uint256[] _polyContributed) public withPerm(PRE_SALE_ADMIN)
     {
-        require(_investors.length == _amounts.length);
+        require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
+        require(_etherContributed.length == _polyContributed.length, "Mis-match in the length of the arrays");
+        require(_etherContributed.length == _investors.length, "Mis-match in the length of the arrays");
         for (uint256 i = 0; i < _investors.length; i++) {
-            allocateTokens(_investors[i], _amounts[i], _etherContributed, _polyContributed);
+            allocateTokens(_investors[i], _amounts[i], _etherContributed[i], _polyContributed[i]);
         }
     }
 }

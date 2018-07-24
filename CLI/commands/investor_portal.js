@@ -630,7 +630,8 @@ function getPolyOracleABI() {
     ROPSTEN: 3,
     KOVAN:   42
     */
-    if (web3.eth.net.getId() == 15) {
+    let network = web3.eth.net.getId();
+    if (network == 15) {
         return JSON.parse(require('fs').readFileSync('./build/contracts/MockOracle.json').toString()).abi;
     } else {
         return JSON.parse(require('fs').readFileSync('./build/contracts/PolyOracle.json').toString()).abi;
@@ -644,7 +645,8 @@ function getEthOracleABI() {
     ROPSTEN: 3,
     KOVAN:   42
     */
-    if (web3.eth.net.getId() == 15) {
+    let network = web3.eth.net.getId();
+    if (network == 15 || network == 42) {
         return JSON.parse(require('fs').readFileSync('./build/contracts/MockOracle.json').toString()).abi;
     } else {
         return JSON.parse(require('fs').readFileSync('./build/contracts/MakerDAOOracle.json').toString()).abi;

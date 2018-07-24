@@ -44,10 +44,13 @@ module.exports = function (deployer, network, accounts) {
     web3 = new Web3(new Web3.providers.HttpProvider('https://ropsten.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
     PolyToken = '0xafbf8a012b63c7e1ddd333882c612b7100a77d78' // PolyToken Ropsten Faucet Address
+    ETHOracle = '0x2a64846750e0059bc4d87648a00faebdf82982a9' // ETH Mocked Oracle Address
   } else if (network === 'kovan') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
     PolyToken = '0xd8568c6535f1bbd82f84d981bf8ea5ca2336052e' // PolyToken Kovan Faucet Address
+    PolyOracle = '0x9c2c839c71ae659b82f96071f518c6e96c3af071' // Poly Oracle Kovan Address 
+    ETHOracle = '0x2a64846750e0059bc4d87648a00faebdf82982a9' // ETH Mocked Oracle Address
   } else if (network === 'mainnet') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolyToken = '0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC' // Mainnet PolyToken Address

@@ -67,6 +67,7 @@ versionNo=$(echo "$latestTag" | cut -b 2-6)
 echo "Latest tag is: $latestTag"
 
 # clone the polymath-core-docs
+mkdir ~/tmp
 cd ~/tmp
 
 if [ ! -d $DIRECTORY ]; then

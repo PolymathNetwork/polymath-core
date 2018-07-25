@@ -19,5 +19,9 @@ module.exports = {
                 'Migrations.sol',
                 'mocks/PolyTokenFaucet.sol',
                 'mocks/TestSTOFactory.sol',
-                'mocks/MockFactory.sol']
+                'mocks/MockFactory.sol',
+                'oracles/MakerDAOOracle.sol',
+                'oracles/PolyOracle.sol',
+                'external/Medianizer.sol',
+                'external/oraclizeAPI.sol']
 };

@@ -11,7 +11,7 @@ trap cleanup EXIT
 
 cleanup() {
   # Kill the testrpc instance that we started (if we started one and if it's still running).
-  if [-n "$bridge_pid" ] && ps -p $bridge_pid > /dev/null; then
+  if [ -n "$bridge_pid" ] && ps -p $bridge_pid > /dev/null; then
       kill -9 $bridge_pid
   fi
   if [ -n "$testrpc_pid" ] && ps -p $testrpc_pid > /dev/null; then

@@ -168,7 +168,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @notice NB - this will only impact newly scheduled Oraclize queries, not future queries which have already been scheduled
     * @param _gasLimit gas limit to use for Oraclize callbacks
     */
-    function setGasLimit(uint256 _gasLimit) onlyOwner public {
+    function setGasLimit(uint256 _gasLimit) isAdminOrOwner public {
         gasLimit = _gasLimit;
     }
 

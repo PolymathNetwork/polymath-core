@@ -82,7 +82,7 @@ let requestIds = new Array();
 
             let log = await assertEvent(I_PolyOracle, {event: 'LogNewOraclizeQuery',logIndex: 1});
 
-            assert.isAtMost(log[0].args._time, latestTime());
+            assert.isAtMost(log[0].args._time.toNumber(), latestTime());
             await increaseTime(50);
 
             const LogPriceUpdated = await I_PolyOracle.allEvents();
@@ -103,7 +103,7 @@ let requestIds = new Array();
             for (var i = 0; i < event_data.length; i++) {
                 let time = event_data[i].args._time;
                 console.log(`       checking the time for the ${i} index and the scheduling time is ${time}`);
-                assert.isAtMost(time, timeScheduling[i]);
+                assert.isAtMost(time.toNumber(), timeScheduling[i]);
             }
         });
            
@@ -232,7 +232,7 @@ let requestIds = new Array();
             for (var i = 0; i < event_data.length; i++) {
                 let time = event_data[i].args._time;
                 console.log(`       checking the time for the ${i} index and the scheduling time is ${time}`);
-                assert.isAtMost(time, timeScheduling[i]);
+                assert.isAtMost(time.toNumber(), timeScheduling[i]);
             }
         });
 
@@ -315,7 +315,7 @@ let requestIds = new Array();
 
             let log = await assertEvent(I_PolyOracle, {event: 'LogNewOraclizeQuery',logIndex: 1});
 
-            assert.isAtMost(log[0].args._time, latestTime());
+            assert.isAtMost(log[0].args._time.toNumber(), latestTime());
             await increaseTime(50);
 
             const LogPriceUpdated = await I_PolyOracle.allEvents();

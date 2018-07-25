@@ -7,3 +7,4 @@ coverage/
 coverage.json
 .vscode/
 bridge.log
+/flat

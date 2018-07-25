@@ -21,7 +21,7 @@ module.exports = {
   },
   polyTokenAddress: function() {
     if(SELECTED_NETWORK == NETWORKS.KOVAN)
-      return "0xd8568c6535f1bbd82f84d981bf8ea5ca2336052e";
+      return "0xb06d72a24df50d4e2cac133b320c5e7de3ef94cb";
     else
       return JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).networks[SELECTED_NETWORK].address;
   },

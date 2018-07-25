@@ -50,7 +50,7 @@ module.exports = function (deployer, network, accounts) {
   } else if (network === 'kovan') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
-    PolyToken = '0xd8568c6535f1bbd82f84d981bf8ea5ca2336052e' // PolyToken Kovan Faucet Address
+    PolyToken = '0xb06d72a24df50d4e2cac133b320c5e7de3ef94cb' // PolyToken Kovan Faucet Address
     PolyOracle = '0x9c2c839c71ae659b82f96071f518c6e96c3af071' // Poly Oracle Kovan Address
     ETHOracle = '0x2a64846750e0059bc4d87648a00faebdf82982a9' // ETH Mocked Oracle Address
   } else if (network === 'mainnet') {

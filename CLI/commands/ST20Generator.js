@@ -159,7 +159,7 @@ async function step_ticker_reg(){
     await registerTickerAction.send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
     .on('transactionHash', function(hash){
       console.log(`
-        Congrats! Your Ticker Registeration tx populated successfully
+        Congrats! Your Ticker Registration tx populated successfully
         Your transaction is being processed. Please wait...
         TxHash: ${hash}\n`
       );
@@ -844,7 +844,7 @@ async function usdTieredSTO_status() {
     let ratePerTier = await currentSTO.methods.ratePerTier(t).call({from: Issuer});
     let tokensPerTierTotal = await currentSTO.methods.tokensPerTierTotal(t).call({from: Issuer});
     let mintedPerTierTotal = await currentSTO.methods.mintedPerTierTotal(t).call({from: Issuer});
-    
+
     let displayMintedPerTierETH = "";
     if (ethRaise) {
       let mintedPerTierETH = await currentSTO.methods.mintedPerTierETH(t).call({from: Issuer});
@@ -852,7 +852,7 @@ async function usdTieredSTO_status() {
       displayMintedPerTierETH = `
         Sold for ETH:              ${web3.utils.fromWei(mintedPerTierETH)} ${displayTokenSymbol}`
     }
-      
+
     let displayMintedPerTierPOLY = "";
     let displayDiscountTokens = "";
     let mintedPerTierDiscountPoly = "0";
@@ -882,7 +882,7 @@ async function usdTieredSTO_status() {
         Rate:                      ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`
         + displayDiscountTokens;
     displayMintedPerTier = displayMintedPerTier + `
-    - Tokens minted in Tier ${t+1}:     ${web3.utils.fromWei(mintedPerTierTotal)} ${displayTokenSymbol}` 
+    - Tokens minted in Tier ${t+1}:     ${web3.utils.fromWei(mintedPerTierTotal)} ${displayTokenSymbol}`
     + displayMintedPerTierETH
     + displayMintedPerTierPOLY;
   }
@@ -907,7 +907,7 @@ async function usdTieredSTO_status() {
     let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaisedETH().call({from: Issuer}));
     displayFundsRaisedETH = `
         ETH:                       ${fundsRaisedETH} ETH`;
-   
+
     //Only show sold for ETH if POLY raise is allowed too
     if (polyRaise) {
       let tokensSoldETH = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForETH().call({from: Issuer}));
@@ -932,7 +932,7 @@ async function usdTieredSTO_status() {
     let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaisedPOLY().call({from: Issuer}));
     displayFundsRaisedPOLY = `
         POLY:                      ${fundsRaisedPOLY} POLY`;
-    
+
     //Only show sold for POLY if ETH raise is allowed too
     if (ethRaise) {
       let tokensSoldPOLY = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForPOLY().call({from: Issuer}));

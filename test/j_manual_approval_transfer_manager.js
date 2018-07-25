@@ -2,6 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, ensureException } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 
+const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
@@ -57,6 +58,7 @@ contract('ManualApprovalTransferManager', accounts => {
     let I_STVersion;
     let I_SecurityToken;
     let I_PolyToken;
+    let I_PolymathRegistry;
 
     // SecurityToken Details
     const swarmHash = "dagwrgwgvwergwrvwrg";
@@ -89,12 +91,18 @@ contract('ManualApprovalTransferManager', accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the token Faucet and Mint tokens for token_owner
-        I_PolyToken = await PolyTokenFaucet.new();
-        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
+         // Step 0: Deploy the PolymathRegistry
+         I_PolymathRegistry = await PolymathRegistry.new({from: account_polymath});
 
-        // STEP 1: Deploy the ModuleRegistry
-        I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
+         // Step 1: Deploy the token Faucet and Mint tokens for token_owner
+         I_PolyToken = await PolyTokenFaucet.new();
+         await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
+         await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
+ 
+         // STEP 2: Deploy the ModuleRegistry
+ 
+         I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:account_polymath});
+         await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: account_polymath});
 
         assert.notEqual(
             I_ModuleRegistry.address.valueOf(),
@@ -170,7 +178,9 @@ contract('ManualApprovalTransferManager', accounts => {
 
         // Step 6: Deploy the TickerRegistry
 
-        I_TickerRegistry = await TickerRegistry.new(I_PolyToken.address, initRegFee, { from: account_polymath });
+        I_TickerRegistry = await TickerRegistry.new(I_PolymathRegistry.address, initRegFee, { from: account_polymath });
+        await I_PolymathRegistry.changeAddress("TickerRegistry", I_TickerRegistry.address, {from: account_polymath});
+
 
         assert.notEqual(
             I_TickerRegistry.address.valueOf(),
@@ -191,14 +201,13 @@ contract('ManualApprovalTransferManager', accounts => {
         // Step 8: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolyToken.address,
-            I_ModuleRegistry.address,
-            I_TickerRegistry.address,
+            I_PolymathRegistry.address,
             I_STVersion.address,
             initRegFee,
             {
                 from: account_polymath
             });
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
@@ -206,9 +215,10 @@ contract('ManualApprovalTransferManager', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 8: Set the STR in TickerRegistry
-        await I_TickerRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
-        await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        // Step 10: update the registries addresses from the PolymathRegistry contract
+        await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
+        await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
+        await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`\nPolymath Network Smart Contracts Deployed:\n

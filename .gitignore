@@ -9,3 +9,4 @@ coverage.json
 bridge.log
 scTopics
 coverageEnv
+/flat

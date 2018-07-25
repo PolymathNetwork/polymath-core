@@ -2,6 +2,13 @@ pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";
 
+/////////////////////
+// Module permissions
+/////////////////////
+//                           Owner       ADMIN
+// changeHolderCount           X           X
+
+
 /**
  * @title Transfer Manager for limiting maximum number of token holders
  */
@@ -9,6 +16,8 @@ contract CountTransferManager is ITransferManager {
 
     // The maximum number of concurrent token holders
     uint256 public maxHolderCount;
+
+    bytes32 public constant ADMIN = "ADMIN";
 
     event LogModifyHolderCount(uint256 _oldHolderCount, uint256 _newHolderCount);
 
@@ -49,7 +58,7 @@ contract CountTransferManager is ITransferManager {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
 
@@ -57,7 +66,7 @@ contract CountTransferManager is ITransferManager {
     * @notice sets the maximum percentage that an individual token holder can hold
     * @param _maxHolderCount is the new maximum amount a holder can hold
     */
-    function changeHolderCount(uint256 _maxHolderCount) public onlyOwner {
+    function changeHolderCount(uint256 _maxHolderCount) public withPerm(ADMIN) {
         emit LogModifyHolderCount(maxHolderCount, _maxHolderCount);
         maxHolderCount = _maxHolderCount;
     }
@@ -66,7 +75,8 @@ contract CountTransferManager is ITransferManager {
      * @notice Return the permissions flag that are associated with CountTransferManager
      */
     function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](0);
+        bytes32[] memory allPermissions = new bytes32[](1);
+        allPermissions[0] = ADMIN;
         return allPermissions;
     }
 

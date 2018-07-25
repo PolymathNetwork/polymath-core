@@ -38,7 +38,7 @@ contract PreSaleSTO is ISTO {
      * @param _endTime Unix timestamp at which offering get ended
      */
     function configure(uint256 _endTime) public onlyFactory {
-        require(_endTime != 0);
+        require(_endTime != 0, "endTime should not be 0");
         endTime = _endTime;
     }
 
@@ -95,8 +95,8 @@ contract PreSaleSTO is ISTO {
      */
     function allocateTokens(address _investor, uint256 _amount, uint256 _etherContributed, uint256 _polyContributed) public withPerm(PRE_SALE_ADMIN)
     {
-        require(now <= endTime);
-        require(_amount > 0);
+        require(now <= endTime, "Current time should less than the endTime");
+        require(_amount > 0, "No. of tokens provided should be greater the zero");
         IST20(securityToken).mint(_investor, _amount);
         investors[_investor] = investors[_investor].add(_amount);
         investorCount = investorCount.add(1);
@@ -110,14 +110,16 @@ contract PreSaleSTO is ISTO {
      * @notice Function used to allocate tokens to the multiple investor
      * @param _investors Array of address of the investors
      * @param _amounts Array of no. of tokens need to transfered to the investors
-     * @param _etherContributed Total amount of ETH get contributed
-     * @param _polyContributed Total amount of POLY get contributed
+     * @param _etherContributed Array of amount of ETH contributed by each investor
+     * @param _polyContributed Array of amount of POLY contributed by each investor
      */
-    function allocateTokensMulti(address[] _investors, uint256[] _amounts, uint256 _etherContributed, uint256 _polyContributed) public withPerm(PRE_SALE_ADMIN)
+    function allocateTokensMulti(address[] _investors, uint256[] _amounts, uint256[] _etherContributed, uint256[] _polyContributed) public withPerm(PRE_SALE_ADMIN)
     {
-        require(_investors.length == _amounts.length);
+        require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
+        require(_etherContributed.length == _polyContributed.length, "Mis-match in the length of the arrays");
+        require(_etherContributed.length == _investors.length, "Mis-match in the length of the arrays");
         for (uint256 i = 0; i < _investors.length; i++) {
-            allocateTokens(_investors[i], _amounts[i], _etherContributed, _polyContributed);
+            allocateTokens(_investors[i], _amounts[i], _etherContributed[i], _polyContributed[i]);
         }
     }
 }

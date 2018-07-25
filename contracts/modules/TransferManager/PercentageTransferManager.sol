@@ -29,7 +29,8 @@ contract PercentageTransferManager is ITransferManager {
     event LogModifyWhitelist(
         address _investor,
         uint256 _dateAdded,
-        address _addedBy
+        address _addedBy,
+        bool    _valid
     );
 
     /**
@@ -51,7 +52,7 @@ contract PercentageTransferManager is ITransferManager {
                 return Result.NA;
             }
             uint256 newBalance = ISecurityToken(securityToken).balanceOf(_to).add(_amount);
-            if (newBalance.mul(10**18).div(ISecurityToken(securityToken).totalSupply()) > maxHolderPercentage) {
+            if (newBalance.mul(10**uint256(ISecurityToken(securityToken).decimals())).div(ISecurityToken(securityToken).totalSupply()) > maxHolderPercentage) {
                 return Result.INVALID;
             }
             return Result.NA;
@@ -70,7 +71,7 @@ contract PercentageTransferManager is ITransferManager {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
 
@@ -90,7 +91,19 @@ contract PercentageTransferManager is ITransferManager {
     */
     function modifyWhitelist(address _investor, bool _valid) public withPerm(WHITELIST) {
         whitelist[_investor] = _valid;
-        emit LogModifyWhitelist(_investor, now, msg.sender);
+        emit LogModifyWhitelist(_investor, now, msg.sender, _valid);
+    }
+
+    /**
+    * @notice adds or removes addresses from the whitelist.
+    * @param _investors Array of the addresses to whitelist
+    * @param _valids Array of boolean value to decide whether or not the address it to be added or removed from the whitelist
+    */
+    function modifyWhitelistMulti(address[] _investors, bool[] _valids) public withPerm(WHITELIST) {
+        require(_investors.length == _valids.length, "Input array length mis-match");
+        for (uint i = 0; i < _investors.length; i++) {
+            modifyWhitelist(_investors[i], _valids[i]);
+        }
     }
 
     /**

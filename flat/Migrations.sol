@@ -1,4 +1,4 @@
-pragma solidity ^0.4.23;
+pragma solidity ^0.4.24;
 
 contract Migrations {
 
@@ -11,7 +11,7 @@ contract Migrations {
         _;
     }
 
-    function Migrations() public {
+    constructor() public {
         owner = msg.sender;
     }
 

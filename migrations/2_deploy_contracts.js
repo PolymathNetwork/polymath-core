@@ -1,4 +1,5 @@
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol')
+const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
@@ -25,6 +26,7 @@ const Web3 = require('web3')
 module.exports = function (deployer, network, accounts) {
   // Ethereum account address hold by the Polymath (Act as the main account which have ownable permissions)
   let PolymathAccount
+  let moduleRegistry
   let web3
   if (network === 'development') {
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
@@ -34,7 +36,7 @@ module.exports = function (deployer, network, accounts) {
       MockOracle.deployed().then((mockedOracle) => {
         PolyOracle = mockedOracle.address;
       });
-    }); 
+    });
     deployer.deploy(MockOracle, 0, "ETH", "USD", new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
         ETHOracle = mockedOracle.address;
@@ -44,10 +46,13 @@ module.exports = function (deployer, network, accounts) {
     web3 = new Web3(new Web3.providers.HttpProvider('https://ropsten.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
     PolyToken = '0xafbf8a012b63c7e1ddd333882c612b7100a77d78' // PolyToken Ropsten Faucet Address
+    ETHOracle = '0x2a64846750e0059bc4d87648a00faebdf82982a9' // ETH Mocked Oracle Address
   } else if (network === 'kovan') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
-    PolyToken = '0xd8568c6535f1bbd82f84d981bf8ea5ca2336052e' // PolyToken Kovan Faucet Address
+    PolyToken = '0xb06d72a24df50d4e2cac133b320c5e7de3ef94cb' // PolyToken Kovan Faucet Address
+    PolyOracle = '0x9c2c839c71ae659b82f96071f518c6e96c3af071' // Poly Oracle Kovan Address
+    ETHOracle = '0x2a64846750e0059bc4d87648a00faebdf82982a9' // ETH Mocked Oracle Address
   } else if (network === 'mainnet') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolyToken = '0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC' // Mainnet PolyToken Address
@@ -57,110 +62,131 @@ module.exports = function (deployer, network, accounts) {
     PolyToken = DevPolyToken.address // Development network polytoken address
   }
 
+
   // POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
-  // A) Deploy the ModuleRegistry Contract (It contains the list of verified ModuleFactory)
-  return deployer.deploy(ModuleRegistry, {from: PolymathAccount}).then(() => {
-    return ModuleRegistry.deployed().then((moduleRegistry) => {
+  // A) Deploy the PolymathRegistry contract
+  return deployer.deploy(PolymathRegistry, {from: PolymathAccount}).then(() => {
+    return PolymathRegistry.deployed().then((polymathRegistry) => {
+
+    return polymathRegistry.changeAddress("PolyToken", PolyToken, {from: PolymathAccount})
+    .then(() => {
+      // A) Deploy the ModuleRegistry Contract (It contains the list of verified ModuleFactory)
+      // console.log("test" + PolymathRegistry.address);
+      return deployer.deploy(ModuleRegistry, polymathRegistry.address, {from: PolymathAccount});
+    }).then(() => {
+      return ModuleRegistry.deployed().then((_moduleRegistry) => {
+        moduleRegistry = _moduleRegistry;
+      // Add module registry to polymath registry
+      return polymathRegistry.changeAddress("ModuleRegistry", ModuleRegistry.address, {from: PolymathAccount});
+    }).then(() => {
       // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
       // manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(GeneralTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount})
-    .then(() => {
+      return deployer.deploy(GeneralTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    }).then(() => {
       // C) Deploy the GeneralPermissionManagerFactory Contract (Factory used to generate the GeneralPermissionManager contract and
       // this manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(GeneralPermissionManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount})
+      return deployer.deploy(GeneralPermissionManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
     }).then(() => {
       // D) Deploy the CountTransferManagerFactory Contract (Factory used to generate the CountTransferManager contract use
       // to track the counts of the investors of the security token)
-      return deployer.deploy(CountTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount})
+      return deployer.deploy(CountTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
     }).then(() => {
       // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
       // to track the percentage of investment the investors could do for a particular security token)
-      return deployer.deploy(PercentageTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount})
+      return deployer.deploy(PercentageTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
     }).then(() => {
       // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
       // to track the percentage of investment the investors could do for a particular security token)
-      return deployer.deploy(EtherDividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount})
+      return deployer.deploy(EtherDividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
     }).then(() => {
       // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
       // to track the percentage of investment the investors could do for a particular security token)
-      return deployer.deploy(ERC20DividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount})
+      return deployer.deploy(ERC20DividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
     }).then(() => {
       // D) Register the PercentageTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the PercentageTransferManager contract.
-      return moduleRegistry.registerModule(PercentageTransferManagerFactory.address, {from: PolymathAccount})
+      return moduleRegistry.registerModule(PercentageTransferManagerFactory.address, {from: PolymathAccount});
     }).then(() => {
       // D) Register the CountTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the CountTransferManager contract.
-      return moduleRegistry.registerModule(CountTransferManagerFactory.address, {from: PolymathAccount})
+      return moduleRegistry.registerModule(CountTransferManagerFactory.address, {from: PolymathAccount});
     }).then(() => {
       // D) Register the GeneralTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the GeneralTransferManager contract.
-    return moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount})
+      return moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount});
     }).then(() => {
       // E) Register the GeneralPermissionManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the GeneralPermissionManager contract.
-    return moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, {from: PolymathAccount})
+      return moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, {from: PolymathAccount});
     }).then(() => {
       // E) Register the GeneralPermissionManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the GeneralPermissionManager contract.
-    return moduleRegistry.registerModule(EtherDividendCheckpointFactory.address, {from: PolymathAccount})
+      return moduleRegistry.registerModule(EtherDividendCheckpointFactory.address, {from: PolymathAccount});
     }).then(() => {
       // E) Register the GeneralPermissionManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the GeneralPermissionManager contract.
-    return moduleRegistry.registerModule(ERC20DividendCheckpointFactory.address, {from: PolymathAccount})
+      return moduleRegistry.registerModule(ERC20DividendCheckpointFactory.address, {from: PolymathAccount});
     }).then(() => {
       // F) Once the GeneralTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-    return moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, {from: PolymathAccount})
+      return moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, {from: PolymathAccount});
     }).then(() => {
       // G) Once the CountTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-    return moduleRegistry.verifyModule(CountTransferManagerFactory.address, true, {from: PolymathAccount})
+      return moduleRegistry.verifyModule(CountTransferManagerFactory.address, true, {from: PolymathAccount});
     }).then(() => {
       // G) Once the PercentageTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-    return moduleRegistry.verifyModule(PercentageTransferManagerFactory.address, true, {from: PolymathAccount})
+      return moduleRegistry.verifyModule(PercentageTransferManagerFactory.address, true, {from: PolymathAccount});
     }).then(() => {
-    // G) Once the GeneralPermissionManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // G) Once the GeneralPermissionManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-    return moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, {from: PolymathAccount})
+      return moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, {from: PolymathAccount})
     }).then(() => {
-    // G) Once the GeneralPermissionManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // G) Once the EtherDividendCheckpointFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-    return moduleRegistry.verifyModule(EtherDividendCheckpointFactory.address, true, {from: PolymathAccount})
+      return moduleRegistry.verifyModule(EtherDividendCheckpointFactory.address, true, {from: PolymathAccount});
     }).then(() => {
-    // G) Once the GeneralPermissionManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // G) Once the ERC20DividendCheckpointFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-    return moduleRegistry.verifyModule(ERC20DividendCheckpointFactory.address, true, {from: PolymathAccount})
+      return moduleRegistry.verifyModule(ERC20DividendCheckpointFactory.address, true, {from: PolymathAccount});
     }).then(() => {
       // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
-    return deployer.deploy(STVersionProxy001, GeneralTransferManagerFactory.address, {from: PolymathAccount})
+      return deployer.deploy(STVersionProxy001, GeneralTransferManagerFactory.address, {from: PolymathAccount});
     }).then(() => {
       // I) Deploy the TickerRegistry Contract (It is used to store the information about the ticker)
-    return deployer.deploy(TickerRegistry, PolyToken, initRegFee, {from: PolymathAccount})
+      return deployer.deploy(TickerRegistry, PolymathRegistry.address, initRegFee, {from: PolymathAccount});
+    }).then(() => {
+      // Assign the address into the TickerRegistry key
+      return polymathRegistry.changeAddress("TickerRegistry", TickerRegistry.address, {from: PolymathAccount});
     }).then(() => {
       // J) Deploy the SecurityTokenRegistry contract (Used to hold the deployed secuirtyToken details. It also act as the interface to deploy the SecurityToken)
-    return deployer.deploy(SecurityTokenRegistry, PolyToken, ModuleRegistry.address, TickerRegistry.address, STVersionProxy001.address, initRegFee, {from: PolymathAccount})
+      return deployer.deploy(SecurityTokenRegistry, PolymathRegistry.address, STVersionProxy001.address, initRegFee, {from: PolymathAccount})
     }).then(() => {
-    return TickerRegistry.deployed().then((tickerRegistry) => {
-      // K) SecurityTokenRegistry address make available to the TickerRegistry contract for accessing the securityTokenRegistry functions
-      return tickerRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
+       // Assign the address into the SecurityTokenRegistry key
+      return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
     }).then(() => {
-      // L) SecurityTokenRegistry address make available to the TickerRegistry contract for accessing the securityTokenRegistry functions
-    return moduleRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
+      // Update all addresses into the registry contract by calling the function updateFromregistry
+      return SecurityTokenRegistry.at(SecurityTokenRegistry.address).updateFromRegistry({from: PolymathAccount});
+    }).then(() => {
+      // Update all addresses into the registry contract by calling the function updateFromregistry
+      return ModuleRegistry.at(ModuleRegistry.address).updateFromRegistry({from: PolymathAccount});
+    }).then(() => {
+      // Update all addresses into the registry contract by calling the function updateFromregistry
+      return TickerRegistry.at(TickerRegistry.address).updateFromRegistry({from: PolymathAccount});
     }).then(() => {
       // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
-    return deployer.deploy(CappedSTOFactory, PolyToken, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})
+      return deployer.deploy(CappedSTOFactory, PolyToken, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})
     }).then(() => {
       // N) Register the CappedSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the CappedSTOFactory contract.
-    return moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount})
+      return moduleRegistry.registerModule(CappedSTOFactory.address, {from: PolymathAccount})
     }).then(()=>{
       // G) Once the CappedSTOFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
@@ -185,23 +211,23 @@ module.exports = function (deployer, network, accounts) {
         });
       });
     }).then(() => {
-        console.log('\n')
-        console.log('----- Polymath Core Contracts -----')
-        console.log('*** Ticker Registry Address: ', TickerRegistry.address, '***')
-        console.log('*** Module Registry Address: ', ModuleRegistry.address, '***')
-        console.log('*** Security Token Registry Address: ', SecurityTokenRegistry.address, '***')
-        console.log('*** Capped STO Factory Address: ', CappedSTOFactory.address, '***')
-        console.log('*** USD Tiered STO Factory Address: ', USDTieredSTOFactory.address, '***')
-        console.log('*** General Permission Manager Factory: ', GeneralPermissionManagerFactory.address, '***')
-        console.log('*** Count Transfer Manager Factory: ', CountTransferManagerFactory.address, '***')
-        console.log('*** Percentage Transfer Manager Factory: ', PercentageTransferManagerFactory.address, '***')
-        console.log('*** ETH Dividends Checkpoint Factory: ', EtherDividendCheckpointFactory.address, '***')
-        console.log('*** ERC20 Dividends Checkpoint Factory: ', ERC20DividendCheckpointFactory.address, '***')
-        console.log('-----------------------------------')
-        console.log('\n')
-        // -------- END OF POLYMATH NETWORK Configuration -------//
-    })
-  })
-})
-})
+      console.log('\n')
+      console.log('----- Polymath Core Contracts -----')
+      console.log('*** Polymath Registry Address: ', PolymathRegistry.address, '***')
+      console.log('*** Ticker Registry Address: ', TickerRegistry.address, '***')
+      console.log('*** Module Registry Address: ', ModuleRegistry.address, '***')
+      console.log('*** Security Token Registry Address: ', SecurityTokenRegistry.address, '***')
+      console.log('*** Capped STO Factory Address: ', CappedSTOFactory.address, '***')
+      console.log('*** General Permission Manager Factory: ', GeneralPermissionManagerFactory.address, '***')
+      console.log('*** Count Transfer Manager Factory: ', CountTransferManagerFactory.address, '***')
+      console.log('*** Percentage Transfer Manager Factory: ', PercentageTransferManagerFactory.address, '***')
+      console.log('*** ETH Dividends Checkpoint Factory: ', EtherDividendCheckpointFactory.address, '***')
+      console.log('*** ERC20 Dividends Checkpoint Factory: ', ERC20DividendCheckpointFactory.address, '***')
+      console.log('-----------------------------------')
+      console.log('\n')
+      // -------- END OF POLYMATH NETWORK Configuration -------//
+    });
+  });
+});
+});
 }

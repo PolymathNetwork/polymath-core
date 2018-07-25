@@ -6,11 +6,23 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
+/////////////////////
+// Module permissions
+/////////////////////
+//                                        Owner       DISTRIBUTE
+// pushDividendPaymentToAddresses           X               X
+// pushDividendPayment                      X               X
+// createDividend                           X
+// createDividendWithCheckpoint             X
+// reclaimDividend                          X
+
 /**
  * @title Checkpoint module for issuing ERC20 dividends
  */
 contract ERC20DividendCheckpoint is ICheckpoint {
     using SafeMath for uint256;
+
+    bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
 
     struct Dividend {
       uint256 checkpointId;
@@ -54,7 +66,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
     * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(0);
     }
 
@@ -126,7 +138,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
      * @param _dividendIndex Dividend to push
      * @param _payees Addresses to which to push the dividend
      */
-    function pushDividendPaymentToAddresses(uint256 _dividendIndex, address[] _payees) public onlyOwner validDividendIndex(_dividendIndex) {
+    function pushDividendPaymentToAddresses(uint256 _dividendIndex, address[] _payees) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
             if (!dividend.claimed[_payees[i]]) {
@@ -141,7 +153,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
      * @param _start Index in investor list at which to start pushing dividends
      * @param _iterations Number of addresses to push dividends for
      */
-    function pushDividendPayment(uint256 _dividendIndex, uint256 _start, uint256 _iterations) public onlyOwner validDividendIndex(_dividendIndex) {
+    function pushDividendPayment(uint256 _dividendIndex, uint256 _start, uint256 _iterations) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 numberInvestors = ISecurityToken(securityToken).getInvestorsLength();
         for (uint256 i = _start; i < Math.min256(numberInvestors, _start.add(_iterations)); i++) {
@@ -238,7 +250,8 @@ contract ERC20DividendCheckpoint is ICheckpoint {
      * @return bytes32 array
      */
     function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](0);
+        bytes32[] memory allPermissions = new bytes32[](1);
+        allPermissions[0] = DISTRIBUTE;
         return allPermissions;
     }
 

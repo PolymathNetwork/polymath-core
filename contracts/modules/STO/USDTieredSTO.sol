@@ -215,17 +215,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
     function _configureFunding(uint8[] _fundRaiseTypes) internal {
         require(_fundRaiseTypes.length > 0 && _fundRaiseTypes.length < 3, "No fund raising currencies specified");
-        if (_fundRaiseTypes.length == 1) {
-            if (_fundRaiseTypes[0] == uint8(FundRaiseType.POLY)) {
-                fundRaiseType[uint8(FundRaiseType.POLY)] == true;
-                fundRaiseType[uint8(FundRaiseType.ETH)] == false;
-            } else if (_fundRaiseTypes[0] == uint8(FundRaiseType.ETH)) {
-                fundRaiseType[uint8(FundRaiseType.POLY)] == false;
-                fundRaiseType[uint8(FundRaiseType.ETH)] == true;
-            }
-        } else {
-            fundRaiseType[uint8(FundRaiseType.POLY)] = true;
-            fundRaiseType[uint8(FundRaiseType.ETH)] = true;
+        fundRaiseType[uint8(FundRaiseType.POLY)] = false;
+        fundRaiseType[uint8(FundRaiseType.ETH)] = false;
+        for (uint8 j = 0; j < _fundRaiseTypes.length; j++) {
+            require(_fundRaiseTypes[j] < 2);
+            fundRaiseType[_fundRaiseTypes[j]] = true;
         }
         emit SetFunding(_fundRaiseTypes);
     }

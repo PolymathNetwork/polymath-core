@@ -23,11 +23,11 @@ program
   });
 
 program
-  .command('faucet')
+  .command('faucet [beneficiary] [amount]')
   .alias('f')
   .description('Poly faucet for local private netwtorks')
-  .action(async function() {
-    await faucet.executeApp();
+  .action(async function(beneficiary, amount) {
+    await faucet.executeApp(beneficiary, amount);
   });
 
 program

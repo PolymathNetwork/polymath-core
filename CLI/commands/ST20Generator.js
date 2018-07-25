@@ -594,8 +594,6 @@ function addressesConfigUSDTieredSTO() {
     defaultInput: Issuer
   });
 
-  addresses.securityTokenRegistryAddress = securityTokenRegistryAddress;
-
   return addresses;
 }
 
@@ -739,9 +737,6 @@ async function usdTieredSTO_launch() {
         type: 'uint256[]',
         name: '_tokensPerTierDiscountPoly'
       },{
-        type: 'address',
-        name: '_securityTokenRegistry'
-      },{
         type: 'uint256',
         name: '_nonAccreditedLimitUSD'
       },{
@@ -764,7 +759,6 @@ async function usdTieredSTO_launch() {
     tiers.ratePerTierDiscountPoly,
     tiers.tokensPerTier,
     tiers.tokensPerTierDiscountPoly,
-    addresses.securityTokenRegistryAddress,
     limits.nonAccreditedLimitUSD,
     limits.minimumInvestmentUSD,
     funding.raiseType,
@@ -1150,7 +1144,7 @@ async function modfifyLimits() {
 async function modfifyFunding() {
   let funding = fundingConfigUSDTieredSTO();
   let modifyFundingAction = currentSTO.methods.modifyFunding(funding.raiseType);
-  let GAS = await common.estimateGas(modifyFundingAction, Issuer, 1.2);
+  let GAS = await common.estimateGas(modifyFundingAction, Issuer, 1.5);
   await modifyFundingAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
   .on('transactionHash', function(hash) {
     console.log(`
@@ -1172,7 +1166,7 @@ async function modfifyFunding() {
 
 async function modfifyAddresses() {
   let addresses = addressesConfigUSDTieredSTO();
-  let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.securityTokenRegistryAddress, addresses.wallet, addresses.reserveWallet);
+  let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.wallet, addresses.reserveWallet);
   let GAS = await common.estimateGas(modifyAddressesAction, Issuer, 1.2);
   await modifyAddressesAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
   .on('transactionHash', function(hash) {

@@ -471,6 +471,35 @@ contract('USDTieredSTO', accounts => {
             I_USDTieredSTO_Array.push(USDTieredSTO.at(tx.logs[2].args._module));
         });
 
+        it("Should successfully attach the third STO module to the security token", async () => {
+            let stoId = 3;
+
+            _startTime.push(latestTime()+ duration.days(0.1));
+            _endTime.push(_startTime[stoId] + duration.days(0.1));
+            _ratePerTier.push([BigNumber(10*10**16), BigNumber(15*10**16)]);                // [ 0.10 USD/Token, 0.15 USD/Token ]
+            _ratePerTierDiscountPoly.push([BigNumber(10*10**16), BigNumber(12*10**16)]);    // [ 0.10 USD/Token, 0.15 USD/Token ]
+            _tokensPerTierTotal.push([BigNumber(100*10**18), BigNumber(200*10**18)]);       // [ 100m Token, 200m Token ]
+            _tokensPerTierDiscountPoly.push([BigNumber(0),BigNumber(50*10**18)]);           // [ 0, 50m Token ]
+            _nonAccreditedLimitUSD.push(BigNumber(10000).mul(BigNumber(10**18)));           // [ 10k USD ]
+            _minimumInvestmentUSD.push(BigNumber(0));
+            _fundRaiseTypes.push([0, 1]);
+            _wallet.push(WALLET);
+            _reserveWallet.push(RESERVEWALLET);
+
+            let config = [
+                _startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId],
+                _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId],
+                _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]
+            ];
+
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
+            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gas: 5000000, gasPrice: GAS_PRICE });
+            console.log("             Gas addModule: ".grey+tx.receipt.gasUsed.toString().grey);
+            assert.equal(tx.logs[2].args._type, STOKEY, "USDTieredSTO doesn't get deployed");
+            assert.equal(web3.utils.hexToString(tx.logs[2].args._name),"USDTieredSTO","USDTieredSTOFactory module was not added");
+            I_USDTieredSTO_Array.push(USDTieredSTO.at(tx.logs[2].args._module));
+        });
+
         it("Should fail because rates and tier array of different length", async() => {
             let stoId = 0;
 
@@ -577,6 +606,103 @@ contract('USDTieredSTO', accounts => {
                 ensureException(error);
             }
             assert.ok(errorThrown, MESSAGE);
+        });
+    });
+
+    describe("Test modifying configuration", async() => {
+
+        it("Should successfully change config before startTime", async() => {
+            let stoId = 3;
+
+            await I_USDTieredSTO_Array[stoId].modifyFunding([0], { from: ISSUER, gas: 4500000 });
+            assert.equal(await I_USDTieredSTO_Array[stoId].fundRaiseType.call(0),true,"STO Configuration doesn't set as expected");
+            assert.equal(await I_USDTieredSTO_Array[stoId].fundRaiseType.call(1),false,"STO Configuration doesn't set as expected");
+
+            await I_USDTieredSTO_Array[stoId].modifyFunding([1], { from: ISSUER, gas: 4500000 });
+            assert.equal(await I_USDTieredSTO_Array[stoId].fundRaiseType.call(0),false,"STO Configuration doesn't set as expected");
+            assert.equal(await I_USDTieredSTO_Array[stoId].fundRaiseType.call(1),true,"STO Configuration doesn't set as expected");
+
+            await I_USDTieredSTO_Array[stoId].modifyFunding([0,1], { from: ISSUER, gas: 4500000 });
+            assert.equal(await I_USDTieredSTO_Array[stoId].fundRaiseType.call(0),true,"STO Configuration doesn't set as expected");
+            assert.equal(await I_USDTieredSTO_Array[stoId].fundRaiseType.call(1),true,"STO Configuration doesn't set as expected");
+
+            await I_USDTieredSTO_Array[stoId].modifyLimits(BigNumber(1*10**18), BigNumber(15*10**18), { from: ISSUER, gas: 4500000 });
+            assert.equal((await I_USDTieredSTO_Array[stoId].minimumInvestmentUSD.call()).toNumber(),BigNumber(15*10**18).toNumber(),"STO Configuration doesn't set as expected");
+            assert.equal((await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSD.call()).toNumber(),BigNumber(1*10**18).toNumber(),"STO Configuration doesn't set as expected");
+
+            await I_USDTieredSTO_Array[stoId].modifyTiers([BigNumber(15*10**18)], [BigNumber(13*10**18)], [BigNumber(15*10**20)], [BigNumber(15*10**20)], { from: ISSUER, gas: 4500000 });
+            assert.equal((await I_USDTieredSTO_Array[stoId].ratePerTier.call(0)).toNumber(),BigNumber(15*10**18).toNumber(),"STO Configuration doesn't set as expected");
+            assert.equal((await I_USDTieredSTO_Array[stoId].ratePerTierDiscountPoly.call(0)).toNumber(),BigNumber(13*10**18).toNumber(),"STO Configuration doesn't set as expected");
+            assert.equal((await I_USDTieredSTO_Array[stoId].tokensPerTierTotal.call(0)),BigNumber(15*10**20).toNumber(),"STO Configuration doesn't set as expected");
+            assert.equal((await I_USDTieredSTO_Array[stoId].tokensPerTierDiscountPoly.call(0)),BigNumber(15*10**20).toNumber(),"STO Configuration doesn't set as expected");
+
+            let tempTime1 = latestTime() + duration.days(0.1);
+            let tempTime2 = latestTime() + duration.days(0.2);
+
+            await I_USDTieredSTO_Array[stoId].modifyTimes(tempTime1, tempTime2, { from: ISSUER, gas: 4500000 });
+            assert.equal(await I_USDTieredSTO_Array[stoId].startTime.call(),tempTime1,"STO Configuration doesn't set as expected");
+            assert.equal(await I_USDTieredSTO_Array[stoId].endTime.call(),tempTime2,"STO Configuration doesn't set as expected");
+
+            await I_USDTieredSTO_Array[stoId].modifyAddresses("0x0000000000000000000000000400000000000000", "0x0000000000000000000003000000000000000000", { from: ISSUER, gas: 4500000 });
+            assert.equal(await I_USDTieredSTO_Array[stoId].wallet.call(),"0x0000000000000000000000000400000000000000","STO Configuration doesn't set as expected");
+            assert.equal(await I_USDTieredSTO_Array[stoId].reserveWallet.call(),"0x0000000000000000000003000000000000000000","STO Configuration doesn't set as expected");
+        });
+
+        it("Should fail to change config after endTime", async() => {
+            let stoId = 3;
+
+            let snapId = await takeSnapshot();
+            await increaseTime(duration.days(1));
+
+            let errorThrown1 = false;
+            try {
+                await I_USDTieredSTO_Array[stoId].modifyFunding([0,1], { from: ISSUER, gas: 4500000 });
+            } catch(error) {
+                errorThrown1 = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown1, MESSAGE);
+
+            let errorThrown2 = false;
+            try {
+                await I_USDTieredSTO_Array[stoId].modifyLimits(BigNumber(15*10**18), BigNumber(1*10**18), { from: ISSUER, gas: 4500000 });
+            } catch(error) {
+                errorThrown2 = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown2, MESSAGE);
+
+            let errorThrown3 = false;
+            try {
+                await I_USDTieredSTO_Array[stoId].modifyTiers([BigNumber(15*10**18)], [BigNumber(13*10**18)], [BigNumber(15*10**20)], [BigNumber(15*10**20)], { from: ISSUER, gas: 4500000 });
+            } catch(error) {
+                errorThrown3 = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown3, MESSAGE);
+
+            let tempTime1 = latestTime();
+            let tempTime2 = latestTime() + duration.days(3);
+
+            let errorThrown4 = false;
+            try {
+                await I_USDTieredSTO_Array[stoId].modifyTimes(tempTime1, tempTime2, { from: ISSUER, gas: 4500000 });
+            } catch(error) {
+                errorThrown4 = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown4, MESSAGE);
+
+            let errorThrown5 = false;
+            try {
+                await I_USDTieredSTO_Array[stoId].modifyAddresses("0x0000000000000000000000000400000000000000", "0x0000000000000000000003000000000000000000", { from: ISSUER, gas: 4500000 });
+            } catch(error) {
+                errorThrown5 = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown5, MESSAGE);
+
+            await revertToSnapshot(snapId);
         });
     });
 

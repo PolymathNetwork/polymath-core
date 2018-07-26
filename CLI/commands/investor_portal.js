@@ -194,47 +194,24 @@ async function investUsdTieredSTO(currency, amount) {
     } else {
         cost = amount;
     }
-
     if (cost == "") process.exit();
 
     let costWei = web3.utils.toWei(cost.toString());
 
     if (raiseType == 'POLY') {
         let userBalance = await polyBalance(User);
-
         if (parseInt(userBalance) >= parseInt(cost)) {
             let allowance = await polyToken.methods.allowance(STOAddress, User).call({from: User});
             if (allowance < costWei) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
                 let GAS = await common.estimateGas(approveAction, User, 1.2);
-                await approveAction.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-                .on('receipt', function(receipt) {
-                })
-                .on('error', console.error);
+                await approveAction.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE });
             }
             let actionBuyWithPoly = currentSTO.methods.buyWithPOLY(User, costWei);
             let GAS = await common.estimateGas(actionBuyWithPoly, User, 1.2);
             await actionBuyWithPoly.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-            .on('transactionHash', function(hash){
-                console.log(`
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`
-                );
-            })
-            .on('receipt', function(receipt){
-                console.log(chalk.green(`
-        Congratulations! The token purchase was successfully completed.
-                `));
-                console.log(`
-        Account ${receipt.events.TokenPurchase.returnValues._purchaser}
-        invested ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues._usdAmount)} USD
-        purchasing ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues._tokens)} ${displayTokenSymbol.toUpperCase()}
-        for beneficiary account ${receipt.events.TokenPurchase.returnValues._beneficiary}
-
-        Review it on Etherscan.
-        TxHash: ${receipt.transactionHash}\n`
-                );
-            });
+            .on('transactionHash', function(hash) { logTransactionHash(hash) })
+            .on('receipt', function(receipt) { logTokensPurchasedUSDTieredSTO(receipt) });
         } else {
             console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} POLY but have ${userBalance} POLY.`));
             console.log(chalk.red(`Please purchase a smaller amount of tokens or access the POLY faucet to get the POLY to complete this txn.`));
@@ -244,114 +221,59 @@ async function investUsdTieredSTO(currency, amount) {
         let actionBuyWithETH = currentSTO.methods.buyWithETH(User);
         let GAS = await common.estimateGas(actionBuyWithETH, User, 1.2, web3.utils.toWei(cost.toString()));
         await actionBuyWithETH.send({ from: User, value:costWei, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
-        .on('transactionHash', function(hash){
-            console.log(`
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`
-            );
-        })
-        .on('receipt', function(receipt){
-            console.log(chalk.green(`
-        Congratulations! The token purchase was successfully completed.
-            `));
-            console.log(`
-        Account ${receipt.events.TokenPurchase.returnValues._purchaser}
-        invested ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues._usdAmount)} USD
-        purchasing ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues._tokens)} ${displayTokenSymbol.toUpperCase()}
-        for beneficiary account ${receipt.events.TokenPurchase.returnValues._beneficiary}
-
-        Review it on Etherscan.
-        TxHash: ${receipt.transactionHash}\n`
-            );
-        });
+        .on('transactionHash', function(hash) { logTransactionHash(hash) })
+        .on('receipt', function(receipt) { logTokensPurchasedUSDTieredSTO(receipt) });
     }
     await showTokenInfo();
     await showUserInfoForUSDTieredSTO();
 }
 
 // Allow investor to buy tokens.
-async function investCappedSTO() {
-    let amt = readlineSync.question(chalk.yellow(`Enter the amount of ${displayTokenSymbol.toUpperCase()} you would like to purchase or press 'Enter' to exit. `));
-    if (amt == "") {
-        process.exit();
-    };
-    let cost = amt/displayRate
+async function investCappedSTO(currency, amount) {
+    if (currency != undefined && displayRaiseType.indexOf(currency) == -1) {
+        console.log(chalk.red(`${currency} is not allowed for current STO`));
+        process.exit(0);
+    }
+
+    let amt;
+    if (amount == undefined) {
+        amt = readlineSync.question(chalk.yellow(`Enter the amount of ${displayTokenSymbol.toUpperCase()} you would like to purchase or press 'Enter' to exit. `));
+    } else {
+        amt = amount;
+    }
+    if (amt == "") process.exit();
+
+    let cost = amt/displayRate;
     console.log(`This investment will cost ${cost} ${displayRaiseType}`);
 
+    let costWei = web3.utils.toWei(cost.toString());
     if (displayRaiseType == 'POLY') {
-        try {
-            let userBalance = await polyBalance(User);
-            let costWei = web3.utils.toWei(cost.toString());
-            if (parseInt(userBalance) >= parseInt(cost)) {
-                let allowance = await polyToken.methods.allowance(STOAddress, User).call({from: User});
-                if (allowance < costWei) {
-                    let approveAction = polyToken.methods.approve(STOAddress, costWei);
-                    let GAS = await common.estimateGas(approveAction, User, 1.2);
-                    await approveAction.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-                    .on('receipt', function(receipt) {
-                    })
-                    .on('error', console.error);
-                }
-                let actionBuyTokensWithPoly = currentSTO.methods.buyTokensWithPoly(costWei);
-                let GAS = await common.estimateGas(actionBuyTokensWithPoly, User, 1.2);
-                await actionBuyTokensWithPoly.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-                .on('transactionHash', function(hash){
-                    console.log(`
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`
-                    );
-                })
-                .on('receipt', function(receipt){
-                    console.log(chalk.green(`
-        Congratulations! The token purchase was successfully completed.
-                    `));
-                    console.log(`
-        Account ${receipt.events.TokenPurchase.returnValues.purchaser}
-        invested ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues.value)} POLY
-        purchasing ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues.amount)} ${displayTokenSymbol.toUpperCase()}
-        for beneficiary account ${receipt.events.TokenPurchase.returnValues.beneficiary}
-
-        Review it on Etherscan.
-        TxHash: ${receipt.transactionHash}\n`
-                    );
-                });
-                showTokenInfo()
-            } else {
-                console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} POLY but have ${userBalance} POLY.`));
-                console.log(chalk.red(`Please purchase a smaller amount of tokens or access the POLY faucet to get the POLY to complete this txn.`));
-                process.exit();
+        let userBalance = await polyBalance(User); 
+        if (parseInt(userBalance) >= parseInt(cost)) {
+            let allowance = await polyToken.methods.allowance(STOAddress, User).call({from: User});
+            if (allowance < costWei) {
+                let approveAction = polyToken.methods.approve(STOAddress, costWei);
+                let GAS = await common.estimateGas(approveAction, User, 1.2);
+                await approveAction.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE });
             }
-        }catch (err){
-            console.log(err.message);
-            return;
+            let actionBuyTokensWithPoly = currentSTO.methods.buyTokensWithPoly(costWei);
+            let GAS = await common.estimateGas(actionBuyTokensWithPoly, User, 1.2);
+            await actionBuyTokensWithPoly.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+            .on('transactionHash', function(hash) { logTransactionHash(hash) })
+            .on('receipt', function(receipt) { logTokensPurchasedCappedSTO(receipt) });
+        } else {
+            console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} POLY but have ${userBalance} POLY.`));
+            console.log(chalk.red(`Please purchase a smaller amount of tokens or access the POLY faucet to get the POLY to complete this txn.`));
+            process.exit();
         }
     } else {
         let actionBuyTokens = currentSTO.methods.buyTokens(User);
-        let GAS = await common.estimateGas(actionBuyTokens, User, 1.2, web3.utils.toWei(cost.toString()));
-        await actionBuyTokens.send({ from: User, value:web3.utils.toWei(cost.toString()), gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
-        .on('transactionHash', function(hash){
-            console.log(`
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`
-            );
-        })
-        .on('receipt', function(receipt){
-            console.log(chalk.green(`
-        Congratulations! The token purchase was successfully completed.
-            `));
-            console.log(`
-        Account ${receipt.events.TokenPurchase.returnValues.purchaser}
-        invested ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues.value)} ETH
-        purchasing ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues.amount)} ${displayTokenSymbol.toUpperCase()}
-        for beneficiary account ${receipt.events.TokenPurchase.returnValues.beneficiary}
-
-        Review it on Etherscan.
-        TxHash: ${receipt.transactionHash}\n`
-            );
-        });
-        showTokenInfo()
+        let GAS = await common.estimateGas(actionBuyTokens, User, 1.2, costWei);
+        await actionBuyTokens.send({ from: User, value: costWei, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+        .on('transactionHash', function(hash) { logTransactionHash(hash) })
+        .on('receipt', function(receipt) { logTokensPurchasedCappedSTO(receipt) });
     }
-
+    await showTokenInfo();
 }
 
 // Show info
@@ -626,6 +548,62 @@ async function showCappedSTOInfo() {
 async function polyBalance(_user) {
     let balance = await polyToken.methods.balanceOf(_user).call();
     return web3.utils.fromWei(balance);
+}
+
+function logTransactionHash(hash) {
+    console.log(`
+        Your transaction is being processed. Please wait...
+        TxHash: ${hash}\n`);
+}
+
+function logTokensPurchasedUSDTieredSTO(receipt) {
+    console.log(chalk.green(`
+        Congratulations! The token purchase was successfully completed.`
+    ));
+    if (!Array.isArray(receipt.events.TokenPurchase)) {
+        console.log(`
+        Account ${receipt.events.TokenPurchase.returnValues._purchaser}
+        invested ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues._usdAmount)} USD
+        purchasing ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues._tokens)} ${displayTokenSymbol.toUpperCase()} at ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues._tierPrice)} USD
+        for beneficiary account ${receipt.events.TokenPurchase.returnValues._beneficiary}`);
+    } else {
+        receipt.events.TokenPurchase.forEach(event => {
+            console.log(`
+        Account ${event.returnValues._purchaser}
+        invested ${web3.utils.fromWei(event.returnValues._usdAmount)} USD
+        purchasing ${web3.utils.fromWei(event.returnValues._tokens)} ${displayTokenSymbol.toUpperCase()} at ${web3.utils.fromWei(event.returnValues._tierPrice)} USD
+        for beneficiary account ${event.returnValues._beneficiary}`);
+        });
+    }
+    console.log(`
+        Review it on Etherscan.
+        TxHash: ${receipt.transactionHash}\n`
+    );
+}
+
+function logTokensPurchasedCappedSTO(receipt) {
+    console.log(chalk.green(`
+        Congratulations! The token purchase was successfully completed.
+            `));
+    if (!Array.isArray(receipt.events.TokenPurchase)) {
+        console.log(`
+        Account ${receipt.events.TokenPurchase.returnValues.purchaser}
+        invested ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues.value)} ${displayRaiseType}
+        purchasing ${web3.utils.fromWei(receipt.events.TokenPurchase.returnValues.amount)} ${displayTokenSymbol.toUpperCase()}
+        for beneficiary account ${receipt.events.TokenPurchase.returnValues.beneficiary}`);
+    }
+    else {
+        receipt.events.TokenPurchase.forEach(event => {
+            console.log(`
+        Account ${event.returnValues.purchaser}
+        invested ${web3.utils.fromWei(event.returnValues.value)} ${displayRaiseType}
+        purchasing ${web3.utils.fromWei(event.returnValues.amount)} ${displayTokenSymbol.toUpperCase()}
+        for beneficiary account ${event.returnValues.beneficiary}`);
+        });
+    }
+    console.log(`
+        Review it on Etherscan.
+        TxHash: ${receipt.transactionHash}\n`);
 }
 
 module.exports = {

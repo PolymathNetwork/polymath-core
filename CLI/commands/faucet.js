@@ -87,7 +87,7 @@ async function send_poly(beneficiary, amount) {
         break;
       case 5:
         beneficiary =  readlineSync.question(`Enter beneficiary of transfer ('${Issuer}'): `);
-        amount = readlineSync.questionInt(`Enter the no. of POLY Tokens: `);
+        amount = readlineSync.questionInt(`Enter the no. of POLY Tokens: `).toString();
         break;
     }
   }

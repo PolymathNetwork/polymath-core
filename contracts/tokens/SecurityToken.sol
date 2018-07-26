@@ -183,7 +183,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     */
     function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget) internal {
         //Check that module exists in registry - will throw otherwise
-        IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
+        IModuleRegistry(moduleRegistry).useModule(_moduleFactory, securityTokenRegistry);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         uint8 moduleType = moduleFactory.getType();
         require(modules[moduleType].length < MAX_MODULES, "Limit of MAX MODULES is reached");

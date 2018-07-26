@@ -40,6 +40,7 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
    /**
     * @notice Called by a security token to notify the registry it is using a module
     * @param _moduleFactory is the address of the relevant module factory
+    * @param _securityTokenRegistry is the address of the Security Token Registry
     */
     function useModule(address _moduleFactory, address _securityTokenRegistry) external {
         //If caller is a registered security token, then register module usage

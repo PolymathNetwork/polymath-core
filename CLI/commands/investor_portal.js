@@ -56,68 +56,79 @@ let STAddress;
 let STOAddress;
 let GTMAddress;
 
-// Program Flow Control
-let validSymbol = false;
-
 // Global display variables
 let displayRate;
 let displayRaiseType;
 let displayTokenSymbol;
 
 // Start Script
-async function executeApp() {
+async function executeApp(investor, symbol, currency, amount) {
     // Init user accounts
-    try {
-        let accounts = await web3.eth.getAccounts();
-        Issuer = accounts[0];
+    let accounts = await web3.eth.getAccounts();
+    Issuer = accounts[0];
+    
+    setup();
 
-        welcome();
-    }
-    catch(err) {
+    try {
+        common.logAsciiBull();
+        console.log("********************************************");
+        console.log("Welcome to the Command-Line Investor Portal.");
+        console.log("********************************************");
+    
+        if (investor == undefined) {
+            User = readlineSync.question(chalk.yellow(`\nEnter your public address to log in as an investor. Otherwise, press 'Enter' to log in as the token issuer: `));
+        } else {
+            User = investor;
+        }
+        if (User == "") User = Issuer;
+    
+        await showUserInfo(User);
+        await inputSymbol(symbol);
+        switch (selectedSTO) {
+            case 'CappedSTO':
+                currentSTO = new web3.eth.Contract(cappedSTOABI, STOAddress);
+                await showCappedSTOInfo();
+                await investCappedSTO(currency, amount);
+                break;
+            case 'USDTieredSTO':
+                currentSTO = new web3.eth.Contract(usdTieredSTOABI, STOAddress);
+                await showUserInfoForUSDTieredSTO();
+                await showUSDTieredSTOInfo();
+                await investUsdTieredSTO(currency, amount)
+                break;
+        }
+    } catch (err) {
         console.error(err);
     }
 };
 
-// Welcome Message
-async function welcome() {
-    common.logAsciiBull();
-    console.log("********************************************");
-    console.log("Welcome to the Command-Line Investor Portal.");
-    console.log("********************************************");
-
+async function setup() {
     try {
         securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
         securityTokenRegistry.setProvider(web3.currentProvider);
         polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
         polyToken.setProvider(web3.currentProvider);
-    }catch(err){
+    } catch (err) {
         console.log(err);
         console.log(chalk.red(`There was a problem getting the contracts. Make sure they are deployed to the selected network.`));
-        process.exit();
-    }
-
-    User = readlineSync.question(chalk.yellow(`\nEnter your public address to log in as an investor. Otherwise, press 'Enter' to log in as the token issuer: `));
-    if (User == "") User = Issuer;
-
-    await showUserInfo(User);
-
-    while (!validSymbol) {
-        await inputSymbol();
+        process.exit(0);
     }
 }
 
 // Input security token symbol or exit
-async function inputSymbol() {
-    STSymbol = readlineSync.question(chalk.yellow(`Enter the symbol of a registered security token or press 'Enter' to exit: `));
-    if (STSymbol == "") {
-        process.exit();
-    };
+async function inputSymbol(symbol) {
+    if (symbol == undefined) {
+        STSymbol = readlineSync.question(chalk.yellow(`Enter the symbol of a registered security token or press 'Enter' to exit: `));
+    } else {
+        STSymbol = symbol;
+    }
+    
+    if (STSymbol == "") process.exit();
 
     STAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(STSymbol).call({from: User});
-    if(STAddress == "0x0000000000000000000000000000000000000000"){
+    if (STAddress == "0x0000000000000000000000000000000000000000"){
         console.log(`Token symbol provided is not a registered Security Token. Please enter another symbol.`);
     } else {
-        validSymbol = true;
         securityToken = new web3.eth.Contract(securityTokenABI, STAddress);
 
         await showTokenInfo();
@@ -130,29 +141,24 @@ async function inputSymbol() {
         STOAddress = res[1];
         if (STOAddress != "0x0000000000000000000000000000000000000000") {
             selectedSTO = web3.utils.toAscii(res[0]).replace(/\u0000/g, '');
-            switch (selectedSTO) {
-                case 'CappedSTO':
-                  currentSTO = new web3.eth.Contract(cappedSTOABI, STOAddress);
-                  await showCappedSTOInfo();
-                  break;
-                case 'USDTieredSTO':
-                  currentSTO = new web3.eth.Contract(usdTieredSTOABI, STOAddress);
-                  await showUserInfoForUSDTieredSTO();
-                  await showUSDTieredSTOInfo();
-                  break;
-            }
         } else {
             console.log(chalk.red(`There is no STO module attached to the ${displayTokenSymbol.toUpperCase()} Token. No further actions can be taken.`));
-            validSymbol = false;
             return;
         }
     }
 }
 
 // Allow investor to buy tokens.
-async function investUsdTieredSTO() {
+async function investUsdTieredSTO(currency, amount) {
     let raiseType;
-    if (displayRaiseType == "ETH and POLY") {
+    if (currency != undefined) {
+        if (displayRaiseType.indexOf(currency) == -1) {
+            console.log(chalk.red(`${currency} is not allowed for current STO`));
+            process.exit(0);
+        } else {
+            raiseType = currency;
+        }
+    } else if (displayRaiseType == "ETH and POLY") {
         let displayPolyPrice = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii("POLY"), web3.utils.toWei("1")).call({from: User}));
         let displayEthPrice = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii("ETH"), web3.utils.toWei("1")).call({from: User}));
         console.log(chalk.green(`   Current POLY price:             ${displayPolyPrice} USD`));
@@ -174,14 +180,21 @@ async function investUsdTieredSTO() {
         }
     }
 
-    let minimumInvestmentUSD = await currentSTO.methods.minimumInvestmentUSD().call({from: User});
-    let minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(web3.utils.fromAscii(raiseType), minimumInvestmentUSD).call({from: User});      
-    let cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `), {   
-        limit: function(input) {
-            return true; //input > web3.utils.fromWei(minimumInvestmentRaiseType);
-        },
-        limitMessage: `Amount must be greater than minimum investment (${web3.utils.fromWei(minimumInvestmentRaiseType)} ${raiseType} = ${web3.utils.fromWei(minimumInvestmentUSD)} USD)`
-    });
+    let cost;
+    if (amount == undefined) {
+        let investorInvestedUSD = web3.utils.fromWei(await currentSTO.methods.investorInvestedUSD(User).call({from: User}));
+        let minimumInvestmentUSD = await currentSTO.methods.minimumInvestmentUSD().call({from: User});
+        let minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(web3.utils.fromAscii(raiseType), minimumInvestmentUSD).call({from: User});      
+        cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `), {   
+            limit: function(input) {
+                return investorInvestedUSD != 0 || input > web3.utils.fromWei(minimumInvestmentRaiseType);
+            },
+            limitMessage: `Amount must be greater than minimum investment (${web3.utils.fromWei(minimumInvestmentRaiseType)} ${raiseType} = ${web3.utils.fromWei(minimumInvestmentUSD)} USD)`
+        });
+    } else {
+        cost = amount;
+    }
+
     if (cost == "") process.exit();
 
     let costWei = web3.utils.toWei(cost.toString());
@@ -540,12 +553,13 @@ async function showUSDTieredSTOInfo() {
 
     if (!displayCanBuy) {
         console.log(chalk.red(`Your address is not approved to participate in this token sale.\n`));
+        process.exit(0);
     } else if (now < displayStartTime) {
         console.log(chalk.red(`The token sale has not yet started.\n`));
+        process.exit(0);
     } else if (now > displayEndTime || displayIsFinalized || !displayIsOpen) {
         console.log(chalk.red(`The token sale has ended.\n`));
-    } else {
-        await investUsdTieredSTO();
+        process.exit(0);
     }
 }
 
@@ -599,12 +613,13 @@ async function showCappedSTOInfo() {
 
     if(!displayCanBuy) {
         console.log(chalk.red(`Your address is not approved to participate in this token sale.\n`));
+        process.exit(0);
     } else if (now < displayStartTime) {
         console.log(chalk.red(`The token sale has not yet started.\n`));
+        process.exit(0);
     } else if (now > displayEndTime) {
         console.log(chalk.red(`The token sale has ended.\n`));
-    } else {
-        investCappedSTO();
+        process.exit(0);
     }
 }
 
@@ -614,7 +629,7 @@ async function polyBalance(_user) {
 }
 
 module.exports = {
-    executeApp: async function() {
-          return executeApp();
+    executeApp: async function(user, symbol, currency, amount) {
+          return executeApp(user, symbol, currency, amount);
       }
 }

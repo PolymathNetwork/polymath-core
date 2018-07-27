@@ -60,6 +60,7 @@ let GTMAddress;
 let displayRate;
 let displayRaiseType;
 let displayTokenSymbol;
+let displayCanBuy;
 
 // Start Script
 async function executeApp(investor, symbol, currency, amount) {
@@ -313,6 +314,15 @@ async function showUserInfoForUSDTieredSTO()
     }
     let displayInvestorInvestedUSD = web3.utils.fromWei(await currentSTO.methods.investorInvestedUSD(User).call({from: User}));
     console.log(`    - Invested in USD:       ${displayInvestorInvestedUSD} USD`);
+    
+    await generalTransferManager.methods.whitelist(User).call({from: User}, function(error, result){
+        displayCanBuy = result.canBuyFromSTO;
+    });
+    console.log(`    - Whitelisted:           ${(displayCanBuy)?'YES':'NO'}`)
+
+    let displayIsUserAccredited = await currentSTO.methods.accredited(User).call({from: User});
+    console.log(`    - Accredited:            ${(displayIsUserAccredited)?"YES":"NO"}`)
+    
     if (!await currentSTO.methods.accredited(User).call({from: User})) {
         let displayNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call({from: User}));
         let displayTokensRemainingAllocation = displayNonAccreditedLimitUSD - displayInvestorInvestedUSD;
@@ -417,10 +427,6 @@ async function showUSDTieredSTOInfo() {
         }
     }
 
-    let displayCanBuy;
-    await generalTransferManager.methods.whitelist(User).call({from: User}, function(error, result){
-        displayCanBuy = result.canBuyFromSTO;
-    });
 
     displayRaiseType;
     if (ethRaise && polyRaise) {
@@ -444,14 +450,10 @@ async function showUSDTieredSTOInfo() {
         timeRemaining = displayEndTime - now;
     }
 
-    let displayIsUserAccredited = await currentSTO.methods.accredited(User).call({from: User});
-
     timeRemaining = common.convertToDaysRemaining(timeRemaining);
 
     console.log(`    **************************   STO Information   ************************
     - Address:                     ${STOAddress}
-    - Can user invest?             ${(displayCanBuy)?'YES':'NO'}
-    - Is user accredited?          ${(displayIsUserAccredited)?"YES":"NO"}
     - Start Time:                  ${new Date(displayStartTime * 1000)}
     - End Time:                    ${new Date(displayEndTime * 1000)}
     - Raise Type:                  ${displayRaiseType}
@@ -497,11 +499,10 @@ async function showCappedSTOInfo() {
 
     let displayRaiseType = await currentSTO.methods.fundRaiseType(0).call({from: Issuer}) ? 'ETH' : 'POLY';
 
-    let displayCanBuy;
     await generalTransferManager.methods.whitelist(User).call({from: User}, function(error, result){
         displayCanBuy = result.canBuyFromSTO;
     });
-
+    
     let now = Math.floor(Date.now()/1000);
     let timeTitle;
     let timeRemaining;
@@ -519,7 +520,6 @@ async function showCappedSTOInfo() {
     console.log(`
     ********************    STO Information    ********************
     - Address:           ${STOAddress}
-    - Can user invest?   ${(displayCanBuy)?'YES':'NO'}
     - Raise Cap:         ${web3.utils.fromWei(displayCap)} ${displayTokenSymbol.toUpperCase()}
     - Start Time:        ${new Date(displayStartTime * 1000)}
     - End Time:          ${new Date(displayEndTime * 1000)}

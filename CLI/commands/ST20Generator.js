@@ -46,17 +46,8 @@ if (typeof web3 !== 'undefined') {
 
 ///////////////////
 // Crowdsale params
-let startTime;
-let endTime;
-let wallet;
-let rate;
-let raiseType;
-let cap;
-let issuerTokens;
-
 let tokenName;
 let tokenSymbol;
-let divisibility = true;
 let selectedSTO;
 
 const regFee = 250;
@@ -72,30 +63,37 @@ let securityToken;
 let currentSTO;
 let cappedSTOFactory;
 let usdTieredSTOFactory;
+
 // App flow
 let accounts;
 let Issuer;
-let _DEBUG = false;
 let DEFAULT_GAS_PRICE = 100000000000;
+let _DEBUG = false;
+let _tokenConfig;
+let _mintingConfig;
+let _stoConfig;
 
-async function executeApp() {
+async function executeApp(tokenConfig, mintingConfig, stoConfig) {
   accounts = await web3.eth.getAccounts();
   Issuer = accounts[0];
 
+  _tokenConfig = tokenConfig;
+  _mintingConfig = mintingConfig;
+  _stoConfig = stoConfig;
+
   setup();
+
+console.log(web3.utils.toWei('1182.73'))
 
   common.logAsciiBull();
   console.log("********************************************");
   console.log("Welcome to the Command-Line ST-20 Generator.");
   console.log("********************************************");
   console.log("The following script will create a new ST-20 according to the parameters you enter.");
+  
   if(_DEBUG){
     console.log('\x1b[31m%s\x1b[0m',"Warning: Debugging is activated. Start and End dates will be adjusted for easier testing.");
   }
-  let start = readlineSync.question('Press enter to continue or exit (CTRL + C): ', {
-    defaultInput: 'Y'
-  });
-  if(start != 'Y' && start != 'y') return;
 
   try {
     await step_ticker_reg();
@@ -122,10 +120,10 @@ function setup(){
     cappedSTOFactory.setProvider(web3.currentProvider);
     usdTieredSTOFactory = new web3.eth.Contract(usdTieredSTOFactoryABI, usdTieredSTOFactoryAddress);
     usdTieredSTOFactory.setProvider(web3.currentProvider);
-  }catch(err){
+  } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
-    return;
+    exit(0);
   }
 }
 
@@ -138,7 +136,13 @@ async function step_ticker_reg(){
 
   while (!available) {
     console.log(chalk.green(`\nRegistering the new token symbol requires 250 POLY & deducted from '${Issuer}', Current balance is ${(await currentBalance(Issuer))} POLY\n`));
-    tokenSymbol =  readlineSync.question('Enter the symbol for your new token: ');
+    
+    if (typeof _tokenConfig !== 'undefined' && _tokenConfig.hasOwnProperty('symbol')) {
+      tokenSymbol = _tokenConfig.symbol;
+    } else {
+      tokenSymbol = readlineSync.question('Enter the symbol for your new token: '); 
+    }
+
     await tickerRegistry.methods.getDetails(tokenSymbol).call({from: Issuer}, function(error, result){
       if (new BigNumber(result[1]).toNumber() == 0) {
         available = true;
@@ -171,7 +175,6 @@ async function step_ticker_reg(){
         TxHash: ${receipt.transactionHash}\n`
       );
     })
-    .on('error', console.error);
   }
 }
 
@@ -186,10 +189,6 @@ async function step_approval(spender, fee) {
       let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
       let GAS = await common.estimateGas(approveAction, Issuer, 1.2);
       await approveAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-      .on('receipt', function(receipt) {
-        return true;
-      })
-      .on('error', console.error);
     }
   } else {
       let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);
@@ -211,16 +210,23 @@ async function step_token_deploy(){
     console.log(chalk.green(`Current balance in POLY is ${(await currentBalance(Issuer))}`));
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Deployment");
-    tokenName =  readlineSync.question('Enter the name for your new token: ');
+    
+    if (typeof _tokenConfig !== 'undefined' && _tokenConfig.hasOwnProperty('name')) {
+      tokenName = _tokenConfig.name;
+    } else {
+      tokenName = readlineSync.question('Enter the name for your new token: ');
+    }
     if (tokenName == "") tokenName = 'default';
+    
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Select the Token divisibility type");
-    divisibile =  readlineSync.question('Press "N" for Non-divisible type token or hit Enter for divisible type token (Default):',{
-      defaultInput:'Y'
-    });
-
-    if(divisibile == 'N' || divisibile == 'n') {
-      divisibility = false;
+    
+    let divisibility;
+    if (typeof _tokenConfig !== 'undefined' && _tokenConfig.hasOwnProperty('divisible')) {
+      divisibility = _tokenConfig.divisible;
+    } else {
+      let divisible = readlineSync.question('Press "N" for Non-divisible type token or hit Enter for divisible type token (Default):');
+      divisibility = (divisible == 'N' || divisible == 'n');
     }
 
     await step_approval(securityTokenRegistryAddress, regFee);
@@ -242,7 +248,6 @@ async function step_token_deploy(){
       );
       securityToken = new web3.eth.Contract(securityTokenABI, receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress);
     })
-    .on('error', console.error);
   }
 }
 
@@ -252,30 +257,45 @@ async function step_Wallet_Issuance(){
   if (STOAddress != "0x0000000000000000000000000000000000000000") {
     console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address " + STOAddress + ". Skipping initial minting");
   } else {
-    let initialMint;
-    await securityToken.getPastEvents('Transfer', {
+    let initialMint = await securityToken.getPastEvents('Transfer', {
       filter: {from: "0x0000000000000000000000000000000000000000"}, // Using an array means OR: e.g. 20 or 23
       fromBlock: 0,
       toBlock: 'latest'
-    }, function(error, events){
-      initialMint = events;
     });
-    if(initialMint.length > 0){
-      console.log('\x1b[32m%s\x1b[0m',web3.utils.fromWei(initialMint[0].returnValues.value,"ether") +" Tokens have already been minted for "+initialMint[0].returnValues.to+". Skipping initial minting");
+    if (initialMint.length > 0) {
+      console.log('\x1b[32m%s\x1b[0m',web3.utils.fromWei(initialMint[0].returnValues.value,"ether") +" Tokens have already been minted for " + initialMint[0].returnValues.to + ". Skipping initial minting");
     } else {
       console.log("\n");
       console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Minting for Issuer");
 
       console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control or you can trasfer to affiliates");
-      let isaffiliate =  readlineSync.question('Press'+ chalk.green(` "Y" `) + 'if you have list of affiliates addresses with you otherwise hit' + chalk.green(' Enter ') + 'and get the minted tokens to a particular address: ');
+      
+      let multimint;
+      if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('multimint')) {
+        multimint = _mintingConfig.multimint;
+      } else {
+        let isAffiliate = readlineSync.question('Press'+ chalk.green(` "Y" `) + 'if you have list of affiliates addresses with you otherwise hit' + chalk.green(' Enter ') + 'and get the minted tokens to a particular address: ');
+        multimint = (isAffiliate == "Y" || isAffiliate == "y");
+      }
 
-      if (isaffiliate == "Y" || isaffiliate == "y")
+      if (multimint)
         await multi_mint_tokens();
       else {
-        let mintWallet =  readlineSync.question('Add the address that will hold the issued tokens to the whitelist ('+Issuer+'): ');
-        if(mintWallet == "") mintWallet = Issuer;
-        let canBuyFromSTO = readlineSync.question(`Address '(${mintWallet})' allowed to buy tokens from the STO (true): `);
-        if(canBuyFromSTO == "") canBuyFromSTO = true;
+        let mintWallet;
+        if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('singleMint') && _mintingConfig.singleMint.hasOwnProperty('wallet')) {
+          mintWallet = _mintingConfig.singleMint.wallet;
+        } else {
+          mintWallet = readlineSync.question('Add the address that will hold the issued tokens to the whitelist (' + Issuer + '): ');
+        }
+        if (mintWallet == "") mintWallet = Issuer;
+
+        let canBuyFromSTO;
+        if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('singleMint') && _mintingConfig.singleMint.hasOwnProperty('allowedToBuy')) {
+          canBuyFromSTO =  _mintingConfig.singleMint.allowedToBuy;
+        } else {
+          readlineSync.question(`Address '(${mintWallet})' allowed to buy tokens from the STO (true): `);
+        }
+        if (canBuyFromSTO == "") canBuyFromSTO = true;
 
         // Add address to whitelist
         let generalTransferManagerAddress;
@@ -285,7 +305,7 @@ async function step_Wallet_Issuance(){
 
         let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
         let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
-        let GAS = await common.estimateGas(modifyWhitelistAction, Issuer, 1.2);
+        let GAS = await common.estimateGas(modifyWhitelistAction, Issuer, 1.5);
         await modifyWhitelistAction.send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
         .on('transactionHash', function(hash){
           console.log(`
@@ -300,11 +320,15 @@ async function step_Wallet_Issuance(){
             TxHash: ${receipt.transactionHash}\n`
           );
         })
-        .on('error', console.error);
 
         // Mint tokens
-        issuerTokens =  readlineSync.question('How many tokens do you plan to mint for the wallet you entered? (500.000): ');
-        if(issuerTokens == "") issuerTokens = '500000';
+        if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('singleMint') && _mintingConfig.singleMint.hasOwnProperty('tokenAmount')) {
+          issuerTokens = _mintingConfig.singleMint.tokenAmount;
+        } else {
+          issuerTokens = readlineSync.question('How many tokens do you plan to mint for the wallet you entered? (500.000): ');
+        }
+        if (issuerTokens == "") issuerTokens = '500000';
+        
         let mintAction = securityToken.methods.mint(mintWallet, web3.utils.toWei(issuerTokens,"ether"));
         GAS = await common.estimateGas(mintAction, Issuer, 1.2);
         await mintAction.send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
@@ -321,7 +345,6 @@ async function step_Wallet_Issuance(){
             TxHash: ${receipt.transactionHash}\n`
           );
         })
-        .on('error', console.error);
       }
     }
   }
@@ -342,7 +365,7 @@ async function step_STO_launch() {
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration");
 
   let result = await securityToken.methods.getModule(3,0).call({from: Issuer});
-  let STO_Address = result[1];
+  STO_Address = result[1];
   if(STO_Address != "0x0000000000000000000000000000000000000000") {
     selectedSTO = web3.utils.toAscii(result[0]).replace(/\u0000/g, '');
     console.log('\x1b[32m%s\x1b[0m',selectedSTO + " has already been created at address " + STO_Address + ". Skipping STO creation");
@@ -355,8 +378,13 @@ async function step_STO_launch() {
         break;
     }
   } else {
-    let options = ['Capped STO', 'USD Tiered STO', 'Select STO later'];
-    let index = readlineSync.keyInSelect(options, 'What type of STO do you want?', { cancel: false });
+    let index;
+    if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('type')) {
+      index = _stoConfig.type;
+    } else {
+      let options = ['Capped STO', 'USD Tiered STO', 'Select STO later'];
+      index = readlineSync.keyInSelect(options, 'What type of STO do you want?', { cancel: false });
+    }
     switch (index) {
       case 0:
         selectedSTO = 'CappedSTO';
@@ -401,24 +429,59 @@ async function cappedSTO_launch() {
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - Capped STO in No. of Tokens");
 
-  cap =  readlineSync.question('How many tokens do you plan to sell on the STO? (500.000): ');
-  startTime =  readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = '+(Math.floor(Date.now()/1000)+60)+' ): ');
-  endTime =  readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = '+(Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60))+' ): ');
-  wallet =  readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer + '): ');
-  raiseType = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise or leave empty for Ether raise (E):');
-
-  if(cap == "") cap = '500000';
-  if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+60));
-  if(endTime == "") endTime = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
-  if(wallet == "") wallet = Issuer;
-  (raiseType == "") ? raiseType = 0 : raiseType = 1;  // 0 = ETH raise, 1 = Poly raise
-
-  if (raiseType) {
-    rate = readlineSync.question('Enter the rate (1 POLY = X ST) for the STO (1000): ');
+  let cap;
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('cap')) {
+    cap = _stoConfig.cap.toString();
   } else {
-    rate = readlineSync.question('Enter the rate (1 ETH = X ST) for the STO (1000): ');
+    cap = readlineSync.question('How many tokens do you plan to sell on the STO? (500.000): ');
   }
-  if (rate == "") rate = BigNumber(1000);
+  if (cap == "") cap = '500000';
+
+  let oneMinuteFromNow = BigNumber((Math.floor(Date.now() / 1000) + 60));
+  let startTime;
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('startTime')) {
+    startTime = _stoConfig.startTime;
+  } else {
+    startTime = readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ');
+  }
+  if (startTime == "") startTime = oneMinuteFromNow;
+
+  let oneMonthFromNow = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
+  let endTime;
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('endTime')) {
+    endTime = _stoConfig.endTime;
+  } else {
+    endTime = readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = ' + oneMonthFromNow + ' ): ');
+  }
+  if (endTime == "") endTime = oneMonthFromNow;
+
+  let wallet;
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('wallet')) {
+    wallet = _stoConfig.wallet;
+  } else {
+    wallet = readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer + '): ');
+  }
+  if (wallet == "") wallet = Issuer;
+
+  let raiseType;
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('raiseType')) {
+    raiseType = _stoConfig.raiseType;
+  } else {
+    raiseType = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise or leave empty for Ether raise (E):');
+    if (raiseType.toUpperCase() == 'P' ) {
+      raiseType = 1;
+    } else { 
+      raiseType = 0;
+    }
+  }
+
+  let rate;
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('rate')) {
+    rate = _stoConfig.rate.toString();
+  } else {
+    rate = readlineSync.question(`Enter the rate (1 ${(raiseType == 1 ? 'POLY' : 'ETH')} = X ST) for the STO (1000): `);
+  }
+  if (rate == "") rate = '1000';
 
   let bytesSTO = web3.eth.abi.encodeFunctionCall( {
     name: 'configure',
@@ -444,7 +507,7 @@ async function cappedSTO_launch() {
         name: '_fundsReceiver'
       }
     ]
-  }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate, raiseType, wallet]);
+  }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), web3.utils.toWei(rate, 'ether'), raiseType, wallet]);
 
   let stoFee = cappedSTOFee;
   let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call({from: Issuer});
@@ -477,7 +540,6 @@ async function cappedSTO_launch() {
           gasUsed: ${receipt.gasUsed}\n`
         );
       })
-      .on('error', console.error);
     }
   }
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
@@ -498,8 +560,7 @@ async function cappedSTO_launch() {
       TxHash: ${receipt.transactionHash}\n`
     );
   })
-  .on('error', console.error);
-  //console.log("aaa",receipt.logs[1].args._securityTokenAddress);
+
   currentSTO = new web3.eth.Contract(cappedSTOABI,STO_Address);
 }
 
@@ -535,6 +596,7 @@ async function cappedSTO_status() {
 
   console.log(`
     ***** STO Information *****
+    - Address:           ${STO_Address}
     - Raise Cap:         ${web3.utils.fromWei(displayCap,"ether")} ${displayTokenSymbol.toUpperCase()}
     - Start Time:        ${new Date(displayStartTime * 1000)}
     - End Time:          ${new Date(displayEndTime * 1000)}
@@ -556,10 +618,13 @@ async function cappedSTO_status() {
 ////////////////////
 // USD Tiered STO //
 ////////////////////
-function fundingConfigUSDTieredSTO(selectedFunding) {
+function fundingConfigUSDTieredSTO() {
   let funding = {};
 
-  if (!selectedFunding) {
+  let selectedFunding;
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('fundingType')) {
+    selectedFunding = _stoConfig.fundingType;
+  } else {
     selectedFunding = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise,' + chalk.green(` E `) + 'for Ether raise or' + chalk.green(` B `) + 'for both (B): ').toUpperCase();
   }
 
@@ -579,20 +644,29 @@ function fundingConfigUSDTieredSTO(selectedFunding) {
 function addressesConfigUSDTieredSTO() {
   let addresses = {};
 
-  addresses.wallet =  readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer + '): ', {
-    limit: function(input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address",
-    defaultInput: Issuer
-  });
-  addresses.reserveWallet =  readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer + '): ', {
-    limit: function(input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address",
-    defaultInput: Issuer
-  });
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('wallet')) {
+    addresses.wallet = _stoConfig.wallet;
+  } else {
+    addresses.wallet = readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer + '): ', {
+      limit: function(input) {
+        return web3.utils.isAddress(input);
+      },
+      limitMessage: "Must be a valid address",
+      defaultInput: Issuer
+    });
+  }
+
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('reserveWallet')) {
+    addresses.reserveWallet = _stoConfig.reserveWallet;
+  } else {
+    addresses.reserveWallet = readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer + '): ', {
+      limit: function(input) {
+        return web3.utils.isAddress(input);
+      },
+      limitMessage: "Must be a valid address",
+      defaultInput: Issuer
+    });
+  }
 
   return addresses;
 }
@@ -601,13 +675,17 @@ function tiersConfigUSDTieredSTO(polyRaise) {
   let tiers = {};
 
   let defaultTiers = 3;
-  tiers.tiers =  readlineSync.questionInt(`Enter the number of tiers for the STO? (${defaultTiers}): `, {
-    limit: function(input) {
-      return input > 0;
-    },
-    limitMessage: 'Must be greater than zero',
-    defaultInput: defaultTiers
-  });
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('numberOfTiers')) {
+    tiers.tiers = _stoConfig.numberOfTiers;
+  } else {
+    tiers.tiers = readlineSync.questionInt(`Enter the number of tiers for the STO? (${defaultTiers}): `, {
+      limit: function(input) {
+        return input > 0;
+      },
+      limitMessage: 'Must be greater than zero',
+      defaultInput: defaultTiers
+    });
+  }
 
   let defaultTokensPerTier = [190000000, 100000000, 200000000];
   let defaultRatePerTier = ['0.05', '0.10', '0.15'];
@@ -618,37 +696,57 @@ function tiersConfigUSDTieredSTO(polyRaise) {
   tiers.tokensPerTierDiscountPoly = [];
   tiers.ratePerTierDiscountPoly = [];
   for (let i = 0; i < tiers.tiers; i++) {
-    tiers.tokensPerTier[i] = web3.utils.toWei(readlineSync.question(`How many tokens do you plan to sell on tier No. ${i+1}? (${defaultTokensPerTier[i]}): `, {
-      limit: function(input) {
-        return parseFloat(input) > 0;
-      },
-      limitMessage: 'Must be greater than zero',
-      defaultInput: defaultTokensPerTier[i]
-    }));
-    tiers.ratePerTier[i] = web3.utils.toWei(readlineSync.question(`What is the USD per token rate for tier No. ${i+1}? (${defaultRatePerTier[i]}): `, {
-      limit: function(input) {
-        return parseFloat(input) > 0;
-      },
-      limitMessage: 'Must be greater than zero',
-      defaultInput: defaultRatePerTier[i]
-    }));
+    if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('tokensPerTiers') && i < _stoConfig.tokensPerTiers.length) {
+      tiers.tokensPerTier[i] = web3.utils.toWei(_stoConfig.tokensPerTiers[i].toString());
+    } else {
+      tiers.tokensPerTier[i] = web3.utils.toWei(readlineSync.question(`How many tokens do you plan to sell on tier No. ${i+1}? (${defaultTokensPerTier[i]}): `, {
+        limit: function(input) {
+          return parseFloat(input) > 0;
+        },
+        limitMessage: 'Must be greater than zero',
+        defaultInput: defaultTokensPerTier[i]
+      }));
+    }
 
-    //If funds can be raised in POLY
-    if (polyRaise && readlineSync.keyInYNStrict(`Do you plan to have a discounted rate for POLY investments for tier No. ${i+1}? `)) {
-      tiers.tokensPerTierDiscountPoly[i] = web3.utils.toWei(readlineSync.question(`How many of those tokens do you plan to sell at discounted rate on tier No. ${i+1}? (${defaultTokensPerTierDiscountPoly[i]}): `, {
+    if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('ratePerTiers') && i < _stoConfig.ratePerTiers.length) {
+      tiers.ratePerTier[i] = web3.utils.toWei(_stoConfig.tokensPerTiers[i].toString());
+    } else {
+      tiers.ratePerTier[i] = web3.utils.toWei(readlineSync.question(`What is the USD per token rate for tier No. ${i+1}? (${defaultRatePerTier[i]}): `, {
         limit: function(input) {
-          return new BigNumber(web3.utils.toWei(input)).lte(tiers.tokensPerTier[i])
+          return parseFloat(input) > 0;
         },
-        limitMessage: 'Must be less than the No. of tokens of the tier',
-        defaultInput: defaultTokensPerTierDiscountPoly[i]
+        limitMessage: 'Must be greater than zero',
+        defaultInput: defaultRatePerTier[i]
       }));
-      tiers.ratePerTierDiscountPoly[i] = web3.utils.toWei(readlineSync.question(`What is the discounted rate for tier No. ${i+1}? (${defaultRatePerTierDiscountPoly[i]}): `, {
-        limit: function(input) {
-          return new BigNumber(web3.utils.toWei(input)).lte(tiers.ratePerTier[i])
-        },
-        limitMessage: 'Must be less than the rate of the tier',
-        defaultInput: defaultRatePerTierDiscountPoly[i]
-      }));
+    }
+    
+    let isTPTDPDefined = (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('discountedTokensPerTiers') && i < _stoConfig.discountedTokensPerTiers.length); //If it's defined by config file
+    let isRPTDPDefined = (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('discountedRatePerTiers') && i < _stoConfig.discountedRatePerTiers.length); //If it's defined by config file
+    //If funds can be raised in POLY and discounts are defined in config file or are choosen by user
+    if (polyRaise && ((isTPTDPDefined && isRPTDPDefined) || readlineSync.keyInYNStrict(`Do you plan to have a discounted rate for POLY investments for tier No. ${i+1}? `))) {
+      if (isTPTDPDefined) {
+        tiers.tokensPerTierDiscountPoly[i] = web3.utils.toWei(_stoConfig.discountedTokensPerTiers[i].toString());
+      } else {
+        tiers.tokensPerTierDiscountPoly[i] = web3.utils.toWei(readlineSync.question(`How many of those tokens do you plan to sell at discounted rate on tier No. ${i+1}? (${defaultTokensPerTierDiscountPoly[i]}): `, {
+          limit: function(input) {
+            return new BigNumber(web3.utils.toWei(input)).lte(tiers.tokensPerTier[i])
+          },
+          limitMessage: 'Must be less than the No. of tokens of the tier',
+          defaultInput: defaultTokensPerTierDiscountPoly[i]
+        }));
+      }
+      
+      if (isRPTDPDefined) {
+        tiers.ratePerTierDiscountPoly[i] = web3.utils.toWei(_stoConfig.discountedRatePerTiers[i].toString());
+      } else {
+        tiers.ratePerTierDiscountPoly[i] = web3.utils.toWei(readlineSync.question(`What is the discounted rate for tier No. ${i+1}? (${defaultRatePerTierDiscountPoly[i]}): `, {
+          limit: function(input) {
+            return new BigNumber(web3.utils.toWei(input)).lte(tiers.ratePerTier[i])
+          },
+          limitMessage: 'Must be less than the rate of the tier',
+          defaultInput: defaultRatePerTierDiscountPoly[i]
+        }));
+      }
     } else {
       tiers.tokensPerTierDiscountPoly[i] = 0;
       tiers.ratePerTierDiscountPoly[i] = 0;
@@ -662,21 +760,30 @@ function timesConfigUSDTieredSTO() {
   let times = {};
 
   let oneMinuteFromNow = Math.floor(Date.now() / 1000) + 60;
-  times.startTime =  readlineSync.questionInt('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ', {
-    limit: function(input) {
-      return input > Math.floor(Date.now() / 1000);
-    },
-    limitMessage: "Must be a future time",
-    defaultInput: oneMinuteFromNow
-  });
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('startTime')) {
+    times.startTime = _stoConfig.startTime;
+  } else {
+    times.startTime = readlineSync.questionInt('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ', {
+      limit: function(input) {
+        return input > Math.floor(Date.now() / 1000);
+      },
+      limitMessage: "Must be a future time",
+      defaultInput: oneMinuteFromNow
+    });
+  }
+
   let oneMonthFromNow = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60);
-  times.endTime =  readlineSync.questionInt('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = ' + oneMonthFromNow + ' ): ', {
-    limit: function(input) {
-      return input > times.startTime;
-    },
-    limitMessage: "Must be greater than Start Time",
-    defaultInput: oneMonthFromNow
-  });
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('endTime')) {
+    times.endTime = _stoConfig.endTime;
+  } else {
+    times.endTime = readlineSync.questionInt('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = ' + oneMonthFromNow + ' ): ', {
+      limit: function(input) {
+        return input > times.startTime;
+      },
+      limitMessage: "Must be greater than Start Time",
+      defaultInput: oneMonthFromNow
+    });
+  }
 
   return times;
 }
@@ -685,21 +792,30 @@ function limitsConfigUSDTieredSTO() {
   let limits = {};
 
   let defaultMinimumInvestment = 5;
-  limits.minimumInvestmentUSD = web3.utils.toWei(readlineSync.question(`What is the minimum investment in USD? (${defaultMinimumInvestment}): `, {
-    limit: function(input) {
-      return parseInt(input) > 0;
-    },
-    limitMessage: "Must be greater than zero",
-    defaultInput: defaultMinimumInvestment
-  }));
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('minimumInvestmentUSD')) {
+    limits.minimumInvestmentUSD = web3.utils.toWei(_stoConfig.minimumInvestmentUSD.toString());
+  } else {
+    limits.minimumInvestmentUSD = web3.utils.toWei(readlineSync.question(`What is the minimum investment in USD? (${defaultMinimumInvestment}): `, {
+      limit: function(input) {
+        return parseInt(input) > 0;
+      },
+      limitMessage: "Must be greater than zero",
+      defaultInput: defaultMinimumInvestment
+    }));
+  }
+
   let nonAccreditedLimit = 10000;
-  limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the limit for non accredited insvestors in USD? (${nonAccreditedLimit}): `, {
-    limit: function(input) {
-      return new BigNumber(web3.utils.toWei(input)).gte(limits.minimumInvestmentUSD);
-    },
-    limitMessage: "Must be greater than minimum investment",
-    defaultInput: nonAccreditedLimit
-  }));
+  if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('nonAccreditedLimitUSD')) {
+    limits.nonAccreditedLimitUSD = web3.utils.toWei(_stoConfig.nonAccreditedLimitUSD.toString());
+  } else {
+    limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the limit for non accredited insvestors in USD? (${nonAccreditedLimit}): `, {
+      limit: function(input) {
+        return new BigNumber(web3.utils.toWei(input)).gte(limits.minimumInvestmentUSD);
+      },
+      limitMessage: "Must be greater than minimum investment",
+      defaultInput: nonAccreditedLimit
+    }));
+  }
 
   return limits;
 }
@@ -817,7 +933,7 @@ async function usdTieredSTO_launch() {
       TxHash: ${receipt.transactionHash}\n`
     );
   })
-  //console.log("aaa",receipt.logs[1].args._securityTokenAddress);
+
   currentSTO = new web3.eth.Contract(usdTieredSTOABI,STO_Address);
 }
 
@@ -967,6 +1083,7 @@ async function usdTieredSTO_status() {
 
   console.log(`
     ****************** STO Information ******************
+    - Address:                     ${STO_Address}
     - Start Time:                  ${new Date(displayStartTime * 1000)}
     - End Time:                    ${new Date(displayEndTime * 1000)}
     - Raise Type:                  ${displayRaiseType}
@@ -1225,7 +1342,7 @@ async function currentBalance(from) {
 }
 
 module.exports = {
-  executeApp: async function() {
-        return executeApp();
+  executeApp: async function(tokenConfig, mintingConfig, stoConfig) {
+        return executeApp(tokenConfig, mintingConfig, stoConfig);
     }
 }

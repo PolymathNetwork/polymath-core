@@ -75,7 +75,7 @@ async function executeApp(investor, symbol, currency, amount) {
         console.log("Welcome to the Command-Line Investor Portal.");
         console.log("********************************************");
     
-        if (investor == undefined) {
+        if (typeof investor === 'undefined') {
             User = readlineSync.question(chalk.yellow(`\nEnter your public address to log in as an investor. Otherwise, press 'Enter' to log in as the token issuer: `));
         } else {
             User = investor;
@@ -117,7 +117,7 @@ async function setup() {
 
 // Input security token symbol or exit
 async function inputSymbol(symbol) {
-    if (symbol == undefined) {
+    if (typeof symbol === 'undefined') {
         STSymbol = readlineSync.question(chalk.yellow(`Enter the symbol of a registered security token or press 'Enter' to exit: `));
     } else {
         STSymbol = symbol;
@@ -151,7 +151,7 @@ async function inputSymbol(symbol) {
 // Allow investor to buy tokens.
 async function investUsdTieredSTO(currency, amount) {
     let raiseType;
-    if (currency != undefined) {
+    if (typeof currency !== 'undefined') {
         if (displayRaiseType.indexOf(currency) == -1) {
             console.log(chalk.red(`${currency} is not allowed for current STO`));
             process.exit(0);
@@ -181,7 +181,7 @@ async function investUsdTieredSTO(currency, amount) {
     }
 
     let cost;
-    if (amount == undefined) {
+    if (typeof amount === 'undefined') {
         let investorInvestedUSD = web3.utils.fromWei(await currentSTO.methods.investorInvestedUSD(User).call({from: User}));
         let minimumInvestmentUSD = await currentSTO.methods.minimumInvestmentUSD().call({from: User});
         let minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(web3.utils.fromAscii(raiseType), minimumInvestmentUSD).call({from: User});      
@@ -230,13 +230,13 @@ async function investUsdTieredSTO(currency, amount) {
 
 // Allow investor to buy tokens.
 async function investCappedSTO(currency, amount) {
-    if (currency != undefined && displayRaiseType.indexOf(currency) == -1) {
+    if (typeof currency !== 'undefined' && displayRaiseType.indexOf(currency) == -1) {
         console.log(chalk.red(`${currency} is not allowed for current STO`));
         process.exit(0);
     }
 
     let amt;
-    if (amount == undefined) {
+    if (typeof amount === 'undefined') {
         amt = readlineSync.question(chalk.yellow(`Enter the amount of ${displayTokenSymbol.toUpperCase()} you would like to purchase or press 'Enter' to exit. `));
     } else {
         amt = amount;

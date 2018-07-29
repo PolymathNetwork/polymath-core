@@ -156,17 +156,21 @@ node CLI/polymath-cli module_manager
 # Setting up Polymath Core
 ## KOVAN
 
-### v1.2.2 (TORO Release)
+### v1.3.0 (TORO Release)
 
 | Contract                                                         | Address                                                                                                                       |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| TickerRegistry:                                               | [0xf1b64cd44f8da99b518ec530bf8c0d5a04c7dbda](https://kovan.etherscan.io/address/0xf1b64cd44f8da99b518ec530bf8c0d5a04c7dbda)                                              |
-| SecurityTokenRegistry:                                        | [0x26142ca417b712379f0e52ffa906492515db891a](https://kovan.etherscan.io/address/0x26142ca417b712379f0e52ffa906492515db891a)                                              |
-| ModuleRegistry:                                               | [0x4785fbc411af7afc407c1182ac1b67594af62afa](https://kovan.etherscan.io/address/0x4785fbc411af7afc407c1182ac1b67594af62afa)                                              |
-| CappedSTOFactory:                                               | [0xb9e520dc268fd4af75b2aeab37b5e6eef810f872](https://kovan.etherscan.io/address/0xb9e520dc268fd4af75b2aeab37b5e6eef810f872)                                              |
-| EthDividendsCheckpointFactory:                                               | [0xe8300d08eb5022d60ee6ff0947367cebc9f6b63c](https://kovan.etherscan.io/address/0xe8300d08eb5022d60ee6ff0947367cebc9f6b63c)                                              |
-| TORO V1.2.0 Token:                                               | [0x2573D0946810da2C95B3A63cB4c8cc3aF0E95723](https://kovan.etherscan.io/address/0x2573D0946810da2C95B3A63cB4c8cc3aF0E95723)                                              |
-| TORO V1.2.0 CappedSTO:                                               | [0xCB1F57bf24b32466116eD5f359595a5BEba7A166](https://kovan.etherscan.io/address/0xCB1F57bf24b32466116eD5f359595a5BEba7A166)                                              |
+| TickerRegistry:                                               | [0xc9af1d88fe48c8a6aa8677a29a89b0a6ae78f5a8](https://kovan.etherscan.io/address/0xc9af1d88fe48c8a6aa8677a29a89b0a6ae78f5a8)                                              |
+| SecurityTokenRegistry:                                        | [0xced6e4ec2ac5425743bf4edf4d4e476120b8fc72](https://kovan.etherscan.io/address/0xced6e4ec2ac5425743bf4edf4d4e476120b8fc72)                                              |
+| ModuleRegistry:                                               | [0x961913dcbe2f36176bf25774337f3277796820eb](https://kovan.etherscan.io/address/0x961913dcbe2f36176bf25774337f3277796820eb)                                              |
+| Polymath Registry:                                            | [0x05a6519e49e34239f78167abf293d94dae61b299](https://kovan.etherscan.io/address/0x05a6519e49e34239f78167abf293d94dae61b299)                                              |
+| CappedSTOFactory:                                               | [0xde4f3cfb6b214e60c4e69e6dfc95ede3c4e3d709](https://kovan.etherscan.io/address/0xde4f3cfb6b214e60c4e69e6dfc95ede3c4e3d709)                                              |
+| EthDividendsCheckpointFactory:                                  | [0x870a07d45b0f4c5653fc29a4cb0697a01e0224b1](https://kovan.etherscan.io/address/0x870a07d45b0f4c5653fc29a4cb0697a01e0224b1)                                              |
+| ERC20 Dividends Checkpoint Factory:                             | [0x7e823f5df6ed1bb6cc005c692febc6aedf3b8889](https://kovan.etherscan.io/address/0x7e823f5df6ed1bb6cc005c692febc6aedf3b8889)                                              |
+| General Permission Manager Factory:                             | [0x6f5fec2934a34d2e2374042cca6505f1c87ef79b](https://kovan.etherscan.io/address/0x6f5fec2934a34d2e2374042cca6505f1c87ef79b)                                              |
+| Count Transfer Manager Factory:                             | [0xb540b6fa752a91c7e7834523172309e543a99a06](https://kovan.etherscan.io/address/0xb540b6fa752a91c7e7834523172309e543a99a06)                                              |
+| Percentage Transfer Manager Factory:                             | [0xfe908f07e6db57aa6bbd8374e59aac86b60374b0](https://kovan.etherscan.io/address/0xfe908f07e6db57aa6bbd8374e59aac86b60374b0)                                              |
+
 
 
 ## Package version requirements for your machine:

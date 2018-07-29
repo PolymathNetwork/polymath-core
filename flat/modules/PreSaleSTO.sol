@@ -634,8 +634,8 @@ contract ISTO is IModule, Pausable {
 
     using SafeMath for uint256;
 
-    enum FundraiseType { ETH, POLY }
-    FundraiseType public fundraiseType;
+    enum FundRaiseType { ETH, POLY }
+    mapping (uint8 => bool) public fundRaiseType;
 
     // Start time of the STO
     uint256 public startTime;
@@ -665,6 +665,11 @@ contract ISTO is IModule, Pausable {
      * @notice Return the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256);
+
+    /**
+     * @notice Return the total no. of tokens sold
+     */
+    function getTokensSold() public view returns (uint256);
 
     /**
      * @notice pause (overridden function)
@@ -712,6 +717,8 @@ contract PreSaleSTO is ISTO {
 
     uint256 public etherRaised;
     uint256 public polyRaised;
+
+    uint256 public tokensSold;
 
     /**
      * @notice Constructor
@@ -761,6 +768,13 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
+     * @notice Return the total no. of tokens sold
+     */
+    function getTokensSold() public view returns (uint256) {
+        return tokensSold;
+    }
+
+    /**
      * @notice Return the permissions flag that are associated with STO
      */
     function getPermissions() public view returns(bytes32[]) {
@@ -785,6 +799,7 @@ contract PreSaleSTO is ISTO {
         investorCount = investorCount.add(1);
         etherRaised = etherRaised.add(_etherContributed);
         polyRaised = polyRaised.add(_polyContributed);
+        tokensSold = tokensSold.add(_amount);
         emit TokensAllocated(_investor, _amount);
     }
 

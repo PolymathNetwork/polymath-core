@@ -22,6 +22,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
     // Emit at the time of launching of new security token
     event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address indexed _owner);
     event LogAddCustomSecurityToken(string _name, string _symbol, address _securityToken, uint256 _addedAt);
+    event LogChangeOracle(bytes32 _currency, bytes32 _denominatedCurrency, address _newOracle, address _oldOracle, uint256 _now);
 
     constructor (
         address _polymathRegistry,
@@ -139,6 +140,27 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
         require(registrationFee != _registrationFee);
         emit LogChangePolyRegisterationFee(registrationFee, _registrationFee);
         registrationFee = _registrationFee;
+    }
+
+    /**
+     * @notice Change address of oracle for currency pair
+     * @param _currency Symbol of currency
+     * @param _denominatedCurrency Symbol of denominated currency
+     * @param _oracle Address of IOracle
+     */
+    function changeOracle(bytes32 _currency, bytes32 _denominatedCurrency, address _oracle) public onlyOwner {
+        emit LogChangeOracle(_currency, _denominatedCurrency, _oracle, oracles[_currency][_denominatedCurrency], now);
+        oracles[_currency][_denominatedCurrency] = _oracle;
+    }
+
+    /**
+     * @notice Get oracle for currency pair
+     * @param _currency Symbol of currency
+     * @param _denominatedCurrency Symbol of denominated currency
+     * @return address of IOracle
+     */
+    function getOracle(bytes32 _currency, bytes32 _denominatedCurrency) public view returns (address) {
+        return oracles[_currency][_denominatedCurrency];
     }
 
      /**

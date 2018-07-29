@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Global variable 
+bridge_pid
+
 # Exit script as soon as a command fails.
 set -o errexit
 
@@ -8,6 +11,9 @@ trap cleanup EXIT
 
 cleanup() {
   # Kill the testrpc instance that we started (if we started one and if it's still running).
+  if [ -n "$bridge_pid" ] && ps -p $bridge_pid > /dev/null; then
+      kill -9 $bridge_pid
+  fi
   if [ -n "$testrpc_pid" ] && ps -p $testrpc_pid > /dev/null; then
     kill -9 $testrpc_pid
   fi
@@ -21,6 +27,22 @@ fi
 
 testrpc_running() {
   nc -z localhost "$testrpc_port"
+}
+
+bridge_running() {
+  if [ $(ps -eaf | grep -c ethereum-bridge) -ge 2 ]; then
+    return 0
+  else
+    return 1
+  fi
+}
+
+start_bridge() {
+  # Run the ethereum-bridge to make oraclize query run
+  node_modules/.bin/ethereum-bridge -H localhost:8545 -a 9 --dev >/dev/null 2>&1 &
+  sleep 10
+  bridge_pid=$!
+  echo "Ethereum-bridge is successfully running as process id ${bridge_pid}"
 }
 
 start_testrpc() {
@@ -43,15 +65,26 @@ start_testrpc() {
   else
     node_modules/.bin/ganache-cli --gasLimit 0xfffffffffff "${accounts[@]}" > /dev/null &
   fi
+  
 
   testrpc_pid=$!
 }
 
 if testrpc_running; then
   echo "Using existing testrpc instance"
+  bridge_running
+  if bridge_running; then
+    echo "Using existing ethereum-bridge instance"
+  else
+    echo "Runnning the new ethereum-bridge instance"
+    start_bridge
+  fi
 else
   echo "Starting our own testrpc instance"
   start_testrpc
+  echo "Starting our own ethereum-bridge instance"
+  sleep 10
+  start_bridge
 fi
 
 if [ "$SOLIDITY_COVERAGE" = true ]; then
@@ -61,5 +94,5 @@ if [ "$SOLIDITY_COVERAGE" = true ]; then
     cat coverage/lcov.info | node_modules/.bin/coveralls
   fi
 else
-  node_modules/.bin/truffle test "$@"
+  node_modules/.bin/truffle test `ls test/*.js`
 fi

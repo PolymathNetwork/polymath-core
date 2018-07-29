@@ -7,14 +7,19 @@ const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFac
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
+const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
 const TickerRegistry = artifacts.require('./TickerRegistry.sol')
 const STVersionProxy001 = artifacts.require('./tokens/STVersionProxy001.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
+const MockOracle = artifacts.require('./MockOracle.sol')
 let BigNumber = require('bignumber.js');
 const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18));   // 20K POLY fee
+const usdTieredSTOSetupCost = new BigNumber(100000).times(new BigNumber(10).pow(18));   // 100K POLY fee
 const initRegFee = new BigNumber(250).times(new BigNumber(10).pow(18));      // 250 POLY fee for registering ticker or security token in registry
 let PolyToken
+let ETHOracle
+let PolyOracle
 
 const Web3 = require('web3')
 
@@ -27,14 +32,27 @@ module.exports = function (deployer, network, accounts) {
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
     PolymathAccount = accounts[0]
     PolyToken = DevPolyToken.address // Development network polytoken address
+    deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
+      MockOracle.deployed().then((mockedOracle) => {
+        PolyOracle = mockedOracle.address;
+      });
+    });
+    deployer.deploy(MockOracle, 0, "ETH", "USD", new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
+      MockOracle.deployed().then((mockedOracle) => {
+        ETHOracle = mockedOracle.address;
+      });
+    });
   } else if (network === 'ropsten') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://ropsten.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
     PolyToken = '0xafbf8a012b63c7e1ddd333882c612b7100a77d78' // PolyToken Ropsten Faucet Address
+    ETHOracle = '0x2a64846750e0059bc4d87648a00faebdf82982a9' // ETH Mocked Oracle Address
   } else if (network === 'kovan') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
     PolyToken = '0xb06d72a24df50d4e2cac133b320c5e7de3ef94cb' // PolyToken Kovan Faucet Address
+    PolyOracle = '0x9c2c839c71ae659b82f96071f518c6e96c3af071' // Poly Oracle Kovan Address
+    ETHOracle = '0x2a64846750e0059bc4d87648a00faebdf82982a9' // ETH Mocked Oracle Address
   } else if (network === 'mainnet') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
@@ -174,7 +192,25 @@ module.exports = function (deployer, network, accounts) {
       // G) Once the CappedSTOFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-      return moduleRegistry.verifyModule(CappedSTOFactory.address, true, {from: PolymathAccount})
+    return moduleRegistry.verifyModule(CappedSTOFactory.address, true, {from: PolymathAccount})
+    }).then(() => {
+      // H) Deploy the USDTieredSTOFactory (Use to generate the USDTieredSTOFactory contract which will used to collect the funds ).
+    return deployer.deploy(USDTieredSTOFactory, PolyToken, usdTieredSTOSetupCost, 0, 0, {from: PolymathAccount})
+    }).then(() => {
+      // I) Register the USDTieredSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
+      // So any securityToken can use that factory to generate the USDTieredSTOFactory contract.
+    return moduleRegistry.registerModule(USDTieredSTOFactory.address, {from: PolymathAccount})
+    }).then(()=>{
+      // J) Once the USDTieredSTOFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+      // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+      return moduleRegistry.verifyModule(USDTieredSTOFactory.address, true, {from: PolymathAccount})
+    }).then(() => {
+      return SecurityTokenRegistry.deployed().then((securityTokenRegistry) => {
+        return securityTokenRegistry.changeOracle("ETH", "USD", ETHOracle, { from: PolymathAccount }).then(() => {
+          return securityTokenRegistry.changeOracle("POLY", "USD", PolyOracle, { from: PolymathAccount });
+        });
+      });
     }).then(() => {
       console.log('\n')
       console.log('----- Polymath Core Contracts -----')

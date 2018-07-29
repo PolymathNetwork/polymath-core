@@ -27,6 +27,14 @@ module.exports = {
       gas: 4500000,
       gasPrice: 150000000000
     },
+    rinkeby: {
+      // provider: new HDWalletProvider(privKey, "http://localhost:8545"),
+      host: 'localhost',
+      port: 8545,
+      network_id: '4', // Match any network id
+      gas: 7500000,
+      gasPrice: 10000000000
+    },
     kovan: {
       // provider: new HDWalletProvider(privKey, "http://localhost:8545"),
       host: 'localhost',
@@ -49,4 +57,7 @@ module.exports = {
       runs: 200,
     },
   },
+  mocha: {
+    enableTimeouts: false
+  }
 };

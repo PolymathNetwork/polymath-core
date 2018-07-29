@@ -634,8 +634,8 @@ contract ISTO is IModule, Pausable {
 
     using SafeMath for uint256;
 
-    enum FundraiseType { ETH, POLY }
-    FundraiseType public fundraiseType;
+    enum FundRaiseType { ETH, POLY }
+    mapping (uint8 => bool) public fundRaiseType;
 
     // Start time of the STO
     uint256 public startTime;
@@ -665,6 +665,11 @@ contract ISTO is IModule, Pausable {
      * @notice Return the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256);
+
+    /**
+     * @notice Return the total no. of tokens sold
+     */
+    function getTokensSold() public view returns (uint256);
 
     /**
      * @notice pause (overridden function)
@@ -818,7 +823,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
       */
     function buyTokens(address _beneficiary) public payable nonReentrant {
         require(!paused);
-        require(fundraiseType == FundraiseType.ETH, "ETH should be the mode of investment");
+        require(fundRaiseType[uint8(FundRaiseType.ETH)], "ETH should be the mode of investment");
 
         uint256 weiAmount = msg.value;
         _processTx(_beneficiary, weiAmount);
@@ -833,7 +838,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
       */
     function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant{
         require(!paused);
-        require(fundraiseType == FundraiseType.POLY, "POLY should be the mode of investment");
+        require(fundRaiseType[uint8(FundRaiseType.POLY)], "POLY should be the mode of investment");
         require(verifyInvestment(msg.sender, _investedPOLY), "Not valid Investment");
         _processTx(msg.sender, _investedPOLY);
         _forwardPoly(msg.sender, wallet, _investedPOLY);
@@ -852,7 +857,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @notice Return ETH raised by the STO
      */
     function getRaisedEther() public view returns (uint256) {
-        if (fundraiseType == FundraiseType.ETH)
+        if (fundRaiseType[uint8(FundRaiseType.ETH)])
             return fundsRaised;
         else
             return 0;
@@ -862,7 +867,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @notice Return POLY raised by the STO
      */
     function getRaisedPOLY() public view returns (uint256) {
-        if (fundraiseType == FundraiseType.POLY)
+        if (fundRaiseType[uint8(FundRaiseType.POLY)])
             return fundsRaised;
         else
             return 0;
@@ -873,6 +878,13 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      */
     function getNumberInvestors() public view returns (uint256) {
         return investorCount;
+    }
+
+    /**
+     * @notice Return the total no. of tokens sold
+     */
+    function getTokensSold() public view returns (uint256) {
+        return tokensSold;
     }
 
     /**
@@ -895,7 +907,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
             fundsRaised,
             investorCount,
             tokensSold,
-            (fundraiseType == FundraiseType.POLY)
+            (fundRaiseType[uint8(FundRaiseType.POLY)])
         );
     }
 
@@ -994,16 +1006,13 @@ contract CappedSTO is ISTO, ReentrancyGuard {
 
     /**
      * @notice Internal function used to check the type of fund raise currency
-     * @param _fundraiseType Type of currency used to collect the funds
+     * @param _fundRaiseType Type of currency used to collect the funds
      */
-    function _check(uint8 _fundraiseType) internal {
-        require(_fundraiseType == 0 || _fundraiseType == 1, "Not a valid fundraise type");
-        if (_fundraiseType == 0) {
-            fundraiseType = FundraiseType.ETH;
-        }
-        if (_fundraiseType == 1) {
+    function _check(uint8 _fundRaiseType) internal {
+        require(_fundRaiseType == 0 || _fundRaiseType == 1, "Not a valid fundraise type");
+        fundRaiseType[_fundRaiseType] = true;
+        if (_fundRaiseType == uint8(FundRaiseType.POLY)) {
             require(address(polyToken) != address(0), "Address of the polyToken should not be 0x");
-            fundraiseType = FundraiseType.POLY;
         }
     }
 

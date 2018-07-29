@@ -43,7 +43,7 @@ if (typeof web3 !== 'undefined') {
 ////////////////////////////USER INPUTS//////////////////////////////////////////
 let tokenSymbol = process.argv.slice(2)[0]; //token symbol
 let BATCH_SIZE = process.argv.slice(2)[1]; //batch size
-if (!BATCH_SIZE) BATCH_SIZE = 75;
+if (!BATCH_SIZE) BATCH_SIZE = 70;
 
 
 
@@ -64,7 +64,7 @@ let Issuer;
 let accounts;
 let generalTransferManager;
 
-let DEFAULT_GAS_PRICE = 10000000000;
+let DEFAULT_GAS_PRICE = 5000000000;
 
 
 

@@ -44,7 +44,7 @@ if (typeof web3 !== 'undefined') {
 ////////////////////////////USER INPUTS//////////////////////////////////////////
 let tokenSymbol = process.argv.slice(2)[0]; //token symbol
 let BATCH_SIZE = process.argv.slice(2)[1]; //batch size
-if (!BATCH_SIZE) BATCH_SIZE = 75;
+if (!BATCH_SIZE) BATCH_SIZE = 70;
 
 
 
@@ -60,7 +60,7 @@ let fullFileData = new Array();
 let badData = new Array();
 
 
-let DEFAULT_GAS_PRICE = 10000000000;
+let DEFAULT_GAS_PRICE = 5000000000;
 
 
 
@@ -280,7 +280,7 @@ function readFile() {
       console.log("-- No Minted event was found for the following data arrays. Please review them manually --");
       console.log(missingDistribs);
       console.log("************************************************************************************************");
-    } 
+    }
     if (missingDistribs.length == 0 && failedVerificationDistribs.length == 0) {
       console.log("\n**************************************************************************************************************************");
       console.log("All accounts passed through from the CSV were successfully get the tokens, because we were able to read them all from events");

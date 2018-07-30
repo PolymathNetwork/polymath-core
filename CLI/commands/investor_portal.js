@@ -12,7 +12,7 @@ if (typeof web3 !== 'undefined') {
   web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 }
 
-let DEFAULT_GAS_PRICE = 80000000000;
+let DEFAULT_GAS_PRICE = 5000000000;
 
 // Load Contract artifacts
 var contracts = require("./helpers/contract_addresses");
@@ -68,7 +68,7 @@ async function executeApp() {
     try {
         let accounts = await web3.eth.getAccounts();
         Issuer = accounts[0];
-    
+
         welcome();
     }
     catch(err) {

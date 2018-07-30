@@ -46,7 +46,7 @@ let generalTransferManager;
 let securityToken;
 let cappedSTOModule;
 
-let DEFAULT_GAS_PRICE = 80000000000;
+let DEFAULT_GAS_PRICE = 5000000000;
 
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////

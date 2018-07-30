@@ -68,7 +68,7 @@ let cappedSTOFactory;
 let accounts;
 let Issuer;
 let _DEBUG = false;
-let DEFAULT_GAS_PRICE = 80000000000;
+let DEFAULT_GAS_PRICE = 2000000000;
 
 async function executeApp() {
   accounts = await web3.eth.getAccounts();
@@ -88,7 +88,7 @@ async function executeApp() {
     defaultInput: 'Y'
   });
   if(start != 'Y' && start != 'y') return;
-  
+
   try {
     await step_ticker_reg();
     await step_token_deploy();
@@ -231,7 +231,7 @@ async function step_token_deploy(){
       );
       securityToken = new web3.eth.Contract(securityTokenABI, receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress);
     })
-    .on('error', console.error);  
+    .on('error', console.error);
   }
 }
 
@@ -240,7 +240,7 @@ async function step_Wallet_Issuance(){
   let STOAddress = result[1];
   if (STOAddress != "0x0000000000000000000000000000000000000000") {
     console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address " + result[1] + ". Skipping initial minting");
-  } else { 
+  } else {
     let initialMint;
     await securityToken.getPastEvents('Transfer', {
       filter: {from: "0x0000000000000000000000000000000000000000"}, // Using an array means OR: e.g. 20 or 23
@@ -407,7 +407,7 @@ async function step_STO_Launch() {
     let bytesSTO = web3.eth.abi.encodeFunctionCall( {
       name: 'configure',
       type: 'function',
-      inputs: [ 
+      inputs: [
         {
           type: 'uint256',
           name: '_startTime'

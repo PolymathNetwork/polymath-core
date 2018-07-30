@@ -154,6 +154,24 @@ node CLI/polymath-cli module_manager
 ```
 
 # Setting up Polymath Core
+## Mainnet
+
+### v1.3.0 (TORO Release)
+
+| Contract                                                         | Address                                                                                                                       |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| TickerRegistry:                                               | [0xc31714e6759a1ee26db1d06af1ed276340cd4233](https://etherscan.io/address/0xc31714e6759a1ee26db1d06af1ed276340cd4233)                                              |
+| SecurityTokenRegistry:                                        | [0xef58491224958d978facf55d2120c55a24516b98](https://etherscan.io/address/0xef58491224958d978facf55d2120c55a24516b98)                                              |
+| ModuleRegistry:                                               | [0x31d85fffd7e38bd42d2ae0409ac149e3ef0fd92c](https://etherscan.io/address/0x31d85fffd7e38bd42d2ae0409ac149e3ef0fd92c)                                              |
+| Polymath Registry:                                            | [0x06595656b93ce14834f0d22b7bbda4382d5ab510](https://etherscan.io/address/0x06595656b93ce14834f0d22b7bbda4382d5ab510)                                              |
+| CappedSTOFactory:                                               | [0x2aa1b133f464ac08f66c2f702581d014e4603d31](https://etherscan.io/address/0x2aa1b133f464ac08f66c2f702581d014e4603d31)                                              |
+| EthDividendsCheckpointFactory:                                  | [0x0da7ed8789348ac40937cf6ae8ff521eee43816c](https://etherscan.io/address/0x0da7ed8789348ac40937cf6ae8ff521eee43816c)                                              |
+| ERC20 Dividends Checkpoint Factory:                             | [0x6950096964b7adae34d5a3d1792fe73afbe9ddbc](https://etherscan.io/address/0x6950096964b7adae34d5a3d1792fe73afbe9ddbc)                                              |
+| General Permission Manager Factory:                             | [0xeba0348e243f2de2f1687060f9c795ac279c66af](https://etherscan.io/address/0xeba0348e243f2de2f1687060f9c795ac279c66af)                                              |
+| Count Transfer Manager Factory:                             | [0xa662a05647a8e713be1bed193c094805d20471ff](https://etherscan.io/address/0xa662a05647a8e713be1bed193c094805d20471ff)                                              |
+| Percentage Transfer Manager Factory:                             | [0x3870ee581a0528d24a6216311fcfa78f95a00593](https://etherscan.io/address/0x3870ee581a0528d24a6216311fcfa78f95a00593)                                              |
+
+
 ## KOVAN
 
 ### v1.3.0 (TORO Release)

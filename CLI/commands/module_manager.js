@@ -356,32 +356,34 @@ async function whitelist() {
 async function mintTokens() {
     let isSTOAttached;
     let _flag = await securityToken.methods.finishedIssuerMinting().call();
-    await securityToken.methods.getModule(3, 0).call({from: Issuer}, function(error, result) {
-        isSTOAttached = result[1] == "0x0000000000000000000000000000000000000000"? false : true;
-    });
-    if (isSTOAttached || _flag) {
+    if (_flag) {
+        console.log(chalk.red("Minting is not possible - Minting has been permanently disabled by issuer"));
+        return;
+    }
+    let result = await securityToken.methods.getModule(3, 0).call({from: Issuer});
+    let isSTOAttached = result[1] != "0x0000000000000000000000000000000000000000";
+    if (isSTOAttached) {
+        console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
+        return;
+    }
+    
+    let _investor = readlineSync.question(chalk.yellow(`Enter the address to receive the tokens: `));
+    let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
+    try {
+        let mintAction = securityToken.methods.mint(_investor, web3.utils.toWei(_amount));
+        let GAS = await common.estimateGas(mintAction, User, 1.2);
+        await mintAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
+        .on('receipt', function(receipt){
+            console.log(chalk.green(`\nMinting Successful.`));
+        });
+    } catch (e) {
+        console.log(e);
         console.log(chalk.red(`
-        ***********************
-        Minting is not possible - Minting has been permanently disabled by issuer
-        ***********************`));
-    }else {
-        let _investor = readlineSync.question(chalk.yellow(`Enter the address to receive the tokens: `));
-        let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
-        try {
-            let mintAction = securityToken.methods.mint(_investor, web3.utils.toWei(_amount));
-            let GAS = await common.estimateGas(mintAction, User, 1.2);
-            await mintAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
-            .on('receipt', function(receipt){
-                console.log(chalk.green(`\nMinting Successful.`));
-            });
-        } catch (e) {
-            console.log(e);
-            console.log(chalk.red(`
     **************************
     Minting was not successful - Please make sure beneficiary address has been whitelisted
     **************************`));
-        }
     }
+    
     backToMenu()
 }
 

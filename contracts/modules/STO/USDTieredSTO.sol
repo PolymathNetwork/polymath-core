@@ -94,7 +94,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Events //
     ////////////
 
-    event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint256 _tierPrice);
+    event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint256 _tierPrice, uint8 _tier);
     event FundsReceivedETH(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
     event FundsReceivedPOLY(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _tier);
@@ -385,9 +385,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         // Check for non-accredited cap
         if (!accredited[_beneficiary]) {
             require(investorInvestedUSD[_beneficiary] < nonAccreditedLimitUSD, "Non-accredited investor has already reached nonAccreditedLimitUSD");
-            if (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD) {
+            if (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD)
                 investedUSD = nonAccreditedLimitUSD.sub(investorInvestedUSD[_beneficiary]);
-            }
         }
 
         uint256 spentUSD;
@@ -424,44 +423,45 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 spentUSD;
         uint256 tierSpentUSD;
         uint256 tierPurchasedTokens;
-        if (_isPOLY) {
-            // Check whether there are any remaining discounted tokens
-            if (tokensPerTierDiscountPoly[_tier] > mintedPerTierDiscountPoly[_tier]) {
-                (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], tokensPerTierDiscountPoly[_tier], mintedPerTierDiscountPoly[_tier], _investedUSD);
-                spentUSD = spentUSD.add(tierSpentUSD);
-                _investedUSD = _investedUSD.sub(spentUSD);
-                mintedPerTierDiscountPoly[_tier] = mintedPerTierDiscountPoly[_tier].add(tierPurchasedTokens);
-                mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
-            }
+        // Check whether there are any remaining discounted tokens
+        if (_isPOLY && tokensPerTierDiscountPoly[_tier] > mintedPerTierDiscountPoly[_tier]) {
+            uint256 discountRemaining = tokensPerTierDiscountPoly[_tier].sub(mintedPerTierDiscountPoly[_tier]);
+            uint256 totalRemaining = tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]);
+            if (totalRemaining < discountRemaining)
+                (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], totalRemaining, _investedUSD, _tier);
+            else
+                (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], discountRemaining, _investedUSD, _tier);
+            spentUSD = spentUSD.add(tierSpentUSD);
+            _investedUSD = _investedUSD.sub(spentUSD);
+            mintedPerTierDiscountPoly[_tier] = mintedPerTierDiscountPoly[_tier].add(tierPurchasedTokens);
+            mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
         if (_investedUSD > 0) {
-            (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTier[_tier], tokensPerTierTotal[_tier], mintedPerTierTotal[_tier], _investedUSD);
+            (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTier[_tier], tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]), _investedUSD, _tier);
             spentUSD = spentUSD.add(tierSpentUSD);
-            if (_isPOLY) {
+            if (_isPOLY)
                 mintedPerTierRegularPoly[_tier] = mintedPerTierRegularPoly[_tier].add(tierPurchasedTokens);
-            } else {
+            else
                 mintedPerTierETH[_tier] = mintedPerTierETH[_tier].add(tierPurchasedTokens);
-            }
             mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
         }
         return spentUSD;
     }
 
-    function _purchaseTier(address _beneficiary, uint256 _tierPrice, uint256 _tierCap, uint256 _tierMinted, uint256 _investedUSD) internal returns(uint256, uint256) {
+    function _purchaseTier(address _beneficiary, uint256 _tierPrice, uint256 _tierRemaining, uint256 _investedUSD, uint8 _tier) internal returns(uint256, uint256) {
         uint256 maximumTokens = wdiv(_investedUSD, _tierPrice);
-        uint256 remainingTokens = _tierCap.sub(_tierMinted);
         uint256 spentUSD;
         uint256 purchasedTokens;
-        if (maximumTokens > remainingTokens) {
-            spentUSD = wmul(remainingTokens, _tierPrice);
-            purchasedTokens = remainingTokens;
+        if (maximumTokens > _tierRemaining) {
+            spentUSD = wmul(_tierRemaining, _tierPrice);
+            purchasedTokens = _tierRemaining;
         } else {
             spentUSD = _investedUSD;
             purchasedTokens = maximumTokens;
         }
         require(IST20(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting the tokens");
-        emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice);
+        emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
         return (spentUSD, purchasedTokens);
     }
 
@@ -474,18 +474,14 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return bool Whether the STO is accepting investments
      */
     function isOpen() public view returns(bool) {
-        if (isFinalized) {
+        if (isFinalized)
             return false;
-        }
-        if (now < startTime) {
+        if (now < startTime)
             return false;
-        }
-        if (now >= endTime) {
+        if (now >= endTime)
             return false;
-        }
-        if (capReached()) {
+        if (capReached())
             return false;
-        }
         return true;
     }
 

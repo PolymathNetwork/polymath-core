@@ -64,9 +64,7 @@ let Issuer;
 let accounts;
 let generalTransferManager;
 
-let DEFAULT_GAS_PRICE = 10000000000;
-
-
+let defaultGasPrice = 10000000000;
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
@@ -158,7 +156,8 @@ function readFile() {
 ////////////////////////MAIN FUNCTION COMMUNICATING TO BLOCKCHAIN
 async function setInvestors() {
   accounts = await web3.eth.getAccounts();
-  Issuer = accounts[0]
+  Issuer = accounts[0];
+  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
 
   let tokenDeployed = false;
   let tokenDeployedAddress;
@@ -207,10 +206,10 @@ async function setInvestors() {
       //expiryTime is time at which KYC of investor get expired (4th row in csv, 4rd parameter in modifyWhiteList() )
       let modifyWhitelistMultiAction = generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray);
       let GAS = await common.estimateGas(modifyWhitelistMultiAction, Issuer, 1.2);
-      let r = await modifyWhitelistMultiAction.send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+      let r = await modifyWhitelistMultiAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice })
       console.log(`Batch ${i} - Attempting to modifyWhitelist accounts:\n\n`, investorArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
-      console.log("Whitelist transaxction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * DEFAULT_GAS_PRICE).toString(), "ether"), "Ether");
+      console.log("Whitelist transaxction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
 
     } catch (err) {
@@ -308,7 +307,6 @@ async function setInvestors() {
     console.log("************************************************************************************************");
   }
   // console.log(`Run 'node scripts/verify_airdrop.js ${polyDistribution.address} > scripts/data/review.csv' to get a log of all the accounts that were distributed the airdrop tokens.`)
-
 }
 
 //will be deleted once DATES are updated
@@ -325,7 +323,6 @@ function isValidDayInput(days) {
   } else {
     return false
   }
-
 }
 
 function isValidDate(date) {

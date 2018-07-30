@@ -56,7 +56,7 @@ let badData = new Array();
 let Issuer;
 let accounts;
 
-let DEFAULT_GAS_PRICE = 10000000000;
+let defaultGasPrice;
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 startScript();
@@ -132,6 +132,7 @@ function readFile() {
 async function changeAccredited() {
   accounts = await web3.eth.getAccounts();
   Issuer = accounts[0]
+  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
 
   // Let's check if token has already been deployed, if it has, skip to STO
   let tokenDeployedAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({ from: Issuer });
@@ -161,10 +162,10 @@ async function changeAccredited() {
         
               let changeAccreditedAction = usdTieredSTO.methods.changeAccredited(investorArray, isAccreditedArray);
               let GAS = await common.estimateGas(changeAccreditedAction, Issuer, 2);
-              let r = await changeAccreditedAction.send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+              let r = await changeAccreditedAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice })
               console.log(`Batch ${i} - Attempting to change accredited accounts:\n\n`, investorArray, "\n\n");
               console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
-              console.log("Change accredited transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * DEFAULT_GAS_PRICE).toString(), "ether"), "Ether");
+              console.log("Change accredited transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");
               console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
             } catch (err) {
               console.log("ERROR:", err);

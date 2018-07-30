@@ -30,11 +30,12 @@ let polyToken;
 // App flow
 let accounts;
 let Issuer;
-let DEFAULT_GAS_PRICE = 80000000000;
+let defaultGasPrice;
 
 async function executeApp(beneficiary, amount) {
   accounts = await web3.eth.getAccounts();
   Issuer = accounts[0];
+  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
 
   console.log("\n");
   console.log("***************************")
@@ -100,7 +101,7 @@ async function transferTokens(to, amount) {
     try {
         let getTokensAction = polyToken.methods.getTokens(amount, to);
         let GAS = await common.estimateGas(getTokensAction, Issuer, 1.2);
-        await getTokensAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+        await getTokensAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
         .on('transactionHash', function(hash) {
             console.log(`
             Your transaction is being processed. Please wait...

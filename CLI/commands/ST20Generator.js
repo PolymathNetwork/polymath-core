@@ -67,7 +67,7 @@ let usdTieredSTOFactory;
 // App flow
 let accounts;
 let Issuer;
-let DEFAULT_GAS_PRICE = 100000000000;
+let defaultGasPrice;
 let _DEBUG = false;
 let _tokenConfig;
 let _mintingConfig;
@@ -76,14 +76,13 @@ let _stoConfig;
 async function executeApp(tokenConfig, mintingConfig, stoConfig) {
   accounts = await web3.eth.getAccounts();
   Issuer = accounts[0];
+  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
 
   _tokenConfig = tokenConfig;
   _mintingConfig = mintingConfig;
   _stoConfig = stoConfig;
 
   setup();
-
-console.log(web3.utils.toWei('1182.73'))
 
   common.logAsciiBull();
   console.log("********************************************");
@@ -96,6 +95,7 @@ console.log(web3.utils.toWei('1182.73'))
   }
 
   try {
+
     await step_ticker_reg();
     await step_token_deploy();
     await step_Wallet_Issuance();
@@ -160,7 +160,7 @@ async function step_ticker_reg(){
     await step_approval(tickerRegistryAddress, regFee);
     let registerTickerAction = tickerRegistry.methods.registerTicker(Issuer,tokenSymbol,"",web3.utils.asciiToHex(""));
     let GAS = await common.estimateGas(registerTickerAction, Issuer, 1.2);
-    await registerTickerAction.send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+    await registerTickerAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
     .on('transactionHash', function(hash){
       console.log(`
         Congrats! Your Ticker Registration tx populated successfully
@@ -188,7 +188,7 @@ async function step_approval(spender, fee) {
     } else {
       let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
       let GAS = await common.estimateGas(approveAction, Issuer, 1.2);
-      await approveAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+      await approveAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice })
     }
   } else {
       let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);
@@ -232,7 +232,7 @@ async function step_token_deploy(){
     await step_approval(securityTokenRegistryAddress, regFee);
     let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, web3.utils.fromAscii(tokenDetails), divisibility);
     let GAS = await common.estimateGas(generateSecurityTokenAction, Issuer, 1.2);
-    await generateSecurityTokenAction.send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+    await generateSecurityTokenAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...
@@ -306,7 +306,7 @@ async function step_Wallet_Issuance(){
         let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
         let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
         let GAS = await common.estimateGas(modifyWhitelistAction, Issuer, 1.5);
-        await modifyWhitelistAction.send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+        await modifyWhitelistAction.send({ from: Issuer, gas: GAS, gasPrice:defaultGasPrice})
         .on('transactionHash', function(hash){
           console.log(`
             Adding wallet to whitelist. Please wait...
@@ -331,7 +331,7 @@ async function step_Wallet_Issuance(){
         
         let mintAction = securityToken.methods.mint(mintWallet, web3.utils.toWei(issuerTokens,"ether"));
         GAS = await common.estimateGas(mintAction, Issuer, 1.2);
-        await mintAction.send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+        await mintAction.send({ from: Issuer, gas: GAS, gasPrice:defaultGasPrice})
         .on('transactionHash', function(hash){
           console.log(`
             Minting tokens. Please wait...
@@ -523,7 +523,7 @@ async function cappedSTO_launch() {
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
       let GAS = await common.estimateGas(transferAction, Issuer, 1.5);
-      await transferAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+      await transferAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
       .on('transactionHash', function(hash) {
         console.log(`
           Transfer ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY to ${tokenSymbol} security token
@@ -544,7 +544,7 @@ async function cappedSTO_launch() {
   }
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let GAS = await common.estimateGas(addModuleAction, Issuer, 1.2);
-  await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0).send({from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+  await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0).send({from: Issuer, gas: GAS, gasPrice:defaultGasPrice})
   .on('transactionHash', function(hash){
     console.log(`
       Your transaction is being processed. Please wait...
@@ -896,7 +896,7 @@ async function usdTieredSTO_launch() {
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
       let GAS = await common.estimateGas(transferAction, Issuer, 1.5);
-      await transferAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+      await transferAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
       .on('transactionHash', function(hash) {
         console.log(`
           Transfer ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY to ${tokenSymbol} security token
@@ -917,7 +917,7 @@ async function usdTieredSTO_launch() {
   }
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let GAS = await common.estimateGas(addModuleAction, Issuer, 1.2);
-  await securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0).send({from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+  await securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0).send({from: Issuer, gas: GAS, gasPrice:defaultGasPrice})
   .on('transactionHash', function(hash){
     console.log(`
       Your transaction is being processed. Please wait...
@@ -1141,7 +1141,7 @@ async function usdTieredSTO_configure() {
         if (readlineSync.keyInYNStrict()) {
           let finalizeAction = currentSTO.methods.finalize();
           let GAS = await common.estimateGas(finalizeAction, Issuer, 1.2);
-          await finalizeAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+          await finalizeAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
           .on('transactionHash', function(hash) {
             console.log(`
               Finalizing STO
@@ -1167,7 +1167,7 @@ async function usdTieredSTO_configure() {
         let accredited = [isAccredited];
         let changeAccreditedAction = currentSTO.methods.changeAccredited(investors, accredited);
         let GAS2 = await common.estimateGas(changeAccreditedAction, Issuer, 2);
-        await changeAccreditedAction.send({from: Issuer, gas: GAS2, gasPrice: DEFAULT_GAS_PRICE})
+        await changeAccreditedAction.send({from: Issuer, gas: GAS2, gasPrice: defaultGasPrice})
         .on('transactionHash', function(hash) {
           console.log(`
             Changing accreditation
@@ -1216,7 +1216,7 @@ async function modfifyTimes() {
   let times = timesConfigUSDTieredSTO();
   let modifyTimesAction = currentSTO.methods.modifyTimes(times.startTime, times.endTime);
   let GAS = await common.estimateGas(modifyTimesAction, Issuer, 1.2);
-  await modifyTimesAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+  await modifyTimesAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
   .on('transactionHash', function(hash) {
     console.log(`
       Modifying start and end times
@@ -1239,7 +1239,7 @@ async function modfifyLimits() {
   let limits = limitsConfigUSDTieredSTO();
   let modifyLimitsAction = currentSTO.methods.modifyLimits(limits.nonAccreditedLimitUSD, limits.minimumInvestmentUSD);
   let GAS = await common.estimateGas(modifyLimitsAction, Issuer, 1.2);
-  await modifyLimitsAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+  await modifyLimitsAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
   .on('transactionHash', function(hash) {
     console.log(`
       Modifying limits
@@ -1262,7 +1262,7 @@ async function modfifyFunding() {
   let funding = fundingConfigUSDTieredSTO();
   let modifyFundingAction = currentSTO.methods.modifyFunding(funding.raiseType);
   let GAS = await common.estimateGas(modifyFundingAction, Issuer, 1.5);
-  await modifyFundingAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+  await modifyFundingAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
   .on('transactionHash', function(hash) {
     console.log(`
       Modifying funding raise types
@@ -1285,7 +1285,7 @@ async function modfifyAddresses() {
   let addresses = addressesConfigUSDTieredSTO();
   let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.wallet, addresses.reserveWallet);
   let GAS = await common.estimateGas(modifyAddressesAction, Issuer, 1.2);
-  await modifyAddressesAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+  await modifyAddressesAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
   .on('transactionHash', function(hash) {
     console.log(`
       Modifying addresses
@@ -1313,7 +1313,7 @@ async function modfifyTiers() {
     tiers.tokensPerTierDiscountPoly,
   );
   let GAS = await common.estimateGas(modifyTiersAction, Issuer, 1.2);
-  await modifyTiersAction.send({from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+  await modifyTiersAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
   .on('transactionHash', function(hash) {
     console.log(`
       Modifying tiers

@@ -1,6 +1,27 @@
 var chalk = require('chalk');
 
 module.exports = {
+  getGasPrice: function (networkId) {
+    let gasPrice;
+    switch (networkId) {
+      case 1: //Mainnet
+        gasPrice = 4000000000;
+        break;
+      case 3: //Ropsten
+        gasPrice = 50000000000;
+        break;
+      case 15: //Ganache
+        gasPrice = 50000000000;
+        break;
+      case 42: //Kovan
+        gasPrice = 50000000000;
+        break;
+      default:
+        throw new Error('Network ID not identified');
+    }
+
+    return gasPrice;
+  },
   estimateGas: async function (actionToEstimate, fromAddress, factor, value) {
     let estimatedGAS = Math.round(factor * (await actionToEstimate.estimateGas({ from: fromAddress, value: value})));
     console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${actionToEstimate._method.name} - Gas limit provided: ${estimatedGAS} ----`));    

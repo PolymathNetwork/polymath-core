@@ -263,8 +263,7 @@ async function step_Wallet_Issuance(){
       else {
         let mintWallet =  readlineSync.question('Add the address that will hold the issued tokens to the whitelist ('+Issuer+'): ');
         if(mintWallet == "") mintWallet = Issuer;
-        let canBuyFromSTO = readlineSync.question(`Address '(${mintWallet})' allowed to buy tokens from the STO (true): `);
-        if(canBuyFromSTO == "") canBuyFromSTO = true;
+        let canBuyFromSTO = readlineSync.keyInYNStrict(`Is address '(${mintWallet})' allowed to buy tokens from the STO? `);
 
         // Add address to whitelist
         let generalTransferManagerAddress;
@@ -395,8 +394,11 @@ async function step_STO_Launch() {
     if(startTime == "") startTime = BigNumber((Math.floor(Date.now()/1000)+60));
     if(endTime == "") endTime = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
     if(wallet == "") wallet = Issuer;
-    (raiseType == "") ? raiseType = 0 : raiseType = 1;  // 0 = ETH raise, 1 = Poly raise
-
+    if (raiseType.toUpperCase() == 'P' ) {
+      raiseType = 1;
+    } else { 
+      raiseType = 0;
+    }
     if (raiseType) {
       rate = readlineSync.question('Enter the rate (1 POLY = X ST) for the STO (1000): ');
     } else {

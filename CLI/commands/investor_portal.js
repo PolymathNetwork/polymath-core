@@ -1,5 +1,6 @@
 // Libraries for terminal prompts
 var readlineSync = require('readline-sync');
+var BigNumber = require('bignumber.js');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
 
@@ -225,7 +226,7 @@ async function invest() {
     if (amt == "") {
         process.exit();
     };
-    let cost = amt/displayRate
+    let cost = new BigNumber(amt).div(displayRate);
     console.log(`This investment will cost ${cost} ${displayRaiseType}`);
 
     if (displayRaiseType == 'POLY') {

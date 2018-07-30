@@ -311,14 +311,16 @@ async function removeModule() {
     pushModules(numSTO,stoModules);
     pushModules(numCP,cpModules);
 
-    let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to remove?'), {cancel: false});
-    console.log("\nSelected:",options[index]);
-    let removeModuleAction = securityToken.methods.removeModule(modules[index].module.type,modules[index].index);
-    let GAS = await common.estimateGas(removeModuleAction, User, 2);
-    await removeModuleAction.send({from: User, gas: GAS, gasPrice: defaultGasPrice })
-    .on('receipt', function(receipt){
-        console.log(chalk.green(`\nSuccessfully removed ${modules[index].module.name}.`));
-    });
+    let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to remove?'));
+    if (index != -1) {
+        console.log("\nSelected: ",options[index]);
+        let removeModuleAction = securityToken.methods.removeModule(modules[index].module.type,modules[index].index);
+        let GAS = await common.estimateGas(removeModuleAction, User, 2);
+        await removeModuleAction.send({from: User, gas: GAS, gasPrice: defaultGasPrice })
+        .on('receipt', function(receipt){
+            console.log(chalk.green(`\nSuccessfully removed ${modules[index].module.name}.`));
+        });
+    }
     backToMenu()
 }
 

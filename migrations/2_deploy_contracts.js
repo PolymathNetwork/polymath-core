@@ -60,6 +60,16 @@ module.exports = function (deployer, network, accounts) {
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
     PolymathAccount = accounts[0]
     PolyToken = DevPolyToken.address // Development network polytoken address
+    deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
+      MockOracle.deployed().then((mockedOracle) => {
+        PolyOracle = mockedOracle.address;
+      });
+    });
+    deployer.deploy(MockOracle, 0, "ETH", "USD", new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
+      MockOracle.deployed().then((mockedOracle) => {
+        ETHOracle = mockedOracle.address;
+      });
+    });
   }
 
 

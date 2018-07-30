@@ -46,8 +46,7 @@ let generalTransferManager;
 let securityToken;
 let cappedSTOModule;
 
-let DEFAULT_GAS_PRICE = 80000000000;
-
+let defaultGasPrice;
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
@@ -58,6 +57,7 @@ async function startScript(tokenSymbol, transferTo, transferAmount) {
 
   accounts = await web3.eth.getAccounts();
   Issuer = accounts[0];
+  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
 
   try {
     tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
@@ -85,7 +85,7 @@ async function transfer() {
   try{
     let transferAction = securityToken.methods.transfer(_transferTo,web3.utils.toWei(_transferAmount,"ether"));
     let GAS = await common.estimateGas(transferAction, Issuer, 1.2);
-    await transferAction.send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+    await transferAction.send({ from: Issuer, gas: GAS, gasPrice:defaultGasPrice})
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...

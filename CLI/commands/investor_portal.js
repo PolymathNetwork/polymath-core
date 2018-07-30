@@ -13,7 +13,7 @@ if (typeof web3 !== 'undefined') {
   web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 }
 
-let DEFAULT_GAS_PRICE = 80000000000;
+let defaultGasPrice;
 
 // Load Contract artifacts
 var contracts = require("./helpers/contract_addresses");
@@ -67,6 +67,7 @@ async function executeApp(investor, symbol, currency, amount) {
     // Init user accounts
     let accounts = await web3.eth.getAccounts();
     Issuer = accounts[0];
+    defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
     
     setup();
 
@@ -206,11 +207,11 @@ async function investUsdTieredSTO(currency, amount) {
             if (allowance < costWei) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
                 let GAS = await common.estimateGas(approveAction, User, 1.2);
-                await approveAction.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE });
+                await approveAction.send({from: User, gas: GAS, gasPrice: defaultGasPrice });
             }
             let actionBuyWithPoly = currentSTO.methods.buyWithPOLY(User, costWei);
             let GAS = await common.estimateGas(actionBuyWithPoly, User, 1.2);
-            await actionBuyWithPoly.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+            await actionBuyWithPoly.send({from: User, gas: GAS, gasPrice: defaultGasPrice })
             .on('transactionHash', function(hash) { logTransactionHash(hash) })
             .on('receipt', function(receipt) { logTokensPurchasedUSDTieredSTO(receipt) });
         } else {
@@ -221,7 +222,7 @@ async function investUsdTieredSTO(currency, amount) {
     } else {
         let actionBuyWithETH = currentSTO.methods.buyWithETH(User);
         let GAS = await common.estimateGas(actionBuyWithETH, User, 1.2, web3.utils.toWei(cost.toString()));
-        await actionBuyWithETH.send({ from: User, value:costWei, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+        await actionBuyWithETH.send({ from: User, value:costWei, gas: GAS, gasPrice:defaultGasPrice})
         .on('transactionHash', function(hash) { logTransactionHash(hash) })
         .on('receipt', function(receipt) { logTokensPurchasedUSDTieredSTO(receipt) });
     }
@@ -255,11 +256,11 @@ async function investCappedSTO(currency, amount) {
             if (allowance < costWei) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
                 let GAS = await common.estimateGas(approveAction, User, 1.2);
-                await approveAction.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE });
+                await approveAction.send({from: User, gas: GAS, gasPrice: defaultGasPrice });
             }
             let actionBuyTokensWithPoly = currentSTO.methods.buyTokensWithPoly(costWei);
             let GAS = await common.estimateGas(actionBuyTokensWithPoly, User, 1.2);
-            await actionBuyTokensWithPoly.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+            await actionBuyTokensWithPoly.send({from: User, gas: GAS, gasPrice: defaultGasPrice })
             .on('transactionHash', function(hash) { logTransactionHash(hash) })
             .on('receipt', function(receipt) { logTokensPurchasedCappedSTO(receipt) });
         } else {
@@ -270,7 +271,7 @@ async function investCappedSTO(currency, amount) {
     } else {
         let actionBuyTokens = currentSTO.methods.buyTokens(User);
         let GAS = await common.estimateGas(actionBuyTokens, User, 1.2, costWei);
-        await actionBuyTokens.send({ from: User, value: costWei, gas: GAS, gasPrice: DEFAULT_GAS_PRICE})
+        await actionBuyTokens.send({ from: User, value: costWei, gas: GAS, gasPrice: defaultGasPrice})
         .on('transactionHash', function(hash) { logTransactionHash(hash) })
         .on('receipt', function(receipt) { logTokensPurchasedCappedSTO(receipt) });
     }
@@ -502,7 +503,7 @@ async function showCappedSTOInfo() {
     await generalTransferManager.methods.whitelist(User).call({from: User}, function(error, result){
         displayCanBuy = result.canBuyFromSTO;
     });
-    
+
     let now = Math.floor(Date.now()/1000);
     let timeTitle;
     let timeRemaining;

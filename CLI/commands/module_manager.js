@@ -11,7 +11,7 @@ if (typeof web3 !== 'undefined') {
     web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 }
 
-let DEFAULT_GAS_PRICE = 80000000000;
+let defaultGasPrice;
 
 // Load contract artifacts
 var contracts = require("./helpers/contract_addresses");
@@ -78,6 +78,8 @@ async function executeApp() {
     let accounts = await web3.eth.getAccounts();
     Issuer = accounts[0];
     User = Issuer;
+    defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
+
     await showUserInfo(User);
 
     while (!validSymbol) {
@@ -313,7 +315,7 @@ async function removeModule() {
     console.log("\nSelected:",options[index]);
     let removeModuleAction = securityToken.methods.removeModule(modules[index].module.type,modules[index].index);
     let GAS = await common.estimateGas(removeModuleAction, User, 2);
-    await removeModuleAction.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+    await removeModuleAction.send({from: User, gas: GAS, gasPrice: defaultGasPrice })
     .on('receipt', function(receipt){
         console.log(chalk.green(`\nSuccessfully removed ${modules[index].module.name}.`));
     });
@@ -335,7 +337,7 @@ async function whitelist() {
         let now = await latestTime();
         let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(investor, now, now, now + 31556952, true);
         let GAS = await common.estimateGas(modifyWhitelistAction, User, 1.2);
-        await modifyWhitelistAction.send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+        await modifyWhitelistAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
         .on('receipt', function(receipt){
             console.log(chalk.green(`\nWhitelisting successful for ${investor}.`));
         });
@@ -366,7 +368,7 @@ async function mintTokens() {
         try {
             let mintAction = securityToken.methods.mint(_investor, web3.utils.toWei(_amount));
             let GAS = await common.estimateGas(mintAction, User, 1.2);
-            await mintAction.send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+            await mintAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
             .on('receipt', function(receipt){
                 console.log(chalk.green(`\nMinting Successful.`));
             });
@@ -384,7 +386,7 @@ async function mintTokens() {
 async function endMintingForSTO() {
     let finishMintingSTOAction = securityToken.methods.finishMintingSTO();
     let GAS = await common.estimateGas(finishMintingSTOAction, User, 1.2);
-    await finishMintingSTOAction.send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+    await finishMintingSTOAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
     .on('receipt', function(receipt){
         console.log(chalk.green(`\nEnd minting for STO was successful.`));
     });
@@ -394,7 +396,7 @@ async function endMintingForSTO() {
 async function endMintingForIssuer() {
     let finishMintingIssuerAction = securityToken.methods.finishMintingIssuer();
     let GAS = await common.estimateGas(finishMintingIssuerAction, User, 1.2);
-    await finishMintingIssuerAction.send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+    await finishMintingIssuerAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
     .on('receipt', function(receipt){
         console.log(chalk.green(`\nEnd minting for Issuer was successful.`));
     });

@@ -31,16 +31,25 @@ Transaction cost: 1.715 ETH at 50gwei gas price (Had to enter a huge gas price d
 2. Transfer of Ownership
 Mainnet Multisig: 0xa22d152d855d80f4d88e5e483c30b87161019d3a
 
-a. Transferred ownership of PolymathRegistry to Multisig: https://etherscan.io/tx/0xd71bb45c84a47dc7efeac9dcd097b95bd5a397b2448b9e1d4ace4b37ad5833fc
-b. Transferred ownership of TickerRegistry to Multisig: https://etherscan.io/tx/0xdb75ea9cf6d4ffce3c9c0c9546bcaa53a063cdc7a7a6a7ed597347790f885b88
-c. Transferred ownership of SecurityTokenRegistry to Multisig: https://etherscan.io/tx/0x67315d6df0669cfefafb4e3860e8ebb79168490adb4b4965ecb5850fb889291c
-d. Transferred ownership of ModuleRegistry to Multisig: https://etherscan.io/tx/0xf0da6fac846e7aed091aede36c471d2128995b8dc5df9156c8752d0a392e6013
-e. Transferred ownership of CappedSTOFactory to Multisig: https://etherscan.io/tx/0xd934ac2b6a5e73715e5d7cad6b198f7c4cbecc4b9258ff7fc26f589254892df3
-f. Transferred ownership of GeneralPermissionManagerFactory to Multisig: https://etherscan.io/tx/0x98abcd6b8d039ee0fe1de72afc7be8caa6211db1bfd497f15449ebe4e7c243da
-g. Transferred ownership of CountTransferManagerFactory to Multisig: https://etherscan.io/tx/0x053d647e449a1aa46b60e90392c519ee6e15a714ee1c7071eeb666819298dc2d
-h. Transferred ownership of PercentageTransferManagerFactory to Multisig: https://etherscan.io/tx/0x271cb0ce1756250b45b209ba82ebedfc73d3e29e0148950445a54df2c75383f9
-i. Transferred ownership of EtherDividendCheckpointFactory to Multisig: https://etherscan.io/tx/0x57373cba2f24f30c8db8cb6e2f7519b4a51c2ed285ddb041da3d6f944efd6f40
-j. Transferred ownership of ERC20DividendCheckpointFactory to Multisig: https://etherscan.io/tx/0xe07316cbeb1fd0fa51f6415f9884e7db8467fd7a3fae8e38f7bdac88575c24bc
+  - a) Transferred ownership of PolymathRegistry to Multisig: https://etherscan.io/tx/0xd71bb45c84a47dc7efeac9dcd097b95bd5a397b2448b9e1d4ace4b37ad5833fc
+
+  - b) Transferred ownership of TickerRegistry to Multisig: https://etherscan.io/tx/0xdb75ea9cf6d4ffce3c9c0c9546bcaa53a063cdc7a7a6a7ed597347790f885b88
+
+  - c) Transferred ownership of SecurityTokenRegistry to Multisig: https://etherscan.io/tx/0x67315d6df0669cfefafb4e3860e8ebb79168490adb4b4965ecb5850fb889291c
+
+  - d) Transferred ownership of ModuleRegistry to Multisig: https://etherscan.io/tx/0xf0da6fac846e7aed091aede36c471d2128995b8dc5df9156c8752d0a392e6013
+
+  - e) Transferred ownership of CappedSTOFactory to Multisig: https://etherscan.io/tx/0xd934ac2b6a5e73715e5d7cad6b198f7c4cbecc4b9258ff7fc26f589254892df3
+
+  - f) Transferred ownership of GeneralPermissionManagerFactory to Multisig: https://etherscan.io/tx/0x98abcd6b8d039ee0fe1de72afc7be8caa6211db1bfd497f15449ebe4e7c243da
+
+  - g) Transferred ownership of CountTransferManagerFactory to Multisig: https://etherscan.io/tx/0x053d647e449a1aa46b60e90392c519ee6e15a714ee1c7071eeb666819298dc2d
+
+  - h) Transferred ownership of PercentageTransferManagerFactory to Multisig: https://etherscan.io/tx/0x271cb0ce1756250b45b209ba82ebedfc73d3e29e0148950445a54df2c75383f9
+
+  - i) Transferred ownership of EtherDividendCheckpointFactory to Multisig: https://etherscan.io/tx/0x57373cba2f24f30c8db8cb6e2f7519b4a51c2ed285ddb041da3d6f944efd6f40
+
+  - j) Transferred ownership of ERC20DividendCheckpointFactory to Multisig: https://etherscan.io/tx/0xe07316cbeb1fd0fa51f6415f9884e7db8467fd7a3fae8e38f7bdac88575c24bc
 
 3. Change of TickerRegistry.expiryLimit from 15 days to 60 days
 https://etherscan.io/tx/0xb978e00a55464ac2389f48e258a5ef59491acc34566a7e4cecf4386e8276b4c1#eventlog

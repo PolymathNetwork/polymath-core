@@ -226,7 +226,10 @@ async function step_token_deploy(){
       divisibility = _tokenConfig.divisible;
     } else {
       let divisible = readlineSync.question('Press "N" for Non-divisible type token or hit Enter for divisible type token (Default):');
-      divisibility = (divisible == 'N' || divisible == 'n');
+      if (divisible == 'N' || divisible == 'n')
+        divisibility = false;
+      else
+        divisibility = true;
     }
 
     await step_approval(securityTokenRegistryAddress, regFee);

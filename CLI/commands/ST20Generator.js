@@ -68,7 +68,7 @@ let cappedSTOFactory;
 let accounts;
 let Issuer;
 let _DEBUG = false;
-let DEFAULT_GAS_PRICE = 2000000000;
+let DEFAULT_GAS_PRICE = 5000000000;
 
 async function executeApp() {
   accounts = await web3.eth.getAccounts();
@@ -396,7 +396,7 @@ async function step_STO_Launch() {
     if(wallet == "") wallet = Issuer;
     if (raiseType.toUpperCase() == 'P' ) {
       raiseType = 1;
-    } else { 
+    } else {
       raiseType = 0;
     }
     if (raiseType) {

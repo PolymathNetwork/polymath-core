@@ -1,52 +1,103 @@
-var NETWORKS = {
-  GANACHE: 15,
-  MAINNET: 1,
-  ROPSTEN: 3,
-  KOVAN:   42
-};
-var SELECTED_NETWORK = NETWORKS.KOVAN;
+const abis = require('../helpers/contract_abis');
+// Generate web3 instance
+const Web3 = require('web3');
+if (typeof web3 !== 'undefined') {
+    web3 = new Web3(web3.currentProvider);
+} else {
+    web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+}
+
+let _polymathRegistry;
+let _moduleRegistry;
+
+function getPolymathRegistryAddress(networkId) {
+  let result;
+  switch (networkId) {
+    case 1: // MAINNET
+      result = "0x06595656b93ce14834f0d22b7bbda4382d5ab510";
+      break;
+    case 3: // ROPSTEN
+      result = "";
+      break;
+    case 15: // GANACHE
+      result = JSON.parse(require('fs').readFileSync('./build/contracts/PolymathRegistry.json').toString()).networks[networkId].address;
+      break;
+    case 42: // KOVAN
+      result = "0x0879dece79f0b7749e2698d377049f5490a06c71";
+      break;
+  }
+
+  return result;
+}
+
+async function getPolymathRegistry() {
+  if (typeof _polymathRegistry === 'undefined') { 
+    let networkId = await web3.eth.net.getId();
+    let polymathRegistryAddress = getPolymathRegistryAddress(networkId);
+    let polymathRegistryAbi = abis.polymathRegistry();
+    _polymathRegistry = new web3.eth.Contract(polymathRegistryAbi, polymathRegistryAddress);
+    _polymathRegistry.setProvider(web3.currentProvider);
+  }
+  
+  return _polymathRegistry;
+}
+
+async function getModuleRegistry() {
+  if (typeof _moduleRegistry === 'undefined') { 
+    let polymathRegistry = await getPolymathRegistry();
+    let moduleRegistryAddress = await polymathRegistry.methods.getAddress("ModuleRegistry").call();
+    let moduleRegistryAbi = abis.moduleRegistryAbi();
+    _moduleRegistry = new web3.eth.Contract(moduleRegistryAbi, moduleRegistryAddress);
+    _moduleRegistry.setProvider(web3.currentProvider);
+  }
+  
+  return _moduleRegistry;
+}
+
 
 module.exports = {
-  tickerRegistryAddress: function() {
-    if(SELECTED_NETWORK == NETWORKS.KOVAN)
-      return "0x33905f8f5021b258e79e0a4d4ce44e396742bf46"; // Updated to poly_oracle deployment
-    else
-      return JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).networks[SELECTED_NETWORK].address;
+  tickerRegistry: async function() {
+    let polymathRegistry = await getPolymathRegistry();
+    return await polymathRegistry.methods.getAddress("TickerRegistry").call();
   },
-  securityTokenRegistryAddress: function() {
-    if(SELECTED_NETWORK == NETWORKS.KOVAN)
-      return "0x2f279fde5b3a9d4570e21ccc6d67a6962b134902"; // Updated to poly_oracle deployment
-    else
-      return JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).networks[SELECTED_NETWORK].address;
+  securityTokenRegistry: async function() {
+    let polymathRegistry = await getPolymathRegistry();
+    return await polymathRegistry.methods.getAddress("SecurityTokenRegistry").call();
   },
-  cappedSTOFactoryAddress: function() {
-    if(SELECTED_NETWORK == NETWORKS.KOVAN)
+  moduleRegistry: async function() {
+    let polymathRegistry = await getPolymathRegistry();
+    return await polymathRegistry.methods.getAddress("ModuleRegistry").call();
+  },
+  polyToken: async function() {
+    let polymathRegistry = await getPolymathRegistry();
+    return await polymathRegistry.methods.getAddress("PolyToken").call();
+  },
+  cappedSTOFactoryAddress: async function() {
+    let networkId = await web3.eth.net.getId();
+    if (networkId == 42)
       return "0x5ad2162dea12e9074641cb3d729102e13d095aa1"; // Updated to poly_oracle deployment
     else
-      return JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).networks[SELECTED_NETWORK].address;
+      return JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).networks[networkId].address;
   },
-  usdTieredSTOFactoryAddress: function() {
-    if(SELECTED_NETWORK == NETWORKS.KOVAN)
+  usdTieredSTOFactoryAddress: async function() {
+    let networkId = await web3.eth.net.getId();
+    if (networkId == 42)
       return "0xd4eb00b4e222ae13b657edb3e29e1d2df090c1d3"; // Updated to poly_oracle deployment
     else
-      return JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTOFactory.json').toString()).networks[SELECTED_NETWORK].address;
+      return JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTOFactory.json').toString()).networks[networkId].address;
   },
-  polyTokenAddress: function() {
-    if(SELECTED_NETWORK == NETWORKS.KOVAN)
-      return "0xb06d72a24df50d4e2cac133b320c5e7de3ef94cb";
-    else
-      return JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).networks[SELECTED_NETWORK].address;
-  },
-  etherDividendCheckpointFactoryAddress: function() {
-    if(SELECTED_NETWORK == NETWORKS.KOVAN)
+  etherDividendCheckpointFactoryAddress: async function() {
+    let networkId = await web3.eth.net.getId();
+    if (networkId == 42)
       return "0x8e34a955dcdd6c0e4a88fb21af562b7db0b20100";
     else
-      return JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpointFactory.json').toString()).networks[SELECTED_NETWORK].address;
+      return JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpointFactory.json').toString()).networks[networkId].address;
   },
-  erc20DividendCheckpointFactoryAddress: function() {
-    if(SELECTED_NETWORK == NETWORKS.KOVAN)
+  erc20DividendCheckpointFactoryAddress: async function() {
+    let networkId = await web3.eth.net.getId();
+    if (networkId == 42)
       return "0x9d8778fc5b4d7b97a74dcfee6661d14709cf5180";
     else
-      return JSON.parse(require('fs').readFileSync('./build/contracts/ERC20DividendCheckpointFactory.json').toString()).networks[SELECTED_NETWORK].address;
+      return JSON.parse(require('fs').readFileSync('./build/contracts/ERC20DividendCheckpointFactory.json').toString()).networks[networkId].address;
   }
 };

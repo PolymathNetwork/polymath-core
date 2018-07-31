@@ -1,20 +1,9 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js');
 var common = require('./common/common_functions');
-var contracts = require("./helpers/contract_addresses");
+var contracts = require('./helpers/contract_addresses');
+var abis = require('./helpers/contract_abis')
 var chalk = require('chalk');
-
-let polytokenAddress = contracts.polyTokenAddress();
-
-let polytokenABI;
-
-try{
-  polytokenABI = JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).abi;
-}catch(err){
-  console.log('\x1b[31m%s\x1b[0m',"Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
-  return;
-}
-
 const Web3 = require('web3');
 
 if (typeof web3 !== 'undefined') {
@@ -48,6 +37,8 @@ async function executeApp(beneficiary, amount) {
 
 async function setup(){
   try {
+    let polytokenAddress = await contracts.polyToken();
+    let polytokenABI = abis.polyToken();
     polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
     polyToken.setProvider(web3.currentProvider);
   } catch (err) {

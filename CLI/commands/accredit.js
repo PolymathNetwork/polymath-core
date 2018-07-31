@@ -4,30 +4,14 @@ var BigNumber = require('bignumber.js');
 const Web3 = require('web3');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
+var contracts = require('./helpers/contract_addresses');
+var abis = require('./helpers/contract_abis')
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
-var contracts = require("./helpers/contract_addresses");
-let tickerRegistryAddress = contracts.tickerRegistryAddress();
-let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
-
 let tickerRegistry;
 let securityTokenRegistry;
 let securityToken;
 let usdTieredSTO;
-
-let tickerRegistryABI;
-let securityTokenRegistryABI;
-let securityTokenABI;
-let usdTieredSTOABI;
-try {
-  tickerRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
-  securityTokenRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
-  securityTokenABI = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
-  usdTieredSTOABI = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTO.json').toString()).abi;
-} catch (err) {
-  console.log('\x1b[31m%s\x1b[0m', "Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
-  return;
-}
 
 ////////////////////////////WEB3//////////////////////////////////////////
 if (typeof web3 !== 'undefined') {
@@ -55,7 +39,6 @@ let badData = new Array();
 
 let Issuer;
 let accounts;
-
 let defaultGasPrice;
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
@@ -63,8 +46,13 @@ startScript();
 
 async function startScript() {
   try {
+    let tickerRegistryAddress = await contracts.tickerRegistry();
+    let tickerRegistryABI = abis.tickerRegistry();
     tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
     tickerRegistry.setProvider(web3.currentProvider);
+    
+    let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
+    let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
     console.log("Processing investor CSV upload. Batch size is " + BATCH_SIZE + " accounts per transaction");
@@ -137,11 +125,13 @@ async function changeAccredited() {
   // Let's check if token has already been deployed, if it has, skip to STO
   let tokenDeployedAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({ from: Issuer });
   if (tokenDeployedAddress != "0x0000000000000000000000000000000000000000") {
+    let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, tokenDeployedAddress);
     let result = await securityToken.methods.getModule(3, 0).call({ from: Issuer });
     if (result[1] != "0x0000000000000000000000000000000000000000") {
       let stoName = web3.utils.toAscii(result[0]).replace(/\u0000/g, '');
       if (stoName == 'USDTieredSTO') {
+          let usdTieredSTOABI = abis.usdTieredSTO();
           usdTieredSTO = new web3.eth.Contract(usdTieredSTOABI, result[1]);
           console.log(`
 -------------------------------------------------------

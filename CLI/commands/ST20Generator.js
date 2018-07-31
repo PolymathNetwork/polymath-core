@@ -3,39 +3,14 @@ var BigNumber = require('bignumber.js');
 var chalk = require('chalk');
 const shell = require('shelljs');
 const Web3 = require('web3');
-var contracts = require("./helpers/contract_addresses");
+var contracts = require('./helpers/contract_addresses');
+var abis = require('./helpers/contract_abis');
 var common = require('./common/common_functions');
 
-let tickerRegistryAddress = contracts.tickerRegistryAddress();
-let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
-let cappedSTOFactoryAddress = contracts.cappedSTOFactoryAddress();
-let usdTieredSTOFactoryAddress = contracts.usdTieredSTOFactoryAddress();
-let polytokenAddress = contracts.polyTokenAddress();
-
-let tickerRegistryABI;
-let securityTokenRegistryABI;
-let securityTokenABI;
-let cappedSTOABI;
-let usdTieredSTOABI;
-let generalTransferManagerABI;
-let polytokenABI;
-let cappedSTOFactoryABI;
-let usdTieredSTOFactoryABI;
-
-try{
-  tickerRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
-  securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
-  securityTokenABI          = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
-  cappedSTOABI              = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
-  usdTieredSTOABI           = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTO.json').toString()).abi;
-  generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
-  polytokenABI              = JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).abi;
-  cappedSTOFactoryABI       = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).abi;
-  usdTieredSTOFactoryABI    = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTOFactory.json').toString()).abi;
-} catch (err) {
-  console.log('\x1b[31m%s\x1b[0m',"Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
-  return;
-}
+let tickerRegistryAddress;
+let securityTokenRegistryAddress;
+let cappedSTOFactoryAddress;
+let usdTieredSTOFactoryAddress;
 
 if (typeof web3 !== 'undefined') {
   web3 = new Web3(web3.currentProvider);
@@ -60,6 +35,7 @@ let tickerRegistry;
 let securityTokenRegistry;
 let polyToken;
 let securityToken;
+let generalTransferManager;
 let currentSTO;
 let cappedSTOFactory;
 let usdTieredSTOFactory;
@@ -82,7 +58,7 @@ async function executeApp(tokenConfig, mintingConfig, stoConfig) {
   _mintingConfig = mintingConfig;
   _stoConfig = stoConfig;
 
-  setup();
+  await setup();
 
   common.logAsciiBull();
   console.log("********************************************");
@@ -95,7 +71,6 @@ async function executeApp(tokenConfig, mintingConfig, stoConfig) {
   }
 
   try {
-
     await step_ticker_reg();
     await step_token_deploy();
     await step_Wallet_Issuance();
@@ -108,22 +83,36 @@ async function executeApp(tokenConfig, mintingConfig, stoConfig) {
   }
 };
 
-function setup(){
+async function setup(){
   try {
-    tickerRegistry = new web3.eth.Contract(tickerRegistryABI,tickerRegistryAddress);
+    tickerRegistryAddress = await contracts.tickerRegistry();
+    let tickerRegistryABI = abis.tickerRegistry();
+    tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
     tickerRegistry.setProvider(web3.currentProvider);
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI,securityTokenRegistryAddress);
+    
+    securityTokenRegistryAddress = await contracts.securityTokenRegistry();
+    let securityTokenRegistryABI = abis.securityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
+
+    let polytokenAddress = await contracts.polyToken();
+    let polytokenABI = abis.polyToken();
     polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
     polyToken.setProvider(web3.currentProvider);
+
+    cappedSTOFactoryAddress = await contracts.cappedSTOFactoryAddress();
+    let cappedSTOFactoryABI = abis.cappedSTOFactory();
     cappedSTOFactory = new web3.eth.Contract(cappedSTOFactoryABI, cappedSTOFactoryAddress);
     cappedSTOFactory.setProvider(web3.currentProvider);
+
+    usdTieredSTOFactoryAddress = await contracts.usdTieredSTOFactoryAddress();
+    let usdTieredSTOFactoryABI = abis.cappedSTO();
     usdTieredSTOFactory = new web3.eth.Contract(usdTieredSTOFactoryABI, usdTieredSTOFactoryAddress);
     usdTieredSTOFactory.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
-    exit(0);
+    process.exit(0);
   }
 }
 
@@ -204,6 +193,7 @@ async function step_token_deploy(){
   let tokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({from: Issuer});
   if (tokenAddress != "0x0000000000000000000000000000000000000000") {
     console.log('\x1b[32m%s\x1b[0m',"Token has already been deployed at address " + tokenAddress + ". Skipping registration");
+    let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, tokenAddress);
   } else {
     console.log("\n");
@@ -249,6 +239,7 @@ async function step_token_deploy(){
         Review it on Etherscan.
         TxHash: ${receipt.transactionHash}\n`
       );
+      let securityTokenABI = abis.securityToken();
       securityToken = new web3.eth.Contract(securityTokenABI, receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress);
     })
   }
@@ -296,9 +287,8 @@ async function step_Wallet_Issuance(){
         if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('singleMint') && _mintingConfig.singleMint.hasOwnProperty('allowedToBuy')) {
           canBuyFromSTO =  _mintingConfig.singleMint.allowedToBuy;
         } else {
-          readlineSync.question(`Address '(${mintWallet})' allowed to buy tokens from the STO (true): `);
+          canBuyFromSTO = readlineSync.keyInYNStrict(`Is address '(${mintWallet})' allowed to buy tokens from the STO? `);
         }
-        if (canBuyFromSTO == "") canBuyFromSTO = true;
 
         // Add address to whitelist
         let generalTransferManagerAddress;
@@ -306,7 +296,8 @@ async function step_Wallet_Issuance(){
           generalTransferManagerAddress = result[1];
         });
 
-        let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
+        let generalTransferManagerABI = abis.generalTransferManager();
+        generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
         let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
         let GAS = await common.estimateGas(modifyWhitelistAction, Issuer, 1.5);
         await modifyWhitelistAction.send({ from: Issuer, gas: GAS, gasPrice:defaultGasPrice})
@@ -374,9 +365,11 @@ async function step_STO_launch() {
     console.log('\x1b[32m%s\x1b[0m',selectedSTO + " has already been created at address " + STO_Address + ". Skipping STO creation");
     switch (selectedSTO) {
       case 'CappedSTO':
+        let cappedSTOABI = abis.cappedSTO();
         currentSTO = new web3.eth.Contract(cappedSTOABI,STO_Address);
         break;
       case 'USDTieredSTO':
+        let usdTieredSTOABI = abis.usdTieredSTO();
         currentSTO = new web3.eth.Contract(usdTieredSTOABI,STO_Address);
         break;
     }
@@ -564,6 +557,7 @@ async function cappedSTO_launch() {
     );
   })
 
+  let cappedSTOABI = abis.cappedSTO();
   currentSTO = new web3.eth.Contract(cappedSTOABI,STO_Address);
 }
 
@@ -658,6 +652,7 @@ function addressesConfigUSDTieredSTO() {
       defaultInput: Issuer
     });
   }
+  if (addresses.wallet == "") addresses.wallet = Issuer;
 
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('reserveWallet')) {
     addresses.reserveWallet = _stoConfig.reserveWallet;
@@ -670,6 +665,7 @@ function addressesConfigUSDTieredSTO() {
       defaultInput: Issuer
     });
   }
+  if (addresses.reserveWallet == "") addresses.reserveWallet = Issuer;
 
   return addresses;
 }
@@ -774,6 +770,7 @@ function timesConfigUSDTieredSTO() {
       defaultInput: oneMinuteFromNow
     });
   }
+  if (times.startTime == "") times.startTime = oneMinuteFromNow;
 
   let oneMonthFromNow = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60);
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('endTime')) {
@@ -787,6 +784,7 @@ function timesConfigUSDTieredSTO() {
       defaultInput: oneMonthFromNow
     });
   }
+  if (times.endTime == "") times.endTime = oneMonthFromNow;
 
   return times;
 }
@@ -937,6 +935,7 @@ async function usdTieredSTO_launch() {
     );
   })
 
+  let usdTieredSTOABI = abis.usdTieredSTO();
   currentSTO = new web3.eth.Contract(usdTieredSTOABI,STO_Address);
 }
 
@@ -1138,16 +1137,49 @@ async function usdTieredSTO_configure() {
         'Modify limits configuration', 'Modify funding configuration');
     }
 
-    let index = readlineSync.keyInSelect(options, 'What do you want to do?');
-    switch (index) {
-      case 0:
-        if (readlineSync.keyInYNStrict()) {
-          let finalizeAction = currentSTO.methods.finalize();
-          let GAS = await common.estimateGas(finalizeAction, Issuer, 1.2);
-          await finalizeAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
+    if (typeof _stoConfig === 'undefined') {
+      let index = readlineSync.keyInSelect(options, 'What do you want to do?');
+      switch (index) {
+        case 0:
+          let reserveWallet = await currentSTO.methods.reserveWallet().call({from: Issuer});
+          let isVerified = await generalTransferManager.methods.verifyTransfer(STO_Address, reserveWallet).call({from: Issuer});
+          if (isVerified) {
+            if (readlineSync.keyInYNStrict()) { 
+              let finalizeAction = currentSTO.methods.finalize();
+              let GAS = await common.estimateGas(finalizeAction, Issuer, 1.2);
+              await finalizeAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
+              .on('transactionHash', function(hash) {
+                console.log(`
+                  Finalizing STO
+                  Your transaction is being processed. Please wait...
+                  TxHash: ${hash}\n`
+                );
+              })
+              .on('receipt', function(receipt) {
+                console.log(`
+                  Congratulations! The transaction was successfully completed.
+                  Review it on Etherscan.
+
+                  TxHash: ${receipt.transactionHash}
+                  gasUsed: ${receipt.gasUsed}\n`
+                );
+              })
+            }
+          } else {
+            console.log(chalk.red(`Reserve wallet (${reserveWallet}) is not able to receive remaining tokens. Check if this address is whitelisted.`));
+          }
+          break;
+        case 1:
+          let investor = readlineSync.question('Enter the address to change accreditation: ');
+          let isAccredited = readlineSync.keyInYNStrict(`Is ${investor} accredited?`);
+          let investors = [investor];
+          let accredited = [isAccredited];
+          let changeAccreditedAction = currentSTO.methods.changeAccredited(investors, accredited);
+          let GAS2 = await common.estimateGas(changeAccreditedAction, Issuer, 2);
+          await changeAccreditedAction.send({from: Issuer, gas: GAS2, gasPrice: defaultGasPrice})
           .on('transactionHash', function(hash) {
             console.log(`
-              Finalizing STO
+              Changing accreditation
               Your transaction is being processed. Please wait...
               TxHash: ${hash}\n`
             );
@@ -1161,56 +1193,31 @@ async function usdTieredSTO_configure() {
               gasUsed: ${receipt.gasUsed}\n`
             );
           })
-        }
-        break;
-      case 1:
-        let investor = readlineSync.question('Enter the address to change accreditation: ');
-        let isAccredited = readlineSync.keyInYNStrict(`Is ${investor} accredited?`);
-        let investors = [investor];
-        let accredited = [isAccredited];
-        let changeAccreditedAction = currentSTO.methods.changeAccredited(investors, accredited);
-        let GAS2 = await common.estimateGas(changeAccreditedAction, Issuer, 2);
-        await changeAccreditedAction.send({from: Issuer, gas: GAS2, gasPrice: defaultGasPrice})
-        .on('transactionHash', function(hash) {
-          console.log(`
-            Changing accreditation
-            Your transaction is being processed. Please wait...
-            TxHash: ${hash}\n`
-          );
-        })
-        .on('receipt', function(receipt) {
-          console.log(`
-            Congratulations! The transaction was successfully completed.
-            Review it on Etherscan.
-
-            TxHash: ${receipt.transactionHash}
-            gasUsed: ${receipt.gasUsed}\n`
-          );
-        })
-        break;
-      case 2:
-        shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75`);
-        break;
-      case 3:
-        await modfifyTimes();
-        await usdTieredSTO_status();
-        break;
-      case 4:
-        await modfifyTiers();
-        await usdTieredSTO_status();
-        break;
-      case 5:
-        await modfifyAddresses();
-        await usdTieredSTO_status();
-        break;
-      case 6:
-        await modfifyLimits();
-        await usdTieredSTO_status();
-        break;
-      case 7:
-        await modfifyFunding();
-        await usdTieredSTO_status();
-        break;
+          break;
+        case 2:
+          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75`);
+          break;
+        case 3:
+          await modfifyTimes();
+          await usdTieredSTO_status();
+          break;
+        case 4:
+          await modfifyTiers();
+          await usdTieredSTO_status();
+          break;
+        case 5:
+          await modfifyAddresses();
+          await usdTieredSTO_status();
+          break;
+        case 6:
+          await modfifyLimits();
+          await usdTieredSTO_status();
+          break;
+        case 7:
+          await modfifyFunding();
+          await usdTieredSTO_status();
+          break;
+      }
     }
   }
 }

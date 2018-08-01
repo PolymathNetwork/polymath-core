@@ -331,9 +331,9 @@ contract('USDTieredSTO', accounts => {
             _endTime.push(_startTime[stoId] + duration.days(100));
             _ratePerTier.push([BigNumber(0.05*10**18), BigNumber(0.10*10**18), BigNumber(0.15*10**18)]);             // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
             _ratePerTierDiscountPoly.push([BigNumber(0.05*10**18), BigNumber(0.08*10**18), BigNumber(0.13*10**18)]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
-            _tokensPerTierTotal.push([BigNumber(1000*10**18), BigNumber(2000*10**18), BigNumber(1500*10**18)]);      // [ 1000 Token, 2000 Token, 1500 Token ]
-            _tokensPerTierDiscountPoly.push([BigNumber(0), BigNumber(1000*10**18), BigNumber(1500*10**18)]);         // [ 0 Token, 1000 Token, 1500 Token ]
-            _nonAccreditedLimitUSD.push(BigNumber(20*10**18));                                                       // 20 USD
+            _tokensPerTierTotal.push([BigNumber(200*10**18), BigNumber(500*10**18), BigNumber(300*10**18)]);         // [ 1000 Token, 2000 Token, 1500 Token ]
+            _tokensPerTierDiscountPoly.push([BigNumber(0), BigNumber(50*10**18), BigNumber(300*10**18)]);            // [ 0 Token, 1000 Token, 1500 Token ]
+            _nonAccreditedLimitUSD.push(BigNumber(10*10**18));                                                       // 20 USD
             _minimumInvestmentUSD.push(BigNumber(1*10**18));                                                         // 1 USD
             _fundRaiseTypes.push([0, 1]);
             _wallet.push(WALLET);
@@ -385,6 +385,8 @@ contract('USDTieredSTO', accounts => {
             await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED2, fromTime, toTime, expiryTime, canBuyFromSTO, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(NOTAPPROVED, fromTime, toTime, expiryTime, false, { from: ISSUER });
+
+            await increaseTime(duration.days(3));
 
             // Accreditation
             await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1, ACCREDITED2], [true, true], { from: ISSUER });
@@ -442,14 +444,14 @@ contract('USDTieredSTO', accounts => {
                         break;
                     case 2: // NONACCREDITED1
                         let usd_NONACCREDITED1 = await I_USDTieredSTO_Array[stoId].investorInvestedUSD.call(NONACCREDITED1);
-                        if (usd_NONACCREDITED1 < _nonAccreditedLimitUSD[stoId]) // under non-accredited cap
+                        if (_nonAccreditedLimitUSD[stoId].gt(usd_NONACCREDITED1)) // under non-accredited cap
                             await invest(NONACCREDITED1, false);
                         else // over non-accredited cap
                             await investFAIL(NONACCREDITED1);
                         break;
                     case 3: // NONACCREDITED2
                         let usd_NONACCREDITED2 = await I_USDTieredSTO_Array[stoId].investorInvestedUSD.call(NONACCREDITED2);
-                        if (usd_NONACCREDITED2 < _nonAccreditedLimitUSD[stoId]) // under non-accredited cap
+                        if (_nonAccreditedLimitUSD[stoId].gt(usd_NONACCREDITED2)) // under non-accredited cap
                             await invest(NONACCREDITED2, false);
                         else // over non-accredited cap
                             await investFAIL(NONACCREDITED2);
@@ -462,15 +464,13 @@ contract('USDTieredSTO', accounts => {
                         break;
                 }
                 tokensSold = await I_USDTieredSTO_Array[stoId].getTokensSold()
-                if (totalTokens.sub(tokensSold) < 0)
+                if (tokensSold.gte(totalTokens)) {
+                    console.log(`${tokensSold} tokens sold, simulation completed successfully!`.green);
                     break;
+                }
             }
 
             async function invest(_investor, _isAccredited) { // need to add check if reached non-accredited cap
-
-                let investment_Token = BigNumber(getRandomInt(1*10**10,50*10**10)).mul(10**8);
-                let isPoly = Math.random() >= 0.5;
-
                 let USD_remaining;
                 if (!_isAccredited) {
                     let USD_to_date = await I_USDTieredSTO_Array[stoId].investorInvestedUSD.call(_investor);
@@ -480,11 +480,13 @@ contract('USDTieredSTO', accounts => {
                 }
 
                 let log_remaining = USD_remaining;
+                let isPoly = Math.random() >= 0.5;
 
-                let Token_counter = investment_Token;
-                let USD_counter = BigNumber(0);
-                let ETH_counter = BigNumber(0);
-                let POLY_counter = BigNumber(0);
+                let Token_counter = BigNumber(getRandomInt(1*10**10,50*10**10)).mul(10**8);
+                let investment_USD = BigNumber(0);
+                let investment_ETH = BigNumber(0);
+                let investment_POLY = BigNumber(0);
+                let investment_Token = Token_counter;
 
                 let Tokens_total = [];
                 let Tokens_discount = [];
@@ -493,93 +495,81 @@ contract('USDTieredSTO', accounts => {
                     Tokens_discount.push((await I_USDTieredSTO_Array[stoId].tokensPerTierDiscountPoly.call(i)).sub(await I_USDTieredSTO_Array[stoId].mintedPerTierDiscountPoly.call(i)));
                 }
 
-                let j = 0;
+                let tier = 0;
                 let Token_Tier;
-                let USD_Paid;
-                let POLY_Paid;
-                let ETH_Paid;
-                let diff_USD;
-                while (Token_counter > 0 && USD_remaining > 0) {
-                    if (Tokens_total[j] > 0) {
+                let USD_Tier;
+                let POLY_Tier;
+                let ETH_Tier;
+
+                let USD_overflow;
+                let Token_overflow;
+
+                while (Token_counter.gt(0) && USD_remaining.gt(0) && tier < _ratePerTier[stoId].length) {
+                    if (Tokens_total[tier].gt(0)) {
                         if (isPoly) {
                             // 1. POLY and discount (consume up to cap then move to regular)
-                            if (Tokens_discount[j] > 0) {
-                                Token_Tier = BigNumber(Math.min(Tokens_total[j], Tokens_discount[j], Token_counter));
-                                USD_Paid = Token_Tier.div(10**18).mul(_ratePerTierDiscountPoly[stoId][j].div(10**18)).mul(10**18); // Token * USD/Token = USD
-                                if (USD_Paid.sub(USD_remaining) > 0) {
-                                    diff_USD = USD_Paid.sub(USD_remaining);
-                                    USD_Paid = USD_remaining;
-                                    Token_Tier = Token_Tier.sub(diff_USD.div(_ratePerTierDiscountPoly[stoId][j]).mul(10**18));
+                            if (Tokens_discount[tier].gt(0)) {
+                                Token_Tier = BigNumber(Math.min(Tokens_total[tier], Tokens_discount[tier], Token_counter));
+                                USD_Tier = Token_Tier.div(10**18).mul(_ratePerTierDiscountPoly[stoId][tier].div(10**18)).mul(10**18); // Token * USD/Token = USD
+                                if (USD_Tier.gt(USD_remaining)) {
+                                    USD_overflow = USD_Tier.sub(USD_remaining);
+                                    Token_overflow = USD_overflow.div(_ratePerTierDiscountPoly[stoId][tier]).mul(10**18);
+                                    USD_Tier = USD_Tier.sub(USD_overflow);
+                                    Token_Tier = Token_Tier.sub(Token_overflow);
+                                    investment_Token = investment_Token.sub(Token_overflow);
                                     console.log('modification1');
                                 }
-                                USD_remaining = USD_remaining.sub(USD_Paid);
-                                Tokens_total[j] = Tokens_total[j].sub(Token_Tier);
-                                Tokens_discount[j] = Tokens_discount[j].sub(Token_Tier);
+                                USD_remaining = USD_remaining.sub(USD_Tier);
+                                Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
+                                Tokens_discount[tier] = Tokens_discount[tier].sub(Token_Tier);
+                                POLY_Tier = USD_Tier.div(USDPOLY).mul(10**18); // USD / USDPOLY = POLY
                                 Token_counter = Token_counter.sub(Token_Tier);
-                                POLY_Paid = USD_Paid.div(USDPOLY).mul(10**18); // USD / USDPOLY = POLY
-                                USD_counter = USD_counter.add(USD_Paid);
-                                POLY_counter = POLY_counter.add(POLY_Paid);
+                                investment_USD = investment_USD.add(USD_Tier);
+                                investment_POLY = investment_POLY.add(POLY_Tier);
                             }
                             // 2. POLY and regular (consume up to cap then skip to next tier)
-                            if (Tokens_total[j] > 0 && Token_counter > 0) {
-                                Token_Tier = BigNumber(Math.min(Tokens_total[j], Token_counter));
-                                USD_Paid = Token_Tier.div(10**18).mul(_ratePerTier[stoId][j].div(10**18)).mul(10**18); // Token * USD/Token = USD
-                                if (USD_Paid.sub(USD_remaining) > 0) {
-                                    diff_USD = USD_Paid.sub(USD_remaining);
-                                    USD_Paid = USD_remaining;
-                                    Token_Tier = Token_Tier.sub(diff_USD.div(_ratePerTier[stoId][j]).mul(10**18));
+                            if (Tokens_total[tier].gt(0) && Token_counter.gt(0)) {
+                                Token_Tier = BigNumber(Math.min(Tokens_total[tier], Token_counter));
+                                USD_Tier = Token_Tier.div(10**18).mul(_ratePerTier[stoId][tier].div(10**18)).mul(10**18); // Token * USD/Token = USD
+                                if (USD_Tier.gt(USD_remaining)) {
+                                    USD_overflow = USD_Tier.sub(USD_remaining);
+                                    Token_overflow = USD_overflow.div(_ratePerTier[stoId][tier]).mul(10**18);
+                                    USD_Tier = USD_Tier.sub(USD_overflow);
+                                    Token_Tier = Token_Tier.sub(Token_overflow);
+                                    investment_Token = investment_Token.sub(Token_overflow);
                                     console.log('modification2');
                                 }
-                                USD_remaining = USD_remaining.sub(USD_Paid);
-                                Tokens_total[j] = Tokens_total[j].sub(Token_Tier);
+                                USD_remaining = USD_remaining.sub(USD_Tier);
+                                Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
+                                POLY_Tier = USD_Tier.div(USDPOLY).mul(10**18); // USD / USDPOLY = POLY
                                 Token_counter = Token_counter.sub(Token_Tier);
-                                POLY_Paid = USD_Paid.div(USDPOLY).mul(10**18); // USD / USDPOLY = POLY
-                                USD_counter = USD_counter.add(USD_Paid);
-                                POLY_counter = POLY_counter.add(POLY_Paid);
+                                investment_USD = investment_USD.add(USD_Tier);
+                                investment_POLY = investment_POLY.add(POLY_Tier);
                             }
                         } else {
                             // 3. ETH (consume up to cap then skip to next tier)
-                            Token_Tier = BigNumber(Math.min(Tokens_total[j], Token_counter));
-                            USD_Paid = Token_Tier.div(10**18).mul(_ratePerTier[stoId][j].div(10**18)).mul(10**18); // Token * USD/Token = USD
-                            if (USD_Paid.sub(USD_remaining) > 0) {
-                                diff_USD = USD_Paid.sub(USD_remaining);
-                                USD_Paid = USD_remaining;
-                                Token_Tier = Token_Tier.sub(diff_USD.div(_ratePerTier[stoId][j]).mul(10**18));
+                            Token_Tier = BigNumber(Math.min(Tokens_total[tier], Token_counter));
+                            USD_Tier = Token_Tier.div(10**18).mul(_ratePerTier[stoId][tier].div(10**18)).mul(10**18); // Token * USD/Token = USD
+                            if (USD_Tier.gt(USD_remaining)) {
+                                USD_overflow = USD_Tier.sub(USD_remaining);
+                                Token_overflow = USD_overflow.div(_ratePerTier[stoId][tier]).mul(10**18);
+                                USD_Tier = USD_Tier.sub(USD_overflow);
+                                Token_Tier = Token_Tier.sub(Token_overflow);
+                                investment_Token = investment_Token.sub(Token_overflow);
                                 console.log('modification3');
                             }
-                            USD_remaining = USD_remaining.sub(USD_Paid);
-                            Tokens_total[j] = Tokens_total[j].sub(Token_Tier);
+                            USD_remaining = USD_remaining.sub(USD_Tier);
+                            Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
+                            ETH_Tier = USD_Tier.div(USDETH).mul(10**18); // USD / USDPOLY = POLY
                             Token_counter = Token_counter.sub(Token_Tier);
-                            ETH_Paid = USD_Paid.div(USDETH).mul(10**18); // USD / USDPOLY = POLY
-                            USD_counter = USD_counter.add(USD_Paid);
-                            ETH_counter = ETH_counter.add(ETH_Paid);
-                            // console.log('Token_Tier: '+Token_Tier.div(10**18).toNumber());
-                            // console.log('USD_Paid: '+USD_Paid.div(10**18).toNumber());
-                            // console.log('ETH_Paid: '+ETH_Paid.div(10**18).toNumber());
+                            investment_USD = investment_USD.add(USD_Tier);
+                            investment_ETH = investment_ETH.add(ETH_Tier);
                         }
                     }
-                    j++
+                    tier++
                 }
 
-                let investment_USD = USD_counter;
-                let investment_ETH = ETH_counter;
-                let investment_POLY = POLY_counter;
-
-                console.log(`
-            ------------------- New Investment -------------------
-            Investor:   ${_investor}
-            N-A USD Remaining:      ${log_remaining.div(10**18)}
-            Total Cap Remaining:    ${Tokens_total}
-            Discount Cap Remaining: ${Tokens_discount}
-            Total Tokens Sold:      ${tokensSold.div(10**18)}
-            Token Investment:       ${investment_Token.div(10**18)}
-            USD Investment:         ${investment_USD.div(10**18)}
-            POLY Investment:        ${investment_POLY.div(10**18)}
-            ETH Investment:         ${investment_ETH.div(10**18)}
-            ------------------------------------------------------
-                `);
-
-                await processInvestment(_investor, investment_Token, investment_USD, investment_POLY, investment_ETH, isPoly);
+                await processInvestment(_investor, investment_Token, investment_USD, investment_POLY, investment_ETH, isPoly, log_remaining, Tokens_total, Tokens_discount, tokensSold);
             }
 
             async function investFAIL(_investor) {
@@ -603,11 +593,27 @@ contract('USDTieredSTO', accounts => {
                 assert.ok(errorThrown, MESSAGE);
             }
 
-            async function processInvestment(_investor, investment_Token, investment_USD, investment_POLY, investment_ETH, isPoly) {
+            async function processInvestment(_investor, investment_Token, investment_USD, investment_POLY, investment_ETH, isPoly, log_remaining, Tokens_total, Tokens_discount, tokensSold) {
+                console.log(`
+            ------------------- New Investment -------------------
+            Investor:   ${_investor}
+            N-A USD Remaining:      ${log_remaining.div(10**18)}
+            Total Cap Remaining:    ${Tokens_total}
+            Discount Cap Remaining: ${Tokens_discount}
+            Total Tokens Sold:      ${tokensSold.div(10**18)}
+            Token Investment:       ${investment_Token.div(10**18)}
+            USD Investment:         ${investment_USD.div(10**18)}
+            POLY Investment:        ${investment_POLY.div(10**18)}
+            ETH Investment:         ${investment_ETH.div(10**18)}
+            ------------------------------------------------------
+                `);
+
                 if (isPoly) {
                     await I_PolyToken.getTokens(investment_POLY, _investor);
                     await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, {from: _investor});
                 }
+
+                // console.log(await I_USDTieredSTO_Array[stoId].isOpen());
 
                 let init_TokenSupply = await I_SecurityToken.totalSupply();
                 let init_InvestorTokenBal = await I_SecurityToken.balanceOf(_investor);
@@ -648,8 +654,8 @@ contract('USDTieredSTO', accounts => {
                 let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
                 let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
-                console.log('init_TokenSupply: '+init_TokenSupply.div(10**18).toNumber());
-                console.log('final_TokenSupply: '+final_TokenSupply.div(10**18).toNumber());
+                // console.log('init_TokenSupply: '+init_TokenSupply.div(10**18).toNumber());
+                // console.log('final_TokenSupply: '+final_TokenSupply.div(10**18).toNumber());
 
                 if (isPoly) {
                     assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");

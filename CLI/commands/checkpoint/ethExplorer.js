@@ -27,6 +27,7 @@ let defaultGasPrice;
 let tokenSymbol;
 let securityToken;
 let etherDividendCheckpoint;
+let generalTransferManager;
 
 async function executeApp() {
   accounts = await web3.eth.getAccounts();
@@ -60,113 +61,111 @@ async function start_explorer(){
   
   // Let's check if token has already been deployed, if it has, skip to STO
   let result = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({from: Issuer});
-  if (result[1] == "0x0000000000000000000000000000000000000000") {
+  if (result == "0x0000000000000000000000000000000000000000") {
     console.log(chalk.red(`Token symbol provided is not a registered Security Token.`));
   } else {
     let securityTokenABI = abis.securityToken();
-    securityToken = new web3.eth.Contract(securityTokenABI,result[1]);
+    securityToken = new web3.eth.Contract(securityTokenABI,result);
 
     // Get the GTM
-    if (!generalTransferManager) {
-      result = await securityToken.methods.getModule(2, 0).call({ from: Issuer });
-      if (result[1] == "0x0000000000000000000000000000000000000000") {
-        console.log(chalk.red(`General Transfer Manager is not attached.`));
-      } else {
-        generalTransferManagerAddress = result[1];
-        let generalTransferManagerABI = abis.generalTransferManager();
-        generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
-        generalTransferManager.setProvider(web3.currentProvider);
+    result = await securityToken.methods.getModule(2, 0).call({ from: Issuer });
+    if (result[1] == "0x0000000000000000000000000000000000000000") {
+      console.log(chalk.red(`General Transfer Manager is not attached.`));
+    } else {
+      generalTransferManagerAddress = result[1];
+      let generalTransferManagerABI = abis.generalTransferManager();
+      generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
+      generalTransferManager.setProvider(web3.currentProvider);
 
-        let checkpointNum = await securityToken.methods.currentCheckpointId().call({ from: Issuer });
-        console.log("Token is at checkpoint: ", checkpointNum);
+      let checkpointNum = await securityToken.methods.currentCheckpointId().call({ from: Issuer });
+      console.log("Token is at checkpoint: ", checkpointNum);
 
-        let options = ['Mint tokens', 'Transfer tokens',
-          'Explore account at checkpoint', 'Explore total supply at checkpoint', 'Create checkpoint', 
-          'Calculate Dividends', 'Calculate Dividends at a checkpoint'];
-        
-        // Only show dividend options if divididenModule is already attached 
-        if (isDividendsModuleAttached()) {
-          options.push('Push dividends to account', 'Pull dividends to account', 
-            'Explore ETH balance', 'Reclaimed dividends after expiry')
-        }
-        
-        let index = readlineSync.keyInSelect(options, 'What do you want to do?');
-        console.log("Selected: ", options[index]);
-        switch (index) {
-          case 0:
-            // Mint tokens
-            let _to =  readlineSync.question('Enter beneficiary of minting: ');
-            let _amount =  readlineSync.question('Enter amount of tokens to mint: ');
-            await mintTokens(_to,_amount);
-          break;
-          case 1:
-            // Transfer tokens
-            let _to2 =  readlineSync.question('Enter beneficiary of tranfer: ');
-            let _amount2 =  readlineSync.question('Enter amount of tokens to transfer: ');
-            await transferTokens(_to2,_amount2);
-          break;
-          case 2:
-            // Explore account at checkpoint
-            let _address =  readlineSync.question('Enter address to explore: ');
-            let _checkpoint =  readlineSync.question('At checkpoint: ');
-            await exploreAddress(_address,_checkpoint);
-          break;
-          case 3:
-            // Explore total supply at checkpoint
-            let _checkpoint2 =  readlineSync.question('Explore total supply at checkpoint: ');
-            await exploreTotalSupply(_checkpoint2);
-          break;
-          case 4:
-            // Create checkpoint
-            await securityToken.methods.createCheckpoint().send({ from: Issuer});
-          break;
-          case 5:
-            // Calculate Dividends
-            let ethDividend =  readlineSync.question('How much eth would you like to distribute to token holders?: ');
-            await createDividends(ethDividend);
-          break;
-          case 6:
-            // Calculate Dividends at a checkpoint
-            let _ethDividend =  readlineSync.question('How much eth would you like to distribute to token holders?: ');
-            let _checkpointId = readlineSync.question(`Enter the checkpoint on which you want to distribute dividend: `);
-            let currentCheckpointId = await securityToken.methods.currentCheckpointId().call({ from: Issuer});
-            if (currentCheckpointId >= _checkpointId) {
-              await createDividendWithCheckpoint(_ethDividend, _checkpointId);
-            } else {
-              console.log(chalk.red(`Future checkpoint are not allowed to create the dividends`));
-            }
-          break;
-          case 7:
-            // Push dividends to account
-            let _checkpoint3 =  readlineSync.question('Distribute dividends at checkpoint: ');
-            let _address2 =  readlineSync.question('Enter addresses to push dividends to (ex- add1,add2,add3,...): ');
-            await pushDividends(_checkpoint3,_address2);
-          break;
-          case 8:
-            // Pull dividends to account
-            let _checkpoint7 =  readlineSync.question('Distribute dividends at checkpoint: ');
-            await pullDividends(_checkpoint7);
-          break;
-          case 9:
-            // Explore ETH balance
-            let _checkpoint4 = readlineSync.question('Enter checkpoint to explore: ');
-            let _address3 =  readlineSync.question('Enter address to explore: ');
-            let _dividendIndex = await etherDividendCheckpoint.methods.getDividendIndex(_checkpoint4).call({ from: Issuer});
-            if (_dividendIndex.length == 1) {
-              let divsAtCheckpoint = await etherDividendCheckpoint.methods.calculateDividend(_dividendIndex[0],_address3).call({ from: Issuer});
-              console.log(`
-                ETH Balance: ${web3.utils.fromWei(await web3.eth.getBalance(_address3),"ether")} ETH
-                Dividends owed at checkpoint ${_checkpoint4}: ${web3.utils.fromWei(divsAtCheckpoint,"ether")} ETH
-              `)
-            } else {
-              console.log(chalk.red("Future checkpoints are not allowed"));
-            }
-          break;
-          case 10:
-            // Reclaimed dividends after expiry
-            let _checkpoint5 = readlineSync.question('Enter the checkpoint to explore: ');
-            await reclaimedDividend(_checkpoint5);
-        }
+      let options = ['Mint tokens', 'Transfer tokens',
+        'Explore account at checkpoint', 'Explore total supply at checkpoint', 'Create checkpoint', 
+        'Calculate Dividends', 'Calculate Dividends at a checkpoint'];
+      
+      // Only show dividend options if divididenModule is already attached 
+      if (isDividendsModuleAttached()) {
+        options.push('Push dividends to account', 'Pull dividends to account', 
+          'Explore ETH balance', 'Reclaimed dividends after expiry')
+      }
+      
+      let index = readlineSync.keyInSelect(options, 'What do you want to do?');
+      console.log("Selected: ", options[index]);
+      switch (index) {
+        case 0:
+          // Mint tokens
+          let _to =  readlineSync.question('Enter beneficiary of minting: ');
+          let _amount =  readlineSync.question('Enter amount of tokens to mint: ');
+          await mintTokens(_to,_amount);
+        break;
+        case 1:
+          // Transfer tokens
+          let _to2 =  readlineSync.question('Enter beneficiary of tranfer: ');
+          let _amount2 =  readlineSync.question('Enter amount of tokens to transfer: ');
+          await transferTokens(_to2,_amount2);
+        break;
+        case 2:
+          // Explore account at checkpoint
+          let _address =  readlineSync.question('Enter address to explore: ');
+          let _checkpoint =  readlineSync.question('At checkpoint: ');
+          await exploreAddress(_address,_checkpoint);
+        break;
+        case 3:
+          // Explore total supply at checkpoint
+          let _checkpoint2 =  readlineSync.question('Explore total supply at checkpoint: ');
+          await exploreTotalSupply(_checkpoint2);
+        break;
+        case 4:
+          // Create checkpoint
+          await securityToken.methods.createCheckpoint().send({ from: Issuer});
+        break;
+        case 5:
+          // Calculate Dividends
+          let ethDividend =  readlineSync.question('How much eth would you like to distribute to token holders?: ');
+          await createDividends(ethDividend);
+        break;
+        case 6:
+          // Calculate Dividends at a checkpoint
+          let _ethDividend =  readlineSync.question('How much eth would you like to distribute to token holders?: ');
+          let _checkpointId = readlineSync.question(`Enter the checkpoint on which you want to distribute dividend: `);
+          let currentCheckpointId = await securityToken.methods.currentCheckpointId().call({ from: Issuer});
+          if (currentCheckpointId >= _checkpointId) {
+            await createDividendWithCheckpoint(_ethDividend, _checkpointId);
+          } else {
+            console.log(chalk.red(`Future checkpoint are not allowed to create the dividends`));
+          }
+        break;
+        case 7:
+          // Push dividends to account
+          let _checkpoint3 =  readlineSync.question('Distribute dividends at checkpoint: ');
+          let _address2 =  readlineSync.question('Enter addresses to push dividends to (ex- add1,add2,add3,...): ');
+          await pushDividends(_checkpoint3,_address2);
+        break;
+        case 8:
+          // Pull dividends to account
+          let _checkpoint7 =  readlineSync.question('Distribute dividends at checkpoint: ');
+          await pullDividends(_checkpoint7);
+        break;
+        case 9:
+          // Explore ETH balance
+          let _checkpoint4 = readlineSync.question('Enter checkpoint to explore: ');
+          let _address3 =  readlineSync.question('Enter address to explore: ');
+          let _dividendIndex = await etherDividendCheckpoint.methods.getDividendIndex(_checkpoint4).call({ from: Issuer});
+          if (_dividendIndex.length == 1) {
+            let divsAtCheckpoint = await etherDividendCheckpoint.methods.calculateDividend(_dividendIndex[0],_address3).call({ from: Issuer});
+            console.log(`
+              ETH Balance: ${web3.utils.fromWei(await web3.eth.getBalance(_address3),"ether")} ETH
+              Dividends owed at checkpoint ${_checkpoint4}: ${web3.utils.fromWei(divsAtCheckpoint,"ether")} ETH
+            `)
+          } else {
+            console.log(chalk.red("Future checkpoints are not allowed"));
+          }
+        break;
+        case 10:
+          // Reclaimed dividends after expiry
+          let _checkpoint5 = readlineSync.question('Enter the checkpoint to explore: ');
+          await reclaimedDividend(_checkpoint5);
       }
     }
   }

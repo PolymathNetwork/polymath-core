@@ -33,7 +33,7 @@ async function executeApp() {
   Issuer = accounts[0];
   defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
 
-  setup();
+  await setup();
 };
 
 async function setup(){
@@ -49,7 +49,7 @@ async function setup(){
     securityTokenRegistry.setProvider(web3.currentProvider);
 
     let polyTokenAddress = await contracts.polyToken();
-    let polyTokenABI = abis.polytoken();
+    let polyTokenABI = abis.polyToken();
     polyToken = new web3.eth.Contract(polyTokenABI, polyTokenAddress);
     polyToken.setProvider(web3.currentProvider);
   } catch (err) {

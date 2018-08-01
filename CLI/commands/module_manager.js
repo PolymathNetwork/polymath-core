@@ -350,7 +350,6 @@ async function whitelist() {
 }
 
 async function mintTokens() {
-    let isSTOAttached;
     let _flag = await securityToken.methods.finishedIssuerMinting().call();
     if (_flag) {
         console.log(chalk.red("Minting is not possible - Minting has been permanently disabled by issuer"));

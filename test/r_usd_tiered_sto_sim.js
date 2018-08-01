@@ -334,7 +334,7 @@ contract('USDTieredSTO', accounts => {
             _tokensPerTierTotal.push([BigNumber(200*10**18), BigNumber(500*10**18), BigNumber(300*10**18)]);         // [ 1000 Token, 2000 Token, 1500 Token ]
             _tokensPerTierDiscountPoly.push([BigNumber(0), BigNumber(50*10**18), BigNumber(300*10**18)]);            // [ 0 Token, 1000 Token, 1500 Token ]
             _nonAccreditedLimitUSD.push(BigNumber(10*10**18));                                                       // 20 USD
-            _minimumInvestmentUSD.push(BigNumber(1*10**18));                                                         // 1 USD
+            _minimumInvestmentUSD.push(BigNumber(1));                                                                // 1 wei USD
             _fundRaiseTypes.push([0, 1]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
@@ -504,7 +504,11 @@ contract('USDTieredSTO', accounts => {
                 let USD_overflow;
                 let Token_overflow;
 
-                while (Token_counter.gt(0) && USD_remaining.gt(0) && tier < _ratePerTier[stoId].length) {
+                while (Token_counter.gt(0) && USD_remaining.gt(0)) {
+                    if (tier == _ratePerTier[stoId].length) {
+                        investment_Token = investment_Token.sub(Token_counter)
+                        break;
+                    }
                     if (Tokens_total[tier].gt(0)) {
                         if (isPoly) {
                             // 1. POLY and discount (consume up to cap then move to regular)
@@ -517,7 +521,6 @@ contract('USDTieredSTO', accounts => {
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     investment_Token = investment_Token.sub(Token_overflow);
-                                    console.log('modification1');
                                 }
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
@@ -537,7 +540,6 @@ contract('USDTieredSTO', accounts => {
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     investment_Token = investment_Token.sub(Token_overflow);
-                                    console.log('modification2');
                                 }
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
@@ -556,7 +558,6 @@ contract('USDTieredSTO', accounts => {
                                 USD_Tier = USD_Tier.sub(USD_overflow);
                                 Token_Tier = Token_Tier.sub(Token_overflow);
                                 investment_Token = investment_Token.sub(Token_overflow);
-                                console.log('modification3');
                             }
                             USD_remaining = USD_remaining.sub(USD_Tier);
                             Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);

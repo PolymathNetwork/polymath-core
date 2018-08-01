@@ -14,37 +14,12 @@ if (typeof web3 !== 'undefined') {
 let defaultGasPrice;
 
 // Load contract artifacts
-var contracts = require("./helpers/contract_addresses");
-let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
-let polytokenAddress = contracts.polyTokenAddress();
-
-let securityTokenRegistryABI;
-let securityTokenABI;
-let polytokenABI;
+var contracts = require('./helpers/contract_addresses');
+var abis = require('./helpers/contract_abis');
 
 let securityTokenRegistry;
 let securityToken;
 let polyToken;
-
-try {
-    securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
-    securityTokenABI          = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
-    polytokenABI              = JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).abi;
-} catch (err) {
-    console.log(chalk.red(`Couldn't find contracts' artifacts. Make sure you ran truffle compile first`));
-    return;
-}
-
-try {
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
-    securityTokenRegistry.setProvider(web3.currentProvider);
-    polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
-    polyToken.setProvider(web3.currentProvider);
-}catch(err){
-    console.log(err);
-    console.log(chalk.red(`There was a problem getting the contracts. Make sure they are deployed to the selected network.`));
-    process.exit();
-}
 
 // Init user address variables
 let Issuer;
@@ -67,8 +42,28 @@ let numTM;
 let numSTO;
 let numCP;
 
+async function setup() {
+    try {
+        let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
+        let securityTokenRegistryABI = abis.securityTokenRegistry();
+        securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+        securityTokenRegistry.setProvider(web3.currentProvider);
+    
+        let polytokenAddress = await contracts.polyToken();
+        let polytokenABI = abis.polyToken();
+        polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
+        polyToken.setProvider(web3.currentProvider);
+    }catch(err){
+        console.log(err);
+        console.log(chalk.red(`There was a problem getting the contracts. Make sure they are deployed to the selected network.`));
+        process.exit();
+    }
+}
+
 // Start function
 async function executeApp() {
+    await setup();
+
     common.logAsciiBull();
     console.log(chalk.yellow(`******************************************`));
     console.log(chalk.yellow(`Welcome to the Command-Line Module Manager`));
@@ -101,6 +96,7 @@ async function getSecurityToken() {
         return;
     }
     validSymbol = true;
+    let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, STAddress);
 
     await displayModules();

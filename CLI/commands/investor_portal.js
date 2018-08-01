@@ -16,16 +16,8 @@ if (typeof web3 !== 'undefined') {
 let defaultGasPrice;
 
 // Load Contract artifacts
-var contracts = require("./helpers/contract_addresses");
-let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
-let polytokenAddress = contracts.polyTokenAddress();
-
-let securityTokenRegistryABI;
-let securityTokenABI;
-let cappedSTOABI;
-let usdTieredSTOABI;
-let polytokenABI;
-let generalTransferManagerABI;
+var contracts = require('./helpers/contract_addresses');
+var abis = require('./helpers/contract_abis');
 
 let securityTokenRegistry;
 let securityToken;
@@ -33,18 +25,6 @@ let selectedSTO;
 let currentSTO;
 let polyToken;
 let generalTransferManager;
-
-try {
-  securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
-  securityTokenABI          = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
-  cappedSTOABI              = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
-  usdTieredSTOABI           = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTO.json').toString()).abi;
-  polytokenABI              = JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).abi;
-  generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
-} catch (err) {
-  console.log(chalk.red(`Couldn't find contracts' artifacts. Make sure you ran truffle compile first`));
-  return;
-}
 
 // Init user address variables
 let Issuer;
@@ -69,30 +49,32 @@ async function executeApp(investor, symbol, currency, amount) {
     Issuer = accounts[0];
     defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
     
-    setup();
+    await setup();
+
+    common.logAsciiBull();
+    console.log("********************************************");
+    console.log("Welcome to the Command-Line Investor Portal.");
+    console.log("********************************************");
+
+    if (typeof investor === 'undefined') {
+        User = readlineSync.question(chalk.yellow(`\nEnter your public address to log in as an investor. Otherwise, press 'Enter' to log in as the token issuer: `));
+    } else {
+        User = investor;
+    }
+    if (User == "") User = Issuer;
 
     try {
-        common.logAsciiBull();
-        console.log("********************************************");
-        console.log("Welcome to the Command-Line Investor Portal.");
-        console.log("********************************************");
-    
-        if (typeof investor === 'undefined') {
-            User = readlineSync.question(chalk.yellow(`\nEnter your public address to log in as an investor. Otherwise, press 'Enter' to log in as the token issuer: `));
-        } else {
-            User = investor;
-        }
-        if (User == "") User = Issuer;
-    
         await showUserInfo(User);
         await inputSymbol(symbol);
         switch (selectedSTO) {
             case 'CappedSTO':
+                let cappedSTOABI = abis.cappedSTO();
                 currentSTO = new web3.eth.Contract(cappedSTOABI, STOAddress);
                 await showCappedSTOInfo();
                 await investCappedSTO(currency, amount);
                 break;
             case 'USDTieredSTO':
+                let usdTieredSTOABI = abis.usdTieredSTO();
                 currentSTO = new web3.eth.Contract(usdTieredSTOABI, STOAddress);
                 await showUserInfoForUSDTieredSTO();
                 await showUSDTieredSTOInfo();
@@ -106,8 +88,13 @@ async function executeApp(investor, symbol, currency, amount) {
 
 async function setup() {
     try {
+        let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
+        let securityTokenRegistryABI = abis.securityTokenRegistry();
         securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
         securityTokenRegistry.setProvider(web3.currentProvider);
+
+        let polytokenAddress = await contracts.polyToken();
+        let polytokenABI = abis.polyToken();
         polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
         polyToken.setProvider(web3.currentProvider);
     } catch (err) {
@@ -131,12 +118,14 @@ async function inputSymbol(symbol) {
     if (STAddress == "0x0000000000000000000000000000000000000000"){
         console.log(`Token symbol provided is not a registered Security Token. Please enter another symbol.`);
     } else {
+        let securityTokenABI = abis.securityToken();
         securityToken = new web3.eth.Contract(securityTokenABI, STAddress);
 
         await showTokenInfo();
 
         let res = await securityToken.methods.getModule(2,0).call({from: User});
         GTMAddress = res[1];
+        let generalTransferManagerABI = abis.generalTransferManager();
         generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,GTMAddress);
 
         res = await securityToken.methods.getModule(3,0).call({from: User});
@@ -245,7 +234,7 @@ async function investCappedSTO(currency, amount) {
     }
     if (amt == "") process.exit();
 
-    let cost = amt/displayRate;
+    let cost = new BigNumber(amt).div(displayRate);
     console.log(`This investment will cost ${cost} ${displayRaiseType}`);
 
     let costWei = web3.utils.toWei(cost.toString());

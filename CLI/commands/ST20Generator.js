@@ -708,7 +708,7 @@ function tiersConfigUSDTieredSTO(polyRaise) {
     }
 
     if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('ratePerTiers') && i < _stoConfig.ratePerTiers.length) {
-      tiers.ratePerTier[i] = web3.utils.toWei(_stoConfig.tokensPerTiers[i].toString());
+      tiers.ratePerTier[i] = web3.utils.toWei(_stoConfig.ratePerTiers[i].toString());
     } else {
       tiers.ratePerTier[i] = web3.utils.toWei(readlineSync.question(`What is the USD per token rate for tier No. ${i+1}? (${defaultRatePerTier[i]}): `, {
         limit: function(input) {

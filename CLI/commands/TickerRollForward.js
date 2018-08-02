@@ -136,17 +136,18 @@ async function registerTickers() {
     });
 
     if (valid) {
-      let registerTickerAction = tickerRegistry.methods.registerTicker(owner, ticker_data[i].symbol, ticker_data[i].name, ticker_data[i].swarmHash);
-      let GAS = await common.estimateGas(registerTickerAction, USER, 1.2);
-      await registerTickerAction.send({ from: USER, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-      .on('receipt', function(receipt){
-        registered_tickers.push(ticker_data[i]);
-        console.log(ticker_data[i]);
-        totalGas = totalGas.add(receipt.gasUsed);
-      })
-      .on('error', function(error){
+      try {
+        let registerTickerAction = tickerRegistry.methods.registerTicker(owner, ticker_data[i].symbol, ticker_data[i].name, ticker_data[i].swarmHash);
+        let GAS = await common.estimateGas(registerTickerAction, USER, 1.2);
+        await registerTickerAction.send({ from: USER, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+        .on('receipt', function(receipt){
+          registered_tickers.push(ticker_data[i]);
+          console.log(ticker_data[i]);
+          totalGas = totalGas.add(receipt.gasUsed);
+        });
+      } catch (error) {
         failed_tickers.push(` ${i} is ${error}`);
-      });
+      }
     }
   }
   await logResults();

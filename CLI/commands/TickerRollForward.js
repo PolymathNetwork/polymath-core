@@ -97,14 +97,14 @@ async function readFile() {
 
 async function registerTickers() {
   // Poly approval for registration fees
-  let polyBalance = await polyToken.methods.balanceOf(USER).call({ from: USER });
+  let polyBalance = BigNumber(await polyToken.methods.balanceOf(USER).call({ from: USER }));
   let fee = await tickerRegistry.methods.registrationFee().call({ from: USER });
   let totalFee = BigNumber(ticker_data.length).mul(fee);
 
   if (totalFee.gt(polyBalance)) {
-    console.log(chalk.red(`\n*****************************************************************************************************************************************`));
+    console.log(chalk.red(`\n*******************************************************************************`));
     console.log(chalk.red(`Not enough POLY to pay registration fee. Require ${totalFee.div(10**18).toNumber()} POLY but have ${polyBalance.div(10**18).toNumber()} POLY.`));
-    console.log(chalk.red(`******************************************************************************************************************************************\n`));
+    console.log(chalk.red(`*******************************************************************************\n`));
     process.exit(0);
   } else {
     let approveAction = polyToken.methods.approve(tickerRegistryAddress, totalFee);

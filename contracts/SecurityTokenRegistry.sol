@@ -16,8 +16,8 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
 
     // Registration fee in POLY base 18 decimals
     uint256 public registrationFee;
-    // Emit when changePolyRegisterationFee is called
-    event LogChangePolyRegisterationFee(uint256 _oldFee, uint256 _newFee);
+    // Emit when changePolyRegistrationFee is called
+    event LogChangePolyRegistrationFee(uint256 _oldFee, uint256 _newFee);
 
     // Emit at the time of launching of new security token
     event LogNewSecurityToken(string _ticker, address indexed _securityTokenAddress, address indexed _owner);
@@ -136,9 +136,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      * @notice set the ticker registration fee in POLY tokens
      * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
      */
-    function changePolyRegisterationFee(uint256 _registrationFee) public onlyOwner {
+    function changePolyRegistrationFee(uint256 _registrationFee) public onlyOwner {
         require(registrationFee != _registrationFee);
-        emit LogChangePolyRegisterationFee(registrationFee, _registrationFee);
+        emit LogChangePolyRegistrationFee(registrationFee, _registrationFee);
         registrationFee = _registrationFee;
     }
 

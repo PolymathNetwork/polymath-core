@@ -1,6 +1,20 @@
 # Changelog
 All notable changes to this project will be documented in this file.   
 
+# v1.4.0 - Unreleased
+
+[__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __01-08-18__
+
+## Added
+
+* USDTieredSTO module added as a new STO type. 
+* Added PolyOracle to get POLY/USD price.
+* Added MakerDAOOracle to get ETH/USD price.
+ 
+##Changed
+
+* Modified function name in TickerRegistry and SecurityTokenRegistry from `changePolyRegisterationFee` to `changePolyRegistrationFee`. Event name is modified too from `LogChangePolyRegisterationFee` to `LogChangePolyRegistrationFee`
+
 # v1.2.1 - Unreleased
 
 [__1.2.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __27-06-18__
@@ -10,7 +24,7 @@ All notable changes to this project will be documented in this file.
 * `modifyWhitelistMulti` added in `PercentageTransferManager` contract.    
 
 ##Changed
-
+* Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not.  
 
 ## Removed
 * Logic of module locking is removed and also removes the `_locked` parameter.    

@@ -53,7 +53,7 @@ async function send_poly(beneficiary, amount) {
   console.log(chalk.blue(`Hello user you have '${(new BigNumber(issuerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()}POLY'\n`))
 
   if (typeof beneficiary === 'undefined' && typeof amount === 'undefined') {
-    let options = ['250 POLY for ticker registeration','500 POLY for token launch + ticker reg', '20K POLY for CappedSTO Module', '20.5K POLY for Ticker + Token + CappedSTO', '100.5K POLY for Ticker + Token + USDTieredSTO','As many POLY as you want'];
+    let options = ['250 POLY for ticker registration','500 POLY for token launch + ticker reg', '20K POLY for CappedSTO Module', '20.5K POLY for Ticker + Token + CappedSTO', '100.5K POLY for Ticker + Token + USDTieredSTO','As many POLY as you want'];
     index = readlineSync.keyInSelect(options, 'What do you want to do?');
     console.log("Selected:",options[index]);
     switch (index) {

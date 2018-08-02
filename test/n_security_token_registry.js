@@ -602,7 +602,7 @@ contract('SecurityTokenRegistry', accounts => {
 
     describe("Test cases for IRegistry functionality", async() => {
 
-        describe("Test cases for changePolyRegisterationFee", async() => {
+        describe("Test cases for changePolyRegistrationFee", async() => {
 
             it("Should successfully get the registration fee", async() => {
                 let fee = await I_SecurityTokenRegistry.registrationFee.call();
@@ -612,7 +612,7 @@ contract('SecurityTokenRegistry', accounts => {
             it("Should fail to change the registration fee if msg.sender not owner", async() => {
                 let errorThrown = false;
                 try {
-                    let tx = await I_SecurityTokenRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_temp });
+                    let tx = await I_SecurityTokenRegistry.changePolyRegistrationFee(400 * Math.pow(10, 18), { from: account_temp });
                 } catch(error) {
                     console.log(`         tx revert -> Failed to change registrationFee`.grey);
                     errorThrown = true;
@@ -622,7 +622,7 @@ contract('SecurityTokenRegistry', accounts => {
             });
 
             it("Should successfully change the registration fee", async() => {
-                await I_SecurityTokenRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_polymath });
+                await I_SecurityTokenRegistry.changePolyRegistrationFee(400 * Math.pow(10, 18), { from: account_polymath });
                 let fee = await I_SecurityTokenRegistry.registrationFee.call();
                 assert.equal(fee, 400 * Math.pow(10, 18));
             });

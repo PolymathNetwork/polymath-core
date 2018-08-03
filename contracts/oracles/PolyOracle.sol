@@ -83,11 +83,11 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
             for (uint256 i = 0; i < _times.length; i++) {
                 requestId = oraclize_query(_times[i], "URL", oracleURL, gasLimit);
                 requestIds[requestId] = _times[i];
+                if (latestScheduledUpdate < requestIds[requestId])
+                      latestScheduledUpdate = requestIds[requestId];
                 emit LogNewOraclizeQuery(_times[i], requestId, oracleURL);
             }
-            if (latestScheduledUpdate < requestIds[requestId]) {
-                latestScheduledUpdate = requestIds[requestId];
-            }
+            
         }
     }
 

@@ -81,6 +81,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
         } else {
             require(oraclize_getPrice("URL", gasLimit) * _times.length <= address(this).balance, "Insufficient Funds");
             for (uint256 i = 0; i < _times.length; i++) {
+                require(_times[i] >= now, "Past scheduling is not allowed and scheduled time should be absolute in nature");
                 requestId = oraclize_query(_times[i], "URL", oracleURL, gasLimit);
                 requestIds[requestId] = _times[i];
                 if (latestScheduledUpdate < requestIds[requestId])

@@ -102,6 +102,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     */
     function schedulePriceUpdatesRolling(uint256 _startTime, uint256 _interval, uint256 _iters) payable isAdminOrOwner public {
         bytes32 requestId;
+        require(_interval > 0, "Interval between scheduled time should be greater than zero");
         require(_iters > 0, "No iterations specified");
         require(_startTime >= now, "Past scheduling is not allowed and scheduled time should be absolute timestamp");
         require(oraclize_getPrice("URL", gasLimit) * _iters <= address(this).balance, "Insufficient Funds");

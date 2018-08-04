@@ -70,13 +70,12 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     */
     function schedulePriceUpdatesFixed(uint256[] _times) payable isAdminOrOwner public {
         bytes32 requestId;
+        uint256 maximumScheduledUpdated;
         if (_times.length == 0) {
             require(oraclize_getPrice("URL", gasLimit) <= address(this).balance, "Insufficient Funds");
             requestId = oraclize_query("URL", oracleURL, gasLimit);
             requestIds[requestId] = now;
-            if (latestScheduledUpdate < requestIds[requestId]) {
-                latestScheduledUpdate = requestIds[requestId];
-            }
+            maximumScheduledUpdated = now;
             emit LogNewOraclizeQuery(now, requestId, oracleURL);
         } else {
             require(oraclize_getPrice("URL", gasLimit) * _times.length <= address(this).balance, "Insufficient Funds");
@@ -84,11 +83,14 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
                 require(_times[i] >= now, "Past scheduling is not allowed and scheduled time should be absolute timestamp");
                 requestId = oraclize_query(_times[i], "URL", oracleURL, gasLimit);
                 requestIds[requestId] = _times[i];
-                if (latestScheduledUpdate < requestIds[requestId])
-                      latestScheduledUpdate = requestIds[requestId];
+                if (maximumScheduledUpdated < requestIds[requestId]) {
+                    maximumScheduledUpdated = requestIds[requestId];
+                }
                 emit LogNewOraclizeQuery(_times[i], requestId, oracleURL);
             }
-            
+        }
+        if (latestScheduledUpdate < maximumScheduledUpdated) {
+            latestScheduledUpdate = maximumScheduledUpdated;
         }
     }
 
@@ -100,6 +102,8 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     */
     function schedulePriceUpdatesRolling(uint256 _startTime, uint256 _interval, uint256 _iters) payable isAdminOrOwner public {
         bytes32 requestId;
+        require(_iters > 0, "No iterations specified");
+        require(_startTime >= now, "Past scheduling is not allowed and scheduled time should be absolute timestamp");
         require(oraclize_getPrice("URL", gasLimit) * _iters <= address(this).balance, "Insufficient Funds");
         for (uint256 i = 0; i < _iters; i++) {
             uint256 scheduledTime = _startTime + (i * _interval);

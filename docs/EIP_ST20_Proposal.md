@@ -160,6 +160,12 @@ interface IERCxxx is ERC20 {
         allowances[msg.sender][_operator] = _amount;
     }
 
+    // Allow tokens to be moved between tranches
+    //
+    function changeTranche(address _investor, bytes32 _tranche, uint256 _amount, bytes _approval) returns (byte reason);
+
+    // TODO: should we have a `verifyChangeTranche` function as part of the standard
+
     // Any increases to totalSupply must happen in mint.
     function mint(address _investor, bytes32 _tranche, uint256 _amount) public returns (byte reason);
 

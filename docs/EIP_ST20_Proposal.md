@@ -162,7 +162,11 @@ interface IERCxxx is ERC20 {
 
     // Allow tokens to be moved between tranches
     //
-    function changeTranche(address _investor, bytes32 _tranche, uint256 _amount, bytes _approval) returns (byte reason);
+    function changeTranche(address _investor, bytes32 _oldTranche, bytes32 _newTranche, uint256 _amount, bytes _approval) returns (byte reason) {
+        // check msg.sender && _approval is valid
+        investorTokenSets[_investor][trancheToIndex[_investor][_oldTranche]].amount -= _amount;
+        investorTokenSets[_investor][trancheToIndex[_investor][_newTranche]].amount += _amount;
+    }
 
     // TODO: should we have a `verifyChangeTranche` function as part of the standard
 

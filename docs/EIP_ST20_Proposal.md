@@ -161,7 +161,6 @@ interface IERCxxx is ERC20 {
     }
 
     // Allow tokens to be moved between tranches
-    //
     function changeTranche(address _investor, bytes32 _oldTranche, bytes32 _newTranche, uint256 _amount, bytes _approval) returns (byte reason) {
         // check msg.sender && _approval is valid
         investorTokenSets[_investor][trancheToIndex[_investor][_oldTranche]].amount -= _amount;
@@ -188,6 +187,8 @@ interface IERCxxx is ERC20 {
     // Allows authorised user to force transfer any unrestricted shares.
     // Only restriction is that _from has sufficient balance
     function forceTransferTrancheFrom(address _from, address _to, bytes32 _tranche, uint256 _amount) returns (byte reason);
+
+    // TODO: Add lots of events
 
 }
 ```

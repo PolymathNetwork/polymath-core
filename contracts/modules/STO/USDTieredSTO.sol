@@ -296,12 +296,13 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         isFinalized = true;
         uint256 tempReturned;
         uint256 tempSold;
+        uint256 remainingTokens;
         for (uint8 i = 0; i < tokensPerTierTotal.length; i++) {
-            if (mintedPerTierTotal[i] < tokensPerTierTotal[i]) {
-                tempReturned = tempReturned.add(tokensPerTierTotal[i]);
-                uint256 remainingTokens = tokensPerTierTotal[i].sub(mintedPerTierTotal[i]);
+            remainingTokens = tokensPerTierTotal[i].sub(mintedPerTierTotal[i]);
+            tempReturned = tempReturned.add(remainingTokens);
+            tempSold = tempSold.add(mintedPerTierTotal[i]);
+            if (remainingTokens > 0) {
                 mintedPerTierTotal[i] = tokensPerTierTotal[i];
-                tempSold = tempSold.add(remainingTokens);
                 require(IST20(securityToken).mint(reserveWallet, remainingTokens), "Error in minting the tokens");
                 emit ReserveTokenMint(msg.sender, reserveWallet, remainingTokens, i);
             }
@@ -377,7 +378,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(isOpen(), "STO is not open");
         require(_investmentValue > 0, "No funds were sent to buy tokens");
 
-        uint256 investedUSD = wmul(_rate, _investmentValue);
+        uint256 investedUSD = decimalMul(_rate, _investmentValue);
 
         // Check for minimum investment
         require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment less than minimumInvestmentUSD");
@@ -412,7 +413,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         }
 
         // Calculate spent in base currency (ETH or POLY)
-        uint256 spentValue = wdiv(spentUSD, _rate);
+        uint256 spentValue = decimalDiv(spentUSD, _rate);
 
         // Return calculated amounts
         return (spentUSD, spentValue);
@@ -428,10 +429,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             uint256 discountRemaining = tokensPerTierDiscountPoly[_tier].sub(mintedPerTierDiscountPoly[_tier]);
             uint256 totalRemaining = tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]);
             if (totalRemaining < discountRemaining)
-                (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], totalRemaining, _investedUSD, _tier);
+                (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], totalRemaining, _investedUSD, _tier);
             else
-                (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], discountRemaining, _investedUSD, _tier);
-            spentUSD = spentUSD.add(tierSpentUSD);
+                (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], discountRemaining, _investedUSD, _tier);
             _investedUSD = _investedUSD.sub(spentUSD);
             mintedPerTierDiscountPoly[_tier] = mintedPerTierDiscountPoly[_tier].add(tierPurchasedTokens);
             mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
@@ -450,11 +450,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     function _purchaseTier(address _beneficiary, uint256 _tierPrice, uint256 _tierRemaining, uint256 _investedUSD, uint8 _tier) internal returns(uint256, uint256) {
-        uint256 maximumTokens = wdiv(_investedUSD, _tierPrice);
+        uint256 maximumTokens = decimalDiv(_investedUSD, _tierPrice);
         uint256 spentUSD;
         uint256 purchasedTokens;
         if (maximumTokens > _tierRemaining) {
-            spentUSD = wmul(_tierRemaining, _tierPrice);
+            spentUSD = decimalMul(_tierRemaining, _tierPrice);
             purchasedTokens = _tierRemaining;
         } else {
             spentUSD = _investedUSD;
@@ -493,7 +493,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function convertToUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
         uint256 rate = IOracle(ISecurityTokenRegistry(RegistryUpdater(securityToken).securityTokenRegistry()).getOracle(_currency, bytes32("USD"))).getPrice();
-        return wmul(_amount, rate);
+        return decimalMul(_amount, rate);
     }
 
     /**
@@ -504,7 +504,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function convertFromUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
         uint256 rate = IOracle(ISecurityTokenRegistry(RegistryUpdater(securityToken).securityTokenRegistry()).getOracle(_currency, bytes32("USD"))).getPrice();
-        return wdiv(_amount, rate);
+        return decimalDiv(_amount, rate);
     }
 
     /**
@@ -512,6 +512,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return bool Whether the cap was reached
      */
     function capReached() public view returns (bool) {
+        if (isFinalized) {
+            return (finalAmountReturned == 0);
+        }
         return (mintedPerTierTotal[mintedPerTierTotal.length - 1] == tokensPerTierTotal[tokensPerTierTotal.length - 1]);
     }
 
@@ -554,13 +557,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     function getTokensSold() public view returns (uint256) {
         if (isFinalized)
             return finalAmountSold;
-        else {
-            uint256 tokensSold;
-            for (uint8 i = 0; i < mintedPerTierTotal.length; i++) {
-                tokensSold = tokensSold.add(mintedPerTierTotal[i]);
-            }
-            return tokensSold;
-        }
+        else
+            return getTokensMinted();
     }
 
     /**
@@ -623,22 +621,22 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],uint256,uint256,uint8[],address,address)"));
     }
 
-    //Below from DSMath
-    //TODO: Attribute or import from DSMath
-    uint constant WAD = 10 ** 18;
-    uint constant RAY = 10 ** 27;
+    uint constant DECIMALS = 10 ** 18;
 
-    function wmul(uint x, uint y) internal pure returns (uint z) {
-        z = SafeMath.add(SafeMath.mul(x, y), WAD / 2) / WAD;
+    /**
+     * @notice This function multiplies two decimals represented as (decimal * 10**DECIMALS)
+     * @return uint256 Result of multiplication represented as (decimal * 10**DECIMALS)
+     */
+    function decimalMul(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = SafeMath.add(SafeMath.mul(x, y), DECIMALS / 2) / DECIMALS;
     }
-    function rmul(uint x, uint y) internal pure returns (uint z) {
-        z = SafeMath.add(SafeMath.mul(x, y), RAY / 2) / RAY;
-    }
-    function wdiv(uint x, uint y) internal pure returns (uint z) {
-        z = SafeMath.add(SafeMath.mul(x, WAD), y / 2) / y;
-    }
-    function rdiv(uint x, uint y) internal pure returns (uint z) {
-        z = SafeMath.add(SafeMath.mul(x, RAY), y / 2) / y;
+
+    /**
+     * @notice This function divides two decimals represented as (decimal * 10**DECIMALS)
+     * @return uint256 Result of division represented as (decimal * 10**DECIMALS)
+     */
+    function decimalDiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = SafeMath.add(SafeMath.mul(x, DECIMALS), y / 2) / y;
     }
 
 }

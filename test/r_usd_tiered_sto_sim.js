@@ -329,13 +329,21 @@ contract('USDTieredSTO', accounts => {
 
             _startTime.push(latestTime() + duration.days(2));
             _endTime.push(_startTime[stoId] + duration.days(100));
-            _ratePerTier.push([BigNumber(0.05*10**18), BigNumber(0.10*10**18), BigNumber(0.15*10**18)]);             // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
-            _ratePerTierDiscountPoly.push([BigNumber(0.05*10**18), BigNumber(0.08*10**18), BigNumber(0.13*10**18)]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
-            _tokensPerTierTotal.push([BigNumber(200*10**18), BigNumber(500*10**18), BigNumber(300*10**18)]);         // [ 1000 Token, 2000 Token, 1500 Token ]
-            _tokensPerTierDiscountPoly.push([BigNumber(0), BigNumber(50*10**18), BigNumber(300*10**18)]);            // [ 0 Token, 1000 Token, 1500 Token ]
-            _nonAccreditedLimitUSD.push(BigNumber(10*10**18));                                                       // 20 USD
-            _minimumInvestmentUSD.push(BigNumber(1));                                                                // 1 wei USD
-            _fundRaiseTypes.push([0, 1]);
+            _ratePerTier.push([
+                BigNumber(0.05*10**18), BigNumber(0.10*10**18), BigNumber(0.15*10**18)
+            ]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
+            _ratePerTierDiscountPoly.push([
+                BigNumber(0.05*10**18), BigNumber(0.08*10**18), BigNumber(0.13*10**18)
+            ]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
+            _tokensPerTierTotal.push([
+                BigNumber(200*10**18), BigNumber(500*10**18), BigNumber(300*10**18)
+            ]); // [ 1000 Token, 2000 Token, 1500 Token ]
+            _tokensPerTierDiscountPoly.push([
+                BigNumber(0), BigNumber(50*10**18), BigNumber(300*10**18)
+            ]); // [ 0 Token, 1000 Token, 1500 Token ]
+            _nonAccreditedLimitUSD.push(BigNumber(10*10**18)); // 20 USD
+            _minimumInvestmentUSD.push(BigNumber(1));          // 1 wei USD
+            _fundRaiseTypes.push([0,1]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
 
@@ -468,7 +476,7 @@ contract('USDTieredSTO', accounts => {
                 let investment_USD = BigNumber(0);
                 let investment_ETH = BigNumber(0);
                 let investment_POLY = BigNumber(0);
-                let investment_Token = Token_counter;
+                let investment_Token = BigNumber(0);
 
                 let Tokens_total = [];
                 let Tokens_discount = [];
@@ -486,65 +494,67 @@ contract('USDTieredSTO', accounts => {
                 let USD_overflow;
                 let Token_overflow;
 
-                while (Token_counter.gt(0) && USD_remaining.gt(0)) {
+                while (Token_counter.gt(0)) {
                     if (tier == _ratePerTier[stoId].length) {
-                        investment_Token = investment_Token.sub(Token_counter)
                         break;
                     }
                     if (Tokens_total[tier].gt(0)) {
                         if (isPoly) {
                             // 1. POLY and discount (consume up to cap then move to regular)
                             if (Tokens_discount[tier].gt(0)) {
-                                Token_Tier = BigNumber(Math.min(Tokens_total[tier], Tokens_discount[tier], Token_counter));
-                                USD_Tier = Token_Tier.div(10**18).mul(_ratePerTierDiscountPoly[stoId][tier].div(10**18)).mul(10**18); // Token * USD/Token = USD
-                                if (USD_Tier.gt(USD_remaining)) {
+                                Token_Tier = BigNumber.min([Tokens_total[tier], Tokens_discount[tier], Token_counter]);
+                                USD_Tier = Token_Tier.div(10**18).mul(_ratePerTierDiscountPoly[stoId][tier].div(10**18)).mul(10**18);
+                                if (USD_Tier.gte(USD_remaining)) {
                                     USD_overflow = USD_Tier.sub(USD_remaining);
                                     Token_overflow = USD_overflow.div(_ratePerTierDiscountPoly[stoId][tier]).mul(10**18);
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
-                                    investment_Token = USD_remaining.div(_ratePerTierDiscountPoly[stoId][tier]).mul(10**18);
+                                    Token_counter = BigNumber(0);
                                 }
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Tokens_discount[tier] = Tokens_discount[tier].sub(Token_Tier);
-                                POLY_Tier = USD_Tier.div(USDPOLY).mul(10**18); // USD / USDPOLY = POLY
+                                POLY_Tier = USD_Tier.div(USDPOLY).mul(10**18);
                                 Token_counter = Token_counter.sub(Token_Tier);
+                                investment_Token = investment_Token.add(Token_Tier);
                                 investment_USD = investment_USD.add(USD_Tier);
                                 investment_POLY = investment_POLY.add(POLY_Tier);
                             }
                             // 2. POLY and regular (consume up to cap then skip to next tier)
                             if (Tokens_total[tier].gt(0) && Token_counter.gt(0)) {
-                                Token_Tier = BigNumber(Math.min(Tokens_total[tier], Token_counter));
-                                USD_Tier = Token_Tier.div(10**18).mul(_ratePerTier[stoId][tier].div(10**18)).mul(10**18); // Token * USD/Token = USD
-                                if (USD_Tier.gt(USD_remaining)) {
+                                Token_Tier = BigNumber.min([Tokens_total[tier], Token_counter]);
+                                USD_Tier = Token_Tier.div(10**18).mul(_ratePerTier[stoId][tier].div(10**18)).mul(10**18);
+                                if (USD_Tier.gte(USD_remaining)) {
                                     USD_overflow = USD_Tier.sub(USD_remaining);
                                     Token_overflow = USD_overflow.div(_ratePerTier[stoId][tier]).mul(10**18);
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
-                                    investment_Token = USD_remaining.div(_ratePerTier[stoId][tier]).mul(10**18);
+                                    Token_counter = BigNumber(0);
                                 }
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
-                                POLY_Tier = USD_Tier.div(USDPOLY).mul(10**18); // USD / USDPOLY = POLY
+                                POLY_Tier = USD_Tier.div(USDPOLY).mul(10**18);
                                 Token_counter = Token_counter.sub(Token_Tier);
+                                investment_Token = investment_Token.add(Token_Tier);
                                 investment_USD = investment_USD.add(USD_Tier);
                                 investment_POLY = investment_POLY.add(POLY_Tier);
                             }
                         } else {
                             // 3. ETH (consume up to cap then skip to next tier)
-                            Token_Tier = BigNumber(Math.min(Tokens_total[tier], Token_counter));
-                            USD_Tier = Token_Tier.div(10**18).mul(_ratePerTier[stoId][tier].div(10**18)).mul(10**18); // Token * USD/Token = USD
-                            if (USD_Tier.gt(USD_remaining)) {
+                            Token_Tier = BigNumber.min([Tokens_total[tier], Token_counter]);
+                            USD_Tier = Token_Tier.div(10**18).mul(_ratePerTier[stoId][tier].div(10**18)).mul(10**18);
+                            if (USD_Tier.gte(USD_remaining)) {
                                 USD_overflow = USD_Tier.sub(USD_remaining);
                                 Token_overflow = USD_overflow.div(_ratePerTier[stoId][tier]).mul(10**18);
                                 USD_Tier = USD_Tier.sub(USD_overflow);
                                 Token_Tier = Token_Tier.sub(Token_overflow);
-                                investment_Token = USD_remaining.div(_ratePerTier[stoId][tier]).mul(10**18);
+                                Token_counter = BigNumber(0);
                             }
                             USD_remaining = USD_remaining.sub(USD_Tier);
                             Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
-                            ETH_Tier = USD_Tier.div(USDETH).mul(10**18); // USD / USDPOLY = POLY
+                            ETH_Tier = USD_Tier.div(USDETH).mul(10**18);
                             Token_counter = Token_counter.sub(Token_Tier);
+                            investment_Token = investment_Token.add(Token_Tier);
                             investment_USD = investment_USD.add(USD_Tier);
                             investment_ETH = investment_ETH.add(ETH_Tier);
                         }

@@ -286,13 +286,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // STO Management //
     ////////////////////
 
-    //TODO - check whether this can only be called when STO has completed
     /**
      * @notice Finalize the STO and mint remaining tokens to reserve address
      * @notice Reserve address must be whitelisted to successfully finalize
      */
     function finalize() public onlyOwner {
-        require(!isFinalized);
+        require(!isFinalized);        
         isFinalized = true;
         uint256 tempReturned;
         uint256 tempSold;
@@ -373,8 +372,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _investmentValue Amount of POLY or ETH invested
       * @param _isPOLY Investment method
       */
-    function _buyTokens(address _beneficiary, uint256 _investmentValue, uint256 _rate, bool _isPOLY) internal nonReentrant returns(uint256, uint256) {
-        require(!paused, "STO is paused");
+    function _buyTokens(address _beneficiary, uint256 _investmentValue, uint256 _rate, bool _isPOLY) internal nonReentrant whenNotPaused returns(uint256, uint256) {
         require(isOpen(), "STO is not open");
         require(_investmentValue > 0, "No funds were sent to buy tokens");
 

@@ -56,6 +56,7 @@ contract('CappedSTO', accounts => {
     let I_CappedSTO_Array_POLY = [];
     let I_PolyToken;
     let I_PolymathRegistry;
+    let pauseTime;
 
     // SecurityToken Details for funds raise Type ETH
     const swarmHash = "dagwrgwgvwergwrvwrg";
@@ -271,7 +272,7 @@ contract('CappedSTO', accounts => {
 
             I_SecurityToken_ETH = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-           
+
             const log = await promisifyLogWatch(I_SecurityToken_ETH.LogModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -553,6 +554,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should pause the STO", async()=> {
+            pauseTime = latestTime();
             let tx = await I_CappedSTO_Array_ETH[0].pause({from: account_issuer});
             assert.isTrue(await I_CappedSTO_Array_ETH[0].paused.call());
         });
@@ -574,10 +576,25 @@ contract('CappedSTO', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should unpause the STO -- Failed due to too large an increase in endtime", async()=> {
+            let errorThrown = false;
+            increaseTime(500);
+            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber()) + 800;
+            try {
+                let tx = await I_CappedSTO_Array_ETH[0].unpause(newEndDate, {from: account_issuer});
+            } catch(error) {
+                console.log(`         tx revert -> Wrong msg.sender`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should unpause the STO -- Failed due to wrong msg.sender", async()=> {
             let errorThrown = false;
+            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber())  + 400;
             try {
-                let tx = await I_CappedSTO_Array_ETH[0].unpause(Math.floor(Date.now()/1000 + 50000), {from: account_investor1});
+                let tx = await I_CappedSTO_Array_ETH[0].unpause(newEndDate, {from: account_investor1});
             } catch(error) {
                 console.log(`         tx revert -> Wrong msg.sender`.grey);
                 ensureException(error);
@@ -588,8 +605,9 @@ contract('CappedSTO', accounts => {
 
         it("Should unpause the STO -- Failed due to entered date is less than the end date", async()=> {
             let errorThrown = false;
+            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber()) - 400;
             try {
-                let tx = await I_CappedSTO_Array_ETH[0].unpause(Math.floor(Date.now()/1000 - 500000), {from: account_issuer});
+                let tx = await I_CappedSTO_Array_ETH[0].unpause(newEndDate, {from: account_issuer});
             } catch(error) {
                 console.log(`         tx revert -> Entered date is less than the end date`.grey);
                 ensureException(error);
@@ -599,8 +617,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should unpause the STO", async()=> {
-            await increaseTime(50);
-            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber() - latestTime()) + latestTime() + 20;
+            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber())  + 400;
             let tx = await I_CappedSTO_Array_ETH[0].unpause(newEndDate, {from: account_issuer});
             assert.isFalse(await I_CappedSTO_Array_ETH[0].paused.call());
         });
@@ -1265,5 +1282,3 @@ contract('CappedSTO', accounts => {
         });
     });
 });
-
-

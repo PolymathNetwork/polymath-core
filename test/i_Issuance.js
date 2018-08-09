@@ -1,5 +1,5 @@
 import latestTime from './helpers/latestTime';
-import { duration, ensureException } from './helpers/utils';
+import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
@@ -31,7 +31,7 @@ contract('Issuance', accounts => {
     let account_investor2;
     let account_fundsReceiver;
     let account_delegate;
-
+    let blockNo;
     let balanceOfReceiver;
     let message = "Transaction Should Fail!";
     const TM_Perm = "WHITELIST";
@@ -250,6 +250,7 @@ contract('Issuance', accounts => {
             it("POLYMATH: Should generate the new security token with the same symbol as registered above", async () => {
                 console.log(name, symbol, tokenDetails, false);
                 await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: account_polymath });
+                let _blockNo = latestBlock();
                 let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_polymath, gas: 60000000  });
 
                 // Verify the successful generation of the security token
@@ -257,10 +258,7 @@ contract('Issuance', accounts => {
 
                 I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-                const LogAddModule = await I_SecurityToken.allEvents();
-                const log = await new Promise(function(resolve, reject) {
-                    LogAddModule.watch(function(error, log){ resolve(log);});
-                });
+                const log = await promisifyLogWatch(I_SecurityToken.LogModuleAdded({from: _blockNo}), 1);
 
                 // Verify that GeneralTransferManager module get added successfully or not
                 assert.equal(log.args._type.toNumber(), transferManagerKey);
@@ -269,7 +267,6 @@ contract('Issuance', accounts => {
                     .replace(/\u0000/g, ''),
                     "GeneralTransferManager"
                 );
-                LogAddModule.stopWatching();
             });
 
             it("POLYMATH: Should intialize the auto attached modules", async () => {
@@ -359,7 +356,7 @@ contract('Issuance', accounts => {
         describe("Operations on the STO", async() => {
             it("Should Buy the tokens", async() => {
                 balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
-
+                blockNo = latestBlock();
                 // Jump time
                 await increaseTime(5000);
                 // Fallback transaction
@@ -388,11 +385,7 @@ contract('Issuance', accounts => {
             });
 
             it("Verification of the event Token Purchase", async() => {
-                let TokenPurchase = I_CappedSTO.allEvents();
-                let log = await new Promise(function(resolve, reject) {
-                    TokenPurchase.watch(function(error, log){ resolve(log);})
-                });
-
+                const log = await promisifyLogWatch(I_CappedSTO.TokenPurchase({from: blockNo}), 1);
                 assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
                 assert.equal(
                     (log.args.amount)
@@ -401,7 +394,6 @@ contract('Issuance', accounts => {
                     1000,
                     "Wrong No. token get dilivered"
                 );
-                TokenPurchase.stopWatching();
             });
 
             it("should add the investor into the whitelist by the delegate", async () => {

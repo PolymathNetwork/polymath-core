@@ -1,5 +1,5 @@
 import latestTime from './helpers/latestTime';
-import { duration, ensureException } from './helpers/utils';
+import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
@@ -91,6 +91,7 @@ contract('CappedSTO', accounts => {
     let endTime_POLY1;
     let startTime_POLY2;
     let endTime_POLY2;
+    let blockNo;
     const P_cap = new BigNumber(50000).times(new BigNumber(10).pow(18));
     const P_fundRaiseType = 1;
     const P_rate = 5;
@@ -262,6 +263,7 @@ contract('CappedSTO', accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
+            let _blockNo = latestBlock();
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000  });
 
             // Verify the successful generation of the security token
@@ -269,15 +271,12 @@ contract('CappedSTO', accounts => {
 
             I_SecurityToken_ETH = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const LogAddModule = await I_SecurityToken_ETH.allEvents();
-            const log = await new Promise(function(resolve, reject) {
-                LogAddModule.watch(function(error, log){ resolve(log);});
-            });
+           
+            const log = await promisifyLogWatch(I_SecurityToken_ETH.LogModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._type.toNumber(), transferManagerKey);
             assert.equal(web3.utils.hexToString(log.args._name),"GeneralTransferManager");
-            LogAddModule.stopWatching();
         });
 
         it("Should intialize the auto attached modules", async () => {
@@ -477,7 +476,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should Buy the tokens", async() => {
-
+            blockNo = latestBlock();
             fromTime = latestTime();
             toTime = latestTime() + duration.days(15);
             expiryTime = toTime + duration.days(100);
@@ -529,10 +528,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Verification of the event Token Purchase", async() => {
-            let TokenPurchase = I_CappedSTO_Array_ETH[0].allEvents();
-            let log = await new Promise(function(resolve, reject) {
-                TokenPurchase.watch(function(error, log){ resolve(log);})
-            });
+            const log = await promisifyLogWatch(I_CappedSTO_Array_ETH[0].TokenPurchase({from: blockNo}), 1);
 
             assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
             assert.equal(
@@ -542,7 +538,6 @@ contract('CappedSTO', accounts => {
                 1000,
                 "Wrong No. token get dilivered"
             );
-            TokenPurchase.stopWatching();
         });
 
         it("Should pause the STO -- Failed due to wrong msg.sender", async()=> {
@@ -892,6 +887,7 @@ contract('CappedSTO', accounts => {
 
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
                 await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
+                let _blockNo = latestBlock();
                 let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_tokenDetails, false, { from: token_owner, gas:85000000 });
 
                 // Verify the successful generation of the security token
@@ -899,15 +895,11 @@ contract('CappedSTO', accounts => {
 
                 I_SecurityToken_POLY = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-                const LogAddModule = await I_SecurityToken_POLY.allEvents();
-                const log = await new Promise(function(resolve, reject) {
-                    LogAddModule.watch(function(error, log){ resolve(log);});
-                });
+                const log = await promisifyLogWatch(I_SecurityToken_POLY.LogModuleAdded({from: _blockNo}), 1);
 
                 // Verify that GeneralTransferManager module get added successfully or not
                 assert.equal(log.args._type.toNumber(), transferManagerKey);
                 assert.equal(web3.utils.hexToString(log.args._name),"GeneralTransferManager");
-                LogAddModule.stopWatching();
             });
 
             it("POLY: Should intialize the auto attached modules", async () => {
@@ -975,7 +967,7 @@ contract('CappedSTO', accounts => {
 
             it("Should Buy the tokens", async() => {
                 await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), account_investor1);
-
+                blockNo = latestBlock();
                 assert.equal(
                     (await I_PolyToken.balanceOf(account_investor1))
                     .dividedBy(new BigNumber(10).pow(18))
@@ -1029,10 +1021,7 @@ contract('CappedSTO', accounts => {
             });
 
             it("Verification of the event Token Purchase", async() => {
-                let TokenPurchase = I_CappedSTO_Array_POLY[0].allEvents();
-                let log = await new Promise(function(resolve, reject) {
-                    TokenPurchase.watch(function(error, log){ resolve(log);})
-                });
+                const log = await promisifyLogWatch(I_CappedSTO_Array_POLY[0].TokenPurchase({from: blockNo}), 1);
 
                 assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
                 assert.equal(
@@ -1042,7 +1031,6 @@ contract('CappedSTO', accounts => {
                     5000,
                     "Wrong No. token get dilivered"
                 );
-                TokenPurchase.stopWatching();
             });
 
             it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async() => {
@@ -1277,3 +1265,5 @@ contract('CappedSTO', accounts => {
         });
     });
 });
+
+

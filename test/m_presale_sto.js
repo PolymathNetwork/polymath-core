@@ -1,5 +1,5 @@
 import latestTime from './helpers/latestTime';
-import { duration, ensureException } from './helpers/utils';
+import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const PreSaleSTOFactory = artifacts.require('./PreSaleSTOFactory.sol');
@@ -226,6 +226,7 @@ contract('PreSaleSTO', accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner });
+            let _blockNo = latestBlock();
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000 });
 
             // Verify the successful generation of the security token
@@ -233,10 +234,7 @@ contract('PreSaleSTO', accounts => {
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const LogAddModule = await I_SecurityToken.allEvents();
-            const log = await new Promise(function(resolve, reject) {
-                LogAddModule.watch(function(error, log){ resolve(log);});
-            });
+            const log = await promisifyLogWatch(I_SecurityToken.LogModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._type.toNumber(), transferManagerKey);
@@ -245,7 +243,6 @@ contract('PreSaleSTO', accounts => {
                 .replace(/\u0000/g, ''),
                 "GeneralTransferManager"
             );
-            LogAddModule.stopWatching();
         });
 
         it("Should intialize the auto attached modules", async () => {

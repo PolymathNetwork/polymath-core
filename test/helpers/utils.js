@@ -41,28 +41,26 @@ export const duration = {
   };
 
 
-
-export function assertEvent(contract, filter) {
-        return new Promise((resolve, reject) => {
-            var event = contract[filter.event]();
-            event.watch();
-            event.get((error, logs) => {
-                var log = _.filter(logs, filter);
-                if (log) {
-                    resolve(log);
-                } else {
-                    throw Error("Failed to find filtered event for " + filter.event);
-                }
-            });
-            event.stopWatching();
-        });
-}
-
-export function wait(ms){
-    var start = new Date().getTime();
-    var end = start;
-    while(end < start + ms) {
-      end = new Date().getTime();
-   }
+/**
+* Helper to wait for log emission.
+* @param  {Object} _event The event to wait for.
+*/
+export function promisifyLogWatch(_event, _times) {
+   return new Promise((resolve, reject) => {
+     let i = 0;
+     _event.watch((error, log) => {
+       if (error !== null)
+         reject(error);
+       i = i + 1;
+       console.log("Received event: " + i + " out of: " + _times);
+       if (i == _times) {
+         _event.stopWatching();
+         resolve(log);
+       }
+     });
+   });
  }
 
+ export function latestBlock () {
+    return web3.eth.getBlock('latest').number;
+  }

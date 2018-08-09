@@ -1,6 +1,6 @@
 const PolyOracle = artifacts.require('./MockPolyOracle.sol');
 import latestTime from './helpers/latestTime';
-import { duration, ensureException, assertEvent, wait } from './helpers/utils';
+import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import {increaseTime} from './helpers/time';
 
 const Web3 = require('web3');
@@ -79,12 +79,9 @@ let requestIds = new Array();
         })
 
         it("Should schedule the timing of the call - single call", async() => {
-            let blockNo = await web3.eth.getBlock('latest').number;
-            await I_PolyOracle.schedulePriceUpdatesFixed([],{from: owner, value:web3.utils.toWei("1")});
-
-            let log = await assertEvent(I_PolyOracle, {event: 'LogNewOraclizeQuery',logIndex: 1});
-
-            assert.isAtMost(log[0].args._time.toNumber(), latestTime());
+            let blockNo = latestBlock();
+            let tx = await I_PolyOracle.schedulePriceUpdatesFixed([],{from: owner, value:web3.utils.toWei("1")});
+            assert.isAtMost(tx.logs[0].args._time.toNumber(), latestTime());
             // await increaseTime(50);
             const logNewPriceWatcher = await promisifyLogWatch(I_PolyOracle.LogPriceUpdated({ fromBlock: blockNo }), 1);
             // const log = await logNewPriceWatcher;
@@ -96,12 +93,12 @@ let requestIds = new Array();
         });
 
         it("Should schedule the timing of the call - multiple calls", async() => {
-            let blockNo = await web3.eth.getBlock('latest').number;
+            let blockNo = latestBlock();
             let timeScheduling = [latestTime()+duration.seconds(10), latestTime()+duration.seconds(20)]
-            await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: owner, value:web3.utils.toWei("1.5")});
+            let tx = await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: owner, value:web3.utils.toWei("1.5")});
 
-            let event_data = await assertEvent(I_PolyOracle, {event: 'LogNewOraclizeQuery'});
-
+            let event_data = tx.logs;
+            
             for (var i = 0; i < event_data.length; i++) {
                 let time = event_data[i].args._time;
                 console.log(`       checking the time for the ${i} index and the scheduling time is ${time}`);
@@ -128,10 +125,10 @@ let requestIds = new Array();
         })
 
         it("Should schedule to call using iters", async() => {
-            let blockNo = await web3.eth.getBlock('latest').number;
-            await I_PolyOracle.schedulePriceUpdatesRolling(latestTime(), 10, 2, {from: owner});
-            let event_data = await assertEvent(I_PolyOracle, {event: 'LogNewOraclizeQuery'});
-
+            let blockNo = latestBlock();
+            console.log(`Latest Block number of the local chain:${blockNo}`);
+            let tx = await I_PolyOracle.schedulePriceUpdatesRolling(latestTime(), 10, 2, {from: owner});
+            let event_data = tx.logs;
             for (var i = 0; i < event_data.length; i++) {
                 let time = event_data[i].args._time;
                 requestIds.push(event_data[i].args._queryId);
@@ -219,11 +216,11 @@ let requestIds = new Array();
 
         it("Should change the gas price manually", async() => {
             await I_PolyOracle.setGasPrice(new BigNumber(60).times(new BigNumber(10).pow(9)),{from : owner});
-            let blockNo = await web3.eth.getBlock('latest').number;
+            let blockNo = latestBlock();
             let timeScheduling = [latestTime()+duration.seconds(10), latestTime()+duration.seconds(20)];
-            await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: owner, value:web3.utils.toWei("2")});
+            let tx = await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: owner, value:web3.utils.toWei("2")});
 
-            let event_data = await assertEvent(I_PolyOracle, {event: 'LogNewOraclizeQuery'});
+            let event_data = tx.logs;
 
             for (var i = 0; i < event_data.length; i++) {
                 let time = event_data[i].args._time;
@@ -317,10 +314,9 @@ let requestIds = new Array();
         });
 
         it("Should schedule the timing of the call - after changes", async() => {
-            let blockNo = await web3.eth.getBlock('latest').number;
-            await I_PolyOracle.schedulePriceUpdatesFixed([],{from: owner, value:web3.utils.toWei("1")});
-            let log = await assertEvent(I_PolyOracle, {event: 'LogNewOraclizeQuery',logIndex: 1});
-            assert.isAtMost(log[0].args._time.toNumber(), latestTime());
+            let blockNo = latestBlock();
+            let tx = await I_PolyOracle.schedulePriceUpdatesFixed([],{from: owner, value:web3.utils.toWei("1")});
+            assert.isAtMost(tx.logs[0].args._time.toNumber(), latestTime());
             const logNewPriceWatcher = await promisifyLogWatch(I_PolyOracle.LogPriceUpdated({ fromBlock: blockNo }), 1);
             assert.equal(logNewPriceWatcher.event, 'LogPriceUpdated', 'LogPriceUpdated not emitted.')
             assert.isNotNull(logNewPriceWatcher.args._price, 'Price returned was null.')
@@ -350,22 +346,3 @@ let requestIds = new Array();
 
 })
 
-/**
- * Helper to wait for log emission.
- * @param  {Object} _event The event to wait for.
- */
-function promisifyLogWatch(_event, _times) {
-    return new Promise((resolve, reject) => {
-      let i = 0;
-      _event.watch((error, log) => {
-        if (error !== null)
-          reject(error);
-        i = i + 1;
-        console.log("Received event: " + i + " out of: " + _times);
-        if (i == _times) {
-          _event.stopWatching();
-          resolve(log);
-        }
-      });
-    });
-  }

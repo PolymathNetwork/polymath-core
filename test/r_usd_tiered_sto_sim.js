@@ -410,24 +410,6 @@ contract('USDTieredSTO', accounts => {
         ----------------------------------------------------------
             `);
 
-            // ------------------- Investor Addresses: -------------------
-            // ACCREDITED1:    0x02a9ac0d93e9524382289dd9f4d1b1601c5d7b1f
-            // ACCREDITED2:    0x163b8e1f139f2a92715ee029a54a03f37e478449
-            // NONACCREDITED1: 0x40404421333ae6d3403d15cf81ad8f2785efbf5b
-            // NONACCREDITED2: 0xaf3af1f4a2d25f8604345f74f00408807f7f8531
-            // NOTWHITELISTED: 0x9dcc760a54745a1bf4ebf3e7665e1c79871cbbf1
-            // NOTAPPROVED:    0x02f56a173adaa091d51f6d1462533dbb70859e9f
-            // -----------------------------------------------------------
-
-            // ------------------- Investor Addresses -------------------
-            // ACCREDITED1:    0x91737e5aa98be303bbc0ebfa29d92dbe3e891564
-            // ACCREDITED2:    0x4e82c519d942dcd0726b57c61dc27ee5b0bae376
-            // NONACCREDITED1: 0xe77bd181d366010b52cafdec403ae4d337b7d451
-            // NONACCREDITED2: 0xd1d67660e20f24e42a2cb1f9bc641ba51e98bf16
-            // NOTWHITELISTED: 0xb1ce94836d1907228d49b3d97a8ee0c6915c7bf1
-            // NOTAPPROVED:    0xd37f010540baa76c9231d8d38edeb513891b1761
-            // ----------------------------------------------------------
-
             let totalTokens = BigNumber(0);
             for (var i = 0; i < _tokensPerTierTotal[stoId].length; i++) {
                 totalTokens = totalTokens.add(_tokensPerTierTotal[stoId][i]);
@@ -520,7 +502,7 @@ contract('USDTieredSTO', accounts => {
                                     Token_overflow = USD_overflow.div(_ratePerTierDiscountPoly[stoId][tier]).mul(10**18);
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
-                                    investment_Token = investment_Token.sub(Token_overflow);
+                                    investment_Token = USD_remaining.div(_ratePerTierDiscountPoly[stoId][tier]).mul(10**18);
                                 }
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
@@ -539,7 +521,7 @@ contract('USDTieredSTO', accounts => {
                                     Token_overflow = USD_overflow.div(_ratePerTier[stoId][tier]).mul(10**18);
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
-                                    investment_Token = investment_Token.sub(Token_overflow);
+                                    investment_Token = USD_remaining.div(_ratePerTier[stoId][tier]).mul(10**18);
                                 }
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
@@ -557,7 +539,7 @@ contract('USDTieredSTO', accounts => {
                                 Token_overflow = USD_overflow.div(_ratePerTier[stoId][tier]).mul(10**18);
                                 USD_Tier = USD_Tier.sub(USD_overflow);
                                 Token_Tier = Token_Tier.sub(Token_overflow);
-                                investment_Token = investment_Token.sub(Token_overflow);
+                                investment_Token = USD_remaining.div(_ratePerTier[stoId][tier]).mul(10**18);
                             }
                             USD_remaining = USD_remaining.sub(USD_Tier);
                             Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);

@@ -17,7 +17,7 @@ Params = Polymath Registry Address, STVersionProxy001, 250 POLY
 	- i. TickerRegistry.updateFromRegistry
 	- ii. ModuleRegistry.updateFromRegistry
 	- iii. SecurityTokenRegistry.updateFromRegistry -----> Make sure it's the new registry
-	- iv. Any SecurityToken instances out there if needed
+	- iv. Any SecurityToken already deployed has to manually call SecurityToken.updateFromRegistry to update to the new STR (they can elect to stay on the old one by not taking any action)
 
 5. Migrate data from old STR to new STR by calling addCustomSecurityToken for each token
 

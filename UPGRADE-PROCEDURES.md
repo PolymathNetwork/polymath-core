@@ -23,6 +23,8 @@ Params = Polymath Registry Address, STVersionProxy001, 250 POLY
 
 6. Unpause new and old STRs
 
+7. Change ownership of new STR to Polymath Multisig
+
 ### USDTieredSTO & Oracles
 
 1. Deploy Oracles

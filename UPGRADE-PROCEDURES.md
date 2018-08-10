@@ -21,7 +21,7 @@ Params = Polymath Registry Address, STVersionProxy001, 250 POLY
 
 5. Migrate data from old STR to new STR by calling addCustomSecurityToken for each token
 
-6. Unpause new STR
+6. Unpause new and old STRs
 
 ### USDTieredSTO & Oracles
 

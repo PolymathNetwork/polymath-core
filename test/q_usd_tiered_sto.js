@@ -37,7 +37,7 @@ contract('USDTieredSTO', accounts => {
     let NONACCREDITED2;
 
     let MESSAGE = "Transaction Should Fail!";
-    const GAS_PRICE = 100000000000;
+    const GAS_PRICE = 0;
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;

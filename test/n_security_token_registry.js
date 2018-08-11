@@ -560,7 +560,7 @@ contract('SecurityTokenRegistry', accounts => {
                 (1000 * Math.pow(10, 18)),
                 {
                     from: token_owner,
-                    gas: 2500000
+                    gas: 4500000
                 });
 
             assert.equal(tx.logs[3].args._type, stoKey, "TestSTO doesn't get deployed");

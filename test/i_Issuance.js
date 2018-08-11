@@ -251,7 +251,7 @@ contract('Issuance', accounts => {
                 console.log(name, symbol, tokenDetails, false);
                 await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: account_polymath });
                 let _blockNo = latestBlock();
-                let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_polymath, gas: 60000000  });
+                let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_polymath  });
 
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -300,7 +300,7 @@ contract('Issuance', accounts => {
                 await I_PolyToken.getTokens(cappedSTOSetupCost, account_polymath);
                 await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: account_polymath});
 
-                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: account_polymath, gas: 2500000 });
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: account_polymath });
 
                 assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
@@ -327,8 +327,7 @@ contract('Issuance', accounts => {
                     expiryTime + duration.days(50),
                     true,
                     {
-                        from: account_polymath,
-                        gas: 500000
+                        from: account_polymath
                     });
                 assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
             });
@@ -363,7 +362,7 @@ contract('Issuance', accounts => {
                 await web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO.address,
-                    gas: 2100000,
+                    gas: 6100000,
                     value: web3.utils.toWei('1', 'ether')
                   });
 
@@ -405,7 +404,7 @@ contract('Issuance', accounts => {
                     true,
                     {
                         from: account_delegate,
-                        gas: 6000000
+                        gas: 7000000
                     });
                 assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
             });

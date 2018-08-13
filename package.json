@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "scripts/test.sh",
+    "docs": "scripts/docs.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:sol": "solium -d .",

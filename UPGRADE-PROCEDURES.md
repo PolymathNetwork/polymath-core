@@ -35,6 +35,8 @@
 - b) Deploy ETH Oracle and update STR
 	Kovan address = 0x2a64846750e0059bc4d87648a00faebdf82982a9
 	SecurityTokenRegistry.changeOracle ("ETH", "USD", 0x2a64846750e0059bc4d87648a00faebdf82982a9 )
+	
+- c) Change ownership of both Oracles to Polymath Multisig
 
 2. Deploy USDTieredSTOFactory contract and verify it on the ModuleRegistry:
 - a) Example params:
@@ -45,5 +47,8 @@
 
 - c) ModuleRegistry -> VerifyModule
   	Example params: 0xd4eb00b4e222ae13b657edb3e29e1d2df090c1d3, true
+	
+- d) Change ownership of USDTieredSTOFactory to Polymath Multisig
+
 
 

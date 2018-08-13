@@ -3,17 +3,21 @@ All notable changes to this project will be documented in this file.
 
 # v1.4.0 - Unreleased
 
-[__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __01-08-18__
+[__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 
 ## Added
 
-* USDTieredSTO module added as a new STO type. 
-* Added PolyOracle to get POLY/USD price.
-* Added MakerDAOOracle to get ETH/USD price.
- 
-##Changed
+* USDTieredSTO module added as a new STO type. Allows to raise with multiple tiers while pegging price to USD
+* Added PolyOracle to get POLY/USD price for the USDTieredSTO.
+* Added MakerDAOOracle to get ETH/USD price for the USDTieredSTO.
+* Added CLI for USDTieredSTO
+* Scripts for monitoring Oracles' status
+* Scripts for monitoring Polymath stats (Tokens registered, tokens deployed, STOs launched)
+
+## Fixed
 
 * Modified function name in TickerRegistry and SecurityTokenRegistry from `changePolyRegisterationFee` to `changePolyRegistrationFee`. Event name is modified too from `LogChangePolyRegisterationFee` to `LogChangePolyRegistrationFee`
+* Minor CLI fixes
 
 =======
 # v1.3.0  

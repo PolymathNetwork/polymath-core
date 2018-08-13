@@ -4,7 +4,7 @@
 set -o errexit
 
 # Global variables
-DIRECTORY=polymath-core-docs
+DIRECTORY=polymath-developer-portal
 WEBSITE_DIRECTORY=versioned_docs
 CORE_ROUTE=$PWD
 
@@ -31,7 +31,7 @@ create_docs() {
     echo "Generating the API documentation in branch $latestTag"
     # Command to generate the documentation using the solidity-docgen
     migrate=$(SOLC_ARGS="openzeppelin-solidity="$CORE_ROUTE"/node_modules/openzeppelin-solidity" \
-solidity-docgen $CORE_ROUTE $CORE_ROUTE/contracts $HOME/tmp/polymath-core-docs/docs)
+solidity-docgen $CORE_ROUTE $CORE_ROUTE/contracts $HOME/tmp/polymath-developer-portal/docs)
     echo "Successfully docs are generated..."
     echo "Transferring the API DOCS to $latestTag directory"
     mv ../../docs/api_* $latestTag 
@@ -41,11 +41,13 @@ solidity-docgen $CORE_ROUTE $CORE_ROUTE/contracts $HOME/tmp/polymath-core-docs/d
     git add .
     git commit -m "create new api docs for $latestTag" > /dev/null 2>&1
     git push origin $latestTag > /dev/null 2>&1
+    #git commit -m "create new api docs for $latestTag" > /dev/null 2>&1
+    #git push origin $latestTag > /dev/null 2>&1
 
     # Remove the repository
     echo "Removing the repository from the system...."
     cd ../../../../
-    rm -rf polymath-core-docs
+    rm -rf polymath-developer-portal
     exit 1 
 }
 
@@ -70,11 +72,13 @@ echo "Latest tag is: $latestTag"
 cd ~/tmp
 
 if [ ! -d $DIRECTORY ]; then
-git clone https://github.com/PolymathNetwork/polymath-core-docs.git  > /dev/null 2>&1
+#git clone https://${GH_USR}:${GH_PWD}@github.com/PolymathNetwork/polymath-core-docs.git  > /dev/null 2>&1 
+git clone https://${GH_USR}:${GH_PWD}@github.com/PolymathNetwork/polymath-core-docs.git 
 cd $DIRECTORY
 else
 cd $DIRECTORY
-git pull  > /dev/null 2>&1
+#git pull  > /dev/null 2>&1
+git pull 
 fi
 
 cd docs/website

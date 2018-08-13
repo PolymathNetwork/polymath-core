@@ -69,7 +69,7 @@ echo "Latest tag is: $latestTag"
 # clone the polymath-core-docs
 
 if [ ! -d $DIRECTORY ]; then
-git clone "https://${GH_TOKEN}@github.com/PolymathNetwork/polymath-core-docs.git"  > /dev/null 2>&1
+git clone "https://${GH_USR}:${GH_PWD}@github.com/PolymathNetwork/polymath-core-docs.git"  > /dev/null 2>&1
 cd $DIRECTORY
 else
 cd $DIRECTORY

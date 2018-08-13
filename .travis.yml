@@ -5,10 +5,7 @@ cache:
   directories:
   - node_modules
 env:
-  matrix:
-  - SOLIDITY_COVERAGE=false
-  global:
-    secure: HHzid6sbf4Q/pJsvl1OJfhK9KE0BwqImyjv/cyqctXvhY+UZl7gGNL+YalPFzKrzP+7ws8JbUattUcacxRYHaErKauSAEheuFWM5TFSr4jTv3IwN8AGwxr3graKh0qQeNMoRzouhNCX2V757Te8TFGz69ghAV5SKHtCjMDCmhtImBFWKF1B9bc03uficA9kOdM9qZOq49vwOs8UQ8gCBqCd67559+ZeRAvn8BWHDx9+VLGGg+mWrWZpkPute0+802lsRLj4qFvGFdAVB/YcLCjQwo6QXTfR19E3o9+xTw4Shoq3yGjPMiu0SJmxDwYlvJRz3BPPksktY3/tyTCHlOz+TD+YhPmPdAjvSqeB2Nkooaw2KsG9tMjjf7XtfO1pv/B9MUobV0Dw1lIkJnek1OPHbjX5NpJjM25IxgVHi8f3a87dQc2XFEAbC+kkJ7or1Dgg2b1I5OEov7wi1A+nONZ2DgeTiGs4zotXTgqfXx661iJMxwn5FrmPWLwD7cT7voEfgKR6iVgANrgJqWu2RJyDkniET0yGdLaI1EdTeQkjHxD8UH4Aejt6GTxNDUnvcPYLfQyXKWKL/2LLKEc1yOriHJTBRi3AjzziG0ySOjrC4Atv/3apO+2ErqL2LmhV6rRTB09DTSPLfX6JFP8GYeSSaWWQ+C0xnLslsrZIkEvA=
+- SOLIDITY_COVERAGE=false
 matrix:
   fast_finish: true
   allow_failures:
@@ -16,7 +13,6 @@ matrix:
 before_script:
 - truffle version
 script:
-- npm run test
 - npm run docs
 notifications:
   slack:

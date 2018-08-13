@@ -473,11 +473,11 @@ async function cappedSTO_launch() {
 
   let rate;
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('rate')) {
-    rate = _stoConfig.rate.toString();
+    rate = _stoConfig.rate;
   } else {
     rate = readlineSync.question(`Enter the rate (1 ${(raiseType == 1 ? 'POLY' : 'ETH')} = X ST) for the STO (1000): `);
   }
-  if (rate == "") rate = '1000';
+  if (rate == "") rate = 1000;
 
   let bytesSTO = web3.eth.abi.encodeFunctionCall( {
     name: 'configure',
@@ -503,7 +503,7 @@ async function cappedSTO_launch() {
         name: '_fundsReceiver'
       }
     ]
-  }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), web3.utils.toWei(rate, 'ether'), raiseType, wallet]);
+  }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate, raiseType, wallet]);
 
   let stoFee = cappedSTOFee;
   let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call({from: Issuer});

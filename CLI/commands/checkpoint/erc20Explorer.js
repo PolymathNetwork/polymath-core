@@ -88,6 +88,7 @@ async function start_explorer(){
     erc20DividendCheckpointAddress = result[1];
     console.log("Dividends module address is:",erc20DividendCheckpointAddress);
     if(erc20DividendCheckpointAddress != "0x0000000000000000000000000000000000000000"){
+      let erc20DividendCheckpointABI = abis.erc20DividendCheckpoint();
       erc20DividendCheckpoint = new web3.eth.Contract(erc20DividendCheckpointABI, erc20DividendCheckpointAddress);
       erc20DividendCheckpoint.setProvider(web3.currentProvider);
     }
@@ -221,7 +222,7 @@ if(erc20DividendCheckpointAddress != "0x0000000000000000000000000000000000000000
         Review it on Etherscan.
         TxHash: ${receipt.transactionHash}\n`
       );
-
+      let erc20DividendCheckpointABI = abis.erc20DividendCheckpoint();
       erc20DividendCheckpoint = new web3.eth.Contract(erc20DividendCheckpointABI, receipt.events.LogModuleAdded.returnValues._module);
       erc20DividendCheckpoint.setProvider(web3.currentProvider);
     })

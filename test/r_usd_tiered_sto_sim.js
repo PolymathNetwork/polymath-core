@@ -503,7 +503,7 @@ contract('USDTieredSTO', accounts => {
                                 USD_Tier = Token_Tier.div(10**18).mul(_ratePerTierDiscountPoly[stoId][tier].div(10**18)).mul(10**18);
                                 if (USD_Tier.gte(USD_remaining)) {
                                     USD_overflow = USD_Tier.sub(USD_remaining);
-                                    Token_overflow = USD_overflow.div(_ratePerTierDiscountPoly[stoId][tier]).mul(10**18);
+                                    Token_overflow = USD_overflow.mul(10**18).div(_ratePerTierDiscountPoly[stoId][tier]);
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     Token_counter = BigNumber(0);
@@ -523,7 +523,7 @@ contract('USDTieredSTO', accounts => {
                                 USD_Tier = Token_Tier.div(10**18).mul(_ratePerTier[stoId][tier].div(10**18)).mul(10**18);
                                 if (USD_Tier.gte(USD_remaining)) {
                                     USD_overflow = USD_Tier.sub(USD_remaining);
-                                    Token_overflow = USD_overflow.div(_ratePerTier[stoId][tier]).mul(10**18);
+                                    Token_overflow = USD_overflow.mul(10**18).div(_ratePerTier[stoId][tier]);
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     Token_counter = BigNumber(0);

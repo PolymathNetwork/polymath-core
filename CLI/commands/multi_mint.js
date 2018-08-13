@@ -23,6 +23,7 @@ if (typeof web3 !== 'undefined') {
 let tokenSymbol = process.argv.slice(2)[0]; //token symbol
 let BATCH_SIZE = process.argv.slice(2)[1]; //batch size
 if (!BATCH_SIZE) BATCH_SIZE = 75;
+
 /////////////////////////GLOBAL VARS//////////////////////////////////////////
 
 //distribData is an array of batches. i.e. if there are 200 entries, with batch sizes of 75, we get [[75],[75],[50]]
@@ -253,6 +254,36 @@ function readFile() {
     console.log("-- The following data arrays failed at verifyTransfer. Please review if these accounts are whitelisted --");
     console.log(failedVerificationDistribs);
     console.log("************************************************************************************************");
+    console.log("LIST OF ALL INVESTORS WHO GOT THE MINTED TOKENS: \n\n", investorAddress_Events)
+
+    let missingDistribs = [];
+    let failedVerificationDistribs = [];
+    for (let l = 0; l < fullFileData.length; l++) {
+      if (affiliatesFailedArray.includes(fullFileData[l][0])) {
+        failedVerificationDistribs.push(fullFileData[l]);
+      } else if (!investorObjectLookup.hasOwnProperty(fullFileData[l][0])) {
+        missingDistribs.push(fullFileData[l]);
+      }
+    }
+
+    if (failedVerificationDistribs.length > 0) {
+      console.log("************************************************************************************************");
+      console.log("-- The following data arrays failed at verifyTransfer. Please review if these accounts are whitelisted --");
+      console.log(failedVerificationDistribs);
+      console.log("************************************************************************************************");
+    }
+    if (missingDistribs.length > 0) {
+      console.log("************************************************************************************************");
+      console.log("-- No Minted event was found for the following data arrays. Please review them manually --");
+      console.log(missingDistribs);
+      console.log("************************************************************************************************");
+    }
+    if (missingDistribs.length == 0 && failedVerificationDistribs.length == 0) {
+      console.log("\n**************************************************************************************************************************");
+      console.log("All accounts passed through from the CSV were successfully get the tokens, because we were able to read them all from events");
+      console.log("****************************************************************************************************************************");
+    }
+
   }
   if (missingDistribs.length > 0) {
     console.log("************************************************************************************************");

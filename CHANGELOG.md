@@ -1,5 +1,5 @@
 # Changelog
-All notable changes to this project will be documented in this file.   
+All notable changes to this project will be documented in this file. 
 
 # v1.4.0 - Unreleased
 
@@ -15,7 +15,22 @@ All notable changes to this project will be documented in this file.
 
 * Modified function name in TickerRegistry and SecurityTokenRegistry from `changePolyRegisterationFee` to `changePolyRegistrationFee`. Event name is modified too from `LogChangePolyRegisterationFee` to `LogChangePolyRegistrationFee`
 
-# v1.2.1 - Unreleased
+=======
+# v1.3.0  
+
+[__1.3.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __25-07-18__
+
+## Added
+* Implemented `finishedIssuerMinting / finishedSTOMinting`. The former permanently forbids the issuer from minting tokens. The latter permanently forbids STO modules from minting tokens.     
+* Added registry of registries. Contracts should point to the registry which acts as a proxy and delegates to the corresponding registry contract.
+* Added ModifyWhitelistMulti to Percentage Transfer Manager.    
+* Add the `Transfer` event in the getTokens function call of `PolyTokenFaucet.sol`.     
+* Introduce the `_valid` flag in the event of `LogModifyWhitelist` in `PercentageTransferManager.sol`
+
+## Changed
+* Removed _locked parameter from modules. This was only used on STOs to allow the issuer to indicate they would not be minting more tokens after the STO (since it wouldn't be possible to remove it), but now we have the finishedSTOMinting flag that they can use to indicate so in a more transparent way.
+
+# v1.2.1
 
 [__1.2.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __27-06-18__
 

@@ -242,6 +242,7 @@ async function step_token_deploy(){
       let securityTokenABI = abis.securityToken();
       securityToken = new web3.eth.Contract(securityTokenABI, receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress);
     })
+    .on('error', console.error);
   }
 }
 

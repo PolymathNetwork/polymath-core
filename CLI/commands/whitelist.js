@@ -20,7 +20,7 @@ if (typeof web3 !== 'undefined') {
 ////////////////////////////USER INPUTS//////////////////////////////////////////
 let tokenSymbol = process.argv.slice(2)[0]; //token symbol
 let BATCH_SIZE = process.argv.slice(2)[1]; //batch size
-if (!BATCH_SIZE) BATCH_SIZE = 75;
+if (!BATCH_SIZE) BATCH_SIZE = 70;
 
 /////////////////////////GLOBAL VARS//////////////////////////////////////////
 

@@ -93,8 +93,9 @@ node CLI/polymath-cli st20generator
     * You will be asked for a token symbol. Enter a new symbol to register or a symbol you have already registered.
     * Enter a token name (long name seen by investors) to complete the token registration process. The token will be deployed to the blockchain.
     * (Optional) If you want to issue tokens to an address you own enter the address and then how many tokens you want to issue. If you want to issue tokens to a list of affiliates press `Y` and it will update a whitelist with them and then tokens will be issued.
-    Make sure the `whitelist_data.csv` and `multi_mint_data.csv` files are present in the data folder and fulfilled with the right information.    
-    * Configure the Capped STO. Enter start and end times, the issuance cap, and exchange rate.
+    Make sure the `whitelist_data.csv` and `multi_mint_data.csv` files are present in the data folder and fulfilled with the right information.
+    * Choose between Capped STO and USD Tiered STO.
+    * Configure the selected STO. Enter start and end times, the issuance type, and exchange rate.
 4. Once the process is finished, you can run the `node CLI/polymath-cli st20generator` command again and enter the token symbol to see the STO's live-progress.
 
 ## Whitelisting investors
@@ -123,14 +124,11 @@ node CLI/polymath-cli multi_mint TOKEN_SYMBOL [BATCH_SIZE]
 
 ## Investing in the STO
 
-You can run the invest command to participate in any STO you have been whitelisted for.
-The script takes 3 parameters:
-- The token symbol for the STO you want to invest in
-- The account that will receive the tokens
-- How much ETH to send
+You can run the investor_portal command to participate in any STO you have been whitelisted for.
+You will be asked for an account, the token symbol and amount for the STO you want to invest in.
 
 ```bash
-node CLI/polymath-cli invest TOKEN_SYMBOL BENEFICIARY ETHER
+node CLI/polymath-cli investor_portal
 ```
 
 ## Transferring tokens
@@ -151,6 +149,20 @@ You will be asked for a token symbol.
 
 ```bash
 node CLI/polymath-cli module_manager
+```
+
+## Checkpoint modules
+
+You can run these commands to create dividends and paid them out proportionally to token holder balances as of the time that the dividend was created, or at the time of a specified checkpoint that was created previously.
+
+For Ether dividends:
+```bash
+node CLI/polymath-cli ethExplorer
+```
+
+For ERC20 dividends:
+```bash
+node CLI/polymath-cli erc20Explorer
 ```
 
 # Setting up Polymath Core

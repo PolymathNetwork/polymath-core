@@ -39,8 +39,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
 
     // Registration fee in POLY base 18 decimals
     uint256 public registrationFee;
-    // Emit when changePolyRegisterationFee is called
-    event LogChangePolyRegisterationFee(uint256 _oldFee, uint256 _newFee);
+    // Emit when changePolyRegistrationFee is called
+    event LogChangePolyRegistrationFee(uint256 _oldFee, uint256 _newFee);
 
     constructor (address _polymathRegistry, uint256 _registrationFee) public
     RegistryUpdater(_polymathRegistry)
@@ -164,9 +164,9 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @notice set the ticker registration fee in POLY tokens
      * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
      */
-    function changePolyRegisterationFee(uint256 _registrationFee) public onlyOwner {
+    function changePolyRegistrationFee(uint256 _registrationFee) public onlyOwner {
         require(registrationFee != _registrationFee);
-        emit LogChangePolyRegisterationFee(registrationFee, _registrationFee);
+        emit LogChangePolyRegistrationFee(registrationFee, _registrationFee);
         registrationFee = _registrationFee;
     }
 

@@ -6,30 +6,10 @@ const chalk = require('chalk');
 var common = require('./common/common_functions');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
-var contracts = require("./helpers/contract_addresses");
-let tickerRegistryAddress = contracts.tickerRegistryAddress();
-let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
-let cappedSTOFactoryAddress = contracts.cappedSTOFactoryAddress();
+var contracts = require('./helpers/contract_addresses');
+var abis = require('./helpers/contract_abis');
 
-let CALLED_BY = "";
-let symbol;
-let tickerRegistryABI;
-let securityTokenRegistryABI;
-let securityTokenABI;
-let cappedSTOABI;
-let generalTransferManagerABI;
 let securityToken;
-try {
-  tickerRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
-  securityTokenRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
-  securityTokenABI = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
-  cappedSTOABI = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
-  generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
-} catch (err) {
-  console.log('\x1b[31m%s\x1b[0m', "Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
-  return;
-}
-
 
 ////////////////////////////WEB3//////////////////////////////////////////
 if (typeof web3 !== 'undefined') {
@@ -39,14 +19,10 @@ if (typeof web3 !== 'undefined') {
   web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 }
 
-
-
 ////////////////////////////USER INPUTS//////////////////////////////////////////
 let tokenSymbol = process.argv.slice(2)[0]; //token symbol
 let BATCH_SIZE = process.argv.slice(2)[1]; //batch size
-if (!BATCH_SIZE) BATCH_SIZE = 70;
-
-
+if (!BATCH_SIZE) BATCH_SIZE = 75;
 
 /////////////////////////GLOBAL VARS//////////////////////////////////////////
 
@@ -59,10 +35,7 @@ let allocData = new Array();
 let fullFileData = new Array();
 let badData = new Array();
 
-
-let DEFAULT_GAS_PRICE = 5000000000;
-
-
+let defaultGasPrice;
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
@@ -70,10 +43,16 @@ startScript();
 
 async function startScript() {
   try {
+    let tickerRegistryAddress = await contracts.tickerRegistry();
+    let tickerRegistryABI = abis.tickerRegistry();
     tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
     tickerRegistry.setProvider(web3.currentProvider);
+    
+    let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
+    let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
+
     console.log("Processing investor CSV upload. Batch size is "+BATCH_SIZE+" accounts per transaction");
     readFile();
   } catch (err) {
@@ -138,7 +117,8 @@ function readFile() {
 
   async function mint_tokens_for_affliliates() {
     accounts = await web3.eth.getAccounts();
-    Issuer = accounts[0]
+    Issuer = accounts[0];
+    defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
 
     let tokenDeployed = false;
     let tokenDeployedAddress;
@@ -151,6 +131,7 @@ function readFile() {
         }
     });
     if (tokenDeployed) {
+        let securityTokenABI = abis.securityToken();
         securityToken = new web3.eth.Contract(securityTokenABI, tokenDeployedAddress);
     }
     await securityToken.methods.getModule(3, 0).call({ from: Issuer }, function (error, result) {
@@ -187,10 +168,10 @@ function readFile() {
       }
       let mintMultiAction = securityToken.methods.mintMulti(affiliatesVerifiedArray, tokensVerifiedArray);
       let GAS = await common.estimateGas(mintMultiAction, Issuer, 1.2);
-      let r = await mintMultiAction.send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+      let r = await mintMultiAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice })
       console.log(`Batch ${i} - Attempting to send the Minted tokens to affiliates accounts:\n\n`, affiliatesVerifiedArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
-      console.log("Multi Mint transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * DEFAULT_GAS_PRICE).toString(), "ether"), "Ether");
+      console.log("Multi Mint transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
 
 
@@ -201,61 +182,77 @@ function readFile() {
 
   console.log("Retrieving logs to determine investors have had their tokens correctly.\n\n")
 
-    let totalInvestors = 0;
-    let updatedInvestors = 0;
+  let totalInvestors = 0;
+  let updatedInvestors = 0;
 
-    let investorData_Events = new Array();
-    let investorObjectLookup = {};
+  let investorData_Events = new Array();
+  let investorObjectLookup = {};
 
-    let event_data = await securityToken.getPastEvents('Minted', {
-      fromBlock: 0,
-      toBlock: 'latest'
-    }, function (error, events) {
+  let event_data = await securityToken.getPastEvents('Minted', {
+    fromBlock: 0,
+    toBlock: 'latest'
+  }, function (error, events) {
 
-    });
+  });
 
-    for (var i = 0; i < event_data.length; i++) {
-      let combineArray = [];
+  for (var i = 0; i < event_data.length; i++) {
+    let combineArray = [];
 
-      let investorAddress_Event = event_data[i].returnValues.to;
-      let amount_Event = event_data[i].returnValues.amount;
-      let blockNumber = event_data[i].blockNumber
+    let investorAddress_Event = event_data[i].returnValues.to;
+    let amount_Event = event_data[i].returnValues.amount;
+    let blockNumber = event_data[i].blockNumber
 
-      combineArray.push(investorAddress_Event);
-      combineArray.push(amount_Event);
-      combineArray.push(blockNumber);
+    combineArray.push(investorAddress_Event);
+    combineArray.push(amount_Event);
+    combineArray.push(blockNumber);
 
-      investorData_Events.push(combineArray)
-      //we have already recorded it, so this is an update to our object
-      if (investorObjectLookup.hasOwnProperty(investorAddress_Event)) {
+    investorData_Events.push(combineArray)
+    //we have already recorded it, so this is an update to our object
+    if (investorObjectLookup.hasOwnProperty(investorAddress_Event)) {
 
-        //the block number form the event we are checking is bigger, so we gotta replace it
-        if (investorObjectLookup[investorAddress_Event].recordedBlockNumber < blockNumber) {
-          investorObjectLookup[investorAddress_Event] = { amount: amount_Event, recordedBlockNumber: blockNumber };
-          updatedInvestors += 1;
-          // investorAddress_Events.push(investorAddress_Event); not needed, because we start the obj with zero events
-
-        } else {
-          //do nothing. so if we find an event, and it was an older block, its old, we dont care
-        }
-        //we have never recorded this address as an object key, so we need to add it to our list of investors updated by the csv
-      } else {
+      //the block number form the event we are checking is bigger, so we gotta replace it
+      if (investorObjectLookup[investorAddress_Event].recordedBlockNumber < blockNumber) {
         investorObjectLookup[investorAddress_Event] = { amount: amount_Event, recordedBlockNumber: blockNumber };
-        totalInvestors += 1;
-        // investorAddress_Events.push(investorAddress_Event);
+        updatedInvestors += 1;
+        // investorAddress_Events.push(investorAddress_Event); not needed, because we start the obj with zero events
+
+      } else {
+        //do nothing. so if we find an event, and it was an older block, its old, we dont care
       }
+      //we have never recorded this address as an object key, so we need to add it to our list of investors updated by the csv
+    } else {
+      investorObjectLookup[investorAddress_Event] = { amount: amount_Event, recordedBlockNumber: blockNumber };
+      totalInvestors += 1;
+      // investorAddress_Events.push(investorAddress_Event);
     }
-    let investorAddress_Events = Object.keys(investorObjectLookup)
+  }
+  let investorAddress_Events = Object.keys(investorObjectLookup)
 
-    console.log(`******************** EVENT LOGS ANALYSIS COMPLETE ********************\n`);
-    console.log(`A total of ${totalInvestors} affiliated investors get the token\n`);
-    console.log(`This script in total sent ${fullFileData.length - badData.length - affiliatesFailedArray.length} new investors and updated investors to the blockchain.\n`);
-    console.log(`There were ${badData.length} bad entries that didnt get sent to the blockchain in the script.\n`);
-    console.log(`There were ${affiliatesFailedArray.length} accounts that didnt get sent to the blockchain as they would fail.\n`);
+  console.log(`******************** EVENT LOGS ANALYSIS COMPLETE ********************\n`);
+  console.log(`A total of ${totalInvestors} affiliated investors get the token\n`);
+  console.log(`This script in total sent ${fullFileData.length - badData.length - affiliatesFailedArray.length} new investors and updated investors to the blockchain.\n`);
+  console.log(`There were ${badData.length} bad entries that didnt get sent to the blockchain in the script.\n`);
+  console.log(`There were ${affiliatesFailedArray.length} accounts that didnt get sent to the blockchain as they would fail.\n`);
 
+  console.log("************************************************************************************************");
+  console.log("OBJECT WITH EVERY USER AND THEIR MINTED TOKEN: \n\n", investorObjectLookup)
+  console.log("************************************************************************************************");
+  console.log("LIST OF ALL INVESTORS WHO GOT THE MINTED TOKENS: \n\n", investorAddress_Events)
 
+  let missingDistribs = [];
+  let failedVerificationDistribs = [];
+  for (let l = 0; l < fullFileData.length; l++) {
+    if (affiliatesFailedArray.includes(fullFileData[l][0])) {
+      failedVerificationDistribs.push(fullFileData[l]);
+    } else if (!investorObjectLookup.hasOwnProperty(fullFileData[l][0])) {
+      missingDistribs.push(fullFileData[l]);
+    }
+  }
+
+  if (failedVerificationDistribs.length > 0) {
     console.log("************************************************************************************************");
-    console.log("OBJECT WITH EVERY USER AND THEIR MINTED TOKEN: \n\n", investorObjectLookup)
+    console.log("-- The following data arrays failed at verifyTransfer. Please review if these accounts are whitelisted --");
+    console.log(failedVerificationDistribs);
     console.log("************************************************************************************************");
     console.log("LIST OF ALL INVESTORS WHO GOT THE MINTED TOKENS: \n\n", investorAddress_Events)
 
@@ -286,15 +283,25 @@ function readFile() {
       console.log("All accounts passed through from the CSV were successfully get the tokens, because we were able to read them all from events");
       console.log("****************************************************************************************************************************");
     }
+
   }
-
-
-
-
-  function isvalidToken(token) {
-    var tokenAmount = parseInt(token);
-    if((tokenAmount % 1 == 0)) {
-      return tokenAmount;
-    }
-    return false;
+  if (missingDistribs.length > 0) {
+    console.log("************************************************************************************************");
+    console.log("-- No Minted event was found for the following data arrays. Please review them manually --");
+    console.log(missingDistribs);
+    console.log("************************************************************************************************");
+  } 
+  if (missingDistribs.length == 0 && failedVerificationDistribs.length == 0) {
+    console.log("\n**************************************************************************************************************************");
+    console.log("All accounts passed through from the CSV were successfully get the tokens, because we were able to read them all from events");
+    console.log("****************************************************************************************************************************");
   }
+}
+
+function isvalidToken(token) {
+  var tokenAmount = parseInt(token);
+  if((tokenAmount % 1 == 0)) {
+    return tokenAmount;
+  }
+  return false;
+}

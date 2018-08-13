@@ -1,10 +1,10 @@
 pragma solidity ^0.4.24;
 
-import "../../../contracts/interfaces/ISecurityToken.sol";
-import "../../../contracts/interfaces/ITokenBurner.sol";
+import "../interfaces/ISecurityToken.sol";
+import "../interfaces/ITokenBurner.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
-contract TokenBurner is ITokenBurner {
+contract MockTokenBurner is ITokenBurner {
 
     address public securityToken;
 

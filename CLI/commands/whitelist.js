@@ -6,29 +6,8 @@ var chalk = require('chalk');
 var common = require('./common/common_functions');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
-var contracts = require("./helpers/contract_addresses");
-let tickerRegistryAddress = contracts.tickerRegistryAddress();
-let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
-let cappedSTOFactoryAddress = contracts.cappedSTOFactoryAddress();
-
-let CALLED_BY = "";
-let symbol;
-let tickerRegistryABI;
-let securityTokenRegistryABI;
-let securityTokenABI;
-let cappedSTOABI;
-let generalTransferManagerABI;
-try {
-  tickerRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
-  securityTokenRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
-  securityTokenABI = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
-  cappedSTOABI = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
-  generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
-} catch (err) {
-  console.log('\x1b[31m%s\x1b[0m', "Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
-  return;
-}
-
+var contracts = require('./helpers/contract_addresses');
+var abis = require('./helpers/contract_abis');
 
 ////////////////////////////WEB3//////////////////////////////////////////
 if (typeof web3 !== 'undefined') {
@@ -38,14 +17,10 @@ if (typeof web3 !== 'undefined') {
   web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 }
 
-
-
 ////////////////////////////USER INPUTS//////////////////////////////////////////
 let tokenSymbol = process.argv.slice(2)[0]; //token symbol
 let BATCH_SIZE = process.argv.slice(2)[1]; //batch size
 if (!BATCH_SIZE) BATCH_SIZE = 70;
-
-
 
 /////////////////////////GLOBAL VARS//////////////////////////////////////////
 
@@ -62,11 +37,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 let Issuer;
 let accounts;
-let generalTransferManager;
-
-let DEFAULT_GAS_PRICE = 5000000000;
-
-
+let defaultGasPrice;
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
@@ -74,10 +45,16 @@ startScript();
 
 async function startScript() {
   try {
+    let tickerRegistryAddress = await contracts.tickerRegistry();
+    let tickerRegistryABI = abis.tickerRegistry();
     tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
     tickerRegistry.setProvider(web3.currentProvider);
+    
+    let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
+    let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
+    
     console.log("Processing investor CSV upload. Batch size is "+BATCH_SIZE+" accounts per transaction");
     readFile();
   } catch (err) {
@@ -158,7 +135,8 @@ function readFile() {
 ////////////////////////MAIN FUNCTION COMMUNICATING TO BLOCKCHAIN
 async function setInvestors() {
   accounts = await web3.eth.getAccounts();
-  Issuer = accounts[0]
+  Issuer = accounts[0];
+  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
 
   let tokenDeployed = false;
   let tokenDeployedAddress;
@@ -171,11 +149,13 @@ async function setInvestors() {
     }
   });
   if (tokenDeployed) {
+    let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, tokenDeployedAddress);
   }
   await securityToken.methods.getModule(2, 0).call({ from: Issuer }, function (error, result) {
     generalTransferManagerAddress = result[1];
   });
+  let generalTransferManagerABI = abis.generalTransferManager();
   let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
 
   console.log(`
@@ -207,10 +187,10 @@ async function setInvestors() {
       //expiryTime is time at which KYC of investor get expired (4th row in csv, 4rd parameter in modifyWhiteList() )
       let modifyWhitelistMultiAction = generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray);
       let GAS = await common.estimateGas(modifyWhitelistMultiAction, Issuer, 1.2);
-      let r = await modifyWhitelistMultiAction.send({ from: Issuer, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+      let r = await modifyWhitelistMultiAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice })
       console.log(`Batch ${i} - Attempting to modifyWhitelist accounts:\n\n`, investorArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
-      console.log("Whitelist transaxction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * DEFAULT_GAS_PRICE).toString(), "ether"), "Ether");
+      console.log("Whitelist transaxction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
 
     } catch (err) {
@@ -308,7 +288,6 @@ async function setInvestors() {
     console.log("************************************************************************************************");
   }
   // console.log(`Run 'node scripts/verify_airdrop.js ${polyDistribution.address} > scripts/data/review.csv' to get a log of all the accounts that were distributed the airdrop tokens.`)
-
 }
 
 //will be deleted once DATES are updated
@@ -325,7 +304,6 @@ function isValidDayInput(days) {
   } else {
     return false
   }
-
 }
 
 function isValidDate(date) {

@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "scripts/test.sh",
+    "test": "scripts/test.sh 2> /dev/null",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:sol": "solium -d .",
@@ -23,7 +23,9 @@
     "flatten-modules": "sol-merger './contracts/modules/*/*.sol' ./flat/modules",
     "flatten-token": "sol-merger './contracts/tokens/*.sol' ./flat/tokens",
     "flatten-mocks": "sol-merger './contracts/mocks/*.sol' ./flat/mocks",
+    "flatten-oracles": "sol-merger './contracts/oracles/*.sol' ./flat/oracles",
     "flatten": "sol-merger './contracts/*.sol' ./flat",
+    "ethereum-bridge": "node_modules/.bin/ethereum-bridge -H localhost:8545 -a 9 --dev",
     "st20generator": "node demo/ST20Generator"
   },
   "repository": {
@@ -72,10 +74,11 @@
     "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.7.0",
     "eslint-plugin-standard": "^3.0.1",
+    "ethereum-bridge": "^0.6.1",
     "fast-csv": "^2.4.1",
     "ganache-cli": "^6.1.0",
     "sol-merger": "^0.1.2",
-    "solidity-coverage": "^0.5.0",
+    "solidity-coverage": "^0.5.5",
     "solium": "^1.1.6",
     "truffle": "^4.1.11",
     "truffle-wallet-provider": "0.0.5"

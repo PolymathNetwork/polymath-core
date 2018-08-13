@@ -1,5 +1,5 @@
 import latestTime from './helpers/latestTime';
-import { duration, ensureException } from './helpers/utils';
+import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
@@ -15,7 +15,7 @@ const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManage
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
-const TokenBurner = artifacts.require('./TokenBurner.sol');
+const TokenBurner = artifacts.require('./MockTokenBurner.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -265,6 +265,7 @@ contract('SecurityToken', accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner });
+            let _blockNo = latestBlock();
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
@@ -272,15 +273,11 @@ contract('SecurityToken', accounts => {
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const LogAddModule = await I_SecurityToken.allEvents();
-            const log = await new Promise(function(resolve, reject) {
-                LogAddModule.watch(function(error, log){ resolve(log);});
-            });
+            const log = await promisifyLogWatch(I_SecurityToken.LogModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._type.toNumber(), transferManagerKey);
             assert.equal(web3.utils.toUtf8(log.args._name),"GeneralTransferManager");
-            LogAddModule.stopWatching();
         });
 
         it("Should intialize the auto attached modules", async () => {

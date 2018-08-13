@@ -434,7 +434,7 @@ contract('TickerRegistry', accounts => {
 
     describe("Test cases for IRegistry functionality", async() => {
 
-        describe("Test cases for changePolyRegisterationFee", async() => {
+        describe("Test cases for changePolyRegistrationFee", async() => {
 
             it("Should successfully get the registration fee", async() => {
                 let fee = await I_TickerRegistry.registrationFee.call();
@@ -444,7 +444,7 @@ contract('TickerRegistry', accounts => {
             it("Should fail to change the registration fee if msg.sender not owner", async() => {
                 let errorThrown = false;
                 try {
-                    let tx = await I_TickerRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_temp });
+                    let tx = await I_TickerRegistry.changePolyRegistrationFee(400 * Math.pow(10, 18), { from: account_temp });
                 } catch(error) {
                     console.log(`         tx revert -> Failed to change registrationFee`.grey);
                     errorThrown = true;
@@ -456,7 +456,7 @@ contract('TickerRegistry', accounts => {
             it("Should fail to change the registration fee if fee is equivalent", async() => {
                 let errorThrown = false;
                 try {
-                    let tx = await I_TickerRegistry.changePolyRegisterationFee(initRegFee, { from: account_polymath });
+                    let tx = await I_TickerRegistry.changePolyRegistrationFee(initRegFee, { from: account_polymath });
                 } catch(error) {
                     console.log(`         tx revert -> Failed to change registrationFee`.grey);
                     errorThrown = true;
@@ -466,7 +466,7 @@ contract('TickerRegistry', accounts => {
             });
 
             it("Should successfully change the registration fee", async() => {
-                await I_TickerRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_polymath });
+                await I_TickerRegistry.changePolyRegistrationFee(400 * Math.pow(10, 18), { from: account_polymath });
                 let fee = await I_TickerRegistry.registrationFee.call();
                 assert.equal(fee, 400 * Math.pow(10, 18));
             });

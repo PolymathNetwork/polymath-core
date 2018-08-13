@@ -1,5 +1,5 @@
 import latestTime from './helpers/latestTime';
-import { duration, ensureException } from './helpers/utils';
+import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
@@ -33,12 +33,12 @@ contract('CappedSTO', accounts => {
     let balanceOfReceiver;
     let message = "Transaction Should Fail!";
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime() + duration.days(15);
-    let expiryTime = toTime + duration.days(100);
-    let P_fromTime = fromTime + duration.days(1);
-    let P_toTime = P_fromTime + duration.days(50);
-    let P_expiryTime = toTime + duration.days(100);
+    let fromTime;
+    let toTime;
+    let expiryTime;
+    let P_fromTime;
+    let P_toTime;
+    let P_expiryTime;
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -56,6 +56,7 @@ contract('CappedSTO', accounts => {
     let I_CappedSTO_Array_POLY = [];
     let I_PolyToken;
     let I_PolymathRegistry;
+    let pauseTime;
 
     // SecurityToken Details for funds raise Type ETH
     const swarmHash = "dagwrgwgvwergwrvwrg";
@@ -85,12 +86,13 @@ contract('CappedSTO', accounts => {
     let endTime_ETH2;
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
-    const fundRaiseType = 0;
+    const E_fundRaiseType = 0;
 
     let startTime_POLY1;
     let endTime_POLY1;
     let startTime_POLY2;
     let endTime_POLY2;
+    let blockNo;
     const P_cap = new BigNumber(50000).times(new BigNumber(10).pow(18));
     const P_fundRaiseType = 1;
     const P_rate = 5;
@@ -262,6 +264,7 @@ contract('CappedSTO', accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
+            let _blockNo = latestBlock();
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000  });
 
             // Verify the successful generation of the security token
@@ -269,15 +272,12 @@ contract('CappedSTO', accounts => {
 
             I_SecurityToken_ETH = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const LogAddModule = await I_SecurityToken_ETH.allEvents();
-            const log = await new Promise(function(resolve, reject) {
-                LogAddModule.watch(function(error, log){ resolve(log);});
-            });
+
+            const log = await promisifyLogWatch(I_SecurityToken_ETH.LogModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._type.toNumber(), transferManagerKey);
             assert.equal(web3.utils.hexToString(log.args._name),"GeneralTransferManager");
-            LogAddModule.stopWatching();
         });
 
         it("Should intialize the auto attached modules", async () => {
@@ -309,7 +309,7 @@ contract('CappedSTO', accounts => {
             let endTime = startTime + duration.days(30);
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
 
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, E_fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
@@ -326,7 +326,7 @@ contract('CappedSTO', accounts => {
             let endTime = startTime + duration.days(30);
             await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCost, { from: token_owner});
 
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, E_fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
@@ -339,7 +339,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to launch the STO due to startTime > endTime", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, E_fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
@@ -354,7 +354,7 @@ contract('CappedSTO', accounts => {
         it("Should fail to launch the STO due to cap is of 0 securityToken", async () => {
             let startTime = latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, E_fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
@@ -370,7 +370,7 @@ contract('CappedSTO', accounts => {
         it("Should successfully attach the STO module to the security token", async () => {
             startTime_ETH1 = latestTime() + duration.days(1);
             endTime_ETH1 = startTime_ETH1 + duration.days(30);
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime_ETH1, endTime_ETH1, cap, rate, fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime_ETH1, endTime_ETH1, cap, rate, E_fundRaiseType, account_fundsReceiver]);
             const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 45000000 });
 
             assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
@@ -403,8 +403,8 @@ contract('CappedSTO', accounts => {
                 "STO Configuration doesn't set as expected"
             );
             assert.equal(
-                await I_CappedSTO_Array_ETH[0].fundraiseType.call(),
-                fundRaiseType,
+                await I_CappedSTO_Array_ETH[0].fundRaiseType.call(E_fundRaiseType),
+                true,
                 "STO Configuration doesn't set as expected"
             );
         });
@@ -477,6 +477,14 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should Buy the tokens", async() => {
+            blockNo = latestBlock();
+            fromTime = latestTime();
+            toTime = latestTime() + duration.days(15);
+            expiryTime = toTime + duration.days(100);
+            P_fromTime = fromTime + duration.days(1);
+            P_toTime = P_fromTime + duration.days(50);
+            P_expiryTime = toTime + duration.days(100);
+
             balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
             // Add the Investor in to the whitelist
 
@@ -521,10 +529,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Verification of the event Token Purchase", async() => {
-            let TokenPurchase = I_CappedSTO_Array_ETH[0].allEvents();
-            let log = await new Promise(function(resolve, reject) {
-                TokenPurchase.watch(function(error, log){ resolve(log);})
-            });
+            const log = await promisifyLogWatch(I_CappedSTO_Array_ETH[0].TokenPurchase({from: blockNo}), 1);
 
             assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
             assert.equal(
@@ -534,7 +539,6 @@ contract('CappedSTO', accounts => {
                 1000,
                 "Wrong No. token get dilivered"
             );
-            TokenPurchase.stopWatching();
         });
 
         it("Should pause the STO -- Failed due to wrong msg.sender", async()=> {
@@ -550,6 +554,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should pause the STO", async()=> {
+            pauseTime = latestTime();
             let tx = await I_CappedSTO_Array_ETH[0].pause({from: account_issuer});
             assert.isTrue(await I_CappedSTO_Array_ETH[0].paused.call());
         });
@@ -571,10 +576,25 @@ contract('CappedSTO', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should unpause the STO -- Failed due to too large an increase in endtime", async()=> {
+            let errorThrown = false;
+            increaseTime(500);
+            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber()) + 800;
+            try {
+                let tx = await I_CappedSTO_Array_ETH[0].unpause(newEndDate, {from: account_issuer});
+            } catch(error) {
+                console.log(`         tx revert -> Wrong msg.sender`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should unpause the STO -- Failed due to wrong msg.sender", async()=> {
             let errorThrown = false;
+            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber())  + 400;
             try {
-                let tx = await I_CappedSTO_Array_ETH[0].unpause(Math.floor(Date.now()/1000 + 50000), {from: account_investor1});
+                let tx = await I_CappedSTO_Array_ETH[0].unpause(newEndDate, {from: account_investor1});
             } catch(error) {
                 console.log(`         tx revert -> Wrong msg.sender`.grey);
                 ensureException(error);
@@ -585,8 +605,9 @@ contract('CappedSTO', accounts => {
 
         it("Should unpause the STO -- Failed due to entered date is less than the end date", async()=> {
             let errorThrown = false;
+            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber()) - 400;
             try {
-                let tx = await I_CappedSTO_Array_ETH[0].unpause(Math.floor(Date.now()/1000 - 500000), {from: account_issuer});
+                let tx = await I_CappedSTO_Array_ETH[0].unpause(newEndDate, {from: account_issuer});
             } catch(error) {
                 console.log(`         tx revert -> Entered date is less than the end date`.grey);
                 ensureException(error);
@@ -596,8 +617,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should unpause the STO", async()=> {
-            await increaseTime(50);
-            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber() - latestTime()) + latestTime() + 20;
+            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber())  + 400;
             let tx = await I_CappedSTO_Array_ETH[0].unpause(newEndDate, {from: account_issuer});
             assert.isFalse(await I_CappedSTO_Array_ETH[0].paused.call());
         });
@@ -750,7 +770,7 @@ contract('CappedSTO', accounts => {
 
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
             await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCost, { from: token_owner});
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime_ETH2, endTime_ETH2, cap, rate, fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime_ETH2, endTime_ETH2, cap, rate, E_fundRaiseType, account_fundsReceiver]);
             const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
 
             assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
@@ -780,8 +800,8 @@ contract('CappedSTO', accounts => {
                 "STO Configuration doesn't set as expected"
             );
             assert.equal(
-                await I_CappedSTO_Array_ETH[1].fundraiseType.call(),
-                fundRaiseType,
+                await I_CappedSTO_Array_ETH[1].fundRaiseType.call(E_fundRaiseType),
+                true,
                 "STO Configuration doesn't set as expected"
             );
         });
@@ -835,7 +855,7 @@ contract('CappedSTO', accounts => {
 
             await I_PolyToken.getTokens(cappedSTOSetupCost*19, token_owner);
             await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCost*19, { from: token_owner});
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, E_fundRaiseType, account_fundsReceiver]);
 
             for (var STOIndex = 2; STOIndex < MAX_MODULES; STOIndex++) {
                 const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
@@ -884,6 +904,7 @@ contract('CappedSTO', accounts => {
 
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
                 await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
+                let _blockNo = latestBlock();
                 let tx = await I_SecurityTokenRegistry.generateSecurityToken(P_name, P_symbol, P_tokenDetails, false, { from: token_owner, gas:85000000 });
 
                 // Verify the successful generation of the security token
@@ -891,15 +912,11 @@ contract('CappedSTO', accounts => {
 
                 I_SecurityToken_POLY = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-                const LogAddModule = await I_SecurityToken_POLY.allEvents();
-                const log = await new Promise(function(resolve, reject) {
-                    LogAddModule.watch(function(error, log){ resolve(log);});
-                });
+                const log = await promisifyLogWatch(I_SecurityToken_POLY.LogModuleAdded({from: _blockNo}), 1);
 
                 // Verify that GeneralTransferManager module get added successfully or not
                 assert.equal(log.args._type.toNumber(), transferManagerKey);
                 assert.equal(web3.utils.hexToString(log.args._name),"GeneralTransferManager");
-                LogAddModule.stopWatching();
             });
 
             it("POLY: Should intialize the auto attached modules", async () => {
@@ -956,8 +973,8 @@ contract('CappedSTO', accounts => {
                     "STO Configuration doesn't set as expected"
                 );
                 assert.equal(
-                    await I_CappedSTO_Array_POLY[0].fundraiseType.call(),
-                    P_fundRaiseType,
+                    await I_CappedSTO_Array_POLY[0].fundRaiseType.call(P_fundRaiseType),
+                    true,
                     "STO Configuration doesn't set as expected"
                 );
             });
@@ -967,7 +984,7 @@ contract('CappedSTO', accounts => {
 
             it("Should Buy the tokens", async() => {
                 await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), account_investor1);
-
+                blockNo = latestBlock();
                 assert.equal(
                     (await I_PolyToken.balanceOf(account_investor1))
                     .dividedBy(new BigNumber(10).pow(18))
@@ -1021,10 +1038,7 @@ contract('CappedSTO', accounts => {
             });
 
             it("Verification of the event Token Purchase", async() => {
-                let TokenPurchase = I_CappedSTO_Array_POLY[0].allEvents();
-                let log = await new Promise(function(resolve, reject) {
-                    TokenPurchase.watch(function(error, log){ resolve(log);})
-                });
+                const log = await promisifyLogWatch(I_CappedSTO_Array_POLY[0].TokenPurchase({from: blockNo}), 1);
 
                 assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
                 assert.equal(
@@ -1034,7 +1048,6 @@ contract('CappedSTO', accounts => {
                     5000,
                     "Wrong No. token get dilivered"
                 );
-                TokenPurchase.stopWatching();
             });
 
             it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async() => {
@@ -1213,8 +1226,8 @@ contract('CappedSTO', accounts => {
                 "STO Configuration doesn't set as expected"
             );
             assert.equal(
-                await I_CappedSTO_Array_POLY[1].fundraiseType.call(),
-                P_fundRaiseType,
+                await I_CappedSTO_Array_POLY[1].fundRaiseType.call(P_fundRaiseType),
+                true,
                 "STO Configuration doesn't set as expected"
             );
         });

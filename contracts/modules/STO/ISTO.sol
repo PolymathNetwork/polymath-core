@@ -9,16 +9,17 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @title Interface to be implemented by all STO modules
  */
 contract ISTO is IModule, Pausable {
-
     using SafeMath for uint256;
 
-    enum FundraiseType { ETH, POLY }
-    FundraiseType public fundraiseType;
+    enum FundRaiseType { ETH, POLY }
+    mapping (uint8 => bool) public fundRaiseType;
 
     // Start time of the STO
     uint256 public startTime;
     // End time of the STO
     uint256 public endTime;
+    // Time STO was paused
+    uint256 public pausedTime;
 
     /**
      * @notice use to verify the investment, whether the investor provide the allowance to the STO or not.
@@ -45,20 +46,30 @@ contract ISTO is IModule, Pausable {
     function getNumberInvestors() public view returns (uint256);
 
     /**
+     * @notice Return the total no. of tokens sold
+     */
+    function getTokensSold() public view returns (uint256);
+
+    /**
      * @notice pause (overridden function)
      */
     function pause() public onlyOwner {
         require(now < endTime);
+        pausedTime = now;
         super._pause();
     }
 
     /**
      * @notice unpause (overridden function)
      */
-    function unpause(uint256 _newEndDate) public onlyOwner {
-        require(_newEndDate >= endTime);
+    function unpause(uint256 _newEndTime) public onlyOwner {
+        require(_newEndTime >= endTime);
+        assert(pausedTime > 0);
+        uint256 pauseLength = now.sub(pausedTime);
+        require(_newEndTime <= endTime.add(pauseLength));
         super._unpause();
-        endTime = _newEndDate;
+        pausedTime = 0;
+        endTime = _newEndTime;
     }
 
     /**

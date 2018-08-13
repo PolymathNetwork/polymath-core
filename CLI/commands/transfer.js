@@ -5,27 +5,8 @@ var chalk = require('chalk');
 var common = require('./common/common_functions');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
-var contracts = require("./helpers/contract_addresses");
-let tickerRegistryAddress = contracts.tickerRegistryAddress();
-let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
-let cappedSTOFactoryAddress = contracts.cappedSTOFactoryAddress();
-
-let tickerRegistryABI;
-let securityTokenRegistryABI;
-let securityTokenABI;
-let cappedSTOABI;
-let generalTransferManagerABI;
-try {
-  tickerRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
-  securityTokenRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
-  securityTokenABI = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
-  cappedSTOABI = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
-  generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
-} catch (err) {
-  console.log('\x1b[31m%s\x1b[0m', "Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
-  return;
-}
-
+var contracts = require('./helpers/contract_addresses');
+var abis = require('./helpers/contract_abis')
 
 ////////////////////////////WEB3//////////////////////////////////////////
 if (typeof web3 !== 'undefined') {
@@ -42,12 +23,9 @@ let _transferAmount; //ETH investment
 
 let Issuer;
 let accounts;
-let generalTransferManager;
 let securityToken;
-let cappedSTOModule;
 
-let DEFAULT_GAS_PRICE = 5000000000;
-
+let defaultGasPrice;
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
@@ -58,10 +36,16 @@ async function startScript(tokenSymbol, transferTo, transferAmount) {
 
   accounts = await web3.eth.getAccounts();
   Issuer = accounts[0];
+  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
 
   try {
+    let tickerRegistryAddress = await contracts.tickerRegistry();
+    let tickerRegistryABI = abis.tickerRegistry();
     tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
     tickerRegistry.setProvider(web3.currentProvider);
+    
+    let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
+    let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
     transfer();
@@ -78,6 +62,7 @@ async function transfer() {
   await securityTokenRegistry.methods.getSecurityTokenAddress(_tokenSymbol).call({ from: Issuer }, function (error, result) {
     if (result != "0x0000000000000000000000000000000000000000") {
       console.log('\x1b[32m%s\x1b[0m', "Token deployed at address " + result + ".");
+      let securityTokenABI = abis.securityToken();
       securityToken = new web3.eth.Contract(securityTokenABI, result);
     }
   });
@@ -85,7 +70,7 @@ async function transfer() {
   try{
     let transferAction = securityToken.methods.transfer(_transferTo,web3.utils.toWei(_transferAmount,"ether"));
     let GAS = await common.estimateGas(transferAction, Issuer, 1.2);
-    await transferAction.send({ from: Issuer, gas: GAS, gasPrice:DEFAULT_GAS_PRICE})
+    await transferAction.send({ from: Issuer, gas: GAS, gasPrice:defaultGasPrice})
     .on('transactionHash', function(hash){
       console.log(`
         Your transaction is being processed. Please wait...

@@ -11,40 +11,15 @@ if (typeof web3 !== 'undefined') {
     web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 }
 
-let DEFAULT_GAS_PRICE = 5000000000;
+let defaultGasPrice;
 
 // Load contract artifacts
-var contracts = require("./helpers/contract_addresses");
-let securityTokenRegistryAddress = contracts.securityTokenRegistryAddress();
-let polytokenAddress = contracts.polyTokenAddress();
-
-let securityTokenRegistryABI;
-let securityTokenABI;
-let polytokenABI;
+var contracts = require('./helpers/contract_addresses');
+var abis = require('./helpers/contract_abis');
 
 let securityTokenRegistry;
 let securityToken;
 let polyToken;
-
-try {
-    securityTokenRegistryABI  = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
-    securityTokenABI          = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
-    polytokenABI              = JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).abi;
-} catch (err) {
-    console.log(chalk.red(`Couldn't find contracts' artifacts. Make sure you ran truffle compile first`));
-    return;
-}
-
-try {
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
-    securityTokenRegistry.setProvider(web3.currentProvider);
-    polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
-    polyToken.setProvider(web3.currentProvider);
-}catch(err){
-    console.log(err);
-    console.log(chalk.red(`There was a problem getting the contracts. Make sure they are deployed to the selected network.`));
-    process.exit();
-}
 
 // Init user address variables
 let Issuer;
@@ -67,8 +42,28 @@ let numTM;
 let numSTO;
 let numCP;
 
+async function setup() {
+    try {
+        let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
+        let securityTokenRegistryABI = abis.securityTokenRegistry();
+        securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+        securityTokenRegistry.setProvider(web3.currentProvider);
+    
+        let polytokenAddress = await contracts.polyToken();
+        let polytokenABI = abis.polyToken();
+        polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
+        polyToken.setProvider(web3.currentProvider);
+    }catch(err){
+        console.log(err);
+        console.log(chalk.red(`There was a problem getting the contracts. Make sure they are deployed to the selected network.`));
+        process.exit();
+    }
+}
+
 // Start function
 async function executeApp() {
+    await setup();
+
     common.logAsciiBull();
     console.log(chalk.yellow(`******************************************`));
     console.log(chalk.yellow(`Welcome to the Command-Line Module Manager`));
@@ -78,6 +73,8 @@ async function executeApp() {
     let accounts = await web3.eth.getAccounts();
     Issuer = accounts[0];
     User = Issuer;
+    defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
+
     await showUserInfo(User);
 
     while (!validSymbol) {
@@ -99,6 +96,7 @@ async function getSecurityToken() {
         return;
     }
     validSymbol = true;
+    let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, STAddress);
 
     await displayModules();
@@ -309,14 +307,16 @@ async function removeModule() {
     pushModules(numSTO,stoModules);
     pushModules(numCP,cpModules);
 
-    let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to remove?'), {cancel: false});
-    console.log("\nSelected:",options[index]);
-    let removeModuleAction = securityToken.methods.removeModule(modules[index].module.type,modules[index].index);
-    let GAS = await common.estimateGas(removeModuleAction, User, 2);
-    await removeModuleAction.send({from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-    .on('receipt', function(receipt){
-        console.log(chalk.green(`\nSuccessfully removed ${modules[index].module.name}.`));
-    });
+    let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to remove?'));
+    if (index != -1) {
+        console.log("\nSelected: ",options[index]);
+        let removeModuleAction = securityToken.methods.removeModule(modules[index].module.type,modules[index].index);
+        let GAS = await common.estimateGas(removeModuleAction, User, 2);
+        await removeModuleAction.send({from: User, gas: GAS, gasPrice: defaultGasPrice })
+        .on('receipt', function(receipt){
+            console.log(chalk.green(`\nSuccessfully removed ${modules[index].module.name}.`));
+        });
+    }
     backToMenu()
 }
 
@@ -335,7 +335,7 @@ async function whitelist() {
         let now = await latestTime();
         let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(investor, now, now, now + 31556952, true);
         let GAS = await common.estimateGas(modifyWhitelistAction, User, 1.2);
-        await modifyWhitelistAction.send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+        await modifyWhitelistAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
         .on('receipt', function(receipt){
             console.log(chalk.green(`\nWhitelisting successful for ${investor}.`));
         });
@@ -350,41 +350,42 @@ async function whitelist() {
 }
 
 async function mintTokens() {
-    let isSTOAttached;
     let _flag = await securityToken.methods.finishedIssuerMinting().call();
-    await securityToken.methods.getModule(3, 0).call({from: Issuer}, function(error, result) {
-        isSTOAttached = result[1] == "0x0000000000000000000000000000000000000000"? false : true;
-    });
-    if (isSTOAttached || _flag) {
+    if (_flag) {
+        console.log(chalk.red("Minting is not possible - Minting has been permanently disabled by issuer"));
+        return;
+    }
+    let result = await securityToken.methods.getModule(3, 0).call({from: Issuer});
+    let isSTOAttached = result[1] != "0x0000000000000000000000000000000000000000";
+    if (isSTOAttached) {
+        console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
+        return;
+    }
+    
+    let _investor = readlineSync.question(chalk.yellow(`Enter the address to receive the tokens: `));
+    let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
+    try {
+        let mintAction = securityToken.methods.mint(_investor, web3.utils.toWei(_amount));
+        let GAS = await common.estimateGas(mintAction, User, 1.2);
+        await mintAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
+        .on('receipt', function(receipt){
+            console.log(chalk.green(`\nMinting Successful.`));
+        });
+    } catch (e) {
+        console.log(e);
         console.log(chalk.red(`
-        ***********************
-        Minting is not possible - Minting has been permanently disabled by issuer
-        ***********************`));
-    }else {
-        let _investor = readlineSync.question(chalk.yellow(`Enter the address to receive the tokens: `));
-        let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
-        try {
-            let mintAction = securityToken.methods.mint(_investor, web3.utils.toWei(_amount));
-            let GAS = await common.estimateGas(mintAction, User, 1.2);
-            await mintAction.send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
-            .on('receipt', function(receipt){
-                console.log(chalk.green(`\nMinting Successful.`));
-            });
-        } catch (e) {
-            console.log(e);
-            console.log(chalk.red(`
     **************************
     Minting was not successful - Please make sure beneficiary address has been whitelisted
     **************************`));
-        }
     }
+    
     backToMenu()
 }
 
 async function endMintingForSTO() {
     let finishMintingSTOAction = securityToken.methods.finishMintingSTO();
     let GAS = await common.estimateGas(finishMintingSTOAction, User, 1.2);
-    await finishMintingSTOAction.send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+    await finishMintingSTOAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
     .on('receipt', function(receipt){
         console.log(chalk.green(`\nEnd minting for STO was successful.`));
     });
@@ -394,7 +395,7 @@ async function endMintingForSTO() {
 async function endMintingForIssuer() {
     let finishMintingIssuerAction = securityToken.methods.finishMintingIssuer();
     let GAS = await common.estimateGas(finishMintingIssuerAction, User, 1.2);
-    await finishMintingIssuerAction.send({ from: User, gas: GAS, gasPrice: DEFAULT_GAS_PRICE })
+    await finishMintingIssuerAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
     .on('receipt', function(receipt){
         console.log(chalk.green(`\nEnd minting for Issuer was successful.`));
     });

@@ -1,6 +1,25 @@
 # Changelog
 All notable changes to this project will be documented in this file. 
 
+# v1.4.0 - Unreleased
+
+[__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
+
+## Added
+
+* USDTieredSTO module added as a new STO type. Allows to raise with multiple tiers while pegging price to USD
+* Added PolyOracle to get POLY/USD price for the USDTieredSTO.
+* Added MakerDAOOracle to get ETH/USD price for the USDTieredSTO.
+* Added CLI for USDTieredSTO
+* Scripts for monitoring Oracles' status
+* Scripts for monitoring Polymath stats (Tokens registered, tokens deployed, STOs launched)
+
+## Fixed
+
+* Modified function name in TickerRegistry and SecurityTokenRegistry from `changePolyRegisterationFee` to `changePolyRegistrationFee`. Event name is modified too from `LogChangePolyRegisterationFee` to `LogChangePolyRegistrationFee`
+* Minor CLI fixes
+
+=======
 # v1.3.0  
 
 [__1.3.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __25-07-18__
@@ -15,7 +34,6 @@ All notable changes to this project will be documented in this file.
 ## Changed
 * Removed _locked parameter from modules. This was only used on STOs to allow the issuer to indicate they would not be minting more tokens after the STO (since it wouldn't be possible to remove it), but now we have the finishedSTOMinting flag that they can use to indicate so in a more transparent way.
 
-
 # v1.2.1
 
 [__1.2.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __27-06-18__
@@ -25,7 +43,7 @@ All notable changes to this project will be documented in this file.
 * `modifyWhitelistMulti` added in `PercentageTransferManager` contract.    
 
 ##Changed
-
+* Added extra parameter to TransferManager.verifyTransfer to indicate whether the call is part of a transfer or not.  
 
 ## Removed
 * Logic of module locking is removed and also removes the `_locked` parameter.    

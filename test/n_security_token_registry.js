@@ -1,5 +1,5 @@
 import latestTime from './helpers/latestTime';
-import { duration, ensureException } from './helpers/utils';
+import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
@@ -278,6 +278,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_SecurityTokenRegistry.unpause({ from: account_polymath});
             await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
+            let _blockNo = latestBlock();
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
@@ -285,10 +286,7 @@ contract('SecurityTokenRegistry', accounts => {
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const LogAddModule = await I_SecurityToken.allEvents();
-            const log = await new Promise(function(resolve, reject) {
-                LogAddModule.watch(function(error, log){ resolve(log);});
-            });
+            const log = await promisifyLogWatch(I_SecurityToken.LogModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTrasnferManager module get added successfully or not
             assert.equal(log.args._type.toNumber(), transferManagerKey);
@@ -297,7 +295,6 @@ contract('SecurityTokenRegistry', accounts => {
                 .replace(/\u0000/g, ''),
                 "GeneralTransferManager"
             );
-            LogAddModule.stopWatching();
         });
 
     });
@@ -332,6 +329,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         it("Should generate the new security token with version 2", async() => {
             await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
+            let _blockNo = latestBlock();
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, symbol2, tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
@@ -339,11 +337,7 @@ contract('SecurityTokenRegistry', accounts => {
 
             I_SecurityToken002 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const LogAddModule = await I_SecurityToken002.allEvents();
-            const log = await new Promise(function(resolve, reject) {
-                LogAddModule.watch(function(error, log){ resolve(log);});
-            });
-
+            const log = await promisifyLogWatch(I_SecurityToken002.LogModuleAdded({from: _blockNo}), 1);
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._type.toNumber(), transferManagerKey);
             assert.equal(
@@ -351,7 +345,6 @@ contract('SecurityTokenRegistry', accounts => {
                 .replace(/\u0000/g, ''),
                 "GeneralTransferManager"
             );
-            LogAddModule.stopWatching();
         });
 
     });
@@ -482,6 +475,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         it("Should generate the new security token with version 3", async() => {
             await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
+            let _blockNo = latestBlock();
             let tx = await I_SecurityTokenRegistry.generateSecurityToken(name2, "DET3", tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
@@ -489,10 +483,8 @@ contract('SecurityTokenRegistry', accounts => {
 
             I_SecurityToken002 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const LogAddModule = await I_SecurityToken002.allEvents();
-            const log = await new Promise(function(resolve, reject) {
-                LogAddModule.watch(function(error, log){ resolve(log);});
-            });
+            const log = await promisifyLogWatch(I_SecurityToken002.LogModuleAdded({from: _blockNo}), 1);
+
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._type.toNumber(), transferManagerKey);
@@ -501,7 +493,6 @@ contract('SecurityTokenRegistry', accounts => {
                 .replace(/\u0000/g, ''),
                 "GeneralTransferManager"
             );
-            LogAddModule.stopWatching();
         });
 
     });
@@ -569,7 +560,7 @@ contract('SecurityTokenRegistry', accounts => {
                 (1000 * Math.pow(10, 18)),
                 {
                     from: token_owner,
-                    gas: 2500000
+                    gas: 4500000
                 });
 
             assert.equal(tx.logs[3].args._type, stoKey, "TestSTO doesn't get deployed");
@@ -602,7 +593,7 @@ contract('SecurityTokenRegistry', accounts => {
 
     describe("Test cases for IRegistry functionality", async() => {
 
-        describe("Test cases for changePolyRegisterationFee", async() => {
+        describe("Test cases for changePolyRegistrationFee", async() => {
 
             it("Should successfully get the registration fee", async() => {
                 let fee = await I_SecurityTokenRegistry.registrationFee.call();
@@ -612,7 +603,7 @@ contract('SecurityTokenRegistry', accounts => {
             it("Should fail to change the registration fee if msg.sender not owner", async() => {
                 let errorThrown = false;
                 try {
-                    let tx = await I_SecurityTokenRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_temp });
+                    let tx = await I_SecurityTokenRegistry.changePolyRegistrationFee(400 * Math.pow(10, 18), { from: account_temp });
                 } catch(error) {
                     console.log(`         tx revert -> Failed to change registrationFee`.grey);
                     errorThrown = true;
@@ -622,7 +613,7 @@ contract('SecurityTokenRegistry', accounts => {
             });
 
             it("Should successfully change the registration fee", async() => {
-                await I_SecurityTokenRegistry.changePolyRegisterationFee(400 * Math.pow(10, 18), { from: account_polymath });
+                await I_SecurityTokenRegistry.changePolyRegistrationFee(400 * Math.pow(10, 18), { from: account_polymath });
                 let fee = await I_SecurityTokenRegistry.registrationFee.call();
                 assert.equal(fee, 400 * Math.pow(10, 18));
             });

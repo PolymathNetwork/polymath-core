@@ -5,7 +5,7 @@
 1. Pause old SecurityTokenRegistry
 
 2. Deploy new SecurityTokenRegistry
-Params = Polymath Registry Address, STVersionProxy001, 250 POLY
+	Example Params = Polymath Registry Address, STVersionProxy001, 250 POLY
 
 3. Pause new SecurityTokenRegistry
 
@@ -36,15 +36,14 @@ Params = Polymath Registry Address, STVersionProxy001, 250 POLY
 	Kovan address = 0x2a64846750e0059bc4d87648a00faebdf82982a9
 	SecurityTokenRegistry.changeOracle ("ETH", "USD", 0x2a64846750e0059bc4d87648a00faebdf82982a9 )
 
-2. Deploy USDTieredSTO contract and verify it on the ModuleRegistry:
-- a) Kovan params:
+2. Deploy USDTieredSTOFactory contract and verify it on the ModuleRegistry:
+- a) Example params:
   		0xb06d72a24df50d4e2cac133b320c5e7de3ef94cb, 100000000000000000000000,0,0
-  	Kovan Address: 0xd4eb00b4e222ae13b657edb3e29e1d2df090c1d3
 
 - b) ModuleRegistry -> RegisterModule
-  	Kovan params: 0xd4eb00b4e222ae13b657edb3e29e1d2df090c1d3
+  	Example params: 0xd4eb00b4e222ae13b657edb3e29e1d2df090c1d3
 
 - c) ModuleRegistry -> VerifyModule
-  	Kovan params: 0xd4eb00b4e222ae13b657edb3e29e1d2df090c1d3, true
+  	Example params: 0xd4eb00b4e222ae13b657edb3e29e1d2df090c1d3, true
 
 

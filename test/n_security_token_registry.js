@@ -363,8 +363,7 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should successfully generate token if registration is unpaused", async() => {
-            await I_SecurityTokenRegistry.unpause({ from: account_polymath});
+        it("Should successfully generate token", async() => {
             let tx = await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
             assert.equal(tx.logs[0].args._symbol, "LOG2");
             assert.equal(tx.logs[0].args._securityToken, dummy_token);

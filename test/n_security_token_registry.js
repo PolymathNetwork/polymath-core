@@ -363,19 +363,6 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail if registration is paused", async() => {
-            let errorThrown = false;
-            try {
-                await I_SecurityTokenRegistry.pause({ from: account_polymath});
-                await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
-            } catch(error) {
-                console.log(`         tx revert -> Registration is paused`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
-
         it("Should successfully generate token if registration is unpaused", async() => {
             await I_SecurityTokenRegistry.unpause({ from: account_polymath});
             let tx = await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});

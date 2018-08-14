@@ -990,7 +990,7 @@ contract('USDTieredSTO', accounts => {
             assert.ok(errorThrown4, 'ACCREDITED POLY investment succeeded when it should not');
 
             // Unpause the STO
-            await I_USDTieredSTO_Array[stoId].unpause(_endTime[stoId], { from: ISSUER });
+            await I_USDTieredSTO_Array[stoId].unpause({ from: ISSUER });
             assert.equal(await I_USDTieredSTO_Array[stoId].paused.call(), false, 'STO did not unpause successfully');
 
             await I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH });

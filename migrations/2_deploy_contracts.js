@@ -42,21 +42,18 @@ module.exports = function (deployer, network, accounts) {
         ETHOracle = mockedOracle.address;
       });
     });
-  } else if (network === 'ropsten') {
-    web3 = new Web3(new Web3.providers.HttpProvider('https://ropsten.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
-    PolymathAccount = accounts[0]
-    PolyToken = '0xafbf8a012b63c7e1ddd333882c612b7100a77d78' // PolyToken Ropsten Faucet Address
-    ETHOracle = '0x2a64846750e0059bc4d87648a00faebdf82982a9' // ETH Mocked Oracle Address
   } else if (network === 'kovan') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
     PolyToken = '0xb06d72a24df50d4e2cac133b320c5e7de3ef94cb' // PolyToken Kovan Faucet Address
-    PolyOracle = '0x9c2c839c71ae659b82f96071f518c6e96c3af071' // Poly Oracle Kovan Address
-    ETHOracle = '0x2a64846750e0059bc4d87648a00faebdf82982a9' // ETH Mocked Oracle Address
+    PolyOracle = '0xa1e02175D6Edce244429946CF0bC11811f431160' // Poly Oracle Kovan Address
+    ETHOracle = '0x4A8FAf5932482Db1FA4B5e5E30169A06844B08a7' // ETH Oracle Kovan Address
   } else if (network === 'mainnet') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
     PolyToken = '0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC' // Mainnet PolyToken Address
+    PolyOracle = '0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27' // Poly Oracle Mainnet Address
+    ETHOracle = '0x60055e9a93aae267da5a052e95846fa9469c0e7a' // ETH Oracle Mainnet Address
   }if (network === 'coverage') {
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
     PolymathAccount = accounts[0]

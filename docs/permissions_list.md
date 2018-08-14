@@ -44,7 +44,7 @@
             <td> - </td>
         </tr>
         <tr>
-            <td> USDTieredSTO <td>
+            <td> USDTieredSTO </td>
             <td>  -  </td>
             <td>  -  </td>
         </tr>

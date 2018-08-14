@@ -33,7 +33,7 @@
             <td> withPerm(CHANGE_PERMISSION)</td>
         </tr>
         <tr>
-            <td rowspan=5>STO</td>
+            <td rowspan=9>STO</td>
             <td>CappedSTO</td>
             <td> - </td>
              <td> - </td>

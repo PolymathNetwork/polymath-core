@@ -291,7 +291,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @notice Reserve address must be whitelisted to successfully finalize
      */
     function finalize() public onlyOwner {
-        require(!isFinalized);        
+        require(!isFinalized);
         isFinalized = true;
         uint256 tempReturned;
         uint256 tempSold;
@@ -377,6 +377,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(_investmentValue > 0, "No funds were sent to buy tokens");
 
         uint256 investedUSD = decimalMul(_rate, _investmentValue);
+        uint256 originalUSD = investedUSD;
 
         // Check for minimum investment
         require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment less than minimumInvestmentUSD");
@@ -412,7 +413,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
         // Calculate spent in base currency (ETH or POLY)
         uint256 spentValue = decimalDiv(spentUSD, _rate);
-
+        // Avoid rounding issues converting from ETH / POLY into USD and back to ETH / POLY
+        if ((spentUSD == originalUSD) || (spentValue > _investmentValue)) {
+            spentValue = _investmentValue;
+        }
         // Return calculated amounts
         return (spentUSD, spentValue);
     }

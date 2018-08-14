@@ -327,7 +327,7 @@ contract('USDTieredSTO', accounts => {
             _startTime.push(latestTime() + duration.days(2));
             _endTime.push(_startTime[stoId] + duration.days(100));
             _ratePerTier.push([
-                BigNumber(0.05*10**18), BigNumber(0.10*10**18), BigNumber(0.15*10**18)
+                BigNumber(0.05*10**18), BigNumber(0.13*10**18), BigNumber(0.17*10**18)
             ]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
             _ratePerTierDiscountPoly.push([
                 BigNumber(0.05*10**18), BigNumber(0.08*10**18), BigNumber(0.13*10**18)
@@ -339,7 +339,7 @@ contract('USDTieredSTO', accounts => {
                 BigNumber(0), BigNumber(50*10**18), BigNumber(300*10**18)
             ]); // [ 0 Token, 1000 Token, 1500 Token ]
             _nonAccreditedLimitUSD.push(BigNumber(10*10**18)); // 20 USD
-            _minimumInvestmentUSD.push(BigNumber(1));          // 1 wei USD
+            _minimumInvestmentUSD.push(BigNumber(0));          // 1 wei USD
             _fundRaiseTypes.push([0,1]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
@@ -450,8 +450,10 @@ contract('USDTieredSTO', accounts => {
                         await investFAIL(NOTAPPROVED);
                         break;
                 }
-                tokensSold = await I_USDTieredSTO_Array[stoId].getTokensSold()
-                if (tokensSold.gte(totalTokens)) {
+                console.log("Next round");
+                tokensSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
+                console.log("Tokens Sold: " + tokensSold.toString());
+                if (tokensSold.gte(totalTokens.sub(1000))) {
                     console.log(`${tokensSold} tokens sold, simulation completed successfully!`.green);
                     break;
                 }
@@ -499,19 +501,23 @@ contract('USDTieredSTO', accounts => {
                         if (isPoly) {
                             // 1. POLY and discount (consume up to cap then move to regular)
                             if (Tokens_discount[tier].gt(0)) {
+                                console.log("Clause 1");
                                 Token_Tier = BigNumber.min([Tokens_total[tier], Tokens_discount[tier], Token_counter]);
-                                USD_Tier = Token_Tier.div(10**18).mul(_ratePerTierDiscountPoly[stoId][tier].div(10**18)).mul(10**18);
+                                USD_Tier = Token_Tier.mul(_ratePerTierDiscountPoly[stoId][tier].div(10**18));
                                 if (USD_Tier.gte(USD_remaining)) {
                                     USD_overflow = USD_Tier.sub(USD_remaining);
                                     Token_overflow = USD_overflow.mul(10**18).div(_ratePerTierDiscountPoly[stoId][tier]);
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     Token_counter = BigNumber(0);
+                                    console.log(USD_overflow.toString(), Token_overflow.toString())
+
                                 }
+                                console.log(Token_Tier.toString(), USD_Tier.toString(), _ratePerTierDiscountPoly[stoId][tier].toString());
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Tokens_discount[tier] = Tokens_discount[tier].sub(Token_Tier);
-                                POLY_Tier = USD_Tier.div(USDPOLY).mul(10**18);
+                                POLY_Tier = USD_Tier.mul(10**18).div(USDPOLY);
                                 Token_counter = Token_counter.sub(Token_Tier);
                                 investment_Token = investment_Token.add(Token_Tier);
                                 investment_USD = investment_USD.add(USD_Tier);
@@ -519,18 +525,21 @@ contract('USDTieredSTO', accounts => {
                             }
                             // 2. POLY and regular (consume up to cap then skip to next tier)
                             if (Tokens_total[tier].gt(0) && Token_counter.gt(0)) {
+                                console.log("Clause 2");
                                 Token_Tier = BigNumber.min([Tokens_total[tier], Token_counter]);
-                                USD_Tier = Token_Tier.div(10**18).mul(_ratePerTier[stoId][tier].div(10**18)).mul(10**18);
+                                USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier].div(10**18));
                                 if (USD_Tier.gte(USD_remaining)) {
                                     USD_overflow = USD_Tier.sub(USD_remaining);
                                     Token_overflow = USD_overflow.mul(10**18).div(_ratePerTier[stoId][tier]);
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     Token_counter = BigNumber(0);
+                                    console.log(USD_overflow.toString(), Token_overflow.toString())
                                 }
+                                console.log(Token_Tier.toString(), USD_Tier.toString(), _ratePerTier[stoId][tier].toString());
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
-                                POLY_Tier = USD_Tier.div(USDPOLY).mul(10**18);
+                                POLY_Tier = USD_Tier.mul(10**18).div(USDPOLY);
                                 Token_counter = Token_counter.sub(Token_Tier);
                                 investment_Token = investment_Token.add(Token_Tier);
                                 investment_USD = investment_USD.add(USD_Tier);
@@ -538,18 +547,21 @@ contract('USDTieredSTO', accounts => {
                             }
                         } else {
                             // 3. ETH (consume up to cap then skip to next tier)
+                            console.log("Clause 3");
                             Token_Tier = BigNumber.min([Tokens_total[tier], Token_counter]);
-                            USD_Tier = Token_Tier.div(10**18).mul(_ratePerTier[stoId][tier].div(10**18)).mul(10**18);
+                            USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier].div(10**18));
                             if (USD_Tier.gte(USD_remaining)) {
                                 USD_overflow = USD_Tier.sub(USD_remaining);
-                                Token_overflow = USD_overflow.div(_ratePerTier[stoId][tier]).mul(10**18);
+                                Token_overflow = USD_overflow.mul(10**18).div(_ratePerTier[stoId][tier]);
                                 USD_Tier = USD_Tier.sub(USD_overflow);
                                 Token_Tier = Token_Tier.sub(Token_overflow);
                                 Token_counter = BigNumber(0);
+                                console.log(USD_overflow.toString(), Token_overflow.toString())
                             }
+                            console.log(Token_Tier.toString(), USD_Tier.toString(), _ratePerTier[stoId][tier].toString());
                             USD_remaining = USD_remaining.sub(USD_Tier);
                             Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
-                            ETH_Tier = USD_Tier.div(USDETH).mul(10**18);
+                            ETH_Tier = USD_Tier.mul(10**18).div(USDETH);
                             Token_counter = Token_counter.sub(Token_Tier);
                             investment_Token = investment_Token.add(Token_Tier);
                             investment_USD = investment_USD.add(USD_Tier);
@@ -584,6 +596,10 @@ contract('USDTieredSTO', accounts => {
             }
 
             async function processInvestment(_investor, investment_Token, investment_USD, investment_POLY, investment_ETH, isPoly, log_remaining, Tokens_total, Tokens_discount, tokensSold) {
+              investment_Token = investment_Token.round(0);
+              investment_USD = investment_USD.round(0);
+              investment_POLY = investment_POLY.round(0);
+              investment_ETH = investment_ETH.round(0);
                 console.log(`
             ------------------- New Investment -------------------
             Investor:   ${_investor}

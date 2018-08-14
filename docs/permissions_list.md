@@ -44,9 +44,24 @@
             <td> - </td>
         </tr>
         <tr>
-            <td> USDTieredSTO </td>
-            <td>  -  </td>
-            <td>  -  </td>
+            <td rowspan=6> USDTieredSTO </td>
+            <td> modifyFunding </td>
+            <td rowspan=6> onlyOwner </td>
+        <tr>
+            <td> modifyLimits </td>
+        <tr>
+        <tr>
+            <td> modifyTiers </td>
+        <tr>
+        <tr>
+            <td> modifyAddresses </td>
+        <tr>
+        <tr>
+            <td> finalize </td>
+        <tr>
+        <tr>
+            <td> changeAccredited </td>
+        <tr>
         </tr>
         <tr>
             <td rowspan=2>PreSaleSTO</td>

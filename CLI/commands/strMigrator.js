@@ -15,6 +15,7 @@ if (typeof web3 !== 'undefined') {
 
 let Issuer;
 let defaultGasPrice;
+let accounts;
 
 async function executeApp(fromStrAddress, toStrAddress) {
     accounts = await web3.eth.getAccounts();

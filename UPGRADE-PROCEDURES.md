@@ -21,7 +21,7 @@
 
 5. Migrate data from old STR to new STR by calling addCustomSecurityToken for each token
 
-6. Unpause new and old STRs
+6. Unpause new STRs
 
 7. Change ownership of new STR to Polymath Multisig
 
@@ -49,3 +49,17 @@
   	Example params: 0xd4eb00b4e222ae13b657edb3e29e1d2df090c1d3, true
 	
 - d) Change ownership of USDTieredSTOFactory to Polymath Multisig
+
+3. Deploy CappedSTOFactory contract and verify it on the ModuleRegistry:
+- a) Rename CappedSTOFactory within smart contract
+
+- b) Example params:
+  		0xb06d72a24df50d4e2cac133b320c5e7de3ef94cb, 20000000000000000000000,0,0
+
+- c) ModuleRegistry -> RegisterModule
+  	Example params: 0xd4eb00b4e222ae13b657edb3e29e1d2df090c1d3
+
+- d) ModuleRegistry -> VerifyModule
+  	Example params: 0xd4eb00b4e222ae13b657edb3e29e1d2df090c1d3, true
+	
+- e) Change ownership of CappedSTOFactory to Polymath Multisig

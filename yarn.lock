@@ -1735,30 +1735,17 @@ commander@2.11.0:
   version "2.11.0"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.11.0.tgz#157152fd1e7a6c8d98a5b715cf376df928004563"
 
-<<<<<<< HEAD
 commander@2.15.1, commander@^2.8.1, commander@^2.9.0:
   version "2.15.1"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.15.1.tgz#df46e867d0fc2aec66a34662b406a9ccafff5b0f"
 
-=======
->>>>>>> master
 commander@^2.11.0:
   version "2.14.1"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.14.1.tgz#2235123e37af8ca3c65df45b026dbd357b01b9aa"
 
-<<<<<<< HEAD
 commander@^2.14.1, commander@^2.15.0:
   version "2.17.1"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.17.1.tgz#bd77ab7de6de94205ceacc72f1716d29f20a77bf"
-=======
-commander@^2.15.0:
-  version "2.17.1"
-  resolved "https://registry.yarnpkg.com/commander/-/commander-2.17.1.tgz#bd77ab7de6de94205ceacc72f1716d29f20a77bf"
-
-commander@^2.8.1, commander@^2.9.0:
-  version "2.15.1"
-  resolved "https://registry.yarnpkg.com/commander/-/commander-2.15.1.tgz#df46e867d0fc2aec66a34662b406a9ccafff5b0f"
->>>>>>> master
 
 commander@~2.8.1:
   version "2.8.1"
@@ -3578,13 +3565,6 @@ growl@1.10.3:
   version "1.10.3"
   resolved "https://registry.yarnpkg.com/growl/-/growl-1.10.3.tgz#1926ba90cf3edfe2adb4927f5880bc22c66c790f"
 
-<<<<<<< HEAD
-growl@1.10.5:
-  version "1.10.5"
-  resolved "https://registry.yarnpkg.com/growl/-/growl-1.10.5.tgz#f2735dc2283674fa67478b10181059355c369e5e"
-
-=======
->>>>>>> master
 handlebars@^4.0.1:
   version "4.0.11"
   resolved "https://registry.yarnpkg.com/handlebars/-/handlebars-4.0.11.tgz#630a35dfe0294bc281edae6ffc5d329fc7982dcc"
@@ -4983,11 +4963,7 @@ minimalistic-crypto-utils@^1.0.0, minimalistic-crypto-utils@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/minimalistic-crypto-utils/-/minimalistic-crypto-utils-1.0.1.tgz#f6c00c1c0b082246e5c4d99dfb8c7c083b2b582a"
 
-<<<<<<< HEAD
 "minimatch@2 || 3", minimatch@3.0.4, minimatch@^3.0.0, minimatch@^3.0.2, minimatch@^3.0.3, minimatch@^3.0.4:
-=======
-"minimatch@2 || 3", minimatch@^3.0.0, minimatch@^3.0.2, minimatch@^3.0.3, minimatch@^3.0.4:
->>>>>>> master
   version "3.0.4"
   resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-3.0.4.tgz#5166e286457f03306064be5497e8dbb0c3d32083"
   dependencies:
@@ -5110,11 +5086,7 @@ multimatch@^2.0.0:
     arrify "^1.0.0"
     minimatch "^3.0.0"
 
-<<<<<<< HEAD
 mustache@*, mustache@^2.3.0:
-=======
-mustache@*:
->>>>>>> master
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/mustache/-/mustache-2.3.1.tgz#ef5db3c0d11f1640e9baa47f4e65ba0c3fcd82b9"
 
@@ -6681,7 +6653,6 @@ solidity-coverage@^0.5.5:
     tree-kill "^1.2.0"
     web3 "^0.18.4"
 
-<<<<<<< HEAD
 solidity-docgen@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/solidity-docgen/-/solidity-docgen-0.1.0.tgz#f3a56ff074e8c7d832af3a3d462c3b5abf0f64cb"
@@ -6694,8 +6665,6 @@ solidity-docgen@^0.1.0:
     react-dom "^16.2.0"
     shelljs "^0.8.1"
 
-=======
->>>>>>> master
 solidity-parser-sc@0.4.11:
   version "0.4.11"
   resolved "https://registry.yarnpkg.com/solidity-parser-sc/-/solidity-parser-sc-0.4.11.tgz#86734c9205537007f4d6201b57176e41696ee607"

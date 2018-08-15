@@ -453,7 +453,7 @@ contract('USDTieredSTO', accounts => {
                 console.log("Next round");
                 tokensSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
                 console.log("Tokens Sold: " + tokensSold.toString());
-                if (tokensSold.gte(totalTokens.sub(1000))) {
+                if (tokensSold.gte(totalTokens.sub(0))) {
                     console.log(`${tokensSold} tokens sold, simulation completed successfully!`.green);
                     break;
                 }
@@ -514,10 +514,10 @@ contract('USDTieredSTO', accounts => {
 
                                 }
                                 console.log(Token_Tier.toString(), USD_Tier.toString(), _ratePerTierDiscountPoly[stoId][tier].toString());
+                                POLY_Tier = USD_Tier.round(0).mul(10**18).div(USDPOLY).round(0);
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Tokens_discount[tier] = Tokens_discount[tier].sub(Token_Tier);
-                                POLY_Tier = USD_Tier.mul(10**18).div(USDPOLY);
                                 Token_counter = Token_counter.sub(Token_Tier);
                                 investment_Token = investment_Token.add(Token_Tier);
                                 investment_USD = investment_USD.add(USD_Tier);
@@ -537,9 +537,9 @@ contract('USDTieredSTO', accounts => {
                                     console.log(USD_overflow.toString(), Token_overflow.toString())
                                 }
                                 console.log(Token_Tier.toString(), USD_Tier.toString(), _ratePerTier[stoId][tier].toString());
+                                POLY_Tier = USD_Tier.round(0).mul(10**18).div(USDPOLY).round(0);
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
-                                POLY_Tier = USD_Tier.mul(10**18).div(USDPOLY);
                                 Token_counter = Token_counter.sub(Token_Tier);
                                 investment_Token = investment_Token.add(Token_Tier);
                                 investment_USD = investment_USD.add(USD_Tier);
@@ -559,9 +559,9 @@ contract('USDTieredSTO', accounts => {
                                 console.log(USD_overflow.toString(), Token_overflow.toString())
                             }
                             console.log(Token_Tier.toString(), USD_Tier.toString(), _ratePerTier[stoId][tier].toString());
+                            ETH_Tier = USD_Tier.round(0).mul(10**18).div(USDETH).round(0);
                             USD_remaining = USD_remaining.sub(USD_Tier);
                             Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
-                            ETH_Tier = USD_Tier.mul(10**18).div(USDETH);
                             Token_counter = Token_counter.sub(Token_Tier);
                             investment_Token = investment_Token.add(Token_Tier);
                             investment_USD = investment_USD.add(USD_Tier);
@@ -635,13 +635,13 @@ contract('USDTieredSTO', accounts => {
                 let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
                 let tx;
-                let gasCost;
+                let gasCost = BigNumber(0);
 
                 if (isPoly) {
                     tx = await I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, { from: _investor, gasPrice: GAS_PRICE });
                     gasCost = BigNumber(GAS_PRICE).mul(tx.receipt.gasUsed);
                     console.log(`buyWithPOLY: ${investment_Token.div(10**18)} tokens for ${investment_POLY.div(10**18)} POLY by ${_investor}`.yellow);
-                } else {
+                } else if (investment_ETH.gte(0)) {
                     tx = await I_USDTieredSTO_Array[stoId].buyWithETH(_investor, { from: _investor, value: investment_ETH, gasPrice: GAS_PRICE });
                     gasCost = BigNumber(GAS_PRICE).mul(tx.receipt.gasUsed);
                     console.log(`buyWithETH: ${investment_Token.div(10**18)} tokens for ${investment_ETH.div(10**18)} ETH by ${_investor}`.yellow);

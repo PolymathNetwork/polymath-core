@@ -412,11 +412,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         }
 
         // Calculate spent in base currency (ETH or POLY)
-        uint256 spentValue = decimalDiv(spentUSD, _rate);
+        uint256 spentValue = decimalMul(decimalDiv(spentUSD, originalUSD), _investmentValue);
+        /* uint256 spentValue = decimalDiv(spentUSD, _rate); */
         // Avoid rounding issues converting from ETH / POLY into USD and back to ETH / POLY
-        if ((spentUSD == originalUSD) || (spentValue > _investmentValue)) {
-            spentValue = _investmentValue;
-        }
+        /* if ((spentUSD == originalUSD) || (spentValue > _investmentValue)) { */
+            /* spentValue = _investmentValue; */
+        /* } */
         // Return calculated amounts
         return (spentUSD, spentValue);
     }
@@ -439,7 +440,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
-        if (_investedUSD > 0) {
+        if ((_investedUSD > 0) && (tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]) > 0)) {
             (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTier[_tier], tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]), _investedUSD, _tier);
             spentUSD = spentUSD.add(tierSpentUSD);
             if (_isPOLY)
@@ -457,6 +458,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 purchasedTokens;
         if (maximumTokens > _tierRemaining) {
             spentUSD = decimalMul(_tierRemaining, _tierPrice);
+            // In case of rounding issues, ensure that spentUSD is never more than investedUSD
+            if (spentUSD > _investedUSD) {
+                spentUSD = _investedUSD;
+            }
             purchasedTokens = _tierRemaining;
         } else {
             spentUSD = _investedUSD;

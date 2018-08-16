@@ -115,7 +115,7 @@ async function step_get_deployed_tokens(securityTokenRegistry) {
 
             let tokenName = await token.methods.name().call();
             let tokenSymbol = await token.methods.symbol().call();
-            let tokenOwner = await token.methods.owner().call();
+            let tokenOwner = event.returnValues._owner;//await token.methods.owner().call();
             let tokenDetails = await token.methods.tokenDetails().call();
             let tokenSwarmHash = '';
             

@@ -501,7 +501,6 @@ contract('USDTieredSTO', accounts => {
                         if (isPoly) {
                             // 1. POLY and discount (consume up to cap then move to regular)
                             if (Tokens_discount[tier].gt(0)) {
-                                console.log("Clause 1");
                                 Token_Tier = BigNumber.min([Tokens_total[tier], Tokens_discount[tier], Token_counter]);
                                 USD_Tier = Token_Tier.mul(_ratePerTierDiscountPoly[stoId][tier].div(10**18));
                                 if (USD_Tier.gte(USD_remaining)) {
@@ -510,12 +509,8 @@ contract('USDTieredSTO', accounts => {
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     Token_counter = BigNumber(0);
-                                    console.log(USD_overflow.toString(), Token_overflow.toString())
-
                                 }
-                                console.log(Token_Tier.toString(), USD_Tier.toString(), _ratePerTierDiscountPoly[stoId][tier].toString());
                                 POLY_Tier = USD_Tier.mul(10**18).round(0).div(USDPOLY).round(0);
-                                console.log('POLY: ' + ETH_Tier.toString());
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Tokens_discount[tier] = Tokens_discount[tier].sub(Token_Tier);
@@ -526,7 +521,6 @@ contract('USDTieredSTO', accounts => {
                             }
                             // 2. POLY and regular (consume up to cap then skip to next tier)
                             if (Tokens_total[tier].gt(0) && Token_counter.gt(0)) {
-                                console.log("Clause 2");
                                 Token_Tier = BigNumber.min([Tokens_total[tier], Token_counter]);
                                 USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier].div(10**18));
                                 if (USD_Tier.gte(USD_remaining)) {
@@ -535,11 +529,8 @@ contract('USDTieredSTO', accounts => {
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     Token_counter = BigNumber(0);
-                                    console.log(USD_overflow.toString(), Token_overflow.toString())
                                 }
-                                console.log(Token_Tier.toString(), USD_Tier.toString(), _ratePerTier[stoId][tier].toString());
                                 POLY_Tier = USD_Tier.mul(10**18).round(0).div(USDPOLY).round(0);
-                                console.log('POLY: ' + ETH_Tier.toString());
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Token_counter = Token_counter.sub(Token_Tier);
@@ -549,7 +540,6 @@ contract('USDTieredSTO', accounts => {
                             }
                         } else {
                             // 3. ETH (consume up to cap then skip to next tier)
-                            console.log("Clause 3");
                             Token_Tier = BigNumber.min([Tokens_total[tier], Token_counter]);
                             USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier].div(10**18));
                             if (USD_Tier.gte(USD_remaining)) {
@@ -558,11 +548,8 @@ contract('USDTieredSTO', accounts => {
                                 USD_Tier = USD_Tier.sub(USD_overflow);
                                 Token_Tier = Token_Tier.sub(Token_overflow);
                                 Token_counter = BigNumber(0);
-                                console.log(USD_overflow.toString(), Token_overflow.toString())
                             }
-                            console.log(Token_Tier.toString(), USD_Tier.toString(), _ratePerTier[stoId][tier].toString());
                             ETH_Tier = USD_Tier.mul(10**18).round(0).div(USDETH).round(0);
-                            console.log('ETH: ' + ETH_Tier.toString());
                             USD_remaining = USD_remaining.sub(USD_Tier);
                             Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                             Token_counter = Token_counter.sub(Token_Tier);

@@ -13,15 +13,15 @@ All notable changes to this project will be documented in this file.
 * Added CLI for USDTieredSTO
 * Scripts for monitoring Oracles' status
 * Scripts for monitoring Polymath stats (Tokens registered, tokens deployed, STOs launched).   
-* `transferTickerOwnership()` function is introduced in `TickerRegistry` to transfer the ticker ownership after the registeration.   
-* `getTickerOwnedByUser()` function is used to get the list of tickers owned by the issuer. 
-* New function `addCustomTicker()` is used the add the Ticker in tickerRegistry. To avail the facility to Registry owner to add the tokens without paying the fee.    
+* `transferTickerOwnership()` function is introduced in `TickerRegistry` to transfer the ticker ownership after the registeration #191. 
+* `getTickerOwnedByUser()` function is used to get the list of tickers owned by the issuer #189.   
+* New function `addCustomTicker()` is used the add the Ticker in tickerRegistry. To avail the facility to Registry owner to add the tokens without paying the fee #190.      
 
 ## Fixed
 
 * Modified function name in TickerRegistry and SecurityTokenRegistry from `changePolyRegisterationFee` to `changePolyRegistrationFee`. Event name is modified too from `LogChangePolyRegisterationFee` to `LogChangePolyRegistrationFee`
 * Minor CLI fixes
-* Change in the datastructure of SymbolDetails new variable `expiredTimestamp` introduced and change the variable name `timestamp` to `registeredTimestamp` in Tickerregistry.sol.   
+* Change in the datastructure of SymbolDetails new variable `expiredTimestamp` introduced and change the variable name `timestamp` to `registeredTimestamp` in Tickerregistry.sol #192.      
  
 
 =======

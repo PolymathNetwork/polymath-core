@@ -23,7 +23,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
     // Details of the symbol that get registered with the polymath platform
     struct SymbolDetails {
         address owner;
-        uint256 timestamp;
+        uint256 registeredTimestamp;
+        uint256 expiredTimestamp;
         string tokenName;
         bytes32 swarmHash;
         bool status;
@@ -31,11 +32,22 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
 
     // Storage of symbols correspond to their details.
     mapping(string => SymbolDetails) registeredSymbols;
+    // Mapping of ticker owner with the list of tickers 
+    mapping(address => bytes32[]) public tokensOwnedByUser;
 
     // Emit after the symbol registration
-    event LogRegisterTicker(address indexed _owner, string _symbol, string _name, bytes32 _swarmHash, uint256 indexed _timestamp);
+    event LogRegisterTicker(
+        address indexed _owner,
+        string _symbol,
+        string _name,
+        bytes32 _swarmHash,
+        uint256 indexed _registeredTimestamp,
+        uint256 indexed _expiredTimestamp
+    );
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
+    // Emit when ownership of the ticker get changed
+    event LogChangeTickerOwnership(string _ticker, address _oldOwner, address _newOwner);
 
     // Registration fee in POLY base 18 decimals
     uint256 public registrationFee;
@@ -50,8 +62,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
 
     /**
      * @notice Register the token symbol for its particular owner
-     * @notice Once the token symbol is registered to its owner then no other issuer can claim
-     * @notice its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
+       Once the token symbol is registered to its owner then no other issuer can claim
+       its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
      * @param _symbol token symbol
      * @param _tokenName Name of the token
      * @param _owner Address of the owner of the token
@@ -61,11 +73,12 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         if(registrationFee > 0)
-            require(ERC20(polyToken).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(ERC20(polyToken).transferFrom(msg.sender, address(this), registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol), "Ticker is already reserved");
-        registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, _swarmHash, false);
-        emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now);
+        tokensOwnedByUser[_owner].push(stringToBytes32(symbol));
+        registeredSymbols[symbol] = SymbolDetails(_owner, now, now.add(expiryLimit), _tokenName, _swarmHash, false);
+        emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now, now.add(expiryLimit));
     }
 
     /**
@@ -91,10 +104,27 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         require(msg.sender == securityTokenRegistry, "msg.sender should be SecurityTokenRegistry contract");
         require(registeredSymbols[symbol].status != true, "Symbol status should not equal to true");
         require(registeredSymbols[symbol].owner == _owner, "Owner of the symbol should matched with the requested issuer address");
-        require(registeredSymbols[symbol].timestamp.add(expiryLimit) >= now, "Ticker should not be expired");
+        require(registeredSymbols[symbol].expiredTimestamp >= now, "Ticker should not be expired");
         registeredSymbols[symbol].tokenName = _tokenName;
         registeredSymbols[symbol].status = true;
         return true;
+    }
+   
+    /**
+     * @notice Register the ticker without paying the fee 
+       Once the token symbol is registered to its owner then no other issuer can claim
+       Its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
+     * @param _symbol token symbol
+     * @param _tokenName Name of the token
+     * @param _swarmHash Off-chain details of the issuer and token
+     */
+    function addCustomTicker(string _symbol, string _tokenName, bytes32 _swarmHash) public onlyOwner {
+        require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
+        string memory symbol = upper(_symbol);
+        require(expiryCheck(symbol), "Ticker is already reserved");
+        tokensOwnedByUser[msg.sender].push(stringToBytes32(symbol));
+        registeredSymbols[symbol] = SymbolDetails(msg.sender, now, now.add(expiryLimit), _tokenName, _swarmHash, false);
+        emit LogRegisterTicker (msg.sender, symbol, _tokenName, _swarmHash, now, now.add(expiryLimit));
     }
 
     /**
@@ -113,36 +143,12 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
             return false;
         }
         else if (registeredSymbols[symbol].owner == address(0) || expiryCheck(symbol)) {
-            registeredSymbols[symbol] = SymbolDetails(_owner, now, _tokenName, _swarmHash, true);
-            emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now);
+            registeredSymbols[symbol] = SymbolDetails(_owner, now, now.add(expiryLimit), _tokenName, _swarmHash, true);
+            emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now, now.add(expiryLimit));
             return false;
         } else
             return true;
      }
-
-    /**
-     * @notice Returns the owner and timestamp for a given symbol
-     * @param _symbol symbol
-     * @return address
-     * @return uint256
-     * @return string
-     * @return bytes32
-     * @return bool
-     */
-    function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool) {
-        string memory symbol = upper(_symbol);
-        if (registeredSymbols[symbol].status == true||registeredSymbols[symbol].timestamp.add(expiryLimit) > now) {
-            return
-            (
-                registeredSymbols[symbol].owner,
-                registeredSymbols[symbol].timestamp,
-                registeredSymbols[symbol].tokenName,
-                registeredSymbols[symbol].swarmHash,
-                registeredSymbols[symbol].status
-            );
-        }else
-            return (address(0), uint256(0), "", bytes32(0), false);
-    }
 
     /**
      * @notice To re-initialize the token symbol details if symbol validity expires
@@ -151,8 +157,9 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      */
     function expiryCheck(string _symbol) internal returns(bool) {
         if (registeredSymbols[_symbol].owner != address(0)) {
-            if (now > registeredSymbols[_symbol].timestamp.add(expiryLimit) && registeredSymbols[_symbol].status != true) {
-                registeredSymbols[_symbol] = SymbolDetails(address(0), uint256(0), "", bytes32(0), false);
+            if (now > registeredSymbols[_symbol].expiredTimestamp && registeredSymbols[_symbol].status != true) {
+                require(_renounceTickerOwnership(_symbol));
+                registeredSymbols[_symbol] = SymbolDetails(address(0), uint256(0), uint256(0), "", bytes32(0), false);
                 return true;
             }else
                 return false;
@@ -168,6 +175,84 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         require(registrationFee != _registrationFee);
         emit LogChangePolyRegistrationFee(registrationFee, _registrationFee);
         registrationFee = _registrationFee;
+    }
+
+    /**
+     * @notice Renounce the ownership of the ticker
+     * @param _ticker Symbol of the token
+     */
+    function _renounceTickerOwnership(string _ticker) internal returns(bool) {
+       bytes32[] memory _symbols = tokensOwnedByUser[registeredSymbols[_ticker].owner];
+       for(uint i = 0; i < _symbols.length; i++) {
+           if (_symbols[i] == stringToBytes32(_ticker))
+                delete _symbols[i];
+       }
+       tokensOwnedByUser[registeredSymbols[_ticker].owner] = _symbols;
+       return true;    
+    }
+
+    /**
+     * @notice Transfer the ownership of the ticker
+     * @dev _newOwner Address whom ownership to transfer
+     * @dev _ticker Symbol 
+     */
+    function transferTickerOwnership(address _newOwner, string _ticker) public whenNotPaused {
+        string memory ticker = upper(_ticker);
+        require(_newOwner != address(0), "Address should not be 0x");
+        require(bytes(ticker).length > 0, "Ticker length should be greator than 0");
+        require(registeredSymbols[ticker].owner == msg.sender, "Only the ticker owner can transfer the ownership");
+        require(_renounceTickerOwnership(ticker), "Should successfully renounce the ownership of the ticker");
+        registeredSymbols[ticker].owner = _newOwner;
+        tokensOwnedByUser[_newOwner].push(stringToBytes32(ticker));
+        emit LogChangeTickerOwnership(ticker, msg.sender, _newOwner);
+    }
+
+    /**
+     * @notice Use to get the ticker list as per the owner
+     * @param _owner Address which owns the list of tickers 
+     */
+    function getTickerOwnedByUser(address _owner) public view returns(bytes32[]) {
+         uint counter = 0;
+         for (uint i = 0; i < tokensOwnedByUser[_owner].length; i++) {
+             if (tokensOwnedByUser[_owner][i] != bytes32(0)) {
+                 counter ++; 
+             }
+         }
+         bytes32[] memory tempList = new bytes32[](counter);
+         counter = 0;
+         for (uint j = 0; j < tokensOwnedByUser[_owner].length; j++) {
+             string memory _symbol = bytes32ToString(tokensOwnedByUser[_owner][j]);
+             if (registeredSymbols[_symbol].expiredTimestamp >= now || registeredSymbols[_symbol].status == true ) {
+                 tempList[counter] = tokensOwnedByUser[_owner][j];
+                 counter ++; 
+             }
+         }
+         return tempList;
+    }
+
+     /**
+     * @notice Returns the owner and timestamp for a given symbol
+     * @param _symbol symbol
+     * @return address
+     * @return uint256
+     * @return string
+     * @return bytes32
+     * @return bool
+     */
+    function getDetails(string _symbol) public view returns (address, uint256, uint256, string, bytes32, bool) {
+        string memory symbol = upper(_symbol);
+        if (registeredSymbols[symbol].status == true||registeredSymbols[symbol].expiredTimestamp > now) {
+            return
+            (
+                registeredSymbols[symbol].owner,
+                registeredSymbols[symbol].registeredTimestamp,
+                registeredSymbols[symbol].expiredTimestamp,
+                registeredSymbols[symbol].tokenName,
+                registeredSymbols[symbol].swarmHash,
+                registeredSymbols[symbol].status
+            );
+        }else
+            return (address(0), uint256(0), uint256(0), "", bytes32(0), false);
     }
 
      /**

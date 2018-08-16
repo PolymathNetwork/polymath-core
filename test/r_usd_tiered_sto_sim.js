@@ -453,7 +453,7 @@ contract('USDTieredSTO', accounts => {
                 console.log("Next round");
                 tokensSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
                 console.log("Tokens Sold: " + tokensSold.toString());
-                if (tokensSold.gte(totalTokens.sub(0))) {
+                if (tokensSold.gte(totalTokens.sub(1*10**18))) {
                     console.log(`${tokensSold} tokens sold, simulation completed successfully!`.green);
                     break;
                 }
@@ -514,7 +514,8 @@ contract('USDTieredSTO', accounts => {
 
                                 }
                                 console.log(Token_Tier.toString(), USD_Tier.toString(), _ratePerTierDiscountPoly[stoId][tier].toString());
-                                POLY_Tier = USD_Tier.round(0).mul(10**18).div(USDPOLY).round(0);
+                                POLY_Tier = USD_Tier.mul(10**18).round(0).div(USDPOLY).round(0);
+                                console.log('POLY: ' + ETH_Tier.toString());
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Tokens_discount[tier] = Tokens_discount[tier].sub(Token_Tier);
@@ -537,7 +538,8 @@ contract('USDTieredSTO', accounts => {
                                     console.log(USD_overflow.toString(), Token_overflow.toString())
                                 }
                                 console.log(Token_Tier.toString(), USD_Tier.toString(), _ratePerTier[stoId][tier].toString());
-                                POLY_Tier = USD_Tier.round(0).mul(10**18).div(USDPOLY).round(0);
+                                POLY_Tier = USD_Tier.mul(10**18).round(0).div(USDPOLY).round(0);
+                                console.log('POLY: ' + ETH_Tier.toString());
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Token_counter = Token_counter.sub(Token_Tier);
@@ -559,7 +561,8 @@ contract('USDTieredSTO', accounts => {
                                 console.log(USD_overflow.toString(), Token_overflow.toString())
                             }
                             console.log(Token_Tier.toString(), USD_Tier.toString(), _ratePerTier[stoId][tier].toString());
-                            ETH_Tier = USD_Tier.round(0).mul(10**18).div(USDETH).round(0);
+                            ETH_Tier = USD_Tier.mul(10**18).round(0).div(USDETH).round(0);
+                            console.log('ETH: ' + ETH_Tier.toString());
                             USD_remaining = USD_remaining.sub(USD_Tier);
                             Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                             Token_counter = Token_counter.sub(Token_Tier);
@@ -637,7 +640,7 @@ contract('USDTieredSTO', accounts => {
                 let tx;
                 let gasCost = BigNumber(0);
 
-                if (isPoly) {
+                if (isPoly && investment_POLY.gt(10)) {
                     tx = await I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, { from: _investor, gasPrice: GAS_PRICE });
                     gasCost = BigNumber(GAS_PRICE).mul(tx.receipt.gasUsed);
                     console.log(`buyWithPOLY: ${investment_Token.div(10**18)} tokens for ${investment_POLY.div(10**18)} POLY by ${_investor}`.yellow);

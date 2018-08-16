@@ -413,11 +413,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
         // Calculate spent in base currency (ETH or POLY)
         uint256 spentValue = decimalMul(decimalDiv(spentUSD, originalUSD), _investmentValue);
-        /* uint256 spentValue = decimalDiv(spentUSD, _rate); */
-        // Avoid rounding issues converting from ETH / POLY into USD and back to ETH / POLY
-        /* if ((spentUSD == originalUSD) || (spentValue > _investmentValue)) { */
-            /* spentValue = _investmentValue; */
-        /* } */
+
         // Return calculated amounts
         return (spentUSD, spentValue);
     }

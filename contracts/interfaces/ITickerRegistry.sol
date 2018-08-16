@@ -17,7 +17,7 @@ contract ITickerRegistry {
     * @notice Returns the owner and timestamp for a given symbol
     * @param _symbol symbol
     */
-    function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool);
+    function getDetails(string _symbol) public view returns (address, uint256, uint256, string, bytes32, bool);
 
     /**
      * @notice Check the symbol is reserved or not
@@ -25,5 +25,11 @@ contract ITickerRegistry {
      * @return bool
      */
      function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) public returns(bool);
+
+     /**
+     * @notice Use to get the ticker list as per the owner
+     * @param _owner Address which owns the list of tickers 
+     */
+    function getTickerOwnedByUser(address _owner) public view returns(bytes32[]);
 
 }

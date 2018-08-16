@@ -12,12 +12,17 @@ All notable changes to this project will be documented in this file.
 * Added MakerDAOOracle to get ETH/USD price for the USDTieredSTO.
 * Added CLI for USDTieredSTO
 * Scripts for monitoring Oracles' status
-* Scripts for monitoring Polymath stats (Tokens registered, tokens deployed, STOs launched)
+* Scripts for monitoring Polymath stats (Tokens registered, tokens deployed, STOs launched).   
+* `transferTickerOwnership()` function is introduced in `TickerRegistry` to transfer the ticker ownership after the registeration.   
+* `getTickerOwnedByUser()` function is used to get the list of tickers owned by the issuer. 
+* New function `addCustomTicker()` is used the add the Ticker in tickerRegistry. To avail the facility to Registry owner to add the tokens without paying the fee.    
 
 ## Fixed
 
 * Modified function name in TickerRegistry and SecurityTokenRegistry from `changePolyRegisterationFee` to `changePolyRegistrationFee`. Event name is modified too from `LogChangePolyRegisterationFee` to `LogChangePolyRegistrationFee`
 * Minor CLI fixes
+* Change in the datastructure of SymbolDetails new variable `expiredTimestamp` introduced and change the variable name `timestamp` to `registeredTimestamp` in Tickerregistry.sol.   
+ 
 
 =======
 # v1.3.0  

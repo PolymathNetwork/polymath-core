@@ -383,7 +383,7 @@ contract('SecurityTokenRegistry', accounts => {
             assert.equal(tx.logs[0].args._securityToken, dummy_token);
             let symbolDetails = await I_TickerRegistry.getDetails("LOG2");
             assert.equal(symbolDetails[0], account_temp);
-            assert.equal(symbolDetails[2], "LOGAN2");
+            assert.equal(symbolDetails[3], "LOGAN2");
         });
 
         it("Should fail if ST address is 0 address", async() => {
@@ -428,7 +428,7 @@ contract('SecurityTokenRegistry', accounts => {
             assert.equal(tx.logs[0].args._securityToken, dummy_token);
             let symbolDetails = await I_TickerRegistry.getDetails("LOG");
             assert.equal(symbolDetails[0], account_temp);
-            assert.equal(symbolDetails[2], "LOGAN");
+            assert.equal(symbolDetails[3], "LOGAN");
         });
 
     });
@@ -444,7 +444,7 @@ contract('SecurityTokenRegistry', accounts => {
             assert.equal(tx.logs[0].args._securityToken, accounts[2]);
             let symbolDetails = await I_TickerRegistry.getDetails("CUST");
             assert.equal(symbolDetails[0], account_temp);
-            assert.equal(symbolDetails[2], "custom");
+            assert.equal(symbolDetails[3], "custom");
         });
 
         it("Should deploy the st vesrion 3", async() => {

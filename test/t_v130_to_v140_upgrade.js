@@ -7,7 +7,9 @@ import { duration } from './helpers/utils';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
+const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const USDTieredSTO = artifacts.require('./USDTieredSTO.sol');
+const CappedSTO = artifacts.require('./CappedSTO.sol');
 const PolyOracle = artifacts.require('./PolyOracle.sol');
 const ETHOracle = artifacts.require('./MakerDAOOracle.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
@@ -75,9 +77,12 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     let I_USDTieredSTOFactory;
     let I_USDOracle;
     let I_POLYOracle;
-    
     let I_USDTieredSTO;
 
+    let I_CappedSTOFactory;
+    let I_UpgradedCappedSTOFactory;
+    let I_CappedSTO;
+    
     // Prepare polymath network status
     before(async() => {
         // Accounts setup
@@ -135,6 +140,14 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             "GeneralDelegateManagerFactory contract was not deployed"
         );
 
+        // STEP 5: Deploy the CappedSTOFactory
+        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, { from: POLYMATH });
+        assert.notEqual(
+            I_CappedSTOFactory.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "CappedSTOFactory contract was not deployed"
+        );
+
         // STEP 6: Register the Modules with the ModuleRegistry contract
         // (A) :  Register the GeneralTransferManagerFactory
         await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: POLYMATH });
@@ -143,6 +156,10 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         // (B) :  Register the GeneralDelegateManagerFactory
         await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: POLYMATH });
         await I_ModuleRegistry.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: POLYMATH });
+
+        // (C) :  Register the CappedSTOFactory
+        await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: POLYMATH });
+        await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: POLYMATH });
 
         // Step 7: Deploy the TickerRegistry
         I_TickerRegistry = await TickerRegistry.new(I_PolymathRegistry.address, REGFEE, { from: POLYMATH });
@@ -185,7 +202,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         await I_ModuleRegistry.updateFromRegistry({from: POLYMATH});
         await I_TickerRegistry.updateFromRegistry({from: POLYMATH});
 
-        // Step : Mint tokens to ISSUERs
+        // Step 11: Mint tokens to ISSUERs
         await I_PolyToken.getTokens(REGFEE * 2, ISSUER1);
         await I_PolyToken.getTokens(REGFEE * 2, ISSUER2);
         await I_PolyToken.getTokens(REGFEE * 2, ISSUER3);
@@ -406,6 +423,36 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         });
     });
 
+    describe("CappedSTOFactory deploy", async() => {
+        // Step 1: Deploy new CappedSTOFactory
+        it("Should successfully deploy CappedSTOFactory", async() => {
+            I_UpgradedCappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, { from: POLYMATH });
+            assert.notEqual(
+                I_UpgradedCappedSTOFactory.address.valueOf(),
+                "0x0000000000000000000000000000000000000000",
+                "CappedSTOFactory contract was not deployed"
+            );
+            let setupCost = await I_UpgradedCappedSTOFactory.setupCost({ from: POLYMATH });
+            assert.equal(setupCost, STOSetupCost);
+        });
+
+        // Step 2: Register and verify
+        it("Should successfully register and verify new CappedSTOFactory contract", async() => {
+            let tx = await I_ModuleRegistry.registerModule(I_UpgradedCappedSTOFactory.address, { from: POLYMATH });
+            assert.equal(tx.logs[0].args._moduleFactory, I_UpgradedCappedSTOFactory.address);
+            tx = await I_ModuleRegistry.verifyModule(I_UpgradedCappedSTOFactory.address, true, { from: POLYMATH });
+            assert.equal(tx.logs[0].args._moduleFactory, I_UpgradedCappedSTOFactory.address);
+            assert.isTrue(tx.logs[0].args._verified);
+        });
+
+        // Step 3: Unverify old CappedSTOFactory
+        it("Should successfully unverify old CappedSTOFactory contract", async() => {
+            let tx = await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, false, { from: POLYMATH });
+            assert.equal(tx.logs[0].args._moduleFactory, I_CappedSTOFactory.address);
+            assert.isFalse(tx.logs[0].args._verified);
+        });
+    });
+
     describe("Change ownerships", async() => {
         // Step 1:  SecurityTokenRegistry
         it("Should successfully change ownership of new SecurityTokenRegistry contract", async() => {
@@ -426,9 +473,15 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         });
 
         // Step 3: USDTieredSTOFactory
-        // 2c - Change ownership of USDTieredSTOFactory
         it("Should successfully change ownership of USDTieredSTOFactory contract", async() => {
             let tx = await I_USDTieredSTOFactory.transferOwnership(MULTISIG, { from: POLYMATH });
+            assert.equal(tx.logs[0].args.previousOwner, POLYMATH, "Previous USDTieredSTOFactory owner was not Polymath account");
+            assert.equal(tx.logs[0].args.newOwner, MULTISIG, "New USDTieredSTOFactory owner is not Multisig account");
+        });
+
+        // Step 3: CappedSTOFactory
+        it("Should successfully change ownership of CappedSTOFactory contract", async() => {
+            let tx = await I_UpgradedCappedSTOFactory.transferOwnership(MULTISIG, { from: POLYMATH });
             assert.equal(tx.logs[0].args.previousOwner, POLYMATH, "Previous USDTieredSTOFactory owner was not Polymath account");
             assert.equal(tx.logs[0].args.newOwner, MULTISIG, "New USDTieredSTOFactory owner is not Multisig account");
         });
@@ -503,11 +556,51 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         });
 
         // Deploy TOK3
-        it("Should succesfully deploy third security token", async() => {
+        it("Should successfully deploy third security token", async() => {
             await I_PolyToken.approve(I_UpgradedSecurityTokenRegistry.address, REGFEE, { from: ISSUER3});
             tx = await I_UpgradedSecurityTokenRegistry.generateSecurityToken(name3, symbol3, tokenDetails3, false, { from: ISSUER3 });
             assert.equal(tx.logs[1].args._ticker, symbol3, "SecurityToken doesn't get deployed");
             I_SecurityToken3 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+        });
+
+        // Launch CappedSTO for TOK3
+        it("Should successfully launch CappedSTO for third security token", async() => {
+            let startTime = latestTime() + duration.days(1);
+            let endTime = startTime + duration.days(30);
+            let cap = BigNumber(500000).mul(10**18);
+            let rate = 1000;
+            let fundRaiseType = 0;
+            let fundsReceiver = ISSUER3;
+            
+            const functionSignature = {
+                name: 'configure',
+                type: 'function',
+                inputs: [{
+                    type: 'uint256',
+                    name: '_startTime'
+                },{
+                    type: 'uint256',
+                    name: '_endTime'
+                },{
+                    type: 'uint256',
+                    name: '_cap'
+                },{
+                    type: 'uint256',
+                    name: '_rate'
+                },{
+                    type: 'uint8',
+                    name: '_fundRaiseType',
+                },{
+                    type: 'address',
+                    name: '_fundsReceiver'
+                }
+                ]
+            };  
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, fundsReceiver]);
+
+            let tx = await I_SecurityToken3.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER3 });
+            assert.equal(tx.logs[2].args._type, STOKEY, "CappedSTO doesn't get deployed");
+            assert.equal(web3.utils.hexToString(tx.logs[2].args._name),"CappedSTO","CappedSTOFactory module was not added");
         });
     });
 });

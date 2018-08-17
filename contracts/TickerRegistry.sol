@@ -34,6 +34,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
     mapping(string => SymbolDetails) registeredSymbols;
     // Mapping of ticker owner with the list of tickers 
     mapping(address => bytes32[]) public tokensOwnedByUser;
+    // Store the location index of the ticker in an array
+    mapping(string => uint) tickerIndex;
 
     // Emit after the symbol registration
     event LogRegisterTicker(
@@ -77,6 +79,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol), "Ticker is already reserved");
         tokensOwnedByUser[_owner].push(stringToBytes32(symbol));
+        tickerIndex[symbol] = tokensOwnedByUser[_owner].length - 1;
         registeredSymbols[symbol] = SymbolDetails(_owner, now, now.add(expiryLimit), _tokenName, _swarmHash, false);
         emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now, now.add(expiryLimit));
     }
@@ -123,6 +126,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol), "Ticker is already reserved");
         tokensOwnedByUser[msg.sender].push(stringToBytes32(symbol));
+        tickerIndex[symbol] = tokensOwnedByUser[msg.sender].length - 1;
         registeredSymbols[symbol] = SymbolDetails(msg.sender, now, now.add(expiryLimit), _tokenName, _swarmHash, false);
         emit LogRegisterTicker (msg.sender, symbol, _tokenName, _swarmHash, now, now.add(expiryLimit));
     }
@@ -182,12 +186,13 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _ticker Symbol of the token
      */
     function _renounceTickerOwnership(string _ticker) internal returns(bool) {
-       bytes32[] memory _symbols = tokensOwnedByUser[registeredSymbols[_ticker].owner];
-       for(uint i = 0; i < _symbols.length; i++) {
-           if (_symbols[i] == stringToBytes32(_ticker))
-                delete _symbols[i];
-       }
-       tokensOwnedByUser[registeredSymbols[_ticker].owner] = _symbols;
+       uint _len = tokensOwnedByUser[registeredSymbols[_ticker].owner].length;
+       uint _index = tickerIndex[_ticker];
+       tokensOwnedByUser[registeredSymbols[_ticker].owner][_index] = tokensOwnedByUser[registeredSymbols[_ticker].owner][_len - 1];
+       tickerIndex[bytes32ToString(tokensOwnedByUser[registeredSymbols[_ticker].owner][_index])] = _index;
+       _len = _len - 1;
+       delete tickerIndex[_ticker];
+       tokensOwnedByUser[registeredSymbols[_ticker].owner].length = _len;
        return true;    
     }
 
@@ -204,6 +209,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         require(_renounceTickerOwnership(ticker), "Should successfully renounce the ownership of the ticker");
         registeredSymbols[ticker].owner = _newOwner;
         tokensOwnedByUser[_newOwner].push(stringToBytes32(ticker));
+        tickerIndex[ticker] = tokensOwnedByUser[_newOwner].length - 1;
         emit LogChangeTickerOwnership(ticker, msg.sender, _newOwner);
     }
 
@@ -213,13 +219,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      */
     function getTickerOwnedByUser(address _owner) public view returns(bytes32[]) {
          uint counter = 0;
-         for (uint i = 0; i < tokensOwnedByUser[_owner].length; i++) {
-             if (tokensOwnedByUser[_owner][i] != bytes32(0)) {
-                 counter ++; 
-             }
-         }
-         bytes32[] memory tempList = new bytes32[](counter);
-         counter = 0;
+         bytes32[] memory tempList = new bytes32[](tokensOwnedByUser[_owner].length);
          for (uint j = 0; j < tokensOwnedByUser[_owner].length; j++) {
              string memory _symbol = bytes32ToString(tokensOwnedByUser[_owner][j]);
              if (registeredSymbols[_symbol].expiredTimestamp >= now || registeredSymbols[_symbol].status == true ) {

@@ -28,6 +28,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     event LogPriceUpdated(uint256 _price, uint256 _oldPrice, bytes32 _queryId, uint256 _time);
     event LogNewOraclizeQuery(uint256 _time, bytes32 _queryId, string _query);
     event LogAdminSet(address _admin, bool _valid, uint256 _time);
+    event LogStalePriceUpdate(bytes32 _queryId, uint256 _time, string _result);
 
     modifier isAdminOrOwner {
         require(admin[msg.sender] || msg.sender == owner, "Address is not admin or owner");
@@ -51,6 +52,11 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
         require(msg.sender == oraclize_cbAddress(), "Only Oraclize can access this method");
         require(!freezeOracle, "Oracle is frozen");
         require(!ignoreRequestIds[_requestId], "Ignoring requestId");
+        if (requestIds[_requestId] < latestUpdate) {
+            // Result is stale, probably because it was received out of order
+            emit LogStalePriceUpdate(_requestId, requestIds[_requestId], _result);
+            return;
+        }
         require(requestIds[_requestId] >= latestUpdate, "Result is stale");
         require(requestIds[_requestId] <= now + oraclizeTimeTolerance, "Result is early");
         uint256 newPOLYUSD = parseInt(_result, 18);

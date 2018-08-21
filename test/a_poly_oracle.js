@@ -11,7 +11,7 @@ contract('PolyOracle', accounts=> {
 
 let I_PolyOracle;
 let owner;
-const URL = "json(https://api.coinmarketcap.com/v2/ticker/2496/?convert=USD).data.quotes.USD.price";
+const URL = '[URL] json(https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?id=2496&convert=USD&CMC_PRO_API_KEY=${[decrypt] BBObnGOy63qVI3OR2+MX88dzSMVjQboiZc7Wluuh2ngkSgiX1csxWgbAFtu22jbrry42zwCS4IUmer1Wk+1o1XhF7hyspoGCkbufQqYwuUYwcA2slX6RbEDai7NgdkgNGWSwd6DcuN8jD5ZMTkX68rJKkplr}).data."2496".quote.USD.price';
 const alternateURL = "json(https://min-api.cryptocompare.com/data/price?fsym=POLY&tsyms=USD).USD";
 const SanityBounds = 20*10**16;
 const GasLimit = 100000;
@@ -28,7 +28,8 @@ let requestIds = new Array();
 
     describe("state variables checks", async() => {
 
-        it("should check the api url", async() => {
+        it("should set and check the api url", async() => {
+            await I_PolyOracle.setOracleURL(URL, {from: owner});
             let url = await I_PolyOracle.oracleURL.call();
             assert.equal(URL, url);
         });
@@ -309,6 +310,7 @@ let requestIds = new Array();
 
         it("should change the api URL manually", async() => {
             await I_PolyOracle.setOracleURL(alternateURL, {from: owner});
+            await I_PolyOracle.setOracleQueryType("URL", {from: owner});
             let url = await I_PolyOracle.oracleURL.call();
             assert.equal(alternateURL, url);
         });

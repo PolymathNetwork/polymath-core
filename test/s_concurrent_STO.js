@@ -370,7 +370,7 @@ contract('SecurityToken addModule Cap', accounts => {
                     case 0:
                         // Capped STO ETH
                         await I_STO_Array[STOIndex].buyTokens(account_investor1, { from : account_investor1, value: web3.utils.toWei('1', 'ether') });
-                        assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].fundsRaised.call()).toString()), 1);
+                        assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaisedEther.call()).toString()), 1);
                         assert.equal(await I_STO_Array[STOIndex].getNumberInvestors.call(), 1);
                         break;
                     case 1:

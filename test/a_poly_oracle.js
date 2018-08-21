@@ -127,7 +127,7 @@ let requestIds = new Array();
         it("Should schedule to call using iters", async() => {
             let blockNo = latestBlock();
             console.log(`Latest Block number of the local chain:${blockNo}`);
-            let tx = await I_PolyOracle.schedulePriceUpdatesRolling(latestTime(), 10, 2, {from: owner});
+            let tx = await I_PolyOracle.schedulePriceUpdatesRolling(latestTime()+ 10, 10, 2, {from: owner});
             let event_data = tx.logs;
             for (var i = 0; i < event_data.length; i++) {
                 let time = event_data[i].args._time;

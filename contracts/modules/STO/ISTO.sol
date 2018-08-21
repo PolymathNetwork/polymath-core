@@ -20,6 +20,17 @@ contract ISTO is IModule, Pausable {
     uint256 public endTime;
     // Time STO was paused
     uint256 public pausedTime;
+    // Amount of ETH funds raised
+    uint256 public fundsRaisedETH;
+    // Amount of POLY funds raised
+    uint256 public fundsRaisedPOLY;
+    // Number of individual investors
+    uint256 public investorCount;
+    // Address where ETH & POLY funds are delivered
+    address public wallet;
+     // Final amount of tokens sold
+    uint256 public totalTokensSold;
+
 
     /**
      * @notice use to verify the investment, whether the investor provide the allowance to the STO or not.

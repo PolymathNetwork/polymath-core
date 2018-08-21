@@ -85,20 +85,11 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     }
 
     /**
-     * @notice Use to get all the tags releated to the functionality of the Module Factory.
-     * @param _moduleType Type of module
-     * @return bytes32 array
-     */
-    function getTagByModuleType(uint8 _moduleType) public view returns(bytes32[]) {
-        return availableTags[_moduleType];
-    }
-
-    /**
      * @notice Add the tag for specified Module Factory
      * @param _moduleType Type of module.
      * @param _tag List of tags
      */
-     function addTagByModuleType(uint8 _moduleType, bytes32[] _tag) public onlyOwner {
+    function addTagByModuleType(uint8 _moduleType, bytes32[] _tag) public onlyOwner {
          for (uint8 i = 0; i < _tag.length; i++) {
              availableTags[_moduleType].push(_tag[i]);
          }
@@ -109,7 +100,7 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
      * @param _moduleType Type of module.
      * @param _removedTags List of tags
      */
-     function removeTagByModuleType(uint8 _moduleType, bytes32[] _removedTags) public onlyOwner {
+    function removeTagByModuleType(uint8 _moduleType, bytes32[] _removedTags) public onlyOwner {
          for (uint8 i = 0; i < availableTags[_moduleType].length; i++) {
             for (uint8 j = 0; j < _removedTags.length; j++) {
                 if (availableTags[_moduleType][i] == _removedTags[j]) {
@@ -117,9 +108,36 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
                 }
             }
         }
-     }
+    }
 
-     /**
+    /**
+     * @notice Use to get all the tags releated to the functionality of the Module Factory.
+     * @param _moduleType Type of module
+     * @return bytes32 array
+     */
+    function getTagByModuleType(uint8 _moduleType) public view returns(bytes32[]) {
+        return availableTags[_moduleType];
+    }
+
+    /**
+     * @notice Use to get the reputation of the Module factory
+     * @param _factoryAddress Ethereum contract address of the module factory
+     * @return address array which have the list of securityToken's uses that module factory 
+     */
+    function getReputationOfFactory(address _factoryAddress) public view returns(address[]) {
+        return reputation[_factoryAddress];
+    }
+
+    /**
+     * @notice Use to get the list of addresses of Module factory for a particular type
+     * @param _moduleType Type of Module
+     * @return address array thal contains the lis of addresses of module factory contracts.
+     */
+    function getModuleListOfType(uint8 _moduleType) public view returns(address[]) {
+        return moduleList[_moduleType];
+    }
+
+    /**
      * @notice pause registration function
      */
     function unpause() public onlyOwner  {

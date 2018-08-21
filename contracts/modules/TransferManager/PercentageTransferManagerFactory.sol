@@ -29,7 +29,7 @@ contract PercentageTransferManagerFactory is IModuleFactory {
         PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender, address(polyToken));
         require(getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
         require(address(percentageTransferManager).call(_data), "Un-successfull call");
-        emit LogGenerateModuleFromFactory(address(percentageTransferManager), getName(), address(this), msg.sender, now);
+        emit LogGenerateModuleFromFactory(address(percentageTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(percentageTransferManager);
 
     }

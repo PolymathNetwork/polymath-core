@@ -512,7 +512,7 @@ contract('CappedSTO', accounts => {
               });
 
             assert.equal(
-                (await I_CappedSTO_Array_ETH[0].fundsRaised.call())
+                (await I_CappedSTO_Array_ETH[0].getRaisedEther.call())
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 1
@@ -661,7 +661,7 @@ contract('CappedSTO', accounts => {
               });
 
               assert.equal(
-                (await I_CappedSTO_Array_ETH[0].fundsRaised.call())
+                (await I_CappedSTO_Array_ETH[0].getRaisedEther.call())
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 10
@@ -713,7 +713,7 @@ contract('CappedSTO', accounts => {
             //console.log("WWWW",newBalance,await I_CappedSTO.fundsRaised.call(),balanceOfReceiver);
             let op = (BigNumber(newBalance).minus(balanceOfReceiver)).toNumber();
             assert.equal(
-                (await I_CappedSTO_Array_ETH[0].fundsRaised.call()).toNumber(),
+                (await I_CappedSTO_Array_ETH[0].getRaisedEther.call()).toNumber(),
                 op,
                 "Somewhere raised money get stolen or sent to wrong wallet"
             );
@@ -829,7 +829,7 @@ contract('CappedSTO', accounts => {
             await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_investor3, value: web3.utils.toWei('1', 'ether') });
 
             assert.equal(
-                (await I_CappedSTO_Array_ETH[1].fundsRaised.call())
+                (await I_CappedSTO_Array_ETH[1].getRaisedEther.call())
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 1
@@ -881,7 +881,7 @@ contract('CappedSTO', accounts => {
             for (var STOIndex = 2; STOIndex < MAX_MODULES; STOIndex++) {
                 await I_CappedSTO_Array_ETH[STOIndex].buyTokens(account_investor3, { from : account_investor3, value: web3.utils.toWei('1', 'ether') });
                 assert.equal(
-                    (await I_CappedSTO_Array_ETH[STOIndex].fundsRaised.call())
+                    (await I_CappedSTO_Array_ETH[STOIndex].getRaisedEther.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1
@@ -1021,7 +1021,7 @@ contract('CappedSTO', accounts => {
                 );
 
                 assert.equal(
-                    (await I_CappedSTO_Array_POLY[0].fundsRaised.call())
+                    (await I_CappedSTO_Array_POLY[0].getRaisedPOLY.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1000
@@ -1075,7 +1075,7 @@ contract('CappedSTO', accounts => {
                 );
 
                   assert.equal(
-                    (await I_CappedSTO_Array_POLY[0].fundsRaised.call())
+                    (await I_CappedSTO_Array_POLY[0].getRaisedPOLY.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     10000
@@ -1127,7 +1127,7 @@ contract('CappedSTO', accounts => {
             it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {
                 const balanceRaised = await I_PolyToken.balanceOf.call(account_fundsReceiver);
                 assert.equal(
-                    (await I_CappedSTO_Array_POLY[0].fundsRaised.call()).toNumber(),
+                    (await I_CappedSTO_Array_POLY[0].getRaisedPOLY.call()).toNumber(),
                     balanceRaised,
                     "Somewhere raised money get stolen or sent to wrong wallet"
                 );
@@ -1265,7 +1265,7 @@ contract('CappedSTO', accounts => {
             );
 
             assert.equal(
-                (await I_CappedSTO_Array_POLY[1].fundsRaised.call())
+                (await I_CappedSTO_Array_POLY[1].getRaisedPOLY.call())
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 polyToInvest

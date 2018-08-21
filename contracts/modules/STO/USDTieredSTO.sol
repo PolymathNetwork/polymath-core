@@ -18,9 +18,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Storage //
     /////////////
 
-    // Address where ETH & POLY funds are delivered
-    address public wallet;
-
     // Address of issuer reserve wallet for unsold tokens
     address public reserveWallet;
 
@@ -54,15 +51,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Amount of USD funds raised
     uint256 public fundsRaisedUSD;
 
-    // Amount of ETH funds raised
-    uint256 public fundsRaisedETH;
-
-    // Amount of POLY funds raised
-    uint256 public fundsRaisedPOLY;
-
-    // Number of individual investors
-    uint256 public investorCount;
-
     // Amount in USD invested by each address
     mapping (address => uint256) public investorInvestedUSD;
 
@@ -83,9 +71,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
     // Whether or not the STO has been finalized
     bool public isFinalized;
-
-    // Final amount of tokens sold
-    uint256 public finalAmountSold;
 
     // Final amount of tokens returned to issuer
     uint256 public finalAmountReturned;
@@ -307,7 +292,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             }
         }
         finalAmountReturned = tempReturned;
-        finalAmountSold = tempSold;
+        totalTokensSold = tempSold;
     }
 
     /**
@@ -554,7 +539,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function getTokensSold() public view returns (uint256) {
         if (isFinalized)
-            return finalAmountSold;
+            return totalTokensSold;
         else
             return getTokensMinted();
     }

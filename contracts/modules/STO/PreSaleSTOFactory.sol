@@ -33,7 +33,7 @@ contract PreSaleSTOFactory is IModuleFactory {
         //Checks that _data is valid (not calling anything it shouldn't)
         require(getSig(_data) == preSaleSTO.getInitFunction(), "Provided data is not valid");
         require(address(preSaleSTO).call(_data), "Un-successfull call");
-        emit LogGenerateModuleFromFactory(address(preSaleSTO), getName(), address(this), msg.sender, now);
+        emit LogGenerateModuleFromFactory(address(preSaleSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(preSaleSTO);
     }
 

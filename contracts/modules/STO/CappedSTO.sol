@@ -11,20 +11,8 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract CappedSTO is ISTO, ReentrancyGuard {
     using SafeMath for uint256;
 
-    // Address where funds are collected and tokens are issued to
-    address public wallet;
-
     // How many token units a buyer gets per wei / base unit of POLY
     uint256 public rate;
-
-    // Amount of funds raised
-    uint256 public fundsRaised;
-
-    uint256 public investorCount;
-
-    // Amount of tokens sold
-    uint256 public tokensSold;
-
     //How many tokens this STO will be allowed to sell to investors
     uint256 public cap;
 
@@ -124,27 +112,21 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     * @return bool Whether the cap was reached
     */
     function capReached() public view returns (bool) {
-        return tokensSold >= cap;
+        return totalTokensSold >= cap;
     }
 
     /**
      * @notice Return ETH raised by the STO
      */
     function getRaisedEther() public view returns (uint256) {
-        if (fundRaiseType[uint8(FundRaiseType.ETH)])
-            return fundsRaised;
-        else
-            return 0;
+        return fundsRaisedETH;
     }
 
     /**
      * @notice Return POLY raised by the STO
      */
     function getRaisedPOLY() public view returns (uint256) {
-        if (fundRaiseType[uint8(FundRaiseType.POLY)])
-            return fundsRaised;
-        else
-            return 0;
+        return fundsRaisedPOLY;
     }
 
     /**
@@ -158,7 +140,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @notice Return the total no. of tokens sold
      */
     function getTokensSold() public view returns (uint256) {
-        return tokensSold;
+        return totalTokensSold;
     }
 
     /**
@@ -178,9 +160,9 @@ contract CappedSTO is ISTO, ReentrancyGuard {
             endTime,
             cap,
             rate,
-            fundsRaised,
+            (fundRaiseType[uint8(FundRaiseType.POLY)]) ? fundsRaisedPOLY: fundsRaisedPOLY,
             investorCount,
-            tokensSold,
+            totalTokensSold,
             (fundRaiseType[uint8(FundRaiseType.POLY)])
         );
     }
@@ -200,8 +182,12 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         uint256 tokens = _getTokenAmount(_investedAmount);
 
         // update state
-        fundsRaised = fundsRaised.add(_investedAmount);
-        tokensSold = tokensSold.add(tokens);
+        if (fundRaiseType[uint8(FundRaiseType.POLY)]) {
+            fundsRaisedPOLY = fundsRaisedPOLY.add(_investedAmount);
+        } else {
+            fundsRaisedETH = fundsRaisedETH.add(_investedAmount);
+        }
+        totalTokensSold = totalTokensSold.add(tokens);
 
         _processPurchase(_beneficiary, tokens);
         emit TokenPurchase(msg.sender, _beneficiary, _investedAmount, tokens);
@@ -218,7 +204,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal view {
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
         require(_investedAmount != 0, "Amount invested should not be equal to 0");
-        require(tokensSold.add(_getTokenAmount(_investedAmount)) <= cap, "Investment more than cap is not allowed");
+        require(totalTokensSold.add(_getTokenAmount(_investedAmount)) <= cap, "Investment more than cap is not allowed");
         require(now >= startTime && now <= endTime, "Offering is closed/Not yet started");
     }
 

@@ -8,7 +8,8 @@ import '../interfaces/IOracle.sol';
 contract PolyOracle is usingOraclize, IOracle, Ownable {
     using SafeMath for uint256;
 
-    string public oracleURL = "json(https://api.coinmarketcap.com/v2/ticker/2496/?convert=USD).data.quotes.USD.price";
+    string public oracleURL = '[URL] json(https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?id=2496&convert=USD&CMC_PRO_API_KEY=${[decrypt] BB/AHDZtyolguqUlfv0EQQOHGA/T1oQgz/yIIhdkHhE8f3Pp/AZElpijlZWfCPG5fMlg2Ss8PrUIS4eal4okS/QvDoBOxuzMdEnqRLBfXDJiggRCjaO1F6YJBiAZZhZlfmOkhH1NDG+YKoB6ZBuOAvAcnHlu}).data."2496".quote.USD.price';
+    string public oracleQueryType = "nested";
     uint256 public sanityBounds = 20*10**16;
     uint256 public gasLimit = 100000;
     uint256 public oraclizeTimeTolerance = 5 minutes;
@@ -78,16 +79,16 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
         bytes32 requestId;
         uint256 maximumScheduledUpdated;
         if (_times.length == 0) {
-            require(oraclize_getPrice("URL", gasLimit) <= address(this).balance, "Insufficient Funds");
-            requestId = oraclize_query("URL", oracleURL, gasLimit);
+            require(oraclize_getPrice(oracleQueryType, gasLimit) <= address(this).balance, "Insufficient Funds");
+            requestId = oraclize_query(oracleQueryType, oracleURL, gasLimit);
             requestIds[requestId] = now;
             maximumScheduledUpdated = now;
             emit LogNewOraclizeQuery(now, requestId, oracleURL);
         } else {
-            require(oraclize_getPrice("URL", gasLimit) * _times.length <= address(this).balance, "Insufficient Funds");
+            require(oraclize_getPrice(oracleQueryType, gasLimit) * _times.length <= address(this).balance, "Insufficient Funds");
             for (uint256 i = 0; i < _times.length; i++) {
                 require(_times[i] >= now, "Past scheduling is not allowed and scheduled time should be absolute timestamp");
-                requestId = oraclize_query(_times[i], "URL", oracleURL, gasLimit);
+                requestId = oraclize_query(_times[i], oracleQueryType, oracleURL, gasLimit);
                 requestIds[requestId] = _times[i];
                 if (maximumScheduledUpdated < requestIds[requestId]) {
                     maximumScheduledUpdated = requestIds[requestId];
@@ -111,10 +112,10 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
         require(_interval > 0, "Interval between scheduled time should be greater than zero");
         require(_iters > 0, "No iterations specified");
         require(_startTime >= now, "Past scheduling is not allowed and scheduled time should be absolute timestamp");
-        require(oraclize_getPrice("URL", gasLimit) * _iters <= address(this).balance, "Insufficient Funds");
+        require(oraclize_getPrice(oracleQueryType, gasLimit) * _iters <= address(this).balance, "Insufficient Funds");
         for (uint256 i = 0; i < _iters; i++) {
             uint256 scheduledTime = _startTime + (i * _interval);
-            requestId = oraclize_query(scheduledTime, "URL", oracleURL, gasLimit);
+            requestId = oraclize_query(scheduledTime, oracleQueryType, oracleURL, gasLimit);
             requestIds[requestId] = scheduledTime;
             emit LogNewOraclizeQuery(scheduledTime, requestId, oracleURL);
         }
@@ -147,6 +148,14 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     */
     function setOracleURL(string _oracleURL) onlyOwner public {
         oracleURL = _oracleURL;
+    }
+
+    /**
+    * @notice Allows owner to set type used in Oraclize queries
+    * @param _oracleQueryType to use
+    */
+    function setOracleQueryType(string _oracleQueryType) onlyOwner public {
+        oracleQueryType = _oracleQueryType;
     }
 
     /**

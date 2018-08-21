@@ -91,9 +91,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD
     );
-    event SetFunding(
-        uint8[] _fundRaiseTypes
-    );
     event SetTimes(
         uint256 _startTime,
         uint256 _endTime
@@ -196,17 +193,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     ) public onlyOwner {
         require(now < startTime);
         _configureAddresses(_wallet, _reserveWallet);
-    }
-
-    function _configureFunding(uint8[] _fundRaiseTypes) internal {
-        require(_fundRaiseTypes.length > 0 && _fundRaiseTypes.length < 3, "No fund raising currencies specified");
-        fundRaiseType[uint8(FundRaiseType.POLY)] = false;
-        fundRaiseType[uint8(FundRaiseType.ETH)] = false;
-        for (uint8 j = 0; j < _fundRaiseTypes.length; j++) {
-            require(_fundRaiseTypes[j] < 2);
-            fundRaiseType[_fundRaiseTypes[j]] = true;
-        }
-        emit SetFunding(_fundRaiseTypes);
     }
 
     function _configureLimits(

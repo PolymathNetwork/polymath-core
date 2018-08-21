@@ -46,7 +46,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @param _endTime Unix timestamp at which offering get ended
      * @param _cap Maximum No. of tokens for sale
      * @param _rate Token units a buyer gets per wei / base unit of POLY
-     * @param _fundRaiseType Type of currency used to collect the funds
+     * @param _fundRaiseTypes Type of currency used to collect the funds
      * @param _fundsReceiver Ethereum account address to hold the funds
      */
     function configure(
@@ -54,7 +54,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         uint256 _endTime,
         uint256 _cap,
         uint256 _rate,
-        uint8 _fundRaiseType,
+        uint8[] _fundRaiseTypes,
         address _fundsReceiver
     )
     public
@@ -64,19 +64,20 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         require(_fundsReceiver != address(0), "Zero address is not permitted");
         require(_startTime >= now && _endTime > _startTime, "Date parameters are not valid");
         require(_cap > 0, "Cap should be greater than 0");
+        require(_fundRaiseTypes.length == 1, "It only selects single fund raise type");
         startTime = _startTime;
         endTime = _endTime;
         cap = _cap;
         rate = _rate;
         wallet = _fundsReceiver;
-        _check(_fundRaiseType);
+        _configureFunding(_fundRaiseTypes);
     }
 
     /**
      * @notice This function returns the signature of configure function
      */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8,address)"));
+        return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8[],address)"));
     }
 
     /**
@@ -262,18 +263,6 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     */
     function _forwardFunds() internal {
         wallet.transfer(msg.value);
-    }
-
-    /**
-     * @notice Internal function used to check the type of fund raise currency
-     * @param _fundRaiseType Type of currency used to collect the funds
-     */
-    function _check(uint8 _fundRaiseType) internal {
-        require(_fundRaiseType == 0 || _fundRaiseType == 1, "Not a valid fundraise type");
-        fundRaiseType[_fundRaiseType] = true;
-        if (_fundRaiseType == uint8(FundRaiseType.POLY)) {
-            require(address(polyToken) != address(0), "Address of the polyToken should not be 0x");
-        }
     }
 
     /**

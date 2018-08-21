@@ -31,6 +31,8 @@ contract ISTO is IModule, Pausable {
      // Final amount of tokens sold
     uint256 public totalTokensSold;
 
+    // Event
+    event SetFunding(uint8[] _fundRaiseTypes);
 
     /**
      * @notice use to verify the investment, whether the investor provide the allowance to the STO or not.
@@ -92,6 +94,20 @@ contract ISTO is IModule, Pausable {
         ERC20Basic token = ERC20Basic(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
         require(token.transfer(msg.sender, balance));
+    }
+
+    function _configureFunding(uint8[] _fundRaiseTypes) internal {
+        require(_fundRaiseTypes.length > 0 && _fundRaiseTypes.length < 3, "No fund raising currencies specified");
+        fundRaiseType[uint8(FundRaiseType.POLY)] = false;
+        fundRaiseType[uint8(FundRaiseType.ETH)] = false;
+        for (uint8 j = 0; j < _fundRaiseTypes.length; j++) {
+            require(_fundRaiseTypes[j] < 2);
+            fundRaiseType[_fundRaiseTypes[j]] = true;
+        }
+        if (fundRaiseType[uint8(FundRaiseType.POLY)]) {
+            require(address(polyToken) != address(0), "Address of the polyToken should not be 0x");
+        }
+        emit SetFunding(_fundRaiseTypes);
     }
 
 }

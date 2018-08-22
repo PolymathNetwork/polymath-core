@@ -12,7 +12,8 @@ All notable changes to this project will be documented in this file.
 * Added MakerDAOOracle to get ETH/USD price for the USDTieredSTO.
 * Added CLI for USDTieredSTO
 * Scripts for monitoring Oracles' status
-* Scripts for monitoring Polymath stats (Tokens registered, tokens deployed, STOs launched)
+* Scripts for monitoring Polymath stats (Tokens registered, tokens deployed, STOs launched).  
+* Add the `registrationTimestamp` in the `SecurityTokenData` structure that also leads the change in the `getSecurityTokenData()` return parameters. #199    
 
 ## Fixed
 

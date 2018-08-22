@@ -13,6 +13,7 @@ contract ISecurityTokenRegistry {
     struct SecurityTokenData {
         string symbol;
         string tokenDetails;
+        uint256 registrationTimestamp;
     }
 
     mapping(address => SecurityTokenData) securityTokens;
@@ -43,7 +44,7 @@ contract ISecurityTokenRegistry {
      * @param _securityToken Address of the Scurity token
      * @return string, address, bytes32
      */
-    function getSecurityTokenData(address _securityToken) public view returns (string, address, string);
+    function getSecurityTokenData(address _securityToken) public view returns (string, address, string, uint256);
 
     /**
     * @notice Check that Security Token is registered

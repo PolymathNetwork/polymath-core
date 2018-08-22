@@ -9,7 +9,7 @@ contract Util {
     * @notice changes a string to upper case
     * @param _base string to change
     */
-    function upper(string _base) internal pure returns (string) {
+    function _upper(string _base) internal pure returns (string) {
         bytes memory _baseBytes = bytes(_base);
         for (uint i = 0; i < _baseBytes.length; i++) {
             bytes1 b1 = _baseBytes[i];

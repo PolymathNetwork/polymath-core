@@ -312,7 +312,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     * @param _to receiver of transfer
     * @param _value value of transfer
     */
-    function adjustInvestorCount(address _from, address _to, uint256 _value) internal {
+    function _adjustInvestorCount(address _from, address _to, uint256 _value) internal {
         if ((_value == 0) || (_from == _to)) {
             return;
         }
@@ -378,16 +378,16 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     /**
      * @notice adjust totalsupply at checkpoint after minting or burning tokens
      */
-    function adjustTotalSupplyCheckpoints() internal {
-        adjustCheckpoints(checkpointTotalSupply, totalSupply());
+    function _adjustTotalSupplyCheckpoints() internal {
+        _adjustCheckpoints(checkpointTotalSupply, totalSupply());
     }
 
     /**
      * @notice adjust token holder balance at checkpoint after a token transfer
      * @param _investor address of the token holder affected
      */
-    function adjustBalanceCheckpoints(address _investor) internal {
-        adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor));
+    function _adjustBalanceCheckpoints(address _investor) internal {
+        _adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor));
     }
 
     /**
@@ -395,7 +395,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @param _checkpoints the affected checkpoint object array
      * @param _newValue the new value that needs to be stored
      */
-    function adjustCheckpoints(Checkpoint[] storage _checkpoints, uint256 _newValue) internal {
+    function _adjustCheckpoints(Checkpoint[] storage _checkpoints, uint256 _newValue) internal {
         //No checkpoints set yet
         if (currentCheckpointId == 0) {
             return;
@@ -430,10 +430,10 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @return bool success
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
-        adjustInvestorCount(msg.sender, _to, _value);
+        _adjustInvestorCount(msg.sender, _to, _value);
         require(verifyTransfer(msg.sender, _to, _value), "Transfer is not valid");
-        adjustBalanceCheckpoints(msg.sender);
-        adjustBalanceCheckpoints(_to);
+        _adjustBalanceCheckpoints(msg.sender);
+        _adjustBalanceCheckpoints(_to);
         require(super.transfer(_to, _value));
         return true;
     }
@@ -446,10 +446,10 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @return bool success
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-        adjustInvestorCount(_from, _to, _value);
+        _adjustInvestorCount(_from, _to, _value);
         require(verifyTransfer(_from, _to, _value), "Transfer is not valid");
-        adjustBalanceCheckpoints(_from);
-        adjustBalanceCheckpoints(_to);
+        _adjustBalanceCheckpoints(_from);
+        _adjustBalanceCheckpoints(_to);
         require(super.transferFrom(_from, _to, _value));
         return true;
     }
@@ -465,7 +465,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     function verifyTransfer(address _from, address _to, uint256 _amount) public checkGranularity(_amount) returns (bool) {
         if (!freeze) {
             bool isTransfer = false;
-            if (transferFunctions[getSig(msg.data)]) {
+            if (transferFunctions[_getSig(msg.data)]) {
               isTransfer = true;
             }
             if (modules[TRANSFERMANAGER_KEY].length == 0) {
@@ -516,10 +516,10 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      */
     function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) isMintingAllowed() returns (bool success) {
         require(_investor != address(0), "Investor address should not be 0x");
-        adjustInvestorCount(address(0), _investor, _amount);
+        _adjustInvestorCount(address(0), _investor, _amount);
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
-        adjustBalanceCheckpoints(_investor);
-        adjustTotalSupplyCheckpoints();
+        _adjustBalanceCheckpoints(_investor);
+        _adjustTotalSupplyCheckpoints();
         totalSupply_ = totalSupply_.add(_amount);
         balances[_investor] = balances[_investor].add(_amount);
         emit Minted(_investor, _amount);
@@ -576,12 +576,12 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @param _value No. of token that get burned
      */
     function burn(uint256 _value) checkGranularity(_value) public {
-        adjustInvestorCount(msg.sender, address(0), _value);
+        _adjustInvestorCount(msg.sender, address(0), _value);
         require(tokenBurner != address(0), "Token Burner contract address is not set yet");
         require(verifyTransfer(msg.sender, address(0), _value), "Transfer is not valid");
         require(_value <= balances[msg.sender], "Value should no be greater than the balance of msg.sender");
-        adjustBalanceCheckpoints(msg.sender);
-        adjustTotalSupplyCheckpoints();
+        _adjustBalanceCheckpoints(msg.sender);
+        _adjustTotalSupplyCheckpoints();
         // no need to require value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
 
@@ -597,7 +597,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @param _data passed data
      * @return bytes4 sig
      */
-    function getSig(bytes _data) internal pure returns (bytes4 sig) {
+    function _getSig(bytes _data) internal pure returns (bytes4 sig) {
         uint len = _data.length < 4 ? _data.length : 4;
         for (uint i = 0; i < len; i++) {
             sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
@@ -621,7 +621,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @return uint256
      */
     function totalSupplyAt(uint256 _checkpointId) public view returns(uint256) {
-        return getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
+        return _getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
     }
 
     /**
@@ -631,7 +631,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @param _currentValue Current value of checkpoint
      * @return uint256
      */
-    function getValueAt(Checkpoint[] storage checkpoints, uint256 _checkpointId, uint256 _currentValue) internal view returns(uint256) {
+    function _getValueAt(Checkpoint[] storage checkpoints, uint256 _checkpointId, uint256 _currentValue) internal view returns(uint256) {
         require(_checkpointId <= currentCheckpointId);
         //Checkpoint id 0 is when the token is first created - everyone has a zero balance
         if (_checkpointId == 0) {
@@ -672,7 +672,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @param _checkpointId Checkpoint ID to query as of
      */
     function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256) {
-        return getValueAt(checkpointBalances[_investor], _checkpointId, balanceOf(_investor));
+        return _getValueAt(checkpointBalances[_investor], _checkpointId, balanceOf(_investor));
     }
 
 }

@@ -15,7 +15,9 @@ contract GeneralTransferManagerFactory is IModuleFactory {
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
       IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-
+        name = "GeneralTransferManager";
+        title = "General Transfer Manager";
+        description = "Manage transfers using a time based whitelist";
     }
 
 
@@ -43,21 +45,21 @@ contract GeneralTransferManagerFactory is IModuleFactory {
      * @notice Get the name of the Module
      */
     function getName() public view returns(bytes32) {
-        return "GeneralTransferManager";
+        return name;
     }
 
     /**
      * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
-        return "Manage transfers using a time based whitelist";
+        return description;
     }
 
     /**
      * @notice Get the title of the Module
      */
     function getTitle() public view returns(string) {
-        return "General Transfer Manager";
+        return title;
     }
 
     /**

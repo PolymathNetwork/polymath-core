@@ -1143,7 +1143,7 @@ contract('CappedSTO', accounts => {
                             "CappedSTO",
                             "Wrong Module added");
                 assert.equal(await I_CappedSTOFactory.getDescription.call(),
-                            "Capped STO",
+                            "Use to collects the funds and once the cap is reached then investment will be no longer entertained",
                             "Wrong Module added");
                 assert.equal(await I_CappedSTOFactory.getTitle.call(),
                             "Capped STO",
@@ -1155,6 +1155,107 @@ contract('CappedSTO', accounts => {
                 assert.equal(web3.utils.hexToString(tags[0]),"Capped");
 
             });
+
+            it("Should fail to change the title -- bad owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_CappedSTOFactory.changeTitle("STO Capped", {from:account_investor1});
+                } catch(error) {
+                    console.log(`         tx revert -> bad owner`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should fail to change the title -- zero length", async() => {
+                let errorThrown = false;
+                try {
+                    await I_CappedSTOFactory.changeTitle("", {from: token_owner});
+                } catch(error) {
+                    console.log(`         tx revert -> bad owner`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully change the title", async() => {
+                await I_CappedSTOFactory.changeTitle("STO Capped", {from: token_owner});
+                assert.equal(await I_CappedSTOFactory.getTitle.call(),
+                            "STO Capped",
+                            "Title doesn't get changed");
+            });
+
+            it("Should fail to change the description -- bad owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_CappedSTOFactory.changeDescription("It is only a STO", {from:account_investor1});
+                } catch(error) {
+                    console.log(`         tx revert -> bad owner`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should fail to change the description -- zero length", async() => {
+                let errorThrown = false;
+                try {
+                    await I_CappedSTOFactory.changeDescription("", {from: token_owner});
+                } catch(error) {
+                    console.log(`         tx revert -> length of string should not be zero`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully change the description", async() => {
+                await I_CappedSTOFactory.changeDescription("It is only a STO", {from: token_owner});
+                assert.equal(await I_CappedSTOFactory.getDescription.call(),
+                            "It is only a STO",
+                            "Description doesn't get changed");
+            });
+
+            it("Should fail to change the name -- bad owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_CappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), {from:account_investor1});
+                } catch(error) {
+                    console.log(`         tx revert -> bad owner`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should fail to change the name -- zero length", async() => {
+                let errorThrown = false;
+                try {
+                    await I_CappedSTOFactory.changeName(web3.utils.stringToHex(""), {from: token_owner});
+                } catch(error) {
+                    console.log(`         tx revert -> length of string should not be zero`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully change the name", async() => {
+                await I_CappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), {from: token_owner});
+                assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()),
+                            "STOCapped",
+                            "Name doesn't get changed");
+            });
+
+            it("Should successfully change the name", async() => {
+                await I_CappedSTOFactory.changeName(web3.utils.stringToHex("CappedSTO"), {from: token_owner});
+                assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()),
+                            "CappedSTO",
+                            "Name doesn't get changed");
+            });
+
          });
 
          describe("Test cases for the get functions of the capped sto", async() => {

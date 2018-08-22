@@ -18,7 +18,9 @@ contract ManualApprovalTransferManagerFactory is IModuleFactory {
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
       IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-
+        name = "ManualApprovalTransferManager";
+        title = "Manual Approval Transfer Manager";
+        description = "Manage transfers using single approvals / blocking";
     }
 
      /**
@@ -44,21 +46,21 @@ contract ManualApprovalTransferManagerFactory is IModuleFactory {
      * @notice Get the name of the Module
      */
     function getName() public view returns(bytes32) {
-        return "ManualApprovalTransferManager";
+        return name;
     }
 
     /**
      * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
-        return "Manage transfers using single approvals / blocking";
+        return description;
     }
 
     /**
      * @notice Get the title of the Module
      */
     function getTitle() public view returns(string) {
-        return "Manual Approval Transfer Manager";
+        return title;
     }
 
     /**

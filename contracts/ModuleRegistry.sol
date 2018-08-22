@@ -2,7 +2,6 @@ pragma solidity ^0.4.24;
 
 import "./interfaces/IModuleRegistry.sol";
 import "./interfaces/IModuleFactory.sol";
-import "./interfaces/ISecurityToken.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
 import "./Pausable.sol";
 import "./RegistryUpdater.sol";
@@ -46,7 +45,7 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
         if (ISecurityTokenRegistry(securityTokenRegistry).isSecurityToken(msg.sender)) {
             require(registry[_moduleFactory] != 0, "ModuleFactory type should not be 0");
             //To use a module, either it must be verified, or owned by the ST owner
-            require(verified[_moduleFactory]||(IModuleFactory(_moduleFactory).owner() == ISecurityToken(msg.sender).owner()),
+            require(verified[_moduleFactory]||(Ownable(_moduleFactory).owner() == Ownable(msg.sender).owner()),
               "Module factory is not verified as well as not called by the owner");
             reputation[_moduleFactory].push(msg.sender);
             emit LogModuleUsed (_moduleFactory, msg.sender);
@@ -65,7 +64,7 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
         registry[_moduleFactory] = moduleFactory.getType();
         moduleList[moduleFactory.getType()].push(_moduleFactory);
         reputation[_moduleFactory] = new address[](0);
-        emit LogModuleRegistered (_moduleFactory, moduleFactory.owner());
+        emit LogModuleRegistered (_moduleFactory, Ownable(_moduleFactory).owner());
         return true;
     }
 

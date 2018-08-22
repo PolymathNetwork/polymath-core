@@ -16,9 +16,9 @@ import "./ReclaimTokens.sol";
 contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, ReclaimTokens {
 
     using SafeMath for uint256;
+
     // constant variable to check the validity to use the symbol
-    // For now it's value is 15 days;
-    uint256 public expiryLimit = 15 * 1 days;
+    uint256 public expiryLimit;
 
     // Details of the symbol that get registered with the polymath platform
     struct SymbolDetails {
@@ -45,6 +45,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
     constructor (address _polymathRegistry, uint256 _registrationFee) public
     RegistryUpdater(_polymathRegistry)
     {
+        expiryLimit = 15 * 1 days;
         registrationFee = _registrationFee;
     }
 
@@ -86,7 +87,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _tokenName Name of the token
      * @return bool
      */
-    function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool) {
+    function checkValidity(string _symbol, address _owner, string _tokenName) external returns(bool) {
         string memory symbol = upper(_symbol);
         require(msg.sender == securityTokenRegistry, "msg.sender should be SecurityTokenRegistry contract");
         require(registeredSymbols[symbol].status != true, "Symbol status should not equal to true");
@@ -105,7 +106,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _swarmHash off-chain hash
      * @return bool
      */
-     function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) public returns(bool) {
+     function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) external returns(bool) {
         string memory symbol = upper(_symbol);
         require(msg.sender == securityTokenRegistry, "msg.sender should be SecurityTokenRegistry contract");
         if (registeredSymbols[symbol].owner == _owner && !expiryCheck(_symbol)) {
@@ -129,7 +130,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @return bytes32
      * @return bool
      */
-    function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool) {
+    function getDetails(string _symbol) external view returns (address, uint256, string, bytes32, bool) {
         string memory symbol = upper(_symbol);
         if (registeredSymbols[symbol].status == true||registeredSymbols[symbol].timestamp.add(expiryLimit) > now) {
             return

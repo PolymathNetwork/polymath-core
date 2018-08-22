@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./IPermissionManager.sol";
+import "../Module.sol";
 
 /////////////////////
 // Module permissions
@@ -13,7 +14,7 @@ import "./IPermissionManager.sol";
 /**
  * @title Permission Manager module for core permissioning functionality
  */
-contract GeneralPermissionManager is IPermissionManager {
+contract GeneralPermissionManager is IPermissionManager, Module {
 
     // Mapping used to hold the permissions on the modules provided to delegate
     mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;
@@ -29,7 +30,7 @@ contract GeneralPermissionManager is IPermissionManager {
 
     /// @notice constructor
     constructor (address _securityToken, address _polyAddress) public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 

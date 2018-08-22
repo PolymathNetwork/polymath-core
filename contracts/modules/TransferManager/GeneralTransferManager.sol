@@ -81,7 +81,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     constructor (address _securityToken, address _polyAddress)
     public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
@@ -267,7 +267,7 @@ contract GeneralTransferManager is ITransferManager {
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
         address signer = ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash)), _v, _r, _s);
-        require(signer == ISecurityToken(securityToken).owner() || signer == signingAddress, "Incorrect signer");
+        require(signer == Ownable(securityToken).owner() || signer == signingAddress, "Incorrect signer");
     }
 
     /**

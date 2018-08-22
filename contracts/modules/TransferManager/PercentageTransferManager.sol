@@ -40,7 +40,7 @@ contract PercentageTransferManager is ITransferManager {
      */
     constructor (address _securityToken, address _polyAddress)
     public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 

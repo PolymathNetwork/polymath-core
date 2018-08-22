@@ -1,14 +1,14 @@
 pragma solidity ^0.4.24;
 
 import "../../Pausable.sol";
-import "../../interfaces/IModule.sol";
+import "../Module.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Interface to be implemented by all STO modules
  */
-contract ISTO is IModule, Pausable {
+contract ISTO is Module, Pausable {
     using SafeMath for uint256;
 
     enum FundRaiseType { ETH, POLY }

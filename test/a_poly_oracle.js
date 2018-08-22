@@ -98,7 +98,7 @@ let requestIds = new Array();
             let tx = await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: owner, value:web3.utils.toWei("1.5")});
 
             let event_data = tx.logs;
-            
+
             for (var i = 0; i < event_data.length; i++) {
                 let time = event_data[i].args._time;
                 console.log(`       checking the time for the ${i} index and the scheduling time is ${time}`);
@@ -116,7 +116,7 @@ let requestIds = new Array();
         it("Should schedule to call using iters - fails", async() => {
             let errorThrown = false;
             try {
-                await I_PolyOracle.schedulePriceUpdatesRolling(latestTime(), 30, 2, {from: accounts[6]});
+                await I_PolyOracle.schedulePriceUpdatesRolling(latestTime() + 10, 30, 2, {from: accounts[6]});
             } catch(error) {
                 errorThrown = true;
                 console.log(`       tx->revert msg.sender is not the owner`.grey);
@@ -127,7 +127,7 @@ let requestIds = new Array();
         it("Should schedule to call using iters", async() => {
             let blockNo = latestBlock();
             console.log(`Latest Block number of the local chain:${blockNo}`);
-            let tx = await I_PolyOracle.schedulePriceUpdatesRolling(latestTime(), 10, 2, {from: owner});
+            let tx = await I_PolyOracle.schedulePriceUpdatesRolling(latestTime() + 10, 10, 2, {from: owner});
             let event_data = tx.logs;
             for (var i = 0; i < event_data.length; i++) {
                 let time = event_data[i].args._time;
@@ -345,4 +345,3 @@ let requestIds = new Array();
     })
 
 })
-

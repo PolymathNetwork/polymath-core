@@ -21,6 +21,8 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
+const TOLERANCE = 2; // Allow balances to be off by 2 WEI for rounding purposes
+
 contract('USDTieredSTO', accounts => {
     // Accounts Variable declaration
     let POLYMATH;
@@ -648,33 +650,38 @@ contract('USDTieredSTO', accounts => {
                 // console.log('final_TokenSupply: '+final_TokenSupply.div(10**18).toNumber());
 
                 if (isPoly) {
-                    assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
-                    assert.equal(final_InvestorTokenBal.toNumber(), init_InvestorTokenBal.add(investment_Token).toNumber(), "Investor Token Balance not changed as expected");
-                    assert.equal(final_InvestorETHBal.toNumber(), init_InvestorETHBal.sub(gasCost).toNumber(), "Investor ETH Balance not changed as expected");
-                    assert.equal(final_InvestorPOLYBal.toNumber(), init_InvestorPOLYBal.sub(investment_POLY).toNumber(), "Investor POLY Balance not changed as expected");
-                    assert.equal(final_STOTokenSold.toNumber(), init_STOTokenSold.add(investment_Token).toNumber(), "STO Token Sold not changed as expected");
-                    assert.equal(final_STOETHBal.toNumber(), init_STOETHBal.toNumber(), "STO ETH Balance not changed as expected");
-                    assert.equal(final_STOPOLYBal.toNumber(), init_STOPOLYBal.toNumber(), "STO POLY Balance not changed as expected");
-                    assert.equal(final_RaisedUSD.toNumber(), init_RaisedUSD.add(investment_USD).toNumber(), "Raised USD not changed as expected");
-                    assert.equal(final_RaisedETH.toNumber(), init_RaisedETH.toNumber(), "Raised ETH not changed as expected");
-                    assert.equal(final_RaisedPOLY.toNumber(), init_RaisedPOLY.add(investment_POLY).toNumber(), "Raised POLY not changed as expected");
-                    assert.equal(final_WalletETHBal.toNumber(), init_WalletETHBal.toNumber(), "Wallet ETH Balance not changed as expected");
-                    assert.equal(final_WalletPOLYBal.toNumber(), init_WalletPOLYBal.add(investment_POLY).toNumber(), "Wallet POLY Balance not changed as expected");
+                    assert.closeTo(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), TOLERANCE, "Token Supply not changed as expected");
+                    assert.closeTo(final_InvestorTokenBal.toNumber(), init_InvestorTokenBal.add(investment_Token).toNumber(), TOLERANCE, "Investor Token Balance not changed as expected");
+                    assert.closeTo(final_InvestorETHBal.toNumber(), init_InvestorETHBal.sub(gasCost).toNumber(), TOLERANCE, "Investor ETH Balance not changed as expected");
+                    assert.closeTo(final_InvestorPOLYBal.toNumber(), init_InvestorPOLYBal.sub(investment_POLY).toNumber(), TOLERANCE, "Investor POLY Balance not changed as expected");
+                    assert.closeTo(final_STOTokenSold.toNumber(), init_STOTokenSold.add(investment_Token).toNumber(), TOLERANCE, "STO Token Sold not changed as expected");
+                    assert.closeTo(final_STOETHBal.toNumber(), init_STOETHBal.toNumber(), TOLERANCE, "STO ETH Balance not changed as expected");
+                    assert.closeTo(final_STOPOLYBal.toNumber(), init_STOPOLYBal.toNumber(), TOLERANCE, "STO POLY Balance not changed as expected");
+                    assert.closeTo(final_RaisedUSD.toNumber(), init_RaisedUSD.add(investment_USD).toNumber(), TOLERANCE, "Raised USD not changed as expected");
+                    assert.closeTo(final_RaisedETH.toNumber(), init_RaisedETH.toNumber(), TOLERANCE, "Raised ETH not changed as expected");
+                    assert.closeTo(final_RaisedPOLY.toNumber(), init_RaisedPOLY.add(investment_POLY).toNumber(), TOLERANCE, "Raised POLY not changed as expected");
+                    assert.closeTo(final_WalletETHBal.toNumber(), init_WalletETHBal.toNumber(), TOLERANCE, "Wallet ETH Balance not changed as expected");
+                    assert.closeTo(final_WalletPOLYBal.toNumber(), init_WalletPOLYBal.add(investment_POLY).toNumber(), TOLERANCE, "Wallet POLY Balance not changed as expected");
                 } else {
-                    assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
-                    assert.equal(final_InvestorTokenBal.toNumber(), init_InvestorTokenBal.add(investment_Token).toNumber(), "Investor Token Balance not changed as expected");
-                    assert.equal(final_InvestorETHBal.toNumber(), init_InvestorETHBal.sub(gasCost).sub(investment_ETH).toNumber(), "Investor ETH Balance not changed as expected");
-                    assert.equal(final_InvestorPOLYBal.toNumber(), init_InvestorPOLYBal.toNumber(), "Investor POLY Balance not changed as expected");
-                    assert.equal(final_STOTokenSold.toNumber(), init_STOTokenSold.add(investment_Token).toNumber(), "STO Token Sold not changed as expected");
-                    assert.equal(final_STOETHBal.toNumber(), init_STOETHBal.toNumber(), "STO ETH Balance not changed as expected");
-                    assert.equal(final_STOPOLYBal.toNumber(), init_STOPOLYBal.toNumber(), "STO POLY Balance not changed as expected");
-                    assert.equal(final_RaisedUSD.toNumber(), init_RaisedUSD.add(investment_USD).toNumber(), "Raised USD not changed as expected");
-                    assert.equal(final_RaisedETH.toNumber(), init_RaisedETH.add(investment_ETH).toNumber(), "Raised ETH not changed as expected");
-                    assert.equal(final_RaisedPOLY.toNumber(), init_RaisedPOLY.toNumber(), "Raised POLY not changed as expected");
-                    assert.equal(final_WalletETHBal.toNumber(), init_WalletETHBal.add(investment_ETH).toNumber(), "Wallet ETH Balance not changed as expected");
-                    assert.equal(final_WalletPOLYBal.toNumber(), init_WalletPOLYBal.toNumber(), "Wallet POLY Balance not changed as expected");
+                    assert.closeTo(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), TOLERANCE, "Token Supply not changed as expected");
+                    assert.closeTo(final_InvestorTokenBal.toNumber(), init_InvestorTokenBal.add(investment_Token).toNumber(), TOLERANCE, "Investor Token Balance not changed as expected");
+                    assert.closeTo(final_InvestorETHBal.toNumber(), init_InvestorETHBal.sub(gasCost).sub(investment_ETH).toNumber(), TOLERANCE, "Investor ETH Balance not changed as expected");
+                    assert.closeTo(final_InvestorPOLYBal.toNumber(), init_InvestorPOLYBal.toNumber(), TOLERANCE, "Investor POLY Balance not changed as expected");
+                    assert.closeTo(final_STOTokenSold.toNumber(), init_STOTokenSold.add(investment_Token).toNumber(), TOLERANCE, "STO Token Sold not changed as expected");
+                    assert.closeTo(final_STOETHBal.toNumber(), init_STOETHBal.toNumber(), TOLERANCE, "STO ETH Balance not changed as expected");
+                    assert.closeTo(final_STOPOLYBal.toNumber(), init_STOPOLYBal.toNumber(), TOLERANCE, "STO POLY Balance not changed as expected");
+                    assert.closeTo(final_RaisedUSD.toNumber(), init_RaisedUSD.add(investment_USD).toNumber(), TOLERANCE, "Raised USD not changed as expected");
+                    assert.closeTo(final_RaisedETH.toNumber(), init_RaisedETH.add(investment_ETH).toNumber(), TOLERANCE, "Raised ETH not changed as expected");
+                    assert.closeTo(final_RaisedPOLY.toNumber(), init_RaisedPOLY.toNumber(), TOLERANCE, "Raised POLY not changed as expected");
+                    assert.closeTo(final_WalletETHBal.toNumber(), init_WalletETHBal.add(investment_ETH).toNumber(), TOLERANCE, "Wallet ETH Balance not changed as expected");
+                    assert.closeTo(final_WalletPOLYBal.toNumber(), init_WalletPOLYBal.toNumber(), TOLERANCE, "Wallet POLY Balance not changed as expected");
                 }
             }
         });
     });
 });
+
+function near(x, y, message) {
+    assert.isAtMost(x, y)
+
+}

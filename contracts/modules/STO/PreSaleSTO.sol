@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./ISTO.sol";
-import "../../interfaces/IST20.sol";
+import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
@@ -29,7 +29,7 @@ contract PreSaleSTO is ISTO {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _securityToken, address _polyAddress) public
-      IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
@@ -97,7 +97,7 @@ contract PreSaleSTO is ISTO {
     {
         require(now <= endTime, "Current time should less than the endTime");
         require(_amount > 0, "No. of tokens provided should be greater the zero");
-        IST20(securityToken).mint(_investor, _amount);
+        ISecurityToken(securityToken).mint(_investor, _amount);
         investors[_investor] = investors[_investor].add(_amount);
         investorCount = investorCount.add(1);
         etherRaised = etherRaised.add(_etherContributed);

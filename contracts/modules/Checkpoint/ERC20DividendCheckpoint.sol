@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./ICheckpoint.sol";
+import "../Module.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
@@ -19,7 +20,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 /**
  * @title Checkpoint module for issuing ERC20 dividends
  */
-contract ERC20DividendCheckpoint is ICheckpoint {
+contract ERC20DividendCheckpoint is ICheckpoint, Module {
     using SafeMath for uint256;
 
     bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
@@ -58,7 +59,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _securityToken, address _polyAddress) public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 

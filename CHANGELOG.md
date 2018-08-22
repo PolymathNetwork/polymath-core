@@ -1,6 +1,19 @@
 # Changelog
 All notable changes to this project will be documented in this file. 
 
+# v1.5.0 - Unreleased
+
+[__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
+
+## Added
+* Add `getReputationOfFactory()` & `getModuleListOfType()` functions to get the array type data from the ModuleRegistry contract.   
+* Add `_setupCost` in `LogGenerateModuleFromFactory` event.        
+
+## Fixed
+* Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.   
+
+=======
+
 # v1.4.0 - Unreleased
 
 [__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
@@ -13,14 +26,11 @@ All notable changes to this project will be documented in this file.
 * Added CLI for USDTieredSTO
 * Scripts for monitoring Oracles' status
 * Scripts for monitoring Polymath stats (Tokens registered, tokens deployed, STOs launched).   
-* Add `getReputationOfFactory()` & `getModuleListOfType()` functions to get the array type data from the ModuleRegistry contract.   
-* Add `_setupCost` in `LogGenerateModuleFromFactory` event.     
 
 ## Fixed
 
 * Modified function name in TickerRegistry and SecurityTokenRegistry from `changePolyRegisterationFee` to `changePolyRegistrationFee`. Event name is modified too from `LogChangePolyRegisterationFee` to `LogChangePolyRegistrationFee`
 * Minor CLI fixes
-* Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
 
 =======
 # v1.3.0  

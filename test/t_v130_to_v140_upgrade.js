@@ -36,11 +36,11 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     // Initial fee for ticker registry and security token registry
     const REGFEE = 250 * Math.pow(10, 18);;
     const STOSetupCost = 0;
-    
+
     // Module key
     const STOKEY = 3;
 
-    // SecurityToken 1 Details 
+    // SecurityToken 1 Details
     const symbol1 = "TOK1";
     const name1 = "TOK1 Token";
     const tokenDetails1 = "This is equity type of issuance";
@@ -82,7 +82,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     let I_CappedSTOFactory;
     let I_UpgradedCappedSTOFactory;
     let I_CappedSTO;
-    
+
     // Prepare polymath network status
     before(async() => {
         // Accounts setup
@@ -193,7 +193,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             "0x0000000000000000000000000000000000000000",
             "SecurityTokenRegistry contract was not deployed",
         );
-        tx = await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: POLYMATH}); 
+        tx = await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: POLYMATH});
         assert.equal(tx.logs[0].args._nameKey, "SecurityTokenRegistry");
         assert.equal(tx.logs[0].args._newAddress, I_SecurityTokenRegistry.address);
 
@@ -276,7 +276,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
                 "SecurityTokenRegistry contract was not deployed",
             );
         });
-        
+
         // 3 - Pause new STR
         it("Should successfully pause the upgraded contract", async() => {
             await I_UpgradedSecurityTokenRegistry.pause({ from: POLYMATH });
@@ -287,10 +287,10 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         // 4 - Update PolymathRegistry
         // 4a - ChangeAddress
         it("Should successfully change SecurityTokenRegistry address on PolymathRegistry", async() => {
-            tx = await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_UpgradedSecurityTokenRegistry.address, {from: POLYMATH}); 
+            tx = await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_UpgradedSecurityTokenRegistry.address, {from: POLYMATH});
             assert.equal(tx.logs[0].args._nameKey, "SecurityTokenRegistry");
             assert.equal(tx.logs[0].args._newAddress, I_UpgradedSecurityTokenRegistry.address);
-        });   
+        });
         // 4b - UpdateFromRegistry
         it("Should successfully change SecurityTokenRegistry address on PolymathRegistry", async() => {
             let strAddress;
@@ -303,14 +303,14 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             await I_TickerRegistry.updateFromRegistry({from: POLYMATH});
             strAddress = await I_TickerRegistry.securityTokenRegistry.call({from: POLYMATH});
             assert.equal(strAddress, I_UpgradedSecurityTokenRegistry.address, "SecurityTokenRegistry address was not updated");
-        });   
+        });
 
         // 5 Migrate data from old STR to new STR
         // 5a - Get tokens from old STR
         it("Should successfully get all tokens launched with old SecurityTokenRegistry", async() => {
             let LogNewSecurityToken = await I_SecurityTokenRegistry.LogNewSecurityToken({}, { fromBlock: 0, toBlock: 'latest'});
             let events = await new Promise(function(resolve, reject) {
-                LogNewSecurityToken.get(function(error, logs) { 
+                LogNewSecurityToken.get(function(error, logs) {
                     if (error)
                         reject(error);
                     else
@@ -329,13 +329,13 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         });
         // 5b - Migrate data to new STR
         it("Should successfully add custom Security Token for first token", async() => {
-            let tx = await I_UpgradedSecurityTokenRegistry.addCustomSecurityToken( 
+            let tx = await I_UpgradedSecurityTokenRegistry.addCustomSecurityToken(
                 name1,
-                symbol1, 
-                ISSUER1, 
+                symbol1,
+                ISSUER1,
                 I_SecurityToken1.address,
                 tokenDetails1,
-                swarmHash1, 
+                swarmHash1,
                 {from: POLYMATH}
             );
             assert.equal(tx.logs[0].args._name, name1, "First token name does not match");
@@ -343,13 +343,13 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             assert.equal(tx.logs[0].args._securityToken, I_SecurityToken1.address, "First token address does not match");
         });
         it("Should successfully add custom Security Token for second token", async() => {
-            let tx = await I_UpgradedSecurityTokenRegistry.addCustomSecurityToken( 
+            let tx = await I_UpgradedSecurityTokenRegistry.addCustomSecurityToken(
                 name2,
-                symbol2, 
-                ISSUER2, 
+                symbol2,
+                ISSUER2,
                 I_SecurityToken2.address,
                 tokenDetails2,
-                web3.utils.asciiToHex(swarmHash2), 
+                web3.utils.asciiToHex(swarmHash2),
                 {from: POLYMATH}
             );
             assert.equal(tx.logs[0].args._name, name2, "Second token name does not match");
@@ -375,30 +375,28 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     describe("USDTieredSTOFactory deploy", async() => {
         // Step 1: Deploy Oracles
         // 1a - Deploy POLY Oracle
-        it("Should successfully deploy POLY Oracle and register on SecurityTokenRegistry", async() => {
+        it("Should successfully deploy POLY Oracle and register on PolymathRegistry", async() => {
             I_POLYOracle = await PolyOracle.new({ from: POLYMATH, value: (1 * (10**18)) });
             assert.notEqual(
                 I_POLYOracle.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
                 "POLYOracle contract was not deployed",
             );
-            tx = await I_UpgradedSecurityTokenRegistry.changeOracle("POLY", "USD", I_POLYOracle.address, { from: POLYMATH });
-            assert.equal(web3.utils.hexToAscii(tx.logs[0].args._currency).replace(/\u0000/g, ''), "POLY");
-            assert.equal(web3.utils.hexToAscii(tx.logs[0].args._denominatedCurrency).replace(/\u0000/g, ''), "USD");
-            assert.equal(tx.logs[0].args._newOracle, I_POLYOracle.address);
+            tx = await I_PolymathRegistry.changeAddress("PolyUsdOracle", I_POLYOracle.address, { from: POLYMATH });
+            assert.equal(tx.logs[0].args._nameKey, "PolyUsdOracle");
+            assert.equal(tx.logs[0].args._newAddress, I_POLYOracle.address);
         });
         // 1b - Deploy ETH Oracle
         it("Should successfully deploy ETH Oracle and register on SecurityTokenRegistry", async() => {
-            I_USDOracle = await ETHOracle.new({ from: POLYMATH }); 
+            I_USDOracle = await ETHOracle.new({ from: POLYMATH });
             assert.notEqual(
                 I_USDOracle.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
                 "USDOracle contract was not deployed",
             );
-            tx = await I_UpgradedSecurityTokenRegistry.changeOracle("ETH", "USD", I_USDOracle.address, { from: POLYMATH });
-            assert.equal(web3.utils.hexToAscii(tx.logs[0].args._currency).replace(/\u0000/g, ''), "ETH");
-            assert.equal(web3.utils.hexToAscii(tx.logs[0].args._denominatedCurrency).replace(/\u0000/g, ''), "USD");
-            assert.equal(tx.logs[0].args._newOracle, I_USDOracle.address);
+            tx = await I_PolymathRegistry.changeAddress("EthUsdOracle", I_USDOracle.address, { from: POLYMATH });
+            assert.equal(tx.logs[0].args._nameKey, "EthUsdOracle");
+            assert.equal(tx.logs[0].args._newAddress, I_USDOracle.address);
         });
 
         // Step 2: Deploy USDTieredSTOFactory\
@@ -548,7 +546,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             };
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            
+
             let tx = await I_SecurityToken1.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER1 });
             assert.equal(tx.logs[2].args._type, STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name),"USDTieredSTO","USDTieredSTOFactory module was not added");
@@ -571,7 +569,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             let rate = 1000;
             let fundRaiseType = 0;
             let fundsReceiver = ISSUER3;
-            
+
             const functionSignature = {
                 name: 'configure',
                 type: 'function',
@@ -595,7 +593,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
                     name: '_fundsReceiver'
                 }
                 ]
-            };  
+            };
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, fundsReceiver]);
 
             let tx = await I_SecurityToken3.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER3 });

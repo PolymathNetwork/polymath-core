@@ -17,9 +17,9 @@ let BigNumber = require('bignumber.js');
 const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18));   // 20K POLY fee
 const usdTieredSTOSetupCost = new BigNumber(100000).times(new BigNumber(10).pow(18));   // 100K POLY fee
 const initRegFee = new BigNumber(250).times(new BigNumber(10).pow(18));      // 250 POLY fee for registering ticker or security token in registry
-let PolyToken
-let ETHOracle
-let PolyOracle
+let PolyToken;
+let ETHOracle;
+let PolyOracle;
 
 const Web3 = require('web3')
 
@@ -213,11 +213,9 @@ module.exports = function (deployer, network, accounts) {
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
       return moduleRegistry.verifyModule(USDTieredSTOFactory.address, true, {from: PolymathAccount})
     }).then(() => {
-      return SecurityTokenRegistry.deployed().then((securityTokenRegistry) => {
-        return securityTokenRegistry.changeOracle("ETH", "USD", ETHOracle, { from: PolymathAccount }).then(() => {
-          return securityTokenRegistry.changeOracle("POLY", "USD", PolyOracle, { from: PolymathAccount });
-        });
-      });
+      return polymathRegistry.changeAddress("PolyUsdOracle", PolyOracle, {from: PolymathAccount});
+    }).then(() => {
+      return polymathRegistry.changeAddress("EthUsdOracle", ETHOracle, {from: PolymathAccount});
     }).then(() => {
       console.log('\n')
       console.log('----- Polymath Core Contracts -----')

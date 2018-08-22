@@ -8,7 +8,7 @@ import '../interfaces/IOracle.sol';
 contract PolyOracle is usingOraclize, IOracle, Ownable {
     using SafeMath for uint256;
 
-    string public oracleURL = '[URL] json(https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?id=2496&convert=USD&CMC_PRO_API_KEY=${[decrypt] BB/AHDZtyolguqUlfv0EQQOHGA/T1oQgz/yIIhdkHhE8f3Pp/AZElpijlZWfCPG5fMlg2Ss8PrUIS4eal4okS/QvDoBOxuzMdEnqRLBfXDJiggRCjaO1F6YJBiAZZhZlfmOkhH1NDG+YKoB6ZBuOAvAcnHlu}).data."2496".quote.USD.price';
+    string public oracleURL = '[URL] json(https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?id=2496&convert=USD&CMC_PRO_API_KEY=${[decrypt] BCA0Bqxmn3jkSENepaHxQv09Z/vGdEO9apO+B9RplHyV3qOL/dw5Indlei3hoXrGk9G14My8MFpHJycB7UoVnl+4mlzEsjTlS2UBAYVrl0fAepfiSyM30/GMZAoJmDagY+0YyNZvpkgXn86Q/59Bi48PWEet}).data."2496".quote.USD.price';
     string public oracleQueryType = "nested";
     uint256 public sanityBounds = 20*10**16;
     uint256 public gasLimit = 100000;

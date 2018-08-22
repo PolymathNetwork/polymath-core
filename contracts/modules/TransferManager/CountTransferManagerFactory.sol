@@ -26,7 +26,7 @@ contract CountTransferManagerFactory is IModuleFactory {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         CountTransferManager countTransferManager = new CountTransferManager(msg.sender, address(polyToken));
-        require(getSig(_data) == countTransferManager.getInitFunction(), "Provided data is not valid");
+        require(_getSig(_data) == countTransferManager.getInitFunction(), "Provided data is not valid");
         require(address(countTransferManager).call(_data), "Un-successfull call");
         emit LogGenerateModuleFromFactory(address(countTransferManager), getName(), address(this), msg.sender, now);
         return address(countTransferManager);

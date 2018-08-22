@@ -244,19 +244,26 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @return bytes32
      * @return address
      */
-    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address) {
+    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32[], address[]) {
         if (modules[_moduleType].length > 0) {
+            uint counter = 0;
             for (uint256 i = 0; i < modules[_moduleType].length; i++) {
+                if (modules[_moduleType][i].name == _name)
+                    counter++;
+            }
+            address[] memory tempAddressArray = new address[](counter);
+            bytes32[] memory tempBytes32Array = new bytes32[](counter);
+            counter = 0;
+            for (i = 0; i < modules[_moduleType].length; i++) {
                 if (modules[_moduleType][i].name == _name) {
-                  return (
-                      modules[_moduleType][i].name,
-                      modules[_moduleType][i].moduleAddress
-                  );
+                    tempAddressArray[counter] = modules[_moduleType][i].moduleAddress;
+                    tempBytes32Array[counter] = modules[_moduleType][i].name;
+                    counter++;
                 }
             }
-            return ("", address(0));
+            return (tempBytes32Array, tempAddressArray);
         } else {
-            return ("", address(0));
+            return (new bytes32[](0), new address[](0));
         }
     }
 

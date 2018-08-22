@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file. 
 
+# v1.5.0 - Unreleased
+
+[__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
+
+## Chnaged
+* Change the logic of `getModuleByName()`. Now it returns the `bytes32` and `address` array instead of the singleton values.   
+
+=========
+
 # v1.4.0 - Unreleased
 
 [__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__

@@ -9,7 +9,7 @@ about: Create an issue report to help build the next generation of securities.
 1. Create a new/separate github issue on the polymath-core repository. 
 
 **Describe the bug/issue**
-A clear and concise description of what the bug/issue is.
+A clear and concise description of what the bug/issue is. Please indicate details related to what Polymath version release, network, tx hash if applicable, etc..
 
 2. Your submission must include the following details:
 - Description of the location and potential impact of the vulnerability

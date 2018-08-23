@@ -41,4 +41,4 @@ The full URL to set in `oracleURL` in the PolyOracle contract is then:
 where `{encrypted_key}` is the output from the above step.
 
 e.g. for the above key, this would be:  
-`string public oracleURL = '[URL] json(https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?id=2496&convert=USD&CMC_PRO_API_KEY=${[decrypt] BDUKwVRCqHlmgo4dCWoghzrhwQ8XhKuxDEY8vedTqAcLEpJ7yyTYSkiIttqp6SJaMMk7j0toxjD/Y22AmdcJeeLulPTAk4lTWmIuobjtDUFUZmu9yQC7toiIMfMf0Tzy7ujfAw8m96RJJEs5IpYUt3owgfsh).data."2496".quote.USD.price';`
+`string public oracleURL = '[URL] json(https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?id=2496&convert=USD&CMC_PRO_API_KEY=${[decrypt] BDUKwVRCqHlmgo4dCWoghzrhwQ8XhKuxDEY8vedTqAcLEpJ7yyTYSkiIttqp6SJaMMk7j0toxjD/Y22AmdcJeeLulPTAk4lTWmIuobjtDUFUZmu9yQC7toiIMfMf0Tzy7ujfAw8m96RJJEs5IpYUt3owgfsh}).data."2496".quote.USD.price';`

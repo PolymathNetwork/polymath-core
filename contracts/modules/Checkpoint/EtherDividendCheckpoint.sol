@@ -6,16 +6,6 @@ import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                                        Owner       DISTRIBUTE
-// pushDividendPaymentToAddresses           X               X
-// pushDividendPayment                      X               X
-// createDividend                           X
-// createDividendWithCheckpoint             X
-// reclaimDividend                          X
-
 /**
  * @title Checkpoint module for issuing ether dividends
  */

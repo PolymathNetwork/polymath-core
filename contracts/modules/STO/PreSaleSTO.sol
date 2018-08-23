@@ -34,8 +34,8 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
-     * @notice Function used to intialize the differnet variables
-     * @param _endTime Unix timestamp at which offering get ended
+     * @notice Function used to initialize the different variables
+     * @param _endTime Unix timestamp at which offering ends
      */
     function configure(uint256 _endTime) public onlyFactory {
         require(_endTime != 0, "endTime should not be 0");
@@ -43,7 +43,7 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
-     * @notice This function returns the signature of configure function
+     * @notice This function returns the signature of the configure function
      */
     function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256)"));
@@ -89,9 +89,9 @@ contract PreSaleSTO is ISTO {
     /**
      * @notice Function used to allocate tokens to the investor
      * @param _investor Address of the investor
-     * @param _amount No. of tokens need to transfered to the investor
-     * @param _etherContributed How much amount of ETH get contributed
-     * @param _polyContributed How much amount of POLY get contributed
+     * @param _amount No. of tokens to be transferred to the investor
+     * @param _etherContributed How much ETH was contributed
+     * @param _polyContributed How much POLY was contributed
      */
     function allocateTokens(address _investor, uint256 _amount, uint256 _etherContributed, uint256 _polyContributed) public withPerm(PRE_SALE_ADMIN)
     {
@@ -107,9 +107,9 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
-     * @notice Function used to allocate tokens to the multiple investor
+     * @notice Function used to allocate tokens to multiple investors
      * @param _investors Array of address of the investors
-     * @param _amounts Array of no. of tokens need to transfered to the investors
+     * @param _amounts Array of no. of tokens to be transferred to the investors
      * @param _etherContributed Array of amount of ETH contributed by each investor
      * @param _polyContributed Array of amount of POLY contributed by each investor
      */

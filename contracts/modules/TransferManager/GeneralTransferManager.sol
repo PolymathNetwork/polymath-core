@@ -3,17 +3,6 @@ pragma solidity ^0.4.24;
 import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                                        Owner       WHITELIST      FLAGS
-// changeIssuanceAddress                    X                          X
-// changeAllowAllTransfers                  X                          X
-// changeAllowAllWhitelistTransfers         X                          X
-// changeAllowAllWhitelistIssuances         X                          X
-// modifyWhitelist                          X             X
-// modifyWhitelistMulti                     X             X
-
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */

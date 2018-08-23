@@ -3,14 +3,6 @@ pragma solidity ^0.4.24;
 import "./IPermissionManager.sol";
 import "../Module.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                          Owner       CHANGE_PERMISSION
-// addPermission              X               X
-// changePermission           X               X
-//
-
 /**
  * @title Permission Manager module for core permissioning functionality
  */

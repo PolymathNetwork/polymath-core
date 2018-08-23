@@ -2,13 +2,6 @@ pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                           Owner       ADMIN
-// changeHolderCount           X           X
-
-
 /**
  * @title Transfer Manager for limiting maximum number of token holders
  */

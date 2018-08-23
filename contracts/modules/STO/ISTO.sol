@@ -22,8 +22,8 @@ contract ISTO is Module, Pausable {
     uint256 public pausedTime;
 
     /**
-     * @notice use to verify the investment, whether the investor provide the allowance to the STO or not.
-     * @param _beneficiary Ethereum address of the beneficiary, who wants to buy the st-20
+     * @notice used to verify the investment, whether the investor provided an allowance to the STO or not.
+     * @param _beneficiary Ethereum address of the beneficiary, who intends to buy the st-20 tokens
      * @param _fundsAmount Amount invested by the beneficiary
      */
     function verifyInvestment(address _beneficiary, uint256 _fundsAmount) public view returns(bool) {

@@ -1,6 +1,24 @@
-var chalk = require('chalk');
+const chalk = require('chalk');
+const Tx = require('ethereumjs-tx');
+const Web3 = require('web3');
 
 module.exports = {
+  initialize: async function (remoteNetwork) {
+    if (typeof web3 === 'undefined' || typeof Issuer === 'undefined') {
+      if (typeof remoteNetwork !== 'undefined') {
+        web3 = new Web3(new Web3.providers.HttpProvider(`https://${remoteNetwork}.infura.io/`));
+        privKey = require('fs').readFileSync('./privKey').toString();
+        Issuer = await web3.eth.accounts.privateKeyToAccount("0x" + privKey);
+      } else {
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+        let accounts = await web3.eth.getAccounts();
+        Issuer = {
+          address: accounts[0],
+          privateKey: require('fs').readFileSync('./privKeyLocal').toString()
+        };
+      }
+    }
+  },
   getGasPrice: function (networkId) {
     let gasPrice;
     switch (networkId) {
@@ -71,5 +89,37 @@ module.exports = {
 @@@@@@@@@@@@@%##%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @@@@@@@@@@#%####%@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 `);
+  },
+  sendTransaction: async function (from, action, gasPrice, value) {
+    let gas = await this.estimateGas(action, from.address, 1.25, value);
+    let nonce = await web3.eth.getTransactionCount(from.address);
+    let abi = action.encodeABI();
+    let parameter = {
+      from: 0,
+      to: action._parent._address,
+      data: abi,
+      gasLimit: gas,
+      gasPrice: gasPrice,
+      nonce: nonce,
+      value: value
+    };
+    
+    const transaction = new Tx(parameter);
+    transaction.sign(Buffer.from(from.privateKey.replace('0x', ''), 'hex'));
+    return await web3.eth.sendSignedTransaction('0x' + transaction.serialize().toString('hex'))
+    .on('transactionHash', function(hash){
+      console.log(`
+  Your transaction is being processed. Please wait...
+  TxHash: ${hash}`
+      );
+    })
+    .on('receipt', function(receipt){
+      console.log(`
+  Congratulations! The transaction was successfully completed.
+  Gas used: ${receipt.gasUsed} - Gas spent: ${web3.utils.fromWei((new web3.utils.BN(gasPrice)).mul(new web3.utils.BN(receipt.gasUsed)))} Ether
+  Review it on Etherscan.
+  TxHash: ${receipt.transactionHash}\n`
+      );
+    });
   }
 };

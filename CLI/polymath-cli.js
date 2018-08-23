@@ -15,7 +15,8 @@ const fs = require('fs');
 
 program
   .version('0.0.1')
-  .description('CLI for Polymath-core');
+  .description('CLI for Polymath-core')
+  .option('-r, --remote-node <network>', 'Use Infura to connect to a remote node on selected network');
 
 program
   .command('st20generator')
@@ -40,7 +41,7 @@ program
   .alias('f')
   .description('Poly faucet for local private netwtorks')
   .action(async function(beneficiary, amount) {
-    await faucet.executeApp(beneficiary, amount);
+    await faucet.executeApp(beneficiary, amount, program.remoteNode);
   });
 
 program
@@ -116,3 +117,8 @@ program
   });
 
 program.parse(process.argv);
+
+if (typeof program.commands.length == 0) {
+  console.error('No command given!');
+  process.exit(1);
+}

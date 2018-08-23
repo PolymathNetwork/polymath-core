@@ -58,19 +58,4 @@ interface ISecurityTokenRegistry {
      */
     function changePolyRegistrationFee(uint256 _registrationFee) external;
 
-    /**
-     * @notice Change address of oracle for currency pair
-     * @param _currency Symbol of currency
-     * @param _denominatedCurrency Symbol of denominated currency
-     * @param _oracle Address of IOracle
-     */
-    function changeOracle(bytes32 _currency, bytes32 _denominatedCurrency, address _oracle) external;
-
-    /**
-    * @notice Get oracle for currency pair
-    * @param _currency Symbol of currency
-    * @param _denominatedCurrency Symbol of denominated currency
-    * @return address of IOracle
-    */
-    function getOracle(bytes32 _currency, bytes32 _denominatedCurrency) external view returns (address);
 }

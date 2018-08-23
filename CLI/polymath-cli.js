@@ -8,6 +8,7 @@ var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
 var erc20explorer = require('./commands/checkpoint/erc20Explorer');
 var ethExplorer = require('./commands/checkpoint/ethExplorer');
+var strMigrator = require('./commands/strMigrator');
 var program = require('commander');
 const yaml = require('js-yaml');
 const fs = require('fs');
@@ -104,6 +105,14 @@ program
   .description('Runs accredit')
   .action(async function(tokenSymbol, batchSize) {
     shell.exec(`${__dirname}/commands/scripts/script.sh Accredit ${tokenSymbol} ${batchSize}`);;
+  });
+
+program
+  .command('strMigrator [fromStrAddress] [toStrAddress]')
+  .alias('str')
+  .description('Runs STR Migrator')
+  .action(async function(fromStrAddress, toStrAddress) {
+    await strMigrator.executeApp(fromStrAddress, toStrAddress);
   });
 
 program.parse(process.argv);

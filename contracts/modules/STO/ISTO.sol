@@ -55,21 +55,14 @@ contract ISTO is Module, Pausable {
      */
     function pause() public onlyOwner {
         require(now < endTime);
-        pausedTime = now;
         super._pause();
     }
 
     /**
      * @notice unpause (overridden function)
      */
-    function unpause(uint256 _newEndTime) public onlyOwner {
-        require(_newEndTime >= endTime);
-        assert(pausedTime > 0);
-        uint256 pauseLength = now.sub(pausedTime);
-        require(_newEndTime <= endTime.add(pauseLength));
+    function unpause() public onlyOwner {
         super._unpause();
-        pausedTime = 0;
-        endTime = _newEndTime;
     }
 
     /**

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "scripts/test.sh 2> /dev/null",
+    "docs": "scripts/docs.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:sol": "solium -d .",
@@ -79,6 +80,7 @@
     "ganache-cli": "^6.1.0",
     "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.5.5",
+    "solidity-docgen": "^0.1.0",
     "solium": "^1.1.6",
     "truffle": "^4.1.11",
     "truffle-wallet-provider": "0.0.5"

@@ -23,7 +23,7 @@ function getPolymathRegistryAddress(networkId) {
       result = JSON.parse(require('fs').readFileSync('./build/contracts/PolymathRegistry.json').toString()).networks[networkId].address;
       break;
     case 42: // KOVAN
-      result = "0x0879dece79f0b7749e2698d377049f5490a06c71";
+      result = "0x05a6519e49e34239f78167abf293d94dae61b299";
       break;
   }
 
@@ -31,26 +31,26 @@ function getPolymathRegistryAddress(networkId) {
 }
 
 async function getPolymathRegistry() {
-  if (typeof _polymathRegistry === 'undefined') { 
+  if (typeof _polymathRegistry === 'undefined') {
     let networkId = await web3.eth.net.getId();
     let polymathRegistryAddress = getPolymathRegistryAddress(networkId);
     let polymathRegistryAbi = abis.polymathRegistry();
     _polymathRegistry = new web3.eth.Contract(polymathRegistryAbi, polymathRegistryAddress);
     _polymathRegistry.setProvider(web3.currentProvider);
   }
-  
+
   return _polymathRegistry;
 }
 
 async function getModuleRegistry() {
-  if (typeof _moduleRegistry === 'undefined') { 
+  if (typeof _moduleRegistry === 'undefined') {
     let polymathRegistry = await getPolymathRegistry();
     let moduleRegistryAddress = await polymathRegistry.methods.getAddress("ModuleRegistry").call();
     let moduleRegistryAbi = abis.moduleRegistryAbi();
     _moduleRegistry = new web3.eth.Contract(moduleRegistryAbi, moduleRegistryAddress);
     _moduleRegistry.setProvider(web3.currentProvider);
   }
-  
+
   return _moduleRegistry;
 }
 
@@ -98,7 +98,7 @@ module.exports = {
     if (networkId == 1)
       return "0x0da7ed8789348ac40937cf6ae8ff521eee43816c";
     else if (networkId == 42)
-      return "0x8e34a955dcdd6c0e4a88fb21af562b7db0b20100";
+      return "0x870a07d45b0f4c5653fc29a4cb0697a01e0224b1";
     else
       return JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpointFactory.json').toString()).networks[networkId].address;
   },
@@ -107,8 +107,8 @@ module.exports = {
     if (networkId == 1)
       return "0x6950096964b7adae34d5a3d1792fe73afbe9ddbc";
     else if (networkId == 42)
-      return "0x9d8778fc5b4d7b97a74dcfee6661d14709cf5180";
-    else 
+      return "0x7e823f5df6ed1bb6cc005c692febc6aedf3b8889";
+    else
       return JSON.parse(require('fs').readFileSync('./build/contracts/ERC20DividendCheckpointFactory.json').toString()).networks[networkId].address;
   }
 };

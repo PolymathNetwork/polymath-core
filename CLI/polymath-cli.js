@@ -33,7 +33,7 @@ program
       mintingConfig = config.initialMint;
       stoCofig = config.sto;
     }
-    await st20generator.executeApp(tokenConfig, mintingConfig, stoCofig);
+    await st20generator.executeApp(tokenConfig, mintingConfig, stoCofig, program.remoteNode);
   });
 
 program
@@ -65,7 +65,7 @@ program
   .alias('mi')
   .description('Distribute tokens to previously whitelisted investors')
   .action(async function(tokenSymbol, batchSize) {
-    shell.exec(`${__dirname}/commands/scripts/script.sh Multimint ${tokenSymbol} ${batchSize}`);;
+    shell.exec(`${__dirname}/commands/scripts/script.sh Multimint ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
   });
 
 program
@@ -73,7 +73,7 @@ program
   .alias('t')
   .description('Transfer ST tokens to another account')
   .action(async function(tokenSymbol, transferTo, transferAmount) {
-    await transfer.executeApp(tokenSymbol, transferTo, transferAmount);
+    await transfer.executeApp(tokenSymbol, transferTo, transferAmount, program.remoteNode);
   });
 
 program
@@ -81,7 +81,7 @@ program
   .alias('w')
   .description('Mass-update a whitelist of allowed/known investors')
   .action(async function(tokenSymbol, batchSize) {
-    shell.exec(`${__dirname}/commands/scripts/script.sh Whitelist ${tokenSymbol} ${batchSize}`);;
+    shell.exec(`${__dirname}/commands/scripts/script.sh Whitelist ${tokenSymbol} ${batchSize} ${remoteNetwork} ${program.remoteNode}`);
   });
 
 program
@@ -105,7 +105,7 @@ program
   .alias('a')
   .description('Runs accredit')
   .action(async function(tokenSymbol, batchSize) {
-    shell.exec(`${__dirname}/commands/scripts/script.sh Accredit ${tokenSymbol} ${batchSize}`);;
+    shell.exec(`${__dirname}/commands/scripts/script.sh Accredit ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
   });
 
 program

@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file.
 ## Fixed
 
 * Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions
+* Bug in ManualApprovalTransferManager that allowed anyone to reduce anyone's transfer allowance 
 
 
 # v1.4.0 - Unreleased

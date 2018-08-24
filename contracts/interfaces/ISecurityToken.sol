@@ -40,7 +40,16 @@ contract ISecurityToken is IST20, Ownable {
      * @param _moduleType is which type of module we are trying to remove
      * @param _name is the name of the module within the chosen type
      */
-    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32[], address[]);
+    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address);
+
+    /**
+     * @notice returns All module list for a module name 
+     * @param _moduleType is which type of module we are trying to get
+     * @param _name is the name of the module within the chosen type
+     * @return bytes32
+     * @return address
+     */
+    function getAllModulesByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32[], address[]);
 
     /**
      * @notice Queries totalSupply as of a defined checkpoint

@@ -27,8 +27,8 @@ All notable changes to this project will be documented in this file.
 
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
-## Changed
-* Change the logic of `getModuleByName()`. Now it returns the `bytes32` and `address` array instead of the singleton values. #198     
+## Added
+* Add new function `getAllModulesByName()`, To get the list of modules having the same name. #198     
 
 =========
 

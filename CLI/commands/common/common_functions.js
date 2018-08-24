@@ -91,17 +91,17 @@ module.exports = {
 `);
   },
   sendTransaction: async function (from, action, gasPrice, value) {
-    let gas = await this.estimateGas(action, from.address, 1.25, value);
+    let gas = await this.estimateGas(action, from.address, 1.33, value);
     let nonce = await web3.eth.getTransactionCount(from.address);
     let abi = action.encodeABI();
     let parameter = {
-      from: 0,
+      from: from.address,
       to: action._parent._address,
       data: abi,
       gasLimit: gas,
       gasPrice: gasPrice,
       nonce: nonce,
-      value: value
+      value: web3.utils.toHex(value)
     };
     
     const transaction = new Tx(parameter);
@@ -126,5 +126,10 @@ module.exports = {
     let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
     let log = logs.find(l => l.topics.includes(eventJsonInterface.signature));
     return web3.eth.abi.decodeLog(eventJsonInterface.inputs, log.data, log.topics.slice(1));
+  },
+  getMultipleEventsFromLogs: function (jsonInterface, logs, eventName) {
+    let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
+    let filteredLogs = logs.filter(l => l.topics.includes(eventJsonInterface.signature));
+    return filteredLogs.map(l => web3.eth.abi.decodeLog(eventJsonInterface.inputs, l.data, l.topics.slice(1)));
   }
 };

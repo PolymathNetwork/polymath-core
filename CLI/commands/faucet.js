@@ -83,8 +83,7 @@ async function send_poly(beneficiary, amount) {
 async function transferTokens(to, amount) {
     try {
         let getTokensAction = polyToken.methods.getTokens(amount, to);
-        //await getTokensAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-        let receipt = await common.sendTransaction(Issuer, getTokensAction, defaultGasPrice);
+        await common.sendTransaction(Issuer, getTokensAction, defaultGasPrice);
     } catch (err){
         console.log(err.message);
         return;

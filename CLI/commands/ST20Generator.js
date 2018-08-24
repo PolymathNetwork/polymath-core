@@ -255,7 +255,6 @@ async function step_Wallet_Issuance(){
         }
 
        let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
-        // 1.5 gas?
         await common.sendTransaction(Issuer, modifyWhitelistAction, defaultGasPrice);
 
         // Mint tokens
@@ -447,7 +446,6 @@ async function cappedSTO_launch() {
       process.exit(0);
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      // 1.5 GAS?
       let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice);
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
@@ -798,7 +796,6 @@ async function usdTieredSTO_launch() {
       process.exit(0);
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      // 1.5 GAS?
       let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice);
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
@@ -1079,7 +1076,6 @@ async function modfifyLimits() {
 async function modfifyFunding() {
   let funding = fundingConfigUSDTieredSTO();
   let modifyFundingAction = currentSTO.methods.modifyFunding(funding.raiseType);
-  // 1.5 GAS?
   await common.sendTransaction(Issuer, modifyFundingAction, defaultGasPrice);
 }
 

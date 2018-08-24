@@ -49,7 +49,7 @@ program
   .alias('i')
   .description('Participate in any STO you have been whitelisted for')
   .action(async function(investor, symbol, currency, amount) {
-    await investor_portal.executeApp(investor, symbol, currency, amount);
+    await investor_portal.executeApp(investor, symbol, currency, amount, program.remoteNode);
   });
 
 program

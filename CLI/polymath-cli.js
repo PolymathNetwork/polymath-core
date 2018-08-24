@@ -113,7 +113,7 @@ program
   .alias('str')
   .description('Runs STR Migrator')
   .action(async function(fromStrAddress, toStrAddress) {
-    await strMigrator.executeApp(fromStrAddress, toStrAddress);
+    await strMigrator.executeApp(fromStrAddress, toStrAddress, program.remoteNode);
   });
 
 program.parse(process.argv);

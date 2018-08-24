@@ -3,15 +3,6 @@ pragma solidity ^0.4.24;
 import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                                        Owner       TRANSFER_APPROVAL
-// addManualApproval                        X                 X
-// addManualBlocking                        X                 X
-// revokeManualApproval                     X                 X
-// revokeManualBlocking                     X                 X
-
 /**
  * @title Transfer Manager module for manually approving or blocking transactions between accounts
  */
@@ -77,7 +68,7 @@ contract ManualApprovalTransferManager is ITransferManager {
      */
     constructor (address _securityToken, address _polyAddress)
     public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 

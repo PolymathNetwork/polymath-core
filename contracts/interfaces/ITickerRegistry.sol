@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 /**
  * @title Interface for the polymath ticker registry contract
  */
-contract ITickerRegistry {
+interface ITickerRegistry {
     /**
     * @notice Check the validity of the symbol
     * @param _symbol token symbol
@@ -11,19 +11,42 @@ contract ITickerRegistry {
     * @param _tokenName Name of the token
     * @return bool
     */
-    function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool);
+    function checkValidity(string _symbol, address _owner, string _tokenName) external returns(bool);
 
     /**
     * @notice Returns the owner and timestamp for a given symbol
     * @param _symbol symbol
     */
-    function getDetails(string _symbol) public view returns (address, uint256, string, bytes32, bool);
+    function getDetails(string _symbol) external view returns (address, uint256, string, bytes32, bool);
 
     /**
      * @notice Check the symbol is reserved or not
      * @param _symbol Symbol of the token
      * @return bool
      */
-     function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) public returns(bool);
+     function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) external returns(bool);
+
+     /**
+      * @notice Register the token symbol for its particular owner
+      * @notice Once the token symbol is registered to its owner then no other issuer can claim
+      * @notice its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
+      * @param _symbol token symbol
+      * @param _tokenName Name of the token
+      * @param _owner Address of the owner of the token
+      * @param _swarmHash Off-chain details of the issuer and token
+      */
+     function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) external;
+
+     /**
+      * @notice Change the expiry time for the token symbol
+      * @param _newExpiry new time period for token symbol expiry
+      */
+     function changeExpiryLimit(uint256 _newExpiry) external;
+
+     /**
+      * @notice set the ticker registration fee in POLY tokens
+      * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
+      */
+     function changePolyRegistrationFee(uint256 _registrationFee) external;
 
 }

@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
 import "./ERC20DividendCheckpoint.sol";
-import "../ModuleFactory.sol";
+import "../../interfaces/IModuleFactory.sol";
 
 /**
  * @title Factory for deploying ERC20DividendCheckpoint module
  */
-contract ERC20DividendCheckpointFactory is ModuleFactory {
+contract ERC20DividendCheckpointFactory is IModuleFactory {
 
     /**
      * @notice Constructor
@@ -16,7 +16,7 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
 
     }

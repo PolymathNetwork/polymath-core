@@ -3,6 +3,13 @@ pragma solidity ^0.4.24;
 import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
+/////////////////////
+// Module permissions
+/////////////////////
+//                                        Owner       WHITELIST      FLAGS
+// modifyWhitelist                          X             X
+// modifyWhitelistMulti                     X             X
+
 /**
  * @title Transfer Manager module for limiting percentage of token supply a single address can hold
  */
@@ -33,7 +40,7 @@ contract PercentageTransferManager is ITransferManager {
      */
     constructor (address _securityToken, address _polyAddress)
     public
-    Module(_securityToken, _polyAddress)
+    IModule(_securityToken, _polyAddress)
     {
     }
 

@@ -1,19 +1,20 @@
 pragma solidity ^0.4.24;
 
 import "./PreSaleSTO.sol";
-import "../ModuleFactory.sol";
+import "../../interfaces/IModuleFactory.sol";
+import "../../interfaces/IModule.sol";
 
 /**
  * @title Factory for deploying PreSaleSTO module
  */
-contract PreSaleSTOFactory is ModuleFactory {
+contract PreSaleSTOFactory is IModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
 
     }

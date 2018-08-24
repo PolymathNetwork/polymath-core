@@ -57,7 +57,7 @@ program
   .alias('mm')
   .description('View modules attached to a token and their status')
   .action(async function() {
-    await module_manager.executeApp();
+    await module_manager.executeApp(program.remoteNode);
   });
 
 program

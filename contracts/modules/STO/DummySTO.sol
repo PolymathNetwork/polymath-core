@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./ISTO.sol";
-import "../../interfaces/ISecurityToken.sol";
+import "../../interfaces/IST20.sol";
 
 /**
  * @title STO module for sample implementation of a different crowdsale module
@@ -25,7 +25,7 @@ contract DummySTO is ISTO {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
+    IModule(_securityToken, _polyAddress)
     {
     }
 
@@ -58,7 +58,7 @@ contract DummySTO is ISTO {
     function generateTokens(address _investor, uint256 _amount) public withPerm(ADMIN) {
         require(!paused);
         require(_amount > 0, "Amount should be greater than 0");
-        ISecurityToken(securityToken).mint(_investor, _amount);
+        IST20(securityToken).mint(_investor, _amount);
         if (investors[_investor] == 0) {
             investorCount = investorCount + 1;
         }

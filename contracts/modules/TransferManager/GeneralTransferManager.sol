@@ -3,6 +3,17 @@ pragma solidity ^0.4.24;
 import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
+/////////////////////
+// Module permissions
+/////////////////////
+//                                        Owner       WHITELIST      FLAGS
+// changeIssuanceAddress                    X                          X
+// changeAllowAllTransfers                  X                          X
+// changeAllowAllWhitelistTransfers         X                          X
+// changeAllowAllWhitelistIssuances         X                          X
+// modifyWhitelist                          X             X
+// modifyWhitelistMulti                     X             X
+
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
@@ -70,7 +81,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     constructor (address _securityToken, address _polyAddress)
     public
-    Module(_securityToken, _polyAddress)
+    IModule(_securityToken, _polyAddress)
     {
     }
 
@@ -256,7 +267,7 @@ contract GeneralTransferManager is ITransferManager {
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
         address signer = ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash)), _v, _r, _s);
-        require(signer == Ownable(securityToken).owner() || signer == signingAddress, "Incorrect signer");
+        require(signer == ISecurityToken(securityToken).owner() || signer == signingAddress, "Incorrect signer");
     }
 
     /**

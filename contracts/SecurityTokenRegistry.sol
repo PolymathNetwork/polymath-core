@@ -14,24 +14,8 @@ import "./helpers/Util.sol";
  */
 contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, RegistryUpdater, ReclaimTokens {
 
-    // Versioning data
-    bytes32 public protocolVersion = "0.0.1";
-    mapping (bytes32 => address) public protocolVersionST;
-
     // Registration fee in POLY base 18 decimals
     uint256 public registrationFee;
-
-    struct SecurityTokenData {
-        string symbol;
-        string tokenDetails;
-    }
-
-    // Stored Security Token Data
-    mapping(address => SecurityTokenData) securityTokens;
-
-    // Stored token symbol addresses
-    mapping(string => address) symbols;
-
     // Emit when changePolyRegistrationFee is called
     event LogChangePolyRegistrationFee(uint256 _oldFee, uint256 _newFee);
 
@@ -59,7 +43,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      * @param _tokenDetails off-chain details of the token
      * @param _divisible Set to true if token is divisible
      */
-    function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) external whenNotPaused {
+    function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) public whenNotPaused {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
         if(registrationFee > 0)
@@ -89,7 +73,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      * @param _tokenDetails off-chain details of the token
      * @param _swarmHash off-chain details about the issuer company
      */
-    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash) external onlyOwner {
+    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash) public onlyOwner {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         string memory symbol = upper(_symbol);
         require(_securityToken != address(0) && symbols[symbol] == address(0), "Symbol is already at the polymath network or entered security token address is 0x");
@@ -118,7 +102,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      * @param _symbol Symbol of the Scurity token
      * @return address
      */
-    function getSecurityTokenAddress(string _symbol) external view returns (address) {
+    function getSecurityTokenAddress(string _symbol) public view returns (address) {
         string memory __symbol = upper(_symbol);
         return symbols[__symbol];
     }
@@ -130,10 +114,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      * @return address
      * @return string
      */
-    function getSecurityTokenData(address _securityToken) external view returns (string, address, string) {
+    function getSecurityTokenData(address _securityToken) public view returns (string, address, string) {
         return (
             securityTokens[_securityToken].symbol,
-            Ownable(_securityToken).owner(),
+            ISecurityToken(_securityToken).owner(),
             securityTokens[_securityToken].tokenDetails
         );
     }
@@ -143,7 +127,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
     * @param _securityToken Address of the Scurity token
     * @return bool
     */
-    function isSecurityToken(address _securityToken) external view returns (bool) {
+    function isSecurityToken(address _securityToken) public view returns (bool) {
         return (keccak256(bytes(securityTokens[_securityToken].symbol)) != keccak256(""));
     }
 
@@ -151,13 +135,13 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      * @notice set the ticker registration fee in POLY tokens
      * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
      */
-    function changePolyRegistrationFee(uint256 _registrationFee) external onlyOwner {
+    function changePolyRegistrationFee(uint256 _registrationFee) public onlyOwner {
         require(registrationFee != _registrationFee);
         emit LogChangePolyRegistrationFee(registrationFee, _registrationFee);
         registrationFee = _registrationFee;
     }
 
-    /**
+     /**
      * @notice pause registration function
      */
     function unpause() public onlyOwner  {

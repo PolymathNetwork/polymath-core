@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./ISTO.sol";
-import "../../interfaces/ISecurityToken.sol";
+import "../../interfaces/IST20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
@@ -29,13 +29,13 @@ contract PreSaleSTO is ISTO {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
+      IModule(_securityToken, _polyAddress)
     {
     }
 
     /**
-     * @notice Function used to initialize the different variables
-     * @param _endTime Unix timestamp at which offering ends
+     * @notice Function used to intialize the differnet variables
+     * @param _endTime Unix timestamp at which offering get ended
      */
     function configure(uint256 _endTime) public onlyFactory {
         require(_endTime != 0, "endTime should not be 0");
@@ -43,7 +43,7 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
-     * @notice This function returns the signature of the configure function
+     * @notice This function returns the signature of configure function
      */
     function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256)"));
@@ -89,15 +89,15 @@ contract PreSaleSTO is ISTO {
     /**
      * @notice Function used to allocate tokens to the investor
      * @param _investor Address of the investor
-     * @param _amount No. of tokens to be transferred to the investor
-     * @param _etherContributed How much ETH was contributed
-     * @param _polyContributed How much POLY was contributed
+     * @param _amount No. of tokens need to transfered to the investor
+     * @param _etherContributed How much amount of ETH get contributed
+     * @param _polyContributed How much amount of POLY get contributed
      */
     function allocateTokens(address _investor, uint256 _amount, uint256 _etherContributed, uint256 _polyContributed) public withPerm(PRE_SALE_ADMIN)
     {
         require(now <= endTime, "Current time should less than the endTime");
         require(_amount > 0, "No. of tokens provided should be greater the zero");
-        ISecurityToken(securityToken).mint(_investor, _amount);
+        IST20(securityToken).mint(_investor, _amount);
         investors[_investor] = investors[_investor].add(_amount);
         investorCount = investorCount.add(1);
         etherRaised = etherRaised.add(_etherContributed);
@@ -107,9 +107,9 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
-     * @notice Function used to allocate tokens to multiple investors
+     * @notice Function used to allocate tokens to the multiple investor
      * @param _investors Array of address of the investors
-     * @param _amounts Array of no. of tokens to be transferred to the investors
+     * @param _amounts Array of no. of tokens need to transfered to the investors
      * @param _etherContributed Array of amount of ETH contributed by each investor
      * @param _polyContributed Array of amount of POLY contributed by each investor
      */

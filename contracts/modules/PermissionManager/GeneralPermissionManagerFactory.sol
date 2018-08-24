@@ -1,19 +1,19 @@
 pragma solidity ^0.4.24;
 
 import "./GeneralPermissionManager.sol";
-import "../ModuleFactory.sol";
+import "../../interfaces/IModuleFactory.sol";
 
 /**
  * @title Factory for deploying GeneralPermissionManager module
  */
-contract GeneralPermissionManagerFactory is ModuleFactory {
+contract GeneralPermissionManagerFactory is IModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
 
     }

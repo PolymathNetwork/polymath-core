@@ -1,14 +1,14 @@
 pragma solidity ^0.4.24;
 
 import "../../Pausable.sol";
-import "../Module.sol";
+import "../../interfaces/IModule.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Interface to be implemented by all STO modules
  */
-contract ISTO is Module, Pausable {
+contract ISTO is IModule, Pausable {
     using SafeMath for uint256;
 
     enum FundRaiseType { ETH, POLY }
@@ -22,8 +22,8 @@ contract ISTO is Module, Pausable {
     uint256 public pausedTime;
 
     /**
-     * @notice used to verify the investment, whether the investor provided an allowance to the STO or not.
-     * @param _beneficiary Ethereum address of the beneficiary, who intends to buy the st-20 tokens
+     * @notice use to verify the investment, whether the investor provide the allowance to the STO or not.
+     * @param _beneficiary Ethereum address of the beneficiary, who wants to buy the st-20
      * @param _fundsAmount Amount invested by the beneficiary
      */
     function verifyInvestment(address _beneficiary, uint256 _fundsAmount) public view returns(bool) {

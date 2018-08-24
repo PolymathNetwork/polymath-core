@@ -99,4 +99,95 @@ interface ISecurityToken {
     */
     function investorCount() external view returns (uint256);
 
+    /**
+    * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
+    * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
+    * @param _amount amount of POLY to withdraw
+    */
+    function withdrawPoly(uint256 _amount) external;
+
+    /**
+    * @notice allows owner to approve more POLY to one of the modules
+    * @param _moduleType module type
+    * @param _moduleIndex module index
+    * @param _budget new budget
+    */
+    function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) external;
+
+    /**
+     * @notice change the tokenDetails
+     * @param _newTokenDetails New token details
+     */
+    function updateTokenDetails(string _newTokenDetails) external;
+
+    /**
+    * @notice allows owner to change token granularity
+    * @param _granularity granularity level of the token
+    */
+    function changeGranularity(uint256 _granularity) external;
+
+    /**
+    * @notice removes addresses with zero balances from the investors list
+    * @param _start Index in investor list at which to start removing zero balances
+    * @param _iters Max number of iterations of the for loop
+    * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
+    */
+    function pruneInvestors(uint256 _start, uint256 _iters) external;
+
+    /**
+     * @notice freeze all the transfers
+     */
+    function freezeTransfers() external;
+
+    /**
+     * @notice un-freeze all the transfers
+     */
+    function unfreezeTransfers() external;
+
+    /**
+     * @notice End token minting period permanently for Issuer
+     */
+    function finishMintingIssuer() external;
+
+    /**
+     * @notice End token minting period permanently for STOs
+     */
+    function finishMintingSTO() external;
+
+    /**
+     * @notice mints new tokens and assigns them to the target _investor.
+     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+     * @param _investors A list of addresses to whom the minted tokens will be dilivered
+     * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
+     * @return success
+     */
+    function mintMulti(address[] _investors, uint256[] _amounts) external returns (bool success);
+
+    /**
+     * @notice used to set the token Burner address. It only be called by the owner
+     * @param _tokenBurner Address of the token burner contract
+     */
+    function setTokenBurner(address _tokenBurner) external;
+
+    /**
+    * @notice Removes a module attached to the SecurityToken
+    * @param _moduleType is which type of module we are trying to remove
+    * @param _moduleIndex is the index of the module within the chosen type
+    */
+    function removeModule(uint8 _moduleType, uint8 _moduleIndex) external;
+
+    /**
+     * @notice Function used to attach the module in security token
+     * @param _moduleFactory Contract address of the module factory that needs to be attached
+     * @param _data Data used for the intialization of the module factory variables
+     * @param _maxCost Maximum cost of the Module factory
+     * @param _budget Budget of the Module factory
+     */
+    function addModule(
+        address _moduleFactory,
+        bytes _data,
+        uint256 _maxCost,
+        uint256 _budget
+    ) external;
+
 }

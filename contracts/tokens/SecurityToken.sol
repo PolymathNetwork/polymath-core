@@ -248,7 +248,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bytes32
      * @return address
      */
-    function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address) {
+    function getModule(uint8 _moduleType, uint _moduleIndex) external view returns (bytes32, address) {
         if (modules[_moduleType].length > 0) {
             return (
                 modules[_moduleType][_moduleIndex].name,
@@ -267,7 +267,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bytes32
      * @return address
      */
-    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address) {
+    function getModuleByName(uint8 _moduleType, bytes32 _name) external view returns (bytes32, address) {
         if (modules[_moduleType].length > 0) {
             for (uint256 i = 0; i < modules[_moduleType].length; i++) {
                 if (modules[_moduleType][i].name == _name) {
@@ -288,7 +288,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
     * @param _amount amount of POLY to withdraw
     */
-    function withdrawPoly(uint256 _amount) public onlyOwner {
+    function withdrawPoly(uint256 _amount) external onlyOwner {
         require(ERC20(polyToken).transfer(owner, _amount), "In-sufficient balance");
     }
 
@@ -298,7 +298,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _moduleIndex module index
     * @param _budget new budget
     */
-    function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
+    function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) external onlyOwner {
         require(_moduleType != 0, "Module type cannot be zero");
         require(_moduleIndex < modules[_moduleType].length, "Incorrrect module index");
         uint256 _currentAllowance = IPolyToken(polyToken).allowance(address(this), modules[_moduleType][_moduleIndex].moduleAddress);
@@ -314,7 +314,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice change the tokenDetails
      * @param _newTokenDetails New token details
      */
-    function updateTokenDetails(string _newTokenDetails) public onlyOwner {
+    function updateTokenDetails(string _newTokenDetails) external onlyOwner {
         emit LogUpdateTokenDetails(tokenDetails, _newTokenDetails);
         tokenDetails = _newTokenDetails;
     }
@@ -323,7 +323,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @notice allows owner to change token granularity
     * @param _granularity granularity level of the token
     */
-    function changeGranularity(uint256 _granularity) public onlyOwner {
+    function changeGranularity(uint256 _granularity) external onlyOwner {
         require(_granularity != 0, "Granularity can not be 0");
         emit LogGranularityChanged(granularity, _granularity);
         granularity = _granularity;
@@ -361,7 +361,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _iters Max number of iterations of the for loop
     * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
     */
-    function pruneInvestors(uint256 _start, uint256 _iters) public onlyOwner {
+    function pruneInvestors(uint256 _start, uint256 _iters) external onlyOwner {
         for (uint256 i = _start; i < Math.min256(_start.add(_iters), investors.length); i++) {
             if ((i < investors.length) && (balanceOf(investors[i]) == 0)) {
                 investorListed[investors[i]] = false;
@@ -376,14 +376,14 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * NB - this length may differ from investorCount if list has not been pruned of zero balance investors
      * @return length
      */
-    function getInvestorsLength() public view returns(uint256) {
+    function getInvestorsLength() external view returns(uint256) {
         return investors.length;
     }
 
     /**
      * @notice freeze all the transfers
      */
-    function freezeTransfers() public onlyOwner {
+    function freezeTransfers() external onlyOwner {
         require(!freeze);
         freeze = true;
         emit LogFreezeTransfers(freeze, now);
@@ -392,7 +392,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     /**
      * @notice un-freeze all the transfers
      */
-    function unfreezeTransfers() public onlyOwner {
+    function unfreezeTransfers() external onlyOwner {
         require(freeze);
         freeze = false;
         emit LogFreezeTransfers(freeze, now);
@@ -517,7 +517,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     /**
      * @notice End token minting period permanently for Issuer
      */
-    function finishMintingIssuer() public onlyOwner {
+    function finishMintingIssuer() external onlyOwner {
         finishedIssuerMinting = true;
         emit LogFinishMintingIssuer(now);
     }
@@ -525,7 +525,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     /**
      * @notice End token minting period permanently for STOs
      */
-    function finishMintingSTO() public onlyOwner {
+    function finishMintingSTO() external onlyOwner {
         finishedSTOMinting = true;
         emit LogFinishMintingSTO(now);
     }
@@ -557,7 +557,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _amounts) public onlyModule(STO_KEY, true) returns (bool success) {
+    function mintMulti(address[] _investors, uint256[] _amounts) external onlyModule(STO_KEY, true) returns (bool success) {
         require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _amounts[i]);
@@ -590,7 +590,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice used to set the token Burner address. It only be called by the owner
      * @param _tokenBurner Address of the token burner contract
      */
-    function setTokenBurner(address _tokenBurner) public onlyOwner {
+    function setTokenBurner(address _tokenBurner) external onlyOwner {
         tokenBurner = ITokenBurner(_tokenBurner);
     }
 
@@ -632,7 +632,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
      * @return uint256
      */
-    function createCheckpoint() public onlyModule(CHECKPOINT_KEY, true) returns(uint256) {
+    function createCheckpoint() external onlyModule(CHECKPOINT_KEY, true) returns(uint256) {
         require(currentCheckpointId < 2**256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
         emit LogCheckpointCreated(currentCheckpointId, now);
@@ -644,7 +644,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _checkpointId Checkpoint ID to query
      * @return uint256
      */
-    function totalSupplyAt(uint256 _checkpointId) public view returns(uint256) {
+    function totalSupplyAt(uint256 _checkpointId) external view returns(uint256) {
         return getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
     }
 

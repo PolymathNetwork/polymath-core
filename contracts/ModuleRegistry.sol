@@ -36,10 +36,10 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     {
     }
 
-   /**
-    * @notice Called by a security token to notify the registry it is using a module
-    * @param _moduleFactory is the address of the relevant module factory
-    */
+    /**
+     * @notice Called by a security token to notify the registry it is using a module
+     * @param _moduleFactory is the address of the relevant module factory
+     */
     function useModule(address _moduleFactory) external {
         //If caller is a registered security token, then register module usage
         if (ISecurityTokenRegistry(securityTokenRegistry).isSecurityToken(msg.sender)) {
@@ -53,10 +53,10 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     }
 
     /**
-    * @notice Called by moduleFactory owner to register new modules for SecurityToken to use
-    * @param _moduleFactory is the address of the module factory to be registered
-    * @return bool
-    */
+     * @notice Called by moduleFactory owner to register new modules for SecurityToken to use
+     * @param _moduleFactory is the address of the module factory to be registered
+     * @return bool
+     */
     function registerModule(address _moduleFactory) external whenNotPaused returns(bool) {
         require(registry[_moduleFactory] == 0, "Module factory should not be pre-registered");
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
@@ -88,7 +88,7 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
      * @param _moduleType Type of module
      * @return bytes32 array
      */
-    function getTagByModuleType(uint8 _moduleType) public view returns(bytes32[]) {
+    function getTagByModuleType(uint8 _moduleType) external view returns(bytes32[]) {
         return availableTags[_moduleType];
     }
 
@@ -97,28 +97,28 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
      * @param _moduleType Type of module.
      * @param _tag List of tags
      */
-     function addTagByModuleType(uint8 _moduleType, bytes32[] _tag) public onlyOwner {
-         for (uint8 i = 0; i < _tag.length; i++) {
-             availableTags[_moduleType].push(_tag[i]);
-         }
-     }
+    function addTagByModuleType(uint8 _moduleType, bytes32[] _tag) external onlyOwner {
+       for (uint8 i = 0; i < _tag.length; i++) {
+           availableTags[_moduleType].push(_tag[i]);
+       }
+    }
 
     /**
      * @notice remove the tag for specified Module Factory
      * @param _moduleType Type of module.
      * @param _removedTags List of tags
      */
-     function removeTagByModuleType(uint8 _moduleType, bytes32[] _removedTags) public onlyOwner {
-         for (uint8 i = 0; i < availableTags[_moduleType].length; i++) {
+    function removeTagByModuleType(uint8 _moduleType, bytes32[] _removedTags) external onlyOwner {
+        for (uint8 i = 0; i < availableTags[_moduleType].length; i++) {
             for (uint8 j = 0; j < _removedTags.length; j++) {
                 if (availableTags[_moduleType][i] == _removedTags[j]) {
                     delete availableTags[_moduleType][i];
                 }
             }
         }
-     }
+    }
 
-     /**
+    /**
      * @notice pause registration function
      */
     function unpause() public onlyOwner  {

@@ -58,7 +58,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _owner Address of the owner of the token
      * @param _swarmHash Off-chain details of the issuer and token
      */
-    function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) public whenNotPaused {
+    function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) external whenNotPaused {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         if(registrationFee > 0)
@@ -73,7 +73,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @notice Change the expiry time for the token symbol
      * @param _newExpiry new time period for token symbol expiry
      */
-    function changeExpiryLimit(uint256 _newExpiry) public onlyOwner {
+    function changeExpiryLimit(uint256 _newExpiry) external onlyOwner {
         require(_newExpiry >= 1 days, "Expiry should greater than or equal to 1 day");
         uint256 _oldExpiry = expiryLimit;
         expiryLimit = _newExpiry;
@@ -165,7 +165,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @notice set the ticker registration fee in POLY tokens
      * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
      */
-    function changePolyRegistrationFee(uint256 _registrationFee) public onlyOwner {
+    function changePolyRegistrationFee(uint256 _registrationFee) external onlyOwner {
         require(registrationFee != _registrationFee);
         emit LogChangePolyRegistrationFee(registrationFee, _registrationFee);
         registrationFee = _registrationFee;

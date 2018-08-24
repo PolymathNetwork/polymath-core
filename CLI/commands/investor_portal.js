@@ -522,21 +522,15 @@ async function polyBalance(_user) {
     return web3.utils.fromWei(balance);
 }
 
-function logTransactionHash(hash) {
-    console.log(`
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`);
-}
-
 function logTokensPurchasedUSDTieredSTO(receipt) {
     console.log(chalk.green(`Congratulations! The token purchase was successfully completed.`));
     let events = common.getMultipleEventsFromLogs(currentSTO._jsonInterface, receipt.logs, 'TokenPurchase');
     for (event of events) {
         console.log(`
-Account ${event._purchaser}
-invested ${web3.utils.fromWei(event._usdAmount)} USD
-purchasing ${web3.utils.fromWei(event._tokens)} ${displayTokenSymbol.toUpperCase()} at ${web3.utils.fromWei(event._tierPrice)} USD
-for beneficiary account ${event._beneficiary}`);
+  Account ${event._purchaser}
+  invested ${web3.utils.fromWei(event._usdAmount)} USD
+  purchasing ${web3.utils.fromWei(event._tokens)} ${displayTokenSymbol.toUpperCase()} at ${web3.utils.fromWei(event._tierPrice)} USD
+  for beneficiary account ${event._beneficiary}`);
     };
 }
 
@@ -545,10 +539,10 @@ function logTokensPurchasedCappedSTO(receipt) {
     let events = common.getMultipleEventsFromLogs(currentSTO._jsonInterface, receipt.logs, 'TokenPurchase');
     for (event of events) {
         console.log(`
-Account ${event.purchaser}
-invested ${web3.utils.fromWei(event.value)} ${displayRaiseType}
-purchasing ${web3.utils.fromWei(event.amount)} ${displayTokenSymbol.toUpperCase()}
-for beneficiary account ${event.beneficiary}`);
+  Account ${event.purchaser}
+  invested ${web3.utils.fromWei(event.value)} ${displayRaiseType}
+  purchasing ${web3.utils.fromWei(event.amount)} ${displayTokenSymbol.toUpperCase()}
+  for beneficiary account ${event.beneficiary}`);
     };
 }
 

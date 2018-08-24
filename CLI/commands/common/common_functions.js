@@ -91,7 +91,7 @@ module.exports = {
 `);
   },
   sendTransaction: async function (from, action, gasPrice, value, factor) {
-    if (typeof factor === 'undefined') factor = 1.33;
+    if (typeof factor === 'undefined') factor = 1.2;
     let gas = await this.estimateGas(action, from.address, factor, value);
     let nonce = await web3.eth.getTransactionCount(from.address);
     let abi = action.encodeABI();

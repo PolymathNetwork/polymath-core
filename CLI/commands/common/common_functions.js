@@ -121,5 +121,10 @@ module.exports = {
   TxHash: ${receipt.transactionHash}\n`
       );
     });
+  },
+  getEventFromLogs: function (jsonInterface, logs, eventName) {
+    let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
+    let log = logs.find(l => l.topics.includes(eventJsonInterface.signature));
+    return web3.eth.abi.decodeLog(eventJsonInterface.inputs, log.data, log.topics.slice(1));
   }
 };

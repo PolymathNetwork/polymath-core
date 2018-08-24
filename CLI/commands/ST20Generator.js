@@ -2,7 +2,6 @@ var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js');
 var chalk = require('chalk');
 const shell = require('shelljs');
-const Web3 = require('web3');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 var common = require('./common/common_functions');
@@ -11,13 +10,6 @@ let tickerRegistryAddress;
 let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 let usdTieredSTOFactoryAddress;
-
-if (typeof web3 !== 'undefined') {
-  web3 = new Web3(web3.currentProvider);
-} else {
-  // set the provider you want from Web3.providers
-  web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-}
 
 ///////////////////
 // Crowdsale params
@@ -41,34 +33,27 @@ let cappedSTOFactory;
 let usdTieredSTOFactory;
 
 // App flow
-let accounts;
-let Issuer;
 let defaultGasPrice;
-let _DEBUG = false;
 let _tokenConfig;
 let _mintingConfig;
 let _stoConfig;
 
-async function executeApp(tokenConfig, mintingConfig, stoConfig) {
-  accounts = await web3.eth.getAccounts();
-  Issuer = accounts[0];
-  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
-
+async function executeApp(tokenConfig, mintingConfig, stoConfig, remoteNetwork) {
   _tokenConfig = tokenConfig;
   _mintingConfig = mintingConfig;
   _stoConfig = stoConfig;
 
-  await setup();
-
+  await common.initialize(remoteNetwork);
+  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
+ 
   common.logAsciiBull();
   console.log("********************************************");
   console.log("Welcome to the Command-Line ST-20 Generator.");
   console.log("********************************************");
   console.log("The following script will create a new ST-20 according to the parameters you enter.");
+  console.log("Issuer Account: " + Issuer.address + "\n");
   
-  if(_DEBUG){
-    console.log('\x1b[31m%s\x1b[0m',"Warning: Debugging is activated. Start and End dates will be adjusted for easier testing.");
-  }
+  await setup();
 
   try {
     await step_ticker_reg();
@@ -124,7 +109,7 @@ async function step_ticker_reg(){
   let available = false;
 
   while (!available) {
-    console.log(chalk.green(`\nRegistering the new token symbol requires 250 POLY & deducted from '${Issuer}', Current balance is ${(await currentBalance(Issuer))} POLY\n`));
+    console.log(chalk.green(`\nRegistering the new token symbol requires 250 POLY & deducted from '${Issuer.address}', Current balance is ${(await currentBalance(Issuer.address))} POLY\n`));
     
     if (typeof _tokenConfig !== 'undefined' && _tokenConfig.hasOwnProperty('symbol')) {
       tokenSymbol = _tokenConfig.symbol;
@@ -132,10 +117,10 @@ async function step_ticker_reg(){
       tokenSymbol = readlineSync.question('Enter the symbol for your new token: '); 
     }
 
-    await tickerRegistry.methods.getDetails(tokenSymbol).call({from: Issuer}, function(error, result){
+    await tickerRegistry.methods.getDetails(tokenSymbol).call({}, function(error, result){
       if (new BigNumber(result[1]).toNumber() == 0) {
         available = true;
-      } else if (result[0] == Issuer) {
+      } else if (result[0] == Issuer.address) {
         console.log('\x1b[32m%s\x1b[0m',"Token Symbol has already been registered by you, skipping registration");
         available = true;
         alreadyRegistered = true;
@@ -147,37 +132,21 @@ async function step_ticker_reg(){
 
   if (!alreadyRegistered) {
     await step_approval(tickerRegistryAddress, regFee);
-    let registerTickerAction = tickerRegistry.methods.registerTicker(Issuer,tokenSymbol,"",web3.utils.asciiToHex(""));
-    let GAS = await common.estimateGas(registerTickerAction, Issuer, 1.2);
-    await registerTickerAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-    .on('transactionHash', function(hash){
-      console.log(`
-        Congrats! Your Ticker Registration tx populated successfully
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`
-      );
-    })
-    .on('receipt', function(receipt){
-      console.log(`
-        Congratulations! The transaction was successfully completed.
-        Review it on Etherscan.
-        TxHash: ${receipt.transactionHash}\n`
-      );
-    })
+    let registerTickerAction = tickerRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "", web3.utils.asciiToHex(""));
+    await common.sendTransaction(Issuer, registerTickerAction, defaultGasPrice);
   }
 }
 
 async function step_approval(spender, fee) {
-  polyBalance = await polyToken.methods.balanceOf(Issuer).call({from: Issuer});
+  polyBalance = await polyToken.methods.balanceOf(Issuer.address).call();
   let requiredAmount = web3.utils.toWei(fee.toString(), "ether");
   if (parseInt(polyBalance) >= parseInt(requiredAmount)) {
-    let allowance = await polyToken.methods.allowance(spender, Issuer).call({from: Issuer});
+    let allowance = await polyToken.methods.allowance(spender, Issuer.address).call();
     if (allowance == web3.utils.toWei(fee.toString(), "ether")) {
       return true;
     } else {
       let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
-      let GAS = await common.estimateGas(approveAction, Issuer, 1.2);
-      await approveAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice })
+      await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
     }
   } else {
       let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);
@@ -190,14 +159,14 @@ async function step_approval(spender, fee) {
 
 async function step_token_deploy(){
   // Let's check if token has already been deployed, if it has, skip to STO
-  let tokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({from: Issuer});
+  let tokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
   if (tokenAddress != "0x0000000000000000000000000000000000000000") {
     console.log('\x1b[32m%s\x1b[0m',"Token has already been deployed at address " + tokenAddress + ". Skipping registration");
     let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, tokenAddress);
   } else {
     console.log("\n");
-    console.log(chalk.green(`Current balance in POLY is ${(await currentBalance(Issuer))}`));
+    console.log(chalk.green(`Current balance in POLY is ${(await currentBalance(Issuer.address))}`));
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Deployment");
     
@@ -224,30 +193,16 @@ async function step_token_deploy(){
 
     await step_approval(securityTokenRegistryAddress, regFee);
     let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, web3.utils.fromAscii(tokenDetails), divisibility);
-    let GAS = await common.estimateGas(generateSecurityTokenAction, Issuer, 1.2);
-    await generateSecurityTokenAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-    .on('transactionHash', function(hash){
-      console.log(`
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`
-      );
-    })
-    .on('receipt', function(receipt){
-      console.log(`
-        Congratulations! The transaction was successfully completed.
-        Deployed Token at address: ${receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress}
-        Review it on Etherscan.
-        TxHash: ${receipt.transactionHash}\n`
-      );
-      let securityTokenABI = abis.securityToken();
-      securityToken = new web3.eth.Contract(securityTokenABI, receipt.events.LogNewSecurityToken.returnValues._securityTokenAddress);
-    })
-    .on('error', console.error);
+    let receipt = await common.sendTransaction(Issuer, generateSecurityTokenAction, defaultGasPrice);
+    let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'LogNewSecurityToken');
+    console.log(`Deployed Token at address: ${event._securityTokenAddress}`);
+    let securityTokenABI = abis.securityToken();
+    securityToken = new web3.eth.Contract(securityTokenABI, event._securityTokenAddress);
   }
 }
 
 async function step_Wallet_Issuance(){
-  let result = await securityToken.methods.getModule(3,0).call({from: Issuer});
+  let result = await securityToken.methods.getModule(3,0).call();
   let STOAddress = result[1];
   if (STOAddress != "0x0000000000000000000000000000000000000000") {
     console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address " + STOAddress + ". Skipping initial minting");
@@ -273,6 +228,14 @@ async function step_Wallet_Issuance(){
         multimint = (isAffiliate == "Y" || isAffiliate == "y");
       }
 
+      // Add address to whitelist
+      let generalTransferManagerAddress;
+      await securityToken.methods.getModule(2,0).call({}, function(error, result){
+        generalTransferManagerAddress = result[1];
+      });
+      let generalTransferManagerABI = abis.generalTransferManager();
+      generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
+       
       if (multimint)
         await multi_mint_tokens();
       else {
@@ -280,9 +243,9 @@ async function step_Wallet_Issuance(){
         if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('singleMint') && _mintingConfig.singleMint.hasOwnProperty('wallet')) {
           mintWallet = _mintingConfig.singleMint.wallet;
         } else {
-          mintWallet = readlineSync.question('Add the address that will hold the issued tokens to the whitelist (' + Issuer + '): ');
+          mintWallet = readlineSync.question('Add the address that will hold the issued tokens to the whitelist (' + Issuer.address + '): ');
         }
-        if (mintWallet == "") mintWallet = Issuer;
+        if (mintWallet == "") mintWallet = Issuer.address;
 
         let canBuyFromSTO;
         if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('singleMint') && _mintingConfig.singleMint.hasOwnProperty('allowedToBuy')) {
@@ -291,30 +254,9 @@ async function step_Wallet_Issuance(){
           canBuyFromSTO = readlineSync.keyInYNStrict(`Is address '(${mintWallet})' allowed to buy tokens from the STO? `);
         }
 
-        // Add address to whitelist
-        let generalTransferManagerAddress;
-        await securityToken.methods.getModule(2,0).call({from: Issuer}, function(error, result){
-          generalTransferManagerAddress = result[1];
-        });
-
-        let generalTransferManagerABI = abis.generalTransferManager();
-        generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
-        let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
-        let GAS = await common.estimateGas(modifyWhitelistAction, Issuer, 1.5);
-        await modifyWhitelistAction.send({ from: Issuer, gas: GAS, gasPrice:defaultGasPrice})
-        .on('transactionHash', function(hash){
-          console.log(`
-            Adding wallet to whitelist. Please wait...
-            TxHash: ${hash}\n`
-          );
-        })
-        .on('receipt', function(receipt){
-          console.log(`
-            Congratulations! The transaction was successfully completed.
-            Review it on Etherscan.
-            TxHash: ${receipt.transactionHash}\n`
-          );
-        })
+       let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
+        // 1.5 gas?
+        await common.sendTransaction(Issuer, modifyWhitelistAction, defaultGasPrice);
 
         // Mint tokens
         if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('singleMint') && _mintingConfig.singleMint.hasOwnProperty('tokenAmount')) {
@@ -325,21 +267,7 @@ async function step_Wallet_Issuance(){
         if (issuerTokens == "") issuerTokens = '500000';
         
         let mintAction = securityToken.methods.mint(mintWallet, web3.utils.toWei(issuerTokens,"ether"));
-        GAS = await common.estimateGas(mintAction, Issuer, 1.2);
-        await mintAction.send({ from: Issuer, gas: GAS, gasPrice:defaultGasPrice})
-        .on('transactionHash', function(hash){
-          console.log(`
-            Minting tokens. Please wait...
-            TxHash: ${hash}\n`
-          );
-        })
-        .on('receipt', function(receipt){
-          console.log(`
-            Congratulations! The transaction was successfully completed.
-            Review it on Etherscan.
-            TxHash: ${receipt.transactionHash}\n`
-          );
-        })
+        await common.sendTransaction(Issuer, mintAction, defaultGasPrice);
       }
     }
   }
@@ -359,7 +287,7 @@ async function step_STO_launch() {
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration");
 
-  let result = await securityToken.methods.getModule(3,0).call({from: Issuer});
+  let result = await securityToken.methods.getModule(3,0).call();
   STO_Address = result[1];
   if(STO_Address != "0x0000000000000000000000000000000000000000") {
     selectedSTO = web3.utils.toAscii(result[0]).replace(/\u0000/g, '');
@@ -456,9 +384,9 @@ async function cappedSTO_launch() {
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('wallet')) {
     wallet = _stoConfig.wallet;
   } else {
-    wallet = readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer + '): ');
+    wallet = readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer.address + '): ');
   }
-  if (wallet == "") wallet = Issuer;
+  if (wallet == "") wallet = Issuer.address;
 
   let raiseType;
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('raiseType')) {
@@ -507,11 +435,11 @@ async function cappedSTO_launch() {
   }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate, raiseType, wallet]);
 
   let stoFee = cappedSTOFee;
-  let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call({from: Issuer});
+  let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call();
   let requiredAmount = web3.utils.toWei(stoFee.toString(), "ether");
   if (parseInt(contractBalance) < parseInt(requiredAmount)) {
     let transferAmount = parseInt(requiredAmount) - parseInt(contractBalance);
-    let ownerBalance = await polyToken.methods.balanceOf(Issuer).call({from: Issuer});
+    let ownerBalance = await polyToken.methods.balanceOf(Issuer.address).call();
     if(parseInt(ownerBalance) < transferAmount) {
       console.log(chalk.red(`\n**************************************************************************************************************************************************`));
       console.log(chalk.red(`Not enough balance to pay the CappedSTO fee, Requires ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(ownerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
@@ -519,60 +447,33 @@ async function cappedSTO_launch() {
       process.exit(0);
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      let GAS = await common.estimateGas(transferAction, Issuer, 1.5);
-      await transferAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-      .on('transactionHash', function(hash) {
-        console.log(`
-          Transfer ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY to ${tokenSymbol} security token
-          Your transaction is being processed. Please wait...
-          TxHash: ${hash}\n`
-        );
-      })
-      .on('receipt', function(receipt){
-        console.log(`
-          Congratulations! The transaction was successfully completed.
-          Number of POLY sent: ${(new BigNumber(receipt.events.Transfer.returnValues._value).dividedBy(new BigNumber(10).pow(18))).toNumber()}
-          Review it on Etherscan.
-          TxHash: ${receipt.transactionHash}
-          gasUsed: ${receipt.gasUsed}\n`
-        );
-      })
+      // 1.5 GAS?
+      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice);
+      let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
+      console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }
   }
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
-  let GAS = await common.estimateGas(addModuleAction, Issuer, 1.2);
-  await securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0).send({from: Issuer, gas: GAS, gasPrice:defaultGasPrice})
-  .on('transactionHash', function(hash){
-    console.log(`
-      Your transaction is being processed. Please wait...
-      TxHash: ${hash}\n`
-    );
-  })
-  .on('receipt', function(receipt){
-      STO_Address = receipt.events.LogModuleAdded.returnValues._module
-    console.log(`
-      Congratulations! The transaction was successfully completed.
-      STO deployed at address: ${STO_Address}
-      Review it on Etherscan.
-      TxHash: ${receipt.transactionHash}\n`
-    );
-  })
-
+  let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
+  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
+  console.log(`STO deployed at address: ${event._module}`);
+  
+  STO_Address = event._module;
   let cappedSTOABI = abis.cappedSTO();
-  currentSTO = new web3.eth.Contract(cappedSTOABI,STO_Address);
+  currentSTO = new web3.eth.Contract(cappedSTOABI, STO_Address);
 }
 
 async function cappedSTO_status() {
-  let displayStartTime = await currentSTO.methods.startTime().call({from: Issuer});
-  let displayEndTime = await currentSTO.methods.endTime().call({from: Issuer});
-  let displayRate = await currentSTO.methods.rate().call({from: Issuer});
-  let displayCap = await currentSTO.methods.cap().call({from: Issuer});
-  let displayWallet = await currentSTO.methods.wallet().call({from: Issuer});
-  let displayRaiseType = await currentSTO.methods.fundRaiseType(0).call({from: Issuer}) ? 'ETH' : 'POLY';
-  let displayFundsRaised = await currentSTO.methods.fundsRaised().call({from: Issuer});
-  let displayTokensSold = await currentSTO.methods.tokensSold().call({from: Issuer});
-  let displayInvestorCount = await currentSTO.methods.investorCount().call({from: Issuer});
-  let displayTokenSymbol = await securityToken.methods.symbol().call({from: Issuer});
+  let displayStartTime = await currentSTO.methods.startTime().call();
+  let displayEndTime = await currentSTO.methods.endTime().call();
+  let displayRate = await currentSTO.methods.rate().call();
+  let displayCap = await currentSTO.methods.cap().call();
+  let displayWallet = await currentSTO.methods.wallet().call();
+  let displayRaiseType = await currentSTO.methods.fundRaiseType(0).call() ? 'ETH' : 'POLY';
+  let displayFundsRaised = await currentSTO.methods.fundsRaised().call();
+  let displayTokensSold = await currentSTO.methods.tokensSold().call();
+  let displayInvestorCount = await currentSTO.methods.investorCount().call();
+  let displayTokenSymbol = await securityToken.methods.symbol().call();
 
   let displayWalletBalance = web3.utils.fromWei(await web3.eth.getBalance(displayWallet),"ether");
   let formattedCap = BigNumber(web3.utils.fromWei(displayCap,"ether"));
@@ -610,7 +511,7 @@ async function cappedSTO_status() {
     - Investor count:    ${displayInvestorCount}
   `);
 
-  console.log(chalk.green(`\n${(await currentBalance(Issuer))} POLY balance remaining at issuer address ${Issuer}`));
+  console.log(chalk.green(`\n${(await currentBalance(Issuer.address))} POLY balance remaining at issuer address ${Issuer.address}`));
 }
 
 ////////////////////
@@ -645,28 +546,28 @@ function addressesConfigUSDTieredSTO() {
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('wallet')) {
     addresses.wallet = _stoConfig.wallet;
   } else {
-    addresses.wallet = readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer + '): ', {
+    addresses.wallet = readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer.address + '): ', {
       limit: function(input) {
         return web3.utils.isAddress(input);
       },
       limitMessage: "Must be a valid address",
-      defaultInput: Issuer
+      defaultInput: Issuer.address
     });
   }
-  if (addresses.wallet == "") addresses.wallet = Issuer;
+  if (addresses.wallet == "") addresses.wallet = Issuer.address;
 
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('reserveWallet')) {
     addresses.reserveWallet = _stoConfig.reserveWallet;
   } else {
-    addresses.reserveWallet = readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer + '): ', {
+    addresses.reserveWallet = readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer.address + '): ', {
       limit: function(input) {
         return web3.utils.isAddress(input);
       },
       limitMessage: "Must be a valid address",
-      defaultInput: Issuer
+      defaultInput: Issuer.address
     });
   }
-  if (addresses.reserveWallet == "") addresses.reserveWallet = Issuer;
+  if (addresses.reserveWallet == "") addresses.reserveWallet = Issuer.address;
 
   return addresses;
 }
@@ -885,11 +786,11 @@ async function usdTieredSTO_launch() {
   ]);
 
   let stoFee = usdTieredSTOFee;
-  let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call({from: Issuer});
+  let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call();
   let requiredAmount = web3.utils.toWei(stoFee.toString(), "ether");
   if (parseInt(contractBalance) < parseInt(requiredAmount)) {
     let transferAmount = parseInt(requiredAmount) - parseInt(contractBalance);
-    let ownerBalance = await polyToken.methods.balanceOf(Issuer).call({from: Issuer});
+    let ownerBalance = await polyToken.methods.balanceOf(Issuer.address).call();
     if(parseInt(ownerBalance) < transferAmount) {
       console.log(chalk.red(`\n**************************************************************************************************************************************************`));
       console.log(chalk.red(`Not enough balance to pay the ${selectedSTO} fee, Requires ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(ownerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
@@ -897,76 +798,49 @@ async function usdTieredSTO_launch() {
       process.exit(0);
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      let GAS = await common.estimateGas(transferAction, Issuer, 1.5);
-      await transferAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-      .on('transactionHash', function(hash) {
-        console.log(`
-          Transfer ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY to ${tokenSymbol} security token
-          Your transaction is being processed. Please wait...
-          TxHash: ${hash}\n`
-        );
-      })
-      .on('receipt', function(receipt){
-        console.log(`
-          Congratulations! The transaction was successfully completed.
-          Number of POLY sent: ${(new BigNumber(receipt.events.Transfer.returnValues._value).dividedBy(new BigNumber(10).pow(18))).toNumber()}
-          Review it on Etherscan.
-          TxHash: ${receipt.transactionHash}
-          gasUsed: ${receipt.gasUsed}\n`
-        );
-      })
+      // 1.5 GAS?
+      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice);
+      let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
+      console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }
   }
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
-  let GAS = await common.estimateGas(addModuleAction, Issuer, 1.2);
-  await securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0).send({from: Issuer, gas: GAS, gasPrice:defaultGasPrice})
-  .on('transactionHash', function(hash){
-    console.log(`
-      Your transaction is being processed. Please wait...
-      TxHash: ${hash}\n`
-    );
-  })
-  .on('receipt', function(receipt){
-      STO_Address = receipt.events.LogModuleAdded.returnValues._module
-    console.log(`
-      Congratulations! The transaction was successfully completed.
-      STO deployed at address: ${STO_Address}
-      Review it on Etherscan.
-      TxHash: ${receipt.transactionHash}\n`
-    );
-  })
-
+  let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
+  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
+  console.log(`STO deployed at address: ${event._module}`);
+  
+  STO_Address = event._module;
   let usdTieredSTOABI = abis.usdTieredSTO();
   currentSTO = new web3.eth.Contract(usdTieredSTOABI,STO_Address);
 }
 
 async function usdTieredSTO_status() {
-  let displayStartTime = await currentSTO.methods.startTime().call({from: Issuer});
-  let displayEndTime = await currentSTO.methods.endTime().call({from: Issuer});
-  let displayCurrentTier = parseInt(await currentSTO.methods.currentTier().call({from: Issuer})) + 1;
-  let displayNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call({from: Issuer}));
-  let displayMinimumInvestmentUSD = web3.utils.fromWei(await currentSTO.methods.minimumInvestmentUSD().call({from: Issuer}));
-  let ethRaise = await currentSTO.methods.fundRaiseType(0).call({from: Issuer});
-  let polyRaise = await currentSTO.methods.fundRaiseType(1).call({from: Issuer});
-  let displayWallet = await currentSTO.methods.wallet().call({from: Issuer});
-  let displayReserveWallet = await currentSTO.methods.reserveWallet().call({from: Issuer});
-  let displayTokensSold = web3.utils.fromWei(await currentSTO.methods.getTokensSold().call({from: Issuer}));
-  let displayInvestorCount = await currentSTO.methods.investorCount().call({from: Issuer});
-  let displayIsFinalized = await currentSTO.methods.isFinalized().call({from: Issuer}) ? "YES" : "NO";
-  let displayTokenSymbol = await securityToken.methods.symbol().call({from: Issuer});
+  let displayStartTime = await currentSTO.methods.startTime().call();
+  let displayEndTime = await currentSTO.methods.endTime().call();
+  let displayCurrentTier = parseInt(await currentSTO.methods.currentTier().call()) + 1;
+  let displayNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
+  let displayMinimumInvestmentUSD = web3.utils.fromWei(await currentSTO.methods.minimumInvestmentUSD().call());
+  let ethRaise = await currentSTO.methods.fundRaiseType(0).call();
+  let polyRaise = await currentSTO.methods.fundRaiseType(1).call();
+  let displayWallet = await currentSTO.methods.wallet().call();
+  let displayReserveWallet = await currentSTO.methods.reserveWallet().call();
+  let displayTokensSold = web3.utils.fromWei(await currentSTO.methods.getTokensSold().call());
+  let displayInvestorCount = await currentSTO.methods.investorCount().call();
+  let displayIsFinalized = await currentSTO.methods.isFinalized().call() ? "YES" : "NO";
+  let displayTokenSymbol = await securityToken.methods.symbol().call();
 
-  let tiersLength = await currentSTO.methods.getNumberOfTiers().call({from: Issuer});;
+  let tiersLength = await currentSTO.methods.getNumberOfTiers().call();;
 
   let displayTiers = "";
   let displayMintedPerTier = "";
   for (let t = 0; t < tiersLength; t++) {
-    let ratePerTier = await currentSTO.methods.ratePerTier(t).call({from: Issuer});
-    let tokensPerTierTotal = await currentSTO.methods.tokensPerTierTotal(t).call({from: Issuer});
-    let mintedPerTierTotal = await currentSTO.methods.mintedPerTierTotal(t).call({from: Issuer});
+    let ratePerTier = await currentSTO.methods.ratePerTier(t).call();
+    let tokensPerTierTotal = await currentSTO.methods.tokensPerTierTotal(t).call();
+    let mintedPerTierTotal = await currentSTO.methods.mintedPerTierTotal(t).call();
 
     let displayMintedPerTierETH = "";
     if (ethRaise) {
-      let mintedPerTierETH = await currentSTO.methods.mintedPerTierETH(t).call({from: Issuer});
+      let mintedPerTierETH = await currentSTO.methods.mintedPerTierETH(t).call();
 
       displayMintedPerTierETH = `
         Sold for ETH:              ${web3.utils.fromWei(mintedPerTierETH)} ${displayTokenSymbol}`
@@ -977,10 +851,10 @@ async function usdTieredSTO_status() {
     let mintedPerTierDiscountPoly = "0";
     if (polyRaise) {
       let displayDiscountMinted = "";
-      let tokensPerTierDiscountPoly = await currentSTO.methods.tokensPerTierDiscountPoly(t).call({from: Issuer});
+      let tokensPerTierDiscountPoly = await currentSTO.methods.tokensPerTierDiscountPoly(t).call();
       if (tokensPerTierDiscountPoly > 0) {
-        let ratePerTierDiscountPoly = await currentSTO.methods.ratePerTierDiscountPoly(t).call({from: Issuer});
-        mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call({from: Issuer});
+        let ratePerTierDiscountPoly = await currentSTO.methods.ratePerTierDiscountPoly(t).call();
+        mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call();
 
         displayDiscountTokens = `
         Tokens at discounted rate: ${web3.utils.fromWei(tokensPerTierDiscountPoly)} ${displayTokenSymbol}
@@ -989,7 +863,7 @@ async function usdTieredSTO_status() {
         displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
       }
 
-      let mintedPerTierRegularPOLY = await currentSTO.methods.mintedPerTierRegularPoly(t).call({from: Issuer});
+      let mintedPerTierRegularPOLY = await currentSTO.methods.mintedPerTierRegularPoly(t).call();
       let mintedPerTierPOLYTotal = new BigNumber(web3.utils.fromWei(mintedPerTierRegularPOLY)).add(new BigNumber(web3.utils.fromWei(mintedPerTierDiscountPoly)));
       displayMintedPerTierPOLY = `
         Sold for POLY:             ${mintedPerTierPOLYTotal} ${displayTokenSymbol} ${displayDiscountMinted}`
@@ -1006,7 +880,7 @@ async function usdTieredSTO_status() {
     + displayMintedPerTierPOLY;
   }
 
-  let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call({from: Issuer}));
+  let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call());
 
   let displayWalletBalanceETH = '';
   let displayReserveWalletBalanceETH = '';
@@ -1015,21 +889,21 @@ async function usdTieredSTO_status() {
   if (ethRaise) {
     let balance = await web3.eth.getBalance(displayWallet);
     let walletBalanceETH = web3.utils.fromWei(balance, "ether");
-    let walletBalanceETH_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('ETH'), balance).call({from: Issuer}));
+    let walletBalanceETH_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('ETH'), balance).call());
     displayWalletBalanceETH = `
         Balance ETH:               ${walletBalanceETH} ETH (${walletBalanceETH_USD} USD)`;
     balance = await web3.eth.getBalance(displayReserveWallet);
     let reserveWalletBalanceETH = web3.utils.fromWei(balance,"ether");
-    let reserveWalletBalanceETH_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('ETH'), balance).call({from: Issuer}));
+    let reserveWalletBalanceETH_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('ETH'), balance).call());
     displayReserveWalletBalanceETH = `
         Balance ETH:               ${reserveWalletBalanceETH} ETH (${reserveWalletBalanceETH_USD} USD)`;
-    let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaisedETH().call({from: Issuer}));
+    let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaisedETH().call());
     displayFundsRaisedETH = `
         ETH:                       ${fundsRaisedETH} ETH`;
 
     //Only show sold for ETH if POLY raise is allowed too
     if (polyRaise) {
-      let tokensSoldETH = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForETH().call({from: Issuer}));
+      let tokensSoldETH = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForETH().call());
       displayTokensSoldETH = `
         Sold for ETH:              ${tokensSoldETH} ${displayTokenSymbol}`;
     }
@@ -1041,20 +915,20 @@ async function usdTieredSTO_status() {
   let displayTokensSoldPOLY = '';
   if (polyRaise) {
     let walletBalancePOLY = await currentBalance(displayWallet);
-    let walletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(walletBalancePOLY.toString())).call({from: Issuer}));
+    let walletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(walletBalancePOLY.toString())).call());
     displayWalletBalancePOLY = `
         Balance POLY               ${walletBalancePOLY} POLY (${walletBalancePOLY_USD} USD)`;
     let reserveWalletBalancePOLY = await currentBalance(displayReserveWallet);
-    let reserveWalletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(reserveWalletBalancePOLY.toString())).call({from: Issuer}));
+    let reserveWalletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(reserveWalletBalancePOLY.toString())).call());
     displayReserveWalletBalancePOLY = `
         Balance POLY               ${reserveWalletBalancePOLY} POLY (${reserveWalletBalancePOLY_USD} USD)`;
-    let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaisedPOLY().call({from: Issuer}));
+    let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaisedPOLY().call());
     displayFundsRaisedPOLY = `
         POLY:                      ${fundsRaisedPOLY} POLY`;
 
     //Only show sold for POLY if ETH raise is allowed too
     if (ethRaise) {
-      let tokensSoldPOLY = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForPOLY().call({from: Issuer}));
+      let tokensSoldPOLY = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForPOLY().call());
       displayTokensSoldPOLY = `
         Sold for POLY:             ${tokensSoldPOLY} ${displayTokenSymbol}`;
     }
@@ -1116,14 +990,14 @@ async function usdTieredSTO_status() {
         USD:                       ${displayFundsRaisedUSD} USD
   `);
 
-  console.log(chalk.green(`\n${(await currentBalance(Issuer))} POLY balance remaining at issuer address ${Issuer}`));
+  console.log(chalk.green(`\n${(await currentBalance(Issuer.address))} POLY balance remaining at issuer address ${Issuer.address}`));
 }
 
 async function usdTieredSTO_configure() {
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"STO Configuration - USD Tiered STO");
 
-  let isFinalized = await currentSTO.methods.isFinalized().call({from: Issuer});
+  let isFinalized = await currentSTO.methods.isFinalized().call();
   if (isFinalized) {
     console.log(chalk.red(`STO is finalized`));
   } else {
@@ -1132,7 +1006,7 @@ async function usdTieredSTO_configure() {
 
     // If STO is not started, you can modify configuration
     let now = Math.floor(Date.now() / 1000);
-    let startTime = await currentSTO.methods.startTime().call.call({from: Issuer});
+    let startTime = await currentSTO.methods.startTime().call.call();
     if (now < startTime) {
       options.push('Modify times configuration', 'Modify tiers configuration', 'Modify addresses configuration',
         'Modify limits configuration', 'Modify funding configuration');
@@ -1142,29 +1016,12 @@ async function usdTieredSTO_configure() {
       let index = readlineSync.keyInSelect(options, 'What do you want to do?');
       switch (index) {
         case 0:
-          let reserveWallet = await currentSTO.methods.reserveWallet().call({from: Issuer});
-          let isVerified = await generalTransferManager.methods.verifyTransfer(STO_Address, reserveWallet).call({from: Issuer});
-          if (isVerified) {
+          let reserveWallet = await currentSTO.methods.reserveWallet().call();
+          let isVerified = await generalTransferManager.methods.verifyTransfer(STO_Address, reserveWallet, 0, false).call();
+          if (isVerified == "2") {
             if (readlineSync.keyInYNStrict()) { 
               let finalizeAction = currentSTO.methods.finalize();
-              let GAS = await common.estimateGas(finalizeAction, Issuer, 1.2);
-              await finalizeAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-              .on('transactionHash', function(hash) {
-                console.log(`
-                  Finalizing STO
-                  Your transaction is being processed. Please wait...
-                  TxHash: ${hash}\n`
-                );
-              })
-              .on('receipt', function(receipt) {
-                console.log(`
-                  Congratulations! The transaction was successfully completed.
-                  Review it on Etherscan.
-
-                  TxHash: ${receipt.transactionHash}
-                  gasUsed: ${receipt.gasUsed}\n`
-                );
-              })
+              await common.sendTransaction(Issuer, finalizeAction, defaultGasPrice);
             }
           } else {
             console.log(chalk.red(`Reserve wallet (${reserveWallet}) is not able to receive remaining tokens. Check if this address is whitelisted.`));
@@ -1176,24 +1033,8 @@ async function usdTieredSTO_configure() {
           let investors = [investor];
           let accredited = [isAccredited];
           let changeAccreditedAction = currentSTO.methods.changeAccredited(investors, accredited);
-          let GAS2 = await common.estimateGas(changeAccreditedAction, Issuer, 2);
-          await changeAccreditedAction.send({from: Issuer, gas: GAS2, gasPrice: defaultGasPrice})
-          .on('transactionHash', function(hash) {
-            console.log(`
-              Changing accreditation
-              Your transaction is being processed. Please wait...
-              TxHash: ${hash}\n`
-            );
-          })
-          .on('receipt', function(receipt) {
-            console.log(`
-              Congratulations! The transaction was successfully completed.
-              Review it on Etherscan.
-
-              TxHash: ${receipt.transactionHash}
-              gasUsed: ${receipt.gasUsed}\n`
-            );
-          })
+          // 2 GAS?
+          await common.sendTransaction(Issuer, changeAccreditedAction, defaultGasPrice);
           break;
         case 2:
           shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75`);
@@ -1226,121 +1067,37 @@ async function usdTieredSTO_configure() {
 async function modfifyTimes() {
   let times = timesConfigUSDTieredSTO();
   let modifyTimesAction = currentSTO.methods.modifyTimes(times.startTime, times.endTime);
-  let GAS = await common.estimateGas(modifyTimesAction, Issuer, 1.2);
-  await modifyTimesAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-  .on('transactionHash', function(hash) {
-    console.log(`
-      Modifying start and end times
-      Your transaction is being processed. Please wait...
-      TxHash: ${hash}\n`
-    );
-  })
-  .on('receipt', function(receipt) {
-    console.log(`
-      Congratulations! The transaction was successfully completed.
-      Review it on Etherscan.
-
-      TxHash: ${receipt.transactionHash}
-      gasUsed: ${receipt.gasUsed}\n`
-    );
-  })
+  await common.sendTransaction(Issuer, modifyTimesAction, defaultGasPrice);
 }
 
 async function modfifyLimits() {
   let limits = limitsConfigUSDTieredSTO();
   let modifyLimitsAction = currentSTO.methods.modifyLimits(limits.nonAccreditedLimitUSD, limits.minimumInvestmentUSD);
-  let GAS = await common.estimateGas(modifyLimitsAction, Issuer, 1.2);
-  await modifyLimitsAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-  .on('transactionHash', function(hash) {
-    console.log(`
-      Modifying limits
-      Your transaction is being processed. Please wait...
-      TxHash: ${hash}\n`
-    );
-  })
-  .on('receipt', function(receipt) {
-    console.log(`
-      Congratulations! The transaction was successfully completed.
-      Review it on Etherscan.
-
-      TxHash: ${receipt.transactionHash}
-      gasUsed: ${receipt.gasUsed}\n`
-    );
-  })
+  await common.sendTransaction(Issuer, modifyLimitsAction, defaultGasPrice);
 }
 
 async function modfifyFunding() {
   let funding = fundingConfigUSDTieredSTO();
   let modifyFundingAction = currentSTO.methods.modifyFunding(funding.raiseType);
-  let GAS = await common.estimateGas(modifyFundingAction, Issuer, 1.5);
-  await modifyFundingAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-  .on('transactionHash', function(hash) {
-    console.log(`
-      Modifying funding raise types
-      Your transaction is being processed. Please wait...
-      TxHash: ${hash}\n`
-    );
-  })
-  .on('receipt', function(receipt) {
-    console.log(`
-      Congratulations! The transaction was successfully completed.
-      Review it on Etherscan.
-
-      TxHash: ${receipt.transactionHash}
-      gasUsed: ${receipt.gasUsed}\n`
-    );
-  })
+  // 1.5 GAS?
+  await common.sendTransaction(Issuer, modifyFundingAction, defaultGasPrice);
 }
 
 async function modfifyAddresses() {
   let addresses = addressesConfigUSDTieredSTO();
   let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.wallet, addresses.reserveWallet);
-  let GAS = await common.estimateGas(modifyAddressesAction, Issuer, 1.2);
-  await modifyAddressesAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-  .on('transactionHash', function(hash) {
-    console.log(`
-      Modifying addresses
-      Your transaction is being processed. Please wait...
-      TxHash: ${hash}\n`
-    );
-  })
-  .on('receipt', function(receipt) {
-    console.log(`
-      Congratulations! The transaction was successfully completed.
-      Review it on Etherscan.
-
-      TxHash: ${receipt.transactionHash}
-      gasUsed: ${receipt.gasUsed}\n`
-    );
-  })
+  await common.sendTransaction(Issuer, modifyAddressesAction, defaultGasPrice);
 }
 
 async function modfifyTiers() {
-  let tiers = tiersConfigUSDTieredSTO(await currentSTO.methods.fundRaiseType(1).call({from: Issuer}));
+  let tiers = tiersConfigUSDTieredSTO(await currentSTO.methods.fundRaiseType(1).call());
   let modifyTiersAction = currentSTO.methods.modifyTiers(
     tiers.ratePerTier,
     tiers.ratePerTierDiscountPoly,
     tiers.tokensPerTier,
     tiers.tokensPerTierDiscountPoly,
   );
-  let GAS = await common.estimateGas(modifyTiersAction, Issuer, 1.2);
-  await modifyTiersAction.send({from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-  .on('transactionHash', function(hash) {
-    console.log(`
-      Modifying tiers
-      Your transaction is being processed. Please wait...
-      TxHash: ${hash}\n`
-    );
-  })
-  .on('receipt', function(receipt) {
-    console.log(`
-      Congratulations! The transaction was successfully completed.
-      Review it on Etherscan.
-
-      TxHash: ${receipt.transactionHash}
-      gasUsed: ${receipt.gasUsed}\n`
-    );
-  })
+  await common.sendTransaction(Issuer, modifyTiersAction, defaultGasPrice);
 }
 
 //////////////////////
@@ -1353,7 +1110,7 @@ async function currentBalance(from) {
 }
 
 module.exports = {
-  executeApp: async function(tokenConfig, mintingConfig, stoConfig) {
-        return executeApp(tokenConfig, mintingConfig, stoConfig);
+  executeApp: async function(tokenConfig, mintingConfig, stoConfig, remoteNetwork) {
+        return executeApp(tokenConfig, mintingConfig, stoConfig, remoteNetwork);
     }
 }

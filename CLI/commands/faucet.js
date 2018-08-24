@@ -13,7 +13,6 @@ let defaultGasPrice;
 
 async function executeApp(beneficiary, amount, remoteNetwork) {
   await common.initialize(remoteNetwork);
-
   defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
 
   console.log("\n");

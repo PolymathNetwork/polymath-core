@@ -14,7 +14,7 @@ contract Pausable {
     * @notice Modifier to make a function callable only when the contract is not paused.
     */
     modifier whenNotPaused() {
-        require(!paused);
+        require(!paused, "Contract is paused");
         _;
     }
 
@@ -22,15 +22,14 @@ contract Pausable {
     * @notice Modifier to make a function callable only when the contract is paused.
     */
     modifier whenPaused() {
-        require(paused);
+        require(paused, "Contract is not paused");
         _;
     }
 
    /**
     * @notice called by the owner to pause, triggers stopped state
     */
-    function _pause() internal {
-        require(!paused);
+    function _pause() whenNotPaused internal {
         paused = true;
         emit Pause(now);
     }
@@ -38,8 +37,7 @@ contract Pausable {
     /**
     * @notice called by the owner to unpause, returns to normal state
     */
-    function _unpause() internal {
-        require(paused);
+    function _unpause() whenPaused internal {
         paused = false;
         emit Unpause(now);
     }

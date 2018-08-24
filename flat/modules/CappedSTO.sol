@@ -14,7 +14,7 @@ contract Pausable {
     * @notice Modifier to make a function callable only when the contract is not paused.
     */
     modifier whenNotPaused() {
-        require(!paused);
+        require(!paused, "Contract is paused");
         _;
     }
 
@@ -22,15 +22,14 @@ contract Pausable {
     * @notice Modifier to make a function callable only when the contract is paused.
     */
     modifier whenPaused() {
-        require(paused);
+        require(paused, "Contract is not paused");
         _;
     }
 
    /**
     * @notice called by the owner to pause, triggers stopped state
     */
-    function _pause() internal {
-        require(!paused);
+    function _pause() whenNotPaused internal {
         paused = true;
         emit Pause(now);
     }
@@ -38,8 +37,7 @@ contract Pausable {
     /**
     * @notice called by the owner to unpause, returns to normal state
     */
-    function _unpause() internal {
-        require(paused);
+    function _unpause() whenPaused internal {
         paused = false;
         emit Unpause(now);
     }
@@ -631,7 +629,6 @@ contract IModule {
  * @title Interface to be implemented by all STO modules
  */
 contract ISTO is IModule, Pausable {
-
     using SafeMath for uint256;
 
     enum FundRaiseType { ETH, POLY }
@@ -641,6 +638,8 @@ contract ISTO is IModule, Pausable {
     uint256 public startTime;
     // End time of the STO
     uint256 public endTime;
+    // Time STO was paused
+    uint256 public pausedTime;
 
     /**
      * @notice use to verify the investment, whether the investor provide the allowance to the STO or not.
@@ -682,10 +681,8 @@ contract ISTO is IModule, Pausable {
     /**
      * @notice unpause (overridden function)
      */
-    function unpause(uint256 _newEndDate) public onlyOwner {
-        require(_newEndDate >= endTime);
+    function unpause() public onlyOwner {
         super._unpause();
-        endTime = _newEndDate;
     }
 
     /**

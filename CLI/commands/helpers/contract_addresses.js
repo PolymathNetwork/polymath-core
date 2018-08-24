@@ -80,7 +80,7 @@ module.exports = {
     if (networkId == 1)
       return "0x2aa1b133f464ac08f66c2f702581d014e4603d31";
     else if (networkId == 42)
-      return "0x5ad2162dea12e9074641cb3d729102e13d095aa1"; // Updated to poly_oracle deployment
+      return "0x4527f1629b1d32ad8b900edebb766967c9c78715"; // Updated to 1.4.0
     else
       return JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).networks[networkId].address;
   },
@@ -89,7 +89,7 @@ module.exports = {
     if (networkId == 1)
       throw new Error("Not implemented");
     else if (networkId == 42)
-      return "0xd4eb00b4e222ae13b657edb3e29e1d2df090c1d3"; // Updated to poly_oracle deployment
+      return "0xcee7b602b6fc093c76f1bfcb05af6df7a9d39725"; // Updated to poly_oracle deployment
     else
       return JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTOFactory.json').toString()).networks[networkId].address;
   },

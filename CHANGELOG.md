@@ -1,30 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# v1.4.1 - Released Candidatea
-
-[__1.4.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
-
-## Added
-
-* Test cases for 1.4.1 migration
-* STR Migration script
-* Encrypted API Key for CMC queries in PolyOracle
-
-## Changed
-
-* Remove endData update from unpause function
-* Allow custom tokens to be added when STR is paused
-* PolyOracle does not revert on out of order callbacks (silently ignores instead)
-* Removed USDTieredSTO > STR dependency by moving oracle registry to PolymathRegistry
-
-## Fixed
-
-* Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions
-* Bug in ManualApprovalTransferManager that allowed anyone to reduce anyone's transfer allowance 
-
-
-# v1.4.0 - Unreleased
+# v1.4.0 - Release candidate
 
 [__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 
@@ -36,15 +13,24 @@ All notable changes to this project will be documented in this file.
 * Added CLI for USDTieredSTO.
 * Scripts for monitoring Oracles' status.
 * Scripts for monitoring Polymath stats (Tokens registered, tokens deployed, STOs launched).
+* Test cases for 1.4.1 migration
+* STR Migration script
+* Encrypted API Key for CMC queries in PolyOracle
 
 ## Changed
 
 * Modified CappedSTOFactory to comply with minor interface changes in iSTO. It now uses a mapping named `fundRaiseType` to specify the fundraise type (ETH / POLY)
+* Remove endData update from unpause function
+* Allow custom tokens to be added when STR is paused
+* PolyOracle does not revert on out of order callbacks (silently ignores instead)
+* Removed USDTieredSTO > STR dependency by moving oracle registry to PolymathRegistry
 
 ## Fixed
 
 * Modified function name in TickerRegistry and SecurityTokenRegistry from `changePolyRegisterationFee` to `changePolyRegistrationFee`. Event name is modified too from `LogChangePolyRegisterationFee` to `LogChangePolyRegistrationFee`
 * Minor CLI fixes
+* Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions
+* Bug in ManualApprovalTransferManager that allowed anyone to reduce anyone's transfer allowance 
 
 =======
 # v1.3.0  

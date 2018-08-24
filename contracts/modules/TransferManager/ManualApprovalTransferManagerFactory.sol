@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
 import "./ManualApprovalTransferManager.sol";
-import "../../interfaces/IModuleFactory.sol";
+import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying ManualApprovalTransferManager module
  */
-contract ManualApprovalTransferManagerFactory is IModuleFactory {
+contract ManualApprovalTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -16,7 +16,7 @@ contract ManualApprovalTransferManagerFactory is IModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+      ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
 
     }

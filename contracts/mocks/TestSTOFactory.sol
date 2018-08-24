@@ -1,18 +1,17 @@
 pragma solidity ^0.4.24;
 
 import "../modules/STO/DummySTO.sol";
-import "../interfaces/IModuleFactory.sol";
-import "../interfaces/IModule.sol";
+import "../modules/ModuleFactory.sol";
 
 
-contract TestSTOFactory is IModuleFactory {
+contract TestSTOFactory is ModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+      ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
 
     }
@@ -48,7 +47,7 @@ contract TestSTOFactory is IModuleFactory {
     }
 
     /**
-     * @notice Get the description of the Module 
+     * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
         return "Test STO";

@@ -9,7 +9,7 @@ contract IModuleRegistry {
      * @notice Called by a security token to notify the registry it is using a module
      * @param _moduleFactory is the address of the relevant module factory
      */
-    function useModule(address _moduleFactory) external;
+    function useModule(address _moduleFactory, address _securityTokenRegistry) external;
 
     /**
      * @notice Called by moduleFactory owner to register new modules for SecurityToken to use

@@ -54,7 +54,6 @@ async function getModuleRegistry() {
   return _moduleRegistry;
 }
 
-
 module.exports = {
   polymathRegistry: async function () {
     let networkId = await web3.eth.net.getId();
@@ -78,30 +77,38 @@ module.exports = {
   },
   cappedSTOFactoryAddress: async function() {
     let networkId = await web3.eth.net.getId();
-    if (networkId == 42)
+    if (networkId == 1)
+      return "0x2aa1b133f464ac08f66c2f702581d014e4603d31";
+    else if (networkId == 42)
       return "0x5ad2162dea12e9074641cb3d729102e13d095aa1"; // Updated to poly_oracle deployment
     else
       return JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).networks[networkId].address;
   },
   usdTieredSTOFactoryAddress: async function() {
     let networkId = await web3.eth.net.getId();
-    if (networkId == 42)
+    if (networkId == 1)
+      throw new Error("Not implemented");
+    else if (networkId == 42)
       return "0xd4eb00b4e222ae13b657edb3e29e1d2df090c1d3"; // Updated to poly_oracle deployment
     else
       return JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTOFactory.json').toString()).networks[networkId].address;
   },
   etherDividendCheckpointFactoryAddress: async function() {
     let networkId = await web3.eth.net.getId();
-    if (networkId == 42)
+    if (networkId == 1)
+      return "0x0da7ed8789348ac40937cf6ae8ff521eee43816c";
+    else if (networkId == 42)
       return "0x8e34a955dcdd6c0e4a88fb21af562b7db0b20100";
     else
       return JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpointFactory.json').toString()).networks[networkId].address;
   },
   erc20DividendCheckpointFactoryAddress: async function() {
     let networkId = await web3.eth.net.getId();
-    if (networkId == 42)
+    if (networkId == 1)
+      return "0x6950096964b7adae34d5a3d1792fe73afbe9ddbc";
+    else if (networkId == 42)
       return "0x9d8778fc5b4d7b97a74dcfee6661d14709cf5180";
-    else
+    else 
       return JSON.parse(require('fs').readFileSync('./build/contracts/ERC20DividendCheckpointFactory.json').toString()).networks[networkId].address;
   }
 };

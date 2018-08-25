@@ -30,6 +30,6 @@ contract ITickerRegistry {
      * @notice Use to get the ticker list as per the owner
      * @param _owner Address which owns the list of tickers 
      */
-    function getTickerOwnedByUser(address _owner) public view returns(bytes32[]);
+    function getTickersByOwner(address _owner) public view returns(bytes32[]);
 
 }

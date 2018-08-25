@@ -23,8 +23,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
     // Details of the symbol that get registered with the polymath platform
     struct SymbolDetails {
         address owner;
-        uint256 registeredTimestamp;
-        uint256 expiredTimestamp;
+        uint256 registrationDate;
+        uint256 expiryDate;
         string tokenName;
         bytes32 swarmHash;
         bool status;
@@ -43,8 +43,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         string _symbol,
         string _name,
         bytes32 _swarmHash,
-        uint256 indexed _registeredTimestamp,
-        uint256 indexed _expiredTimestamp
+        uint256 indexed _registrationDate,
+        uint256 indexed _expiryDate
     );
     // Emit when the token symbol expiry get changed
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
@@ -107,7 +107,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         require(msg.sender == securityTokenRegistry, "msg.sender should be SecurityTokenRegistry contract");
         require(registeredSymbols[symbol].status != true, "Symbol status should not equal to true");
         require(registeredSymbols[symbol].owner == _owner, "Owner of the symbol should matched with the requested issuer address");
-        require(registeredSymbols[symbol].expiredTimestamp >= now, "Ticker should not be expired");
+        require(registeredSymbols[symbol].expiryDate >= now, "Ticker should not be expired");
         registeredSymbols[symbol].tokenName = _tokenName;
         registeredSymbols[symbol].status = true;
         return true;
@@ -120,9 +120,13 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _symbol token symbol
      * @param _tokenName Name of the token
      * @param _swarmHash Off-chain details of the issuer and token
+     * @param _registrationDate Date on which ticker get registered
+     * @param _expiryDate Expiry date of the ticker
      */
-    function addCustomTicker(string _symbol, string _tokenName, bytes32 _swarmHash) public onlyOwner {
+    function addCustomTicker(string _symbol, string _tokenName, bytes32 _swarmHash, uint256 _registrationDate, uint256 _expiryDate) public onlyOwner {
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
+        require(_expiryDate != 0 && _registrationDate != 0, "Dates should not be 0");
+        require(_registrationDate < _expiryDate, "Registration date should be less than the expiry date");
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol), "Ticker is already reserved");
         tokensOwnedByUser[msg.sender].push(stringToBytes32(symbol));
@@ -161,7 +165,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      */
     function expiryCheck(string _symbol) internal returns(bool) {
         if (registeredSymbols[_symbol].owner != address(0)) {
-            if (now > registeredSymbols[_symbol].expiredTimestamp && registeredSymbols[_symbol].status != true) {
+            if (now > registeredSymbols[_symbol].expiryDate && registeredSymbols[_symbol].status != true) {
                 require(_renounceTickerOwnership(_symbol));
                 registeredSymbols[_symbol] = SymbolDetails(address(0), uint256(0), uint256(0), "", bytes32(0), false);
                 return true;
@@ -204,7 +208,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
     function transferTickerOwnership(address _newOwner, string _ticker) public whenNotPaused {
         string memory ticker = upper(_ticker);
         require(_newOwner != address(0), "Address should not be 0x");
-        require(bytes(ticker).length > 0, "Ticker length should be greator than 0");
+        require(bytes(ticker).length > 0, "Ticker length should be greater than 0");
         require(registeredSymbols[ticker].owner == msg.sender, "Only the ticker owner can transfer the ownership");
         require(_renounceTickerOwnership(ticker), "Should successfully renounce the ownership of the ticker");
         registeredSymbols[ticker].owner = _newOwner;
@@ -217,12 +221,12 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @notice Use to get the ticker list as per the owner
      * @param _owner Address which owns the list of tickers 
      */
-    function getTickerOwnedByUser(address _owner) public view returns(bytes32[]) {
+    function getTickersByOwner(address _owner) public view returns(bytes32[]) {
          uint counter = 0;
          bytes32[] memory tempList = new bytes32[](tokensOwnedByUser[_owner].length);
          for (uint j = 0; j < tokensOwnedByUser[_owner].length; j++) {
              string memory _symbol = bytes32ToString(tokensOwnedByUser[_owner][j]);
-             if (registeredSymbols[_symbol].expiredTimestamp >= now || registeredSymbols[_symbol].status == true ) {
+             if (registeredSymbols[_symbol].expiryDate >= now || registeredSymbols[_symbol].status == true ) {
                  tempList[counter] = tokensOwnedByUser[_owner][j];
                  counter ++; 
              }
@@ -241,12 +245,12 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      */
     function getDetails(string _symbol) public view returns (address, uint256, uint256, string, bytes32, bool) {
         string memory symbol = upper(_symbol);
-        if (registeredSymbols[symbol].status == true||registeredSymbols[symbol].expiredTimestamp > now) {
+        if (registeredSymbols[symbol].status == true||registeredSymbols[symbol].expiryDate > now) {
             return
             (
                 registeredSymbols[symbol].owner,
-                registeredSymbols[symbol].registeredTimestamp,
-                registeredSymbols[symbol].expiredTimestamp,
+                registeredSymbols[symbol].registrationDate,
+                registeredSymbols[symbol].expiryDate,
                 registeredSymbols[symbol].tokenName,
                 registeredSymbols[symbol].swarmHash,
                 registeredSymbols[symbol].status

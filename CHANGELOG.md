@@ -14,7 +14,7 @@ All notable changes to this project will be documented in this file.
 * Scripts for monitoring Oracles' status
 * Scripts for monitoring Polymath stats (Tokens registered, tokens deployed, STOs launched).   
 * `transferTickerOwnership()` function is introduced in `TickerRegistry` to transfer the ticker ownership after the registeration #191. 
-* `getTickerOwnedByUser()` function is used to get the list of tickers owned by the issuer #189.   
+* `getTickersByOwner()` function is used to get the list of tickers owned by the issuer #189.   
 * New function `addCustomTicker()` is used the add the Ticker in tickerRegistry. To avail the facility to Registry owner to add the tokens without paying the fee #190.      
 
 ## Fixed

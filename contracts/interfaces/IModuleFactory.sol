@@ -15,6 +15,7 @@ contract IModuleFactory is Ownable {
     string public title;
     bytes32 public name;
     string public description;
+    string public version;
 
     event LogChangeFactorySetupFee(uint256 _oldSetupcost, uint256 _newSetupCost, address _moduleFactory);
     event LogChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
@@ -54,6 +55,11 @@ contract IModuleFactory is Ownable {
      * @notice Get the title of the Module
      */
     function getTitle() public view returns(string);
+
+    /**
+     * @notice Get the version of the Module
+     */
+    function getVersion() public view returns(string);
 
     /**
      * @notice Get the Instructions that helped to used the module
@@ -126,6 +132,15 @@ contract IModuleFactory is Ownable {
     function changeName(bytes32 _newName) public onlyOwner {
         require(_newName != bytes32(0));
         name = _newName;
+    }
+
+    /**
+     * @notice Update the version of the ModuleFactory
+     * @param _newVersion New name that will replace the old one.
+     */
+    function changeVersion(string _newVersion) public onlyOwner {
+        require(bytes(_newVersion).length > 0 );
+        version = _newVersion;
     }
 
 }

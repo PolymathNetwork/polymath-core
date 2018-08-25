@@ -15,7 +15,8 @@ contract CappedSTOFactory is IModuleFactory {
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
       IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {
+    {   
+        version = "1.0.0";
         name = "CappedSTO";
         title = "Capped STO";
         description = "Use to collects the funds and once the cap is reached then investment will be no longer entertained";
@@ -63,6 +64,13 @@ contract CappedSTOFactory is IModuleFactory {
      */
     function getTitle() public view returns(string) {
         return title;
+    }
+
+    /**
+     * @notice Get the version of the Module
+     */
+    function getVersion() public view returns(string) {
+        return version;
     }
 
     /**

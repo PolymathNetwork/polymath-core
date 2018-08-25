@@ -15,7 +15,8 @@ contract PreSaleSTOFactory is IModuleFactory {
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
       IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {
+    {   
+        version = "1.0.0";
         name = "PreSaleSTO";
         title = "PreSale STO";
         description = "Allows Issuer to configure pre-sale token allocations";
@@ -65,6 +66,13 @@ contract PreSaleSTOFactory is IModuleFactory {
      */
     function getTitle() public view returns(string) {
         return title;
+    }
+
+    /**
+     * @notice Get the version of the Module
+     */
+    function getVersion() public view returns(string) {
+        return version;
     }
 
     /**

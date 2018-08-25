@@ -14,7 +14,8 @@ contract GeneralPermissionManagerFactory is IModuleFactory {
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
       IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {
+    {   
+        version = "1.0.0";
         name = "GeneralPermissionManager";
         title = "General Permission Manager";
         description = "Manage permissions within the Security Token and attached modules";
@@ -58,6 +59,13 @@ contract GeneralPermissionManagerFactory is IModuleFactory {
      */
     function getTitle() public  view returns(string) {
         return title;
+    }
+
+    /**
+     * @notice Get the version of the Module
+     */
+    function getVersion() public view returns(string) {
+        return version;
     }
 
     /**

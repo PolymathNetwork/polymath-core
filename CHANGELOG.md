@@ -22,6 +22,13 @@ All notable changes to this project will be documented in this file.
 
 * Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions
 
+# v1.5.0 - Unreleased
+
+[__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
+
+## Added
+* Adding the functionality to change the `version`,`name`,`description`,`title` of a Module factory.   
+
 
 # v1.4.0 - Unreleased
 

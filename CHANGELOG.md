@@ -28,6 +28,7 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 * Add the `registrationTimestamp` in the `SecurityTokenData` structure that also leads the change in the `getSecurityTokenData()` return parameters. #199
+* Add `_deployedAt` new parameter in the `addCustomSecurityToken`. #199
 
 ==========
 

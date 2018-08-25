@@ -1,19 +1,19 @@
 pragma solidity ^0.4.24;
 
 import "./GeneralTransferManager.sol";
-import "../../interfaces/IModuleFactory.sol";
+import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying GeneralTransferManager module
  */
-contract GeneralTransferManagerFactory is IModuleFactory {
+contract GeneralTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {   
         version = "1.0.0";
         name = "GeneralTransferManager";
@@ -68,6 +68,13 @@ contract GeneralTransferManagerFactory is IModuleFactory {
      */
     function getTitle() public view returns(string) {
         return title;
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCost() external view returns (uint256) {
+        return setupCost;
     }
 
     /**

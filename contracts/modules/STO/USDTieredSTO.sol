@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./ISTO.sol";
-import "../../interfaces/IST20.sol";
+import "../../interfaces/ISecurityToken.sol";
 import "../../interfaces/IOracle.sol";
 import "../../RegistryUpdater.sol";
 import "../../interfaces/ISecurityTokenRegistry.sol";
@@ -144,7 +144,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // STO Configuration //
     ///////////////////////
 
-    constructor (address _securityToken, address _polyAddress) public IModule(_securityToken, _polyAddress) {
+    constructor (address _securityToken, address _polyAddress) public
+    Module(_securityToken, _polyAddress)
+    {      
         oracleKeys[bytes32("ETH")][bytes32("USD")] = ETH_ORACLE;
         oracleKeys[bytes32("POLY")][bytes32("USD")] = POLY_ORACLE;
     }
@@ -309,7 +311,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             tempSold = tempSold.add(mintedPerTierTotal[i]);
             if (remainingTokens > 0) {
                 mintedPerTierTotal[i] = tokensPerTierTotal[i];
-                require(IST20(securityToken).mint(reserveWallet, remainingTokens), "Error in minting the tokens");
+                require(ISecurityToken(securityToken).mint(reserveWallet, remainingTokens), "Error in minting the tokens");
                 emit ReserveTokenMint(msg.sender, reserveWallet, remainingTokens, i);
             }
         }
@@ -475,7 +477,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             spentUSD = _investedUSD;
             purchasedTokens = maximumTokens;
         }
-        require(IST20(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting the tokens");
+        require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting the tokens");
         emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
         return (spentUSD, purchasedTokens);
     }

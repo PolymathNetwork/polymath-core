@@ -1,19 +1,19 @@
 pragma solidity ^0.4.24;
 
 import "./CountTransferManager.sol";
-import "../../interfaces/IModuleFactory.sol";
+import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying CountTransferManager module
  */
-contract CountTransferManagerFactory is IModuleFactory {
+contract CountTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {   
         version = "1.0.0";
         name = "CountTransferManager";
@@ -70,6 +70,13 @@ contract CountTransferManagerFactory is IModuleFactory {
      */
     function getVersion() public view returns(string) {
         return version;
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCost() external view returns (uint256) {
+        return setupCost;
     }
 
     /**

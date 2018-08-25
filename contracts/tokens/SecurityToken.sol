@@ -1,17 +1,17 @@
 pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/Math.sol";
-import "../interfaces/IERC20.sol";
-import "../interfaces/ISecurityToken.sol";
+import "../interfaces/IPolyToken.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IModuleRegistry.sol";
-import "../interfaces/IST20.sol";
 import "../modules/TransferManager/ITransferManager.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "../interfaces/ITokenBurner.sol";
 import "../RegistryUpdater.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 
 /**
 * @title Security Token contract
@@ -20,11 +20,31 @@ import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 * @notice - Transfers are restricted
 * @notice - Modules can be attached to it to control its behaviour
 * @notice - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
+* @notice - ST does not inherit from ISecurityToken due to:
+* @notice - https://github.com/ethereum/solidity/issues/4847
 */
-contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
+contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
     bytes32 public constant securityTokenVersion = "0.0.1";
+
+    // off-chain hash
+    string public tokenDetails;
+
+    uint8 public constant PERMISSIONMANAGER_KEY = 1;
+    uint8 public constant TRANSFERMANAGER_KEY = 2;
+    uint8 public constant STO_KEY = 3;
+    uint8 public constant CHECKPOINT_KEY = 4;
+    uint256 public granularity;
+
+    // Value of current checkpoint
+    uint256 public currentCheckpointId;
+
+    // Total number of non-zero token holders
+    uint256 public investorCount;
+
+    // List of token holders
+    address[] public investors;
 
     // Reference to token burner contract
     ITokenBurner public tokenBurner;
@@ -87,6 +107,9 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     event LogFinishMintingSTO(uint256 _timestamp);
     // Change the STR address in the event of a upgrade
     event LogChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
+    // Events to log minting and burning
+    event Minted(address indexed to, uint256 amount);
+    event Burnt(address indexed _burner, uint256 _value);
 
     // If _fallback is true, then for STO module type we only allow the module if it is set, if it is not set we only allow the owner
     // for other _moduleType we allow both issuer and module.
@@ -187,7 +210,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         uint8 moduleType = moduleFactory.getType();
         require(modules[moduleType].length < MAX_MODULES, "Limit of MAX MODULES is reached");
-        uint256 moduleCost = moduleFactory.setupCost();
+        uint256 moduleCost = moduleFactory.getSetupCost();
         require(moduleCost <= _maxCost, "Max Cost is always be greater than module cost");
         //Approve fee for module
         require(ERC20(polyToken).approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
@@ -225,7 +248,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @return bytes32
      * @return address
      */
-    function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address) {
+    function getModule(uint8 _moduleType, uint _moduleIndex) external view returns (bytes32, address) {
         if (modules[_moduleType].length > 0) {
             return (
                 modules[_moduleType][_moduleIndex].name,
@@ -244,7 +267,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @return bytes32
      * @return address
      */
-    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address) {
+    function getModuleByName(uint8 _moduleType, bytes32 _name) external view returns (bytes32, address) {
         if (modules[_moduleType].length > 0) {
             for (uint256 i = 0; i < modules[_moduleType].length; i++) {
                 if (modules[_moduleType][i].name == _name) {
@@ -295,7 +318,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
     * @param _amount amount of POLY to withdraw
     */
-    function withdrawPoly(uint256 _amount) public onlyOwner {
+    function withdrawPoly(uint256 _amount) external onlyOwner {
         require(ERC20(polyToken).transfer(owner, _amount), "In-sufficient balance");
     }
 
@@ -305,14 +328,14 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     * @param _moduleIndex module index
     * @param _budget new budget
     */
-    function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
+    function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) external onlyOwner {
         require(_moduleType != 0, "Module type cannot be zero");
         require(_moduleIndex < modules[_moduleType].length, "Incorrrect module index");
-        uint256 _currentAllowance = IERC20(polyToken).allowance(address(this), modules[_moduleType][_moduleIndex].moduleAddress);
+        uint256 _currentAllowance = IPolyToken(polyToken).allowance(address(this), modules[_moduleType][_moduleIndex].moduleAddress);
         if (_budget < _currentAllowance) {
-            require(IERC20(polyToken).decreaseApproval(modules[_moduleType][_moduleIndex].moduleAddress, _currentAllowance.sub(_budget)), "Insufficient balance to decreaseApproval");
+            require(IPolyToken(polyToken).decreaseApproval(modules[_moduleType][_moduleIndex].moduleAddress, _currentAllowance.sub(_budget)), "Insufficient balance to decreaseApproval");
         } else {
-            require(IERC20(polyToken).increaseApproval(modules[_moduleType][_moduleIndex].moduleAddress, _budget.sub(_currentAllowance)), "Insufficient balance to increaseApproval");
+            require(IPolyToken(polyToken).increaseApproval(modules[_moduleType][_moduleIndex].moduleAddress, _budget.sub(_currentAllowance)), "Insufficient balance to increaseApproval");
         }
         emit LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
     }
@@ -321,7 +344,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @notice change the tokenDetails
      * @param _newTokenDetails New token details
      */
-    function updateTokenDetails(string _newTokenDetails) public onlyOwner {
+    function updateTokenDetails(string _newTokenDetails) external onlyOwner {
         emit LogUpdateTokenDetails(tokenDetails, _newTokenDetails);
         tokenDetails = _newTokenDetails;
     }
@@ -330,7 +353,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     * @notice allows owner to change token granularity
     * @param _granularity granularity level of the token
     */
-    function changeGranularity(uint256 _granularity) public onlyOwner {
+    function changeGranularity(uint256 _granularity) external onlyOwner {
         require(_granularity != 0, "Granularity can not be 0");
         emit LogGranularityChanged(granularity, _granularity);
         granularity = _granularity;
@@ -368,7 +391,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     * @param _iters Max number of iterations of the for loop
     * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
     */
-    function pruneInvestors(uint256 _start, uint256 _iters) public onlyOwner {
+    function pruneInvestors(uint256 _start, uint256 _iters) external onlyOwner {
         for (uint256 i = _start; i < Math.min256(_start.add(_iters), investors.length); i++) {
             if ((i < investors.length) && (balanceOf(investors[i]) == 0)) {
                 investorListed[investors[i]] = false;
@@ -383,14 +406,14 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * NB - this length may differ from investorCount if list has not been pruned of zero balance investors
      * @return length
      */
-    function getInvestorsLength() public view returns(uint256) {
+    function getInvestorsLength() external view returns(uint256) {
         return investors.length;
     }
 
     /**
      * @notice freeze all the transfers
      */
-    function freezeTransfers() public onlyOwner {
+    function freezeTransfers() external onlyOwner {
         require(!freeze);
         freeze = true;
         emit LogFreezeTransfers(freeze, now);
@@ -399,7 +422,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     /**
      * @notice un-freeze all the transfers
      */
-    function unfreezeTransfers() public onlyOwner {
+    function unfreezeTransfers() external onlyOwner {
         require(freeze);
         freeze = false;
         emit LogFreezeTransfers(freeze, now);
@@ -524,7 +547,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     /**
      * @notice End token minting period permanently for Issuer
      */
-    function finishMintingIssuer() public onlyOwner {
+    function finishMintingIssuer() external onlyOwner {
         finishedIssuerMinting = true;
         emit LogFinishMintingIssuer(now);
     }
@@ -532,7 +555,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     /**
      * @notice End token minting period permanently for STOs
      */
-    function finishMintingSTO() public onlyOwner {
+    function finishMintingSTO() external onlyOwner {
         finishedSTOMinting = true;
         emit LogFinishMintingSTO(now);
     }
@@ -564,7 +587,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _amounts) public onlyModule(STO_KEY, true) returns (bool success) {
+    function mintMulti(address[] _investors, uint256[] _amounts) external onlyModule(STO_KEY, true) returns (bool success) {
         require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _amounts[i]);
@@ -597,7 +620,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @notice used to set the token Burner address. It only be called by the owner
      * @param _tokenBurner Address of the token burner contract
      */
-    function setTokenBurner(address _tokenBurner) public onlyOwner {
+    function setTokenBurner(address _tokenBurner) external onlyOwner {
         tokenBurner = ITokenBurner(_tokenBurner);
     }
 
@@ -605,7 +628,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @notice Burn function used to burn the securityToken
      * @param _value No. of token that get burned
      */
-    function burn(uint256 _value) checkGranularity(_value) public {
+    function burn(uint256 _value) checkGranularity(_value) public returns (bool) {
         adjustInvestorCount(msg.sender, address(0), _value);
         require(tokenBurner != address(0), "Token Burner contract address is not set yet");
         require(verifyTransfer(msg.sender, address(0), _value), "Transfer is not valid");
@@ -620,6 +643,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
         totalSupply_ = totalSupply_.sub(_value);
         emit Burnt(msg.sender, _value);
         emit Transfer(msg.sender, address(0), _value);
+        return true;
     }
 
     /**
@@ -638,7 +662,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
      * @return uint256
      */
-    function createCheckpoint() public onlyModule(CHECKPOINT_KEY, true) returns(uint256) {
+    function createCheckpoint() external onlyModule(CHECKPOINT_KEY, true) returns(uint256) {
         require(currentCheckpointId < 2**256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
         emit LogCheckpointCreated(currentCheckpointId, now);
@@ -650,7 +674,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @param _checkpointId Checkpoint ID to query
      * @return uint256
      */
-    function totalSupplyAt(uint256 _checkpointId) public view returns(uint256) {
+    function totalSupplyAt(uint256 _checkpointId) external view returns(uint256) {
         return getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
     }
 

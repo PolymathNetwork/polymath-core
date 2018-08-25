@@ -4,7 +4,7 @@
 set -o errexit
 
 # Global variables
-DIRECTORY=polymath-core-docs
+DIRECTORY=polymath-developer-portal
 WEBSITE_DIRECTORY=versioned_docs
 CORE_ROUTE=$PWD
 
@@ -14,6 +14,12 @@ create_docs() {
     # getting the all available branches 
     if [ "$(git branch | grep -w $latestTag)" == "" ];
     then
+    # Check whether the branch is already present or not
+    if [ "$(git branch -r | grep "origin/$latestTag" | wc -l)" -eq 1 ];
+    then 
+    echo "$latesTag Branch is already present on remote"
+    exit 0
+    fi
     # Checkout and create the $latestTag branch
     git checkout -b $latestTag
 
@@ -30,8 +36,9 @@ create_docs() {
 
     echo "Generating the API documentation in branch $latestTag"
     # Command to generate the documentation using the solidity-docgen
+    #npm install > /dev/null 2>&1
     migrate=$(SOLC_ARGS="openzeppelin-solidity="$CORE_ROUTE"/node_modules/openzeppelin-solidity" \
-solidity-docgen $CORE_ROUTE $CORE_ROUTE/contracts $HOME/tmp/polymath-core-docs/docs)
+solidity-docgen $CORE_ROUTE $CORE_ROUTE/contracts $CORE_ROUTE/polymath-developer-portal/)
     echo "Successfully docs are generated..."
     echo "Transferring the API DOCS to $latestTag directory"
     mv ../../docs/api_* $latestTag 
@@ -39,19 +46,21 @@ solidity-docgen $CORE_ROUTE $CORE_ROUTE/contracts $HOME/tmp/polymath-core-docs/d
     # Commit the changes
     echo "Commiting the new changes..."
     git add .
-    git commit -m "create new api docs for $latestTag" > /dev/null 2>&1
-    git push origin $latestTag > /dev/null 2>&1
+    #git commit -m "create new api docs for $latestTag" > /dev/null 2>&1
+    #git push origin $latestTag > /dev/null 2>&1
+    git commit -m "create new api docs for $latestTag"
+    git push origin $latestTag
 
     # Remove the repository
     echo "Removing the repository from the system...."
-    cd ../../../../
-    rm -rf polymath-core-docs
-    exit 1 
+    cd ../../../
+    rm -rf polymath-developer-portal
+    exit 0 
 }
 
 reject_docs() {
     echo "$latestTag docs are already exist into the $DIRECTORY"
-    exit 1
+    exit 0
 }
 
 echo "Checking the latest tag branch merge on masters"
@@ -66,18 +75,18 @@ versionNo=$(echo "$latestTag" | cut -b 2-6)
 #print the tag
 echo "Latest tag is: $latestTag"
 
-# clone the polymath-core-docs
-cd ~/tmp
+# clone the polymath-developer-portal
 
 if [ ! -d $DIRECTORY ]; then
-git clone https://github.com/PolymathNetwork/polymath-core-docs.git  > /dev/null 2>&1
+git clone https://${GH_USR}:${GH_PWD}@github.com/PolymathNetwork/polymath-developer-portal.git  > /dev/null 2>&1 
 cd $DIRECTORY
 else
 cd $DIRECTORY
-git pull  > /dev/null 2>&1
+git checkout master > /dev/null 2>&1
+git pull origin master > /dev/null 2>&1
 fi
 
-cd docs/website
+cd website
 
 if [ ! -d $WEBSITE_DIRECTORY ]; then
 echo "Created: versioned_docs directory"

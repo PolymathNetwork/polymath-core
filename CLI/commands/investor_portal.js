@@ -417,8 +417,6 @@ async function showUSDTieredSTOInfo() {
         }
     }
 
-
-    displayRaiseType;
     if (ethRaise && polyRaise) {
         displayRaiseType = "ETH and POLY";
       } else if (ethRaise) {
@@ -487,7 +485,7 @@ async function showCappedSTOInfo() {
     let displayInvestorCount = await currentSTO.methods.investorCount().call({from: User});
     let displayTokensRemaining = web3.utils.fromWei(displayCap) - web3.utils.fromWei(displayTokensSold);
 
-    let displayRaiseType = await currentSTO.methods.fundRaiseType(0).call({from: Issuer}) ? 'ETH' : 'POLY';
+    displayRaiseType = await currentSTO.methods.fundRaiseType(0).call({from: Issuer}) ? 'ETH' : 'POLY';
 
     await generalTransferManager.methods.whitelist(User).call({from: User}, function(error, result){
         displayCanBuy = result.canBuyFromSTO;

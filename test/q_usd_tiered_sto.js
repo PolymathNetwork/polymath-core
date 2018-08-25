@@ -291,8 +291,8 @@ contract('USDTieredSTO', accounts => {
         // Step 11: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY
         I_POLYOracle = await MockOracle.new(I_PolyToken.address, "POLY", "USD", USDPOLY, { from: POLYMATH }); // 25 cents per POLY
-        await I_SecurityTokenRegistry.changeOracle("ETH", "USD", I_USDOracle.address, { from: POLYMATH });
-        await I_SecurityTokenRegistry.changeOracle("POLY", "USD", I_POLYOracle.address, { from: POLYMATH });
+        await I_PolymathRegistry.changeAddress("EthUsdOracle", I_USDOracle.address, { from: POLYMATH });
+        await I_PolymathRegistry.changeAddress("PolyUsdOracle", I_POLYOracle.address, { from: POLYMATH });
 
         // Printing all the contract addresses
         console.log(`
@@ -990,7 +990,7 @@ contract('USDTieredSTO', accounts => {
             assert.ok(errorThrown4, 'ACCREDITED POLY investment succeeded when it should not');
 
             // Unpause the STO
-            await I_USDTieredSTO_Array[stoId].unpause(_endTime[stoId], { from: ISSUER });
+            await I_USDTieredSTO_Array[stoId].unpause({ from: ISSUER });
             assert.equal(await I_USDTieredSTO_Array[stoId].paused.call(), false, 'STO did not unpause successfully');
 
             await I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH });
@@ -3111,4 +3111,29 @@ contract('USDTieredSTO', accounts => {
             });
         });
     });
+
+    describe("Test cases for the USDTieredSTOFactory", async() => {
+        it("should get the exact details of the factory", async() => {
+            assert.equal((await I_USDTieredSTOFactory.setupCost.call()).toNumber(), STOSetupCost);
+            assert.equal(await I_USDTieredSTOFactory.getType.call(),3);
+            assert.equal(web3.utils.hexToString(await I_USDTieredSTOFactory.getName.call()),
+                        "USDTieredSTO",
+                        "Wrong Module added");
+            assert.equal(await I_USDTieredSTOFactory.getDescription.call(),
+                        "USD Tiered STO",
+                        "Wrong Module added");
+            assert.equal(await I_USDTieredSTOFactory.getTitle.call(),
+                        "USD Tiered STO",
+                        "Wrong Module added");
+            assert.equal(await I_USDTieredSTOFactory.getInstructions.call(),
+                        "Initialises a USD tiered STO.",
+                        "Wrong Module added");
+            let tags = await I_USDTieredSTOFactory.getTags.call();
+            assert.equal(web3.utils.hexToString(tags[0]),"USD");
+            assert.equal(web3.utils.hexToString(tags[1]),"Tiered");
+            assert.equal(web3.utils.hexToString(tags[2]),"POLY");
+            assert.equal(web3.utils.hexToString(tags[3]),"ETH");
+
+        });
+     });
 });

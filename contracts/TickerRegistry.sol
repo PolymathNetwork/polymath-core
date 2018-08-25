@@ -16,9 +16,9 @@ import "./ReclaimTokens.sol";
 contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, ReclaimTokens {
 
     using SafeMath for uint256;
+
     // constant variable to check the validity to use the symbol
-    // For now it's value is 15 days;
-    uint256 public expiryLimit = 15 * 1 days;
+    uint256 public expiryLimit;
 
     // Details of the symbol that get registered with the polymath platform
     struct SymbolDetails {
@@ -59,6 +59,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
     constructor (address _polymathRegistry, uint256 _registrationFee) public
     RegistryUpdater(_polymathRegistry)
     {
+        expiryLimit = 15 * 1 days;
         registrationFee = _registrationFee;
     }
 
@@ -71,7 +72,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _owner Address of the owner of the token
      * @param _swarmHash Off-chain details of the issuer and token
      */
-    function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) public whenNotPaused {
+    function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) external whenNotPaused {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         if(registrationFee > 0)
@@ -88,7 +89,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @notice Change the expiry time for the token symbol
      * @param _newExpiry new time period for token symbol expiry
      */
-    function changeExpiryLimit(uint256 _newExpiry) public onlyOwner {
+    function changeExpiryLimit(uint256 _newExpiry) external onlyOwner {
         require(_newExpiry >= 1 days, "Expiry should greater than or equal to 1 day");
         uint256 _oldExpiry = expiryLimit;
         expiryLimit = _newExpiry;
@@ -102,7 +103,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _tokenName Name of the token
      * @return bool
      */
-    function checkValidity(string _symbol, address _owner, string _tokenName) public returns(bool) {
+    function checkValidity(string _symbol, address _owner, string _tokenName) external returns(bool) {
         string memory symbol = upper(_symbol);
         require(msg.sender == securityTokenRegistry, "msg.sender should be SecurityTokenRegistry contract");
         require(registeredSymbols[symbol].status != true, "Symbol status should not equal to true");
@@ -143,7 +144,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _swarmHash off-chain hash
      * @return bool
      */
-     function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) public returns(bool) {
+     function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) external returns(bool) {
         string memory symbol = upper(_symbol);
         require(msg.sender == securityTokenRegistry, "msg.sender should be SecurityTokenRegistry contract");
         if (registeredSymbols[symbol].owner == _owner && !expiryCheck(_symbol)) {
@@ -179,7 +180,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @notice set the ticker registration fee in POLY tokens
      * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
      */
-    function changePolyRegistrationFee(uint256 _registrationFee) public onlyOwner {
+    function changePolyRegistrationFee(uint256 _registrationFee) external onlyOwner {
         require(registrationFee != _registrationFee);
         emit LogChangePolyRegistrationFee(registrationFee, _registrationFee);
         registrationFee = _registrationFee;

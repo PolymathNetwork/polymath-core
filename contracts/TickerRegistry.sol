@@ -132,8 +132,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         require(expiryCheck(symbol), "Ticker is already reserved");
         tokensOwnedByUser[msg.sender].push(stringToBytes32(symbol));
         tickerIndex[symbol] = tokensOwnedByUser[msg.sender].length - 1;
-        registeredSymbols[symbol] = SymbolDetails(msg.sender, now, now.add(expiryLimit), _tokenName, _swarmHash, false);
-        emit LogRegisterTicker (msg.sender, symbol, _tokenName, _swarmHash, now, now.add(expiryLimit));
+        registeredSymbols[symbol] = SymbolDetails(msg.sender, _registrationDate, _expiryDate, _tokenName, _swarmHash, false);
+        emit LogRegisterTicker (msg.sender, symbol, _tokenName, _swarmHash, _registrationDate, _expiryDate);
     }
 
     /**
@@ -233,6 +233,10 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
              }
          }
          return tempList;
+    }
+
+    function getTemp(address _owner) public view returns(bytes32) {
+       return tokensOwnedByUser[_owner][0];
     }
 
      /**

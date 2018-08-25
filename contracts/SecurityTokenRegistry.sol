@@ -89,17 +89,17 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      * @param _securityToken Address of the securityToken
      * @param _tokenDetails off-chain details of the token
      * @param _swarmHash off-chain details about the issuer company
-     * @param _deployeddAt Timestamp at which security token comes deployed on the ethereum blockchain
+     * @param _deployedAt Timestamp at which security token comes deployed on the ethereum blockchain
      */
-    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash, uint256 _deployeddAt) external onlyOwner {
+    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash, uint256 _deployedAt) external onlyOwner {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         string memory symbol = upper(_symbol);
         require(_securityToken != address(0) && symbols[symbol] == address(0), "Symbol is already at the polymath network or entered security token address is 0x");
         require(_owner != address(0));
         require(!(ITickerRegistry(tickerRegistry).isReserved(symbol, _owner, _name, _swarmHash)), "Trying to use non-valid symbol");
         symbols[symbol] = _securityToken;
-        securityTokens[_securityToken] = SecurityTokenData(symbol, _tokenDetails, _deployeddAt);
-        emit LogAddCustomSecurityToken(_name, symbol, _securityToken, _deployeddAt);
+        securityTokens[_securityToken] = SecurityTokenData(symbol, _tokenDetails, _deployedAt);
+        emit LogAddCustomSecurityToken(_name, symbol, _securityToken, _deployedAt);
     }
 
     /**

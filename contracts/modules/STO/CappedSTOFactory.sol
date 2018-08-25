@@ -1,20 +1,19 @@
 pragma solidity ^0.4.24;
 
 import "./CappedSTO.sol";
-import "../../interfaces/IModuleFactory.sol";
-import "../../interfaces/IModule.sol";
+import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying CappedSTO module
  */
-contract CappedSTOFactory is IModuleFactory {
+contract CappedSTOFactory is ModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+      ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
 
     }

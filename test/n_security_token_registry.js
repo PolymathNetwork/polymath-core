@@ -354,7 +354,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should fail if msg.sender is not polymath", async() => {
             let errorThrown = false;
             try {
-                await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_delegate});
+                await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", Math.floor(Date.now()/10000), {from: account_delegate});
             } catch(error) {
                 console.log(`         tx revert -> msg.sender is not polymath account`.grey);
                 errorThrown = true;
@@ -363,22 +363,8 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail if registration is paused", async() => {
-            let errorThrown = false;
-            try {
-                await I_SecurityTokenRegistry.pause({ from: account_polymath});
-                await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
-            } catch(error) {
-                console.log(`         tx revert -> Registration is paused`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("Should successfully generate token if registration is unpaused", async() => {
-            await I_SecurityTokenRegistry.unpause({ from: account_polymath});
-            let tx = await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
+        it("Should successfully generate token", async() => {
+            let tx = await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", "Swarm hash", Math.floor(Date.now()/10000), {from: account_polymath});
             assert.equal(tx.logs[0].args._symbol, "LOG2");
             assert.equal(tx.logs[0].args._securityToken, dummy_token);
             let symbolDetails = await I_TickerRegistry.getDetails("LOG2");
@@ -389,7 +375,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should fail if ST address is 0 address", async() => {
             let errorThrown = false;
             try {
-                await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, 0, "I am custom ST", "Swarm hash", {from: account_polymath});
+                await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, 0, "I am custom ST", "Swarm hash", Math.floor(Date.now()/10000), {from: account_polymath});
             } catch(error) {
                 console.log(`         tx revert -> Security token address is 0`.grey);
                 errorThrown = true;
@@ -401,7 +387,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should fail if symbol or name of length 0", async() => {
             let errorThrown = false;
             try {
-                await I_SecurityTokenRegistry.addCustomSecurityToken("", "", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
+                await I_SecurityTokenRegistry.addCustomSecurityToken("", "", account_temp, dummy_token, "I am custom ST", "Swarm hash", Math.floor(Date.now()/10000), {from: account_polymath});
             } catch(error) {
                 console.log(`         tx revert -> Symbol and name of zero length`.grey);
                 errorThrown = true;
@@ -413,7 +399,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should fail if symbol is reserved", async() => {
             let errorThrown = false;
             try {
-                await I_SecurityTokenRegistry.addCustomSecurityToken(name2, symbol2, account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
+                await I_SecurityTokenRegistry.addCustomSecurityToken(name2, symbol2, account_temp, dummy_token, "I am custom ST", "Swarm hash", Math.floor(Date.now()/10000), {from: account_polymath});
             } catch(error) {
                 console.log(`         tx revert -> Symbol is already reserved`.grey);
                 errorThrown = true;
@@ -423,7 +409,7 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should successfully generate the custom token", async() => {
-            let tx = await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
+            let tx = await I_SecurityTokenRegistry.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", Math.floor(Date.now()/10000), {from: account_polymath});
             assert.equal(tx.logs[0].args._symbol, "LOG");
             assert.equal(tx.logs[0].args._securityToken, dummy_token);
             let symbolDetails = await I_TickerRegistry.getDetails("LOG");
@@ -439,7 +425,7 @@ contract('SecurityTokenRegistry', accounts => {
             await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), account_temp);
             await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: account_temp});
             await I_TickerRegistry.registerTicker(account_temp, "CUST", "custom", "I am swram hash", {from: account_temp});
-            let tx = await I_SecurityTokenRegistry.addCustomSecurityToken("custom", "CUST", account_temp, accounts[2], "I am custom ST", "I am swram hash", {from: account_polymath});
+            let tx = await I_SecurityTokenRegistry.addCustomSecurityToken("custom", "CUST", account_temp, accounts[2], "I am custom ST", "I am swram hash", Math.floor(Date.now()/10000), {from: account_polymath});
             assert.equal(tx.logs[0].args._symbol, "CUST");
             assert.equal(tx.logs[0].args._securityToken, accounts[2]);
             let symbolDetails = await I_TickerRegistry.getDetails("CUST");

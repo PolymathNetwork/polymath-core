@@ -59,9 +59,9 @@ async function setup(){
 async function start_explorer(){
   if (!tokenSymbol) tokenSymbol = readlineSync.question('Enter the token symbol: ');
   
-  // Let's check if token has already been deployed, if it has, skip to STO
   let result = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({from: Issuer});
   if (result == "0x0000000000000000000000000000000000000000") {
+    tokenSymbol = undefined;
     console.log(chalk.red(`Token symbol provided is not a registered Security Token.`));
   } else {
     let securityTokenABI = abis.securityToken();
@@ -85,13 +85,13 @@ async function start_explorer(){
         'Calculate Dividends', 'Calculate Dividends at a checkpoint'];
       
       // Only show dividend options if divididenModule is already attached 
-      if (isDividendsModuleAttached()) {
+      if (await isDividendsModuleAttached()) {
         options.push('Push dividends to account', 'Pull dividends to account', 
           'Explore ETH balance', 'Reclaimed dividends after expiry')
       }
       
       let index = readlineSync.keyInSelect(options, 'What do you want to do?');
-      console.log("Selected: ", options[index]);
+      console.log("Selected: ", index != -1 ? options[index] : 'Cancel');
       switch (index) {
         case 0:
           // Mint tokens
@@ -166,6 +166,10 @@ async function start_explorer(){
           // Reclaimed dividends after expiry
           let _checkpoint5 = readlineSync.question('Enter the checkpoint to explore: ');
           await reclaimedDividend(_checkpoint5);
+          break;
+        case -1:
+          process.exit(0);
+          break;
       }
     }
   }
@@ -421,7 +425,7 @@ async function isDividendsModuleAttached() {
 }
 
 async function addDividendsModule() {
-  if (!isDividendsModuleAttached()) {
+  if (!(await isDividendsModuleAttached())) {
     let etherDividendCheckpointFactoryAddress = await contracts.etherDividendCheckpointFactoryAddress();
     let addModuleAction = securityToken.methods.addModule(etherDividendCheckpointFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
     let GAS = await common.estimateGas(addModuleAction, Issuer, 1.2);

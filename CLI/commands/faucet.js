@@ -55,7 +55,7 @@ async function send_poly(beneficiary, amount) {
   if (typeof beneficiary === 'undefined' && typeof amount === 'undefined') {
     let options = ['250 POLY for ticker registration','500 POLY for token launch + ticker reg', '20K POLY for CappedSTO Module', '20.5K POLY for Ticker + Token + CappedSTO', '100.5K POLY for Ticker + Token + USDTieredSTO','As many POLY as you want'];
     index = readlineSync.keyInSelect(options, 'What do you want to do?');
-    console.log("Selected:",options[index]);
+    console.log("Selected:", index != -1 ? options[index] : 'Cancel');
     switch (index) {
       case 0:
         beneficiary =  readlineSync.question(`Enter beneficiary of 250 POLY ('${Issuer}'): `);
@@ -81,6 +81,8 @@ async function send_poly(beneficiary, amount) {
         beneficiary =  readlineSync.question(`Enter beneficiary of transfer ('${Issuer}'): `);
         amount = readlineSync.questionInt(`Enter the no. of POLY Tokens: `).toString();
         break;
+      case -1:
+        process.exit(0);
     }
   }
   

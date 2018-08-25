@@ -1,19 +1,19 @@
 pragma solidity ^0.4.24;
 
 import "./PercentageTransferManager.sol";
-import "../../interfaces/IModuleFactory.sol";
+import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying PercentageTransferManager module
  */
-contract PercentageTransferManagerFactory is IModuleFactory {
+contract PercentageTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+      ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
 
     }

@@ -235,10 +235,6 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
          return tempList;
     }
 
-    function getTemp(address _owner) public view returns(bytes32) {
-       return tokensOwnedByUser[_owner][0];
-    }
-
      /**
      * @notice Returns the owner and timestamp for a given symbol
      * @param _symbol symbol

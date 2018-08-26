@@ -238,8 +238,8 @@ contract('TickerRegistry', accounts => {
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
-            let tokenList = await I_TickerRegistry.getTickersByOwner.call(token_owner);
-            assert.equal(web3.utils.hexToAscii(tokenList[0]).replace(/\u0000/g, ''), symbol);
+            // let tokenList = await I_TickerRegistry.getTickersByOwner.call(token_owner);
+            // assert.equal(web3.utils.hexToAscii(tokenList[0]).replace(/\u0000/g, ''), symbol);
         });
 
         it("Should fail to register ticker due to the symbol length is 0", async() => {
@@ -290,8 +290,8 @@ contract('TickerRegistry', accounts => {
             await increaseTime(duration.days(15) + 4000);
             await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: account_temp});
             let tx = await I_TickerRegistry.registerTicker(account_temp, symbol, name, swarmHash, { from: account_temp });
-            let tokenList = await I_TickerRegistry.getTickersByOwner.call(account_temp);
-            assert.equal(web3.utils.hexToAscii(tokenList[0]).replace(/\u0000/g, ''), symbol);
+            // let tokenList = await I_TickerRegistry.getTickersByOwner.call(account_temp);
+            // assert.equal(web3.utils.hexToAscii(tokenList[0]).replace(/\u0000/g, ''), symbol);
             assert.equal(tx.logs[0].args._owner, account_temp);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });

@@ -161,7 +161,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
             endTime,
             cap,
             rate,
-            (fundRaiseType[uint8(FundRaiseType.POLY)]) ? fundsRaisedPOLY: fundsRaisedPOLY,
+            (fundRaiseType[uint8(FundRaiseType.POLY)]) ? fundsRaisedPOLY: fundsRaisedETH,
             investorCount,
             totalTokensSold,
             (fundRaiseType[uint8(FundRaiseType.POLY)])

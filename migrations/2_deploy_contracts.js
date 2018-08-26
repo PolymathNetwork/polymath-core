@@ -6,6 +6,7 @@ const PercentageTransferManagerFactory = artifacts.require('./PercentageTransfer
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
+const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
@@ -103,13 +104,17 @@ module.exports = function (deployer, network, accounts) {
       // to track the percentage of investment the investors could do for a particular security token)
       return deployer.deploy(PercentageTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
     }).then(() => {
-      // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
-      // to track the percentage of investment the investors could do for a particular security token)
+      // D) Deploy the EtherDividendCheckpointFactory Contract (Factory used to generate the EtherDividendCheckpoint contract use
+      // to provide the functionality of the dividend in terms of ETH)
       return deployer.deploy(EtherDividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
     }).then(() => {
-      // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
-      // to track the percentage of investment the investors could do for a particular security token)
+      // D) Deploy the ERC20DividendCheckpointFactory Contract (Factory used to generate the ERC20DividendCheckpoint contract use
+      // to provide the functionality of the dividend in terms of ERC20 token)
       return deployer.deploy(ERC20DividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    }).then(() => {
+        // D) Deploy the ManualApprovalTransferManagerFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
+        // to manual approve the transfer that will overcome the other transfer restrictions)
+        return deployer.deploy(ManualApprovalTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
     }).then(() => {
       // D) Register the PercentageTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the PercentageTransferManager contract.
@@ -131,8 +136,12 @@ module.exports = function (deployer, network, accounts) {
       // So any securityToken can use that factory to generate the GeneralPermissionManager contract.
       return moduleRegistry.registerModule(EtherDividendCheckpointFactory.address, {from: PolymathAccount});
     }).then(() => {
-      // E) Register the GeneralPermissionManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
-      // So any securityToken can use that factory to generate the GeneralPermissionManager contract.
+      // D) Register the ManualApprovalTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
+      // So any securityToken can use that factory to generate the ManualApprovalTransferManager contract.
+      return moduleRegistry.registerModule(ManualApprovalTransferManagerFactory.address, {from: PolymathAccount});
+    }).then(() => {
+      // E) Register the ERC20DividendCheckpointFactory in the ModuleRegistry to make the factory available at the protocol level.
+      // So any securityToken can use that factory to generate the ERC20DividendCheckpoint contract.
       return moduleRegistry.registerModule(ERC20DividendCheckpointFactory.address, {from: PolymathAccount});
     }).then(() => {
       // F) Once the GeneralTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
@@ -164,6 +173,11 @@ module.exports = function (deployer, network, accounts) {
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
       return moduleRegistry.verifyModule(ERC20DividendCheckpointFactory.address, true, {from: PolymathAccount});
+    }).then(() => {
+      // G) Once the ManualApprovalTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+      // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+      return moduleRegistry.verifyModule(ManualApprovalTransferManagerFactory.address, true, {from: PolymathAccount});
     }).then(() => {
       // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
       return deployer.deploy(STVersionProxy001, GeneralTransferManagerFactory.address, {from: PolymathAccount});
@@ -229,6 +243,7 @@ module.exports = function (deployer, network, accounts) {
       console.log('*** Percentage Transfer Manager Factory: ', PercentageTransferManagerFactory.address, '***')
       console.log('*** ETH Dividends Checkpoint Factory: ', EtherDividendCheckpointFactory.address, '***')
       console.log('*** ERC20 Dividends Checkpoint Factory: ', ERC20DividendCheckpointFactory.address, '***')
+      console.log('*** Manual Approval Transfer Manager Factory: ', ManualApprovalTransferManagerFactory.address, '***')
       console.log('-----------------------------------')
       console.log('\n')
       // -------- END OF POLYMATH NETWORK Configuration -------//

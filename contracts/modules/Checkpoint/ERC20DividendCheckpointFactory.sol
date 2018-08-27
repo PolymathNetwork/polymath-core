@@ -31,7 +31,9 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        return address(new ERC20DividendCheckpoint(msg.sender, address(polyToken)));
+        address erc20DividendCheckpoint = new ERC20DividendCheckpoint(msg.sender, address(polyToken));
+        emit LogGenerateModuleFromFactory(erc20DividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
+        return erc20DividendCheckpoint;
     }
 
     /**

@@ -46,4 +46,18 @@ interface IModuleRegistry {
       */
     function removeTagByModuleType(uint8 _moduleType, bytes32[] _removedTags) external;
 
+    /**
+     * @notice Use to get the reputation of the Module factory
+     * @param _factoryAddress Ethereum contract address of the module factory
+     * @return address array which have the list of securityToken's uses that module factory 
+     */
+    function getReputationOfFactory(address _factoryAddress) public view returns(address[]);
+
+    /**
+     * @notice Use to get the list of addresses of Module factory for a particular type
+     * @param _moduleType Type of Module
+     * @return address array thal contains the lis of addresses of module factory contracts.
+     */
+    function getModuleListOfType(uint8 _moduleType) public view returns(address[]);
+
 }

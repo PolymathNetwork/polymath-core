@@ -8,7 +8,14 @@ interface IModuleFactory {
     event LogChangeFactorySetupFee(uint256 _oldSetupcost, uint256 _newSetupCost, address _moduleFactory);
     event LogChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
     event LogChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
-    event LogGenerateModuleFromFactory(address _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address _creator, uint256 _timestamp);
+    event LogGenerateModuleFromFactory(
+        address _module,
+        bytes32 indexed _moduleName,
+        address indexed _moduleFactory,
+        address _creator,
+        uint256 _setupCost,
+        uint256 _timestamp
+    );
 
     //Should create an instance of the Module, or throw
     function deploy(bytes _data) external returns(address);

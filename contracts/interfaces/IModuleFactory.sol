@@ -34,6 +34,11 @@ interface IModuleFactory {
     function getTitle() external view returns(string);
 
     /**
+     * @notice Get the version of the Module
+     */
+    function getVersion() public view returns(string);
+
+    /**
      * @notice Get the Instructions that helped to used the module
      */
     function getInstructions() external view returns (string);

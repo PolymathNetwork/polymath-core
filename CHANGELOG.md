@@ -34,6 +34,7 @@ All notable changes to this project will be documented in this file.
 * Adding the functionality to change the `version`,`name`,`description`,`title` of a Module factory.   
 * Add the `registrationTimestamp` in the `SecurityTokenData` structure that also leads the change in the `getSecurityTokenData()` return parameters. #199
 * Add `_deployedAt` new parameter in the `addCustomSecurityToken`. #199
+* Add new function `getAllModulesByName()`, To get the list of modules having the same name. #198     
 
 # v1.4.0 - Unreleased
 

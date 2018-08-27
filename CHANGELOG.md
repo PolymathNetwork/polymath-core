@@ -27,23 +27,15 @@ All notable changes to this project will be documented in this file.
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
+
+* Adding the functionality to change the `version`,`name`,`description`,`title` of a Module factory.   
 * Add the `registrationTimestamp` in the `SecurityTokenData` structure that also leads the change in the `getSecurityTokenData()` return parameters. #199
 * Add `_deployedAt` new parameter in the `addCustomSecurityToken`. #199
-
-==========
-
-# v1.5.0 - Unreleased
-
-[__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
-
-## Added
 * Add `getReputationOfFactory()` & `getModuleListOfType()` functions to get the array type data from the ModuleRegistry contract.   
 * Add `_setupCost` in `LogGenerateModuleFromFactory` event.        
 
 ## Fixed
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.   
-
-=======
 
 # v1.4.0 - Unreleased
 

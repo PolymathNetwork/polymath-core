@@ -32,7 +32,7 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address manualTransferManager = new ManualApprovalTransferManager(msg.sender, address(polyToken));
-        emit LogGenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, now);
+        emit LogGenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(manualTransferManager);
     }
 

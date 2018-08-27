@@ -29,8 +29,8 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address permissionManager = new GeneralPermissionManager(msg.sender, address(polyToken));
-        emit LogGenerateModuleFromFactory(address(permissionManager), getName(), address(this), msg.sender, now);
-        return address(permissionManager);
+        emit LogGenerateModuleFromFactory(address(permissionManager), getName(), address(this), msg.sender, setupCost, now);
+        return permissionManager;
     }
 
     /**

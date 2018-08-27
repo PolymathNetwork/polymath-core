@@ -118,22 +118,24 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @notice Register the ticker without paying the fee 
        Once the token symbol is registered to its owner then no other issuer can claim
        Its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
+     * @param _owner Owner of the token
      * @param _symbol token symbol
      * @param _tokenName Name of the token
      * @param _swarmHash Off-chain details of the issuer and token
      * @param _registrationDate Date on which ticker get registered
      * @param _expiryDate Expiry date of the ticker
      */
-    function addCustomTicker(string _symbol, string _tokenName, bytes32 _swarmHash, uint256 _registrationDate, uint256 _expiryDate) public onlyOwner {
+    function addCustomTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash, uint256 _registrationDate, uint256 _expiryDate) public onlyOwner {
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         require(_expiryDate != 0 && _registrationDate != 0, "Dates should not be 0");
         require(_registrationDate < _expiryDate, "Registration date should be less than the expiry date");
+        require(_owner != address(0), "Address should not be 0x");
         string memory symbol = upper(_symbol);
         require(expiryCheck(symbol), "Ticker is already reserved");
-        tokensOwnedByUser[msg.sender].push(stringToBytes32(symbol));
-        tickerIndex[symbol] = tokensOwnedByUser[msg.sender].length - 1;
-        registeredSymbols[symbol] = SymbolDetails(msg.sender, _registrationDate, _expiryDate, _tokenName, _swarmHash, false);
-        emit LogRegisterTicker (msg.sender, symbol, _tokenName, _swarmHash, _registrationDate, _expiryDate);
+        tokensOwnedByUser[_owner].push(stringToBytes32(symbol));
+        tickerIndex[symbol] = tokensOwnedByUser[_owner].length - 1;
+        registeredSymbols[symbol] = SymbolDetails(_owner, _registrationDate, _expiryDate, _tokenName, _swarmHash, false);
+        emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, _registrationDate, _expiryDate);
     }
 
     /**

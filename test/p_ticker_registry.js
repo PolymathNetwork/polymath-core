@@ -613,7 +613,7 @@ contract('TickerRegistry', accounts => {
             it("Should register the ticker successfully -- fail because msg.sender is not the Owner of the registry", async() => {
                 let errorThrown = false;
                 try {
-                    let tx = await I_TickerRegistry.addCustomTicker("CHECK", "temporary", swarmHash, latestTime(), latestTime() + 10000, { from: account_temp});
+                    let tx = await I_TickerRegistry.addCustomTicker(account_polymath, "CHECK", "temporary", swarmHash, latestTime(), latestTime() + 10000, { from: account_temp});
                 } catch(error) {
                     console.log(`         tx revert -> Because msg.sender is not the Owner of the registry`.grey);
                     errorThrown = true;
@@ -625,7 +625,7 @@ contract('TickerRegistry', accounts => {
             it("Should register the ticker successfully -- fail because ticker length is 0", async() => {
                 let errorThrown = false;
                 try {
-                    let tx = await I_TickerRegistry.addCustomTicker("", "temporary", swarmHash, latestTime(), latestTime() + 10000, { from: account_polymath});
+                    let tx = await I_TickerRegistry.addCustomTicker(account_polymath, "", "temporary", swarmHash, latestTime(), latestTime() + 10000, { from: account_polymath});
                 } catch(error) {
                     console.log(`         tx revert -> Because ticker length is 0`.grey);
                     errorThrown = true;
@@ -637,7 +637,7 @@ contract('TickerRegistry', accounts => {
             it("Should register the ticker successfully -- fail because ticker is already registered", async() => {
                 let errorThrown = false;
                 try {
-                    let tx = await I_TickerRegistry.addCustomTicker("BBB", "temporary", swarmHash, latestTime(), latestTime() + 10000, { from: account_polymath});
+                    let tx = await I_TickerRegistry.addCustomTicker(account_polymath, "BBB", "temporary", swarmHash, latestTime(), latestTime() + 10000, { from: account_polymath});
                 } catch(error) {
                     console.log(`         tx revert -> Ticker should not be already registered`.grey);
                     errorThrown = true;
@@ -647,7 +647,7 @@ contract('TickerRegistry', accounts => {
             });
 
             it("Should register the ticker successfully", async() => {
-                let tx = await I_TickerRegistry.addCustomTicker("CHECK", "temporary", swarmHash, latestTime(), latestTime() + 10000, { from: account_polymath});
+                let tx = await I_TickerRegistry.addCustomTicker(account_polymath, "CHECK", "temporary", swarmHash, latestTime(), latestTime() + 10000, { from: account_polymath});
                 assert.equal(tx.logs[0].args._owner, account_polymath);
                 assert.equal(tx.logs[0].args._symbol, "CHECK");
                 let tokenList = await I_TickerRegistry.getTickersByOwner.call(account_polymath);

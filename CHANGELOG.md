@@ -22,7 +22,6 @@ All notable changes to this project will be documented in this file.
 
 * Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions
 
-=======
 
 # v1.5.0 - Released Candidatea
 
@@ -32,7 +31,9 @@ All notable changes to this project will be documented in this file.
 * `transferTickerOwnership()` function is introduced in `TickerRegistry` to transfer the ticker ownership after the registeration #191. 
 * `getTickersByOwner()` function is used to get the list of tickers owned by the issuer #189.   
 * New function `addCustomTicker()` is used the add the Ticker in tickerRegistry. To avail the facility to Registry owner to add the tokens without paying the fee #190.  
-
+* Adding the functionality to change the `version`,`name`,`description`,`title` of a Module factory.   
+* Add the `registrationTimestamp` in the `SecurityTokenData` structure that also leads the change in the `getSecurityTokenData()` return parameters. #199
+* Add `_deployedAt` new parameter in the `addCustomSecurityToken`. #199
 
 # v1.4.0 - Unreleased
 

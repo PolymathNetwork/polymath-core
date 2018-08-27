@@ -22,6 +22,15 @@ All notable changes to this project will be documented in this file.
 
 * Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions
 
+# v1.5.0 - Unreleased
+
+[__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
+
+## Added
+* Add the `registrationTimestamp` in the `SecurityTokenData` structure that also leads the change in the `getSecurityTokenData()` return parameters. #199
+* Add `_deployedAt` new parameter in the `addCustomSecurityToken`. #199
+
+==========
 
 # v1.5.0 - Unreleased
 

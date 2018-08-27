@@ -336,6 +336,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
                 I_SecurityToken1.address,
                 tokenDetails1,
                 swarmHash1,
+                Math.floor(Date.now()/10000),
                 {from: POLYMATH}
             );
             assert.equal(tx.logs[0].args._name, name1, "First token name does not match");
@@ -350,6 +351,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
                 I_SecurityToken2.address,
                 tokenDetails2,
                 web3.utils.asciiToHex(swarmHash2),
+                Math.floor(Date.now()/10000),
                 {from: POLYMATH}
             );
             assert.equal(tx.logs[0].args._name, name2, "Second token name does not match");

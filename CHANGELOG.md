@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# v1.4.1 - Released Candidatea
+# v1.4.1 - Release Candidate
 
 [__1.4.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 

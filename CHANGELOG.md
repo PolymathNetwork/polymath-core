@@ -36,6 +36,7 @@ All notable changes to this project will be documented in this file.
 
 ## Fixed
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.   
+* Add new function `getAllModulesByName()`, To get the list of modules having the same name. #198     
 
 # v1.4.0 - Unreleased
 

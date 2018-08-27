@@ -54,8 +54,25 @@ interface ISecurityTokenRegistry {
 
     /**
      * @notice set the ticker registration fee in POLY tokens
-     * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
+     * @param _stLaunchFee registration fee in POLY tokens (base 18 decimals)
      */
-    function changePolyRegistrationFee(uint256 _registrationFee) external;
+    function changeSecurityLaunchFee(uint256 _stLaunchFee) external;
+
+    /**
+     * @notice Returns the owner and timestamp for a given symbol
+     * @param _symbol symbol
+     * @return address
+     * @return uint256
+     * @return string
+     * @return bytes32
+     * @return bool
+     */
+    function getTickerDetails(string _symbol) external view returns (address, uint256, string, bytes32, bool);
+
+    /**
+     * @notice set the ticker registration fee in POLY tokens
+     * @param _tickerRegFee registration fee in POLY tokens (base 18 decimals)
+     */
+    function changeTickerRegistrationFee(uint256 _tickerRegFee) external;
 
 }

@@ -9,7 +9,7 @@ const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpo
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
-const TickerRegistry = artifacts.require('./TickerRegistry.sol')
+const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol')
 const STVersionProxy001 = artifacts.require('./tokens/STVersionProxy001.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
 const MockOracle = artifacts.require('./MockOracle.sol')
@@ -69,6 +69,31 @@ module.exports = function (deployer, network, accounts) {
       });
     });
   }
+
+  let functionSignature = {
+    name: 'initialize',
+    type: 'function',
+    inputs: [{
+       type:'address',
+       name: '_polymathRegistry'
+    },{
+        type: 'address',
+        name: '_stVersionProxy'
+    },{
+        type: 'uint256',
+        name: '_stLaunchFee'
+    },{
+        type: 'uint256',
+        name: '_tickerRegFee'
+    },{
+        type: 'address',
+        name: '_polyToken'
+    },{
+      type: 'address',
+      name: '_owner'
+  }
+    ]
+}
 
 
   // POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
@@ -168,26 +193,19 @@ module.exports = function (deployer, network, accounts) {
       // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
       return deployer.deploy(STVersionProxy001, GeneralTransferManagerFactory.address, {from: PolymathAccount});
     }).then(() => {
-      // I) Deploy the TickerRegistry Contract (It is used to store the information about the ticker)
-      return deployer.deploy(TickerRegistry, PolymathRegistry.address, initRegFee, {from: PolymathAccount});
-    }).then(() => {
-      // Assign the address into the TickerRegistry key
-      return polymathRegistry.changeAddress("TickerRegistry", TickerRegistry.address, {from: PolymathAccount});
-    }).then(() => {
       // J) Deploy the SecurityTokenRegistry contract (Used to hold the deployed secuirtyToken details. It also act as the interface to deploy the SecurityToken)
-      return deployer.deploy(SecurityTokenRegistry, PolymathRegistry.address, STVersionProxy001.address, initRegFee, {from: PolymathAccount})
+      return deployer.deploy(SecurityTokenRegistry, {from: PolymathAccount})
     }).then(() => {
        // Assign the address into the SecurityTokenRegistry key
       return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
-    }).then(() => {
-      // Update all addresses into the registry contract by calling the function updateFromregistry
-      return SecurityTokenRegistry.at(SecurityTokenRegistry.address).updateFromRegistry({from: PolymathAccount});
+    }).then(()=> {
+      return deployer.deploy(SecurityTokenRegistryProxy, {from: PolymathAccount});
+    }).then(()=> {
+      let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignature, [PolymathRegistry.address, STVersionProxy001.address, initRegFee, initRegFee, PolyToken, PolymathAccount]);
+      return SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from : PolymathAccount});      
     }).then(() => {
       // Update all addresses into the registry contract by calling the function updateFromregistry
       return ModuleRegistry.at(ModuleRegistry.address).updateFromRegistry({from: PolymathAccount});
-    }).then(() => {
-      // Update all addresses into the registry contract by calling the function updateFromregistry
-      return TickerRegistry.at(TickerRegistry.address).updateFromRegistry({from: PolymathAccount});
     }).then(() => {
       // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
       return deployer.deploy(CappedSTOFactory, PolyToken, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})
@@ -220,9 +238,9 @@ module.exports = function (deployer, network, accounts) {
       console.log('\n')
       console.log('----- Polymath Core Contracts -----')
       console.log('*** Polymath Registry Address: ', PolymathRegistry.address, '***')
-      console.log('*** Ticker Registry Address: ', TickerRegistry.address, '***')
       console.log('*** Module Registry Address: ', ModuleRegistry.address, '***')
       console.log('*** Security Token Registry Address: ', SecurityTokenRegistry.address, '***')
+      console.log('*** Security Token Registry Proxy Address', SecurityTokenRegistryProxy.address, '***')
       console.log('*** Capped STO Factory Address: ', CappedSTOFactory.address, '***')
       console.log('*** General Permission Manager Factory: ', GeneralPermissionManagerFactory.address, '***')
       console.log('*** Count Transfer Manager Factory: ', CountTransferManagerFactory.address, '***')

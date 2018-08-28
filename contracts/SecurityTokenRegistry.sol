@@ -120,7 +120,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      * @param _symbol Symbol of the Scurity token
      * @return address
      */
-    function getSecurityTokenAddress(string _symbol) public view returns (address) {
+    function getSecurityTokenAddress(string _symbol) external view returns (address) {
         string memory __symbol = _upper(_symbol);
         return symbols[__symbol];
     }

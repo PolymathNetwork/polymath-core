@@ -5,6 +5,7 @@ import "../interfaces/IPolyToken.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IModuleRegistry.sol";
+import "../interfaces/IFeatureRegistry.sol";
 import "../modules/TransferManager/ITransferManager.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "../interfaces/ITokenBurner.sol";
@@ -135,6 +136,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     modifier isMintingAllowed() {
         require(!mintingFrozen, "Minting is permanently frozen");
+        _;
+    }
+
+    modifier isEnabled(string _nameKey) {
+        require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey));
         _;
     }
 
@@ -510,8 +516,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice Permanently freeze minting of this security token.
      * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function freezeMinting() external isMintingAllowed() onlyOwner {
-        require(IModuleRegistry(moduleRegistry).freezeMintingAllowed());
+    function freezeMinting() external isMintingAllowed() isEnabled("freezeMintingAllowed") onlyOwner {
         mintingFrozen = true;
         emit LogFreezeMinting(now);
     }

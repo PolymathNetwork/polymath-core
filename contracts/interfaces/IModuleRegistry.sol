@@ -46,10 +46,4 @@ interface IModuleRegistry {
       */
     function removeTagByModuleType(uint8 _moduleType, bytes32[] _removedTags) external;
 
-    /**
-     * @notice Indicate if minting can be frozen permanently by issuers
-     * @return bool
-     */
-    function freezeMintingAllowed() external view returns(bool);
-
 }

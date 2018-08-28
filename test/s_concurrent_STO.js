@@ -14,6 +14,7 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
+const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
 const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
@@ -41,6 +42,7 @@ contract('SecurityToken addModule Cap', accounts => {
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
     let I_TickerRegistry;
+    let I_FeatureRegistry;
     let I_STFactory;
     let I_SecurityTokenRegistry;
     let I_SecurityToken;
@@ -225,25 +227,41 @@ contract('SecurityToken addModule Cap', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-         // Step 10: update the registries addresses from the PolymathRegistry contract
-         await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
-         await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
-         await I_TickerRegistry.updateFromRegistry({from: account_polymath});
+        // Step 10: Deploy the FeatureRegistry
+
+        I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: account_polymath
+            });
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+
+        assert.notEqual(
+            I_FeatureRegistry.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "FeatureRegistry contract was not deployed",
+        );
+
+        // Step 11: update the registries addresses from the PolymathRegistry contract
+        await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
+        await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
+        await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`
-        -------------------- Polymath Network Smart Contracts: --------------------
-        PolymathRegistry:                 ${I_PolymathRegistry.address}
-        TickerRegistry:                   ${I_TickerRegistry.address}
-        SecurityTokenRegistry:            ${I_SecurityTokenRegistry.address}
-        ModuleRegistry:                   ${I_ModuleRegistry.address}
+        --------------------- Polymath Network Smart Contracts: ---------------------
+        PolymathRegistry:                  ${PolymathRegistry.address}
+        TickerRegistry:                    ${TickerRegistry.address}
+        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${ModuleRegistry.address}
+        FeatureRegistry:                   ${FeatureRegistry.address}
 
-        STFactory:                        ${I_STFactory.address}
-        GeneralTransferManagerFactory:    ${I_GeneralTransferManagerFactory.address}
-        GeneralPermissionManagerFactory:  ${I_GeneralPermissionManagerFactory.address}
+        STFactory:                         ${STFactory.address}
+        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
 
-        CappedSTOFactory:                 ${I_CappedSTOFactory.address}
-        ---------------------------------------------------------------------------
+        CappedSTOFactory:                  ${I_CappedSTOFactory.address}
+        -----------------------------------------------------------------------------
         `);
     });
 

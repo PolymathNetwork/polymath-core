@@ -24,9 +24,6 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     // Contains the list of the available tags corresponds to the module type
     mapping (uint8 => bytes32[]) public availableTags;
 
-    // Indicate if minting can be frozen permanently by issuers
-    bool public freezeMintingAllowed;
-
     // Emit when Module been used by the securityToken
     event LogModuleUsed(address indexed _moduleFactory, address indexed _securityToken);
     // Emit when the Module Factory get registered with the ModuleRegistry contract
@@ -119,21 +116,6 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
                 }
             }
         }
-    }
-
-    /**
-     * @notice One-way feature switch to enable permanently freezing minting
-     */
-    function allowFreezeMinting() external onlyOwner {
-        freezeMintingAllowed = true;
-    }
-
-    /**
-     * @notice Getter function for freezeMintingAllowed
-     * @return bool
-     */
-    function freezeMintingAllowed() external view returns(bool) {
-        return freezeMintingAllowed;
     }
 
     /**

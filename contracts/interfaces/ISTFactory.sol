@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 /**
  * @title Interface for security token proxy deployment
  */
-interface ISTProxy {
+interface ISTFactory {
 
     /**
      * @notice deploys the token and adds default modules like permission manager and transfer manager.

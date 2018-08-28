@@ -10,7 +10,7 @@ const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
 const TickerRegistry = artifacts.require('./TickerRegistry.sol')
-const STVersionProxy001 = artifacts.require('./tokens/STVersionProxy001.sol')
+const STFactory = artifacts.require('./tokens/STFactory.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
 const MockOracle = artifacts.require('./MockOracle.sol')
 let BigNumber = require('bignumber.js');
@@ -19,7 +19,7 @@ const usdTieredSTOSetupCost = new BigNumber(100000).times(new BigNumber(10).pow(
 const initRegFee = new BigNumber(250).times(new BigNumber(10).pow(18));      // 250 POLY fee for registering ticker or security token in registry
 let PolyToken;
 let ETHOracle;
-let PolyOracle;
+let POLYOracle;
 
 const Web3 = require('web3')
 
@@ -34,7 +34,7 @@ module.exports = function (deployer, network, accounts) {
     PolyToken = DevPolyToken.address // Development network polytoken address
     deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
-        PolyOracle = mockedOracle.address;
+        POLYOracle = mockedOracle.address;
       });
     });
     deployer.deploy(MockOracle, 0, "ETH", "USD", new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
@@ -46,13 +46,13 @@ module.exports = function (deployer, network, accounts) {
     web3 = new Web3(new Web3.providers.HttpProvider('https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
     PolyToken = '0xb06d72a24df50d4e2cac133b320c5e7de3ef94cb' // PolyToken Kovan Faucet Address
-    PolyOracle = '0xa1e02175D6Edce244429946CF0bC11811f431160' // Poly Oracle Kovan Address
+    POLYOracle = '0xa1e02175D6Edce244429946CF0bC11811f431160' // Poly Oracle Kovan Address
     ETHOracle = '0x4A8FAf5932482Db1FA4B5e5E30169A06844B08a7' // ETH Oracle Kovan Address
   } else if (network === 'mainnet') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
     PolyToken = '0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC' // Mainnet PolyToken Address
-    PolyOracle = '0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27' // Poly Oracle Mainnet Address
+    POLYOracle = '0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27' // Poly Oracle Mainnet Address
     ETHOracle = '0x60055e9a93aae267da5a052e95846fa9469c0e7a' // ETH Oracle Mainnet Address
   }if (network === 'coverage') {
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
@@ -60,7 +60,7 @@ module.exports = function (deployer, network, accounts) {
     PolyToken = DevPolyToken.address // Development network polytoken address
     deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
-        PolyOracle = mockedOracle.address;
+        POLYOracle = mockedOracle.address;
       });
     });
     deployer.deploy(MockOracle, 0, "ETH", "USD", new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
@@ -165,8 +165,8 @@ module.exports = function (deployer, network, accounts) {
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
       return moduleRegistry.verifyModule(ERC20DividendCheckpointFactory.address, true, {from: PolymathAccount});
     }).then(() => {
-      // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
-      return deployer.deploy(STVersionProxy001, GeneralTransferManagerFactory.address, {from: PolymathAccount});
+      // H) Deploy the STFactory Contract which contains the logic of deployment of securityToken.
+      return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, {from: PolymathAccount});
     }).then(() => {
       // I) Deploy the TickerRegistry Contract (It is used to store the information about the ticker)
       return deployer.deploy(TickerRegistry, PolymathRegistry.address, initRegFee, {from: PolymathAccount});
@@ -175,7 +175,7 @@ module.exports = function (deployer, network, accounts) {
       return polymathRegistry.changeAddress("TickerRegistry", TickerRegistry.address, {from: PolymathAccount});
     }).then(() => {
       // J) Deploy the SecurityTokenRegistry contract (Used to hold the deployed secuirtyToken details. It also act as the interface to deploy the SecurityToken)
-      return deployer.deploy(SecurityTokenRegistry, PolymathRegistry.address, STVersionProxy001.address, initRegFee, {from: PolymathAccount})
+      return deployer.deploy(SecurityTokenRegistry, PolymathRegistry.address, STFactory.address, initRegFee, {from: PolymathAccount})
     }).then(() => {
        // Assign the address into the SecurityTokenRegistry key
       return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
@@ -213,24 +213,36 @@ module.exports = function (deployer, network, accounts) {
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
       return moduleRegistry.verifyModule(USDTieredSTOFactory.address, true, {from: PolymathAccount})
     }).then(() => {
-      return polymathRegistry.changeAddress("PolyUsdOracle", PolyOracle, {from: PolymathAccount});
+      return polymathRegistry.changeAddress("PolyUsdOracle", POLYOracle, {from: PolymathAccount});
     }).then(() => {
       return polymathRegistry.changeAddress("EthUsdOracle", ETHOracle, {from: PolymathAccount});
     }).then(() => {
-      console.log('\n')
-      console.log('----- Polymath Core Contracts -----')
-      console.log('*** Polymath Registry Address: ', PolymathRegistry.address, '***')
-      console.log('*** Ticker Registry Address: ', TickerRegistry.address, '***')
-      console.log('*** Module Registry Address: ', ModuleRegistry.address, '***')
-      console.log('*** Security Token Registry Address: ', SecurityTokenRegistry.address, '***')
-      console.log('*** Capped STO Factory Address: ', CappedSTOFactory.address, '***')
-      console.log('*** General Permission Manager Factory: ', GeneralPermissionManagerFactory.address, '***')
-      console.log('*** Count Transfer Manager Factory: ', CountTransferManagerFactory.address, '***')
-      console.log('*** Percentage Transfer Manager Factory: ', PercentageTransferManagerFactory.address, '***')
-      console.log('*** ETH Dividends Checkpoint Factory: ', EtherDividendCheckpointFactory.address, '***')
-      console.log('*** ERC20 Dividends Checkpoint Factory: ', ERC20DividendCheckpointFactory.address, '***')
-      console.log('-----------------------------------')
-      console.log('\n')
+      console.log('\n');
+      console.log(`
+      -------------------- Polymath Network Smart Contracts: --------------------
+      PolymathRegistry:                 ${PolymathRegistry.address}
+      TickerRegistry:                   ${TickerRegistry.address}
+      ModuleRegistry:                   ${ModuleRegistry.address}
+      SecurityTokenRegistry:            ${SecurityTokenRegistry.address}
+
+      ETHOracle:                        ${ETHOracle.address}
+      POLYOracle:                       ${POLYOracle.address}
+
+      STFactory:                        ${STFactory.address}
+      GeneralTransferManagerFactory:    ${GeneralTransferManagerFactory.address}
+      GeneralPermissionManagerFactory:  ${GeneralPermissionManagerFactory.address}
+
+      CappedSTOFactory:                 ${CappedSTOFactory.address}
+      USDTieredSTOFactory:              ${USDTieredSTOFactory.address}
+
+      CountTransferManagerFactory:      ${CountTransferManagerFactory.address}
+      PercentageTransferManagerFactory: ${PercentageTransferManagerFactory.address}
+
+      EtherDividendCheckpointFactory:   ${EtherDividendCheckpointFactory.address}
+      ERC20DividendCheckpointFactory:   ${ERC20DividendCheckpointFactory.address}
+      ---------------------------------------------------------------------------
+      `);
+      console.log('\n');
       // -------- END OF POLYMATH NETWORK Configuration -------//
     });
   });

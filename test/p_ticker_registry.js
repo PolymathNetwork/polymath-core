@@ -6,7 +6,7 @@ const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
+const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -44,7 +44,7 @@ contract('TickerRegistry', accounts => {
     let I_ModuleRegistry;
     let I_TickerRegistry;
     let I_SecurityTokenRegistry;
-    let I_STVersion;
+    let I_STFactory;
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
@@ -92,12 +92,12 @@ contract('TickerRegistry', accounts => {
          I_PolyToken = await PolyTokenFaucet.new();
          await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
          await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
- 
+
          // STEP 2: Deploy the ModuleRegistry
- 
+
          I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:account_polymath});
          await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: account_polymath});
- 
+
 
         assert.notEqual(
             I_ModuleRegistry.address.valueOf(),
@@ -146,21 +146,21 @@ contract('TickerRegistry', accounts => {
             "TickerRegistry contract was not deployed",
         );
 
-        // Step 7: Deploy the STversionProxy contract
+        // Step 7: Deploy the STFactory contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
         // Step 8: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
             I_PolymathRegistry.address,
-            I_STVersion.address,
+            I_STFactory.address,
             initRegFee,
             {
                 from: account_polymath
@@ -180,13 +180,17 @@ contract('TickerRegistry', accounts => {
          await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
-        console.log(`\nPolymath Network Smart Contracts Deployed:\n
-            ModuleRegistry: ${I_ModuleRegistry.address}\n
-            GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}\n
-            GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
-            TickerRegistry: ${I_TickerRegistry.address}\n
-            STVersionProxy_001: ${I_STVersion.address}\n
-            SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
+        console.log(`
+        -------------------- Polymath Network Smart Contracts: --------------------
+        PolymathRegistry:                 ${I_PolymathRegistry.address}
+        TickerRegistry:                   ${I_TickerRegistry.address}
+        SecurityTokenRegistry:            ${I_SecurityTokenRegistry.address}
+        ModuleRegistry:                   ${I_ModuleRegistry.address}
+
+        STFactory:                        ${I_STFactory.address}
+        GeneralTransferManagerFactory:    ${I_GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:  ${I_GeneralPermissionManagerFactory.address}
+        ---------------------------------------------------------------------------
         `);
     });
 
@@ -231,7 +235,7 @@ contract('TickerRegistry', accounts => {
         });
 
         it("Should successfully register ticker", async() => {
-            
+
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);

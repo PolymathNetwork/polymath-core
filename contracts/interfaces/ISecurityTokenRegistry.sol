@@ -29,7 +29,7 @@ interface ISecurityTokenRegistry {
     * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
     * @notice Changing versions does not affect existing tokens.
     */
-    function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) external;
+    function setProtocolVersion(address _STFactoryAddress, bytes32 _version) external;
 
     /**
      * @notice Get security token address by ticker name

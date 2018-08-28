@@ -49,8 +49,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // Reference to token burner contract
     ITokenBurner public tokenBurner;
 
-    // Use to halt all the transactions
-    bool public freeze = false;
+    // Use to temporarily halt all transactions
+    bool public transfersFrozen;
+
+    // Use to permanently halt all minting
+    bool public mintingFrozen;
 
     struct ModuleData {
         bytes32 name;
@@ -65,9 +68,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     mapping (address => Checkpoint[]) public checkpointBalances;
     Checkpoint[] public checkpointTotalSupply;
-
-    bool public finishedIssuerMinting = false;
-    bool public finishedSTOMinting = false;
 
     mapping (bytes4 => bool) transferFunctions;
 
@@ -97,14 +97,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     // Emit when the budget allocated to a module is changed
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
-    // Emit when all the transfers get freeze
-    event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
+    // Emit when transfers are frozen or unfrozen
+    event LogFreezeTransfers(bool _status, uint256 _timestamp);
     // Emit when new checkpoint created
     event LogCheckpointCreated(uint256 indexed _checkpointId, uint256 _timestamp);
-    // Emit when the minting get finished for the Issuer
-    event LogFinishMintingIssuer(uint256 _timestamp);
-    // Emit when the minting get finished for the STOs
-    event LogFinishMintingSTO(uint256 _timestamp);
+    // Emit when is permanently frozen by the issuer
+    event LogFreezeMinting(uint256 _timestamp);
     // Change the STR address in the event of a upgrade
     event LogChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
     // Events to log minting and burning
@@ -135,14 +133,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         _;
     }
 
-    // Checks whether the minting is allowed or not, check for the owner if owner is no the msg.sender then check
-    // for the finishedSTOMinting flag because only STOs and owner are allowed for minting
-    modifier isMintingAllowed() {
-        if (msg.sender == owner) {
-            require(!finishedIssuerMinting, "Minting is finished for Issuer");
-        } else {
-            require(!finishedSTOMinting, "Minting is finished for STOs");
-        }
+    modifier mintingAllowed() {
+        require(!mintingFrozen, "Minting is permanently frozen");
         _;
     }
 
@@ -381,21 +373,21 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice freeze all the transfers
+     * @notice freeze transfers
      */
     function freezeTransfers() external onlyOwner {
-        require(!freeze);
-        freeze = true;
-        emit LogFreezeTransfers(freeze, now);
+        require(!transfersFrozen);
+        transfersFrozen = true;
+        emit LogFreezeTransfers(true, now);
     }
 
     /**
-     * @notice un-freeze all the transfers
+     * @notice unfreeze transfers
      */
     function unfreezeTransfers() external onlyOwner {
-        require(freeze);
-        freeze = false;
-        emit LogFreezeTransfers(freeze, now);
+        require(transfersFrozen);
+        transfersFrozen = false;
+        emit LogFreezeTransfers(false, now);
     }
 
     /**
@@ -486,7 +478,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bool
      */
     function verifyTransfer(address _from, address _to, uint256 _amount) public checkGranularity(_amount) returns (bool) {
-        if (!freeze) {
+        if (!transfersFrozen) {
             bool isTransfer = false;
             if (transferFunctions[getSig(msg.data)]) {
               isTransfer = true;
@@ -515,29 +507,23 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice End token minting period permanently for Issuer
+     * @notice Permanently freeze minting of this security token.
+     * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function finishMintingIssuer() external onlyOwner {
-        finishedIssuerMinting = true;
-        emit LogFinishMintingIssuer(now);
-    }
-
-    /**
-     * @notice End token minting period permanently for STOs
-     */
-    function finishMintingSTO() external onlyOwner {
-        finishedSTOMinting = true;
-        emit LogFinishMintingSTO(now);
+    function freezeMinting() external mintingAllowed() onlyOwner {
+        require(IModuleRegistry(moduleRegistry).freezeMintingAllowed());
+        mintingFrozen = true;
+        emit LogFreezeMinting(now);
     }
 
     /**
      * @notice mints new tokens and assigns them to the target _investor.
-     * @dev Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
-     * @param _investor Address to whom the minted tokens will be dilivered
-     * @param _amount Number of tokens get minted
+     * @dev Can only be called by the issuer or STO attached to the token
+     * @param _investor Address where the minted tokens will be delivered
+     * @param _amount Number of tokens be minted
      * @return success
      */
-    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) isMintingAllowed() returns (bool success) {
+    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) mintingAllowed() returns (bool success) {
         require(_investor != address(0), "Investor address should not be 0x");
         adjustInvestorCount(address(0), _investor, _amount);
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
@@ -552,7 +538,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     /**
      * @notice mints new tokens and assigns them to the target _investor.
-     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+     * @dev Can only be called by the issuer or STO attached to the token.
      * @param _investors A list of addresses to whom the minted tokens will be dilivered
      * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success

@@ -421,10 +421,40 @@ contract('SecurityToken', accounts => {
             assert.equal(balance2.dividedBy(new BigNumber(10).pow(18)).toNumber(), 110);
         });
 
+        it("Should finish the minting -- fail because feature is not activated", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.freezeMinting({from: account_issuer});
+            } catch(error) {
+                console.log(`         tx revert -> freezeMinting cannot be called before activated by polymath`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should finish the minting -- fail to activate the feature because msg.sender is not polymath", async() => {
+            let errorThrown = false;
+            try {
+                await I_ModuleRegistry.allowFreezeMinting({from: account_issuer});
+            } catch(error) {
+                console.log(`         tx revert -> allowFreezeMinting mus be called by polymath`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should finish the minting -- successfully activate the feature", async() => {
+            assert.equal(false, await I_ModuleRegistry.freezeMintingAllowed());
+            await I_ModuleRegistry.allowFreezeMinting({from: account_polymath});
+            assert.equal(true, await I_ModuleRegistry.freezeMintingAllowed());
+        });
+
         it("Should finish the minting -- fail because msg.sender is not the owner", async() => {
             let errorThrown = false;
             try {
-                await I_SecurityToken.finishMintingIssuer({from: account_temp});
+                await I_SecurityToken.freezeMinting({from: account_temp});
             } catch(error) {
                 console.log(`         tx revert -> finishMintingIssuer only be called by the owner of the SecurityToken`.grey);
                 errorThrown = true;
@@ -435,7 +465,7 @@ contract('SecurityToken', accounts => {
 
         it("Should finish minting & rstrict the further minting", async() => {
             let id = await takeSnapshot();
-            await I_SecurityToken.finishMintingIssuer({from: account_issuer});
+            await I_SecurityToken.freezeMinting({from: account_issuer});
             let errorThrown = false;
             try {
                 await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
@@ -446,18 +476,6 @@ contract('SecurityToken', accounts => {
             }
             assert.ok(errorThrown, message);
             await revertToSnapshot(id);
-        });
-
-        it("Should finish the minting -- fail because msg.sender is not the owner", async() => {
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.finishMintingSTO({from: account_temp});
-            } catch(error) {
-                console.log(`         tx revert -> finishMintingSTO only be called by the owner of the SecurityToken`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
         });
 
         it("Should fail to attach the STO factory because not enough poly in contract", async () => {
@@ -675,27 +693,6 @@ contract('SecurityToken', accounts => {
                     .toNumber(),
                     1000
                 );
-            });
-
-            it("Should finish minting & rstrict the further minting", async() => {
-                let id = await takeSnapshot();
-                await I_SecurityToken.finishMintingSTO({from: account_issuer});
-                let errorThrown = false;
-                try {
-                     // Fallback transaction
-                await web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_CappedSTO.address,
-                    gas: 2100000,
-                    value: web3.utils.toWei('2', 'ether')
-                    });
-                } catch(error) {
-                    console.log(`         tx revert -> Minting is finished`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
-                await revertToSnapshot(id);
             });
 
             it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async() => {
@@ -986,10 +983,10 @@ contract('SecurityToken', accounts => {
 
            it("Should freeze the transfers", async() => {
              let tx = await I_SecurityToken.freezeTransfers({from: token_owner});
-             assert.isTrue(tx.logs[0].args._freeze);
+             assert.isTrue(tx.logs[0].args._status);
             });
 
-           it("Should freeze the transfers", async() => {
+           it("Should fail to freeze the transfers", async() => {
                let errorThrown = false;
                try {
                     await I_SecurityToken.freezeTransfers({from: token_owner});
@@ -1047,9 +1044,9 @@ contract('SecurityToken', accounts => {
                assert.ok(errorThrown, message);
            });
 
-           it("Should un freeze all the transfers", async() => {
+           it("Should unfreeze all the transfers", async() => {
                 let tx = await I_SecurityToken.unfreezeTransfers({from: token_owner});
-                assert.isFalse(tx.logs[0].args._freeze);
+                assert.isFalse(tx.logs[0].args._status);
            });
 
            it("Should freeze the transfers", async() => {

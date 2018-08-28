@@ -26,7 +26,6 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         uint256 registrationDate;
         uint256 expiryDate;
         string tokenName;
-        bytes32 swarmHash;
         bool status;
     }
 
@@ -42,7 +41,6 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         address indexed _owner,
         string _symbol,
         string _name,
-        bytes32 _swarmHash,
         uint256 indexed _registrationDate,
         uint256 indexed _expiryDate
     );
@@ -50,7 +48,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
     // Emit when ownership of the ticker get changed
     event LogChangeTickerOwnership(string _ticker, address _oldOwner, address _newOwner);
-
+    // Emit when a ticker details get modified 
+    event LogModifyTickerDetails(address _owner, string _symbol, string _name, uint256 _registrationDate, uint256 _expiryDate);
     // Registration fee in POLY base 18 decimals
     uint256 public registrationFee;
     // Emit when changePolyRegistrationFee is called
@@ -70,9 +69,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _symbol token symbol
      * @param _tokenName Name of the token
      * @param _owner Address of the owner of the token
-     * @param _swarmHash Off-chain details of the issuer and token
      */
-    function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) external whenNotPaused {
+    function registerTicker(address _owner, string _symbol, string _tokenName) external whenNotPaused {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         if(registrationFee > 0)
@@ -81,8 +79,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         require(expiryCheck(symbol), "Ticker is already reserved");
         tokensOwnedByUser[_owner].push(stringToBytes32(symbol));
         tickerIndex[symbol] = tokensOwnedByUser[_owner].length - 1;
-        registeredSymbols[symbol] = SymbolDetails(_owner, now, now.add(expiryLimit), _tokenName, _swarmHash, false);
-        emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now, now.add(expiryLimit));
+        registeredSymbols[symbol] = SymbolDetails(_owner, now, now.add(expiryLimit), _tokenName, false);
+        emit LogRegisterTicker (_owner, symbol, _tokenName, now, now.add(expiryLimit));
     }
 
     /**
@@ -121,11 +119,10 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _owner Owner of the token
      * @param _symbol token symbol
      * @param _tokenName Name of the token
-     * @param _swarmHash Off-chain details of the issuer and token
      * @param _registrationDate Date on which ticker get registered
      * @param _expiryDate Expiry date of the ticker
      */
-    function addCustomTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash, uint256 _registrationDate, uint256 _expiryDate) public onlyOwner {
+    function addCustomTicker(address _owner, string _symbol, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) public onlyOwner {
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         require(_expiryDate != 0 && _registrationDate != 0, "Dates should not be 0");
         require(_registrationDate < _expiryDate, "Registration date should be less than the expiry date");
@@ -134,8 +131,24 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         require(expiryCheck(symbol), "Ticker is already reserved");
         tokensOwnedByUser[_owner].push(stringToBytes32(symbol));
         tickerIndex[symbol] = tokensOwnedByUser[_owner].length - 1;
-        registeredSymbols[symbol] = SymbolDetails(_owner, _registrationDate, _expiryDate, _tokenName, _swarmHash, false);
-        emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, _registrationDate, _expiryDate);
+        registeredSymbols[symbol] = SymbolDetails(_owner, _registrationDate, _expiryDate, _tokenName, false);
+        emit LogRegisterTicker (_owner, symbol, _tokenName, _registrationDate, _expiryDate);
+    }
+
+    /**
+     * @notice Modify the ticker details. Only polymath account have the ownership
+     * to do so. But only allowed to modify the tickers those are not yet deployed
+     * @param _owner Owner of the token
+     * @param _symbol token symbol
+     * @param _tokenName Name of the token
+     * @param _registrationDate Date on which ticker get registered
+     * @param _expiryDate Expiry date of the ticker
+     */
+    function modifyTickerDetails(address _owner, string _symbol, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external onlyOwner { 
+        string memory symbol = upper(_symbol);
+        require(!registeredSymbols[symbol].status, "Modifying the details of deployed token is not permitted");
+        registeredSymbols[symbol] = SymbolDetails(_owner, _registrationDate, _expiryDate, _tokenName, false);
+        emit LogModifyTickerDetails(_owner, _symbol, _tokenName, _registrationDate, _expiryDate);
     }
 
     /**
@@ -143,10 +156,9 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _symbol Symbol of the token
      * @param _owner Owner of the token
      * @param _tokenName Name of the token
-     * @param _swarmHash off-chain hash
      * @return bool
      */
-     function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) external returns(bool) {
+     function isReserved(string _symbol, address _owner, string _tokenName) external returns(bool) {
         string memory symbol = upper(_symbol);
         require(msg.sender == securityTokenRegistry, "msg.sender should be SecurityTokenRegistry contract");
         if (registeredSymbols[symbol].owner == _owner && !expiryCheck(_symbol)) {
@@ -154,8 +166,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
             return false;
         }
         else if (registeredSymbols[symbol].owner == address(0) || expiryCheck(symbol)) {
-            registeredSymbols[symbol] = SymbolDetails(_owner, now, now.add(expiryLimit), _tokenName, _swarmHash, true);
-            emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now, now.add(expiryLimit));
+            registeredSymbols[symbol] = SymbolDetails(_owner, now, now.add(expiryLimit), _tokenName, true);
+            emit LogRegisterTicker (_owner, symbol, _tokenName, now, now.add(expiryLimit));
             return false;
         } else
             return true;
@@ -170,7 +182,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         if (registeredSymbols[_symbol].owner != address(0)) {
             if (now > registeredSymbols[_symbol].expiryDate && registeredSymbols[_symbol].status != true) {
                 require(_renounceTickerOwnership(_symbol));
-                registeredSymbols[_symbol] = SymbolDetails(address(0), uint256(0), uint256(0), "", bytes32(0), false);
+                registeredSymbols[_symbol] = SymbolDetails(address(0), uint256(0), uint256(0), "", false);
                 return true;
             }else
                 return false;
@@ -243,10 +255,9 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @return address
      * @return uint256
      * @return string
-     * @return bytes32
      * @return bool
      */
-    function getDetails(string _symbol) public view returns (address, uint256, uint256, string, bytes32, bool) {
+    function getDetails(string _symbol) public view returns (address, uint256, uint256, string, bool) {
         string memory symbol = upper(_symbol);
         if (registeredSymbols[symbol].status == true||registeredSymbols[symbol].expiryDate > now) {
             return
@@ -255,11 +266,10 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
                 registeredSymbols[symbol].registrationDate,
                 registeredSymbols[symbol].expiryDate,
                 registeredSymbols[symbol].tokenName,
-                registeredSymbols[symbol].swarmHash,
                 registeredSymbols[symbol].status
             );
         }else
-            return (address(0), uint256(0), uint256(0), "", bytes32(0), false);
+            return (address(0), uint256(0), uint256(0), "", false);
     }
 
      /**

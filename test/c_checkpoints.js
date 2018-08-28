@@ -50,7 +50,6 @@ contract('Checkpoints', accounts => {
     let I_PolymathRegistry;
 
     // SecurityToken Details
-    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Team";
     const symbol = "sap";
     const tokenDetails = "This is equity type of issuance";
@@ -183,7 +182,7 @@ contract('Checkpoints', accounts => {
 
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
-            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, contact, swarmHash, { from : token_owner });
+            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, contact, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol.toUpperCase());
         });

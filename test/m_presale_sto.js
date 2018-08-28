@@ -52,7 +52,6 @@ contract('PreSaleSTO', accounts => {
     let I_PolymathRegistry;
 
     // SecurityToken Details for funds raise Type ETH
-    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Team";
     const symbol = "SAP";
     const tokenDetails = "This is equity type of issuance";
@@ -219,7 +218,7 @@ contract('PreSaleSTO', accounts => {
 
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner });
-            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from : token_owner });
+            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });

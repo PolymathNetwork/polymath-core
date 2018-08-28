@@ -17,14 +17,14 @@ interface ITickerRegistry {
     * @notice Returns the owner and timestamp for a given symbol
     * @param _symbol symbol
     */
-    function getDetails(string _symbol) public view returns (address, uint256, uint256, string, bytes32, bool);
+    function getDetails(string _symbol) public view returns (address, uint256, uint256, string, bool);
 
     /**
      * @notice Check the symbol is reserved or not
      * @param _symbol Symbol of the token
      * @return bool
      */
-     function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) external returns(bool);
+     function isReserved(string _symbol, address _owner, string _tokenName) external returns(bool);
 
      /**
       * @notice Register the token symbol for its particular owner
@@ -33,9 +33,19 @@ interface ITickerRegistry {
       * @param _symbol token symbol
       * @param _tokenName Name of the token
       * @param _owner Address of the owner of the token
-      * @param _swarmHash Off-chain details of the issuer and token
       */
-     function registerTicker(address _owner, string _symbol, string _tokenName, bytes32 _swarmHash) external;
+     function registerTicker(address _owner, string _symbol, string _tokenName) external;
+
+    /**
+     * @notice Modify the ticker details. Only polymath account have the ownership
+     * to do so. But only allowed to modify the tickers those are not yet deployed
+     * @param _owner Owner of the token
+     * @param _symbol token symbol
+     * @param _tokenName Name of the token
+     * @param _registrationDate Date on which ticker get registered
+     * @param _expiryDate Expiry date of the ticker
+     */
+    function modifyTickerDetails(address _owner, string _symbol, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external;
 
      /**
       * @notice Change the expiry time for the token symbol

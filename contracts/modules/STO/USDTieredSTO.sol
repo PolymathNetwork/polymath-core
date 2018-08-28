@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./ISTO.sol";
-import "../../interfaces/IST20.sol";
+import "../../interfaces/ISecurityToken.sol";
 import "../../interfaces/IOracle.sol";
 import "../../RegistryUpdater.sol";
 import "../../interfaces/ISecurityTokenRegistry.sol";
@@ -17,6 +17,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     /////////////
     // Storage //
     /////////////
+
+    string public POLY_ORACLE = "PolyUsdOracle";
+    string public ETH_ORACLE = "EthUsdOracle";
+    mapping (bytes32 => mapping (bytes32 => string)) oracleKeys;
 
     // Address where ETH & POLY funds are delivered
     address public wallet;
@@ -54,15 +58,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Amount of USD funds raised
     uint256 public fundsRaisedUSD;
 
-    // Amount of ETH funds raised
-    uint256 public fundsRaisedETH;
-
-    // Amount of POLY funds raised
-    uint256 public fundsRaisedPOLY;
-
-    // Number of individual investors
-    uint256 public investorCount;
-
     // Amount in USD invested by each address
     mapping (address => uint256) public investorInvestedUSD;
 
@@ -84,9 +79,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Whether or not the STO has been finalized
     bool public isFinalized;
 
-    // Final amount of tokens sold
-    uint256 public finalAmountSold;
-
     // Final amount of tokens returned to issuer
     uint256 public finalAmountReturned;
 
@@ -106,9 +98,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD
     );
-    event SetFunding(
-        uint8[] _fundRaiseTypes
-    );
     event SetTimes(
         uint256 _startTime,
         uint256 _endTime
@@ -125,13 +114,13 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     ///////////////
 
     modifier validETH {
-        require(ISecurityTokenRegistry(RegistryUpdater(securityToken).securityTokenRegistry()).getOracle(bytes32("ETH"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
+        require(_getOracle(bytes32("ETH"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
         require(fundRaiseType[uint8(FundRaiseType.ETH)]);
         _;
     }
 
     modifier validPOLY {
-        require(ISecurityTokenRegistry(RegistryUpdater(securityToken).securityTokenRegistry()).getOracle(bytes32("POLY"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
+        require(_getOracle(bytes32("POLY"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
         require(fundRaiseType[uint8(FundRaiseType.POLY)]);
         _;
     }
@@ -140,7 +129,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // STO Configuration //
     ///////////////////////
 
-    constructor (address _securityToken, address _polyAddress) public IModule(_securityToken, _polyAddress) { }
+    constructor (address _securityToken, address _polyAddress) public
+    Module(_securityToken, _polyAddress)
+    {      
+        oracleKeys[bytes32("ETH")][bytes32("USD")] = ETH_ORACLE;
+        oracleKeys[bytes32("POLY")][bytes32("USD")] = POLY_ORACLE;
+    }
 
     /**
      * @notice Function used to intialize the contract variables
@@ -213,17 +207,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         _configureAddresses(_wallet, _reserveWallet);
     }
 
-    function _configureFunding(uint8[] _fundRaiseTypes) internal {
-        require(_fundRaiseTypes.length > 0 && _fundRaiseTypes.length < 3, "No fund raising currencies specified");
-        fundRaiseType[uint8(FundRaiseType.POLY)] = false;
-        fundRaiseType[uint8(FundRaiseType.ETH)] = false;
-        for (uint8 j = 0; j < _fundRaiseTypes.length; j++) {
-            require(_fundRaiseTypes[j] < 2);
-            fundRaiseType[_fundRaiseTypes[j]] = true;
-        }
-        emit SetFunding(_fundRaiseTypes);
-    }
-
     function _configureLimits(
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD
@@ -291,7 +274,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @notice Reserve address must be whitelisted to successfully finalize
      */
     function finalize() public onlyOwner {
-        require(!isFinalized);        
+        require(!isFinalized);
         isFinalized = true;
         uint256 tempReturned;
         uint256 tempSold;
@@ -302,12 +285,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             tempSold = tempSold.add(mintedPerTierTotal[i]);
             if (remainingTokens > 0) {
                 mintedPerTierTotal[i] = tokensPerTierTotal[i];
-                require(IST20(securityToken).mint(reserveWallet, remainingTokens), "Error in minting the tokens");
+                require(ISecurityToken(securityToken).mint(reserveWallet, remainingTokens), "Error in minting the tokens");
                 emit ReserveTokenMint(msg.sender, reserveWallet, remainingTokens, i);
             }
         }
         finalAmountReturned = tempReturned;
-        finalAmountSold = tempSold;
+        totalTokensSold = tempSold;
     }
 
     /**
@@ -338,7 +321,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _beneficiary Address where security tokens will be sent
       */
     function buyWithETH(address _beneficiary) public payable validETH {
-        uint256 rate = IOracle(ISecurityTokenRegistry(RegistryUpdater(securityToken).securityTokenRegistry()).getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
+        uint256 rate = IOracle(_getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, msg.value, rate, false);
         // Modify storage
         investorInvestedETH[_beneficiary] = investorInvestedETH[_beneficiary].add(spentValue);
@@ -356,7 +339,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY {
-        uint256 rate = IOracle(ISecurityTokenRegistry(RegistryUpdater(securityToken).securityTokenRegistry()).getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
+        uint256 rate = IOracle(_getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _investedPOLY, rate, true);
         // Modify storage
         investorInvestedPOLY[_beneficiary] = investorInvestedPOLY[_beneficiary].add(spentValue);
@@ -377,6 +360,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(_investmentValue > 0, "No funds were sent to buy tokens");
 
         uint256 investedUSD = _decimalMul(_rate, _investmentValue);
+        uint256 originalUSD = investedUSD;
 
         // Check for minimum investment
         require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment less than minimumInvestmentUSD");
@@ -411,7 +395,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         }
 
         // Calculate spent in base currency (ETH or POLY)
-        uint256 spentValue = _decimalDiv(spentUSD, _rate);
+        uint256 spentValue;
+        if (spentUSD == 0) {
+            spentValue = 0;
+        } else {
+            spentValue = _decimalMul(_decimalDiv(spentUSD, originalUSD), _investmentValue);
+        }
 
         // Return calculated amounts
         return (spentUSD, spentValue);
@@ -435,7 +424,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
-        if (_investedUSD > 0) {
+        if ((_investedUSD > 0) && (tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]) > 0)) {
             (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTier[_tier], tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]), _investedUSD, _tier);
             spentUSD = spentUSD.add(tierSpentUSD);
             if (_isPOLY)
@@ -453,12 +442,16 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 purchasedTokens;
         if (maximumTokens > _tierRemaining) {
             spentUSD = _decimalMul(_tierRemaining, _tierPrice);
+            // In case of rounding issues, ensure that spentUSD is never more than investedUSD
+            if (spentUSD > _investedUSD) {
+                spentUSD = _investedUSD;
+            }
             purchasedTokens = _tierRemaining;
         } else {
             spentUSD = _investedUSD;
             purchasedTokens = maximumTokens;
         }
-        require(IST20(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting the tokens");
+        require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting the tokens");
         emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
         return (spentUSD, purchasedTokens);
     }
@@ -490,7 +483,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return uint256 Value in USD
      */
     function convertToUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
-        uint256 rate = IOracle(ISecurityTokenRegistry(RegistryUpdater(securityToken).securityTokenRegistry()).getOracle(_currency, bytes32("USD"))).getPrice();
+        uint256 rate = IOracle(_getOracle(_currency, bytes32("USD"))).getPrice();
         return _decimalMul(_amount, rate);
     }
 
@@ -501,7 +494,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return uint256 Value in ETH or POLY
      */
     function convertFromUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
-        uint256 rate = IOracle(ISecurityTokenRegistry(RegistryUpdater(securityToken).securityTokenRegistry()).getOracle(_currency, bytes32("USD"))).getPrice();
+        uint256 rate = IOracle(_getOracle(_currency, bytes32("USD"))).getPrice();
         return _decimalDiv(_amount, rate);
     }
 
@@ -554,7 +547,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function getTokensSold() public view returns (uint256) {
         if (isFinalized)
-            return finalAmountSold;
+            return totalTokensSold;
         else
             return getTokensMinted();
     }
@@ -635,6 +628,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function _decimalDiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = SafeMath.add(SafeMath.mul(x, DECIMALS), y / 2) / y;
+    }
+
+    function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns (address) {
+        return PolymathRegistry(RegistryUpdater(securityToken).polymathRegistry()).getAddress(oracleKeys[_currency][_denominatedCurrency]);
     }
 
 }

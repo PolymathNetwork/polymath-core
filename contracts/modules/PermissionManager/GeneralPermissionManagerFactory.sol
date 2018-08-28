@@ -1,21 +1,24 @@
 pragma solidity ^0.4.24;
 
 import "./GeneralPermissionManager.sol";
-import "../../interfaces/IModuleFactory.sol";
+import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying GeneralPermissionManager module
  */
-contract GeneralPermissionManagerFactory is IModuleFactory {
+contract GeneralPermissionManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {
-
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    {   
+        version = "1.0.0";
+        name = "GeneralPermissionManager";
+        title = "General Permission Manager";
+        description = "Manage permissions within the Security Token and attached modules";
     }
 
     /**
@@ -26,8 +29,8 @@ contract GeneralPermissionManagerFactory is IModuleFactory {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address permissionManager = new GeneralPermissionManager(msg.sender, address(polyToken));
-        emit LogGenerateModuleFromFactory(address(permissionManager), getName(), address(this), msg.sender, now);
-        return address(permissionManager);
+        emit LogGenerateModuleFromFactory(address(permissionManager), getName(), address(this), msg.sender, setupCost, now);
+        return permissionManager;
     }
 
     /**
@@ -41,21 +44,35 @@ contract GeneralPermissionManagerFactory is IModuleFactory {
      * @notice Get the name of the Module
      */
     function getName() public view returns(bytes32) {
-        return "GeneralPermissionManager";
+        return name;
     }
 
     /**
      * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
-        return "Manage permissions within the Security Token and attached modules";
+        return description;
     }
 
     /**
      * @notice Get the title of the Module
      */
     function getTitle() public  view returns(string) {
-        return "General Permission Manager";
+        return title;
+    }
+
+    /**
+     * @notice Get the version of the Module
+     */
+    function getVersion() public view returns(string) {
+        return version;
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCost() external view returns (uint256) {
+        return setupCost;
     }
 
     /**

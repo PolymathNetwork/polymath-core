@@ -180,7 +180,7 @@ module.exports = function (deployer, network, accounts) {
       return moduleRegistry.verifyModule(ManualApprovalTransferManagerFactory.address, true, {from: PolymathAccount});
     }).then(() => {
       // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
-      return deployer.deploy(STVersionProxy001, GeneralTransferManagerFactory.address, {from: PolymathAccount});
+      return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, {from: PolymathAccount});
     }).then(() => {
       // I) Deploy the TickerRegistry Contract (It is used to store the information about the ticker)
       return deployer.deploy(TickerRegistry, PolymathRegistry.address, initRegFee, {from: PolymathAccount});

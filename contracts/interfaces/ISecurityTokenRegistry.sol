@@ -5,11 +5,12 @@ pragma solidity ^0.4.24;
  */
 interface ISecurityTokenRegistry {
 
-    /**
+   /**
      * @notice Creates a new Security Token and saves it to the registry
      * @param _name Name of the token
      * @param _symbol Ticker symbol of the security token
      * @param _tokenDetails off-chain details of the token
+     * @param _divisible Set to true if token is divisible
      */
     function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) external;
 
@@ -20,9 +21,49 @@ interface ISecurityTokenRegistry {
      * @param _owner Owner of the token
      * @param _securityToken Address of the securityToken
      * @param _tokenDetails off-chain details of the token
-     * @param _swarmHash off-chain details about the issuer company
+     * @param _deployedAt Timestamp at which security token comes deployed on the ethereum blockchain
      */
-    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash) external;
+    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt) external;
+
+     /**
+     * @notice Register the token symbol for its particular owner
+     * @notice Once the token symbol is registered to its owner then no other issuer can claim
+     * @notice its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
+     * @param _symbol token symbol
+     * @param _tokenName Name of the token
+     * @param _owner Address of the owner of the token
+     */
+    function registerTicker(address _owner, string _symbol, string _tokenName) external;
+
+    /**
+     * @notice Register the ticker without paying the fee 
+       Once the token symbol is registered to its owner then no other issuer can claim
+       Its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
+     * @param _owner Owner of the token
+     * @param _symbol token symbol
+     * @param _tokenName Name of the token
+     * @param _registrationDate Date on which ticker get registered
+     * @param _expiryDate Expiry date of the ticker
+     */
+    function addCustomTicker(address _owner, string _symbol, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external;
+
+    /**
+     * @notice Modify the ticker details. Only polymath account have the ownership
+     * to do so. But only allowed to modify the tickers those are not yet deployed
+     * @param _owner Owner of the token
+     * @param _symbol token symbol
+     * @param _tokenName Name of the token
+     * @param _registrationDate Date on which ticker get registered
+     * @param _expiryDate Expiry date of the ticker
+     */
+    function modifyTickerDetails(address _owner, string _symbol, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external;
+
+    /**
+     * @notice Transfer the ownership of the ticker
+     * @dev _newOwner Address whom ownership to transfer
+     * @dev _ticker Symbol 
+     */
+    function transferTickerOwnership(address _newOwner, string _ticker) external;
 
     /**
     * @notice Changes the protocol version and the SecurityToken contract
@@ -46,11 +87,33 @@ interface ISecurityTokenRegistry {
     function getSecurityTokenData(address _securityToken) external view returns (string, address, string);
 
     /**
+     * @notice Get the current STFactory Address
+     */
+    function getSTFactoryAddress() public view returns(address);
+
+    /**
+     * @notice Use to get the ticker list as per the owner
+     * @param _owner Address which owns the list of tickers 
+     */
+    function getTickersByOwner(address _owner) public view returns(bytes32[]);
+
+    /**
     * @notice Check that Security Token is registered
     * @param _securityToken Address of the Scurity token
     * @return bool
     */
     function isSecurityToken(address _securityToken) external view returns (bool);
+
+    /**
+    * @dev Allows the current owner to relinquish control of the contract.
+    */
+    function renounceOwnership() external;
+
+    /**
+    * @dev Allows the current owner to transfer control of the contract to a newOwner.
+    * @param _newOwner The address to transfer ownership to.
+    */
+    function transferOwnership(address _newOwner) external; 
 
     /**
      * @notice set the ticker registration fee in POLY tokens
@@ -65,10 +128,9 @@ interface ISecurityTokenRegistry {
      * @return uint256
      * @return uint256
      * @return string
-     * @return bytes32
      * @return bool
      */
-    function getTickerDetails(string _symbol) external view returns (address, uint256, uint256, string, bytes32, bool);
+    function getTickerDetails(string _symbol) external view returns (address, uint256, uint256, string, bool);
 
     /**
      * @notice set the ticker registration fee in POLY tokens

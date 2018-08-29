@@ -77,7 +77,7 @@ contract('Issuance', accounts => {
     //let endTime;                    // Add 30 days more
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
-    const fundRaiseType = 0;
+    const fundRaiseType = [0];
     const cappedSTOSetupCost= web3.utils.toWei("20000","ether");
     const maxCost = cappedSTOSetupCost;
     const functionSignature = {
@@ -96,8 +96,8 @@ contract('Issuance', accounts => {
             type: 'uint256',
             name: '_rate'
         },{
-            type: 'uint8',
-            name: '_fundRaiseType',
+            type: 'uint8[]',
+            name: '_fundRaiseTypes',
         },{
             type: 'address',
             name: '_fundsReceiver'
@@ -372,7 +372,7 @@ contract('Issuance', accounts => {
                   });
 
                 assert.equal(
-                    (await I_CappedSTO.fundsRaised.call())
+                    (await I_CappedSTO.getRaisedEther.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1
@@ -423,7 +423,7 @@ contract('Issuance', accounts => {
                   });
 
                 assert.equal(
-                    (await I_CappedSTO.fundsRaised.call())
+                    (await I_CappedSTO.getRaisedEther.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     2

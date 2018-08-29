@@ -24,6 +24,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
     struct SecurityTokenData {
         string symbol;
         string tokenDetails;
+        uint256 registrationTimestamp;
     }
 
     // Stored Security Token Data
@@ -75,7 +76,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
             polymathRegistry
         );
 
-        securityTokens[newSecurityTokenAddress] = SecurityTokenData(symbol, _tokenDetails);
+        securityTokens[newSecurityTokenAddress] = SecurityTokenData(symbol, _tokenDetails, now);
         symbols[symbol] = newSecurityTokenAddress;
         emit LogNewSecurityToken(symbol, newSecurityTokenAddress, msg.sender);
     }
@@ -88,16 +89,17 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      * @param _securityToken Address of the securityToken
      * @param _tokenDetails off-chain details of the token
      * @param _swarmHash off-chain details about the issuer company
+     * @param _deployedAt Timestamp at which security token comes deployed on the ethereum blockchain
      */
-    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash) external onlyOwner {
+    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash, uint256 _deployedAt) external onlyOwner {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         string memory symbol = upper(_symbol);
         require(_securityToken != address(0) && symbols[symbol] == address(0), "Symbol is already at the polymath network or entered security token address is 0x");
         require(_owner != address(0));
         require(!(ITickerRegistry(tickerRegistry).isReserved(symbol, _owner, _name, _swarmHash)), "Trying to use non-valid symbol");
         symbols[symbol] = _securityToken;
-        securityTokens[_securityToken] = SecurityTokenData(symbol, _tokenDetails);
-        emit LogAddCustomSecurityToken(_name, symbol, _securityToken, now);
+        securityTokens[_securityToken] = SecurityTokenData(symbol, _tokenDetails, _deployedAt);
+        emit LogAddCustomSecurityToken(_name, symbol, _securityToken, _deployedAt);
     }
 
     /**
@@ -125,16 +127,18 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
 
      /**
      * @notice Get security token data by its address
-     * @param _securityToken Address of the Scurity token
-     * @return string
-     * @return address
-     * @return string
+     * @param _securityToken Address of the Scurity token.
+     * @return string Symbol of the Security Token.
+     * @return address Address of the issuer of Security Token.
+     * @return string Details of the Token.
+     * @return uint256 Timestamp at which Security Token get launched on Polymath platform.
      */
-    function getSecurityTokenData(address _securityToken) external view returns (string, address, string) {
+    function getSecurityTokenData(address _securityToken) public view returns (string, address, string, uint256) {
         return (
             securityTokens[_securityToken].symbol,
             Ownable(_securityToken).owner(),
-            securityTokens[_securityToken].tokenDetails
+            securityTokens[_securityToken].tokenDetails,
+            securityTokens[_securityToken].registrationTimestamp
         );
     }
 

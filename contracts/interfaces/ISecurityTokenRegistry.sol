@@ -21,8 +21,9 @@ interface ISecurityTokenRegistry {
      * @param _securityToken Address of the securityToken
      * @param _tokenDetails off-chain details of the token
      * @param _swarmHash off-chain details about the issuer company
+     * @param _deployeddAt Timestamp at which security token comes deployed on the ethereum blockchain
      */
-    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash) external;
+    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash, uint256 _deployeddAt) external;
 
     /**
     * @notice Changes the protocol version and the SecurityToken contract
@@ -43,7 +44,7 @@ interface ISecurityTokenRegistry {
      * @param _securityToken Address of the Scurity token
      * @return string, address, bytes32
      */
-    function getSecurityTokenData(address _securityToken) external view returns (string, address, string);
+    function getSecurityTokenData(address _securityToken) public view returns (string, address, string, uint256);
 
     /**
     * @notice Check that Security Token is registered

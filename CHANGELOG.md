@@ -1,27 +1,24 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# v1.4.1 - Released Candidatea
 
-[__1.4.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
+# v1.5.0 - Release Candidate
+
+[__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
-
-* Test cases for 1.4.1 migration
-* STR Migration script
-* Encrypted API Key for CMC queries in PolyOracle
-
-## Changed
-
-* Remove endData update from unpause function
-* Allow custom tokens to be added when STR is paused
-* PolyOracle does not revert on out of order callbacks (silently ignores instead)
-* Removed USDTieredSTO > STR dependency by moving oracle registry to PolymathRegistry
+* `transferTickerOwnership()` function is introduced in `TickerRegistry` to transfer the ticker ownership after the registeration #191.
+* `getTickersByOwner()` function is used to get the list of tickers owned by the issuer #189.   
+* New function `addCustomTicker()` is used the add the Ticker in tickerRegistry. To avail the facility to Registry owner to add the tokens without paying the fee #190.  
+* Adding the functionality to change the `version`,`name`,`description`,`title` of a Module factory.   
+* Add the `registrationTimestamp` in the `SecurityTokenData` structure that also leads the change in the `getSecurityTokenData()` return parameters. #199
+* Add `_deployedAt` new parameter in the `addCustomSecurityToken`. #199
+* Add `getReputationOfFactory()` & `getModuleListOfType()` functions to get the array type data from the ModuleRegistry contract.   
+* Add `_setupCost` in `LogGenerateModuleFromFactory` event.        
 
 ## Fixed
-
-* Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions
-
+* Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.   
+* Add new function `getAllModulesByName()`, To get the list of modules having the same name. #198     
 
 # v1.4.0 - Unreleased
 
@@ -35,15 +32,25 @@ All notable changes to this project will be documented in this file.
 * Added CLI for USDTieredSTO.
 * Scripts for monitoring Oracles' status.
 * Scripts for monitoring Polymath stats (Tokens registered, tokens deployed, STOs launched).
+* Test cases for 1.4.1 migration
+* STR Migration script
+* Encrypted API Key for CMC queries in PolyOracle
 
 ## Changed
 
 * Modified CappedSTOFactory to comply with minor interface changes in iSTO. It now uses a mapping named `fundRaiseType` to specify the fundraise type (ETH / POLY)
+* Remove endData update from unpause function
+* Allow custom tokens to be added when STR is paused
+* PolyOracle does not revert on out of order callbacks (silently ignores instead)
+* Removed USDTieredSTO > STR dependency by moving oracle registry to PolymathRegistry
 
 ## Fixed
 
 * Modified function name in TickerRegistry and SecurityTokenRegistry from `changePolyRegisterationFee` to `changePolyRegistrationFee`. Event name is modified too from `LogChangePolyRegisterationFee` to `LogChangePolyRegistrationFee`
 * Minor CLI fixes
+* Change in the datastructure of SymbolDetails new variable `expiredTimestamp` introduced and change the variable name `timestamp` to `registeredTimestamp` in Tickerregistry.sol #192.      
+* Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions
+* Bug in ManualApprovalTransferManager that allowed anyone to reduce anyone's transfer allowance 
 
 =======
 # v1.3.0  

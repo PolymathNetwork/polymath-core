@@ -89,7 +89,7 @@ contract('SecurityToken', accounts => {
     let endTime;
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
-    const fundRaiseType = 0;
+    const fundRaiseType = [0];
     const cappedSTOSetupCost= web3.utils.toWei("20000","ether");
     const maxCost = cappedSTOSetupCost;
     const functionSignature = {
@@ -108,8 +108,8 @@ contract('SecurityToken', accounts => {
             type: 'uint256',
             name: '_rate'
         },{
-            type: 'uint8',
-            name: '_fundRaiseType',
+            type: 'uint8[]',
+            name: '_fundRaiseTypes',
         },{
             type: 'address',
             name: '_fundsReceiver'
@@ -523,21 +523,21 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should get the modules of the securityToken by name", async () => {
-            let moduleData = await I_SecurityToken.getModuleByName.call(stoKey, "CappedSTO");
-            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "CappedSTO");
-            assert.equal(moduleData[1], I_CappedSTO.address);
+            let moduleData = await I_SecurityToken.getAllModulesByName.call(stoKey, "CappedSTO");
+            assert.equal(web3.utils.toAscii(moduleData[0][0]).replace(/\u0000/g, ''), "CappedSTO");
+            assert.equal(moduleData[1][0], I_CappedSTO.address);
         });
 
         it("Should get the modules of the securityToken by name (not added into the security token yet)", async () => {
-            let moduleData = await I_SecurityToken.getModuleByName.call(permissionManagerKey, "GeneralPermissionManager");
-            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "");
-            assert.equal(moduleData[1], "0x0000000000000000000000000000000000000000");
+            let moduleData = await I_SecurityToken.getAllModulesByName.call(permissionManagerKey, "GeneralPermissionManager");
+            assert.equal(moduleData[0].length, 0);
+            assert.equal(moduleData[1].length, 0);
         });
 
         it("Should get the modules of the securityToken by name (not added into the security token yet)", async () => {
-            let moduleData = await I_SecurityToken.getModuleByName.call(transferManagerKey, "CountTransferManager");
-            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "");
-            assert.equal(moduleData[1], "0x0000000000000000000000000000000000000000");
+            let moduleData = await I_SecurityToken.getAllModulesByName.call(transferManagerKey, "CountTransferManager");
+            assert.equal(moduleData[0].length, 0);
+            assert.equal(moduleData[1].length, 0);
         });
 
         it("Should fail in updating the token details", async() => {
@@ -661,7 +661,7 @@ contract('SecurityToken', accounts => {
                     });
 
                 assert.equal(
-                    (await I_CappedSTO.fundsRaised.call())
+                    (await I_CappedSTO.getRaisedEther.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1
@@ -934,7 +934,7 @@ contract('SecurityToken', accounts => {
                     });
 
                 assert.equal(
-                    (await I_CappedSTO.fundsRaised.call())
+                    (await I_CappedSTO.getRaisedEther.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     2

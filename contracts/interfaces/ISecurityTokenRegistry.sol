@@ -63,11 +63,12 @@ interface ISecurityTokenRegistry {
      * @param _symbol symbol
      * @return address
      * @return uint256
+     * @return uint256
      * @return string
      * @return bytes32
      * @return bool
      */
-    function getTickerDetails(string _symbol) external view returns (address, uint256, string, bytes32, bool);
+    function getTickerDetails(string _symbol) external view returns (address, uint256, uint256, string, bytes32, bool);
 
     /**
      * @notice set the ticker registration fee in POLY tokens

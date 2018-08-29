@@ -93,7 +93,7 @@ contract SecurityTokenRegistryV2 is ISecurityTokenRegistry, Util, EternalStorage
         require(_checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
         if(uintStorage[keccak256(abi.encodePacked('stLaunchFee'))] > 0)
             require(ERC20(addressStorage[keccak256(abi.encodePacked("polyToken"))]).transferFrom(msg.sender, address(this), uintStorage[keccak256(abi.encodePacked('stLaunchFee'))]), "Failed transferFrom because of sufficent Allowance is not provided");
-        string memory symbol = upper(_symbol);
+        string memory symbol = _upper(_symbol);
         address newSecurityTokenAddress = ISTProxy(addressStorage[keccak256(abi.encodePacked('protocolVersionST', bytes32Storage[keccak256(abi.encodePacked('protocolVersion'))]))]).deployToken(
             _name,
             symbol,
@@ -120,7 +120,7 @@ contract SecurityTokenRegistryV2 is ISecurityTokenRegistry, Util, EternalStorage
      */
     function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash) external onlyOwner whenNotPaused {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
-        string memory symbol = upper(_symbol);
+        string memory symbol = _upper(_symbol);
         require(_securityToken != address(0) && addressStorage[keccak256(abi.encodePacked("symbols", symbol))] == address(0), "Symbol is already at the polymath network or entered security token address is 0x");
         require(_owner != address(0));
         require(!_isReserved(symbol, _owner, _name, _swarmHash), "Trying to use non-valid symbol");
@@ -158,7 +158,7 @@ contract SecurityTokenRegistryV2 is ISecurityTokenRegistry, Util, EternalStorage
      * @return address
      */
     function getSecurityTokenAddress(string _symbol) external view returns (address) {
-        string memory __symbol = upper(_symbol);
+        string memory __symbol = _upper(_symbol);
         return addressStorage[keccak256(abi.encodePacked("symbols", __symbol))];
     }
 
@@ -210,7 +210,7 @@ contract SecurityTokenRegistryV2 is ISecurityTokenRegistry, Util, EternalStorage
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         if(uintStorage[keccak256(abi.encodePacked('tickerRegFee'))] > 0)
             require(ERC20(addressStorage[keccak256(abi.encodePacked("polyToken"))]).transferFrom(msg.sender, address(this), uintStorage[keccak256(abi.encodePacked('tickerRegFee'))]), "Failed transferFrom because of sufficent Allowance is not provided");
-        string memory symbol = upper(_symbol);
+        string memory symbol = _upper(_symbol);
         require(_expiryCheck(symbol), "Ticker is already reserved");
         _storeSymbolDetails(symbol, _owner, now, _tokenName, _swarmHash, false);
         emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now);
@@ -234,7 +234,7 @@ contract SecurityTokenRegistryV2 is ISecurityTokenRegistry, Util, EternalStorage
      * @return bool
      */
     function _checkValidity(string _symbol, address _owner, string _tokenName) internal returns(bool) {
-        string memory symbol = upper(_symbol);
+        string memory symbol = _upper(_symbol);
         require(boolStorage[keccak256(abi.encodePacked("registeredSymbols", symbol, "status"))] != true, "Symbol status should not equal to true");
         require(addressStorage[keccak256(abi.encodePacked("registeredSymbols", symbol, "owner"))] == _owner, "Owner of the symbol should matched with the requested issuer address");
         require(uintStorage[keccak256(abi.encodePacked("registeredSymbols", symbol, "timestamp"))].add(uintStorage[keccak256(abi.encodePacked('expiryLimit'))]) >= now, "Ticker should not be expired");
@@ -252,7 +252,7 @@ contract SecurityTokenRegistryV2 is ISecurityTokenRegistry, Util, EternalStorage
      * @return bool
      */
      function _isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) internal returns(bool) {
-        string memory symbol = upper(_symbol);
+        string memory symbol = _upper(_symbol);
         if (addressStorage[keccak256(abi.encodePacked("registeredSymbols", symbol, "owner"))] == _owner && ! _expiryCheck(symbol)) {
             boolStorage[keccak256(abi.encodePacked("registeredSymbols", symbol, "status"))] = true;
             return false;
@@ -275,7 +275,7 @@ contract SecurityTokenRegistryV2 is ISecurityTokenRegistry, Util, EternalStorage
      * @return bool
      */
     function getDetails(string _symbol) external view returns (address, uint256, string, bytes32, bool) {
-        string memory symbol = upper(_symbol);
+        string memory symbol = _upper(_symbol);
         if (boolStorage[keccak256(abi.encodePacked("registeredSymbols", symbol, "status"))] == true || uintStorage[keccak256(abi.encodePacked("registeredSymbols", symbol, "timestamp"))].add(uintStorage[keccak256(abi.encodePacked('expiryLimit'))]) > now) {
             return
             (

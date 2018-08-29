@@ -3,8 +3,7 @@ var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
-
-let defaultGasPrice;
+var global = require('./common/global');
 
 // Load Contract artifacts
 var contracts = require('./helpers/contract_addresses');
@@ -34,9 +33,8 @@ let displayCanBuy;
 
 // Start Script
 async function executeApp(investorAddress, investorPrivKey, symbol, currency, amount, remoteNetwork) {
-    await common.initialize(remoteNetwork);
-    defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
-    
+    await global.initialize(remoteNetwork);
+
     common.logAsciiBull();
     console.log("********************************************");
     console.log("Welcome to the Command-Line Investor Portal.");

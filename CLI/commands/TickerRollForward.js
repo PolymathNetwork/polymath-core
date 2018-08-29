@@ -3,6 +3,7 @@ var csv = require('fast-csv');
 var BigNumber = require('bignumber.js');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
+var global = require('./common/global');
 
 /////////////////////////  ARTIFACTS  /////////////////////////
 var contracts = require('./helpers/contract_addresses');
@@ -12,8 +13,6 @@ var abis = require('./helpers/contract_abis');
 let remoteNetwork = process.argv.slice(2)[0]; //batch size
 
 ///////////////////////// GLOBAL VARS /////////////////////////
-let defaultGasPrice;
-
 let ticker_data = [];
 let registered_tickers = [];
 let failed_tickers = [];
@@ -49,8 +48,7 @@ function FailedRegistration(_ticker, _error) {
 startScript();
 
 async function startScript() {
-  await common.initialize(remoteNetwork);
-  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
+  await global.initialize(remoteNetwork);
 
   let tickerRegistryAddress = await contracts.tickerRegistry();
   let tickerRegistryABI = abis.tickerRegistry();

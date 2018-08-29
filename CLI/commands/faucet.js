@@ -1,19 +1,17 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js');
 var common = require('./common/common_functions');
+var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis')
 var chalk = require('chalk');
 
 ////////////////////////
+// App flow
 let polyToken;
 
-// App flow
-let defaultGasPrice;
-
 async function executeApp(beneficiary, amount, remoteNetwork) {
-  await common.initialize(remoteNetwork);
-  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
+  await global.initialize(remoteNetwork);
 
   console.log("\n");
   console.log("***************************")

@@ -2,6 +2,7 @@ var fs = require('fs');
 var csv = require('fast-csv');
 var BigNumber = require('bignumber.js');
 var common = require('./common/common_functions');
+var global = require('./common/global');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require('./helpers/contract_addresses');
@@ -26,15 +27,13 @@ let badData = new Array();
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-let defaultGasPrice;
-
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
 startScript();
 
 async function startScript() {
-  await common.initialize(remoteNetwork);
-  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
+  await global.initialize(remoteNetwork);
+
   try {
     let tickerRegistryAddress = await contracts.tickerRegistry();
     let tickerRegistryABI = abis.tickerRegistry();

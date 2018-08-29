@@ -5,6 +5,7 @@ const shell = require('shelljs');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 var common = require('./common/common_functions');
+var global = require('./common/global');
 
 let tickerRegistryAddress;
 let securityTokenRegistryAddress;
@@ -33,7 +34,6 @@ let cappedSTOFactory;
 let usdTieredSTOFactory;
 
 // App flow
-let defaultGasPrice;
 let _tokenConfig;
 let _mintingConfig;
 let _stoConfig;
@@ -43,8 +43,7 @@ async function executeApp(tokenConfig, mintingConfig, stoConfig, remoteNetwork) 
   _mintingConfig = mintingConfig;
   _stoConfig = stoConfig;
 
-  await common.initialize(remoteNetwork);
-  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
+  await global.initialize(remoteNetwork);
  
   common.logAsciiBull();
   console.log("********************************************");

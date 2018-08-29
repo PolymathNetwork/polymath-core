@@ -1,50 +1,7 @@
 const chalk = require('chalk');
 const Tx = require('ethereumjs-tx');
-const Web3 = require('web3');
 
 module.exports = {
-  initialize: async function (remoteNetwork) {
-    if (typeof web3 === 'undefined' || typeof Issuer === 'undefined') {
-      if (typeof remoteNetwork !== 'undefined') {
-        web3 = new Web3(new Web3.providers.HttpProvider(`https://${remoteNetwork}.infura.io/`));
-        privKey = require('fs').readFileSync('./privKey').toString();
-        Issuer = await web3.eth.accounts.privateKeyToAccount("0x" + privKey);
-      } else {
-        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-        let accounts = await web3.eth.getAccounts();
-        Issuer = {
-          address: accounts[0],
-          privateKey: require('fs').readFileSync('./privKeyLocal').toString()
-        };
-      }
-    }
-  },
-  getGasPrice: function (networkId) {
-    let gasPrice;
-    switch (networkId) {
-      case 1: //Mainnet
-        gasPrice = 4000000000;
-        break;
-      case 3: //Ropsten
-        gasPrice = 50000000000;
-        break;
-      case 15: //Ganache
-        gasPrice = 50000000000;
-        break;
-      case 42: //Kovan
-        gasPrice = 50000000000;
-        break;
-      default:
-        throw new Error('Network ID not identified');
-    }
-
-    return gasPrice;
-  },
-  estimateGas: async function (actionToEstimate, fromAddress, factor, value) {
-    let estimatedGAS = Math.round(factor * (await actionToEstimate.estimateGas({ from: fromAddress, value: value})));
-    console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${actionToEstimate._method.name} - Gas limit provided: ${estimatedGAS} ----`));    
-    return estimatedGAS;
-  },
   convertToDaysRemaining: function (timeRemaining) {
     var seconds = parseInt(timeRemaining, 10);
   
@@ -92,7 +49,10 @@ module.exports = {
   },
   sendTransaction: async function (from, action, gasPrice, value, factor) {
     if (typeof factor === 'undefined') factor = 1.2;
-    let gas = await this.estimateGas(action, from.address, factor, value);
+
+    let gas = Math.round(factor * (await action.estimateGas({ from: from.address, value: value})));
+    console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${estimatedGAS} ----`));    
+
     let nonce = await web3.eth.getTransactionCount(from.address);
     let abi = action.encodeABI();
     let parameter = {

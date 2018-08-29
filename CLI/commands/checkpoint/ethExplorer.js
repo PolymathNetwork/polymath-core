@@ -9,19 +9,18 @@ const duration = {
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
 var common = require('../common/common_functions');
+var global = require('../common/global');
 var contracts = require('../helpers/contract_addresses');
 var abis = require('../helpers/contract_abis');
 
 // App flow
-let defaultGasPrice;
 let tokenSymbol;
 let securityToken;
 let etherDividendCheckpoint;
 let generalTransferManager;
 
 async function executeApp(remoteNetwork) {
-  await common.initialize(remoteNetwork);
-  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
+  await global.initialize(remoteNetwork);
 
   await setup();
   await start_explorer();

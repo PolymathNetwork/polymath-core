@@ -2,12 +2,11 @@
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
+var global = require('./common/global');
 
 // Load contract artifacts
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
-
-let defaultGasPrice;
 
 let securityTokenRegistry;
 let securityToken;
@@ -49,8 +48,7 @@ async function setup() {
 
 // Start function
 async function executeApp(remoteNetwork) {
-    await common.initialize(remoteNetwork);
-    defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
+    await global.initialize(remoteNetwork);
 
     common.logAsciiBull();
     console.log(chalk.yellow(`******************************************`));

@@ -2,12 +2,10 @@ var readlineSync = require('readline-sync');
 var chalk = require('chalk');
 var abis = require('./helpers/contract_abis');
 var common = require('./common/common_functions');
-
-let defaultGasPrice;
+var global = require('./common/global');
 
 async function executeApp(fromStrAddress, toStrAddress, remoteNetwork) {
-    await common.initialize(remoteNetwork);
-    defaultGasPrice = new web3.utils.BN(common.getGasPrice(await web3.eth.net.getId()));
+    await global.initialize(remoteNetwork);
 
     common.logAsciiBull();
     console.log("****************************************");

@@ -1,4 +1,5 @@
 var common = require('./common/common_functions');
+var global = require('./common/global');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require('./helpers/contract_addresses');
@@ -11,8 +12,6 @@ let _transferAmount; //ETH investment
 
 let securityToken;
 
-let defaultGasPrice;
-
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
 async function startScript(tokenSymbol, transferTo, transferAmount, remoteNetwork) {
@@ -20,8 +19,7 @@ async function startScript(tokenSymbol, transferTo, transferAmount, remoteNetwor
   _transferTo = transferTo;
   _transferAmount = transferAmount;
 
-  await common.initialize(remoteNetwork);
-  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
+  await global.initialize(remoteNetwork);
 
   try {
     let tickerRegistryAddress = await contracts.tickerRegistry();

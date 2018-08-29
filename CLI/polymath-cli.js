@@ -89,7 +89,7 @@ program
   .alias('erc20')
   .description('Runs erc20Explorer')
   .action(async function() {
-    await erc20explorer.executeApp();
+    await erc20explorer.executeApp(program.remoteNode);
   });
 
 program
@@ -97,7 +97,7 @@ program
   .alias('eth')
   .description('Runs ethExplorer')
   .action(async function() {
-    await ethExplorer.executeApp();
+    await ethExplorer.executeApp(program.remoteNode);
   });
 
 program

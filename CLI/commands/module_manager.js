@@ -43,7 +43,7 @@ async function setup() {
     }catch(err){
         console.log(err);
         console.log(chalk.red(`There was a problem getting the contracts. Make sure they are deployed to the selected network.`));
-        process.exit();
+        process.exit(0);
     }
 }
 

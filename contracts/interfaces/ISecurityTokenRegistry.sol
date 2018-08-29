@@ -84,7 +84,7 @@ interface ISecurityTokenRegistry {
      * @param _securityToken Address of the Scurity token
      * @return string, address, bytes32
      */
-    function getSecurityTokenData(address _securityToken) external view returns (string, address, string);
+    function getSecurityTokenData(address _securityToken) public view returns (string, address, string, uint256);
 
     /**
      * @notice Get the current STFactory Address

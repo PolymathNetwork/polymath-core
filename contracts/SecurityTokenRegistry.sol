@@ -331,12 +331,13 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
 
      /**
      * @notice Get security token data by its address
-     * @param _securityToken Address of the Scurity token
-     * @return string
-     * @return address
-     * @return string
+     * @param _securityToken Address of the Scurity token.
+     * @return string Symbol of the Security Token.
+     * @return address Address of the issuer of Security Token.
+     * @return string Details of the Token.
+     * @return uint256 Timestamp at which Security Token get launched on Polymath platform.
      */
-    function getSecurityTokenData(address _securityToken) external view returns (string, address, string) {
+    function getSecurityTokenData(address _securityToken) public view returns (string, address, string, uint256) {
         return (
             getMapString("securityTokens_symbol", _securityToken),
             Ownable(_securityToken).owner(),

@@ -14,6 +14,10 @@ contract ModuleFactory is IModuleFactory, Ownable {
     uint256 public setupCost;
     uint256 public usageCost;
     uint256 public monthlySubscriptionCost;
+    string public description;
+    string public version;
+    bytes32 public name;
+    string public title;
 
     event LogChangeFactorySetupFee(uint256 _oldSetupcost, uint256 _newSetupCost, address _moduleFactory);
     event LogChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
@@ -68,11 +72,39 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Get the setup cost of the module
+     * @notice Update the title of the ModuleFactory
+     * @param _newTitle New Title that will replace the old one.
      */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
+    function changeTitle(string _newTitle) public onlyOwner {
+        require(bytes(_newTitle).length > 0);
+        title = _newTitle;
     }
 
+    /**
+     * @notice Update the description of the ModuleFactory
+     * @param _newDesc New description that will replace the old one.
+     */
+    function changeDescription(string _newDesc) public onlyOwner {
+        require(bytes(_newDesc).length > 0);
+        description = _newDesc;
+    }
+
+    /**
+     * @notice Update the name of the ModuleFactory
+     * @param _newName New name that will replace the old one.
+     */
+    function changeName(bytes32 _newName) public onlyOwner {
+        require(_newName != bytes32(0));
+        name = _newName;
+    }
+
+    /**
+     * @notice Update the version of the ModuleFactory
+     * @param _newVersion New name that will replace the old one.
+     */
+    function changeVersion(string _newVersion) public onlyOwner {
+        require(bytes(_newVersion).length > 0 );
+        version = _newVersion;
+    }
 
 }

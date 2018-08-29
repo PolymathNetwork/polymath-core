@@ -20,6 +20,7 @@ const STVersion = artifacts.require('./STVersionProxy001.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
+const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol');
 
 contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     // Accounts Variable declaration
@@ -39,6 +40,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
 
     // Module key
     const STOKEY = 3;
+    const TMKEY = 2;
 
     // SecurityToken 1 Details
     const symbol1 = "TOK1";
@@ -52,11 +54,13 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     const tokenDetails2 = "This is equity type of issuance";
     const swarmHash2 = "dagwrgwgvwergwrvwrg";
 
+    /*
     //SecurityToken 3 Details
     const symbol3 = "TOK3";
     const name3 = "TOK3 Token";
     const tokenDetails3 = "This is equity type of issuance";
     const swarmHash3 = "dagwrgwgvwergwrvwrg";
+    */
 
     // Contract Instance Declaration
     let I_PolymathRegistry;
@@ -68,11 +72,11 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     let I_STVersion;
 
     let I_SecurityTokenRegistry;
-    let I_UpgradedSecurityTokenRegistry
+    //let I_UpgradedSecurityTokenRegistry
 
     let I_SecurityToken1;
     let I_SecurityToken2;
-    let I_SecurityToken3;
+    //let I_SecurityToken3;
 
     let I_USDTieredSTOFactory;
     let I_USDOracle;
@@ -82,6 +86,8 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     let I_CappedSTOFactory;
     let I_UpgradedCappedSTOFactory;
     let I_CappedSTO;
+
+    let I_ManualApprovalTransferManagerFactory;
 
     // Prepare polymath network status
     before(async() => {
@@ -220,12 +226,14 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         assert.equal(tx.logs[0].args._owner, ISSUER2);
         assert.equal(tx.logs[0].args._symbol, symbol2);
 
+        /*
         // (C) :  TOK3
         await I_PolyToken.approve(I_TickerRegistry.address, REGFEE, { from: ISSUER3 });
         tx = await I_TickerRegistry.registerTicker(ISSUER3, symbol3, name3, swarmHash3, { from : ISSUER3 });
         assert.equal(tx.logs[0].args._owner, ISSUER3);
         assert.equal(tx.logs[0].args._symbol, symbol3);
-
+        */
+       
         // Step 13: Deploy tokens
         // (A) :  TOK1
         await I_PolyToken.approve(I_SecurityTokenRegistry.address, REGFEE, { from: ISSUER1});
@@ -254,6 +262,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         `);
     });
 
+    /*
     describe("STR Upgrade", async() => {
         // 1 - Pause old STR
         it("Should successfully pause the contract", async() => {
@@ -371,7 +380,8 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             assert.isFalse(status, "SecurityTokenRegistry is paused");
         });
     });
-
+    */
+   
     describe("USDTieredSTOFactory deploy", async() => {
         // Step 1: Deploy Oracles
         // 1a - Deploy POLY Oracle
@@ -398,9 +408,10 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             assert.equal(tx.logs[0].args._nameKey, "EthUsdOracle");
             assert.equal(tx.logs[0].args._newAddress, I_USDOracle.address);
         });
+    });
 
-        // Step 2: Deploy USDTieredSTOFactory\
-        // 2a - Deploy
+    describe("USDTieredSTOFactory deploy", async() => {
+        // Step 1: Deploy USDTieredSTOFactory\
         it("Should successfully deploy USDTieredSTOFactory", async() => {
             I_USDTieredSTOFactory = await USDTieredSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, { from: POLYMATH });
             assert.notEqual(
@@ -411,7 +422,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             let setupCost = await I_USDTieredSTOFactory.setupCost({ from: POLYMATH });
             assert.equal(setupCost, STOSetupCost);
         });
-        // 2b - Register and verify
+        // Step 2: Register and verify
         it("Should successfully register and verify USDTieredSTOFactory contract", async() => {
             let tx = await I_ModuleRegistry.registerModule(I_USDTieredSTOFactory.address, { from: POLYMATH });
             assert.equal(tx.logs[0].args._moduleFactory, I_USDTieredSTOFactory.address);
@@ -451,13 +462,36 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         });
     });
 
+    describe("ManualApprovalTransferManagerFactory deploy", async() => {
+        // Step 1: Deploy new ManualApprovalTransferManager
+        it("Should successfully deploy ManualApprovalTransferManagerFactory", async() => {
+            I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: POLYMATH });
+            assert.notEqual(
+                I_ManualApprovalTransferManagerFactory.address.valueOf(),
+                "0x0000000000000000000000000000000000000000",
+                "ManualApprovalTransferManagerFactory contract was not deployed"
+            );
+        });
+
+        // Step 2: Register and verify
+        it("Should successfully register and verify new ManualApprovalTransferManagerFactory contract", async() => {
+            let tx = await I_ModuleRegistry.registerModule(I_ManualApprovalTransferManagerFactory.address, { from: POLYMATH });
+            assert.equal(tx.logs[0].args._moduleFactory, I_ManualApprovalTransferManagerFactory.address);
+            tx = await I_ModuleRegistry.verifyModule(I_ManualApprovalTransferManagerFactory.address, true, { from: POLYMATH });
+            assert.equal(tx.logs[0].args._moduleFactory, I_ManualApprovalTransferManagerFactory.address);
+            assert.isTrue(tx.logs[0].args._verified);
+        });
+    });
+
     describe("Change ownerships", async() => {
+        /*
         // Step 1:  SecurityTokenRegistry
         it("Should successfully change ownership of new SecurityTokenRegistry contract", async() => {
             let tx = await I_UpgradedSecurityTokenRegistry.transferOwnership(MULTISIG, { from: POLYMATH });
             assert.equal(tx.logs[0].args.previousOwner, POLYMATH, "Previous owner was not Polymath account");
             assert.equal(tx.logs[0].args.newOwner, MULTISIG, "New owner is not Multisig account");
         });
+        */
 
         // Step 2: Oracles
         it("Should successfully change ownership of both Oracles contract", async() => {
@@ -482,6 +516,13 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             let tx = await I_UpgradedCappedSTOFactory.transferOwnership(MULTISIG, { from: POLYMATH });
             assert.equal(tx.logs[0].args.previousOwner, POLYMATH, "Previous USDTieredSTOFactory owner was not Polymath account");
             assert.equal(tx.logs[0].args.newOwner, MULTISIG, "New USDTieredSTOFactory owner is not Multisig account");
+        });
+
+        // Step 4: ManualApprovalTransferManagerFactory
+        it("Should successfully change ownership of ManualApprovalTransferManagerFactory contract", async() => {
+            let tx = await I_ManualApprovalTransferManagerFactory.transferOwnership(MULTISIG, { from: POLYMATH });
+            assert.equal(tx.logs[0].args.previousOwner, POLYMATH, "Previous ManualApprovalTransferManagerFactory owner was not Polymath account");
+            assert.equal(tx.logs[0].args.newOwner, MULTISIG, "New ManualApprovalTransferManagerFactory owner is not Multisig account");
         });
     });
 
@@ -553,6 +594,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             I_USDTieredSTO = USDTieredSTO.at(tx.logs[2].args._module);
         });
 
+        /*
         // Deploy TOK3
         it("Should successfully deploy third security token", async() => {
             await I_PolyToken.approve(I_UpgradedSecurityTokenRegistry.address, REGFEE, { from: ISSUER3});
@@ -560,8 +602,9 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             assert.equal(tx.logs[1].args._ticker, symbol3, "SecurityToken doesn't get deployed");
             I_SecurityToken3 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
         });
+        */
 
-        // Launch CappedSTO for TOK3
+        // Launch NewCappedSTO for TOK3
         it("Should successfully launch CappedSTO for third security token", async() => {
             let startTime = latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
@@ -596,9 +639,17 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             };
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, fundsReceiver]);
 
-            let tx = await I_SecurityToken3.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER3 });
+            let tx = await I_SecurityToken2.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER2 });
             assert.equal(tx.logs[2].args._type, STOKEY, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name),"CappedSTO","CappedSTOFactory module was not added");
+        });
+
+        // Attach ManualApprovalTransferManager module for TOK2
+        it("Should successfully attach the ManualApprovalTransferManagerFactory with the second token", async () => {
+            const tx = await I_SecurityToken2.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: ISSUER2 });
+            assert.equal(tx.logs[2].args._type.toNumber(), TMKEY, "ManualApprovalTransferManagerFactory doesn't get deployed");
+            assert.equal(web3.utils.toUtf8(tx.logs[2].args._name), "ManualApprovalTransferManager", "ManualApprovalTransferManagerFactory module was not added");
+            I_ManualApprovalTransferManagerFactory = ManualApprovalTransferManagerFactory.at(tx.logs[2].args._module);
         });
     });
 });

@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./interfaces/ITickerRegistry.sol";
 import "./tokens/SecurityToken.sol";
-import "./interfaces/ISTProxy.sol";
+import "./interfaces/ISTFactory.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
 import "./Pausable.sol";
 import "./RegistryUpdater.sol";
@@ -42,7 +42,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
 
     constructor (
         address _polymathRegistry,
-        address _stVersionProxy,
+        address _STFactory,
         uint256 _registrationFee
     )
     public
@@ -50,7 +50,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
     {
         registrationFee = _registrationFee;
         // By default, the STR version is set to 0.0.1
-        setProtocolVersion(_stVersionProxy, "0.0.1");
+        setProtocolVersion(_STFactory, "0.0.1");
     }
 
     /**
@@ -66,7 +66,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
         if(registrationFee > 0)
             require(ERC20(polyToken).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = upper(_symbol);
-        address newSecurityTokenAddress = ISTProxy(protocolVersionST[protocolVersion]).deployToken(
+        address newSecurityTokenAddress = ISTFactory(protocolVersionST[protocolVersion]).deployToken(
             _name,
             symbol,
             18,
@@ -107,9 +107,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
     * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
     * @notice Changing versions does not affect existing tokens.
     */
-    function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) public onlyOwner {
+    function setProtocolVersion(address _STFactoryAddress, bytes32 _version) public onlyOwner {
         protocolVersion = _version;
-        protocolVersionST[_version] = _stVersionProxyAddress;
+        protocolVersionST[_version] = _STFactoryAddress;
     }
 
     //////////////////////////////

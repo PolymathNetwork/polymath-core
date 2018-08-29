@@ -26,7 +26,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
-    bytes32 public constant securityTokenVersion = "0.0.1";
+    bytes32 public constant securityTokenVersion = "0.0.2";
 
     // off-chain hash
     string public tokenDetails;

@@ -7,7 +7,7 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
+const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -52,7 +52,7 @@ contract('ERC20DividendCheckpoint', accounts => {
     let I_ModuleRegistry;
     let I_TickerRegistry;
     let I_SecurityTokenRegistry;
-    let I_STVersion;
+    let I_STFactory;
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
@@ -173,21 +173,21 @@ contract('ERC20DividendCheckpoint', accounts => {
             "TickerRegistry contract was not deployed",
         );
 
-        // Step 7: Deploy the STversionProxy contract
+        // Step 7: Deploy the STFactory contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address);
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address);
 
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
        // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
             I_PolymathRegistry.address,
-            I_STVersion.address,
+            I_STFactory.address,
             initRegFee,
             {
                 from: account_polymath
@@ -206,14 +206,19 @@ contract('ERC20DividendCheckpoint', accounts => {
         await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
-        console.log(`\nPolymath Network Smart Contracts Deployed:\n
-            ModuleRegistry: ${I_ModuleRegistry.address}\n
-            GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}\n
-            ERC20DividendCheckpointFactory: ${I_ERC20DividendCheckpointFactory.address}\n
-            GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
-            TickerRegistry: ${I_TickerRegistry.address}\n
-            STVersionProxy_001: ${I_STVersion.address}\n
-            SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
+        console.log(`
+        -------------------- Polymath Network Smart Contracts: --------------------
+        PolymathRegistry:                 ${I_PolymathRegistry.address}
+        TickerRegistry:                   ${I_TickerRegistry.address}
+        SecurityTokenRegistry:            ${I_SecurityTokenRegistry.address}
+        ModuleRegistry:                   ${I_ModuleRegistry.address}
+
+        STFactory:                        ${I_STFactory.address}
+        GeneralTransferManagerFactory:    ${I_GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:  ${I_GeneralPermissionManagerFactory.address}
+
+        ERC20DividendCheckpointFactory:   ${I_ERC20DividendCheckpointFactory.address}
+        ---------------------------------------------------------------------------
         `);
     });
 
@@ -429,7 +434,7 @@ contract('ERC20DividendCheckpoint', accounts => {
         it("Create new dividend of POLY tokens", async() => {
             let maturity = latestTime() + duration.days(1);
             let expiry = latestTime() + duration.days(10);
-            
+
             let tx = await I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, web3.utils.toWei('1.5', 'ether'), {from: token_owner});
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 1, "Dividend should be created at checkpoint 1");
         });
@@ -778,7 +783,7 @@ contract('ERC20DividendCheckpoint', accounts => {
             let investor1BalanceAfter1 = BigNumber(await I_PolyToken.balanceOf(account_investor1));
             let investor2BalanceAfter1 = BigNumber(await I_PolyToken.balanceOf(account_investor2));
             let investor3BalanceAfter1 = BigNumber(await I_PolyToken.balanceOf(account_investor3));
-            let tempBalanceAfter1 = BigNumber(await I_PolyToken.balanceOf(account_temp));         
+            let tempBalanceAfter1 = BigNumber(await I_PolyToken.balanceOf(account_temp));
             await I_ERC20DividendCheckpoint.pushDividendPaymentToAddresses(3, [account_temp, account_investor1], {from: token_owner});
             let investor1BalanceAfter2 = BigNumber(await I_PolyToken.balanceOf(account_investor1));
             let investor2BalanceAfter2 = BigNumber(await I_PolyToken.balanceOf(account_investor2));
@@ -787,7 +792,7 @@ contract('ERC20DividendCheckpoint', accounts => {
             assert.equal(investor1BalanceAfter2.sub(investor1BalanceAfter1).toNumber(), web3.utils.toWei('1', 'ether'));
             assert.equal(investor2BalanceAfter2.sub(investor2BalanceAfter1).toNumber(), 0);
             assert.equal(investor3BalanceAfter2.sub(investor3BalanceAfter1).toNumber(), 0);
-            assert.equal(tempBalanceAfter2.sub(tempBalanceAfter1).toNumber(), web3.utils.toWei('1', 'ether'));            
+            assert.equal(tempBalanceAfter2.sub(tempBalanceAfter1).toNumber(), web3.utils.toWei('1', 'ether'));
             //Check fully claimed
             assert.equal((await I_ERC20DividendCheckpoint.dividends(3))[6].toNumber(), web3.utils.toWei('4', 'ether'));
         });
@@ -798,7 +803,7 @@ contract('ERC20DividendCheckpoint', accounts => {
             assert.equal(dividendAmount1.toNumber(), 0);
             assert.equal(dividendAmount2.toNumber(), 0);
          });
-            
+
          it("Issuer unable to reclaim dividend (expiry not passed)", async() => {
             let errorThrown = false;
             try {
@@ -830,7 +835,7 @@ contract('ERC20DividendCheckpoint', accounts => {
             let tokenOwnerAfter = BigNumber(await I_PolyToken.balanceOf(token_owner));
             assert.equal(tokenOwnerAfter.sub(tokenOwnerBalance).toNumber(), web3.utils.toWei('7', 'ether'));
         });
-            
+
 
         it("Issuer is able to reclaim dividend after expiry", async() => {
             let errorThrown = false;
@@ -844,7 +849,7 @@ contract('ERC20DividendCheckpoint', accounts => {
             }
             assert.ok(errorThrown, message);
         });
-            
+
         it("Investor 3 unable to pull dividend after expiry", async() => {
             let errorThrown = false;
             try {

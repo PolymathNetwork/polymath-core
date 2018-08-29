@@ -9,7 +9,7 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
+const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -51,7 +51,7 @@ contract('ModuleRegistry', accounts => {
     let I_TickerRegistry;
     let I_SecurityTokenRegistry;
     let I_CappedSTOFactory;
-    let I_STVersion;
+    let I_STFactory;
     let I_SecurityToken;
     let I_CappedSTO;
     let I_PolyToken;
@@ -163,19 +163,19 @@ contract('ModuleRegistry', accounts => {
             "GeneralTransferManagerFactory contract was not deployed"
         );
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
         // Step 8: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
             I_PolymathRegistry.address,
-            I_STVersion.address,
+            I_STFactory.address,
             initRegFee,
             {
                 from: account_polymath
@@ -185,7 +185,17 @@ contract('ModuleRegistry', accounts => {
         await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
         await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
-        // Step 7: Deploy the STversionProxy contract
+        console.log(`
+        -------------------- Polymath Network Smart Contracts: --------------------
+        PolymathRegistry:                 ${I_PolymathRegistry.address}
+        TickerRegistry:                   ${I_TickerRegistry.address}
+        SecurityTokenRegistry:            ${I_SecurityTokenRegistry.address}
+        ModuleRegistry:                   ${I_ModuleRegistry.address}
+
+        STFactory:                        ${I_STFactory.address}
+        GeneralTransferManagerFactory:    ${I_GeneralTransferManagerFactory.address}
+        ---------------------------------------------------------------------------
+        `);
     });
 
     describe("Test case of the module registry", async() => {
@@ -385,19 +395,19 @@ contract('ModuleRegistry', accounts => {
                 "Failed in verifying the module"
             );
 
-            I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+            I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
-                I_STVersion.address.valueOf(),
+                I_STFactory.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
-                "STVersion contract was not deployed",
+                "STFactory contract was not deployed",
             );
 
             // Deploy the SecurityTokenRegistry
 
             I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
                 I_PolymathRegistry.address,
-                I_STVersion.address,
+                I_STFactory.address,
                 initRegFee,
                 {
                     from: account_polymath

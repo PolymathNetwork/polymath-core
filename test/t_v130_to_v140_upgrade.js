@@ -16,7 +16,7 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
+const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
@@ -65,7 +65,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     let I_GeneralTransferManagerFactory;
     let I_GeneralPermissionManagerFactory;
     let I_TickerRegistry;
-    let I_STVersion;
+    let I_STFactory;
 
     let I_SecurityTokenRegistry;
     let I_UpgradedSecurityTokenRegistry
@@ -172,18 +172,18 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         assert.equal(tx.logs[0].args._nameKey, "TickerRegistry");
         assert.equal(tx.logs[0].args._newAddress, I_TickerRegistry.address);
 
-        // Step 8: Deploy the STversionProxy contract
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : POLYMATH });
+        // Step 8: Deploy the STFactory contract
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : POLYMATH });
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
         // Step 9: Deploy the SecurityTokenRegistry
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
             I_PolymathRegistry.address,
-            I_STVersion.address,
+            I_STFactory.address,
             REGFEE,
             {
                 from: POLYMATH
@@ -242,14 +242,17 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         // Printing all the contract addresses
         console.log(`
         -------------------- Polymath Network Smart Contracts: --------------------
-        ModuleRegistry:                  ${I_ModuleRegistry.address}
-        GeneralTransferManagerFactory:   ${I_GeneralTransferManagerFactory.address}
-        GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}
-        TickerRegistry:                  ${I_TickerRegistry.address}
-        STVersionProxy_001:              ${I_STVersion.address}
-        SecurityTokenRegistry:           ${I_SecurityTokenRegistry.address}
-        SecurityToken TOK1:              ${I_SecurityToken1.address}
-        SecurityToken TOK2:              ${I_SecurityToken2.address}
+        PolymathRegistry:                 ${I_PolymathRegistry.address}
+        TickerRegistry:                   ${I_TickerRegistry.address}
+        SecurityTokenRegistry:            ${I_SecurityTokenRegistry.address}
+        ModuleRegistry:                   ${I_ModuleRegistry.address}
+
+        STFactory:                        ${I_STFactory.address}
+        GeneralTransferManagerFactory:    ${I_GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:  ${I_GeneralPermissionManagerFactory.address}
+
+        SecurityToken TOK1:               ${I_SecurityToken1.address}
+        SecurityToken TOK2:               ${I_SecurityToken2.address}
         ---------------------------------------------------------------------------
         `);
     });
@@ -266,7 +269,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         it("Should successfully deploy upgraded SecurityTokenRegistry contract", async() => {
             I_UpgradedSecurityTokenRegistry = await SecurityTokenRegistry.new(
                 I_PolymathRegistry.address,
-                I_STVersion.address,
+                I_STFactory.address,
                 REGFEE,
                 {from: POLYMATH}
             );

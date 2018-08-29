@@ -9,8 +9,8 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
-const STVersion002 = artifacts.require('./STVersionProxy002.sol');
+const STFactory = artifacts.require('./STFactory.sol');
+const STFactory002 = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -54,13 +54,13 @@ contract('SecurityTokenRegistry', accounts => {
     let I_TickerRegistry;
     let I_SecurityTokenRegistry;
     let I_TestSTOFactory;
-    let I_STVersion;
+    let I_STFactory;
     let I_SecurityToken;
     let I_DummySTO;
     let I_PolyToken;
-    let I_STVersion002;
+    let I_STFactory002;
     let I_SecurityToken002;
-    let I_STVersion003;
+    let I_STFactory003;
     let I_PolymathRegistry;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
@@ -181,14 +181,14 @@ contract('SecurityTokenRegistry', accounts => {
             "TickerRegistry contract was not deployed",
         );
 
-        // Step 6: Deploy the STversionProxy contract
+        // Step 6: Deploy the STFactory contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
         // STEP 8: Deploy the CappedSTOFactory
@@ -208,7 +208,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
             I_PolymathRegistry.address,
-            I_STVersion.address,
+            I_STFactory.address,
             initRegFee,
             {
                 from: account_polymath
@@ -229,14 +229,19 @@ contract('SecurityTokenRegistry', accounts => {
 
 
         // Printing all the contract addresses
-        console.log(`\nPolymath Network Smart Contracts Deployed:\n
-            ModuleRegistry: ${I_ModuleRegistry.address}\n
-            GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}\n
-            GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
-            TestSTOFactory: ${I_TestSTOFactory.address}\n
-            TickerRegistry: ${I_TickerRegistry.address}\n
-            STVersionProxy_001: ${I_STVersion.address}\n
-            SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
+        console.log(`
+        -------------------- Polymath Network Smart Contracts: --------------------
+        PolymathRegistry:                 ${I_PolymathRegistry.address}
+        TickerRegistry:                   ${I_TickerRegistry.address}
+        SecurityTokenRegistry:            ${I_SecurityTokenRegistry.address}
+        ModuleRegistry:                   ${I_ModuleRegistry.address}
+
+        STFactory:                        ${I_STFactory.address}
+        GeneralTransferManagerFactory:    ${I_GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:  ${I_GeneralPermissionManagerFactory.address}
+
+        TestSTOFactory:                   ${I_TestSTOFactory.address}
+        ---------------------------------------------------------------------------
         `);
     });
 
@@ -302,16 +307,16 @@ contract('SecurityTokenRegistry', accounts => {
     describe("Generate SecurityToken v2", async() => {
 
         it("Should deploy the st version 2", async() => {
-            // Step 7: Deploy the STversionProxy contract
+            // Step 7: Deploy the STFactory contract
 
-            I_STVersion002 = await STVersion002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+            I_STFactory002 = await STFactory002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
-                I_STVersion002.address.valueOf(),
+                I_STFactory002.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
-                "STVersion002 contract was not deployed",
+                "STFactory002 contract was not deployed",
             );
-            await I_SecurityTokenRegistry.setProtocolVersion(I_STVersion002.address, "0.2.0", { from: account_polymath });
+            await I_SecurityTokenRegistry.setProtocolVersion(I_STFactory002.address, "0.2.0", { from: account_polymath });
 
             assert.equal(
                 web3.utils.toAscii(await I_SecurityTokenRegistry.protocolVersion.call())
@@ -434,16 +439,16 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should deploy the st vesrion 3", async() => {
-            // Step 7: Deploy the STversionProxy contract
+            // Step 7: Deploy the STFactory contract
 
-            I_STVersion003 = await STVersion002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+            I_STFactory003 = await STFactory002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
-                I_STVersion003.address.valueOf(),
+                I_STFactory003.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
-                "STVersion002 contract was not deployed",
+                "STFactory002 contract was not deployed",
             );
-            await I_SecurityTokenRegistry.setProtocolVersion(I_STVersion003.address, "0.3.0", { from: account_polymath });
+            await I_SecurityTokenRegistry.setProtocolVersion(I_STFactory003.address, "0.3.0", { from: account_polymath });
 
             assert.equal(
                 web3.utils.toAscii(await I_SecurityTokenRegistry.protocolVersion.call())

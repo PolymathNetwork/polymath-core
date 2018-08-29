@@ -49,10 +49,10 @@ async function setup(){
     let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
-  }catch (err) {
+  } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
-    return;
+    process.exit(0);
   }
 }
 
@@ -82,7 +82,7 @@ async function start_explorer(){
 
       let options = ['Mint tokens', 'Transfer tokens',
         'Explore account at checkpoint', 'Explore total supply at checkpoint', 'Create checkpoint', 
-        'Calculate Dividends', 'Calculate Dividends at a checkpoint'];
+        'Calculate Dividends', 'Calculate Dividends at past checkpoint'];
       
       // Only show dividend options if divididenModule is already attached 
       if (await isDividendsModuleAttached()) {
@@ -130,7 +130,7 @@ async function start_explorer(){
           let _ethDividend =  readlineSync.question('How much eth would you like to distribute to token holders?: ');
           let _checkpointId = readlineSync.question(`Enter the checkpoint on which you want to distribute dividend: `);
           let currentCheckpointId = await securityToken.methods.currentCheckpointId().call({ from: Issuer});
-          if (currentCheckpointId >= _checkpointId) {
+          if (parseInt(currentCheckpointId) >= parseInt(_checkpointId)) {
             await createDividendWithCheckpoint(_ethDividend, _checkpointId);
           } else {
             console.log(chalk.red(`Future checkpoint are not allowed to create the dividends`));
@@ -178,45 +178,43 @@ async function start_explorer(){
 }
 
 async function mintTokens(address, amount){
-  let _flag = await securityToken.methods.finishedIssuerMinting().call();
-  if (_flag) {
+  if (await securityToken.methods.finishedIssuerMinting().call()) {
     console.log(chalk.red("Minting is not possible - Minting has been permanently disabled by issuer"));
-    return;
-  }
-  let result = await securityToken.methods.getModule(3, 0).call({from: Issuer});
-  let isSTOAttached = result[1] != "0x0000000000000000000000000000000000000000";
-  if (isSTOAttached) {
-    console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
-    return;
-  }
-
-  await whitelistAddress(address);
-
-  try {
-    let mintAction = securityToken.methods.mint(address,web3.utils.toWei(amount,"ether"));
-    GAS = await common.estimateGas(mintAction, Issuer, 1.2);
-    await mintAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-    .on('transactionHash', function(hash){
-      console.log(`
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`
-      );
-    })
-    .on('receipt', function(receipt){
-      console.log(`
-        Congratulations! The transaction was successfully completed.
-
-        Minted ${web3.utils.fromWei(receipt.events.Transfer.returnValues.value,"ether")} tokens
-        to account ${receipt.events.Transfer.returnValues.to}
-
-        Review it on Etherscan.
-        TxHash: ${receipt.transactionHash}\n`
-      );
-    });
-  } catch (err) {
-    console.log(err);
-    console.log(chalk.red("There was an error processing the transfer transaction. \n The most probable cause for this error is one of the involved accounts not being in the whitelist or under a lockup period."));
-  }
+  } else {
+    let result = await securityToken.methods.getModule(3, 0).call({from: Issuer});
+    let isSTOAttached = result[1] != "0x0000000000000000000000000000000000000000";
+    if (isSTOAttached) {
+      console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
+    } else {
+      await whitelistAddress(address);
+  
+      try {
+        let mintAction = securityToken.methods.mint(address,web3.utils.toWei(amount,"ether"));
+        let GAS = await common.estimateGas(mintAction, Issuer, 1.2);
+        await mintAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
+        .on('transactionHash', function(hash){
+          console.log(`
+            Your transaction is being processed. Please wait...
+            TxHash: ${hash}\n`
+          );
+        })
+        .on('receipt', function(receipt){
+          console.log(`
+            Congratulations! The transaction was successfully completed.
+    
+            Minted ${web3.utils.fromWei(receipt.events.Transfer.returnValues.value,"ether")} tokens
+            to account ${receipt.events.Transfer.returnValues.to}
+    
+            Review it on Etherscan.
+            TxHash: ${receipt.transactionHash}\n`
+          );
+        });
+      } catch (err) {
+        console.log(err);
+        console.log(chalk.red("There was an error processing the transfer transaction. \n The most probable cause for this error is one of the involved accounts not being in the whitelist or under a lockup period."));
+      }
+    }
+  } 
 }
 
 async function transferTokens(address, amount){
@@ -224,7 +222,7 @@ async function transferTokens(address, amount){
 
   try{
     let transferAction = securityToken.methods.transfer(address,web3.utils.toWei(amount,"ether"));
-    GAS = await common.estimateGas(transferAction, Issuer, 1.2);
+    let GAS = await common.estimateGas(transferAction, Issuer, 1.5);
     await transferAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
     .on('transactionHash', function(hash){
       console.log(`
@@ -273,13 +271,13 @@ async function exploreTotalSupply(checkpoint){
 async function createDividends(ethDividend){
   await addDividendsModule();
 
-  let time = (await web3.eth.getBlock('latest')).timestamp;
+  let time = Math.floor(Date.now()/1000);
   let defaultTime = time + duration.minutes(10);
   let expiryTime = readlineSync.questionInt('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = ' + defaultTime + ' ): ', {defaultInput: defaultTime});
   
   //Send eth dividends
   let createDividendAction = etherDividendCheckpoint.methods.createDividend(time, expiryTime);
-  GAS = await common.estimateGas(createDividendAction, Issuer, 1.2, web3.utils.toWei(ethDividend,"ether"));
+  let GAS = await common.estimateGas(createDividendAction, Issuer, 1.2, web3.utils.toWei(ethDividend,"ether"));
   await createDividendAction.send({ from: Issuer, value: web3.utils.toWei(ethDividend,"ether"), gas: GAS, gasPrice: defaultGasPrice })
   .on('transactionHash', function(hash){
     console.log(`
@@ -289,7 +287,8 @@ async function createDividends(ethDividend){
   })
   .on('receipt', function(receipt){
     console.log(`
-      ${receipt.events}
+      Congratulations! Dividend is created successfully.
+      CheckpointId: ${receipt.events.EtherDividendDeposited.returnValues._checkpointId}
       TxHash: ${receipt.transactionHash}\n`
     );
   })
@@ -298,7 +297,7 @@ async function createDividends(ethDividend){
 async function createDividendWithCheckpoint(ethDividend, checkpointId) {
   await addDividendsModule(); 
 
-  let time = (await web3.eth.getBlock('latest')).timestamp;
+  let time = Math.floor(Date.now()/1000);
   let defaultTime = time + duration.minutes(10);
   let expiryTime = readlineSync.questionInt('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = ' + defaultTime + ' ): ', {defaultInput: defaultTime});
   
@@ -330,45 +329,65 @@ async function pushDividends(checkpoint, account){
   let accs = account.split(',');
   let dividend = await etherDividendCheckpoint.methods.getDividendIndex(checkpoint).call();
   if(dividend.length == 1) {
-    let pushDividendPaymentToAddressesAction = etherDividendCheckpoint.methods.pushDividendPaymentToAddresses(dividend[0], accs);
-    let GAS = await common.estimateGas(pushDividendPaymentToAddressesAction, Issuer, 1.2);  
-    await pushDividendPaymentToAddressesAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice })
-    .on('transactionHash', function(hash){
-      console.log(`
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`
-      );
-    })
-    .on('receipt', function(receipt){
-      console.log(`
-        Congratulations! Dividends are pushed successfully
-        TxHash: ${receipt.transactionHash}\n`
-      );
-    })
+    try {
+      let _dividendData = await etherDividendCheckpoint.methods.dividends(dividend[0]).call();
+      if (parseInt(_dividendData[3]) >= parseInt(Math.floor(Date.now()/1000))) {
+        let pushDividendPaymentToAddressesAction = etherDividendCheckpoint.methods.pushDividendPaymentToAddresses(dividend[0], accs);
+        let GAS = await common.estimateGas(pushDividendPaymentToAddressesAction, Issuer, 1.2);  
+        await pushDividendPaymentToAddressesAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice })
+        .on('transactionHash', function(hash){
+          console.log(`
+            Your transaction is being processed. Please wait...
+            TxHash: ${hash}\n`
+          );
+        })
+        .on('receipt', function(receipt){
+          console.log(`
+            Congratulations! Dividends are pushed successfully
+            TxHash: ${receipt.transactionHash}\n`
+          );
+        })
+      } else {
+        console.log(`\nSorry! You missed the ${chalk.yellow("Golden")} opportunity to get the dividend benefits\n`);
+      }
+    } catch(error) {
+      console.log(error.message);
+      console.log(chalk.red("\nPossible chance that one of the address already claim the dividend"));
+    }
   } else {
-    console.log(chalk.red("Future checkpoints are not allowed"));
+      console.log(chalk.red("Future checkpoints are not allowed"));
   }
 }
 
 async function pullDividends(checkpointId) {
   let dividend = await etherDividendCheckpoint.methods.getDividendIndex(checkpointId).call();
   if(dividend.length == 1) {
-    let pullDividendPaymentAction = etherDividendCheckpoint.methods.pullDividendPayment(dividend[0]);
-    let GAS = await common.estimateGas(pullDividendPaymentAction, Issuer, 1.2);  
-    await pullDividendPaymentAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice })
-    .on('transactionHash', function(hash){
-      console.log(`
-        Your transaction is being processed. Please wait...
-        TxHash: ${hash}\n`
-      );
-    })
-    .on('receipt', function(receipt){
-      console.log(`
-        Amount: ${web3.utils.fromWei(receipt.events.EtherDividendClaimed.returnValues._amount, "ether")} ETH
-        Payee:  ${receipt.events.EtherDividendClaimed.returnValues._payee}
-        TxHash: ${receipt.transactionHash}\n`
-      );
-    })
+    try {
+      let _dividendData = await etherDividendCheckpoint.methods.dividends(dividend[0]).call();
+      if (parseInt(_dividendData[3]) >= parseInt(Math.floor(Date.now()/1000))) {
+        let pullDividendPaymentAction = etherDividendCheckpoint.methods.pullDividendPayment(dividend[0]);
+        let GAS = await common.estimateGas(pullDividendPaymentAction, Issuer, 1.2);  
+        await pullDividendPaymentAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice })
+        .on('transactionHash', function(hash){
+          console.log(`
+            Your transaction is being processed. Please wait...
+            TxHash: ${hash}\n`
+          );
+        })
+        .on('receipt', function(receipt){
+          console.log(`
+            Amount: ${web3.utils.fromWei(receipt.events.EtherDividendClaimed.returnValues._amount, "ether")} ETH
+            Payee:  ${receipt.events.EtherDividendClaimed.returnValues._payee}
+            TxHash: ${receipt.transactionHash}\n`
+          );
+        })
+      } else {
+        console.log(`\nSorry! You missed the ${chalk.yellow("Golden")} opportunity to get the dividend benefits\n`);
+      }
+    } catch(error) {
+      console.log(error.message);
+      console.log(chalk.red(`May be ${Issuer} already claimed his dividends`));
+    }
   } else {
     console.log(chalk.red("Future checkpoints are not allowed"));
   }

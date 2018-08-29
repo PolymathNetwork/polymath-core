@@ -357,6 +357,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
                 I_SecurityToken1.address,
                 tokenDetails1,
                 swarmHash1,
+                Math.floor(Date.now()/10000),
                 {from: POLYMATH}
             );
             assert.equal(tx.logs[0].args._name, name1, "First token name does not match");
@@ -371,6 +372,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
                 I_SecurityToken2.address,
                 tokenDetails2,
                 web3.utils.asciiToHex(swarmHash2),
+                Math.floor(Date.now()/10000),
                 {from: POLYMATH}
             );
             assert.equal(tx.logs[0].args._name, name2, "Second token name does not match");
@@ -607,7 +609,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
                     type: 'uint256',
                     name: '_rate'
                 },{
-                    type: 'uint8',
+                    type: 'uint8[]',
                     name: '_fundRaiseType',
                 },{
                     type: 'address',
@@ -615,7 +617,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
                 }
                 ]
             };
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, [fundRaiseType], fundsReceiver]);
 
             let tx = await I_SecurityToken3.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER3 });
             assert.equal(tx.logs[2].args._type, STOKEY, "CappedSTO doesn't get deployed");

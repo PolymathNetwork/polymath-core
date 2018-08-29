@@ -86,7 +86,7 @@ contract('ModuleRegistry', accounts => {
     let endTime;
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
-    const fundRaiseType = 0;
+    const fundRaiseType = [0];
     const functionSignature = {
         name: 'configure',
         type: 'function',
@@ -103,8 +103,8 @@ contract('ModuleRegistry', accounts => {
             type: 'uint256',
             name: '_rate'
         },{
-            type: 'uint8',
-            name: '_fundRaiseType',
+            type: 'uint8[]',
+            name: '_fundRaiseTypes',
         },{
             type: 'address',
             name: '_fundsReceiver'

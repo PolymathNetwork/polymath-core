@@ -16,13 +16,6 @@ contract PreSaleSTO is ISTO {
 
     mapping (address => uint256) public investors;
 
-    uint256 public investorCount;
-
-    uint256 public etherRaised;
-    uint256 public polyRaised;
-
-    uint256 public tokensSold;
-
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
@@ -53,14 +46,14 @@ contract PreSaleSTO is ISTO {
      * @notice Return ETH raised by the STO
      */
     function getRaisedEther() public view returns (uint256) {
-        return etherRaised;
+        return fundsRaisedETH;
     }
 
     /**
      * @notice Return POLY raised by the STO
      */
     function getRaisedPOLY() public view returns (uint256) {
-        return polyRaised;
+        return fundsRaisedPOLY;
     }
 
     /**
@@ -74,7 +67,7 @@ contract PreSaleSTO is ISTO {
      * @notice Return the total no. of tokens sold
      */
     function getTokensSold() public view returns (uint256) {
-        return tokensSold;
+        return totalTokensSold;
     }
 
     /**
@@ -100,9 +93,9 @@ contract PreSaleSTO is ISTO {
         ISecurityToken(securityToken).mint(_investor, _amount);
         investors[_investor] = investors[_investor].add(_amount);
         investorCount = investorCount.add(1);
-        etherRaised = etherRaised.add(_etherContributed);
-        polyRaised = polyRaised.add(_polyContributed);
-        tokensSold = tokensSold.add(_amount);
+        fundsRaisedETH = fundsRaisedETH.add(_etherContributed);
+        fundsRaisedPOLY = fundsRaisedPOLY.add(_polyContributed);
+        totalTokensSold = totalTokensSold.add(_amount);
         emit TokensAllocated(_investor, _amount);
     }
 

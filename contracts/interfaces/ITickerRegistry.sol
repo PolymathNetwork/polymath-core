@@ -17,7 +17,7 @@ interface ITickerRegistry {
     * @notice Returns the owner and timestamp for a given symbol
     * @param _symbol symbol
     */
-    function getDetails(string _symbol) external view returns (address, uint256, string, bytes32, bool);
+    function getDetails(string _symbol) public view returns (address, uint256, uint256, string, bytes32, bool);
 
     /**
      * @notice Check the symbol is reserved or not
@@ -48,5 +48,11 @@ interface ITickerRegistry {
       * @param _registrationFee registration fee in POLY tokens (base 18 decimals)
       */
      function changePolyRegistrationFee(uint256 _registrationFee) external;
+
+     /**
+     * @notice Use to get the ticker list as per the owner
+     * @param _owner Address which owns the list of tickers 
+     */
+    function getTickersByOwner(address _owner) public view returns(bytes32[]);
 
 }

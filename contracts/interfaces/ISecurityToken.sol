@@ -56,6 +56,15 @@ interface ISecurityToken {
     function getModuleByName(uint8 _moduleType, bytes32 _name) external view returns (bytes32, address);
 
     /**
+     * @notice returns All module list for a module name 
+     * @param _moduleType is which type of module we are trying to get
+     * @param _name is the name of the module within the chosen type
+     * @return bytes32
+     * @return address
+     */
+    function getAllModulesByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32[], address[]);
+
+    /**
      * @notice Queries totalSupply as of a defined checkpoint
      * @param _checkpointId Checkpoint ID to query as of
      */

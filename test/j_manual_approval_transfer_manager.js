@@ -379,11 +379,29 @@ contract('ManualApprovalTransferManager', accounts => {
             await revertToSnapshot(snapId);
         });
 
+
         it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "ManualApprovalTransferManager doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[2].args._name), "ManualApprovalTransferManager", "ManualApprovalTransferManager module was not added");
             I_ManualApprovalTransferManager = ManualApprovalTransferManager.at(tx.logs[2].args._module);
+        });
+//function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result) {
+        it("Cannot call verifyTransfer on the TM directly if _isTransfer == true", async() => {
+            let errorThrown = false;
+            try {
+                await I_ManualApprovalTransferManager.verifyTransfer(account_investor4, account_investor4, web3.utils.toWei('2', 'ether'), true, { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> invalid not from SecurityToken`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+        });
+
+        it("Can call verifyTransfer on the TM directly if _isTransfer == false", async() => {
+            await I_ManualApprovalTransferManager.verifyTransfer(account_investor4, account_investor4, web3.utils.toWei('2', 'ether'), false, { from: token_owner });
         });
 
         it("Add a new token holder", async() => {

@@ -28,6 +28,8 @@ contract('TickerRegistry', accounts => {
     let account_issuer;
     let token_owner;
     let account_temp;
+    let account_holder;
+    let account_newHolder;
 
     let balanceOfReceiver;
     // investor Details
@@ -84,6 +86,8 @@ contract('TickerRegistry', accounts => {
         account_issuer = accounts[1];
         account_temp = accounts[8];
         token_owner = account_issuer;
+        account_holder = accounts[2];
+        account_newHolder = accounts[3];
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
@@ -252,10 +256,11 @@ contract('TickerRegistry', accounts => {
         });
 
         it("Should successfully register ticker", async() => {
-
             let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
+            // let tokenList = await I_TickerRegistry.getTickersByOwner.call(token_owner);
+            // assert.equal(web3.utils.hexToAscii(tokenList[0]).replace(/\u0000/g, ''), symbol);
         });
 
         it("Should fail to register ticker due to the symbol length is 0", async() => {
@@ -303,9 +308,11 @@ contract('TickerRegistry', accounts => {
         });
 
         it("Should successfully register pre registerd ticker if expiry is reached", async() => {
-            await increaseTime(1300000);
+            await increaseTime(duration.days(15) + 4000);
             await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: account_temp});
             let tx = await I_TickerRegistry.registerTicker(account_temp, symbol, name, swarmHash, { from: account_temp });
+            // let tokenList = await I_TickerRegistry.getTickersByOwner.call(account_temp);
+            // assert.equal(web3.utils.hexToAscii(tokenList[0]).replace(/\u0000/g, ''), symbol);
             assert.equal(tx.logs[0].args._owner, account_temp);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
@@ -399,25 +406,25 @@ contract('TickerRegistry', accounts => {
         it("Should get the details of the symbol", async() => {
             let tx = await I_TickerRegistry.getDetails.call(symbol);
             assert.equal(tx[0], account_temp);
-            assert.equal(tx[2], name);
+            assert.equal(tx[3], name);
             assert.equal(
-                web3.utils.toAscii(tx[3])
+                web3.utils.toAscii(tx[4])
                 .replace(/\u0000/g, ''),
                 swarmHash
             );
-            assert.equal(tx[4], false);
+            assert.equal(tx[5], false);
         });
 
         it("Should get the details of unregistered token", async() => {
             let tx = await I_TickerRegistry.getDetails.call("TORO");
             assert.equal(tx[0], "0x0000000000000000000000000000000000000000");
-            assert.equal(tx[2], "");
+            assert.equal(tx[3], "");
             assert.equal(
-                web3.utils.toAscii(tx[3])
+                web3.utils.toAscii(tx[4])
                 .replace(/\u0000/g, ''),
                 ""
             );
-            assert.equal(tx[4], false);
+            assert.equal(tx[5], false);
         });
 
     });
@@ -570,6 +577,106 @@ contract('TickerRegistry', accounts => {
             });
 
         });
+
+        describe("Test case for the transferTickerOwnership of the ticker", async()=> {
+
+            it("Should successfully transfer the ownership to other issuer -- failed because of msg.sender is not the rightful owner", async() => {
+                let errorThrown = false;
+                await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), account_holder, {from: account_holder});
+                await I_PolyToken.approve(I_TickerRegistry.address, 400 * Math.pow(10, 18), { from: account_holder});
+                await I_TickerRegistry.registerTicker(account_holder, "BBB", "temporary", swarmHash, {from: account_holder});
+                try {
+                    await I_TickerRegistry.transferTickerOwnership(account_newHolder, "BBB", { from: account_temp });
+                } catch(error) {
+                    console.log(`         tx revert -> msg.sender should be the owner of Ticker`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully transfer the ownership to other issuer -- failed because of new owner is 0x", async() => {
+                let errorThrown = false;
+                try {
+                    await I_TickerRegistry.transferTickerOwnership(0x0, "BBB", { from: account_holder });
+                } catch(error) {
+                    console.log(`         tx revert -> new owner should not be 0x`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully transfer the ownership to other issuer -- failed because of ticker length is 0", async() => {
+                let errorThrown = false;
+                try {
+                    await I_TickerRegistry.transferTickerOwnership(account_newHolder, "", { from: account_holder });
+                } catch(error) {
+                    console.log(`         tx revert -> Entered ticker length should be greater than 0`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully transfer the ownership to other issuer", async() => {
+                let tx = await I_TickerRegistry.transferTickerOwnership(account_newHolder, "BBB", { from: account_holder });
+                assert.equal(tx.logs[0].args._ticker, "BBB", "Emitted symbol is not matched with the desired symbol whose ownership need to change");
+                let tokenList = await I_TickerRegistry.getTickersByOwner.call(account_holder);
+                assert.equal(tokenList.length, 0, "Length should be 0");
+                tokenList = await I_TickerRegistry.getTickersByOwner.call(account_newHolder);
+                assert.equal(web3.utils.hexToAscii(tokenList[0]).replace(/\u0000/g, ''), "BBB", "Error in transferring the ownership of the ticker");
+            });
+        });
+
+        describe("Test case for the custom ticker resgister", async() => {
+
+            it("Should register the ticker successfully -- fail because msg.sender is not the Owner of the registry", async() => {
+                let errorThrown = false;
+                try {
+                    let tx = await I_TickerRegistry.addCustomTicker(account_polymath, "CHECK", "temporary", swarmHash, latestTime(), latestTime() + 10000, { from: account_temp});
+                } catch(error) {
+                    console.log(`         tx revert -> Because msg.sender is not the Owner of the registry`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should register the ticker successfully -- fail because ticker length is 0", async() => {
+                let errorThrown = false;
+                try {
+                    let tx = await I_TickerRegistry.addCustomTicker(account_polymath, "", "temporary", swarmHash, latestTime(), latestTime() + 10000, { from: account_polymath});
+                } catch(error) {
+                    console.log(`         tx revert -> Because ticker length is 0`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should register the ticker successfully -- fail because ticker is already registered", async() => {
+                let errorThrown = false;
+                try {
+                    let tx = await I_TickerRegistry.addCustomTicker(account_polymath, "BBB", "temporary", swarmHash, latestTime(), latestTime() + 10000, { from: account_polymath});
+                } catch(error) {
+                    console.log(`         tx revert -> Ticker should not be already registered`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should register the ticker successfully", async() => {
+                let tx = await I_TickerRegistry.addCustomTicker(account_polymath, "CHECK", "temporary", swarmHash, latestTime(), latestTime() + 10000, { from: account_polymath});
+                assert.equal(tx.logs[0].args._owner, account_polymath);
+                assert.equal(tx.logs[0].args._symbol, "CHECK");
+                let tokenList = await I_TickerRegistry.getTickersByOwner.call(account_polymath);
+                assert.equal(web3.utils.hexToAscii(tokenList[0]).replace(/\u0000/g, ''), "CHECK");
+            });
+        })
+
     });
+
 
 });

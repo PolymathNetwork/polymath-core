@@ -282,6 +282,36 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
+     * @notice returns module list for a module name - will return first match
+     * @param _moduleType is which type of module we are trying to get
+     * @param _name is the name of the module within the chosen type
+     * @return bytes32
+     * @return address
+     */
+    function getAllModulesByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32[], address[]) {
+        if (modules[_moduleType].length > 0) {
+            uint counter = 0;
+            for (uint256 i = 0; i < modules[_moduleType].length; i++) {
+                if (modules[_moduleType][i].name == _name)
+                    counter++;
+            }
+            address[] memory tempAddressArray = new address[](counter);
+            bytes32[] memory tempBytes32Array = new bytes32[](counter);
+            counter = 0;
+            for (i = 0; i < modules[_moduleType].length; i++) {
+                if (modules[_moduleType][i].name == _name) {
+                    tempAddressArray[counter] = modules[_moduleType][i].moduleAddress;
+                    tempBytes32Array[counter] = modules[_moduleType][i].name;
+                    counter++;
+                }
+            }
+            return (tempBytes32Array, tempAddressArray);
+        } else {
+            return (new bytes32[](0), new address[](0));
+        }
+    }
+
+    /**
     * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
     * @param _amount amount of POLY to withdraw

@@ -87,7 +87,7 @@ else
   start_bridge
 fi
 
-if [ "$SOLIDITY_COVERAGE" = true ]; then
+if [ "$TRAVIS_PULL_REQUEST" = true ]; then
   node_modules/.bin/solidity-coverage
 
   if [ "$CONTINUOUS_INTEGRATION" = true ]; then

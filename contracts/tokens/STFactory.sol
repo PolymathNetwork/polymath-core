@@ -1,17 +1,16 @@
 pragma solidity ^0.4.24;
 
-import "./SecurityTokenV2.sol";
-import "../SecurityTokenRegistry.sol";
-import "../interfaces/ISTProxy.sol";
+import "./SecurityToken.sol";
+import "../interfaces/ISTFactory.sol";
 
 /**
- * @title Proxy for deploying Security Token v2
+ * @title Proxy for deploying Security Token v1
  */
-contract STVersionProxy002 is ISTProxy {
+contract STFactory is ISTFactory {
 
     address public transferManagerFactory;
 
-    //Should be set to false when we have more TransferManager options
+    // Should be set to false when we have more TransferManager options
     bool addTransferManager = true;
 
     constructor (address _transferManagerFactory) public {

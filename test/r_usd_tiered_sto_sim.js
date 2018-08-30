@@ -10,7 +10,8 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
+const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
+const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -47,11 +48,12 @@ contract('USDTieredSTO', accounts => {
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
     let I_TickerRegistry;
+    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_USDTieredSTOFactory;
     let I_USDOracle;
     let I_POLYOracle;
-    let I_STVersion;
+    let I_STFactory;
     let I_SecurityToken;
     let I_USDTieredSTO_Array = [];
     let I_PolyToken;
@@ -232,21 +234,21 @@ contract('USDTieredSTO', accounts => {
             "TickerRegistry contract was not deployed",
         );
 
-        // Step 8: Deploy the STversionProxy contract
+        // Step 8: Deploy the STFactory contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : POLYMATH });
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : POLYMATH });
 
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
         // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
             I_PolymathRegistry.address,
-            I_STVersion.address,
+            I_STFactory.address,
             REGFEE,
             {
                 from: POLYMATH
@@ -259,12 +261,27 @@ contract('USDTieredSTO', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 10: update the registries addresses from the PolymathRegistry contract
+        // Step 10: Deploy the FeatureRegistry
+
+        I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: POLYMATH
+            });
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: POLYMATH});
+
+        assert.notEqual(
+            I_FeatureRegistry.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "FeatureRegistry contract was not deployed",
+        );
+
+        // Step 11: update the registries addresses from the PolymathRegistry contract
         await I_SecurityTokenRegistry.updateFromRegistry({from: POLYMATH});
         await I_ModuleRegistry.updateFromRegistry({from: POLYMATH});
         await I_TickerRegistry.updateFromRegistry({from: POLYMATH});
 
-        // Step 11: Deploy & Register Mock Oracles
+        // Step 12: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY
         I_POLYOracle = await MockOracle.new(I_PolyToken.address, "POLY", "USD", USDPOLY, { from: POLYMATH }); // 25 cents per POLY
         await I_PolymathRegistry.changeAddress("EthUsdOracle", I_USDOracle.address, { from: POLYMATH });
@@ -272,17 +289,21 @@ contract('USDTieredSTO', accounts => {
 
         // Printing all the contract addresses
         console.log(`
-        -------------------- Polymath Network Smart Contracts: --------------------
-        ModuleRegistry:                  ${I_ModuleRegistry.address}
-        GeneralTransferManagerFactory:   ${I_GeneralTransferManagerFactory.address}
-        GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}
-        USDTieredSTOFactory:             ${I_USDTieredSTOFactory.address}
-        TickerRegistry:                  ${I_TickerRegistry.address}
-        STVersionProxy_001:              ${I_STVersion.address}
-        SecurityTokenRegistry:           ${I_SecurityTokenRegistry.address}
-        USDOracle:                       ${I_USDOracle.address}
-        POLYOracle:                      ${I_POLYOracle.address}
-        ---------------------------------------------------------------------------
+        --------------------- Polymath Network Smart Contracts: ---------------------
+        PolymathRegistry:                  ${PolymathRegistry.address}
+        TickerRegistry:                    ${TickerRegistry.address}
+        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${ModuleRegistry.address}
+        FeatureRegistry:                   ${FeatureRegistry.address}
+
+        STFactory:                         ${STFactory.address}
+        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
+
+        USDOracle:                         ${I_USDOracle.address}
+        POLYOracle:                        ${I_POLYOracle.address}
+        USDTieredSTOFactory:               ${I_USDTieredSTOFactory.address}
+        -----------------------------------------------------------------------------
         `);
     });
 

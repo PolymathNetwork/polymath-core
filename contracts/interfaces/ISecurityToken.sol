@@ -154,14 +154,9 @@ interface ISecurityToken {
     function unfreezeTransfers() external;
 
     /**
-     * @notice End token minting period permanently for Issuer
+     * @notice End token minting period permanently
      */
-    function finishMintingIssuer() external;
-
-    /**
-     * @notice End token minting period permanently for STOs
-     */
-    function finishMintingSTO() external;
+    function freezeMinting() external;
 
     /**
      * @notice mints new tokens and assigns them to the target _investor.

@@ -5,6 +5,7 @@ import "../interfaces/IPolyToken.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IModuleRegistry.sol";
+import "../interfaces/IFeatureRegistry.sol";
 import "../modules/TransferManager/ITransferManager.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "../interfaces/ITokenBurner.sol";
@@ -26,7 +27,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
-    bytes32 public constant securityTokenVersion = "0.0.1";
+    bytes32 public constant securityTokenVersion = "0.0.2";
 
     // off-chain hash
     string public tokenDetails;
@@ -49,8 +50,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // Reference to token burner contract
     ITokenBurner public tokenBurner;
 
-    // Use to halt all the transactions
-    bool public freeze = false;
+    // Use to temporarily halt all transactions
+    bool public transfersFrozen;
+
+    // Use to permanently halt all minting
+    bool public mintingFrozen;
 
     struct ModuleData {
         bytes32 name;
@@ -65,9 +69,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     mapping (address => Checkpoint[]) public checkpointBalances;
     Checkpoint[] public checkpointTotalSupply;
-
-    bool public finishedIssuerMinting = false;
-    bool public finishedSTOMinting = false;
 
     mapping (bytes4 => bool) transferFunctions;
 
@@ -97,36 +98,35 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     // Emit when the budget allocated to a module is changed
     event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
-    // Emit when all the transfers get freeze
-    event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
+    // Emit when transfers are frozen or unfrozen
+    event LogFreezeTransfers(bool _status, uint256 _timestamp);
     // Emit when new checkpoint created
     event LogCheckpointCreated(uint256 indexed _checkpointId, uint256 _timestamp);
-    // Emit when the minting get finished for the Issuer
-    event LogFinishMintingIssuer(uint256 _timestamp);
-    // Emit when the minting get finished for the STOs
-    event LogFinishMintingSTO(uint256 _timestamp);
+    // Emit when is permanently frozen by the issuer
+    event LogFreezeMinting(uint256 _timestamp);
     // Change the STR address in the event of a upgrade
     event LogChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
     // Events to log minting and burning
     event Minted(address indexed to, uint256 amount);
     event Burnt(address indexed _burner, uint256 _value);
 
-    // If _fallback is true, then for STO module type we only allow the module if it is set, if it is not set we only allow the owner
-    // for other _moduleType we allow both issuer and module.
-    modifier onlyModule(uint8 _moduleType, bool _fallback) {
-      //Loop over all modules of type _moduleType
+    // Require msg.sender to be the specified module type
+    modifier onlyModule(uint8 _moduleType) {
         bool isModuleType = false;
         for (uint8 i = 0; i < modules[_moduleType].length; i++) {
             isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
         }
-        if (_fallback && !isModuleType) {
-            if (_moduleType == STO_KEY)
-                require(modules[_moduleType].length == 0 && msg.sender == owner, "Sender is not owner or STO module is attached");
-            else
-                require(msg.sender == owner, "Sender is not owner");
-        } else {
-            require(isModuleType, "Sender is not correct module type");
+        require(isModuleType, "msg.sender is not correct module type");
+        _;
+    }
+
+    // Require msg.sender to be the specified module type or the owner of the token
+    modifier onlyModuleOrOwner(uint8 _moduleType) {
+        bool isModuleType = false;
+        for (uint8 i = 0; i < modules[_moduleType].length; i++) {
+            isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
         }
+        require(msg.sender == owner || isModuleType, "msg.sender is not owner and not correct module type");
         _;
     }
 
@@ -135,14 +135,13 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         _;
     }
 
-    // Checks whether the minting is allowed or not, check for the owner if owner is no the msg.sender then check
-    // for the finishedSTOMinting flag because only STOs and owner are allowed for minting
     modifier isMintingAllowed() {
-        if (msg.sender == owner) {
-            require(!finishedIssuerMinting, "Minting is finished for Issuer");
-        } else {
-            require(!finishedSTOMinting, "Minting is finished for STOs");
-        }
+        require(!mintingFrozen, "Minting is permanently frozen");
+        _;
+    }
+
+    modifier isEnabled(string _nameKey) {
+        require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey));
         _;
     }
 
@@ -411,21 +410,21 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice freeze all the transfers
+     * @notice freeze transfers
      */
     function freezeTransfers() external onlyOwner {
-        require(!freeze);
-        freeze = true;
-        emit LogFreezeTransfers(freeze, now);
+        require(!transfersFrozen);
+        transfersFrozen = true;
+        emit LogFreezeTransfers(true, now);
     }
 
     /**
-     * @notice un-freeze all the transfers
+     * @notice unfreeze transfers
      */
     function unfreezeTransfers() external onlyOwner {
-        require(freeze);
-        freeze = false;
-        emit LogFreezeTransfers(freeze, now);
+        require(transfersFrozen);
+        transfersFrozen = false;
+        emit LogFreezeTransfers(false, now);
     }
 
     /**
@@ -516,7 +515,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bool
      */
     function verifyTransfer(address _from, address _to, uint256 _amount) public checkGranularity(_amount) returns (bool) {
-        if (!freeze) {
+        if (!transfersFrozen) {
             bool isTransfer = false;
             if (transferFunctions[getSig(msg.data)]) {
               isTransfer = true;
@@ -545,29 +544,22 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice End token minting period permanently for Issuer
+     * @notice Permanently freeze minting of this security token.
+     * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function finishMintingIssuer() external onlyOwner {
-        finishedIssuerMinting = true;
-        emit LogFinishMintingIssuer(now);
-    }
-
-    /**
-     * @notice End token minting period permanently for STOs
-     */
-    function finishMintingSTO() external onlyOwner {
-        finishedSTOMinting = true;
-        emit LogFinishMintingSTO(now);
+    function freezeMinting() external isMintingAllowed() isEnabled("freezeMintingAllowed") onlyOwner {
+        mintingFrozen = true;
+        emit LogFreezeMinting(now);
     }
 
     /**
      * @notice mints new tokens and assigns them to the target _investor.
-     * @dev Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
-     * @param _investor Address to whom the minted tokens will be dilivered
-     * @param _amount Number of tokens get minted
+     * @dev Can only be called by the issuer or STO attached to the token
+     * @param _investor Address where the minted tokens will be delivered
+     * @param _amount Number of tokens be minted
      * @return success
      */
-    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) isMintingAllowed() returns (bool success) {
+    function mint(address _investor, uint256 _amount) public onlyModuleOrOwner(STO_KEY) checkGranularity(_amount) isMintingAllowed() returns (bool success) {
         require(_investor != address(0), "Investor address should not be 0x");
         adjustInvestorCount(address(0), _investor, _amount);
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
@@ -582,12 +574,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     /**
      * @notice mints new tokens and assigns them to the target _investor.
-     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+     * @dev Can only be called by the issuer or STO attached to the token.
      * @param _investors A list of addresses to whom the minted tokens will be dilivered
      * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _amounts) external onlyModule(STO_KEY, true) returns (bool success) {
+    function mintMulti(address[] _investors, uint256[] _amounts) external onlyModuleOrOwner(STO_KEY) returns (bool success) {
         require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _amounts[i]);
@@ -662,7 +654,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
      * @return uint256
      */
-    function createCheckpoint() external onlyModule(CHECKPOINT_KEY, true) returns(uint256) {
+    function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
         require(currentCheckpointId < 2**256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
         emit LogCheckpointCreated(currentCheckpointId, now);

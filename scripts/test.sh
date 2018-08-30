@@ -19,7 +19,7 @@ cleanup() {
   fi
 }
 
-if [ "$SOLIDITY_COVERAGE" = true ]; then
+if [ "$TRAVIS_PULL_REQUEST" != false ]; then
   testrpc_port=8545
 else
   testrpc_port=8545
@@ -60,7 +60,7 @@ start_testrpc() {
     --account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501209,1000000000000000000000000"
   )
 
-  if [ "$SOLIDITY_COVERAGE" = true ]; then
+  if [ "$TRAVIS_PULL_REQUEST" != false ]; then
     node_modules/.bin/testrpc-sc --gasLimit 0xfffffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
   else
     node_modules/.bin/ganache-cli --gasLimit 0xfffffffffff "${accounts[@]}" > /dev/null &
@@ -87,7 +87,7 @@ else
   start_bridge
 fi
 
-if [ "$TRAVIS_PULL_REQUEST" = true ]; then
+if [ "$TRAVIS_PULL_REQUEST" != false ]; then
   node_modules/.bin/solidity-coverage
 
   if [ "$CONTINUOUS_INTEGRATION" = true ]; then

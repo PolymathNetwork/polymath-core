@@ -2,6 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./PercentageTransferManager.sol";
 import "../ModuleFactory.sol";
+import "../../helpers/Util.sol";
 
 /**
  * @title Factory for deploying PercentageTransferManager module
@@ -30,7 +31,7 @@ contract PercentageTransferManagerFactory is ModuleFactory {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender, address(polyToken));
-        require(getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
+        require(Util.getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
         require(address(percentageTransferManager).call(_data), "Un-successfull call");
         emit LogGenerateModuleFromFactory(address(percentageTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(percentageTransferManager);

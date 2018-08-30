@@ -10,6 +10,7 @@ import "../modules/TransferManager/ITransferManager.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "../interfaces/ITokenBurner.sol";
 import "../RegistryUpdater.sol";
+import "../helpers/Util.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
@@ -517,7 +518,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function verifyTransfer(address _from, address _to, uint256 _amount) public checkGranularity(_amount) returns (bool) {
         if (!transfersFrozen) {
             bool isTransfer = false;
-            if (transferFunctions[getSig(msg.data)]) {
+            if (transferFunctions[Util.getSig(msg.data)]) {
               isTransfer = true;
             }
             if (modules[TRANSFERMANAGER_KEY].length == 0) {
@@ -636,18 +637,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         emit Burnt(msg.sender, _value);
         emit Transfer(msg.sender, address(0), _value);
         return true;
-    }
-
-    /**
-     * @notice Get function signature from _data
-     * @param _data passed data
-     * @return bytes4 sig
-     */
-    function getSig(bytes _data) internal pure returns (bytes4 sig) {
-        uint len = _data.length < 4 ? _data.length : 4;
-        for (uint i = 0; i < len; i++) {
-            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
-        }
     }
 
     /**

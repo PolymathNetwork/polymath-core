@@ -11,7 +11,7 @@ import "./helpers/Util.sol";
 /**
  * @title Registry contract for issuers to register their security tokens
  */
-contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
+contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
 
     /**
      * @notice state variables
@@ -142,7 +142,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
         require(_checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
         if (getUint("stLaunchFee") > 0)
             require(IPolyToken(getAddress("polyToken")).transferFrom(msg.sender, address(this), getUint("stLaunchFee")), "Failed transferFrom because of sufficent Allowance is not provided");
-        string memory symbol = _upper(_symbol);
+        string memory symbol = Util.upper(_symbol);
         address newSecurityTokenAddress = ISTFactory(getSTFactoryAddress()).deployToken(
             _name,
             symbol,
@@ -168,7 +168,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
      */
     function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt) external onlyOwner whenNotPaused {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
-        string memory symbol = _upper(_symbol);
+        string memory symbol = Util.upper(_symbol);
         require(_securityToken != address(0) && getMapAddress("symbols", symbol) == address(0), "Symbol is already at the polymath network or entered security token address is 0x");
         require(_owner != address(0));
         require(!_isReserved(symbol, _owner, _name), "Trying to use non-valid symbol");
@@ -193,9 +193,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
             address _polyToken = getAddress("polyToken");
             require(IPolyToken(_polyToken).transferFrom(msg.sender, address(this), _fee), "Failed transferFrom because of sufficent Allowance is not provided");
         }
-        string memory symbol = _upper(_symbol);
+        string memory symbol = Util.upper(_symbol);
         require(_expiryCheck(symbol), "Ticker is already reserved");
-        pushMapArray("tokensOwnedByUser", _owner, _stringToBytes32(symbol));
+        pushMapArray("tokensOwnedByUser", _owner, Util.stringToBytes32(symbol));
         setMap("tickerIndex", symbol, (getMapArrayBytes32("tokensOwnedByUser", _owner).length - 1));
         _storeSymbolDetails(symbol, _owner, now, now.add(getUint('expiryLimit')), _tokenName, false);
         emit LogRegisterTicker(_owner, symbol, _tokenName, now, now.add(getUint('expiryLimit')));
@@ -216,9 +216,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
         require(_expiryDate != 0 && _registrationDate != 0, "Dates should not be 0");
         require(_registrationDate < _expiryDate, "Registration date should be less than the expiry date");
         require(_owner != address(0), "Address should not be 0x");
-        string memory symbol = _upper(_symbol);
+        string memory symbol = Util.upper(_symbol);
         require(_expiryCheck(symbol), "Ticker is already reserved");
-        pushMapArray("tokensOwnedByUser", _owner, _stringToBytes32(symbol));
+        pushMapArray("tokensOwnedByUser", _owner, Util.stringToBytes32(symbol));
         setMap("tickerIndex", symbol, (getMapArrayBytes32("tokensOwnedByUser", _owner).length - 1));
         _storeSymbolDetails(symbol, _owner, _registrationDate, _expiryDate, _tokenName, false);
         emit LogRegisterTicker(_owner, symbol, _tokenName, _registrationDate, _expiryDate);
@@ -234,7 +234,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
      * @param _expiryDate Expiry date of the ticker
      */
     function modifyTickerDetails(address _owner, string _symbol, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external onlyOwner {
-        string memory symbol = _upper(_symbol);
+        string memory symbol = Util.upper(_symbol);
         require(!getMapBool("registeredSymbols_status", symbol), "Modifying the details of deployed token is not permitted");
         _storeSymbolDetails(symbol, _owner, _registrationDate, _expiryDate, _tokenName, false);
         emit LogModifyTickerDetails(_owner, _symbol, _tokenName, _registrationDate, _expiryDate);
@@ -246,13 +246,13 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
      * @dev _ticker Symbol
      */
     function transferTickerOwnership(address _newOwner, string _ticker) external whenNotPaused {
-        string memory ticker = _upper(_ticker);
+        string memory ticker = Util.upper(_ticker);
         require(_newOwner != address(0), "Address should not be 0x");
         require(bytes(ticker).length > 0, "Ticker length should be greater than 0");
         require(getMapAddress("registeredSymbols_owner", ticker) == msg.sender, "Only the ticker owner can transfer the ownership");
         require(_renounceTickerOwnership(ticker), "Should successfully renounce the ownership of the ticker");
         setMap("registeredSymbols_owner", ticker, _newOwner);
-        pushMapArray("tokensOwnedByUser", _newOwner, _stringToBytes32(ticker));
+        pushMapArray("tokensOwnedByUser", _newOwner, Util.stringToBytes32(ticker));
         setMap("tickerIndex", ticker, (getMapArrayBytes32("tokensOwnedByUser", _newOwner).length - 1));
         emit LogChangeTickerOwnership(ticker, msg.sender, _newOwner);
     }
@@ -359,7 +359,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
      * @return address
      */
     function getSecurityTokenAddress(string _symbol) public view returns (address) {
-        string memory __symbol = _upper(_symbol);
+        string memory __symbol = Util.upper(_symbol);
         return getMapAddress("symbols", __symbol);
     }
 
@@ -396,7 +396,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
          uint _len = getMapArrayBytes32("tokensOwnedByUser", _owner).length;
          bytes32[] memory tempList = new bytes32[](_len);
          for (uint j = 0; j < _len; j++) {
-             string memory _symbol = _bytes32ToString(getMapArrayBytes32("tokensOwnedByUser", _owner)[j]);
+             string memory _symbol = Util.bytes32ToString(getMapArrayBytes32("tokensOwnedByUser", _owner)[j]);
              if (getMapUint("registeredSymbols_expiryDate", _symbol) >= now || getMapBool("registeredSymbols_status", _symbol) == true) {
                  tempList[counter] = getMapArrayBytes32("tokensOwnedByUser", _owner)[j];
                  counter ++;
@@ -415,7 +415,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
      * @return bool
      */
     function getTickerDetails(string _symbol) external view returns (address, uint256, uint256, string, bool) {
-        string memory symbol = _upper(_symbol);
+        string memory symbol = Util.upper(_symbol);
         if (getMapBool("registeredSymbols_status", symbol) == true || getMapUint("registeredSymbols_expiryDate", symbol) > now) {
             return
             (
@@ -451,7 +451,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
      * @return bool
      */
     function _checkValidity(string _symbol, address _owner, string _tokenName) internal returns(bool) {
-        string memory symbol = _upper(_symbol);
+        string memory symbol = Util.upper(_symbol);
         require(getMapBool("registeredSymbols_status", symbol)!= true, "Symbol status should not equal to true");
         require(getMapAddress("registeredSymbols_owner", symbol) == _owner, "Owner of the symbol should matched with the requested issuer address");
         require(getMapUint("registeredSymbols_expiryDate", symbol) >= now, "Ticker should not be expired");
@@ -468,7 +468,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
      * @return bool
      */
      function _isReserved(string _symbol, address _owner, string _tokenName) internal returns(bool) {
-        string memory symbol = _upper(_symbol);
+        string memory symbol = Util.upper(_symbol);
         if (getMapAddress("registeredSymbols_owner", symbol) == _owner && ! _expiryCheck(symbol)) {
             setMap("registeredSymbols_stauts", symbol, true);
             return false;
@@ -528,7 +528,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
        require(_index != uint256(1 ether), "Deleted index is not allowed");
        deleteMapArrayBytes32("tokensOwnedByUser", _currentOwner, _index);
        bytes32 _symbol =  getMapArrayBytes32("tokensOwnedByUser", getMapAddress("registeredSymbols_owner", _ticker))[_index];
-       setMap("tickerIndex", _bytes32ToString(_symbol), _index);
+       setMap("tickerIndex", Util.bytes32ToString(_symbol), _index);
        setMap("tickerIndex", _ticker, uint256(1 ether));
        return true;
     }

@@ -3,13 +3,13 @@ pragma solidity ^0.4.24;
 /**
  * @title Utility contract for reusable code
  */
-contract Util {
+library Util {
 
    /**
     * @notice changes a string to upper case
     * @param _base string to change
     */
-    function _upper(string _base) internal pure returns (string) {
+    function upper(string _base) internal pure returns (string) {
         bytes memory _baseBytes = bytes(_base);
         for (uint i = 0; i < _baseBytes.length; i++) {
             bytes1 b1 = _baseBytes[i];
@@ -26,7 +26,7 @@ contract Util {
      * @param _source String that need to convert into bytes32
      */
     /// Notice - Maximum length for _source will be 32 chars otherwise returned bytes32 value will have lossy value. 
-    function _stringToBytes32(string memory _source) public pure returns (bytes32 result) {
+    function stringToBytes32(string memory _source) internal pure returns (bytes32 result) {
         bytes memory tempString = bytes(_source);
         if (tempString.length == 0) {
             return 0x0;
@@ -40,7 +40,7 @@ contract Util {
      * @notice Changes the bytes32 into string 
      * @param _source that need to convert into string
      */
-    function _bytes32ToString(bytes32 _source) public pure returns (string result) {
+    function bytes32ToString(bytes32 _source) internal pure returns (string result) {
         bytes memory bytesString = new bytes(32);
         uint charCount = 0;
         for (uint j = 0; j < 32; j++) {
@@ -55,6 +55,18 @@ contract Util {
             bytesStringTrimmed[j] = bytesString[j];
         }
         return string(bytesStringTrimmed);
+    }
+
+    /**
+     * @notice Get function signature from _data
+     * @param _data passed data
+     * @return bytes4 sig
+     */
+    function getSig(bytes _data) internal pure returns (bytes4 sig) {
+        uint len = _data.length < 4 ? _data.length : 4;
+        for (uint i = 0; i < len; i++) {
+            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
+        }
     }
 
 

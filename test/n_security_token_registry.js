@@ -53,6 +53,7 @@ contract('SecurityTokenRegistry', accounts => {
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
     let I_TickerRegistry;
+    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_SecurityTokenRegistryV2;
     let I_DummySTOFactory;
@@ -60,9 +61,9 @@ contract('SecurityTokenRegistry', accounts => {
     let I_SecurityToken;
     let I_DummySTO;
     let I_PolyToken;
-    let I_STVersion002;
+    let I_STFactory002;
     let I_SecurityToken002;
-    let I_STVersion003;
+    let I_STFactory003;
     let I_PolymathRegistry;
     let I_SecurityTokenRegistryProxy;
     let I_STRProxied;
@@ -202,12 +203,12 @@ contract('SecurityTokenRegistry', accounts => {
 
         // Step 6: Deploy the STversionProxy contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
         // STEP 8: Deploy the CappedSTOFactory
@@ -520,14 +521,14 @@ contract('SecurityTokenRegistry', accounts => {
     describe("Generate SecurityToken v2", async() => {
 
         it("Should deploy the st version 2", async() => {
-            // Step 7: Deploy the STversionProxy contract
+            // Step 7: Deploy the STFactory contract
 
-            I_STVersion002 = await STVersion002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+            I_STFactory002 = await STFactory002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
-                I_STVersion002.address.valueOf(),
+                I_STFactory002.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
-                "STVersion002 contract was not deployed",
+                "STFactory002 contract was not deployed",
             );
             await I_STRProxied.setProtocolVersion(I_STVersion002.address, "0.2.0", { from: account_polymath });
 
@@ -709,14 +710,14 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should deploy the st vesrion 3", async() => {
-            // Step 7: Deploy the STversionProxy contract
+            // Step 7: Deploy the STFactory contract
 
-            I_STVersion003 = await STVersion002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+            I_STFactory003 = await STFactory002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
-                I_STVersion003.address.valueOf(),
+                I_STFactory003.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
-                "STVersion002 contract was not deployed",
+                "STFactory002 contract was not deployed",
             );
             await I_STRProxied.setProtocolVersion(I_STVersion003.address, "0.3.0", { from: account_polymath });
 

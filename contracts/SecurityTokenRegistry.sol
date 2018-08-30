@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./tokens/SecurityToken.sol";
-import "./interfaces/ISTProxy.sol";
+import "./interfaces/ISTFactory.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
 import "./storage/EternalStorage.sol";
 import "./helpers/Util.sol";
@@ -114,9 +114,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
             
     }
 
-    function initialize(address _polymathRegistry, address _stVersionProxy, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner) payable public {
+    function initialize(address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner) payable public {
         require(!getBool("flag"));
-        require(_stVersionProxy != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0), "Input address should not be 0x");
+        require(_STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0), "Input address should not be 0x");
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Input fees should not be 0x");
         set("polyToken", _polyToken);
         set("stLaunchFee", _stLaunchFee);
@@ -125,7 +125,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
         set("paused", false);
         set("owner", _owner);
         set("polymathRegistry", _polymathRegistry);
-        _setProtocolVersion(_stVersionProxy, "0.0.1");
+        _setProtocolVersion(_STFactory, "0.0.1");
         set("flag", true);
     }
 
@@ -139,13 +139,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
     function generateSecurityToken(string _name, string _symbol, string _tokenDetails, bool _divisible) external whenNotPaused {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         require(_checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
-        if (getUint("stLaunchFee") > 0) {
-            uint256 _fee = getUint("stLaunchFee");
-            address _polyToken = getAddress("polyToken");
-            require(ERC20(_polyToken).transferFrom(msg.sender, address(this), _fee), "Failed transferFrom because of sufficent Allowance is not provided");
-        }
+        if (getUint("stLaunchFee") > 0)
+            require(ERC20(getAddress("polyToken")).transferFrom(msg.sender, address(this), getUint("stLaunchFee")), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = _upper(_symbol);
-        address newSecurityTokenAddress = ISTProxy(getSTFactoryAddress()).deployToken(
+        address newSecurityTokenAddress = ISTFactory(getSTFactoryAddress()).deployToken(
             _name,
             symbol,
             18,
@@ -154,8 +151,8 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
             _divisible,
             getAddress("polymathRegistry")
         );
-        setMap("symbols", symbol, newSecurityTokenAddress);
         _storeSecurityTokenData(newSecurityTokenAddress, symbol, _tokenDetails, now);
+        setMap("symbols", symbol, newSecurityTokenAddress);
         emit LogNewSecurityToken(symbol, _name, newSecurityTokenAddress, msg.sender, now, msg.sender);
     }
     
@@ -304,11 +301,11 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
     * @notice Changes the protocol version and the SecurityToken contract
     * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
     * @notice Changing versions does not affect existing tokens.
-    * @param _stVersionProxyAddress Address of the proxy.
+    * @param _STFactoryAddress Address of the proxy.
     * @param _version new version of the proxy which is used to deploy the securityToken. 
     */
-    function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) external onlyOwner {
-        _setProtocolVersion(_stVersionProxyAddress, _version);
+    function setProtocolVersion(address _STFactoryAddress, bytes32 _version) external onlyOwner {
+        _setProtocolVersion(_STFactoryAddress, _version);
     }
 
     /**
@@ -386,7 +383,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
      * @notice Get the current STFactory Address
      */
     function getSTFactoryAddress() public view returns(address) {
-        return getMapAddress('protocolVersionST', getBytes32('protocolVersion'));
+        return getMapAddress("protocolVersionST", getBytes32("protocolVersion"));
     }
 
     /**
@@ -440,9 +437,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
     * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
     * @notice Changing versions does not affect existing tokens.
     */
-    function _setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) internal {
+    function _setProtocolVersion(address _STFactoryAddress, bytes32 _version) internal {
         set("protocolVersion", _version);
-        setMap("protocolVersionST", getBytes32("protocolVersion"), _stVersionProxyAddress);
+        setMap("protocolVersionST", getBytes32("protocolVersion"), _STFactoryAddress);
     }
 
     /**

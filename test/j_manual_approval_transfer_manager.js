@@ -7,7 +7,8 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
+const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
+const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -54,8 +55,9 @@ contract('ManualApprovalTransferManager', accounts => {
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
     let I_TickerRegistry;
+    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
-    let I_STVersion;
+    let I_STFactory;
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
@@ -98,9 +100,9 @@ contract('ManualApprovalTransferManager', accounts => {
          I_PolyToken = await PolyTokenFaucet.new();
          await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
          await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
- 
+
          // STEP 2: Deploy the ModuleRegistry
- 
+
          I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:account_polymath});
          await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: account_polymath});
 
@@ -188,21 +190,21 @@ contract('ManualApprovalTransferManager', accounts => {
             "TickerRegistry contract was not deployed",
         );
 
-        // Step 7: Deploy the STversionProxy contract
+        // Step 7: Deploy the STFactory contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address);
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address);
 
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
         // Step 8: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
             I_PolymathRegistry.address,
-            I_STVersion.address,
+            I_STFactory.address,
             initRegFee,
             {
                 from: account_polymath
@@ -215,21 +217,42 @@ contract('ManualApprovalTransferManager', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 10: update the registries addresses from the PolymathRegistry contract
+        // Step 10: Deploy the FeatureRegistry
+
+        I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: account_polymath
+            });
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+
+        assert.notEqual(
+            I_FeatureRegistry.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "FeatureRegistry contract was not deployed",
+        );
+
+        // Step 11: update the registries addresses from the PolymathRegistry contract
         await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
         await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
         await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
-        console.log(`\nPolymath Network Smart Contracts Deployed:\n
-            ModuleRegistry: ${I_ModuleRegistry.address}\n
-            GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}\n
-            ManualApprovalTransferManagerFactory: ${I_ManualApprovalTransferManagerFactory.address}\n
-            CountTransferManagerFactory: ${I_CountTransferManagerFactory.address}\n
-            GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
-            TickerRegistry: ${I_TickerRegistry.address}\n
-            STVersionProxy_001: ${I_STVersion.address}\n
-            SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
+        console.log(`
+        --------------------- Polymath Network Smart Contracts: ---------------------
+        PolymathRegistry:                  ${PolymathRegistry.address}
+        TickerRegistry:                    ${TickerRegistry.address}
+        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${ModuleRegistry.address}
+        FeatureRegistry:                   ${FeatureRegistry.address}
+
+        STFactory:                         ${STFactory.address}
+        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
+
+        ManualApprovalTransferManagerFactory: ${I_ManualApprovalTransferManagerFactory.address}
+        CountTransferManagerFactory:       ${I_CountTransferManagerFactory.address}
+        -----------------------------------------------------------------------------
         `);
     });
 
@@ -356,11 +379,29 @@ contract('ManualApprovalTransferManager', accounts => {
             await revertToSnapshot(snapId);
         });
 
+
         it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "ManualApprovalTransferManager doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[2].args._name), "ManualApprovalTransferManager", "ManualApprovalTransferManager module was not added");
             I_ManualApprovalTransferManager = ManualApprovalTransferManager.at(tx.logs[2].args._module);
+        });
+//function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result) {
+        it("Cannot call verifyTransfer on the TM directly if _isTransfer == true", async() => {
+            let errorThrown = false;
+            try {
+                await I_ManualApprovalTransferManager.verifyTransfer(account_investor4, account_investor4, web3.utils.toWei('2', 'ether'), true, { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> invalid not from SecurityToken`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+        });
+
+        it("Can call verifyTransfer on the TM directly if _isTransfer == false", async() => {
+            await I_ManualApprovalTransferManager.verifyTransfer(account_investor4, account_investor4, web3.utils.toWei('2', 'ether'), false, { from: token_owner });
         });
 
         it("Add a new token holder", async() => {

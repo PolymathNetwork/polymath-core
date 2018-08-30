@@ -77,8 +77,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         if(registrationFee > 0)
             require(ERC20(polyToken).transferFrom(msg.sender, address(this), registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
-        string memory symbol = upper(_symbol);
-        require(expiryCheck(symbol), "Ticker is already reserved");
+        string memory symbol = _upper(_symbol);
+        require(_expiryCheck(symbol), "Ticker is already reserved");
         tokensOwnedByUser[_owner].push(stringToBytes32(symbol));
         tickerIndex[symbol] = tokensOwnedByUser[_owner].length - 1;
         registeredSymbols[symbol] = SymbolDetails(_owner, now, now.add(expiryLimit), _tokenName, _swarmHash, false);
@@ -104,7 +104,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @return bool
      */
     function checkValidity(string _symbol, address _owner, string _tokenName) external returns(bool) {
-        string memory symbol = upper(_symbol);
+        string memory symbol = _upper(_symbol);
         require(msg.sender == securityTokenRegistry, "msg.sender should be SecurityTokenRegistry contract");
         require(registeredSymbols[symbol].status != true, "Symbol status should not equal to true");
         require(registeredSymbols[symbol].owner == _owner, "Owner of the symbol should matched with the requested issuer address");
@@ -130,8 +130,8 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         require(_expiryDate != 0 && _registrationDate != 0, "Dates should not be 0");
         require(_registrationDate < _expiryDate, "Registration date should be less than the expiry date");
         require(_owner != address(0), "Address should not be 0x");
-        string memory symbol = upper(_symbol);
-        require(expiryCheck(symbol), "Ticker is already reserved");
+        string memory symbol = _upper(_symbol);
+        require(_expiryCheck(symbol), "Ticker is already reserved");
         tokensOwnedByUser[_owner].push(stringToBytes32(symbol));
         tickerIndex[symbol] = tokensOwnedByUser[_owner].length - 1;
         registeredSymbols[symbol] = SymbolDetails(_owner, _registrationDate, _expiryDate, _tokenName, _swarmHash, false);
@@ -147,13 +147,13 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @return bool
      */
      function isReserved(string _symbol, address _owner, string _tokenName, bytes32 _swarmHash) external returns(bool) {
-        string memory symbol = upper(_symbol);
+        string memory symbol = _upper(_symbol);
         require(msg.sender == securityTokenRegistry, "msg.sender should be SecurityTokenRegistry contract");
-        if (registeredSymbols[symbol].owner == _owner && !expiryCheck(_symbol)) {
+        if (registeredSymbols[symbol].owner == _owner && !_expiryCheck(_symbol)) {
             registeredSymbols[symbol].status = true;
             return false;
         }
-        else if (registeredSymbols[symbol].owner == address(0) || expiryCheck(symbol)) {
+        else if (registeredSymbols[symbol].owner == address(0) || _expiryCheck(symbol)) {
             registeredSymbols[symbol] = SymbolDetails(_owner, now, now.add(expiryLimit), _tokenName, _swarmHash, true);
             emit LogRegisterTicker (_owner, symbol, _tokenName, _swarmHash, now, now.add(expiryLimit));
             return false;
@@ -166,7 +166,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _symbol token symbol
      * @return bool
      */
-    function expiryCheck(string _symbol) internal returns(bool) {
+    function _expiryCheck(string _symbol) internal returns(bool) {
         if (registeredSymbols[_symbol].owner != address(0)) {
             if (now > registeredSymbols[_symbol].expiryDate && registeredSymbols[_symbol].status != true) {
                 require(_renounceTickerOwnership(_symbol));
@@ -209,7 +209,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @dev _ticker Symbol 
      */
     function transferTickerOwnership(address _newOwner, string _ticker) public whenNotPaused {
-        string memory ticker = upper(_ticker);
+        string memory ticker = _upper(_ticker);
         require(_newOwner != address(0), "Address should not be 0x");
         require(bytes(ticker).length > 0, "Ticker length should be greater than 0");
         require(registeredSymbols[ticker].owner == msg.sender, "Only the ticker owner can transfer the ownership");
@@ -247,7 +247,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @return bool
      */
     function getDetails(string _symbol) public view returns (address, uint256, uint256, string, bytes32, bool) {
-        string memory symbol = upper(_symbol);
+        string memory symbol = _upper(_symbol);
         if (registeredSymbols[symbol].status == true||registeredSymbols[symbol].expiryDate > now) {
             return
             (

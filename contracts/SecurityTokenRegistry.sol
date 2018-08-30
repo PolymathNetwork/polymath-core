@@ -65,7 +65,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
         require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
         if(registrationFee > 0)
             require(ERC20(polyToken).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
-        string memory symbol = upper(_symbol);
+        string memory symbol = _upper(_symbol);
         address newSecurityTokenAddress = ISTFactory(protocolVersionST[protocolVersion]).deployToken(
             _name,
             symbol,
@@ -93,7 +93,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      */
     function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, bytes32 _swarmHash, uint256 _deployedAt) external onlyOwner {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
-        string memory symbol = upper(_symbol);
+        string memory symbol = _upper(_symbol);
         require(_securityToken != address(0) && symbols[symbol] == address(0), "Symbol is already at the polymath network or entered security token address is 0x");
         require(_owner != address(0));
         require(!(ITickerRegistry(tickerRegistry).isReserved(symbol, _owner, _name, _swarmHash)), "Trying to use non-valid symbol");
@@ -121,7 +121,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      * @return address
      */
     function getSecurityTokenAddress(string _symbol) external view returns (address) {
-        string memory __symbol = upper(_symbol);
+        string memory __symbol = _upper(_symbol);
         return symbols[__symbol];
     }
 

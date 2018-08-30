@@ -4,8 +4,6 @@ node_js:
 cache:
   directories:
   - node_modules
-env:
-  - SOLIDITY_COVERAGE=$TRAVIS_PULL_REQUEST
 matrix:
   fast_finish: true
 before_script:

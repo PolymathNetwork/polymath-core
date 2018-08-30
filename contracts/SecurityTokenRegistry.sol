@@ -1,8 +1,9 @@
 pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./tokens/SecurityToken.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "./interfaces/ISTFactory.sol";
+import "./interfaces/IPolyToken.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
 import "./storage/EternalStorage.sol";
 import "./helpers/Util.sol";
@@ -45,9 +46,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
        }
 
      */
-    
+
     using SafeMath for uint256;
-   
+
     // Emit when ecosystem get paused
     event Pause(uint256 _timestammp);
      // Emit when ecosystem get unpaused
@@ -60,11 +61,11 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
     event LogChangeSecurityLaunchFee(uint256 _oldFee, uint256 _newFee);
     // Emit when changeTickerRegistrationFee is called
     event LogChangeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee);
-    // Emit when ownership get transferred 
+    // Emit when ownership get transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     // Emit when ownership of the ticker get changed
     event LogChangeTickerOwnership(string _ticker, address indexed _oldOwner, address indexed _newOwner);
-    // Emit when a ticker details get modified 
+    // Emit when a ticker details get modified
     event LogModifyTickerDetails(address _owner, string _symbol, string _name, uint256 _registrationDate, uint256 _expiryDate);
     // Emit at the time of launching of new security token
     event LogNewSecurityToken(
@@ -83,7 +84,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
         uint256 indexed _registrationDate,
         uint256 indexed _expiryDate
     );
-    
+
     /**
     * @dev Throws if called by any account other than the owner.
     */
@@ -111,7 +112,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
     // Constructor
     constructor () public
     {
-            
+
     }
 
     function initialize(address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner) payable public {
@@ -140,7 +141,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         require(_checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
         if (getUint("stLaunchFee") > 0)
-            require(ERC20(getAddress("polyToken")).transferFrom(msg.sender, address(this), getUint("stLaunchFee")), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(IPolyToken(getAddress("polyToken")).transferFrom(msg.sender, address(this), getUint("stLaunchFee")), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = _upper(_symbol);
         address newSecurityTokenAddress = ISTFactory(getSTFactoryAddress()).deployToken(
             _name,
@@ -155,7 +156,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
         setMap("symbols", symbol, newSecurityTokenAddress);
         emit LogNewSecurityToken(symbol, _name, newSecurityTokenAddress, msg.sender, now, msg.sender);
     }
-    
+
     /**
      * @notice Add a new custom (Token should follow the ISecurityToken interface) Security Token and saves it to the registry
      * @param _name Name of the token
@@ -190,7 +191,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
         if (getUint("tickerRegFee") > 0) {
             uint256 _fee = getUint("tickerRegFee");
             address _polyToken = getAddress("polyToken");
-            require(ERC20(_polyToken).transferFrom(msg.sender, address(this), _fee), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(IPolyToken(_polyToken).transferFrom(msg.sender, address(this), _fee), "Failed transferFrom because of sufficent Allowance is not provided");
         }
         string memory symbol = _upper(_symbol);
         require(_expiryCheck(symbol), "Ticker is already reserved");
@@ -201,7 +202,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
     }
 
     /**
-     * @notice Register the ticker without paying the fee 
+     * @notice Register the ticker without paying the fee
        Once the token symbol is registered to its owner then no other issuer can claim
        Its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
      * @param _owner Owner of the token
@@ -232,7 +233,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
      * @param _registrationDate Date on which ticker get registered
      * @param _expiryDate Expiry date of the ticker
      */
-    function modifyTickerDetails(address _owner, string _symbol, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external onlyOwner { 
+    function modifyTickerDetails(address _owner, string _symbol, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external onlyOwner {
         string memory symbol = _upper(_symbol);
         require(!getMapBool("registeredSymbols_status", symbol), "Modifying the details of deployed token is not permitted");
         _storeSymbolDetails(symbol, _owner, _registrationDate, _expiryDate, _tokenName, false);
@@ -242,7 +243,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
     /**
      * @notice Transfer the ownership of the ticker
      * @dev _newOwner Address whom ownership to transfer
-     * @dev _ticker Symbol 
+     * @dev _ticker Symbol
      */
     function transferTickerOwnership(address _newOwner, string _ticker) external whenNotPaused {
         string memory ticker = _upper(_ticker);
@@ -265,7 +266,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
         emit LogChangeSecurityLaunchFee(getUint("stLaunchFee"), _stLaunchFee);
         set("stLaunchFee", _stLaunchFee);
     }
-    
+
     /**
      * @notice Change the expiry time for the token symbol
      * @param _newExpiry new time period for token symbol expiry
@@ -292,7 +293,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
     */
     function reclaimERC20(address _tokenContract) external onlyOwner {
         require(_tokenContract != address(0));
-        ERC20Basic token = ERC20Basic(_tokenContract);
+        IPolyToken token = IPolyToken(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
         require(token.transfer(getAddress("owner"), balance));
     }
@@ -302,7 +303,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
     * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
     * @notice Changing versions does not affect existing tokens.
     * @param _STFactoryAddress Address of the proxy.
-    * @param _version new version of the proxy which is used to deploy the securityToken. 
+    * @param _version new version of the proxy which is used to deploy the securityToken.
     */
     function setProtocolVersion(address _STFactoryAddress, bytes32 _version) external onlyOwner {
         _setProtocolVersion(_STFactoryAddress, _version);
@@ -388,7 +389,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
 
     /**
      * @notice Use to get the ticker list as per the owner
-     * @param _owner Address which owns the list of tickers 
+     * @param _owner Address which owns the list of tickers
      */
     function getTickersByOwner(address _owner) external view returns(bytes32[]) {
          uint counter = 0;
@@ -398,7 +399,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
              string memory _symbol = _bytes32ToString(getMapArrayBytes32("tokensOwnedByUser", _owner)[j]);
              if (getMapUint("registeredSymbols_expiryDate", _symbol) >= now || getMapBool("registeredSymbols_status", _symbol) == true) {
                  tempList[counter] = getMapArrayBytes32("tokensOwnedByUser", _owner)[j];
-                 counter ++; 
+                 counter ++;
              }
          }
          return tempList;
@@ -427,7 +428,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
         } else
             return (address(0), uint256(0), uint256(0), "", false);
     }
-    
+
     ////////////////////////
     //// Internal functions
     ////////////////////////
@@ -529,7 +530,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
        bytes32 _symbol =  getMapArrayBytes32("tokensOwnedByUser", getMapAddress("registeredSymbols_owner", _ticker))[_index];
        setMap("tickerIndex", _bytes32ToString(_symbol), _index);
        setMap("tickerIndex", _ticker, uint256(1 ether));
-       return true;    
+       return true;
     }
 
     /**
@@ -541,5 +542,5 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, EternalStorage {
         emit OwnershipTransferred(getAddress("owner"), _newOwner);
         set("owner", _newOwner);
     }
- 
+
 }

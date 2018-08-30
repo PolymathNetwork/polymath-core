@@ -25,7 +25,7 @@ interface ISecurityTokenRegistry {
      */
     function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt) external;
 
-     /**
+      /**
      * @notice Register the token symbol for its particular owner
      * @notice Once the token symbol is registered to its owner then no other issuer can claim
      * @notice its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
@@ -69,6 +69,8 @@ interface ISecurityTokenRegistry {
     * @notice Changes the protocol version and the SecurityToken contract
     * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
     * @notice Changing versions does not affect existing tokens.
+    * @param _stVersionProxyAddress Address of the proxy.
+    * @param _version new version of the proxy which is used to deploy the securityToken. 
     */
     function setProtocolVersion(address _stVersionProxyAddress, bytes32 _version) external;
 
@@ -77,14 +79,17 @@ interface ISecurityTokenRegistry {
      * @param _symbol Symbol of the Scurity token
      * @return address _symbol
      */
-    function getSecurityTokenAddress(string _symbol) external view returns (address);
+    function getSecurityTokenAddress(string _symbol) public view returns (address);
 
-     /**
+    /**
      * @notice Get security token data by its address
-     * @param _securityToken Address of the Scurity token
-     * @return string, address, bytes32
+     * @param _securityToken Address of the Scurity token.
+     * @return string Symbol of the Security Token.
+     * @return address Address of the issuer of Security Token.
+     * @return string Details of the Token.
+     * @return uint256 Timestamp at which Security Token get launched on Polymath platform.
      */
-    function getSecurityTokenData(address _securityToken) public view returns (string, address, string, uint256);
+    function getSecurityTokenData(address _securityToken) external view returns (string, address, string, uint256);
 
     /**
      * @notice Get the current STFactory Address
@@ -95,7 +100,7 @@ interface ISecurityTokenRegistry {
      * @notice Use to get the ticker list as per the owner
      * @param _owner Address which owns the list of tickers 
      */
-    function getTickersByOwner(address _owner) public view returns(bytes32[]);
+    function getTickersByOwner(address _owner) external view returns(bytes32[]);
 
     /**
     * @notice Check that Security Token is registered

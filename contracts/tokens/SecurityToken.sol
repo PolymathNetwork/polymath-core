@@ -110,22 +110,23 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event Minted(address indexed to, uint256 amount);
     event Burnt(address indexed _burner, uint256 _value);
 
-    // If _fallback is true, then for STO module type we only allow the module if it is set, if it is not set we only allow the owner
-    // for other _moduleType we allow both issuer and module.
-    modifier onlyModule(uint8 _moduleType, bool _fallback) {
-      //Loop over all modules of type _moduleType
+    // Require msg.sender to be the specified module type
+    modifier onlyModule(uint8 _moduleType) {
         bool isModuleType = false;
         for (uint8 i = 0; i < modules[_moduleType].length; i++) {
             isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
         }
-        if (_fallback && !isModuleType) {
-            if (_moduleType == STO_KEY)
-                require(modules[_moduleType].length == 0 && msg.sender == owner, "Sender is not owner or STO module is attached");
-            else
-                require(msg.sender == owner, "Sender is not owner");
-        } else {
-            require(isModuleType, "Sender is not correct module type");
+        require(isModuleType, "msg.sender is not correct module type");
+        _;
+    }
+
+    // Require msg.sender to be the specified module type or the owner of the token
+    modifier onlyModuleOrOwner(uint8 _moduleType) {
+        bool isModuleType = false;
+        for (uint8 i = 0; i < modules[_moduleType].length; i++) {
+            isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
         }
+        require(msg.sender == owner || isModuleType, "msg.sender is not owner and not correct module type");
         _;
     }
 
@@ -558,7 +559,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _amount Number of tokens be minted
      * @return success
      */
-    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) isMintingAllowed() returns (bool success) {
+    function mint(address _investor, uint256 _amount) public onlyModuleOrOwner(STO_KEY) checkGranularity(_amount) isMintingAllowed() returns (bool success) {
         require(_investor != address(0), "Investor address should not be 0x");
         adjustInvestorCount(address(0), _investor, _amount);
         require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
@@ -578,7 +579,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _amounts) external onlyModule(STO_KEY, true) returns (bool success) {
+    function mintMulti(address[] _investors, uint256[] _amounts) external onlyModuleOrOwner(STO_KEY) returns (bool success) {
         require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _amounts[i]);
@@ -653,7 +654,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
      * @return uint256
      */
-    function createCheckpoint() external onlyModule(CHECKPOINT_KEY, true) returns(uint256) {
+    function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
         require(currentCheckpointId < 2**256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
         emit LogCheckpointCreated(currentCheckpointId, now);

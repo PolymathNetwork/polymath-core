@@ -442,7 +442,7 @@ contract('SecurityToken', accounts => {
         it("Should finish the minting -- fail because feature is not activated", async() => {
             let errorThrown = false;
             try {
-                await I_SecurityToken.freezeMinting({from: account_issuer});
+                await I_SecurityToken.freezeMinting({from: token_owner});
             } catch(error) {
                 console.log(`         tx revert -> freezeMinting cannot be called before activated by polymath`.grey);
                 errorThrown = true;
@@ -454,7 +454,7 @@ contract('SecurityToken', accounts => {
         it("Should finish the minting -- fail to activate the feature because msg.sender is not polymath", async() => {
             let errorThrown = false;
             try {
-                await I_FeatureRegistry.setFeatureStatus("freezeMintingAllowed", true, {from: account_issuer});
+                await I_FeatureRegistry.setFeatureStatus("freezeMintingAllowed", true, {from: token_owner});
             } catch(error) {
                 console.log(`         tx revert -> allowFreezeMinting must be called by polymath`.grey);
                 errorThrown = true;
@@ -503,7 +503,7 @@ contract('SecurityToken', accounts => {
 
         it("Should finish minting & restrict the further minting", async() => {
             let id = await takeSnapshot();
-            await I_SecurityToken.freezeMinting({from: account_issuer});
+            await I_SecurityToken.freezeMinting({from: token_owner});
             let errorThrown = false;
             try {
                 await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
@@ -561,6 +561,27 @@ contract('SecurityToken', accounts => {
             assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
             I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
+        });
+
+        it("Should successfully mint tokens while STO attached", async () => {
+            await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
+            let balance = await I_SecurityToken.balanceOf(account_affiliate1);
+            assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 300);
+        });
+
+        it("Should fail to mint tokens while STO attached after freezeMinting called", async () => {
+            let id = await takeSnapshot();
+            await I_SecurityToken.freezeMinting({from: token_owner});
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
+            } catch(error) {
+                console.log(`         tx revert -> Minting is finished`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+            await revertToSnapshot(id);
         });
 
     });
@@ -862,7 +883,7 @@ contract('SecurityToken', accounts => {
                     expiryTime,
                     true,
                     {
-                        from: account_issuer,
+                        from: token_owner,
                         gas: 500000
                     });
 
@@ -891,7 +912,7 @@ contract('SecurityToken', accounts => {
                     expiryTime,
                     true,
                     {
-                        from: account_issuer,
+                        from: token_owner,
                         gas: 500000
                     });
 
@@ -913,28 +934,18 @@ contract('SecurityToken', accounts => {
                 await revertToSnapshot(ID_snap);
             });
 
-            it("Should fail in minting the tokens from Issuer", async() => {
-                let errorThrown = false;
-                try {
-                    await I_SecurityToken.mint(account_investor1, (10 *  Math.pow(10, 18)), { from : token_owner, gas: 2500000});
-                } catch(error) {
-                    console.log(`       Tx-> revert because Issuer is not allowed to mint after attaching the STO`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
+            it("Should successfully mint tokens while STO attached", async () => {
+                await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
+                let balance = await I_SecurityToken.balanceOf(account_affiliate1);
+                assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 400);
             });
 
-            it("Should fail in minting the tokens from Issuer", async() => {
-                let errorThrown = false;
-                try {
-                    await I_SecurityToken.mintMulti([account_investor1, account_investor2], [web3.utils.toWei("10"), web3.utils.toWei("10")], { from : token_owner, gas: 2500000});
-                } catch(error) {
-                    console.log(`       Tx-> revert because Issuer is not allowed to mint after attaching the STO`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
+            it("Should mint the tokens for multiple afiliated investors while STO attached", async() => {
+                await I_SecurityToken.mintMulti([account_affiliate1, account_affiliate2], [(100 * Math.pow(10, 18)), (110 * Math.pow(10, 18))], {from: token_owner, gas: 500000});
+                let balance1 = await I_SecurityToken.balanceOf(account_affiliate1);
+                assert.equal(balance1.dividedBy(new BigNumber(10).pow(18)).toNumber(), 500);
+                let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
+                assert.equal(balance2.dividedBy(new BigNumber(10).pow(18)).toNumber(), 220);
             });
 
             it("Should provide more permissions to the delegate", async() => {
@@ -960,13 +971,13 @@ contract('SecurityToken', accounts => {
             });
 
             it("should account_temp successfully buy the token", async() => {
-                 // Fallback transaction
-                 await web3.eth.sendTransaction({
+                // Fallback transaction
+                await web3.eth.sendTransaction({
                     from: account_temp,
                     to: I_CappedSTO.address,
                     gas: 2100000,
                     value: web3.utils.toWei('1', 'ether')
-                    });
+                });
 
                 assert.equal(
                     (await I_CappedSTO.getRaisedEther.call())
@@ -983,6 +994,26 @@ contract('SecurityToken', accounts => {
                     .toNumber(),
                     1000
                 );
+            });
+
+            it("STO should fail to mint tokens after minting is frozen", async() => {
+                let id = await takeSnapshot();
+                await I_SecurityToken.freezeMinting({from: token_owner});
+                let errorThrown = false;
+                try {
+                    await web3.eth.sendTransaction({
+                       from: account_temp,
+                       to: I_CappedSTO.address,
+                       gas: 2100000,
+                       value: web3.utils.toWei('1', 'ether')
+                    });
+                } catch(error) {
+                    console.log(`         tx revert -> Minting is finished`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+                await revertToSnapshot(id);
             });
 
             it("Should remove investor from the whitelist by the delegate", async() => {

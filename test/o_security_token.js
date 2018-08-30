@@ -9,6 +9,7 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
+const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
 const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
@@ -54,6 +55,7 @@ contract('SecurityToken', accounts => {
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
     let I_TickerRegistry;
+    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_CappedSTOFactory;
     let I_STFactory;
@@ -237,25 +239,41 @@ contract('SecurityToken', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-       // Step 10: update the registries addresses from the PolymathRegistry contract
-       await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
-       await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
-       await I_TickerRegistry.updateFromRegistry({from: account_polymath});
+        // Step 10: Deploy the FeatureRegistry
+
+        I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: account_polymath
+            });
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+
+        assert.notEqual(
+            I_FeatureRegistry.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "FeatureRegistry contract was not deployed",
+        );
+
+        // Step 11: update the registries addresses from the PolymathRegistry contract
+        await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
+        await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
+        await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`
-        -------------------- Polymath Network Smart Contracts: --------------------
-        PolymathRegistry:                 ${I_PolymathRegistry.address}
-        TickerRegistry:                   ${I_TickerRegistry.address}
-        SecurityTokenRegistry:            ${I_SecurityTokenRegistry.address}
-        ModuleRegistry:                   ${I_ModuleRegistry.address}
+        --------------------- Polymath Network Smart Contracts: ---------------------
+        PolymathRegistry:                  ${PolymathRegistry.address}
+        TickerRegistry:                    ${TickerRegistry.address}
+        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${ModuleRegistry.address}
+        FeatureRegistry:                   ${FeatureRegistry.address}
 
-        STFactory:                        ${I_STFactory.address}
-        GeneralTransferManagerFactory:    ${I_GeneralTransferManagerFactory.address}
-        GeneralPermissionManagerFactory:  ${I_GeneralPermissionManagerFactory.address}
+        STFactory:                         ${STFactory.address}
+        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
 
-        CappedSTOFactory:                 ${I_CappedSTOFactory.address}
-        ---------------------------------------------------------------------------
+        CappedSTOFactory:                  ${I_CappedSTOFactory.address}
+        -----------------------------------------------------------------------------
         `);
     });
 
@@ -421,10 +439,60 @@ contract('SecurityToken', accounts => {
             assert.equal(balance2.dividedBy(new BigNumber(10).pow(18)).toNumber(), 110);
         });
 
+        it("Should finish the minting -- fail because feature is not activated", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.freezeMinting({from: token_owner});
+            } catch(error) {
+                console.log(`         tx revert -> freezeMinting cannot be called before activated by polymath`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should finish the minting -- fail to activate the feature because msg.sender is not polymath", async() => {
+            let errorThrown = false;
+            try {
+                await I_FeatureRegistry.setFeatureStatus("freezeMintingAllowed", true, {from: token_owner});
+            } catch(error) {
+                console.log(`         tx revert -> allowFreezeMinting must be called by polymath`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should finish the minting -- successfully activate the feature", async() => {
+            let errorThrown1 = false;
+            try {
+                await I_FeatureRegistry.setFeatureStatus("freezeMintingAllowed", false, {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> must change state`.grey);
+                errorThrown1 = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown1, message);
+
+            assert.equal(false, await I_FeatureRegistry.getFeatureStatus("freezeMintingAllowed", {from: account_temp}));
+            await I_FeatureRegistry.setFeatureStatus("freezeMintingAllowed", true, {from: account_polymath});
+            assert.equal(true, await I_FeatureRegistry.getFeatureStatus("freezeMintingAllowed", {from: account_temp}));
+
+            let errorThrown2 = false;
+            try {
+                await I_FeatureRegistry.setFeatureStatus("freezeMintingAllowed", true, {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> must change state`.grey);
+                errorThrown2 = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown2, message);
+        });
+
         it("Should finish the minting -- fail because msg.sender is not the owner", async() => {
             let errorThrown = false;
             try {
-                await I_SecurityToken.finishMintingIssuer({from: account_temp});
+                await I_SecurityToken.freezeMinting({from: account_temp});
             } catch(error) {
                 console.log(`         tx revert -> finishMintingIssuer only be called by the owner of the SecurityToken`.grey);
                 errorThrown = true;
@@ -433,9 +501,9 @@ contract('SecurityToken', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should finish minting & rstrict the further minting", async() => {
+        it("Should finish minting & restrict the further minting", async() => {
             let id = await takeSnapshot();
-            await I_SecurityToken.finishMintingIssuer({from: account_issuer});
+            await I_SecurityToken.freezeMinting({from: token_owner});
             let errorThrown = false;
             try {
                 await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
@@ -446,18 +514,6 @@ contract('SecurityToken', accounts => {
             }
             assert.ok(errorThrown, message);
             await revertToSnapshot(id);
-        });
-
-        it("Should finish the minting -- fail because msg.sender is not the owner", async() => {
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.finishMintingSTO({from: account_temp});
-            } catch(error) {
-                console.log(`         tx revert -> finishMintingSTO only be called by the owner of the SecurityToken`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
         });
 
         it("Should fail to attach the STO factory because not enough poly in contract", async () => {
@@ -505,6 +561,27 @@ contract('SecurityToken', accounts => {
             assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
             I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
+        });
+
+        it("Should successfully mint tokens while STO attached", async () => {
+            await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
+            let balance = await I_SecurityToken.balanceOf(account_affiliate1);
+            assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 300);
+        });
+
+        it("Should fail to mint tokens while STO attached after freezeMinting called", async () => {
+            let id = await takeSnapshot();
+            await I_SecurityToken.freezeMinting({from: token_owner});
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
+            } catch(error) {
+                console.log(`         tx revert -> Minting is finished`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+            await revertToSnapshot(id);
         });
 
     });
@@ -677,27 +754,6 @@ contract('SecurityToken', accounts => {
                 );
             });
 
-            it("Should finish minting & rstrict the further minting", async() => {
-                let id = await takeSnapshot();
-                await I_SecurityToken.finishMintingSTO({from: account_issuer});
-                let errorThrown = false;
-                try {
-                     // Fallback transaction
-                await web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_CappedSTO.address,
-                    gas: 2100000,
-                    value: web3.utils.toWei('2', 'ether')
-                    });
-                } catch(error) {
-                    console.log(`         tx revert -> Minting is finished`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
-                await revertToSnapshot(id);
-            });
-
             it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async() => {
                 let errorThrown = false;
                 try {
@@ -827,7 +883,7 @@ contract('SecurityToken', accounts => {
                     expiryTime,
                     true,
                     {
-                        from: account_issuer,
+                        from: token_owner,
                         gas: 500000
                     });
 
@@ -856,7 +912,7 @@ contract('SecurityToken', accounts => {
                     expiryTime,
                     true,
                     {
-                        from: account_issuer,
+                        from: token_owner,
                         gas: 500000
                     });
 
@@ -878,28 +934,18 @@ contract('SecurityToken', accounts => {
                 await revertToSnapshot(ID_snap);
             });
 
-            it("Should fail in minting the tokens from Issuer", async() => {
-                let errorThrown = false;
-                try {
-                    await I_SecurityToken.mint(account_investor1, (10 *  Math.pow(10, 18)), { from : token_owner, gas: 2500000});
-                } catch(error) {
-                    console.log(`       Tx-> revert because Issuer is not allowed to mint after attaching the STO`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
+            it("Should successfully mint tokens while STO attached", async () => {
+                await I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
+                let balance = await I_SecurityToken.balanceOf(account_affiliate1);
+                assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 400);
             });
 
-            it("Should fail in minting the tokens from Issuer", async() => {
-                let errorThrown = false;
-                try {
-                    await I_SecurityToken.mintMulti([account_investor1, account_investor2], [web3.utils.toWei("10"), web3.utils.toWei("10")], { from : token_owner, gas: 2500000});
-                } catch(error) {
-                    console.log(`       Tx-> revert because Issuer is not allowed to mint after attaching the STO`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
+            it("Should mint the tokens for multiple afiliated investors while STO attached", async() => {
+                await I_SecurityToken.mintMulti([account_affiliate1, account_affiliate2], [(100 * Math.pow(10, 18)), (110 * Math.pow(10, 18))], {from: token_owner, gas: 500000});
+                let balance1 = await I_SecurityToken.balanceOf(account_affiliate1);
+                assert.equal(balance1.dividedBy(new BigNumber(10).pow(18)).toNumber(), 500);
+                let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
+                assert.equal(balance2.dividedBy(new BigNumber(10).pow(18)).toNumber(), 220);
             });
 
             it("Should provide more permissions to the delegate", async() => {
@@ -925,13 +971,13 @@ contract('SecurityToken', accounts => {
             });
 
             it("should account_temp successfully buy the token", async() => {
-                 // Fallback transaction
-                 await web3.eth.sendTransaction({
+                // Fallback transaction
+                await web3.eth.sendTransaction({
                     from: account_temp,
                     to: I_CappedSTO.address,
                     gas: 2100000,
                     value: web3.utils.toWei('1', 'ether')
-                    });
+                });
 
                 assert.equal(
                     (await I_CappedSTO.getRaisedEther.call())
@@ -948,6 +994,26 @@ contract('SecurityToken', accounts => {
                     .toNumber(),
                     1000
                 );
+            });
+
+            it("STO should fail to mint tokens after minting is frozen", async() => {
+                let id = await takeSnapshot();
+                await I_SecurityToken.freezeMinting({from: token_owner});
+                let errorThrown = false;
+                try {
+                    await web3.eth.sendTransaction({
+                       from: account_temp,
+                       to: I_CappedSTO.address,
+                       gas: 2100000,
+                       value: web3.utils.toWei('1', 'ether')
+                    });
+                } catch(error) {
+                    console.log(`         tx revert -> Minting is finished`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+                await revertToSnapshot(id);
             });
 
             it("Should remove investor from the whitelist by the delegate", async() => {
@@ -986,10 +1052,10 @@ contract('SecurityToken', accounts => {
 
            it("Should freeze the transfers", async() => {
              let tx = await I_SecurityToken.freezeTransfers({from: token_owner});
-             assert.isTrue(tx.logs[0].args._freeze);
+             assert.isTrue(tx.logs[0].args._status);
             });
 
-           it("Should freeze the transfers", async() => {
+           it("Should fail to freeze the transfers", async() => {
                let errorThrown = false;
                try {
                     await I_SecurityToken.freezeTransfers({from: token_owner});
@@ -1047,9 +1113,9 @@ contract('SecurityToken', accounts => {
                assert.ok(errorThrown, message);
            });
 
-           it("Should un freeze all the transfers", async() => {
+           it("Should unfreeze all the transfers", async() => {
                 let tx = await I_SecurityToken.unfreezeTransfers({from: token_owner});
-                assert.isFalse(tx.logs[0].args._freeze);
+                assert.isFalse(tx.logs[0].args._status);
            });
 
            it("Should freeze the transfers", async() => {

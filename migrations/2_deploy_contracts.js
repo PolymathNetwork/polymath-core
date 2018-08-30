@@ -8,9 +8,10 @@ const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpo
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
 const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
-const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
+const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol')
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
 const TickerRegistry = artifacts.require('./TickerRegistry.sol')
+const FeatureRegistry = artifacts.require('./FeatureRegistry.sol')
 const STFactory = artifacts.require('./tokens/STFactory.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
 const MockOracle = artifacts.require('./MockOracle.sol')
@@ -194,6 +195,12 @@ module.exports = function (deployer, network, accounts) {
        // Assign the address into the SecurityTokenRegistry key
       return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
     }).then(() => {
+      // K) Deploy the FeatureRegistry contract to control feature switches
+      return deployer.deploy(FeatureRegistry, PolymathRegistry.address, {from: PolymathAccount});
+    }).then(() => {
+       // Assign the address into the FeatureRegistry key
+      return polymathRegistry.changeAddress("FeatureRegistry", FeatureRegistry.address, {from: PolymathAccount});
+    }).then(() => {
       // Update all addresses into the registry contract by calling the function updateFromregistry
       return SecurityTokenRegistry.at(SecurityTokenRegistry.address).updateFromRegistry({from: PolymathAccount});
     }).then(() => {
@@ -233,30 +240,31 @@ module.exports = function (deployer, network, accounts) {
     }).then(() => {
       console.log('\n');
       console.log(`
-      -------------------- Polymath Network Smart Contracts: --------------------
-      PolymathRegistry:                 ${PolymathRegistry.address}
-      TickerRegistry:                   ${TickerRegistry.address}
-      ModuleRegistry:                   ${ModuleRegistry.address}
-      SecurityTokenRegistry:            ${SecurityTokenRegistry.address}
+      --------------------- Polymath Network Smart Contracts: ---------------------
+      PolymathRegistry:                  ${PolymathRegistry.address}
+      TickerRegistry:                    ${TickerRegistry.address}
+      SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+      ModuleRegistry:                    ${ModuleRegistry.address}
+      FeatureRegistry:                   ${FeatureRegistry.address}
 
-      ETHOracle:                        ${ETHOracle.address}
-      POLYOracle:                       ${POLYOracle.address}
+      ETHOracle:                         ${ETHOracle}
+      POLYOracle:                        ${POLYOracle}
 
-      STFactory:                        ${STFactory.address}
-      GeneralTransferManagerFactory:    ${GeneralTransferManagerFactory.address}
-      GeneralPermissionManagerFactory:  ${GeneralPermissionManagerFactory.address}
+      STFactory:                         ${STFactory.address}
+      GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
+      GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
 
-      CappedSTOFactory:                 ${CappedSTOFactory.address}
-      USDTieredSTOFactory:              ${USDTieredSTOFactory.address}
+      CappedSTOFactory:                  ${CappedSTOFactory.address}
+      USDTieredSTOFactory:               ${USDTieredSTOFactory.address}
 
-      CountTransferManagerFactory:      ${CountTransferManagerFactory.address}
-      PercentageTransferManagerFactory: ${PercentageTransferManagerFactory.address}
+      CountTransferManagerFactory:       ${CountTransferManagerFactory.address}
+      PercentageTransferManagerFactory:  ${PercentageTransferManagerFactory.address}
       ManualApprovalTransferManagerFactory:
-                                        ${ManualApprovalTransferManagerFactory.address}
+                                         ${ManualApprovalTransferManagerFactory.address}
 
-      EtherDividendCheckpointFactory:   ${EtherDividendCheckpointFactory.address}
-      ERC20DividendCheckpointFactory:   ${ERC20DividendCheckpointFactory.address}
-      ---------------------------------------------------------------------------
+      EtherDividendCheckpointFactory:    ${EtherDividendCheckpointFactory.address}
+      ERC20DividendCheckpointFactory:    ${ERC20DividendCheckpointFactory.address}
+      -----------------------------------------------------------------------------
       `);
       console.log('\n');
       // -------- END OF POLYMATH NETWORK Configuration -------//

@@ -1,6 +1,6 @@
-## Polymath: Code of Conduct
+# Polymath: Code of Conduct
 
-# 1. Purpose
+## 1. Purpose
 
 A primary goal of Polymath is to be inclusive to all contributors, with the most varied and diverse backgrounds possible. Everyone is welcome! Thus, we are committed to providing a friendly and safe environment for everyone. 
 
@@ -8,11 +8,11 @@ This code of conduct outlines our overall expectations for anyone who participat
 
 We invite all those who participate in Polymath to help us foster a safe and positive experience for everyone.
 
-# 2. Open Source Community
+## 2. Open Source Community
 
 A goal of this Code of Conduct is to increase the open source community by encouraging participants to recognize and strengthen the relationships between our actions and their effects on our community. Communities mirror the societies in which they exist and positive action is essential for us to create a successful open source community and proejct.
 
-# 3. Expected Behavior
+## 3. Expected Behavior
 
 The following behaviors are expected and requested from all community members:
 
@@ -22,7 +22,7 @@ The following behaviors are expected and requested from all community members:
 - Refrain from negative behaviour.
 - Please alert community leaders if you notice violations of this Code of Conduct, even if they seem minor.
 
-# 4. Unacceptable Behavior
+## 4. Unacceptable Behavior
 
 The following behaviors are considered harassment and are absolutely unacceptable within our community:
 
@@ -36,25 +36,23 @@ The following behaviors are considered harassment and are absolutely unacceptabl
 - Advocating for, or encouraging, any of the above behavior.
 - Sustained disruption of community events, including meetings, townhalls/webinars, online forums, talks and presentations.
 
-# 5. Consequences of Unacceptable Behavior
+## 5. Consequences of Unacceptable Behavior
 
-Unacceptable behavior from any community member will not be tolerated. The community organizers may take any action they deem appropriate, up to and including a 
-temporary ban or permanent removal from the community without warning (and without refund in the case of a paid event).
+Unacceptable behavior from any community member will not be tolerated. The community organizers may take any action they deem appropriate, up to and including a temporary ban or permanent removal from the community without warning (and without refund in the case of a paid event).
 
-
-# 6. Reporting Guidelines
+## 6. Reporting Guidelines
 
 If you are subject to or witness unacceptable behavior, or have any other concerns, please notify a community organizer as soon as possible. (community@polymath.network)
 
-# 7. Addressing Grievances
+## 7. Addressing Grievances
 
 If you feel you have been falsely or unfairly accused of violating this Code of Conduct, you should notify Polymath with a concise description of your grievance. Your grievance will be handled in accordance with our existing governing policies.
 
-# 8. Scope
+## 8. Scope
 
 We expect all community participants (contributors, paid or otherwise; sponsors; and other guests) to abide by this Code of Conduct in all community venues–online and in-person–as well as in all one-on-one communications pertaining to community business.
 
-# 9. Contact info 
+## 9. Contact info 
 
 You can contact Polymath via Gitter: https://gitter.im/PolymathNetwork/Lobby
 

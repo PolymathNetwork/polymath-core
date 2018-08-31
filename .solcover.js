@@ -4,5 +4,5 @@ module.exports = {
     copyPackages: ['openzeppelin-solidity'],
     testCommand: 'node ../node_modules/.bin/truffle test `ls test/*.js --ignore a_poly_oracle.js` --network coverage',
     deepSkip: true,
-    skipFiles: ['external']
+    skipFiles: ['external', 'flat']
 };

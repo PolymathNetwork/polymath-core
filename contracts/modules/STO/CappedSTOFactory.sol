@@ -31,7 +31,7 @@ contract CappedSTOFactory is ModuleFactory {
         //Check valid bytes - can only call module init function
         CappedSTO cappedSTO = new CappedSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(getSig(_data) == cappedSTO.getInitFunction(), "Provided data is not valid");
+        require(_getSig(_data) == cappedSTO.getInitFunction(), "Provided data is not valid");
         require(address(cappedSTO).call(_data), "Un-successfull call");
         emit LogGenerateModuleFromFactory(address(cappedSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(cappedSTO);

@@ -114,13 +114,13 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     ///////////////
 
     modifier validETH {
-        require(getOracle(bytes32("ETH"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
+        require(_getOracle(bytes32("ETH"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
         require(fundRaiseType[uint8(FundRaiseType.ETH)]);
         _;
     }
 
     modifier validPOLY {
-        require(getOracle(bytes32("POLY"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
+        require(_getOracle(bytes32("POLY"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
         require(fundRaiseType[uint8(FundRaiseType.POLY)]);
         _;
     }
@@ -321,7 +321,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _beneficiary Address where security tokens will be sent
       */
     function buyWithETH(address _beneficiary) public payable validETH {
-        uint256 rate = IOracle(getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
+        uint256 rate = IOracle(_getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, msg.value, rate, false);
         // Modify storage
         investorInvestedETH[_beneficiary] = investorInvestedETH[_beneficiary].add(spentValue);
@@ -339,7 +339,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY {
-        uint256 rate = IOracle(getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
+        uint256 rate = IOracle(_getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _investedPOLY, rate, true);
         // Modify storage
         investorInvestedPOLY[_beneficiary] = investorInvestedPOLY[_beneficiary].add(spentValue);
@@ -359,7 +359,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(isOpen(), "STO is not open");
         require(_investmentValue > 0, "No funds were sent to buy tokens");
 
-        uint256 investedUSD = decimalMul(_rate, _investmentValue);
+        uint256 investedUSD = _decimalMul(_rate, _investmentValue);
         uint256 originalUSD = investedUSD;
 
         // Check for minimum investment
@@ -399,7 +399,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         if (spentUSD == 0) {
             spentValue = 0;
         } else {
-            spentValue = decimalMul(decimalDiv(spentUSD, originalUSD), _investmentValue);
+            spentValue = _decimalMul(_decimalDiv(spentUSD, originalUSD), _investmentValue);
         }
 
         // Return calculated amounts
@@ -437,11 +437,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     function _purchaseTier(address _beneficiary, uint256 _tierPrice, uint256 _tierRemaining, uint256 _investedUSD, uint8 _tier) internal returns(uint256, uint256) {
-        uint256 maximumTokens = decimalDiv(_investedUSD, _tierPrice);
+        uint256 maximumTokens = _decimalDiv(_investedUSD, _tierPrice);
         uint256 spentUSD;
         uint256 purchasedTokens;
         if (maximumTokens > _tierRemaining) {
-            spentUSD = decimalMul(_tierRemaining, _tierPrice);
+            spentUSD = _decimalMul(_tierRemaining, _tierPrice);
             // In case of rounding issues, ensure that spentUSD is never more than investedUSD
             if (spentUSD > _investedUSD) {
                 spentUSD = _investedUSD;
@@ -483,8 +483,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return uint256 Value in USD
      */
     function convertToUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
-        uint256 rate = IOracle(getOracle(_currency, bytes32("USD"))).getPrice();
-        return decimalMul(_amount, rate);
+        uint256 rate = IOracle(_getOracle(_currency, bytes32("USD"))).getPrice();
+        return _decimalMul(_amount, rate);
     }
 
     /**
@@ -494,8 +494,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return uint256 Value in ETH or POLY
      */
     function convertFromUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
-        uint256 rate = IOracle(getOracle(_currency, bytes32("USD"))).getPrice();
-        return decimalDiv(_amount, rate);
+        uint256 rate = IOracle(_getOracle(_currency, bytes32("USD"))).getPrice();
+        return _decimalDiv(_amount, rate);
     }
 
     /**
@@ -618,7 +618,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @notice This function multiplies two decimals represented as (decimal * 10**DECIMALS)
      * @return uint256 Result of multiplication represented as (decimal * 10**DECIMALS)
      */
-    function decimalMul(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    function _decimalMul(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = SafeMath.add(SafeMath.mul(x, y), DECIMALS / 2) / DECIMALS;
     }
 
@@ -626,11 +626,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @notice This function divides two decimals represented as (decimal * 10**DECIMALS)
      * @return uint256 Result of division represented as (decimal * 10**DECIMALS)
      */
-    function decimalDiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+    function _decimalDiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = SafeMath.add(SafeMath.mul(x, DECIMALS), y / 2) / y;
     }
 
-    function getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns (address) {
+    function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns (address) {
         return PolymathRegistry(RegistryUpdater(securityToken).polymathRegistry()).getAddress(oracleKeys[_currency][_denominatedCurrency]);
     }
 

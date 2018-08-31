@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# v1.4.1
+
+## Fixed
+
+Fix #239: fix basic fee logic for ongoing module fees
+Fix #238: make beneficial investments optionally supported (default to not
+allowed)
+
 # v1.4.0 - Release candidate
 
 [__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__

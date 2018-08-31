@@ -593,6 +593,54 @@ contract('GeneralTransferManager', accounts => {
             assert.equal(tx.logs[0].args._signingAddress, account_polymath);
         });
 
+        it("Should fail to pull fees as no budget set", async() => {
+
+            let errorThrown = false;
+            try {
+                await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> No budget set`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should set a budget for the GeneralTransferManager", async() => {
+            await I_SecurityToken.changeModuleBudget(2, 0, 10 * Math.pow(10, 18), {from: token_owner});
+            let errorThrown = false;
+            try {
+                await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> No balance on token`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+            await I_PolyToken.getTokens(10 * Math.pow(10, 18), token_owner);
+            await I_PolyToken.transfer(I_SecurityToken.address, 10 * Math.pow(10, 18), {from: token_owner});
+        });
+
+
+        it("Factory owner should pull fees - fails as not permissioned by issuer", async() => {
+            let errorThrown = false;
+            try {
+                await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_delegate});
+            } catch(error) {
+                console.log(`         tx revert -> Incorrect permissions`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+        });
+
+        it("Factory owner should pull fees", async() => {
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FEE_ADMIN", true, {from: token_owner});
+            let balanceBefore = await I_PolyToken.balanceOf(account_polymath);
+            await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_delegate});
+            let balanceAfter = await I_PolyToken.balanceOf(account_polymath);
+            assert.equal(balanceBefore.add(web3.utils.toWei('1','ether')).toNumber(), balanceAfter.toNumber(), "Fee is transferred");
+        });
+
         it("Should change the white list transfer variable", async() => {
             let tx = await I_GeneralTransferManager.changeAllowAllWhitelistIssuances(true, {from : token_owner});
             assert.isTrue(tx.logs[0].args._allowAllWhitelistIssuances);

@@ -9,7 +9,7 @@ const MockOracle = artifacts.require('./MockOracle.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
-const TickerRegistry = artifacts.require('./TickerRegistry.sol');
+const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
 const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
 const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
@@ -44,6 +44,7 @@ contract('USDTieredSTO', accounts => {
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
+    let I_SecurityTokenRegistryProxy;
     let I_GeneralPermissionManager;
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
@@ -54,13 +55,13 @@ contract('USDTieredSTO', accounts => {
     let I_USDOracle;
     let I_POLYOracle;
     let I_STFactory;
+    let I_STRProxied;
     let I_SecurityToken;
     let I_USDTieredSTO_Array = [];
     let I_PolyToken;
     let I_PolymathRegistry;
 
     // SecurityToken Details for funds raise Type ETH
-    const SWARMHASH = "dagwrgwgvwergwrvwrg";
     const NAME = "Team";
     const SYMBOL = "SAP";
     const TOKENDETAILS = "This is equity type of issuance";
@@ -143,6 +144,31 @@ contract('USDTieredSTO', accounts => {
         }]
     };
 
+    const functionSignatureProxy = {
+        name: 'initialize',
+        type: 'function',
+        inputs: [{
+            type:'address',
+            name: '_polymathRegistry'
+        },{
+            type: 'address',
+            name: '_stVersionProxy'
+        },{
+            type: 'uint256',
+            name: '_stLaunchFee'
+        },{
+            type: 'uint256',
+            name: '_tickerRegFee'
+        },{
+            type: 'address',
+            name: '_polyToken'
+        },{
+            type: 'address',
+            name: 'owner'
+        }
+    ]
+    };
+
     function getRandomInt(min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
@@ -223,17 +249,6 @@ contract('USDTieredSTO', accounts => {
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_USDTieredSTOFactory.address, { from: ISSUER });
 
-        // Step 7: Deploy the TickerRegistry
-
-        I_TickerRegistry = await TickerRegistry.new(I_PolymathRegistry.address, REGFEE, { from: POLYMATH });
-        await I_PolymathRegistry.changeAddress("TickerRegistry", I_TickerRegistry.address, {from: POLYMATH});
-
-        assert.notEqual(
-            I_TickerRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "TickerRegistry contract was not deployed",
-        );
-
         // Step 8: Deploy the STFactory contract
 
         I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : POLYMATH });
@@ -246,20 +261,20 @@ contract('USDTieredSTO', accounts => {
 
         // Step 9: Deploy the SecurityTokenRegistry
 
-        I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolymathRegistry.address,
-            I_STFactory.address,
-            REGFEE,
-            {
-                from: POLYMATH
-            });
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: POLYMATH});
-
+        I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: POLYMATH });
+ 
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
             "SecurityTokenRegistry contract was not deployed",
         );
+ 
+        // Step 10: update the registries addresses from the PolymathRegistry contract
+        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: POLYMATH});
+        let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, REGFEE, REGFEE, I_PolyToken.address, POLYMATH]);
+        await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: POLYMATH});
+        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+ 
 
         // Step 10: Deploy the FeatureRegistry
 
@@ -277,9 +292,8 @@ contract('USDTieredSTO', accounts => {
         );
 
         // Step 11: update the registries addresses from the PolymathRegistry contract
-        await I_SecurityTokenRegistry.updateFromRegistry({from: POLYMATH});
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, {from: POLYMATH});
         await I_ModuleRegistry.updateFromRegistry({from: POLYMATH});
-        await I_TickerRegistry.updateFromRegistry({from: POLYMATH});
 
         // Step 12: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY
@@ -291,7 +305,7 @@ contract('USDTieredSTO', accounts => {
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
         PolymathRegistry:                  ${PolymathRegistry.address}
-        TickerRegistry:                    ${TickerRegistry.address}
+        SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
         SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
         ModuleRegistry:                    ${ModuleRegistry.address}
         FeatureRegistry:                   ${FeatureRegistry.address}
@@ -311,17 +325,17 @@ contract('USDTieredSTO', accounts => {
 
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
-            await I_PolyToken.approve(I_TickerRegistry.address, REGFEE, { from: ISSUER });
-            let tx = await I_TickerRegistry.registerTicker(ISSUER, SYMBOL, NAME, SWARMHASH, { from : ISSUER });
+            await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
+            let tx = await I_STRProxied.registerTicker(ISSUER, SYMBOL, NAME, { from : ISSUER });
             assert.equal(tx.logs[0].args._owner, ISSUER);
             assert.equal(tx.logs[0].args._symbol, SYMBOL);
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
-            await I_PolyToken.approve(I_SecurityTokenRegistry.address, REGFEE, { from: ISSUER });
+            await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
             let _blockNo = latestBlock();
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, { from: ISSUER });
+            let tx = await I_STRProxied.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, { from: ISSUER });
             assert.equal(tx.logs[1].args._ticker, SYMBOL, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);

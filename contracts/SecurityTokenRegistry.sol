@@ -166,7 +166,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _tokenDetails off-chain details of the token
      * @param _deployedAt Timestamp at which security token comes deployed on the ethereum blockchain
      */
-    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt) external onlyOwner whenNotPaused {
+    function addCustomSecurityToken(string _name, string _symbol, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt) external onlyOwner {
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         string memory symbol = Util.upper(_symbol);
         require(_securityToken != address(0) && getMapAddress("symbols", symbol) == address(0), "Symbol is already at the polymath network or entered security token address is 0x");
@@ -211,7 +211,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _registrationDate Date on which ticker get registered
      * @param _expiryDate Expiry date of the ticker
      */
-    function addCustomTicker(address _owner, string _symbol, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external onlyOwner whenNotPaused {
+    function addCustomTicker(address _owner, string _symbol, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external onlyOwner {
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         require(_expiryDate != 0 && _registrationDate != 0, "Dates should not be 0");
         require(_registrationDate < _expiryDate, "Registration date should be less than the expiry date");
@@ -474,6 +474,8 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             return false;
         }
         else if (getMapAddress("registeredSymbols_owner", symbol) == address(0) || _expiryCheck(symbol)) {
+            pushMapArray("tokensOwnedByUser", _owner, Util.stringToBytes32(symbol));
+            setMap("tickerIndex", symbol, (getMapArrayBytes32("tokensOwnedByUser", _owner).length - 1));
             _storeSymbolDetails(symbol, _owner, now, now.add(getMapUint("registeredSymbols_expiryDate", symbol)), _tokenName, false);
             emit LogRegisterTicker (_owner, symbol, _tokenName, now, now.add(getMapUint("registeredSymbols_expiryDate", symbol)));
             return false;

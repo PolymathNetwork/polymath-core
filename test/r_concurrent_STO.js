@@ -13,7 +13,7 @@ const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
-const TickerRegistry = artifacts.require('./TickerRegistry.sol');
+const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
 const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
 const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
@@ -37,6 +37,7 @@ contract('SecurityToken addModule Cap', accounts => {
 
     // Contract instance declaration
     let I_GeneralPermissionManagerFactory;
+    let I_SecurityTokenRegistryProxy;
     let I_GeneralPermissionManager;
     let I_GeneralTransferManagerFactory;
     let I_GeneralTransferManager;
@@ -44,6 +45,7 @@ contract('SecurityToken addModule Cap', accounts => {
     let I_TickerRegistry;
     let I_FeatureRegistry;
     let I_STFactory;
+    let I_STRProxied;
     let I_SecurityTokenRegistry;
     let I_SecurityToken;
     let I_PolyToken;
@@ -119,6 +121,31 @@ contract('SecurityToken addModule Cap', accounts => {
         }]
     }
 
+    const functionSignatureProxy = {
+        name: 'initialize',
+        type: 'function',
+        inputs: [{
+            type:'address',
+            name: '_polymathRegistry'
+        },{
+            type: 'address',
+            name: '_stVersionProxy'
+        },{
+            type: 'uint256',
+            name: '_stLaunchFee'
+        },{
+            type: 'uint256',
+            name: '_tickerRegFee'
+        },{
+            type: 'address',
+            name: '_polyToken'
+        },{
+            type: 'address',
+            name: 'owner'
+        }
+    ]
+    };
+
     before(async() => {
         // Accounts setup
         account_polymath = accounts[0];
@@ -189,17 +216,6 @@ contract('SecurityToken addModule Cap', accounts => {
         await I_ModuleRegistry.registerModule(I_DummySTOFactory.address, { from: account_issuer });
         await I_ModuleRegistry.registerModule(I_PreSaleSTOFactory.address, { from: account_issuer });
 
-        // Step 6: Deploy the TickerRegistry
-
-        I_TickerRegistry = await TickerRegistry.new(I_PolymathRegistry.address, initRegFee, { from: account_polymath });
-        await I_PolymathRegistry.changeAddress("TickerRegistry", I_TickerRegistry.address, {from: account_polymath});
-
-        assert.notEqual(
-            I_TickerRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "TickerRegistry contract was not deployed",
-        );
-
         // Step 7: Deploy the STFactory contract
 
         I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
@@ -210,22 +226,22 @@ contract('SecurityToken addModule Cap', accounts => {
             "STFactory contract was not deployed",
         );
 
-        // Step 8: Deploy the SecurityTokenRegistry
+        // Step 9: Deploy the SecurityTokenRegistry
 
-        I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolymathRegistry.address,
-            I_STFactory.address,
-            initRegFee,
-            {
-                from: account_polymath
-            });
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
-
+        I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
+ 
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
             "SecurityTokenRegistry contract was not deployed",
         );
+ 
+        // Step 10: update the registries addresses from the PolymathRegistry contract
+        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
+        let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+        await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
+        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+ 
 
         // Step 10: Deploy the FeatureRegistry
 
@@ -243,15 +259,14 @@ contract('SecurityToken addModule Cap', accounts => {
         );
 
         // Step 11: update the registries addresses from the PolymathRegistry contract
-        await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, {from: account_polymath});
         await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
-        await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
         PolymathRegistry:                  ${PolymathRegistry.address}
-        TickerRegistry:                    ${TickerRegistry.address}
+        SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
         SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
         ModuleRegistry:                    ${ModuleRegistry.address}
         FeatureRegistry:                   ${FeatureRegistry.address}
@@ -260,6 +275,7 @@ contract('SecurityToken addModule Cap', accounts => {
         GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
         GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
 
+
         CappedSTOFactory:                  ${I_CappedSTOFactory.address}
         -----------------------------------------------------------------------------
         `);
@@ -267,7 +283,6 @@ contract('SecurityToken addModule Cap', accounts => {
 
     describe("Generate Security Token", async() => {
         // SecurityToken Details for funds raise Type ETH
-        const swarmHash = "dagwrgwgvwergwrvwrg";
         const name = "Team";
         const symbol = "SAP";
         const tokenDetails = "This is equity type of issuance";
@@ -275,17 +290,17 @@ contract('SecurityToken addModule Cap', accounts => {
 
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
-            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: account_issuer });
-            let tx = await I_TickerRegistry.registerTicker(account_issuer, symbol, name, swarmHash, { from : account_issuer });
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_issuer });
+            let tx = await I_STRProxied.registerTicker(account_issuer, symbol, name, { from : account_issuer });
             assert.equal(tx.logs[0].args._owner, account_issuer);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
-            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: account_issuer});
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_issuer});
             let _blockNo = latestBlock();
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_issuer, gas: 85000000  });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_issuer, gas: 85000000  });
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);

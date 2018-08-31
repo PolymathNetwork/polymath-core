@@ -10,8 +10,8 @@ const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const SecurityTokenRegistryMock = artifacts.require('./SecurityTokenRegistryMock.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
-const STVersion002 = artifacts.require('./STVersionProxy002.sol');
+const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
+const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -61,6 +61,7 @@ contract('SecurityTokenRegistry', accounts => {
     let I_SecurityToken;
     let I_DummySTO;
     let I_PolyToken;
+    let I_STFactory;
     let I_STFactory002;
     let I_SecurityToken002;
     let I_STFactory003;
@@ -69,14 +70,12 @@ contract('SecurityTokenRegistry', accounts => {
     let I_STRProxied;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
-    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Demo Token";
     const symbol = "DET";
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
 
     //Security Token Detials (Version 2)
-    const swarmHash2 = "dagwrgwgvwergwrvwrg";
     const name2 = "Demo2 Token";
     const symbol2 = "DET2";
     const tokenDetails2 = "This is equity type of issuance";
@@ -224,7 +223,7 @@ contract('SecurityTokenRegistry', accounts => {
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_DummySTOFactory.address, { from: token_owner });
 
-        // Step 9: Deploy the SecurityTokenRegistry
+        // // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
@@ -236,21 +235,42 @@ contract('SecurityTokenRegistry', accounts => {
         );
 
          // Step 10: update the registries addresses from the PolymathRegistry contract
-         await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
          I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-         let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STVersion.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+         let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
          await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
-         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);    
+         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);  
+         
+         // Step 10: Deploy the FeatureRegistry
 
-        // Printing all the contract addresses
-        console.log(`\nPolymath Network Smart Contracts Deployed:\n
-            SecurityTokenRegistryProxy: ${I_SecurityTokenRegistryProxy.address}\n
-            ModuleRegistry: ${I_ModuleRegistry.address}\n
-            GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}\n
-            GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
-            DummySTOFactory: ${I_DummySTOFactory.address}\n
-            STVersionProxy_001: ${I_STVersion.address}\n
-            SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
+        I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: account_polymath
+            });
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+
+        assert.notEqual(
+            I_FeatureRegistry.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "FeatureRegistry contract was not deployed",
+        );
+
+        await I_ModuleRegistry.updateFromRegistry({from: account_polymath});        
+
+        console.log(`
+        --------------------- Polymath Network Smart Contracts: ---------------------
+        PolymathRegistry:                  ${PolymathRegistry.address}
+        SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
+        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${ModuleRegistry.address}
+        FeatureRegistry:                   ${FeatureRegistry.address}
+
+        STFactory:                         ${STFactory.address}
+        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
+
+        DummySTOFactory:                  ${I_DummySTOFactory.address}
+        -----------------------------------------------------------------------------
         `);
     });
 
@@ -265,7 +285,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should fail to register ticker if tickerRegFee not approved", async() => {
             let errorThrown = false;
             try {
-                let tx = await I_STRProxied.registerTicker(account_temp, symbol, name, swarmHash, { from: account_temp });
+                let tx = await I_STRProxied.registerTicker(account_temp, symbol, name, { from: account_temp });
             } catch(error) {
                 console.log(`         tx revert -> POLY allowance not provided for registration fee`.grey);
                 errorThrown = true;
@@ -279,7 +299,7 @@ contract('SecurityTokenRegistry', accounts => {
             try {
                 await I_PolyToken.getTokens(initRegFee, account_temp);
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_temp});
-                let tx = await I_STRProxied.registerTicker("0x0000000000000000000000000000000000000000", symbol, name, swarmHash, { from: account_temp });
+                let tx = await I_STRProxied.registerTicker("0x0000000000000000000000000000000000000000", symbol, name, { from: account_temp });
             } catch(error) {
                 console.log(`         tx revert -> owner should not be 0x`.grey);
                 errorThrown = true;
@@ -289,7 +309,7 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should register the ticker before the generation of the security token", async () => {
-            let tx = await I_STRProxied.registerTicker(account_temp, symbol, name, swarmHash, { from: account_temp });
+            let tx = await I_STRProxied.registerTicker(account_temp, symbol, name, { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._symbol, symbol, `Symbol should be ${symbol}`);
         });
@@ -298,7 +318,7 @@ contract('SecurityTokenRegistry', accounts => {
             let errorThrown = false;
             try {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_temp});
-                let tx = await I_STRProxied.registerTicker(account_temp, "", name, swarmHash, { from: account_temp });
+                let tx = await I_STRProxied.registerTicker(account_temp, "", name, { from: account_temp });
             } catch(error) {
                 console.log(`         tx revert -> Symbol Length is 0`.grey);
                 errorThrown = true;
@@ -311,7 +331,7 @@ contract('SecurityTokenRegistry', accounts => {
             let errorThrown = false;
             try {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_temp});
-                let tx = await I_STRProxied.registerTicker(account_temp, "POLYMATHNET", name, swarmHash, { from: account_temp });
+                let tx = await I_STRProxied.registerTicker(account_temp, "POLYMATHNET", name, { from: account_temp });
             } catch(error) {
                 console.log(`         tx revert -> Symbol Length is greater than 10`.grey);
                 errorThrown = true;
@@ -328,7 +348,7 @@ contract('SecurityTokenRegistry', accounts => {
             let errorThrown = false;
             try {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
-                let tx = await I_STRProxied.registerTicker(token_owner, symbol, name, swarmHash, { from: token_owner });
+                let tx = await I_STRProxied.registerTicker(token_owner, symbol, name, { from: token_owner });
             } catch(error) {
                 console.log(`         tx revert -> Symbol is already alloted to someone else`.grey);
                 errorThrown = true;
@@ -340,7 +360,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should successfully register pre registerd ticker if expiry is reached", async() => {
             await increaseTime(1300000);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, name, swarmHash, { from: token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, symbol, name, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Owner should be the ${token_owner}`);
             assert.equal(tx.logs[0].args._symbol, symbol, `Symbol should be ${symbol}`);
         });
@@ -350,7 +370,7 @@ contract('SecurityTokenRegistry', accounts => {
             try {
                 await I_STRProxied.pause({ from: account_polymath});
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
-                let tx = await I_STRProxied.registerTicker(token_owner, "AAA", name, swarmHash, { from: token_owner });
+                let tx = await I_STRProxied.registerTicker(token_owner, "AAA", name, { from: token_owner });
             } catch(error) {
                 console.log(`         tx revert -> Registration is paused`.grey);
                 errorThrown = true;
@@ -374,7 +394,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should successfully register ticker if registration is unpaused", async() => {
             await I_STRProxied.unpause({ from: account_polymath});
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
-            let tx = await I_STRProxied.registerTicker(token_owner, "AAA", name, swarmHash, { from: token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, "AAA", name, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Owner should be the ${token_owner}`);
             assert.equal(tx.logs[0].args._symbol, "AAA", `Symbol should be AAA`);
         });
@@ -433,24 +453,14 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should get the details of the symbol", async() => {
             let tx = await I_STRProxied.getTickerDetails.call(symbol);
             assert.equal(tx[0], token_owner, "Should equal to the rightful owner of the ticker");
-            assert.equal(tx[2], name, `Name of the token should equal to ${name}`);
-            assert.equal(
-                web3.utils.toAscii(tx[3])
-                .replace(/\u0000/g, ''),
-                swarmHash
-            );
+            assert.equal(tx[3], name, `Name of the token should equal to ${name}`);
             assert.equal(tx[4], false, "Status if the symbol should be undeployed -- false");
         });
 
         it("Should get the details of unregistered token", async() => {
             let tx = await I_STRProxied.getTickerDetails.call("TORO");
             assert.equal(tx[0], "0x0000000000000000000000000000000000000000", "Should be 0x as ticker is not exists in the registry");
-            assert.equal(tx[2], "", "Should be an empty string");
-            assert.equal(
-                web3.utils.toAscii(tx[3])
-                .replace(/\u0000/g, ''),
-                ""
-            );
+            assert.equal(tx[3], "", "Should be an empty string");
             assert.equal(tx[4], false, "Status if the symbol should be undeployed -- false");
         });
     });
@@ -460,7 +470,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should get the ticker details successfully and prove the data is not storing in to the logic contract", async() => {
             let data = await I_STRProxied.getTickerDetails(symbol, {from: token_owner});
             assert.equal(data[0], token_owner, "Token owner should be equal");
-            assert.equal(data[2], name, "Name of the token should match with the registered symbol infor");
+            assert.equal(data[3], name, "Name of the token should match with the registered symbol infor");
             assert.equal(data[4], false, "Token is not launched yet so it should return False");
             data = await I_SecurityTokenRegistry.getTickerDetails(symbol, {from:token_owner});
             console.log("This is the data from the original securityTokenRegistry contract");
@@ -523,14 +533,14 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should deploy the st version 2", async() => {
             // Step 7: Deploy the STFactory contract
 
-            I_STFactory002 = await STFactory002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+            I_STFactory002 = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
                 I_STFactory002.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
                 "STFactory002 contract was not deployed",
             );
-            await I_STRProxied.setProtocolVersion(I_STVersion002.address, "0.2.0", { from: account_polymath });
+            await I_STRProxied.setProtocolVersion(I_STFactory002.address, "0.2.0", { from: account_polymath });
 
             assert.equal(
                 web3.utils.toAscii(await I_STRProxied.getBytes32Values.call(web3.utils.soliditySha3("protocolVersion")))
@@ -541,7 +551,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol2, name2, swarmHash, { from : token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, symbol2, name2, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Token owner should be ${token_owner}`);
             assert.equal(tx.logs[0].args._symbol, symbol2, `Symbol should be ${symbol2}`);
         });
@@ -601,7 +611,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should check the old data persist or not", async() => {
             let data = await I_STRProxied.getTickerDetails.call(symbol);
             assert.equal(data[0], token_owner, "Should be equal to the token owner address");
-            assert.equal(data[2], name, "Should be equal to the name of the token that is provided earlier");
+            assert.equal(data[3], name, "Should be equal to the name of the token that is provided earlier");
             assert.isTrue(data[4], "Token status should be deployed == true");
         });
 
@@ -616,7 +626,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should fail if msg.sender is not polymath", async() => {
             let errorThrown = false;
             try {
-                await I_STRProxied.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_delegate});
+                await I_STRProxied.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_delegate});
             } catch(error) {
                 console.log(`         tx revert -> msg.sender is not polymath account`.grey);
                 errorThrown = true;
@@ -625,33 +635,19 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail if registration is paused", async() => {
-            let errorThrown = false;
-            try {
-                await I_STRProxied.pause({ from: account_polymath});
-                await I_STRProxied.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
-            } catch(error) {
-                console.log(`         tx revert -> Registration is paused`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("Should successfully generate token if registration is unpaused", async() => {
-            await I_STRProxied.unpause({ from: account_polymath});
-            let tx = await I_STRProxied.addCustomSecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
-            assert.equal(tx.logs[1].args._symbol, "LOG2", "Symbol should match with the registered symbol");
-            assert.equal(tx.logs[1].args._securityToken, dummy_token,`Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`);
+        it("Should successfully generate token", async() => {
+            let tx = await I_STRProxied.addCustomSecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
+            assert.equal(tx.logs[1].args._ticker, "LOG2", "Symbol should match with the registered symbol");
+            assert.equal(tx.logs[1].args._securityTokenAddress, dummy_token,`Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`);
             let symbolDetails = await I_STRProxied.getTickerDetails("LOG2");
-            assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
-            assert.equal(symbolDetails[2], "LOGAN2", `Name of the symbol should be LOGAN2`);
+            // assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
+            // assert.equal(symbolDetails[3], "LOGAN2", `Name of the symbol should be LOGAN2`);
         });
 
         it("Should fail if ST address is 0 address", async() => {
             let errorThrown = false;
             try {
-                await I_STRProxied.addCustomSecurityToken("LOGAN", "LOG", account_temp, 0, "I am custom ST", "Swarm hash", {from: account_polymath});
+                await I_STRProxied.addCustomSecurityToken("LOGAN", "LOG", account_temp, 0, "I am custom ST", latestTime(), {from: account_polymath});
             } catch(error) {
                 console.log(`         tx revert -> Security token address is 0`.grey);
                 errorThrown = true;
@@ -663,7 +659,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should fail if symbol or name of length 0", async() => {
             let errorThrown = false;
             try {
-                await I_STRProxied.addCustomSecurityToken("", "", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
+                await I_STRProxied.addCustomSecurityToken("", "", account_temp, dummy_token, "I am custom ST",latestTime(), {from: account_polymath});
             } catch(error) {
                 console.log(`         tx revert -> Symbol and name of zero length`.grey);
                 errorThrown = true;
@@ -675,7 +671,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should fail if symbol is reserved", async() => {
             let errorThrown = false;
             try {
-                await I_STRProxied.addCustomSecurityToken(name2, symbol2, account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
+                await I_STRProxied.addCustomSecurityToken(name2, symbol2, account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
             } catch(error) {
                 console.log(`         tx revert -> Symbol is already reserved`.grey);
                 errorThrown = true;
@@ -685,12 +681,12 @@ contract('SecurityTokenRegistry', accounts => {
         });
 
         it("Should successfully generate the custom token", async() => {
-            let tx = await I_STRProxied.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", "Swarm hash", {from: account_polymath});
-            assert.equal(tx.logs[1].args._symbol, "LOG", "Symbol should match with the registered symbol");
-            assert.equal(tx.logs[1].args._securityToken, dummy_token, `Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`);
-            let symbolDetails = await I_STRProxied.getTickerDetails("LOG");
-            assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
-            assert.equal(symbolDetails[2], "LOGAN", `Name of the symbol should be LOGAN`);
+            let tx = await I_STRProxied.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
+            assert.equal(tx.logs[1].args._ticker, "LOG", "Symbol should match with the registered symbol");
+            assert.equal(tx.logs[1].args._securityTokenAddress, dummy_token, `Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`);
+            // let symbolDetails = await I_STRProxied.getTickerDetails("LOG");
+            // assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
+            // assert.equal(symbolDetails[3], "LOGAN", `Name of the symbol should be LOGAN`);
         });
 
     });
@@ -700,26 +696,26 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should add the new custom token in the polymath network", async() => {
             await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), account_temp);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_temp});
-            await I_STRProxied.registerTicker(account_temp, "CUST", "custom", "I am swram hash", {from: account_temp});
-            let tx = await I_STRProxied.addCustomSecurityToken("custom", "CUST", account_temp, accounts[2], "I am custom ST", "I am swram hash", {from: account_polymath});
-            assert.equal(tx.logs[0].args._symbol, "CUST", "Symbol should match with the registered symbol");
-            assert.equal(tx.logs[0].args._securityToken, accounts[2], `Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`);
+            await I_STRProxied.registerTicker(account_temp, "CUST", "custom", {from: account_temp});
+            let tx = await I_STRProxied.addCustomSecurityToken("custom", "CUST", account_temp, accounts[2], "I am custom ST", latestTime(),{from: account_polymath});
+            assert.equal(tx.logs[0].args._ticker, "CUST", "Symbol should match with the registered symbol");
+            assert.equal(tx.logs[0].args._securityTokenAddress, accounts[2], `Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`);
             let symbolDetails = await I_STRProxied.getTickerDetails("CUST");
             assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
-            assert.equal(symbolDetails[2], "custom", `Name of the symbol should be custom`);
+            assert.equal(symbolDetails[3], "custom", `Name of the symbol should be custom`);
         });
 
         it("Should deploy the st vesrion 3", async() => {
             // Step 7: Deploy the STFactory contract
 
-            I_STFactory003 = await STFactory002.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+            I_STFactory003 = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
                 I_STFactory003.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
                 "STFactory002 contract was not deployed",
             );
-            await I_STRProxied.setProtocolVersion(I_STVersion003.address, "0.3.0", { from: account_polymath });
+            await I_STRProxied.setProtocolVersion(I_STFactory003.address, "0.3.0", { from: account_polymath });
 
             assert.equal(
                 web3.utils.toAscii(await I_STRProxied.getBytes32Values.call(web3.utils.soliditySha3("protocolVersion")))
@@ -730,7 +726,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
-            let tx = await I_STRProxied.registerTicker(token_owner, "DET3", name2, swarmHash, { from : token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, "DET3", name2, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, "DET3");
         });

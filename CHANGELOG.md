@@ -1,24 +1,51 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-
 # v1.5.0 - Release Candidate
 
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
-* `transferTickerOwnership()` function is introduced in `TickerRegistry` to transfer the ticker ownership after the registeration #191.
+* `transferTickerOwnership()` function is introduced in `TickerRegistry` to transfer the ticker ownership after the registeration #191. 
 * `getTickersByOwner()` function is used to get the list of tickers owned by the issuer #189.   
 * New function `addCustomTicker()` is used the add the Ticker in tickerRegistry. To avail the facility to Registry owner to add the tokens without paying the fee #190.  
 * Adding the functionality to change the `version`,`name`,`description`,`title` of a Module factory.   
 * Add the `registrationTimestamp` in the `SecurityTokenData` structure that also leads the change in the `getSecurityTokenData()` return parameters. #199
 * Add `_deployedAt` new parameter in the `addCustomSecurityToken`. #199
 * Add `getReputationOfFactory()` & `getModuleListOfType()` functions to get the array type data from the ModuleRegistry contract.   
-* Add `_setupCost` in `LogGenerateModuleFromFactory` event.        
+* Add `_setupCost` in `LogGenerateModuleFromFactory` event.   
+* Add new function `getAllModulesByName()`, To get the list of modules having the same name. #198.  
+* Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230         
 
 ## Fixed
-* Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.   
-* Add new function `getAllModulesByName()`, To get the list of modules having the same name. #198     
+* Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs. 
+* Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230    
+  
+## Removed 
+* Remove `swarmHash` from the `registerTicker(), addCustomTicker(), generateSecurityToken(), addCustomSecurityToken()` functions of TickerRegistry.sol and SecurityTokenRegistry.sol. #230   
+
+======
+
+# v1.4.1 - Release Candidate
+
+[__1.4.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
+
+## Added
+
+* Test cases for 1.4.1 migration
+* STR Migration script
+* Encrypted API Key for CMC queries in PolyOracle
+
+## Changed
+
+* Remove endData update from unpause function
+* Allow custom tokens to be added when STR is paused
+* PolyOracle does not revert on out of order callbacks (silently ignores instead)
+* Removed USDTieredSTO > STR dependency by moving oracle registry to PolymathRegistry
+
+## Fixed
+
+* Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions      
 
 # v1.4.0 - Unreleased
 

@@ -60,7 +60,6 @@ contract('USDTieredSTO', accounts => {
     let I_PolymathRegistry;
 
     // SecurityToken Details for funds raise Type ETH
-    const SWARMHASH = "dagwrgwgvwergwrvwrg";
     const NAME = "Team";
     const SYMBOL = "SAP";
     const TOKENDETAILS = "This is equity type of issuance";
@@ -312,7 +311,7 @@ contract('USDTieredSTO', accounts => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_TickerRegistry.address, REGFEE, { from: ISSUER });
-            let tx = await I_TickerRegistry.registerTicker(ISSUER, SYMBOL, NAME, SWARMHASH, { from : ISSUER });
+            let tx = await I_TickerRegistry.registerTicker(ISSUER, SYMBOL, NAME, { from : ISSUER });
             assert.equal(tx.logs[0].args._owner, ISSUER);
             assert.equal(tx.logs[0].args._symbol, SYMBOL);
         });

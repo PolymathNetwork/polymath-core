@@ -45,19 +45,16 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     const symbol1 = "TOK1";
     const name1 = "TOK1 Token";
     const tokenDetails1 = "This is equity type of issuance";
-    const swarmHash1 = "dagwrgwgvwergwrvwrg";
 
     //SecurityToken 2 Details
     const symbol2 = "TOK2";
     const name2 = "TOK2 Token";
     const tokenDetails2 = "This is equity type of issuance";
-    const swarmHash2 = "dagwrgwgvwergwrvwrg";
 
     //SecurityToken 3 Details
     const symbol3 = "TOK3";
     const name3 = "TOK3 Token";
     const tokenDetails3 = "This is equity type of issuance";
-    const swarmHash3 = "dagwrgwgvwergwrvwrg";
 
     // Contract Instance Declaration
     let I_PolymathRegistry;
@@ -227,19 +224,19 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         // Step 13: Register tokens
         // (A) :  TOK1
         await I_PolyToken.approve(I_TickerRegistry.address, REGFEE, { from: ISSUER1 });
-        tx = await I_TickerRegistry.registerTicker(ISSUER1, symbol1, name1, swarmHash1, { from : ISSUER1 });
+        tx = await I_TickerRegistry.registerTicker(ISSUER1, symbol1, name1, { from : ISSUER1 });
         assert.equal(tx.logs[0].args._owner, ISSUER1);
         assert.equal(tx.logs[0].args._symbol, symbol1);
 
         // (B) :  TOK2
         await I_PolyToken.approve(I_TickerRegistry.address, REGFEE, { from: ISSUER2 });
-        tx = await I_TickerRegistry.registerTicker(ISSUER2, symbol2, name2, swarmHash2, { from : ISSUER2 });
+        tx = await I_TickerRegistry.registerTicker(ISSUER2, symbol2, name2, { from : ISSUER2 });
         assert.equal(tx.logs[0].args._owner, ISSUER2);
         assert.equal(tx.logs[0].args._symbol, symbol2);
 
         // (C) :  TOK3
         await I_PolyToken.approve(I_TickerRegistry.address, REGFEE, { from: ISSUER3 });
-        tx = await I_TickerRegistry.registerTicker(ISSUER3, symbol3, name3, swarmHash3, { from : ISSUER3 });
+        tx = await I_TickerRegistry.registerTicker(ISSUER3, symbol3, name3, { from : ISSUER3 });
         assert.equal(tx.logs[0].args._owner, ISSUER3);
         assert.equal(tx.logs[0].args._symbol, symbol3);
 
@@ -356,13 +353,12 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
                 ISSUER1,
                 I_SecurityToken1.address,
                 tokenDetails1,
-                swarmHash1,
                 Math.floor(Date.now()/10000),
                 {from: POLYMATH}
             );
             assert.equal(tx.logs[0].args._name, name1, "First token name does not match");
-            assert.equal(tx.logs[0].args._symbol, symbol1, "First token symbol does not match");
-            assert.equal(tx.logs[0].args._securityToken, I_SecurityToken1.address, "First token address does not match");
+            assert.equal(tx.logs[0].args._ticker, symbol1, "First token symbol does not match");
+            assert.equal(tx.logs[0].args._securityTokenAddress, I_SecurityToken1.address, "First token address does not match");
         });
         it("Should successfully add custom Security Token for second token", async() => {
             let tx = await I_UpgradedSecurityTokenRegistry.addCustomSecurityToken(
@@ -371,13 +367,12 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
                 ISSUER2,
                 I_SecurityToken2.address,
                 tokenDetails2,
-                web3.utils.asciiToHex(swarmHash2),
                 Math.floor(Date.now()/10000),
                 {from: POLYMATH}
             );
             assert.equal(tx.logs[0].args._name, name2, "Second token name does not match");
-            assert.equal(tx.logs[0].args._symbol, symbol2, "Second token symbol does not match");
-            assert.equal(tx.logs[0].args._securityToken, I_SecurityToken2.address, "Second token address does not match");
+            assert.equal(tx.logs[0].args._ticker, symbol2, "Second token symbol does not match");
+            assert.equal(tx.logs[0].args._securityTokenAddress, I_SecurityToken2.address, "Second token address does not match");
         });
 
         // 6 Unpause both STRs

@@ -267,7 +267,6 @@ contract('SecurityToken addModule Cap', accounts => {
 
     describe("Generate Security Token", async() => {
         // SecurityToken Details for funds raise Type ETH
-        const swarmHash = "dagwrgwgvwergwrvwrg";
         const name = "Team";
         const symbol = "SAP";
         const tokenDetails = "This is equity type of issuance";
@@ -276,7 +275,7 @@ contract('SecurityToken addModule Cap', accounts => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
             await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: account_issuer });
-            let tx = await I_TickerRegistry.registerTicker(account_issuer, symbol, name, swarmHash, { from : account_issuer });
+            let tx = await I_TickerRegistry.registerTicker(account_issuer, symbol, name, { from : account_issuer });
             assert.equal(tx.logs[0].args._owner, account_issuer);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });

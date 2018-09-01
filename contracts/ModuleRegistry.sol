@@ -3,6 +3,7 @@ pragma solidity ^0.4.24;
 import "./interfaces/IModuleRegistry.sol";
 import "./interfaces/IModuleFactory.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
+import "./interfaces/IFeatureRegistry.sol";
 import "./Pausable.sol";
 import "./RegistryUpdater.sol";
 import "./ReclaimTokens.sol";
@@ -37,18 +38,24 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     }
 
     /**
-     * @notice Called by a security token to notify the registry it is using a module
+     * @notice Called by a security token to check if the ModuleFactory is verified or appropriate custom module
+     * @dev ModuleFactory reputation increases by one every time it is deployed
+     * @dev Any module can be added during token creation without being registered if it is defined in the token proxy deployment contract
+     * @dev The feature switch for custom modules is labelled "customModulesAllowed"
      * @param _moduleFactory is the address of the relevant module factory
      */
     function useModule(address _moduleFactory) external {
-        //If caller is a registered security token, then register module usage
+        // This if statement is required to be able to add modules from the token proxy contract during deployment
         if (ISecurityTokenRegistry(securityTokenRegistry).isSecurityToken(msg.sender)) {
+            if (IFeatureRegistry(featureRegistry).getFeatureStatus("customModulesAllowed")) {
+                require(verified[_moduleFactory]||(Ownable(_moduleFactory).owner() == Ownable(msg.sender).owner()),
+                  "ModuleFactory must be verified or SecurityToken owner must be ModuleFactory owner");
+            } else {
+                require(verified[_moduleFactory], "ModuleFactory must be verified");
+            }
             require(registry[_moduleFactory] != 0, "ModuleFactory type should not be 0");
-            //To use a module, either it must be verified, or owned by the ST owner
-            require(verified[_moduleFactory]||(Ownable(_moduleFactory).owner() == Ownable(msg.sender).owner()),
-              "Module factory is not verified as well as not called by the owner");
             reputation[_moduleFactory].push(msg.sender);
-            emit LogModuleUsed (_moduleFactory, msg.sender);
+            emit LogModuleUsed(_moduleFactory, msg.sender);
         }
     }
 
@@ -121,7 +128,7 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     /**
      * @notice Use to get the reputation of the Module factory
      * @param _factoryAddress Ethereum contract address of the module factory
-     * @return address array which have the list of securityToken's uses that module factory 
+     * @return address array which have the list of securityToken's uses that module factory
      */
     function getReputationOfFactory(address _factoryAddress) public view returns(address[]) {
         return reputation[_factoryAddress];

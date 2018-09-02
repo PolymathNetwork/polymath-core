@@ -531,9 +531,9 @@ contract('ModuleRegistry', accounts => {
 
     });
 
-    describe("test cases for useModule", async() => {
+    describe("test cases for Custom Modules", async() => {
 
-        it("Sholud fail in adding module. Because module is un-verified", async() => {
+        it("Should fail in adding module. Because module is un-verified", async() => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
@@ -548,7 +548,7 @@ contract('ModuleRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should successfully add the CappedSTO module. Because module is deployed by the owner of ST", async() => {
+        it("Should fail to add module because custom modules not allowed", async() => {
             I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: token_owner });
 
             assert.notEqual(
@@ -571,7 +571,29 @@ contract('ModuleRegistry', accounts => {
             endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
-            tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
+            let errorThrown = false;
+            try {
+                tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
+            } catch(error) {
+                errorThrown = true;
+                console.log(`         tx revert -> Module is un-verified`.grey);
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should switch customModulesAllowed to true", async() => {
+            assert.equal(false, await I_FeatureRegistry.getFeatureStatus.call("customModulesAllowed"), "Custom modules should be dissabled by default.");
+            let tx = await I_FeatureRegistry.setFeatureStatus("customModulesAllowed", true, { from: account_polymath });
+            assert.equal(true, await I_FeatureRegistry.getFeatureStatus.call("customModulesAllowed"), "Custom modules should be switched to true.");
+        });
+
+        it("Should successfully add module because custom modules switched on", async() => {
+            startTime = latestTime() + duration.seconds(5000);
+            endTime = startTime + duration.days(30);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+
+            let tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
 
             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
@@ -580,6 +602,11 @@ contract('ModuleRegistry', accounts => {
                 "CappedSTO",
                 "CappedSTOFactory module was not added"
             );
+        });
+
+        it("Should successfully add verified module", async() => {
+            let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, { from: token_owner });
+            assert.equal(tx.logs[2].args._type, permissionManagerKey, "module doesn't get deployed");
         });
 
     });

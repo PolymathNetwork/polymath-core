@@ -197,6 +197,7 @@ contract('CappedSTO', accounts => {
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: token_owner });
+        await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
 
         // Step 7: Deploy the TickerRegistry
 

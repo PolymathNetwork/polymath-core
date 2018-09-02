@@ -203,6 +203,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_TestSTOFactory.address, { from: token_owner });
+        await I_ModuleRegistry.verifyModule(I_TestSTOFactory.address, true, { from: account_polymath });
 
         // Step 9: Deploy the SecurityTokenRegistry
 

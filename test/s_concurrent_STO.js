@@ -186,8 +186,13 @@ contract('SecurityToken addModule Cap', accounts => {
 
         // (C) : Register the STO Factories
         await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_issuer });
+        await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
+
         await I_ModuleRegistry.registerModule(I_DummySTOFactory.address, { from: account_issuer });
+        await I_ModuleRegistry.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
+
         await I_ModuleRegistry.registerModule(I_PreSaleSTOFactory.address, { from: account_issuer });
+        await I_ModuleRegistry.verifyModule(I_PreSaleSTOFactory.address, true, { from: account_polymath });
 
         // Step 6: Deploy the TickerRegistry
 

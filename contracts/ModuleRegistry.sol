@@ -21,7 +21,7 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     // Mapping contain the list of addresses of Module factory for a particular type
     mapping (uint8 => address[]) public moduleList;
     // Mapping to store the index of the moduleFactory in the moduleList
-    mapping(address => uint8) public moduleListIndex;
+    mapping(address => uint8) private moduleListIndex;
     // contains the list of verified modules
     mapping (address => bool) public verified;
     // Contains the list of the available tags corresponds to the module type
@@ -39,10 +39,6 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     constructor (address _polymathRegistry) public
         RegistryUpdater(_polymathRegistry)
     {
-        moduleList[1].push(address(0x0000000000000000000000000000000000000000));
-        moduleList[2].push(address(0x0000000000000000000000000000000000000000));
-        moduleList[3].push(address(0x0000000000000000000000000000000000000000));
-        moduleList[4].push(address(0x0000000000000000000000000000000000000000));
     }
 
     /**
@@ -91,13 +87,12 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
      * @return bool
      */
     function removeModule(address _moduleFactory) external whenNotPaused returns(bool) {
-        require(registry[_moduleFactory] != 0, "Module factory should be registered");
         require(msg.sender == Ownable(_moduleFactory).owner() || msg.sender == owner,
             "msg.sender must be moduleFactory owner or registry curator");
 
         uint8 index = moduleListIndex[_moduleFactory];
-        require(index != 0, "ModuleFactory index is not valid");
         uint8 moduleType = registry[_moduleFactory];
+        require(registry[_moduleFactory] == moduleType && moduleType != 0, "Module factory should be registered");
         uint8 last = uint8(moduleList[moduleType].length - 1);
         address temp = moduleList[moduleType][last];
 

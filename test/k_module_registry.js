@@ -629,68 +629,52 @@ contract('ModuleRegistry', accounts => {
         it("Should successfully remove module and delete data if msg.sender is curator", async() => {
             let snap = await takeSnapshot();
 
-            let sto1id = await I_ModuleRegistry.moduleListIndex.call(I_CappedSTOFactory1.address);
-            let sto2id = await I_ModuleRegistry.moduleListIndex.call(I_CappedSTOFactory2.address);
-            let sto1 = await I_ModuleRegistry.moduleList.call(3,sto1id);
-            let sto2 = await I_ModuleRegistry.moduleList.call(3,sto2id);
+            let sto1 = await I_ModuleRegistry.moduleList.call(3,0);
+            let sto2 = await I_ModuleRegistry.moduleList.call(3,1);
 
             assert.equal(sto1,I_CappedSTOFactory1.address);
             assert.equal(sto2,I_CappedSTOFactory2.address);
-            assert.equal(3,(await I_ModuleRegistry.getModuleListOfType.call(3)).length);
+            assert.equal((await I_ModuleRegistry.getModuleListOfType.call(3)).length, 2);
 
             let tx = await I_ModuleRegistry.removeModule(sto1, { from: account_polymath });
 
             assert.equal(tx.logs[0].args._moduleFactory, sto1, "Event is not properly emitted for _moduleFactory");
             assert.equal(tx.logs[0].args._decisionMaker, account_polymath, "Event is not properly emitted for _decisionMaker");
 
-            let sto1id_end = await I_ModuleRegistry.moduleListIndex.call(sto1);
-            let sto2id_end = await I_ModuleRegistry.moduleListIndex.call(sto2);
-            let sto1_end = await I_ModuleRegistry.moduleList.call(3,sto1id_end);
-            let sto2_end = await I_ModuleRegistry.moduleList.call(3,sto2id_end);
+            let sto2_end = await I_ModuleRegistry.moduleList.call(3,0);
 
             // re-ordering
             assert.equal(sto2_end,sto2);
-            // set to zero address
-            assert.equal(sto1_end,'0x0000000000000000000000000000000000000000');
             // delete related data
             assert.equal(await I_ModuleRegistry.registry.call(sto1), 0);
-            assert.equal(0,(await I_ModuleRegistry.getReputationOfFactory.call(sto1)));
-            assert.equal(2,(await I_ModuleRegistry.getModuleListOfType.call(3)).length);
-            assert.equal(await I_ModuleRegistry.moduleListIndex.call(sto1), 0);
+            assert.equal(await I_ModuleRegistry.getReputationOfFactory.call(sto1), 0);
+            assert.equal((await I_ModuleRegistry.getModuleListOfType.call(3)).length, 1);
             assert.equal(await I_ModuleRegistry.verified.call(sto1), false);
 
             await revertToSnapshot(snap);
         });
 
         it("Should successfully remove module and delete data if msg.sender is owner", async() => {
-            let sto1id = await I_ModuleRegistry.moduleListIndex.call(I_CappedSTOFactory1.address);
-            let sto2id = await I_ModuleRegistry.moduleListIndex.call(I_CappedSTOFactory2.address);
-            let sto1 = await I_ModuleRegistry.moduleList.call(3,sto1id);
-            let sto2 = await I_ModuleRegistry.moduleList.call(3,sto2id);
+            let sto1 = await I_ModuleRegistry.moduleList.call(3,0);
+            let sto2 = await I_ModuleRegistry.moduleList.call(3,1);
 
             assert.equal(sto1,I_CappedSTOFactory1.address);
             assert.equal(sto2,I_CappedSTOFactory2.address);
-            assert.equal(3,(await I_ModuleRegistry.getModuleListOfType.call(3)).length);
+            assert.equal((await I_ModuleRegistry.getModuleListOfType.call(3)).length, 2);
 
             let tx = await I_ModuleRegistry.removeModule(sto2, { from: token_owner });
 
             assert.equal(tx.logs[0].args._moduleFactory, sto2, "Event is not properly emitted for _moduleFactory");
             assert.equal(tx.logs[0].args._decisionMaker, token_owner, "Event is not properly emitted for _decisionMaker");
 
-            let sto1id_end = await I_ModuleRegistry.moduleListIndex.call(sto1);
-            let sto2id_end = await I_ModuleRegistry.moduleListIndex.call(sto2);
-            let sto1_end = await I_ModuleRegistry.moduleList.call(3,sto1id_end);
-            let sto2_end = await I_ModuleRegistry.moduleList.call(3,sto2id_end);
+            let sto1_end = await I_ModuleRegistry.moduleList.call(3,0);
 
             // re-ordering
-            assert.equal(sto2_end,'0x0000000000000000000000000000000000000000');
-            // set to zero address
             assert.equal(sto1_end,sto1);
             // delete related data
             assert.equal(await I_ModuleRegistry.registry.call(sto2), 0);
-            assert.equal(0,(await I_ModuleRegistry.getReputationOfFactory.call(sto2)));
-            assert.equal(2,(await I_ModuleRegistry.getModuleListOfType.call(3)).length);
-            assert.equal(await I_ModuleRegistry.moduleListIndex.call(sto2), 0);
+            assert.equal(await I_ModuleRegistry.getReputationOfFactory.call(sto2), 0);
+            assert.equal((await I_ModuleRegistry.getModuleListOfType.call(3)).length, 1);
             assert.equal(await I_ModuleRegistry.verified.call(sto2), false);
         });
 

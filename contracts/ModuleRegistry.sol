@@ -87,18 +87,21 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
      * @return bool
      */
     function removeModule(address _moduleFactory) external whenNotPaused returns(bool) {
+        uint8 moduleType = registry[_moduleFactory];
+
+        require(moduleType != 0, "Module factory should be registered");
         require(msg.sender == Ownable(_moduleFactory).owner() || msg.sender == owner,
             "msg.sender must be moduleFactory owner or registry curator");
 
         uint8 index = moduleListIndex[_moduleFactory];
-        uint8 moduleType = registry[_moduleFactory];
-        require(registry[_moduleFactory] == moduleType && moduleType != 0, "Module factory should be registered");
         uint8 last = uint8(moduleList[moduleType].length - 1);
         address temp = moduleList[moduleType][last];
 
         // pop from array and re-order
-        moduleList[moduleType][index] = temp;
-        moduleListIndex[temp] = index;
+        if (index != last) {
+            moduleList[moduleType][index] = temp;
+            moduleListIndex[temp] = index;
+        }
         delete moduleList[moduleType][last];
         moduleList[moduleType].length--;
 

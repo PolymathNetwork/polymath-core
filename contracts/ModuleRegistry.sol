@@ -75,11 +75,11 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     function registerModule(address _moduleFactory) external whenNotPaused returns(bool) {
         require(registry[_moduleFactory] == 0, "Module factory should not be pre-registered");
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        uint8 kind = moduleFactory.getType();
-        require(kind != 0, "Factory kind should not equal to 0");
-        registry[_moduleFactory] = kind;
-        moduleListIndex[_moduleFactory] = uint8(moduleList[kind].length);
-        moduleList[kind].push(_moduleFactory);
+        uint8 moduleType = moduleFactory.getType();
+        require(moduleType != 0, "Factory moduleType should not equal to 0");
+        registry[_moduleFactory] = moduleType;
+        moduleListIndex[_moduleFactory] = uint8(moduleList[moduleType].length);
+        moduleList[moduleType].push(_moduleFactory);
         reputation[_moduleFactory] = new address[](0);
         emit LogModuleRegistered (_moduleFactory, Ownable(_moduleFactory).owner());
         return true;
@@ -97,15 +97,15 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
 
         uint8 index = moduleListIndex[_moduleFactory];
         require(index != 0, "ModuleFactory index is not valid");
-        uint8 kind = registry[_moduleFactory];
-        uint8 last = uint8(moduleList[kind].length - 1);
-        address temp = moduleList[kind][last];
+        uint8 moduleType = registry[_moduleFactory];
+        uint8 last = uint8(moduleList[moduleType].length - 1);
+        address temp = moduleList[moduleType][last];
 
         // pop from array and re-order
-        moduleList[kind][index] = temp;
+        moduleList[moduleType][index] = temp;
         moduleListIndex[temp] = index;
-        delete moduleList[kind][last];
-        moduleList[kind].length--;
+        delete moduleList[moduleType][last];
+        moduleList[moduleType].length--;
 
         delete registry[_moduleFactory];
         delete reputation[_moduleFactory];

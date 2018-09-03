@@ -220,10 +220,8 @@ module.exports = function (deployer, network, accounts) {
        // Assign the address into the SecurityTokenRegistry key
       return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
     }).then(()=> {
-      return deployer.deploy(SecurityTokenRegistryProxy, {from: PolymathAccount});
-    }).then(()=> {
       let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignature, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolyToken, PolymathAccount]);
-      return SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from : PolymathAccount});      
+      return deployer.deploy(SecurityTokenRegistryProxy,"1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
     }).then(() => {
       // Update all addresses into the registry contract by calling the function updateFromregistry
       return ModuleRegistry.at(ModuleRegistry.address).updateFromRegistry({from: PolymathAccount});

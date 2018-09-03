@@ -12,4 +12,8 @@ import "./OwnedUpgradeabilityProxy.sol";
  */
 contract SecurityTokenRegistryProxy is EternalStorage, OwnedUpgradeabilityProxy {
 
+    constructor(string _version, address _implementation, bytes _data) payable public {
+        upgradeToAndCall(_version, _implementation, _data);
+    }
+
 }

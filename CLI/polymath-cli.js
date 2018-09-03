@@ -8,6 +8,7 @@ var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
 var erc20explorer = require('./commands/checkpoint/erc20Explorer');
 var ethExplorer = require('./commands/checkpoint/ethExplorer');
+var dividends_manager = require('./commands/dividends_manager');
 var strMigrator = require('./commands/strMigrator');
 var program = require('commander');
 const yaml = require('js-yaml');
@@ -82,6 +83,14 @@ program
   .description('Mass-update a whitelist of allowed/known investors')
   .action(async function(tokenSymbol, batchSize) {
     shell.exec(`${__dirname}/commands/scripts/script.sh Whitelist ${tokenSymbol} ${batchSize} ${remoteNetwork} ${program.remoteNode}`);
+  });
+
+program
+  .command('dividends_manager [dividendsType]')
+  .alias('dm')
+  .description('Runs dividends_manager')
+  .action(async function(dividendsType) {
+    await dividends_manager.executeApp(dividendsType, program.remoteNode);
   });
 
 program

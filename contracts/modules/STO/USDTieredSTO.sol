@@ -22,6 +22,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     string public ETH_ORACLE = "EthUsdOracle";
     mapping (bytes32 => mapping (bytes32 => string)) oracleKeys;
 
+    // Determine whether users can invest on behalf of a beneficiary
+    bool public allowBeneficialInvestments = false;
+
     // Address where ETH & POLY funds are delivered
     address public wallet;
 
@@ -98,10 +101,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Events //
     ////////////
 
+    event SetAllowBeneficialInvestments(bool _allowed);
     event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint256 _tierPrice, uint8 _tier);
     event FundsReceivedETH(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
     event FundsReceivedPOLY(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _tier);
+
     event SetAddresses(
         address indexed _wallet,
         address indexed _reserveWallet
@@ -329,6 +334,16 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         }
     }
 
+    /**
+     * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
+     * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
+     */
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public onlyOwner {
+        require(_allowBeneficialInvestments != allowBeneficialInvestments, "Does not change value");
+        allowBeneficialInvestments = _allowBeneficialInvestments;
+        emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
+    }
+
     //////////////////////////
     // Investment Functions //
     //////////////////////////
@@ -380,6 +395,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _isPOLY Investment method
       */
     function _buyTokens(address _beneficiary, uint256 _investmentValue, uint256 _rate, bool _isPOLY) internal nonReentrant whenNotPaused returns(uint256, uint256) {
+        if (!allowBeneficialInvestments) {
+            require(_beneficiary == msg.sender, "Beneficiary must match funding provider");
+        }
         require(isOpen(), "STO is not open");
         require(_investmentValue > 0, "No funds were sent to buy tokens");
 

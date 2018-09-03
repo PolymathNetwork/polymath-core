@@ -20,7 +20,7 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     mapping (address => address[]) public reputation;
     // Mapping contain the list of addresses of Module factory for a particular type
     mapping (uint8 => address[]) public moduleList;
-    // Mapping to store the index of the moduleFacorty in the moduleList
+    // Mapping to store the index of the moduleFactory in the moduleList
     mapping(address => uint8) public moduleListIndex;
     // contains the list of verified modules
     mapping (address => bool) public verified;

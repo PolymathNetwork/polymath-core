@@ -245,6 +245,7 @@ contract('USDTieredSTO', accounts => {
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_USDTieredSTOFactory.address, { from: ISSUER });
+        await I_ModuleRegistry.verifyModule(I_USDTieredSTOFactory.address, true, { from: POLYMATH });
 
         // Step 7: Deploy the TickerRegistry
 

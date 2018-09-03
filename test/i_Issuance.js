@@ -179,6 +179,7 @@ contract('Issuance', accounts => {
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: token_owner });
+        await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
 
         // Step 6: Deploy the TickerRegistry
 
@@ -316,6 +317,7 @@ contract('Issuance', accounts => {
 
                 // (C) : Register the STOFactory
                 await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
+                await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
 
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [(latestTime() + duration.seconds(5000)), (latestTime() + duration.days(30)), cap, rate, fundRaiseType, account_fundsReceiver]);
 

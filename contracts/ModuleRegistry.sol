@@ -19,6 +19,8 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     mapping (address => address[]) public reputation;
     // Mapping contain the list of addresses of Module factory for a particular type
     mapping (uint8 => address[]) public moduleList;
+    // Mapping to store the index of the moduleFacorty in the moduleList
+    mapping(address => uint8) public moduleListIndex;
     // contains the list of verified modules
     mapping (address => bool) public verified;
     // Contains the list of the available tags corresponds to the module type
@@ -30,10 +32,16 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     event LogModuleRegistered(address indexed _moduleFactory, address indexed _owner);
     // Emit when the module get verified by the Polymath team
     event LogModuleVerified(address indexed _moduleFactory, bool _verified);
+    // Emit when a moduleFactory is removed by Polymath or moduleFactory owner
+    event LogModuleRemoved(address indexed _moduleFactory, address indexed _decisionMaker);
 
     constructor (address _polymathRegistry) public
         RegistryUpdater(_polymathRegistry)
     {
+        moduleList[1].push(address(0x0000000000000000000000000000000000000000));
+        moduleList[2].push(address(0x0000000000000000000000000000000000000000));
+        moduleList[3].push(address(0x0000000000000000000000000000000000000000));
+        moduleList[4].push(address(0x0000000000000000000000000000000000000000));
     }
 
     /**
@@ -60,11 +68,44 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     function registerModule(address _moduleFactory) external whenNotPaused returns(bool) {
         require(registry[_moduleFactory] == 0, "Module factory should not be pre-registered");
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        require(moduleFactory.getType() != 0, "Factory type should not equal to 0");
-        registry[_moduleFactory] = moduleFactory.getType();
-        moduleList[moduleFactory.getType()].push(_moduleFactory);
+        uint8 kind = moduleFactory.getType();
+        require(kind != 0, "Factory kind should not equal to 0");
+        registry[_moduleFactory] = kind;
+        moduleListIndex[_moduleFactory] = uint8(moduleList[kind].length);
+        moduleList[kind].push(_moduleFactory);
         reputation[_moduleFactory] = new address[](0);
         emit LogModuleRegistered (_moduleFactory, Ownable(_moduleFactory).owner());
+        return true;
+    }
+
+    /**
+     * @notice Called by moduleFactory owner or registry curator to delete a moduleFactory
+     * @param _moduleFactory is the address of the module factory to be deleted
+     * @return bool
+     */
+    function removeModule(address _moduleFactory) external whenNotPaused returns(bool) {
+        require(registry[_moduleFactory] != 0, "Module factory should be registered");
+        require(msg.sender == Ownable(_moduleFactory).owner() || msg.sender == owner,
+            "msg.sender must be moduleFactory owner or registry curator");
+
+        uint8 index = moduleListIndex[_moduleFactory];
+        require(index != 0, "ModuleFactory index is not valid");
+        uint8 kind = registry[_moduleFactory];
+        uint8 last = uint8(moduleList[kind].length - 1);
+        address temp = moduleList[kind][last];
+
+        // pop from array and re-order
+        moduleList[kind][index] = temp;
+        moduleListIndex[temp] = index;
+        delete moduleList[kind][last];
+        moduleList[kind].length--;
+
+        delete registry[_moduleFactory];
+        delete reputation[_moduleFactory];
+        delete verified[_moduleFactory];
+        delete moduleListIndex[_moduleFactory];
+
+        emit LogModuleRemoved (_moduleFactory, msg.sender);
         return true;
     }
 
@@ -121,7 +162,7 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     /**
      * @notice Use to get the reputation of the Module factory
      * @param _factoryAddress Ethereum contract address of the module factory
-     * @return address array which have the list of securityToken's uses that module factory 
+     * @return address array which have the list of securityToken's uses that module factory
      */
     function getReputationOfFactory(address _factoryAddress) public view returns(address[]) {
         return reputation[_factoryAddress];

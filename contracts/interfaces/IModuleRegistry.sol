@@ -18,6 +18,13 @@ interface IModuleRegistry {
     function registerModule(address _moduleFactory) external returns(bool);
 
     /**
+     * @notice Called by moduleFactory owner or registry curator to delete a moduleFactory
+     * @param _moduleFactory is the address of the module factory to be deleted
+     * @return bool
+     */
+    function removeModule(address _moduleFactory) external returns(bool);
+
+    /**
      * @notice Use to get all the tags releated to the functionality of the Module Factory.
      * @param _moduleType Type of module
      */
@@ -49,7 +56,7 @@ interface IModuleRegistry {
     /**
      * @notice Use to get the reputation of the Module factory
      * @param _factoryAddress Ethereum contract address of the module factory
-     * @return address array which have the list of securityToken's uses that module factory 
+     * @return address array which have the list of securityToken's uses that module factory
      */
     function getReputationOfFactory(address _factoryAddress) public view returns(address[]);
 

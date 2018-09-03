@@ -56,7 +56,7 @@ contract('SecurityTokenRegistry', accounts => {
     let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_DummySTOFactory;
-    let I_STVersion;
+    let I_STFactory;
     let I_SecurityToken;
     let I_DummySTO;
     let I_PolyToken;
@@ -203,6 +203,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_DummySTOFactory.address, { from: token_owner });
+        await I_ModuleRegistry.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
 
         // Step 9: Deploy the SecurityTokenRegistry
 
@@ -248,7 +249,7 @@ contract('SecurityTokenRegistry', accounts => {
             GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
             DummySTOFactory: ${I_DummySTOFactory.address}\n
             TickerRegistry: ${I_TickerRegistry.address}\n
-            STVersionProxy_001: ${I_STVersion.address}\n
+            STVersionProxy_001: ${I_STFactory.address}\n
             SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
         `);
     });
@@ -530,7 +531,7 @@ contract('SecurityTokenRegistry', accounts => {
                     (1000 * Math.pow(10, 18)),
                     {
                         from: token_owner,
-                        gas: 26000000
+                        gas: 45000000
                     });
             } catch(error) {
                 console.log(`         tx revert -> SecurityToken doesn't have sufficient POLY to pay`.grey);

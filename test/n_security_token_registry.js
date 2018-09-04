@@ -3,7 +3,7 @@ import { duration, ensureException, promisifyLogWatch, latestBlock } from './hel
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
-const TestSTOFactory = artifacts.require('./TestSTOFactory.sol');
+const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
 const DummySTO = artifacts.require('./DummySTO.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
@@ -55,7 +55,7 @@ contract('SecurityTokenRegistry', accounts => {
     let I_TickerRegistry;
     let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
-    let I_TestSTOFactory;
+    let I_DummySTOFactory;
     let I_STFactory;
     let I_SecurityToken;
     let I_DummySTO;
@@ -193,17 +193,17 @@ contract('SecurityTokenRegistry', accounts => {
 
         // STEP 8: Deploy the CappedSTOFactory
 
-        I_TestSTOFactory = await TestSTOFactory.new(I_PolyToken.address, 1000 * Math.pow(10, 18), 0, 0,{ from: token_owner });
+        I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, 1000 * Math.pow(10, 18), 0, 0,{ from: token_owner });
 
         assert.notEqual(
-            I_TestSTOFactory.address.valueOf(),
+            I_DummySTOFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "TestSTOFactory contract was not deployed"
+            "DummySTOFactory contract was not deployed"
         );
 
         // (C) : Register the STOFactory
-        await I_ModuleRegistry.registerModule(I_TestSTOFactory.address, { from: token_owner });
-        await I_ModuleRegistry.verifyModule(I_TestSTOFactory.address, true, { from: account_polymath });
+        await I_ModuleRegistry.registerModule(I_DummySTOFactory.address, { from: token_owner });
+        await I_ModuleRegistry.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
 
         // Step 9: Deploy the SecurityTokenRegistry
 
@@ -243,20 +243,14 @@ contract('SecurityTokenRegistry', accounts => {
         await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
-        console.log(`
-        --------------------- Polymath Network Smart Contracts: ---------------------
-        PolymathRegistry:                  ${PolymathRegistry.address}
-        TickerRegistry:                    ${TickerRegistry.address}
-        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
-        ModuleRegistry:                    ${ModuleRegistry.address}
-        FeatureRegistry:                   ${FeatureRegistry.address}
-
-        STFactory:                         ${STFactory.address}
-        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
-        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
-
-        TestSTOFactory:                    ${I_TestSTOFactory.address}
-        -----------------------------------------------------------------------------
+        console.log(`\nPolymath Network Smart Contracts Deployed:\n
+            ModuleRegistry: ${I_ModuleRegistry.address}\n
+            GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}\n
+            GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
+            DummySTOFactory: ${I_DummySTOFactory.address}\n
+            TickerRegistry: ${I_TickerRegistry.address}\n
+            STVersionProxy_001: ${I_STFactory.address}\n
+            SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
         `);
     });
 
@@ -531,13 +525,13 @@ contract('SecurityTokenRegistry', accounts => {
 
             try {
                 const tx = await I_SecurityToken.addModule(
-                    I_TestSTOFactory.address,
+                    I_DummySTOFactory.address,
                     bytesSTO,
                     (1000 * Math.pow(10, 18)),
                     (1000 * Math.pow(10, 18)),
                     {
                         from: token_owner,
-                        gas: 26000000
+                        gas: 45000000
                     });
             } catch(error) {
                 console.log(`         tx revert -> SecurityToken doesn't have sufficient POLY to pay`.grey);
@@ -551,30 +545,27 @@ contract('SecurityTokenRegistry', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(
                 functionSignature,
                 [
-                    (latestTime() + duration.seconds(500)),
+                    (latestTime() + duration.seconds(1000)),
                     (latestTime() + duration.days(30)),
                     cap,
                     someString,
                 ]);
-
             await I_PolyToken.getTokens((1000 * Math.pow(10, 18)), I_SecurityToken.address);
-
             const tx = await I_SecurityToken.addModule(
-                I_TestSTOFactory.address,
+                I_DummySTOFactory.address,
                 bytesSTO,
                 (1000 * Math.pow(10, 18)),
                 (1000 * Math.pow(10, 18)),
                 {
                     from: token_owner,
-                    gas: 4500000
+                    gas: 26000000
                 });
-
-            assert.equal(tx.logs[3].args._type, stoKey, "TestSTO doesn't get deployed");
+            assert.equal(tx.logs[3].args._type, stoKey, "DummySTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
                 .replace(/\u0000/g, ''),
-                "TestSTO",
-                "TestSTOFactory module was not added"
+                "DummySTO",
+                "DummySTOFactory module was not added"
             );
 
             I_DummySTO = DummySTO.at(tx.logs[3].args._module);

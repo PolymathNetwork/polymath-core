@@ -139,10 +139,11 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function generateSecurityToken(string _name, string _ticker, string _tokenDetails, bool _divisible) external whenNotPaused {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Name and Symbol string length should be greater than 0");
-        require(_checkValidity(_ticker, msg.sender, _name), "Trying to use non-valid ticker");
+        string memory ticker = Util.upper(_ticker);
+        require(checkValidity(ticker, msg.sender, _name), "Trying to use non-valid ticker");
+        _storeSymbolDetails(_ticker, msg.sender, getMapUint("registeredTickers_registrationDate", _ticker), getMapUint("registeredTickers_registrationDate", _ticker), _name, true);
         if (getUint("stLaunchFee") > 0)
             require(IPolyToken(getAddress("polyToken")).transferFrom(msg.sender, address(this), getUint("stLaunchFee")), "Failed transferFrom because of sufficent Allowance is not provided");
-        string memory ticker = Util.upper(_ticker);
         address newSecurityTokenAddress = ISTFactory(getSTFactoryAddress()).deployToken(
             _name,
             ticker,
@@ -453,13 +454,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _tokenName Name of the token
      * @return bool
      */
-    function _checkValidity(string _ticker, address _owner, string _tokenName) internal returns(bool) {
-        string memory ticker = Util.upper(_ticker);
-        require(getMapBool("registeredTickers_status", ticker)!= true, "Ticker status should not equal to true");
-        require(getMapAddress("registeredTickers_owner", ticker) == _owner, "Owner of the ticker should matched with the requested issuer address");
-        require(getMapUint("registeredTickers_expiryDate", ticker) >= now, "Ticker should not be expired");
-        setMap("registeredTickers_tokenName", ticker, _tokenName);
-        setMap("registeredTickers_status", ticker, true);
+    function checkValidity(string _ticker, address _owner, string _tokenName) public view returns(bool) {
+        require(getMapBool("registeredTickers_status", _ticker)!= true, "Ticker status should not equal to true");
+        require(getMapAddress("registeredTickers_owner", _ticker) == _owner, "Owner of the ticker should matched with the requested issuer address");
+        require(getMapUint("registeredTickers_expiryDate", _ticker) >= now, "Ticker should not be expired");
         return true;
     }
 
@@ -505,11 +503,16 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @notice Internal function use to store the ticker details
      */
     function _storeSymbolDetails(string _ticker, address _owner, uint256 _registrationDate, uint256 _expiryDate, string _tokenName, bool _status) internal {
-        setMap("registeredTickers_owner", _ticker, _owner);
-        setMap("registeredTickers_registrationDate", _ticker, _registrationDate);
-        setMap("registeredTickers_expiryDate", _ticker, _expiryDate);
-        setMap("registeredTickers_tokenName", _ticker, _tokenName);
-        setMap("registeredTickers_status", _ticker, _status);
+        if (getMapAddress("registeredTickers_owner", _ticker) != _owner) 
+            setMap("registeredTickers_owner", _ticker, _owner);
+        if (getMapUint("registeredTickers_registrationDate", _ticker) != _registrationDate)
+            setMap("registeredTickers_registrationDate", _ticker, _registrationDate);
+        if (getMapUint("registeredTickers_expiryDate", _ticker) != _expiryDate)
+            setMap("registeredTickers_expiryDate", _ticker, _expiryDate);
+        if (keccak256(abi.encodePacked(getMapString("registeredTickers_tokenName", _ticker))) != keccak256(abi.encodePacked(_tokenName)))
+            setMap("registeredTickers_tokenName", _ticker, _tokenName);
+        if (getMapBool("registeredTickers_status", _ticker) != _status)
+            setMap("registeredTickers_status", _ticker, _status);
     }
 
     /**

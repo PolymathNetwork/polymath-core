@@ -26,7 +26,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityOwnerStorage, UpgradeabilityP
   * @dev Throws if called by any account other than the owner.
   */
   modifier onlyProxyOwner() {
-    require(msg.sender == proxyOwner());
+    require(msg.sender == proxyOwner(), "Only proxy owner can call this function");
     _;
   }
 

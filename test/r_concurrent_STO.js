@@ -293,7 +293,7 @@ contract('SecurityToken addModule Cap', accounts => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_issuer });
             let tx = await I_STRProxied.registerTicker(account_issuer, symbol, name, { from : account_issuer });
             assert.equal(tx.logs[0].args._owner, account_issuer);
-            assert.equal(tx.logs[0].args._symbol, symbol);
+            assert.equal(tx.logs[0].args._ticker, symbol);
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {

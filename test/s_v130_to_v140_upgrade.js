@@ -242,19 +242,19 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER1 });
         tx = await I_STRProxied.registerTicker(ISSUER1, symbol1, name1, { from : ISSUER1 });
         assert.equal(tx.logs[0].args._owner, ISSUER1);
-        assert.equal(tx.logs[0].args._symbol, symbol1);
+        assert.equal(tx.logs[0].args._ticker, symbol1);
 
         // (B) :  TOK2
         await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER2 });
         tx = await I_STRProxied.registerTicker(ISSUER2, symbol2, name2, { from : ISSUER2 });
         assert.equal(tx.logs[0].args._owner, ISSUER2);
-        assert.equal(tx.logs[0].args._symbol, symbol2);
+        assert.equal(tx.logs[0].args._ticker, symbol2);
 
         // (C) :  TOK3
         await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER3 });
         tx = await I_STRProxied.registerTicker(ISSUER3, symbol3, name3, { from : ISSUER3 });
         assert.equal(tx.logs[0].args._owner, ISSUER3);
-        assert.equal(tx.logs[0].args._symbol, symbol3);
+        assert.equal(tx.logs[0].args._ticker, symbol3);
 
         // Step 14: Deploy tokens
         // (A) :  TOK1

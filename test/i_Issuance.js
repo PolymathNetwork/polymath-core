@@ -281,7 +281,7 @@ contract('Issuance', accounts => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_polymath });
                 let tx = await I_STRProxied.registerTicker(account_polymath, symbol, name, { from : account_polymath });
                 assert.equal(tx.logs[0].args._owner, account_polymath);
-                assert.equal(tx.logs[0].args._symbol, symbol);
+                assert.equal(tx.logs[0].args._ticker, symbol);
             });
 
             it("POLYMATH: Should generate the new security token with the same symbol as registered above", async () => {

@@ -72,15 +72,15 @@ module.exports = function (deployer, network, accounts) {
     });
   }
 
-  let functionSignature = {
+  const functionSignatureProxy = {
     name: 'initialize',
     type: 'function',
     inputs: [{
-       type:'address',
-       name: '_polymathRegistry'
+        type:'address',
+        name: '_polymathRegistry'
     },{
         type: 'address',
-        name: '_stVersionProxy'
+        name: '_STFactory'
     },{
         type: 'uint256',
         name: '_stLaunchFee'
@@ -91,11 +91,11 @@ module.exports = function (deployer, network, accounts) {
         type: 'address',
         name: '_polyToken'
     },{
-      type: 'address',
-      name: '_owner'
-  }
-    ]
-}
+        type: 'address',
+        name: '_owner'
+    }
+]
+};
 
 
   // POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
@@ -220,8 +220,10 @@ module.exports = function (deployer, network, accounts) {
        // Assign the address into the SecurityTokenRegistry key
       return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});
     }).then(()=> {
-      let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignature, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolyToken, PolymathAccount]);
-      return deployer.deploy(SecurityTokenRegistryProxy,"1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
+      return deployer.deploy(SecurityTokenRegistryProxy, {from: PolymathAccount});
+    }).then(() => {
+      let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolyToken, PolymathAccount]);
+      SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
     }).then(() => {
       // Update all addresses into the registry contract by calling the function updateFromregistry
       return ModuleRegistry.at(ModuleRegistry.address).updateFromRegistry({from: PolymathAccount});

@@ -353,7 +353,7 @@ contract('USDTieredSTO', accounts => {
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
             let tx = await I_STRProxied.registerTicker(ISSUER, SYMBOL, NAME, { from : ISSUER });
             assert.equal(tx.logs[0].args._owner, ISSUER);
-            assert.equal(tx.logs[0].args._symbol, SYMBOL);
+            assert.equal(tx.logs[0].args._ticker, SYMBOL);
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {

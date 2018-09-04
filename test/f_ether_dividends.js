@@ -259,7 +259,7 @@ contract('EtherDividendCheckpoint', accounts => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
-            assert.equal(tx.logs[0].args._symbol, symbol.toUpperCase());
+            assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {

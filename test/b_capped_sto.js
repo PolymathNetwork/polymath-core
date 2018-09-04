@@ -292,7 +292,7 @@ contract('CappedSTO', accounts => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             let tx = await I_STRProxied.registerTicker(token_owner, symbol, name, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
-            assert.equal(tx.logs[0].args._symbol, symbol);
+            assert.equal(tx.logs[0].args._ticker, symbol);
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
@@ -902,7 +902,7 @@ contract('CappedSTO', accounts => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
                 let tx = await I_STRProxied.registerTicker(token_owner, P_symbol, P_name, { from : token_owner });
                 assert.equal(tx.logs[0].args._owner, token_owner);
-                assert.equal(tx.logs[0].args._symbol, P_symbol);
+                assert.equal(tx.logs[0].args._ticker, P_symbol);
             });
 
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {

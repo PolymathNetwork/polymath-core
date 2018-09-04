@@ -311,7 +311,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should register the ticker before the generation of the security token", async () => {
             let tx = await I_STRProxied.registerTicker(account_temp, symbol, name, { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
-            assert.equal(tx.logs[0].args._symbol, symbol, `Symbol should be ${symbol}`);
+            assert.equal(tx.logs[0].args._ticker, symbol, `Symbol should be ${symbol}`);
         });
 
         it("Should fail to register ticker due to the symbol length is 0", async() => {
@@ -362,7 +362,7 @@ contract('SecurityTokenRegistry', accounts => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             let tx = await I_STRProxied.registerTicker(token_owner, symbol, name, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Owner should be the ${token_owner}`);
-            assert.equal(tx.logs[0].args._symbol, symbol, `Symbol should be ${symbol}`);
+            assert.equal(tx.logs[0].args._ticker, symbol, `Symbol should be ${symbol}`);
         });
 
         it("Should fail to register ticker if registration is paused", async() => {
@@ -396,7 +396,7 @@ contract('SecurityTokenRegistry', accounts => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             let tx = await I_STRProxied.registerTicker(token_owner, "AAA", name, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Owner should be the ${token_owner}`);
-            assert.equal(tx.logs[0].args._symbol, "AAA", `Symbol should be AAA`);
+            assert.equal(tx.logs[0].args._ticker, "AAA", `Symbol should be AAA`);
         });
 
         it("Should fail to unpause if already unpaused", async() => {
@@ -553,7 +553,7 @@ contract('SecurityTokenRegistry', accounts => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             let tx = await I_STRProxied.registerTicker(token_owner, symbol2, name2, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Token owner should be ${token_owner}`);
-            assert.equal(tx.logs[0].args._symbol, symbol2, `Symbol should be ${symbol2}`);
+            assert.equal(tx.logs[0].args._ticker, symbol2, `Symbol should be ${symbol2}`);
         });
 
         it("Should generate the new security token with version 2", async() => {
@@ -728,7 +728,7 @@ contract('SecurityTokenRegistry', accounts => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             let tx = await I_STRProxied.registerTicker(token_owner, "DET3", name2, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
-            assert.equal(tx.logs[0].args._symbol, "DET3");
+            assert.equal(tx.logs[0].args._ticker, "DET3");
         });
 
         it("Should generate the new security token with version 3", async() => {

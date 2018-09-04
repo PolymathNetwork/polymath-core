@@ -122,10 +122,10 @@ contract ManualApprovalTransferManager is ITransferManager {
     * @param _expiryTime is the time until which the transfer is allowed
     */
     function addManualApproval(address _from, address _to, uint256 _allowance, uint256 _expiryTime) public withPerm(TRANSFER_APPROVAL) {
-        //Passing a _expiryTime == 0 into this function, is equivalent to removing the manual approval.
         require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         require(_expiryTime > now, "Invalid expiry time");
+        require(manualApprovals[_from][_to].allowance == 0, "Approval already exists");
         manualApprovals[_from][_to] = ManualApproval(_allowance, _expiryTime);
         emit LogAddManualApproval(_from, _to, _allowance, _expiryTime, msg.sender);
     }
@@ -137,10 +137,10 @@ contract ManualApprovalTransferManager is ITransferManager {
     * @param _expiryTime is the time until which the transfer is blocked
     */
     function addManualBlocking(address _from, address _to, uint256 _expiryTime) public withPerm(TRANSFER_APPROVAL) {
-        //Passing a _expiryTime == 0 into this function, is equivalent to removing the manual blocking.
         require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         require(_expiryTime > now, "Invalid expiry time");
+        require(manualApprovals[_from][_to].expiryTime == 0, "Blocking already exists");
         manualBlockings[_from][_to] = ManualBlocking(_expiryTime);
         emit LogAddManualBlocking(_from, _to, _expiryTime, msg.sender);
     }

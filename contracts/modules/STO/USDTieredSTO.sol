@@ -82,8 +82,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // List of accredited investors
     mapping (address => bool) public accredited;
 
-    // Limit in USD for non-accredited investors multiplied by 10**18
+    // Default limit in USD for non-accredited investors multiplied by 10**18
     uint256 public nonAccreditedLimitUSD;
+
+    // Overrides for default limit in USD for non-accredited investors multiplied by 10**18
+    mapping (address => uint256) public nonAccreditedLimitUSDOverride;
 
     // Minimum investable amount in USD
     uint256 public minimumInvestmentUSD;
@@ -102,6 +105,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     ////////////
 
     event SetAllowBeneficialInvestments(bool _allowed);
+    event SetNonAccreditedLimit(address _investor, uint256 _limit);
+    event SetAccredited(address _investor, bool _accredited);
     event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint256 _tierPrice, uint8 _tier);
     event FundsReceivedETH(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
     event FundsReceivedPOLY(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
@@ -331,6 +336,22 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(_investors.length == _accredited.length);
         for (uint256 i = 0; i < _investors.length; i++) {
             accredited[_investors[i]] = _accredited[i];
+            emit SetAccredited(_investors[i], _accredited[i]);
+        }
+    }
+
+    /**
+     * @notice Modify the list of overrides for non-accredited limits in USD
+     * @param _investors Array of investor addresses to modify
+     * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
+     */
+    function changeNonAccreditedLimit(address[] _investors, uint256[] _nonAccreditedLimit) public onlyOwner {
+        //nonAccreditedLimitUSDOverride
+        require(_investors.length == _nonAccreditedLimit.length);
+        for (uint256 i = 0; i < _investors.length; i++) {
+            require(_nonAccreditedLimit[i] > 0, "Limit cannot be 0");
+            nonAccreditedLimitUSDOverride[_investors[i]] = _nonAccreditedLimit[i];
+            emit SetNonAccreditedLimit(_investors[i], _nonAccreditedLimit[i]);
         }
     }
 
@@ -409,9 +430,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
         // Check for non-accredited cap
         if (!accredited[_beneficiary]) {
-            require(investorInvestedUSD[_beneficiary] < nonAccreditedLimitUSD, "Non-accredited investor has already reached nonAccreditedLimitUSD");
-            if (investedUSD.add(investorInvestedUSD[_beneficiary]) > nonAccreditedLimitUSD)
-                investedUSD = nonAccreditedLimitUSD.sub(investorInvestedUSD[_beneficiary]);
+            uint256 investorLimitUSD = (nonAccreditedLimitUSDOverride[_beneficiary] == 0) ? nonAccreditedLimitUSD : nonAccreditedLimitUSDOverride[_beneficiary];
+            require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Non-accredited investor has already reached nonAccreditedLimitUSD");
+            if (investedUSD.add(investorInvestedUSD[_beneficiary]) > investorLimitUSD)
+                investedUSD = investorLimitUSD.sub(investorInvestedUSD[_beneficiary]);
         }
 
         uint256 spentUSD;

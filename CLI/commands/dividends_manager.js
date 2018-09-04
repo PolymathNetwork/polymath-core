@@ -8,6 +8,7 @@ const duration = {
 };
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
+var moment = require('moment');
 var common = require('./common/common_functions');
 var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
@@ -83,18 +84,20 @@ async function start_explorer(){
       let currentCheckpoint = await securityToken.methods.currentCheckpointId().call();
       console.log(chalk.yellow(`\nToken is at checkpoint: ${currentCheckpoint}`));
 
-      let options = ['Mint tokens', 'Transfer tokens',
-        'Explore account at checkpoint', 'Explore total supply at checkpoint', 'Create checkpoint', 
-        'Calculate Dividends', 'Calculate Dividends at checkpoint'];
+      let options = ['Mint tokens', 'Transfer tokens', 'Create checkpoint', 'Create dividends']
+
+      if (currentCheckpoint > 0) {
+        options.push('Explore account at checkpoint', 'Explore total supply at checkpoint')
+      }
       
       // Only show dividend options if divididenModule is already attached 
       if (await isDividendsModuleAttached()) {
-        options.push('Push dividends to account', 'Pull dividends to account', 
+        options.push('Pull dividends', 'Push dividends to account',
           `Explore ${dividendsType} balance`, 'Reclaimed dividends after expiry')
       }
 
       let index = readlineSync.keyInSelect(options, 'What do you want to do?');
-      console.log("Selected: ", index != -1 ? options[index] : 'Cancel');
+      console.log('Selected:', index != -1 ? options[index] : 'Cancel', '\n');
       switch (index) {
         case 0:
           // Mint tokens
@@ -109,89 +112,62 @@ async function start_explorer(){
           await transferTokens(_to2,_amount2);
         break;
         case 2:
-          // Explore account at checkpoint
-          let _address =  readlineSync.question('Enter address to explore: ');
-          let _checkpoint =  readlineSync.questionInt('At checkpoint: ', {
-            limit: function(input) {
-              return input > 0 && input <= parseInt(currentCheckpoint);
-            },
-            limitMessage: `Must be greater than 0 and less than ${currentCheckpoint}`,
-          });
-          await exploreAddress(_address, _checkpoint);
-        break;
-        case 3:
-          // Explore total supply at checkpoint
-          let _checkpoint2 =  readlineSync.question('Explore total supply at checkpoint: ', {
-            limit: function(input) {
-              return input > 0 && input <= parseInt(currentCheckpoint);
-            },
-            limitMessage: `Must be greater than 0 and less than ${currentCheckpoint}`,
-          });
-          await exploreTotalSupply(_checkpoint2);
-        break;
-        case 4:
           // Create checkpoint
           let createCheckpointAction = securityToken.methods.createCheckpoint();
           await common.sendTransaction(Issuer, createCheckpointAction, defaultGasPrice);
         break;
-        case 5:
-          // Calculate Dividends
+        case 3:
+          // Create Dividends
           let dividend =  readlineSync.question(`How much ${dividendsType} would you like to distribute to token holders?: `);
           await checkBalance(dividend);
-          await createDividends(dividend);
+          let checkpointId = currentCheckpoint == 0 ? 0 : await selectCheckpoint(true); // If there are no checkpoints, it must create a new one 
+          await createDividends(dividend, checkpointId);
+        break;
+        case 4:
+          // Explore account at checkpoint
+          let _address =  readlineSync.question('Enter address to explore: ');
+          let _checkpoint = await selectCheckpoint(false);
+          await exploreAddress(_address, _checkpoint);
+        break;
+        case 5:
+          // Explore total supply at checkpoint
+          let _checkpoint2 = await selectCheckpoint(false);
+          await exploreTotalSupply(_checkpoint2);
         break;
         case 6:
-          // Calculate Dividends at a checkpoint
-          let _dividend =  readlineSync.question(`How much ${dividendsType} would you like to distribute to token holders?: `);
-          await checkBalance(_dividend);
-          let _checkpointId = readlineSync.question(`Enter the checkpoint on which you want to distribute dividend: `, {
-            limit: function(input) {
-              return input > 0 && input <= parseInt(currentCheckpoint);
-            },
-            limitMessage: `Must be greater than 0 and less than ${currentCheckpoint}`,
-          });
-          await createDividendWithCheckpoint(_dividend, _checkpointId);
+          // Pull dividends
+          let _dividend2 = await selectDividend({expired: false, reclaimed: false});
+          if (_dividend2 !== null) {
+            await pullDividends(_dividend2);
+          }
         break;
         case 7:
           // Push dividends to account
-          let _checkpoint3 =  readlineSync.question('Distribute dividends at checkpoint: ', {
-            limit: function(input) {
-              return input > 0 && input <= parseInt(currentCheckpoint);
-            },
-            limitMessage: `Must be greater than 0 and less than ${currentCheckpoint}`,
-          });
-          let _address2 =  readlineSync.question('Enter addresses to push dividends to (ex- add1,add2,add3,...): ');
-          await pushDividends(_checkpoint3, _address2);
-        break;
-        case 8:
-          // Pull dividends to account
-          let _checkpoint7 =  readlineSync.question('Distribute dividends at checkpoint: ', {
-            limit: function(input) {
-              return input > 0 && input <= parseInt(currentCheckpoint);
-            },
-            limitMessage: `Must be greater than 0 and less than ${currentCheckpoint}`,
-          });
-          await pullDividends(_checkpoint7);
-        break;
-        case 9:
-          //explore balance
-          let _address3 =  readlineSync.question('Enter address to explore: ');
-          let _checkpoint4 = readlineSync.question('Enter checkpoint to explore: '); 
-          let _dividendIndex = await currentDividendsModule.methods.getDividendIndex(_checkpoint4).call();
-          if (_dividendIndex.length == 1) {
-            let divsAtCheckpoint = await currentDividendsModule.methods.calculateDividend(_dividendIndex[0],_address3).call();
-            console.log(`
-  ${dividendsType} Balance: ${web3.utils.fromWei((await polyToken.methods.balanceOf(_address3).call()).toString())} ${dividendsType}
-  Dividends owed at checkpoint ${_checkpoint4}: ${web3.utils.fromWei(divsAtCheckpoint)} ${dividendsType}
-            `)
-          } else {
-            console.log(chalk.red("Future checkpoints are not allowed"));
+          let _dividend = await selectDividend({expired: false, reclaimed: false});
+          if (_dividend !== null) {
+            let _addresses = readlineSync.question('Enter addresses to push dividends to (ex- add1,add2,add3,...): ');
+            await pushDividends(_dividend, _addresses);
           }
         break;
-        case 10:
+        case 8:
+          //explore balance
+          let _address3 =  readlineSync.question('Enter address to explore: ');
+          let _dividend3 = await selectDividend();
+          if (_dividend3 !== null) {
+            let divsBalance = await currentDividendsModule.methods.calculateDividend(_dividend3.index, _address3).call();
+            let balance = await getBalance(_address3);
+            console.log(`
+  ${dividendsType} Balance: ${web3.utils.fromWei(balance)} ${dividendsType}
+  Dividends owned: ${web3.utils.fromWei(divsBalance)} ${dividendsType}
+            `);
+          }
+        break;
+        case 9:
           // Reclaimed dividends after expiry
-          let _checkpoint5 = readlineSync.question('Enter the checkpoint to explore: ');
-          await reclaimedDividend(_checkpoint5);
+          let _dividend4 = await selectDividend({expired: true, reclaimed: false});
+          if (_dividend4 !== null) {
+            await reclaimedDividend(_dividend4);
+          }
           break;
         case -1:
           process.exit(0);
@@ -250,125 +226,80 @@ async function transferTokens(address, amount){
 
 async function exploreAddress(address, checkpoint){
   let balance = await securityToken.methods.balanceOf(address).call();
-  balance = web3.utils.fromWei(balance,"ether");
+  balance = web3.utils.fromWei(balance);
   console.log(`Balance of ${address} is: ${balance} (Using balanceOf)`);
 
   let balanceAt = await securityToken.methods.balanceOfAt(address,checkpoint).call();
-  balanceAt = web3.utils.fromWei(balanceAt,"ether");
+  balanceAt = web3.utils.fromWei(balanceAt);
   console.log(`Balance of ${address} is: ${balanceAt} (Using balanceOfAt - checkpoint ${checkpoint})`);
 }
   
 async function exploreTotalSupply(checkpoint){
   let totalSupply = await securityToken.methods.totalSupply().call();
-  totalSupply = web3.utils.fromWei(totalSupply,"ether");
+  totalSupply = web3.utils.fromWei(totalSupply);
   console.log(`TotalSupply is: ${totalSupply} (Using totalSupply)`);
 
   let totalSupplyAt = await securityToken.methods.totalSupplyAt(checkpoint).call();
-  totalSupplyAt = web3.utils.fromWei(totalSupplyAt,"ether");
+  totalSupplyAt = web3.utils.fromWei(totalSupplyAt);
   console.log(`TotalSupply is: ${totalSupplyAt} (Using totalSupplyAt - checkpoint ${checkpoint})`);
 }
 
-async function createDividends(dividend){
-  await addDividendsModule();
-
-  let time = Math.floor(Date.now()/1000);
-  let defaultTime = time + duration.minutes(10);
-  let expiryTime = readlineSync.questionInt('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = ' + defaultTime + ' ): ', {defaultInput: defaultTime});
-
-  if (dividendsType == 'POLY') {
-    let approveAction = polyToken.methods.approve(currentDividendsModule._address, web3.utils.toWei(dividend));
-    await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
-    let createDividendAction = currentDividendsModule.methods.createDividend(time, expiryTime, polyToken._address, web3.utils.toWei(dividend));
-    await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice);
-  } else if (dividendsType == 'ETH') {
-    let createDividendAction = etherDividendCheckpoint.methods.createDividend(time, expiryTime);
-    await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice, web3.utils.toWei(ethDividend));  
-  }
-}
-
-async function createDividendWithCheckpoint(dividend, checkpointId) {
+async function createDividends(dividend, checkpointId) {
   await addDividendsModule(); 
 
   let time = Math.floor(Date.now()/1000);
   let defaultTime = time + duration.minutes(10);
   let expiryTime = readlineSync.questionInt('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = ' + defaultTime + ' ): ', {defaultInput: defaultTime});
   
-  let dividendStatus = await currentDividendsModule.methods.getDividendIndex(checkpointId).call();
-  if (dividendStatus.length != 1) {
-    if (dividendsType == 'POLY') {
-      let approveAction = polyToken.methods.approve(currentDividendsModule._address, web3.utils.toWei(dividend));
-      await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
-      let createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(time, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId);
-      await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice);
-    } else if (dividendsType == 'ETH') {
-      let createDividendAction = etherDividendCheckpoint.methods.createDividendWithCheckpoint(time, expiryTime, checkpointId);
-      await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice, web3.utils.toWei(ethDividend));  
+  let createDividendAction;
+  if (dividendsType == 'POLY') {
+    let approveAction = polyToken.methods.approve(currentDividendsModule._address, web3.utils.toWei(dividend));
+    await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
+    if (checkpointId > 0) {
+      createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(time, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId);
+    } else {
+      createDividendAction = currentDividendsModule.methods.createDividend(time, expiryTime, polyToken._address, web3.utils.toWei(dividend));
     }
-  } else {
-    console.log(chalk.blue(`\nDividends are already distributed at checkpoint '${checkpointId}'. Not allowed to re-create\n`));
+    await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice);
+  } else if (dividendsType == 'ETH') {
+    if (checkpointId > 0) {
+      createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(time, expiryTime, checkpointId);
+    } else {
+      createDividendAction = currentDividendsModule.methods.createDividend(time, expiryTime);
+    }
+    await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice, web3.utils.toWei(dividend));  
   }
 }
 
-async function pushDividends(checkpoint, account){
-let accs = account.split(',');
-let dividend = await currentDividendsModule.methods.getDividendIndex(checkpoint).call();
-  if (dividend.length == 1) {
-    try {
-      let _dividendData = await currentDividendsModule.methods.dividends(dividend[0]).call();
-      if (parseInt(_dividendData[3]) >= parseInt(Math.floor(Date.now()/1000))) {
-        let pushDividendPaymentToAddressesAction = currentDividendsModule.methods.pushDividendPaymentToAddresses(dividend[0], accs);
-        await common.sendTransaction(Issuer, pushDividendPaymentToAddressesAction, defaultGasPrice);
-      } else {
-        console.log(`\nSorry! You missed the ${chalk.yellow("Golden")} opportunity to get the dividend benefits\n`);
-      }
-    } catch (error) {
-      console.log(error.message);
-      console.log(chalk.red("\nPossible chance that one of the address already claim the dividend"));
-    }
+async function pushDividends(dividend, account){
+  let accs = account.split(',');
+  let pushDividendPaymentToAddressesAction = currentDividendsModule.methods.pushDividendPaymentToAddresses(dividend.index, accs);
+  await common.sendTransaction(Issuer, pushDividendPaymentToAddressesAction, defaultGasPrice);
+}
+
+async function pullDividends(dividend) {
+  if (await currentDividendsModule.methods.calculateDividend(dividend.index, Issuer.address).call() > 0) {
+    let pullDividendPaymentAction = currentDividendsModule.methods.pullDividendPayment(dividend.index);
+    await common.sendTransaction(Issuer, pullDividendPaymentAction, defaultGasPrice);
   } else {
-    console.log(chalk.red("Future checkpoints are not allowed"));
+    console.log(chalk.red(`${Issuer.address} has already claimed his dividends`));
   }
 }
 
-async function pullDividends(checkpointId) {
-  let dividend = await currentDividendsModule.methods.getDividendIndex(checkpointId).call();
-  if (dividend.length == 1) {
-    try {
-      let _dividendData = await currentDividendsModule.methods.dividends(dividend[0]).call();
-      if (parseInt(_dividendData[3]) >= parseInt(Math.floor(Date.now()/1000))) {
-        let pullDividendPaymentAction = currentDividendsModule.methods.pullDividendPayment(dividend[0]);
-        await common.sendTransaction(Issuer, pullDividendPaymentAction, defaultGasPrice);
-      } else {
-        console.log(`\nSorry! You missed the ${chalk.yellow("Golden")} opportunity to get the dividend benefits\n`);
-      }
-    } catch(error) {
-      console.log(error.message);
-      console.log(chalk.red(`May be ${Issuer.address} already claimed his dividends`));
-    }
-  } else {
-    console.log(chalk.red("Future checkpoints are not allowed"));
+async function reclaimedDividend(dividend) {
+  let reclaimDividendAction = currentDividendsModule.methods.reclaimDividend(dividend.index);
+  let receipt = await common.sendTransaction(Issuer, reclaimDividendAction, defaultGasPrice);
+  let eventName;
+  if (dividendsType == 'POLY') {
+    eventName = 'ERC20DividendReclaimed';
+  } else if (dividendsType == 'ETH') {
+    eventName = 'EtherDividendReclaimed';
   }
-}
-
-async function reclaimedDividend(checkpointId) {
-  let dividendIndex = await currentDividendsModule.methods.getDividendIndex(checkpointId).call();
-  if (dividendIndex.length == 1) {
-    let reclaimDividendAction = currentDividendsModule.methods.reclaimDividend(dividendIndex[0]);
-    let receipt = await common.sendTransaction(Issuer, reclaimDividendAction, defaultGasPrice);
-    let eventName;
-    if (dividendsType == 'POLY') {
-      eventName = 'ERC20DividendReclaimed';
-    } else if (dividendsType == 'ETH') {
-      eventName = 'EtherDividendReclaimed';
-    }
-    let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, eventName);
-    console.log(`
+  let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, eventName);
+  console.log(`
   Claimed Amount ${web3.utils.fromWei(event._claimedAmount)} POLY
   to account ${event._claimer}`
-    );
-  } else {
-    console.log(chalk.red("Future checkpoints are not allowed"));
-  }
+  );
 }
 
 async function whitelistAddress(address) {
@@ -379,16 +310,22 @@ async function whitelistAddress(address) {
 }
 
 // Helper functions
-async function checkBalance(_dividend) {
-  let issuerBalance;
+async function getBalance(address) {
+  let balance;
   if (dividendsType == 'POLY') {
-    issuerBalance = await polyToken.methods.balanceOf(Issuer.address).call();
+    balance = (await polyToken.methods.balanceOf(address).call()).toString();
   } else if (dividendsType == 'ETH') {
-    issuerBalance = await web3.eth.getBalance(Issuer.address).call();
+    balance = (await web3.eth.getBalance(address)).toString();
   }
+
+  return balance;
+}
+async function checkBalance(_dividend) {
+  let issuerBalance = await getBalance(Issuer.address);
   if (parseInt(web3.utils.fromWei(issuerBalance)) < parseInt(_dividend)) {
     console.log(chalk.red(`
-  You have ${web3.utils.fromWei(issuerBalance)} ${dividendsType} need ${(parseInt(_dividend) - parseInt(web3.utils.fromWei(issuerBalance)))} more ${dividendsType}\n`));
+  You have ${web3.utils.fromWei(issuerBalance)} ${dividendsType} need ${(parseInt(_dividend) - parseInt(web3.utils.fromWei(issuerBalance)))} more ${dividendsType}
+  `));
     process.exit(0);
   }
 }
@@ -436,6 +373,90 @@ async function addDividendsModule() {
     currentDividendsModule = new web3.eth.Contract(dividendsModuleABI, event._module);
     currentDividendsModule.setProvider(web3.currentProvider);
   }
+}
+
+async function selectCheckpoint(includeCreate) {
+  let options = [];
+  let fix = 1; //Checkpoint 0 is not included, so I need to add 1 to fit indexes for checkpoints and options
+  let checkpoints = (await getCheckpoints()).map(function(c) { return c.timestamp });
+  if (includeCreate) {
+    options.push('Create new checkpoint');
+    fix = 0; //If this option is added, fix isn't needed.
+  }
+  options = options.concat(checkpoints);
+
+  return readlineSync.keyInSelect(options, 'Select a checkpoint:', {cancel: false}) + fix;
+}
+
+async function getCheckpoints() {
+  let result = [];
+  /*
+  let currentCheckpoint = await securityToken.methods.currentCheckpointId().call();
+  for (let index = 1; index <= currentCheckpoint; index++) {
+    result.push(checkpoint(index).call());
+  }
+  */
+  
+  let events = await securityToken.getPastEvents('LogCheckpointCreated', { fromBlock: 0});
+  for (let event of events) {
+    let checkpoint = {};
+    checkpoint.id = event.returnValues._checkpointId;
+    checkpoint.timestamp = moment.unix(event.returnValues._timestamp).format('MMMM Do YYYY, HH:mm:ss');
+    result.push(checkpoint);
+  }
+
+  return result.sort((a, b) => a.id - b.id);
+}
+
+async function selectDividend(filter) {
+  let result = null;
+  let dividends = await getDividends();
+
+  if (typeof filter !== 'undefined') {
+    if (typeof filter.expired !== 'undefined') {
+      let now = Math.floor(Date.now()/1000);
+      dividends = dividends.filter(d => filter.expired == (d.expiry < now));
+    }
+    if (typeof filter.reclaimed !== 'undefined') {
+      dividends = dividends.filter(d => filter.reclaimed == d.reclaimed);
+    }
+  }
+
+  if (dividends.length > 0) {
+    let options = dividends.map(function(d) { 
+      return `Created: ${moment.unix(d.created).format('MMMM Do YYYY, HH:mm:ss')}
+    Expiry: ${moment.unix(d.expiry).format('MMMM Do YYYY, HH:mm:ss')}
+    Amount: ${web3.utils.fromWei(d.amount)} ${dividendsType}
+    Claimed Amount: ${web3.utils.fromWei(d.claimedAmount)} ${dividendsType}
+    At checkpoint: ${d.checkpointId}`
+    });
+
+    let index = readlineSync.keyInSelect(options, 'Select a dividend:');
+    if (index != -1) {
+      result = dividends[index];
+    }
+  } else {
+    console.log(chalk.red(`No dividends were found that meet the requirements`))
+    console.log(chalk.red(`Requirements: Expired: ${filter.expired} - Reclaimed: ${filter.reclaimed}\n`))
+  }
+
+  return result;
+}
+
+async function getDividends() {
+  let result = [];
+
+  let currentCheckpoint = await securityToken.methods.currentCheckpointId().call();
+  for (let index = 1; index <= currentCheckpoint; index++) {
+    let dividendIndexes = await currentDividendsModule.methods.getDividendIndex(index).call();
+    for (const i of dividendIndexes) {
+      let dividend = await currentDividendsModule.methods.dividends(i).call();
+      dividend.index = i;
+      result.push(dividend);
+    }
+  }
+
+  return result;
 }
 
 module.exports = {

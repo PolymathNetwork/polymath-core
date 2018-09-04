@@ -25,6 +25,12 @@ async function executeApp(type, remoteNetwork) {
   dividendsType = type;
   await global.initialize(remoteNetwork);
 
+  common.logAsciiBull();
+  console.log("**********************************************");
+  console.log("Welcome to the Command-Line Dividends Manager.");
+  console.log("**********************************************");
+  console.log("Issuer Account: " + Issuer.address + "\n");
+
   await setup();
   await start_explorer();
 };
@@ -53,6 +59,8 @@ async function setup(){
 }
 
 async function start_explorer(){
+  console.log('\n\x1b[34m%s\x1b[0m',"Dividends Manager - Main Menu");
+
   if (!tokenSymbol) 
     tokenSymbol = readlineSync.question('Enter the token symbol: ');
   

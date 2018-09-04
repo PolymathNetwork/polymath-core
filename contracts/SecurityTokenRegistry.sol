@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./interfaces/IOwner.sol";
 import "./interfaces/ISTFactory.sol";
 import "./interfaces/IPolyToken.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
@@ -189,11 +189,8 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function registerTicker(address _owner, string _ticker, string _tokenName) external whenNotPaused {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length should always between 0 & 10");
-        if (getUint("tickerRegFee") > 0) {
-            uint256 _fee = getUint("tickerRegFee");
-            address _polyToken = getAddress("polyToken");
-            require(IPolyToken(_polyToken).transferFrom(msg.sender, address(this), _fee), "Failed transferFrom because of sufficent Allowance is not provided");
-        }
+        if (getUint("tickerRegFee") > 0)
+            require(IPolyToken(getAddress("polyToken")).transferFrom(msg.sender, address(this), getUint("tickerRegFee")), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory ticker = Util.upper(_ticker);
         require(_expiryCheck(ticker), "Ticker is already reserved");
         _setTickerOwner(_owner, ticker);
@@ -249,7 +246,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(_newOwner != address(0), "Address should not be 0x");
         require(bytes(ticker).length > 0, "Ticker length should be greater than 0");
         require(getMapAddress("registeredTickers_owner", ticker) == msg.sender, "Only the ticker owner can transfer the ownership");
-        require(Ownable(getSecurityTokenAddress(ticker)).owner() == _newOwner, "Token should be deployed and the owner of the securityToken should be the new owner of the ticker");
+        require(IOwner(getSecurityTokenAddress(ticker)).owner() == _newOwner, "Token should be deployed and the owner of the securityToken should be the new owner of the ticker");
         uint256 _index = getMapUint("tickerIndex", ticker);
         deleteMapArrayBytes32("userToTickers", msg.sender, _index);
         if (getMapArrayBytes32("userToTickers", msg.sender).length >= _index) {
@@ -378,7 +375,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function getSecurityTokenData(address _securityToken) external view returns (string, address, string, uint256) {
         return (
             getMapString("securityTokens_ticker", _securityToken),
-            Ownable(_securityToken).owner(),
+            IOwner(_securityToken).owner(),
             getMapString("securityTokens_tokenDetails", _securityToken),
             getMapUint("securityTokens_deployedAt", _securityToken)
         );

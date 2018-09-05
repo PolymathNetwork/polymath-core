@@ -1,19 +1,33 @@
 pragma solidity ^0.4.18;
 
 import './UpgradeabilityProxy.sol';
-import '../storage/UpgradeabilityOwnerStorage.sol';
 
 /**
  * @title OwnedUpgradeabilityProxy
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
-contract OwnedUpgradeabilityProxy is UpgradeabilityOwnerStorage, UpgradeabilityProxy {
+contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
+  
+  // Owner of the contract
+  address private __upgradeabilityOwner;
+  
   /**
   * @dev Event to show ownership has been transferred
   * @param _previousOwner representing the address of the previous owner
   * @param _newOwner representing the address of the new owner
   */
   event ProxyOwnershipTransferred(address _previousOwner, address _newOwner);
+
+  /**
+  * @dev Throws if called by any account other than the owner.
+  */
+  modifier ifOwner() {
+    if (msg.sender == _upgradeabilityOwner()) {
+      _;
+    } else {
+      _fallback();
+    }
+  }
 
   /**
   * @dev the constructor sets the original owner of the contract to the sender account.
@@ -23,28 +37,52 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityOwnerStorage, UpgradeabilityP
   }
 
   /**
-  * @dev Throws if called by any account other than the owner.
-  */
-  modifier onlyProxyOwner() {
-    require(msg.sender == proxyOwner(), "Only proxy owner can call this function");
-    _;
+   * @dev Tells the address of the owner
+   * @return the address of the owner
+   */
+  function _upgradeabilityOwner() internal view returns (address) {
+    return __upgradeabilityOwner;
+  }
+
+  /**
+   * @dev Sets the address of the owner
+   */
+  function setUpgradeabilityOwner(address _newUpgradeabilityOwner) internal {
+    require(_newUpgradeabilityOwner != address(0), "Address should not be 0x");
+    __upgradeabilityOwner = _newUpgradeabilityOwner;
   }
 
   /**
    * @dev Tells the address of the proxy owner
    * @return the address of the proxy owner
    */
-  function proxyOwner() public view returns (address) {
-    return upgradeabilityOwner();
+  function proxyOwner() external view ifOwner returns (address) {
+    return _upgradeabilityOwner();
+  }
+
+  /**
+  * @dev Tells the version name of the current implementation
+  * @return string representing the name of the current version
+  */
+  function version() external view ifOwner returns (string) {
+    return __version;
+  }
+
+  /**
+  * @dev Tells the address of the current implementation
+  * @return address of the current implementation
+  */
+  function implementation() external view ifOwner returns (address) {
+    return __implementation;
   }
 
   /**
    * @dev Allows the current owner to transfer control of the contract to a newOwner.
    * @param _newOwner The address to transfer ownership to.
    */
-  function transferProxyOwnership(address _newOwner) public onlyProxyOwner {
+  function transferProxyOwnership(address _newOwner) external ifOwner {
     require(_newOwner != address(0), "Address should not be 0x");
-    emit ProxyOwnershipTransferred(proxyOwner(), _newOwner);
+    emit ProxyOwnershipTransferred(_upgradeabilityOwner(), _newOwner);
     setUpgradeabilityOwner(_newOwner);
   }
 
@@ -53,7 +91,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityOwnerStorage, UpgradeabilityP
    * @param _newVersion representing the version name of the new implementation to be set.
    * @param _newImplementation representing the address of the new implementation to be set.
    */
-  function upgradeTo(string _newVersion, address _newImplementation) public onlyProxyOwner {
+  function upgradeTo(string _newVersion, address _newImplementation) external ifOwner {
     _upgradeTo(_newVersion, _newImplementation);
   }
 
@@ -65,8 +103,9 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityOwnerStorage, UpgradeabilityP
    * @param _data represents the msg.data to bet sent in the low level call. This parameter may include the function
    * signature of the implementation to be called with the needed payload
    */
-  function upgradeToAndCall(string _newVersion, address _newImplementation, bytes _data) payable public onlyProxyOwner {
-    upgradeTo(_newVersion, _newImplementation);
+  function upgradeToAndCall(string _newVersion, address _newImplementation, bytes _data) payable external ifOwner {
+    _upgradeTo(_newVersion, _newImplementation);
     require(address(this).call.value(msg.value)(_data), "Fail in executing the function of implementation contract");
   }
+
 }

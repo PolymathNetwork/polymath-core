@@ -85,25 +85,32 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         uint256 indexed _expiryDate
     );
 
+    ///@notice if isReserved returns:
+    // OD - Owned and Deployed
+    // NN - Not-owned and Not-deployed
+    // ON - Owned and Not-deployed
+    // ND - Not-owned and Deployed
+    enum TickerStatus { OD, NN, ON, ND}
+    
     /**
-    * @dev Throws if called by any account other than the owner.
-    */
+     * @dev Throws if called by any account other than the owner.
+     */
     modifier onlyOwner() {
         require(msg.sender == getAddress("owner"));
         _;
     }
 
     /**
-    * @notice Modifier to make a function callable only when the contract is not paused.
-    */
+     * @notice Modifier to make a function callable only when the contract is not paused.
+     */
     modifier whenNotPaused() {
         require(!getBool("paused"), "Contract is paused");
         _;
     }
 
     /**
-    * @notice Modifier to make a function callable only when the contract is paused.
-    */
+     * @notice Modifier to make a function callable only when the contract is paused.
+     */
     modifier whenPaused() {
         require(getBool("paused"), "Contract is not paused");
         _;
@@ -140,8 +147,8 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function generateSecurityToken(string _name, string _ticker, string _tokenDetails, bool _divisible) external whenNotPaused {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Name and Symbol string length should be greater than 0");
         string memory ticker = Util.upper(_ticker);
-        require(checkValidity(ticker, msg.sender, _name), "Trying to use non-valid ticker");
-        _storeSymbolDetails(_ticker, msg.sender, getMapUint("registeredTickers_registrationDate", _ticker), getMapUint("registeredTickers_registrationDate", _ticker), _name, true);
+        require(_checkValidity(ticker, msg.sender, _name), "Trying to use non-valid ticker");
+        _storeSymbolDetails(ticker, msg.sender, getMapUint("registeredTickers_registrationDate", ticker), getMapUint("registeredTickers_registrationDate", ticker), _name, true);
         if (getUint("stLaunchFee") > 0)
             require(IPolyToken(getAddress("polyToken")).transferFrom(msg.sender, address(this), getUint("stLaunchFee")), "Failed transferFrom because of sufficent Allowance is not provided");
         address newSecurityTokenAddress = ISTFactory(getSTFactoryAddress()).deployToken(
@@ -169,10 +176,16 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function addCustomSecurityToken(string _name, string _ticker, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt) external onlyOwner {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Name and Ticker string length should be greater than 0");
+        require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length should always between 0 & 10");
         string memory ticker = Util.upper(_ticker);
         require(_securityToken != address(0) && getMapAddress("tickerToSecurityTokens", ticker) == address(0), "Ticker is already at the polymath network or entered security token address is 0x");
         require(_owner != address(0));
-        require(!_isReserved(ticker, _owner, _name), "Trying to use non-valid ticker");
+        if (_isReserved(ticker, _owner, _name) == TickerStatus.ON) {
+            _storeSymbolDetails(ticker, _owner, getMapUint("registeredTickers_registrationDate", ticker), getMapUint("registeredTickers_expiryDate", ticker), _name, true);
+        } else if(_isReserved(ticker, _owner, _name) == TickerStatus.NN) {
+            _addTicker(_owner, ticker, _name, now, now.add(getUint("expiryLimit")), true);
+        } else 
+            revert();
         setMap("tickerToSecurityTokens", ticker, _securityToken);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
         emit LogNewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender);
@@ -193,9 +206,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             require(IPolyToken(getAddress("polyToken")).transferFrom(msg.sender, address(this), getUint("tickerRegFee")), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory ticker = Util.upper(_ticker);
         require(_expiryCheck(ticker), "Ticker is already reserved");
-        _setTickerOwner(_owner, ticker);
-        _storeSymbolDetails(ticker, _owner, now, now.add(getUint('expiryLimit')), _tokenName, false);
-        emit LogRegisterTicker(_owner, ticker, _tokenName, now, now.add(getUint('expiryLimit')));
+        _addTicker(_owner, ticker, _tokenName, now, now.add(getUint("expiryLimit")), false);
     }
 
     /**
@@ -215,9 +226,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(_owner != address(0), "Address should not be 0x");
         string memory ticker = Util.upper(_ticker);
         require(_expiryCheck(ticker), "Ticker is already reserved");
-        _setTickerOwner(_owner, ticker);
-        _storeSymbolDetails(ticker, _owner, _registrationDate, _expiryDate, _tokenName, false);
-        emit LogRegisterTicker(_owner, ticker, _tokenName, _registrationDate, _expiryDate);
+        _addTicker(_owner, ticker, _tokenName, _registrationDate, _expiryDate, false);
     }
 
     /**
@@ -232,6 +241,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function modifyTickerDetails(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external onlyOwner {
         string memory ticker = Util.upper(_ticker);
         require(!getMapBool("registeredTickers_status", ticker), "Modifying the details of deployed token is not permitted");
+        _setTickerOwner(_owner, ticker);
         _storeSymbolDetails(ticker, _owner, _registrationDate, _expiryDate, _tokenName, false);
         emit LogModifyTickerDetails(_owner, _ticker, _tokenName, _registrationDate, _expiryDate);
     }
@@ -451,7 +461,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _tokenName Name of the token
      * @return bool
      */
-    function checkValidity(string _ticker, address _owner, string _tokenName) public view returns(bool) {
+    function _checkValidity(string _ticker, address _owner, string _tokenName) internal view returns(bool) {
         require(getMapBool("registeredTickers_status", _ticker)!= true, "Ticker status should not equal to true");
         require(getMapAddress("registeredTickers_owner", _ticker) == _owner, "Owner of the ticker should matched with the requested issuer address");
         require(getMapUint("registeredTickers_expiryDate", _ticker) >= now, "Ticker should not be expired");
@@ -463,21 +473,18 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _ticker Symbol of the token
      * @param _owner Owner of the token
      * @param _tokenName Name of the token
-     * @return bool
+     * @return TickerStatus
      */
-     function _isReserved(string _ticker, address _owner, string _tokenName) internal returns(bool) {
-        string memory ticker = Util.upper(_ticker);
-        if (getMapAddress("registeredTickers_owner", ticker) == _owner && ! _expiryCheck(ticker)) {
-            setMap("registeredTickers_status", ticker, true);
-            return false;
+     function _isReserved(string _ticker, address _owner, string _tokenName) internal view returns(TickerStatus) {
+        if (getMapAddress("registeredTickers_owner", _ticker) == _owner && !_expiryCheck(_ticker)) {
+            return TickerStatus.ON;
         }
-        else if (getMapAddress("registeredTickers_owner", ticker) == address(0) || _expiryCheck(ticker)) {
-            _setTickerOwner(_owner, ticker);
-            _storeSymbolDetails(ticker, _owner, now, now.add(getMapUint("registeredTickers_expiryDate", ticker)), _tokenName, false);
-            emit LogRegisterTicker (_owner, ticker, _tokenName, now, now.add(getMapUint("registeredTickers_expiryDate", ticker)));
-            return false;
+        else if (getMapAddress("registeredTickers_owner", _ticker) == address(0) || _expiryCheck(_ticker)) {
+            // This also cover that the ticker is expired but owned by someone else or _owner itself
+            // but _ticker status is false it means token having ticker is not deployed yet.
+            return TickerStatus.NN; 
         } else
-            return true;
+            return TickerStatus.ND; // can also return OD
      }
 
     /**
@@ -485,10 +492,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _ticker token ticker
      * @return bool
      */
-    function _expiryCheck(string _ticker) internal returns(bool) {
+    function _expiryCheck(string _ticker) internal view returns(bool) {
         if (getMapAddress("registeredTickers_owner", _ticker) != address(0)) {
-            if (now > getMapUint("registeredTickers_expiryDate", _ticker) && getMapBool("registeredTickers_status", _ticker) != true) {
-                _storeSymbolDetails(_ticker, address(0), uint256(0), uint256(0), "", false);
+            if (now > getMapUint("registeredTickers_expiryDate", _ticker) && !getMapBool("registeredTickers_status", _ticker)) {
                 return true;
             } else
                 return false;
@@ -529,6 +535,15 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function _setTickerOwner(address _owner, string _ticker) internal {
         pushMapArray("userToTickers", _owner, Util.stringToBytes32(_ticker));
         setMap("tickerIndex", _ticker, (getMapArrayBytes32("userToTickers", _owner).length - 1));
+    }
+
+    /**
+     * @notice Internal function to set the details of the ticker
+     */
+    function _addTicker(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate, bool _status) internal {
+        _setTickerOwner(_owner, _ticker);
+        _storeSymbolDetails(_ticker, _owner, _registrationDate, _expiryDate, _tokenName, _status);
+        emit LogRegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate);
     }
 
     /**

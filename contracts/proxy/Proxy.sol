@@ -10,26 +10,42 @@ contract Proxy {
   * @dev Tells the address of the implementation where every call will be delegated.
   * @return address of the implementation to which it will be delegated
   */
-  function implementation() public view returns (address);
+  function _implementation() internal view returns (address);
+
+  /**
+   * @dev Fallback function.
+   * Implemented entirely in `_fallback`.
+   */
+   function _fallback() internal {
+     _delegate(_implementation());
+   }
 
   /**
   * @dev Fallback function allowing to perform a delegatecall to the given implementation.
   * This function will return whatever the implementation call returns
   */
-  function () payable public {
-    address _impl = implementation();
-    require(_impl != address(0), "Implementation address should not be 0x");
-
+  function _delegate(address implementation) internal {
     assembly {
-      let ptr := mload(0x40)
-      calldatacopy(ptr, 0, calldatasize)
-      let result := delegatecall(gas, _impl, ptr, calldatasize, 0, 0)
-      let size := returndatasize
-      returndatacopy(ptr, 0, size)
+      // Copy msg.data. We take full control of memory in this inline assembly
+      // block because it will not return to Solidity code. We overwrite the
+      // Solidity scratch pad at memory position 0.
+      calldatacopy(0, 0, calldatasize)
+
+      // Call the implementation.
+      // out and outsize are 0 because we don't know the size yet.
+      let result := delegatecall(gas, implementation, 0, calldatasize, 0, 0)
+
+      // Copy the returned data.
+      returndatacopy(0, 0, returndatasize)
 
       switch result
-      case 0 { revert(ptr, size) }
-      default { return(ptr, size) }
+      // delegatecall returns 0 on error.
+      case 0 { revert(0, returndatasize) }
+      default { return(0, returndatasize) }
     }
+  }
+
+  function () payable external {
+    _fallback();
   }
 }

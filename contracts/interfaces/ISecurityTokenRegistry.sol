@@ -143,13 +143,4 @@ interface ISecurityTokenRegistry {
      */
     function changeTickerRegistrationFee(uint256 _tickerRegFee) external;
 
-    /**
-     * @notice Check the validity of the ticker
-     * @param _ticker token ticker
-     * @param _owner address of the owner
-     * @param _tokenName Name of the token
-     * @return bool
-     */
-    function checkValidity(string _ticker, address _owner, string _tokenName) public view returns(bool);
-
 }

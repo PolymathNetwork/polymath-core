@@ -77,6 +77,7 @@
     "eslint-plugin-promise": "^3.7.0",
     "eslint-plugin-standard": "^3.0.1",
     "ethereum-bridge": "^0.6.1",
+    "ethereumjs-abi": "^0.6.5",
     "fast-csv": "^2.4.1",
     "ganache-cli": "^6.1.8",
     "sol-merger": "^0.1.2",

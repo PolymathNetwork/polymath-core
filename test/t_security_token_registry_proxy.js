@@ -1,4 +1,5 @@
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
+import { encodeProxyCall } from './helpers/encodeCall';
 
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
@@ -36,7 +37,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
     let account_polymath_new;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = 250 * Math.pow(10, 18);
+    const initRegFee = web3.utils.toWei("250");
     const version = "1.0.0";
     const message = "Transaction Should Fail!";
 
@@ -47,31 +48,6 @@ contract ("SecurityTokenRegistryProxy", accounts => {
     const decimals = 18;
 
     const transferManagerKey = 2;
-
-    const functionSignatureProxy = {
-        name: 'initialize',
-        type: 'function',
-        inputs: [{
-            type:'address',
-            name: '_polymathRegistry'
-        },{
-            type: 'address',
-            name: '_STFactory'
-        },{
-            type: 'uint256',
-            name: '_stLaunchFee'
-        },{
-            type: 'uint256',
-            name: '_tickerRegFee'
-        },{
-            type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
-            name: '_owner'
-        }
-    ]
-    };
 
     before(async() => {
         account_polymath = accounts[0];
@@ -173,7 +149,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
     describe("Attach the implementation address", async() => {
 
         it("Should attach the implementation and version -- failed because of bad owner", async() => {
-            let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+            let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
             let errorThrown = false;
             try {
                 await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_temp});
@@ -186,7 +162,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
         })
 
         it("Should attach the implementation and version", async() => {
-            let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+            let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
             await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
             assert.equal(await I_SecurityTokenRegistryProxy.implementation.call(), I_SecurityTokenRegistry.address);
             assert.equal(await I_SecurityTokenRegistryProxy.version.call(), "1.0.0");

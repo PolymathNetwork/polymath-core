@@ -33,7 +33,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
   * @dev the constructor sets the original owner of the contract to the sender account.
   */
   constructor() public {
-    setUpgradeabilityOwner(msg.sender);
+    _setUpgradeabilityOwner(msg.sender);
   }
 
   /**
@@ -47,9 +47,16 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
   /**
    * @dev Sets the address of the owner
    */
-  function setUpgradeabilityOwner(address _newUpgradeabilityOwner) internal {
+  function _setUpgradeabilityOwner(address _newUpgradeabilityOwner) internal {
     require(_newUpgradeabilityOwner != address(0), "Address should not be 0x");
     __upgradeabilityOwner = _newUpgradeabilityOwner;
+  }
+
+  /**
+   * @notice Internal function to provide the address of the implementation contract
+   */
+  function _implementation() internal view returns (address) {
+    return __implementation;
   }
 
   /**
@@ -73,7 +80,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
   * @return address of the current implementation
   */
   function implementation() external view ifOwner returns (address) {
-    return __implementation;
+    _implementation();
   }
 
   /**
@@ -83,7 +90,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
   function transferProxyOwnership(address _newOwner) external ifOwner {
     require(_newOwner != address(0), "Address should not be 0x");
     emit ProxyOwnershipTransferred(_upgradeabilityOwner(), _newOwner);
-    setUpgradeabilityOwner(_newOwner);
+    _setUpgradeabilityOwner(_newOwner);
   }
 
   /**

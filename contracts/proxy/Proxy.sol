@@ -45,7 +45,7 @@ contract Proxy {
     }
   }
 
-  function () payable external {
+  function () payable public {
     _fallback();
   }
 }

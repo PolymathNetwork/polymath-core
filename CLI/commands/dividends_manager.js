@@ -269,7 +269,7 @@ async function createDividends(dividend, checkpointId) {
       createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend));
     }
     let receipt = await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice);
-    let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ERC20DividendDeposited');
+    let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'ERC20DividendDeposited');
     console.log(`
   Dividend ${event._dividendIndex} deposited`
     );
@@ -292,25 +292,24 @@ async function pushDividends(dividend, account){
   let pushDividendPaymentToAddressesAction = currentDividendsModule.methods.pushDividendPaymentToAddresses(dividend.index, accs);
   let receipt = await common.sendTransaction(Issuer, pushDividendPaymentToAddressesAction, defaultGasPrice);
   let successEventName;
-  let failedEventName;
   if (dividendsType == 'POLY') {
     successEventName = 'ERC20DividendClaimed';
-    failedEventName = 'ERC20DividendClaimFailed';
   } else if (dividendsType == 'ETH') {
     successEventName = 'EtherDividendClaimed';
-    failedEventName = 'EtherDividendClaimFailed';
+    let failedEventName = 'EtherDividendClaimFailed';
+    let failedEvents = common.getMultipleEventsFromLogs(currentDividendsModule._jsonInterface, receipt.logs, failedEventName);
+    for (const event of failedEvents) {
+      console.log(`
+  Failed to claim ${web3.utils.fromWei(event._amount)} ${dividendsType} 
+  to account ${event._payee}`
+      );
+    }
   }
+  
   let successEvents = common.getMultipleEventsFromLogs(currentDividendsModule._jsonInterface, receipt.logs, successEventName);
   for (const event of successEvents) {
     console.log(`
   Claimend ${web3.utils.fromWei(event._amount)} ${dividendsType} 
-  to account ${event._payee}`
-    );
-  }
-  let failedEvents = common.getMultipleEventsFromLogs(currentDividendsModule._jsonInterface, receipt.logs, failedEventName);
-  for (const event of failedEvents) {
-    console.log(`
-  Failed to claim ${web3.utils.fromWei(event._amount)} ${dividendsType} 
   to account ${event._payee}`
     );
   }

@@ -32,7 +32,12 @@ async function executeApp(type, remoteNetwork) {
   console.log("Issuer Account: " + Issuer.address + "\n");
 
   await setup();
-  await start_explorer();
+  try {
+    await start_explorer();
+  } catch (err) {
+    console.log(err);
+    return;
+  }
 };
 
 async function setup(){
@@ -100,7 +105,7 @@ async function start_explorer(){
       
       // Only show dividend options if divididenModule is already attached 
       if (await isDividendsModuleAttached()) {
-        options.push('Pull dividends', 'Push dividends to account',
+        options.push('Push dividends to accounts',
           `Explore ${dividendsType} balance`, 'Reclaimed dividends after expiry')
       }
 
@@ -142,14 +147,8 @@ async function start_explorer(){
           let _checkpoint2 = await selectCheckpoint(false);
           await exploreTotalSupply(_checkpoint2);
         break;
-        case 6:
-          // Pull dividends
-          let _dividend2 = await selectDividend({expired: false, reclaimed: false});
-          if (_dividend2 !== null) {
-            await pullDividends(_dividend2);
-          }
         break;
-        case 7:
+        case 6:
           // Push dividends to account
           let _dividend = await selectDividend({expired: false, reclaimed: false});
           if (_dividend !== null) {
@@ -157,7 +156,7 @@ async function start_explorer(){
             await pushDividends(_dividend, _addresses);
           }
         break;
-        case 8:
+        case 7:
           //explore balance
           let _address3 =  readlineSync.question('Enter address to explore: ');
           let _dividend3 = await selectDividend();
@@ -170,7 +169,7 @@ async function start_explorer(){
             `);
           }
         break;
-        case 9:
+        case 8:
           // Reclaimed dividends after expiry
           let _dividend4 = await selectDividend({expired: true, reclaimed: false});
           if (_dividend4 !== null) {
@@ -184,7 +183,7 @@ async function start_explorer(){
     }
   }
   //Restart
-  start_explorer();
+  await start_explorer();
 }
 
 async function mintTokens(address, amount){
@@ -256,6 +255,7 @@ async function createDividends(dividend, checkpointId) {
   await addDividendsModule(); 
 
   let time = Math.floor(Date.now()/1000);
+  let maturityTime = readlineSync.questionInt('Enter the dividend maturity time from which dividend can be paid (Unix Epoch time)\n(Now = ' + time + ' ): ', {defaultInput: time});
   let defaultTime = time + duration.minutes(10);
   let expiryTime = readlineSync.questionInt('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = ' + defaultTime + ' ): ', {defaultInput: defaultTime});
   
@@ -264,33 +264,55 @@ async function createDividends(dividend, checkpointId) {
     let approveAction = polyToken.methods.approve(currentDividendsModule._address, web3.utils.toWei(dividend));
     await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
     if (checkpointId > 0) {
-      createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(time, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId);
+      createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId);
     } else {
-      createDividendAction = currentDividendsModule.methods.createDividend(time, expiryTime, polyToken._address, web3.utils.toWei(dividend));
+      createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend));
     }
-    await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice);
+    let receipt = await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice);
+    let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ERC20DividendDeposited');
+    console.log(`
+  Dividend ${event._dividendIndex} deposited`
+    );
   } else if (dividendsType == 'ETH') {
     if (checkpointId > 0) {
-      createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(time, expiryTime, checkpointId);
+      createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, checkpointId);
     } else {
-      createDividendAction = currentDividendsModule.methods.createDividend(time, expiryTime);
+      createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime);
     }
-    await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice, web3.utils.toWei(dividend));  
+    let receipt = await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice, web3.utils.toWei(dividend));  
+    let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'EtherDividendDeposited');
+    console.log(`
+  Dividend ${event._dividendIndex} deposited`
+    );
   }
 }
 
 async function pushDividends(dividend, account){
   let accs = account.split(',');
   let pushDividendPaymentToAddressesAction = currentDividendsModule.methods.pushDividendPaymentToAddresses(dividend.index, accs);
-  await common.sendTransaction(Issuer, pushDividendPaymentToAddressesAction, defaultGasPrice);
-}
-
-async function pullDividends(dividend) {
-  if (await currentDividendsModule.methods.calculateDividend(dividend.index, Issuer.address).call() > 0) {
-    let pullDividendPaymentAction = currentDividendsModule.methods.pullDividendPayment(dividend.index);
-    await common.sendTransaction(Issuer, pullDividendPaymentAction, defaultGasPrice);
-  } else {
-    console.log(chalk.red(`${Issuer.address} has already claimed his dividends`));
+  let receipt = await common.sendTransaction(Issuer, pushDividendPaymentToAddressesAction, defaultGasPrice);
+  let successEventName;
+  let failedEventName;
+  if (dividendsType == 'POLY') {
+    successEventName = 'ERC20DividendClaimed';
+    failedEventName = 'ERC20DividendClaimFailed';
+  } else if (dividendsType == 'ETH') {
+    successEventName = 'EtherDividendClaimed';
+    failedEventName = 'EtherDividendClaimFailed';
+  }
+  let successEvents = common.getMultipleEventsFromLogs(currentDividendsModule._jsonInterface, receipt.logs, successEventName);
+  for (const event of successEvents) {
+    console.log(`
+  Claimend ${web3.utils.fromWei(event._amount)} ${dividendsType} 
+  to account ${event._payee}`
+    );
+  }
+  let failedEvents = common.getMultipleEventsFromLogs(currentDividendsModule._jsonInterface, receipt.logs, failedEventName);
+  for (const event of failedEvents) {
+    console.log(`
+  Failed to claim ${web3.utils.fromWei(event._amount)} ${dividendsType} 
+  to account ${event._payee}`
+    );
   }
 }
 
@@ -305,7 +327,7 @@ async function reclaimedDividend(dividend) {
   }
   let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, eventName);
   console.log(`
-  Claimed Amount ${web3.utils.fromWei(event._claimedAmount)} POLY
+  Reclaimed Amount ${web3.utils.fromWei(event._claimedAmount)} ${dividendsType}
   to account ${event._claimer}`
   );
 }
@@ -433,6 +455,7 @@ async function selectDividend(filter) {
   if (dividends.length > 0) {
     let options = dividends.map(function(d) { 
       return `Created: ${moment.unix(d.created).format('MMMM Do YYYY, HH:mm:ss')}
+    Maturity: ${moment.unix(d.maturity).format('MMMM Do YYYY, HH:mm:ss')}
     Expiry: ${moment.unix(d.expiry).format('MMMM Do YYYY, HH:mm:ss')}
     Amount: ${web3.utils.fromWei(d.amount)} ${dividendsType}
     Claimed Amount: ${web3.utils.fromWei(d.claimedAmount)} ${dividendsType}

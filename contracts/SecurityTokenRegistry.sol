@@ -361,6 +361,15 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         emit Unpause(now);
     }
 
+    /**
+     * @notice Change the PolyToken address
+     * @param _newAddress Address of the polytoken 
+     */
+    function updatePolyTokenAddress(address _newAddress) external onlyOwner {
+        require(_newAddress != address(0));
+        set("polyToken", _newAddress);
+    }
+
     //////////////////////////////
     ///////// Get Functions
     //////////////////////////////
@@ -480,7 +489,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         }
         else if (getMapAddress("registeredTickers_owner", _ticker) == address(0) || _expiryCheck(_ticker)) {
             // This also cover that the ticker is expired but owned by someone else or _owner itself
-            // but _ticker status is false it means token having ticker is not deployed yet.
+            // but _ticker status is false it means the token having ticker is not deployed yet.
             return TickerStatus.NN;
         } else
             return TickerStatus.ND; // can also return OD

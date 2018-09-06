@@ -150,7 +150,7 @@ async function start_explorer(){
         break;
         case 6:
           // Push dividends to account
-          let _dividend = await selectDividend({expired: false, reclaimed: false});
+          let _dividend = await selectDividend({valid: true, expired: false, reclaimed: false});
           if (_dividend !== null) {
             let _addresses = readlineSync.question('Enter addresses to push dividends to (ex- add1,add2,add3,...): ');
             await pushDividends(_dividend, _addresses);
@@ -442,9 +442,12 @@ async function selectDividend(filter) {
   let result = null;
   let dividends = await getDividends();
 
+  let now = Math.floor(Date.now()/1000);
   if (typeof filter !== 'undefined') {
+    if (typeof filter.valid !== 'undefined') {
+      dividends = dividends.filter(d => filter.valid == (now > d.maturity));
+    }
     if (typeof filter.expired !== 'undefined') {
-      let now = Math.floor(Date.now()/1000);
       dividends = dividends.filter(d => filter.expired == (d.expiry < now));
     }
     if (typeof filter.reclaimed !== 'undefined') {
@@ -467,8 +470,8 @@ async function selectDividend(filter) {
       result = dividends[index];
     }
   } else {
-    console.log(chalk.red(`No dividends were found that meet the requirements`))
-    console.log(chalk.red(`Requirements: Expired: ${filter.expired} - Reclaimed: ${filter.reclaimed}\n`))
+    console.log(chalk.red(`No dividends were found meeting the requirements`))
+    console.log(chalk.red(`Requirements: Valid: ${filter.valid} - Expired: ${filter.expired} - Reclaimed: ${filter.reclaimed}\n`))
   }
 
   return result;

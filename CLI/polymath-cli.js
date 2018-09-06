@@ -109,6 +109,14 @@ program
   });
 
 program
+  .command('nonAccreditedLimit <tokenSymbol> [batchSize]')
+  .alias('nal')
+  .description('Runs changeNonAccreditedLimit')
+  .action(async function(tokenSymbol, batchSize) {
+    shell.exec(`${__dirname}/commands/scripts/script.sh NonAccreditedLimit ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
+  });
+
+program
   .command('strMigrator [fromStrAddress] [toStrAddress]')
   .alias('str')
   .description('Runs STR Migrator')

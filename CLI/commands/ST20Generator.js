@@ -704,11 +704,11 @@ function limitsConfigUSDTieredSTO() {
     }));
   }
 
-  let nonAccreditedLimit = 10000;
+  let nonAccreditedLimit = 2500;
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('nonAccreditedLimitUSD')) {
     limits.nonAccreditedLimitUSD = web3.utils.toWei(_stoConfig.nonAccreditedLimitUSD.toString());
   } else {
-    limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the limit for non accredited insvestors in USD? (${nonAccreditedLimit}): `, {
+    limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the default limit for non accredited insvestors in USD? (${nonAccreditedLimit}): `, {
       limit: function(input) {
         return new BigNumber(web3.utils.toWei(input)).gte(limits.minimumInvestmentUSD);
       },
@@ -998,7 +998,9 @@ async function usdTieredSTO_configure() {
     console.log(chalk.red(`STO is finalized`));
   } else {
     let options = [];
-    options.push('Finalize STO', 'Change accredited account', 'Change accredited in batch');
+    options.push('Finalize STO', 
+      'Change accredited account', 'Change accredited in batch', 
+      'Change non accredited limit for an account', 'Change non accredited limits in batch');
 
     // If STO is not started, you can modify configuration
     let now = Math.floor(Date.now() / 1000);
@@ -1036,22 +1038,34 @@ async function usdTieredSTO_configure() {
           shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75`);
           break;
         case 3:
+          let account = readlineSync.question('Enter the address to change non accredited limit: ');
+          let limit = readlineSync.question(`Enter the limit in USD: `);
+          let accounts = [account];
+          let limits = [web3.utils.toWei(limit)];
+          let changeNonAccreditedLimitAction = currentSTO.methods.changeNonAccreditedLimit(accounts, limits);
+          // 2 GAS?
+          await common.sendTransaction(Issuer, changeNonAccreditedLimitAction, defaultGasPrice);
+          break;
+        case 4:
+          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75`);
+          break;
+        case 5:
           await modfifyTimes();
           await usdTieredSTO_status();
           break;
-        case 4:
+        case 6:
           await modfifyTiers();
           await usdTieredSTO_status();
           break;
-        case 5:
+        case 7:
           await modfifyAddresses();
           await usdTieredSTO_status();
           break;
-        case 6:
+        case 8:
           await modfifyLimits();
           await usdTieredSTO_status();
           break;
-        case 7:
+        case 9:
           await modfifyFunding();
           await usdTieredSTO_status();
           break;

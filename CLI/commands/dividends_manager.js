@@ -309,7 +309,7 @@ async function pushDividends(dividend, account){
   let successEvents = common.getMultipleEventsFromLogs(currentDividendsModule._jsonInterface, receipt.logs, successEventName);
   for (const event of successEvents) {
     console.log(`
-  Claimend ${web3.utils.fromWei(event._amount)} ${dividendsType}
+  Claimed ${web3.utils.fromWei(event._amount)} ${dividendsType}
   to account ${event._payee}`
     );
   }

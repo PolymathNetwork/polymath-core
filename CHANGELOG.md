@@ -46,8 +46,11 @@ All notable changes to this project will be documented in this file.
 ## Fixed
 
 * Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions      
+* Fix #239: fix basic fee logic for ongoing module fees
+* Fix #238: make beneficial investments optionally supported (default to not
+allowed)
 
-# v1.4.0 - Unreleased
+# v1.4.0 - Release candidate
 
 [__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 

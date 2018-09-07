@@ -1,33 +1,18 @@
-'use strict'
-
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
-const Web3 = require('web3');
 var abis = require('./helpers/contract_abis');
 var common = require('./common/common_functions');
+var global = require('./common/global');
 
-if (typeof web3 !== 'undefined') {
-    web3 = new Web3(web3.currentProvider);
-} else {
-    // set the provider you want from Web3.providers
-    web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-}
-
-let Issuer;
-let defaultGasPrice;
-let accounts;
-
-async function executeApp(fromStrAddress, toStrAddress) {
-    accounts = await web3.eth.getAccounts();
-    Issuer = accounts[0];
-    defaultGasPrice = new web3.utils.BN(common.getGasPrice(await web3.eth.net.getId()));
+async function executeApp(fromStrAddress, toStrAddress, remoteNetwork) {
+    await global.initialize(remoteNetwork);
 
     common.logAsciiBull();
     console.log("****************************************");
     console.log("Welcome to the Command-Line STR Migrator");
     console.log("****************************************");
     console.log("The following script will migrate tokens from old STR to new one.");
-    console.log("\n");
+    console.log("Issuer Account: " + Issuer.address + "\n");
   
     try {
         let fromSTR = step_instance_fromSTR(fromStrAddress);
@@ -140,20 +125,8 @@ async function step_add_Custom_STs(tokens, toStr) {
         console.log(`\n`);
         try {
             let addCustomSTAction = toStr.methods.addCustomSecurityToken(t.name, t.symbol, t.owner, t.address, t.details, web3.utils.asciiToHex(t.swarmHash));
-            let GAS = await common.estimateGas(addCustomSTAction, Issuer, 1.2);
-            await addCustomSTAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice})
-            .on('transactionHash', function (hash) {
-                console.log(`Congrats! Your Add Custom Security Token tx populated successfully`);
-                console.log(`Your transaction is being processed. Please wait...`);
-                console.log(`TxHash: ${hash}\n`);
-            })
-            .on('receipt', function (receipt) {
-                console.log(chalk.green(`Congratulations! The transaction was successfully completed.`));
-                console.log(`Gas used: ${receipt.gasUsed} - Gas spent: ${web3.utils.fromWei(defaultGasPrice.mul(new web3.utils.BN(receipt.gasUsed)))} Ether`);
-                console.log(`Review it on Etherscan.`);
-                console.log(`TxHash: ${receipt.transactionHash}\n`);
-                totalGas = totalGas.add(new web3.utils.BN(receipt.gasUsed));
-            });
+            let receipt = await common.sendTransaction(Issuer, addCustomSTAction, defaultGasPrice);
+            totalGas = totalGas.add(new web3.utils.BN(receipt.gasUsed));
             succeed.push(t);
         } catch (error) {
             failed.push(t);
@@ -180,7 +153,7 @@ ${failed.map(token => chalk.red(`${token.symbol} at ${token.address}`)).join('\n
 }
 
 module.exports = {
-    executeApp: async function(fromStrAddress, toStrAddress) {
-        return executeApp(fromStrAddress, toStrAddress);
+    executeApp: async function(fromStrAddress, toStrAddress, remoteNetwork) {
+        return executeApp(fromStrAddress, toStrAddress, remoteNetwork);
     }
 };

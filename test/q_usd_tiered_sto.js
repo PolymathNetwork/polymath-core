@@ -1584,11 +1584,19 @@ contract('USDTieredSTO', accounts => {
             assert.equal((await I_USDTieredSTO_Array[stoId].investorInvestedPOLY.call(ACCREDITED1)).toNumber(), init_investorInvestedPOLY.add(investment_POLY).toNumber(), "investorInvestedPOLY not changed as expected");
         });
 
+        it("should successfully modify NONACCREDITED cap for NONACCREDITED1", async() => {
+            let stoId = 0;
+            let tierId = 0;
+            console.log("Current investment: " + (await I_USDTieredSTO_Array[stoId].investorInvestedUSD.call(NONACCREDITED1)).toNumber());
+            await I_USDTieredSTO_Array[stoId].changeNonAccreditedLimit([NONACCREDITED1], [_nonAccreditedLimitUSD[stoId].div(2)], {from: ISSUER});
+            console.log("Current limit: " + (await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSDOverride(NONACCREDITED1)).toNumber());
+        });
+
         it("should successfully buy a partial amount and refund balance when reaching NONACCREDITED cap", async() => {
             let stoId = 0;
             let tierId = 0;
 
-            let investment_USD = _nonAccreditedLimitUSD[stoId];
+            let investment_USD = (await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSDOverride(NONACCREDITED1));//_nonAccreditedLimitUSD[stoId];
             let investment_Token = await convert(stoId, tierId, false, "USD", "TOKEN", investment_USD);
             let investment_ETH = await convert(stoId, tierId, false, "USD", "ETH", investment_USD);
             let investment_POLY = await convert(stoId, tierId, false, "USD", "POLY", investment_USD);
@@ -1597,6 +1605,8 @@ contract('USDTieredSTO', accounts => {
             let refund_Token = await convert(stoId, tierId, false, "USD", "TOKEN", refund_USD);
             let refund_ETH = await convert(stoId, tierId, false, "USD", "ETH", refund_USD);
             let refund_POLY = await convert(stoId, tierId, false, "USD", "POLY", refund_USD);
+
+            console.log("Expected refund in tokens: " + refund_Token.toNumber());
 
             let snap = await takeSnapshot();
 

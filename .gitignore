@@ -1,8 +1,10 @@
 /node_modules
+/CLI/node_modules
 /build
 .npm-debug.log
 *.DS_Store
 privKey
+privKeyLocal
 coverage/
 coverage.json
 .vscode/

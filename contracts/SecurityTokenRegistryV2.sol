@@ -521,7 +521,7 @@ contract SecurityTokenRegistryV2 is ISecurityTokenRegistry, EternalStorage {
             set(Utils.setMap("registeredTickers_registrationDate", _ticker), _registrationDate);
         if (getUint(Utils.getMap("registeredTickers_expiryDate", _ticker)) != _expiryDate)
             set(Utils.setMap("registeredTickers_expiryDate", _ticker), _expiryDate);
-        if (keccak256(abi.encodePacked(getString(Utils.getMap("registeredTickers_tokenName", _ticker)))) != keccak256(abi.encodePacked(_tokenName)))
+        if (Utils.getHash(getString(Utils.getMap("registeredTickers_tokenName", _ticker))) != Utils.getHash(_tokenName))
             set(Utils.setMap("registeredTickers_tokenName", _ticker), _tokenName);
         if (getBool(Utils.getMap("registeredTickers_status", _ticker)) != _status)
             set(Utils.setMap("registeredTickers_status", _ticker), _status);

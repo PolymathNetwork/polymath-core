@@ -365,7 +365,7 @@ async function cappedSTO_launch() {
       process.exit(0);
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice);
+      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 1.5);
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }
@@ -407,13 +407,13 @@ async function cappedSTO_launch() {
 
   let raiseType;
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('raiseType')) {
-    raiseType = _stoConfig.raiseType;
+    raiseType = [_stoConfig.raiseType];
   } else {
     raiseType = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise or leave empty for Ether raise (E):');
     if (raiseType.toUpperCase() == 'P' ) {
-      raiseType = 1;
+      raiseType = [1];
     } else { 
-      raiseType = 0;
+      raiseType = [0];
     }
   }
 
@@ -442,8 +442,8 @@ async function cappedSTO_launch() {
         type: 'uint256',
         name: '_rate'
       },{
-        type: 'uint8',
-        name: '_fundRaiseType'
+        type: 'uint8[]',
+        name: '_fundRaiseTypes'
       },{
         type: 'address',
         name: '_fundsReceiver'
@@ -467,15 +467,25 @@ async function cappedSTO_status() {
   let displayRate = await currentSTO.methods.rate().call();
   let displayCap = await currentSTO.methods.cap().call();
   let displayWallet = await currentSTO.methods.wallet().call();
-  let displayRaiseType = await currentSTO.methods.fundRaiseType(0).call() ? 'ETH' : 'POLY';
-  let displayFundsRaised = await currentSTO.methods.fundsRaised().call();
-  let displayTokensSold = await currentSTO.methods.tokensSold().call();
+  let displayRaiseType;
+  let displayFundsRaised;
+  let displayWalletBalance;
+  let raiseType = await currentSTO.methods.fundRaiseType(0).call();
+  if (raiseType) {
+    displayRaiseType = 'ETH';
+    displayFundsRaised = await currentSTO.methods.fundsRaisedETH().call();
+    displayWalletBalance = web3.utils.fromWei(await web3.eth.getBalance(displayWallet));
+  } else {
+    displayRaiseType = 'POLY';
+    displayFundsRaised = await currentSTO.methods.fundsRaisedPOLY().call();
+    displayWalletBalance = await currentBalance(displayWallet);
+  }
+  let displayTokensSold = await currentSTO.methods.totalTokensSold().call();
   let displayInvestorCount = await currentSTO.methods.investorCount().call();
   let displayTokenSymbol = await securityToken.methods.symbol().call();
 
-  let displayWalletBalance = web3.utils.fromWei(await web3.eth.getBalance(displayWallet),"ether");
-  let formattedCap = BigNumber(web3.utils.fromWei(displayCap,"ether"));
-  let formattedSold = BigNumber(web3.utils.fromWei(displayTokensSold,"ether"));
+  let formattedCap = BigNumber(web3.utils.fromWei(displayCap));
+  let formattedSold = BigNumber(web3.utils.fromWei(displayTokensSold));
 
   let now = Math.floor(Date.now()/1000);
   let timeTitle;

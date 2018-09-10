@@ -160,18 +160,12 @@ You will be asked for a token symbol.
 node CLI/polymath-cli module_manager
 ```
 
-## Checkpoint modules
+## Dividends manager
 
-You can run these commands to create dividends and paid them out proportionally to token holder balances as of the time that the dividend was created, or at the time of a specified checkpoint that was created previously.
+You can run this command to create dividends and paid them out proportionally to token holder balances as of the time that the dividend was created, or at the time of a specified checkpoint that was created previously. You can choose between Ether or ERC20 dividens.
 
-For Ether dividends:
 ```bash
-node CLI/polymath-cli ethExplorer
-```
-
-For ERC20 dividends:
-```bash
-node CLI/polymath-cli erc20Explorer
+node CLI/polymath-cli dividends_manager
 ```
 
 # Setting up Polymath Core

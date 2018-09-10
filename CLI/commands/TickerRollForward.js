@@ -23,11 +23,10 @@ let polyToken;
 let tickerRegistry;
 let tickerRegistryAddress;
 
-function Ticker(_owner, _symbol, _name, _swarmHash) {
+function Ticker(_owner, _symbol, _name) {
     this.owner = _owner;
     this.symbol = _symbol;
     this.name = _name;
-    this.swarmHash = _swarmHash;
 }
 
 function FailedRegistration(_ticker, _error) {
@@ -115,7 +114,7 @@ async function registerTickers() {
 
     if (valid) {
       try {
-        let registerTickerAction = tickerRegistry.methods.registerTicker(owner, ticker_data[i].symbol, ticker_data[i].name, ticker_data[i].swarmHash);
+        let registerTickerAction = tickerRegistry.methods.registerTicker(owner, ticker_data[i].symbol, ticker_data[i].name);
         let receipt = await common.sendTransaction(Issuer, registerTickerAction, defaultGasPrice);
         registered_tickers.push(ticker_data[i]);
         console.log(ticker_data[i]);

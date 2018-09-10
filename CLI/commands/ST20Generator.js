@@ -131,7 +131,7 @@ async function step_ticker_reg(){
 
   if (!alreadyRegistered) {
     await step_approval(tickerRegistryAddress, regFee);
-    let registerTickerAction = tickerRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "", web3.utils.asciiToHex(""));
+    let registerTickerAction = tickerRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "");
     await common.sendTransaction(Issuer, registerTickerAction, defaultGasPrice);
   }
 }

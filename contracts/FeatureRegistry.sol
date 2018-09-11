@@ -29,7 +29,7 @@ contract FeatureRegistry is IFeatureRegistry, ReclaimTokens {
      */
     function setFeatureStatus(string _nameKey, bool _newStatus) public onlyOwner {
         bytes32 key = keccak256(bytes(_nameKey));
-        require(featureStatus[key] != _newStatus, "New feature status must be different than existing status");
+        require(featureStatus[key] != _newStatus, "Status unchanged");
         emit LogChangeFeatureStatus(_nameKey, _newStatus);
         featureStatus[key] = _newStatus;
     }

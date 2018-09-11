@@ -7,8 +7,9 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Interface to be implemented by all STO modules
+ * @dev NB = order of ReclaimableTokens & Module important as they both override omlyOwner
  */
-contract ISTO is Module, Pausable, ReclaimTokens {
+contract ISTO is ReclaimTokens, Module, Pausable  {
     using SafeMath for uint256;
 
     enum FundRaiseType { ETH, POLY }

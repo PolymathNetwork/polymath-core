@@ -232,9 +232,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256[] _tokensPerTierDiscountPoly
     ) internal {
         require(_tokensPerTierTotal.length > 0);
-        require(_ratePerTier.length == _tokensPerTierTotal.length, "Mismatch between rates and tokens per tier");
-        require(_ratePerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch between discount rates and tokens per tier");
-        require(_tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch between discount tokens per tier and tokens per tier");
+        require(_ratePerTier.length == _tokensPerTierTotal.length, "Mismatch b/w rates and tokens per tier");
+        require(_ratePerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount rates and tokens per tier");
+        require(_tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount tokens per tier and tokens per tier");
         for (uint8 i = 0; i < _ratePerTier.length; i++) {
             require(_ratePerTier[i] > 0, "Rate > 0");
             require(_tokensPerTierTotal[i] > 0, "Tokens per tier > 0");
@@ -257,7 +257,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _endTime
     ) internal {
         require(_endTime > _startTime, "In-valid data");
-        require(_startTime > now, "Start Time must be in the future");
+        require(_startTime > now, "In-valid start time");
         startTime = _startTime;
         endTime = _endTime;
         emit SetTimes(_startTime, _endTime);
@@ -267,8 +267,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _wallet,
         address _reserveWallet
     ) internal {
-        require(_wallet != address(0), "0x address type is not allowed");
-        require(_reserveWallet != address(0), "0x address type is not allowed");
+        require(_wallet != address(0), "0x address is not allowed");
+        require(_reserveWallet != address(0), "0x address is not allowed");
         wallet = _wallet;
         reserveWallet = _reserveWallet;
         emit SetAddresses(_wallet, _reserveWallet);
@@ -324,7 +324,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         //nonAccreditedLimitUSDOverride
         require(_investors.length == _nonAccreditedLimit.length);
         for (uint256 i = 0; i < _investors.length; i++) {
-            require(_nonAccreditedLimit[i] > 0, "Limit cannot be 0");
+            require(_nonAccreditedLimit[i] > 0, "Limit can't be 0");
             nonAccreditedLimitUSDOverride[_investors[i]] = _nonAccreditedLimit[i];
             emit SetNonAccreditedLimit(_investors[i], _nonAccreditedLimit[i]);
         }

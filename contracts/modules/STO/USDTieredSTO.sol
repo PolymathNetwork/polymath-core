@@ -5,7 +5,6 @@ import "../../interfaces/ISecurityToken.sol";
 import "../../interfaces/IOracle.sol";
 import "../../RegistryUpdater.sol";
 import "../../helpers/DecimalMath.sol";
-import "../../interfaces/ISecurityTokenRegistry.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 

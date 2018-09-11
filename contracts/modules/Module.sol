@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "../interfaces/IModule.sol";
 import "../interfaces/ISecurityToken.sol";
-import "../interfaces/IPolyToken.sol";
+import "../interfaces/IERC20.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /**
@@ -17,7 +17,7 @@ contract Module is IModule {
 
     bytes32 public constant FEE_ADMIN = "FEE_ADMIN";
 
-    IPolyToken public polyToken;
+    IERC20 public polyToken;
 
     /**
      * @notice Constructor
@@ -27,7 +27,7 @@ contract Module is IModule {
     constructor (address _securityToken, address _polyAddress) public {
         securityToken = _securityToken;
         factory = msg.sender;
-        polyToken = IPolyToken(_polyAddress);
+        polyToken = IERC20(_polyAddress);
     }
 
     //Allows owner, factory or permissioned delegate

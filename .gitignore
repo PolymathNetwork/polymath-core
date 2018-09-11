@@ -1,6 +1,7 @@
 /node_modules
 /CLI/node_modules
 /build
+/CLI/node_modules
 .npm-debug.log
 *.DS_Store
 privKey

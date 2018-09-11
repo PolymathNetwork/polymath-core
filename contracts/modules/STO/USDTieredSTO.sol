@@ -231,14 +231,14 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256[] _tokensPerTierDiscountPoly
     ) internal {
         require(_tokensPerTierTotal.length > 0);
-        require(_ratePerTier.length == _tokensPerTierTotal.length, "Mismatch b/w rates and tokens per tier");
-        require(_ratePerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount rates and tokens per tier");
-        require(_tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount tokens per tier and tokens per tier");
+        require(_ratePerTier.length == _tokensPerTierTotal.length, "Mismatch b/w rates & tokens / tier");
+        require(_ratePerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount rates & tokens / tier");
+        require(_tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount tokens / tier & tokens / tier");
         for (uint8 i = 0; i < _ratePerTier.length; i++) {
             require(_ratePerTier[i] > 0, "Rate > 0");
             require(_tokensPerTierTotal[i] > 0, "Tokens per tier > 0");
-            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Discounted tokens per tier <= to tokens per tier");
-            require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Discounted rate per tier <= rate per tier");
+            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Discounted tokens / tier <= to tokens / tier");
+            require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Discounted rate / tier <= rate / tier");
         }
         mintedPerTierTotal = new uint256[](_ratePerTier.length);
         mintedPerTierETH = new uint256[](_ratePerTier.length);
@@ -255,8 +255,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _startTime,
         uint256 _endTime
     ) internal {
-        require(_endTime > _startTime, "In-valid data");
-        require(_startTime > now, "In-valid start time");
+        require((_endTime > _startTime) && (_startTime > now), "Invalid times");
         startTime = _startTime;
         endTime = _endTime;
         emit SetTimes(_startTime, _endTime);
@@ -266,8 +265,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _wallet,
         address _reserveWallet
     ) internal {
-        require(_wallet != address(0), "0x address is not allowed");
-        require(_reserveWallet != address(0), "0x address is not allowed");
+        require(_wallet != address(0) && reserveWallet != address(0), "0x address is not allowed");
         wallet = _wallet;
         reserveWallet = _reserveWallet;
         emit SetAddresses(_wallet, _reserveWallet);
@@ -293,7 +291,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             tempSold = tempSold.add(mintedPerTierTotal[i]);
             if (remainingTokens > 0) {
                 mintedPerTierTotal[i] = tokensPerTierTotal[i];
-                require(ISecurityToken(securityToken).mint(reserveWallet, remainingTokens), "Error in minting the tokens");
+                require(ISecurityToken(securityToken).mint(reserveWallet, remainingTokens), "Error in minting");
                 emit ReserveTokenMint(msg.sender, reserveWallet, remainingTokens, i);
             }
         }
@@ -334,7 +332,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */
     function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public onlyOwner {
-        require(_allowBeneficialInvestments != allowBeneficialInvestments, "Does not change value");
+        require(_allowBeneficialInvestments != allowBeneficialInvestments, "Value unchanged");
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
     }
@@ -391,21 +389,21 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       */
     function _buyTokens(address _beneficiary, uint256 _investmentValue, uint256 _rate, bool _isPOLY) internal nonReentrant whenNotPaused returns(uint256, uint256) {
         if (!allowBeneficialInvestments) {
-            require(_beneficiary == msg.sender, "Beneficiary must match funding provider");
+            require(_beneficiary == msg.sender, "Beneficiary must match funder");
         }
         require(isOpen(), "STO is not open");
-        require(_investmentValue > 0, "No funds were sent to buy tokens");
+        require(_investmentValue > 0, "No funds were sent");
 
         uint256 investedUSD = DecimalMath.mul(_rate, _investmentValue);
         uint256 originalUSD = investedUSD;
 
         // Check for minimum investment
-        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment less than minimumInvestmentUSD");
+        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
 
         // Check for non-accredited cap
         if (!accredited[_beneficiary]) {
             uint256 investorLimitUSD = (nonAccreditedLimitUSDOverride[_beneficiary] == 0) ? nonAccreditedLimitUSD : nonAccreditedLimitUSDOverride[_beneficiary];
-            require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Non-accredited investor has already reached nonAccreditedLimitUSD");
+            require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Non-accredited investor has reached limit");
             if (investedUSD.add(investorInvestedUSD[_beneficiary]) > investorLimitUSD)
                 investedUSD = investorLimitUSD.sub(investorInvestedUSD[_beneficiary]);
         }
@@ -489,7 +487,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             spentUSD = _investedUSD;
             purchasedTokens = maximumTokens;
         }
-        require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting the tokens");
+        require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
         emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
         return (spentUSD, purchasedTokens);
     }
@@ -647,7 +645,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return bytes4 Configure function signature
      */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],uint256,uint256,uint8[],address,address)"));
+        //keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],uint256,uint256,uint8[],address,address)") ==
+        //0xd31d4f2d09fc7bdefd7ea179aebde3dd53e24265c3c63e17e399bbf85fe873bf
+        return bytes4(0xd31d4f2d);
     }
 
     function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns (address) {

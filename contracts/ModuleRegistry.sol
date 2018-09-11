@@ -20,6 +20,8 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     mapping (address => address[]) public reputation;
     // Mapping contain the list of addresses of Module factory for a particular type
     mapping (uint8 => address[]) public moduleList;
+    // Mapping to store the index of the moduleFactory in the moduleList
+    mapping(address => uint8) private moduleListIndex;
     // contains the list of verified modules
     mapping (address => bool) public verified;
     // Contains the list of the available tags corresponds to the module type
@@ -31,6 +33,8 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     event LogModuleRegistered(address indexed _moduleFactory, address indexed _owner);
     // Emit when the module get verified by the Polymath team
     event LogModuleVerified(address indexed _moduleFactory, bool _verified);
+    // Emit when a moduleFactory is removed by Polymath or moduleFactory owner
+    event LogModuleRemoved(address indexed _moduleFactory, address indexed _decisionMaker);
 
     constructor (address _polymathRegistry) public
         RegistryUpdater(_polymathRegistry)
@@ -67,11 +71,46 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
     function registerModule(address _moduleFactory) external whenNotPaused returns(bool) {
         require(registry[_moduleFactory] == 0, "Module factory should not be pre-registered");
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        require(moduleFactory.getType() != 0, "Factory type should not equal to 0");
-        registry[_moduleFactory] = moduleFactory.getType();
-        moduleList[moduleFactory.getType()].push(_moduleFactory);
+        uint8 moduleType = moduleFactory.getType();
+        require(moduleType != 0, "Factory moduleType should not equal to 0");
+        registry[_moduleFactory] = moduleType;
+        moduleListIndex[_moduleFactory] = uint8(moduleList[moduleType].length);
+        moduleList[moduleType].push(_moduleFactory);
         reputation[_moduleFactory] = new address[](0);
         emit LogModuleRegistered (_moduleFactory, Ownable(_moduleFactory).owner());
+        return true;
+    }
+
+    /**
+     * @notice Called by moduleFactory owner or registry curator to delete a moduleFactory
+     * @param _moduleFactory is the address of the module factory to be deleted
+     * @return bool
+     */
+    function removeModule(address _moduleFactory) external whenNotPaused returns(bool) {
+        uint8 moduleType = registry[_moduleFactory];
+
+        require(moduleType != 0, "Module factory should be registered");
+        require(msg.sender == Ownable(_moduleFactory).owner() || msg.sender == owner,
+            "msg.sender must be moduleFactory owner or registry curator");
+
+        uint8 index = moduleListIndex[_moduleFactory];
+        uint8 last = uint8(moduleList[moduleType].length - 1);
+        address temp = moduleList[moduleType][last];
+
+        // pop from array and re-order
+        if (index != last) {
+            moduleList[moduleType][index] = temp;
+            moduleListIndex[temp] = index;
+        }
+        delete moduleList[moduleType][last];
+        moduleList[moduleType].length--;
+
+        delete registry[_moduleFactory];
+        delete reputation[_moduleFactory];
+        delete verified[_moduleFactory];
+        delete moduleListIndex[_moduleFactory];
+
+        emit LogModuleRemoved (_moduleFactory, msg.sender);
         return true;
     }
 

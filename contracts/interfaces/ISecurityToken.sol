@@ -24,12 +24,14 @@ interface ISecurityToken {
     /**
      * @notice mints new tokens and assigns them to the target _investor.
      * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+     * @param _investor address the tokens will be minted to
+     * @param _amount is the amount of tokens that will be minted to the investor
      */
     function mint(address _investor, uint256 _amount) external returns (bool success);
 
     /**
      * @notice Burn function used to burn the securityToken
-     * @param _value No. of token that get burned
+     * @param _value No. of tokens that get burned
      */
     function burn(uint256 _value) external returns (bool success);
 
@@ -43,21 +45,21 @@ interface ISecurityToken {
 
     /**
      * @notice returns module list for a module type
-     * @param _moduleType is which type of module we are trying to remove
+     * @param _moduleType is which type of module we are trying to access
      * @param _moduleIndex is the index of the module within the chosen type
      */
     function getModule(uint8 _moduleType, uint _moduleIndex) external view returns (bytes32, address);
 
     /**
-     * @notice returns module list for a module name - will return first match
-     * @param _moduleType is which type of module we are trying to remove
+     * @notice returns a module that matches the provided name - will return first match
+     * @param _moduleType is which type of module we are trying to access
      * @param _name is the name of the module within the chosen type
      */
     function getModuleByName(uint8 _moduleType, bytes32 _name) external view returns (bytes32, address);
 
     /**
-     * @notice returns All module list for a module name 
-     * @param _moduleType is which type of module we are trying to get
+     * @notice returns all the modules that match the provided name within a module type
+     * @param _moduleType is the type of module we are trying to get
      * @param _name is the name of the module within the chosen type
      * @return bytes32
      * @return address
@@ -65,13 +67,13 @@ interface ISecurityToken {
     function getAllModulesByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32[], address[]);
 
     /**
-     * @notice Queries totalSupply as of a defined checkpoint
+     * @notice Queries totalSupply at a specified checkpoint
      * @param _checkpointId Checkpoint ID to query as of
      */
     function totalSupplyAt(uint256 _checkpointId) external view returns (uint256);
 
     /**
-     * @notice Queries balances as of a defined checkpoint
+     * @notice Queries balances at a specified checkpoint
      * @param _investor Investor to query balance for
      * @param _checkpointId Checkpoint ID to query as of
      */
@@ -84,7 +86,7 @@ interface ISecurityToken {
 
     /**
      * @notice gets length of investors array
-     * NB - this length may differ from investorCount if list has not been pruned of zero balance investors
+     * NB - this length may differ from investorCount if the list has not been pruned of zero-balance investors
      * @return length
      */
     function getInvestorsLength() external view returns (uint256);
@@ -96,14 +98,14 @@ interface ISecurityToken {
     function currentCheckpointId() external view returns (uint256);
 
     /**
-    * @notice gets investor at a particular index
+    * @notice gets an investor at a particular index
     * @param _index index to return address from
     * @return investor address
     */
     function investors(uint256 _index) external view returns (address);
 
     /**
-    * @notice gets number of investors
+    * @notice gets the number of investors
     * @return count of investors
     */
     function investorCount() external view returns (uint256);
@@ -117,14 +119,14 @@ interface ISecurityToken {
 
     /**
     * @notice allows owner to approve more POLY to one of the modules
-    * @param _moduleType module type
-    * @param _moduleIndex module index
-    * @param _budget new budget
+    * @param _moduleType is the selected module type
+    * @param _moduleIndex is the index of the module in the selected type list
+    * @param _budget is the new budget for the selected module
     */
     function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) external;
 
     /**
-     * @notice change the tokenDetails
+     * @notice changes the tokenDetails
      * @param _newTokenDetails New token details
      */
     function updateTokenDetails(string _newTokenDetails) external;
@@ -159,16 +161,16 @@ interface ISecurityToken {
     function freezeMinting() external;
 
     /**
-     * @notice mints new tokens and assigns them to the target _investor.
-     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
-     * @param _investors A list of addresses to whom the minted tokens will be dilivered
-     * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
+     * @notice mints new tokens and assigns them to the target investors.
+     * Can only be called by the STO attached to the token or by the Issuer (Security Token contract owner)
+     * @param _investors A list of addresses to whom the minted tokens will be delivered
+     * @param _amounts A list of the amount of tokens to mint to corresponding addresses from _investor[] list
      * @return success
      */
     function mintMulti(address[] _investors, uint256[] _amounts) external returns (bool success);
 
     /**
-     * @notice used to set the token Burner address. It only be called by the owner
+     * @notice used to set the token Burner address. It can only be called by the owner
      * @param _tokenBurner Address of the token burner contract
      */
     function setTokenBurner(address _tokenBurner) external;

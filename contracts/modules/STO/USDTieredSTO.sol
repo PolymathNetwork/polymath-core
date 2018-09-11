@@ -4,6 +4,7 @@ import "./ISTO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "../../interfaces/IOracle.sol";
 import "../../RegistryUpdater.sol";
+import "../../helpers/DecimalMath.sol";
 import "../../interfaces/ISecurityTokenRegistry.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
@@ -235,10 +236,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(_ratePerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch between discount rates and tokens per tier");
         require(_tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch between discount tokens per tier and tokens per tier");
         for (uint8 i = 0; i < _ratePerTier.length; i++) {
-            require(_ratePerTier[i] > 0, "Rate of token should be greater than 0");
-            require(_tokensPerTierTotal[i] > 0, "Tokens per tier should be greater than 0");
-            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Discounted tokens per tier should be less than or equal to tokens per tier");
-            require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Discounted rate per tier should be less than or equal to rate per tier");
+            require(_ratePerTier[i] > 0, "Rate > 0");
+            require(_tokensPerTierTotal[i] > 0, "Tokens per tier > 0");
+            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Discounted tokens per tier <= to tokens per tier");
+            require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Discounted rate per tier <= rate per tier");
         }
         mintedPerTierTotal = new uint256[](_ratePerTier.length);
         mintedPerTierETH = new uint256[](_ratePerTier.length);
@@ -255,7 +256,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _startTime,
         uint256 _endTime
     ) internal {
-        require(_endTime > _startTime, "Date parameters are not valid");
+        require(_endTime > _startTime, "In-valid data");
         require(_startTime > now, "Start Time must be in the future");
         startTime = _startTime;
         endTime = _endTime;
@@ -266,8 +267,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _wallet,
         address _reserveWallet
     ) internal {
-        require(_wallet != address(0), "Zero address is not permitted for wallet");
-        require(_reserveWallet != address(0), "Zero address is not permitted for wallet");
+        require(_wallet != address(0), "0x address type is not allowed");
+        require(_reserveWallet != address(0), "0x address type is not allowed");
         wallet = _wallet;
         reserveWallet = _reserveWallet;
         emit SetAddresses(_wallet, _reserveWallet);
@@ -396,7 +397,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(isOpen(), "STO is not open");
         require(_investmentValue > 0, "No funds were sent to buy tokens");
 
-        uint256 investedUSD = _decimalMul(_rate, _investmentValue);
+        uint256 investedUSD = DecimalMath.mul(_rate, _investmentValue);
         uint256 originalUSD = investedUSD;
 
         // Check for minimum investment
@@ -437,7 +438,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         if (spentUSD == 0) {
             spentValue = 0;
         } else {
-            spentValue = _decimalMul(_decimalDiv(spentUSD, originalUSD), _investmentValue);
+            spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, originalUSD), _investmentValue);
         }
 
         // Return calculated amounts
@@ -475,11 +476,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     function _purchaseTier(address _beneficiary, uint256 _tierPrice, uint256 _tierRemaining, uint256 _investedUSD, uint8 _tier) internal returns(uint256, uint256) {
-        uint256 maximumTokens = _decimalDiv(_investedUSD, _tierPrice);
+        uint256 maximumTokens = DecimalMath.div(_investedUSD, _tierPrice);
         uint256 spentUSD;
         uint256 purchasedTokens;
         if (maximumTokens > _tierRemaining) {
-            spentUSD = _decimalMul(_tierRemaining, _tierPrice);
+            spentUSD = DecimalMath.mul(_tierRemaining, _tierPrice);
             // In case of rounding issues, ensure that spentUSD is never more than investedUSD
             if (spentUSD > _investedUSD) {
                 spentUSD = _investedUSD;
@@ -522,7 +523,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function convertToUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
         uint256 rate = IOracle(_getOracle(_currency, bytes32("USD"))).getPrice();
-        return _decimalMul(_amount, rate);
+        return DecimalMath.mul(_amount, rate);
     }
 
     /**
@@ -533,7 +534,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function convertFromUSD(bytes32 _currency, uint256 _amount) public view returns(uint256) {
         uint256 rate = IOracle(_getOracle(_currency, bytes32("USD"))).getPrice();
-        return _decimalDiv(_amount, rate);
+        return DecimalMath.div(_amount, rate);
     }
 
     /**
@@ -648,24 +649,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],uint256,uint256,uint8[],address,address)"));
-    }
-
-    uint constant DECIMALS = 10 ** 18;
-
-    /**
-     * @notice This function multiplies two decimals represented as (decimal * 10**DECIMALS)
-     * @return uint256 Result of multiplication represented as (decimal * 10**DECIMALS)
-     */
-    function _decimalMul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = SafeMath.add(SafeMath.mul(x, y), DECIMALS / 2) / DECIMALS;
-    }
-
-    /**
-     * @notice This function divides two decimals represented as (decimal * 10**DECIMALS)
-     * @return uint256 Result of division represented as (decimal * 10**DECIMALS)
-     */
-    function _decimalDiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = SafeMath.add(SafeMath.mul(x, DECIMALS), y / 2) / y;
     }
 
     function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns (address) {

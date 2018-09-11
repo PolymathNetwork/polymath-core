@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 /**
- * @title Interface for the polymath module registry contract
+ * @title Interface for the Polymath Module Registry contract
  */
 interface IModuleRegistry {
 
@@ -12,13 +12,13 @@ interface IModuleRegistry {
     function useModule(address _moduleFactory) external;
 
     /**
-     * @notice Called by moduleFactory owner to register new modules for SecurityToken to use
+     * @notice Called by the ModuleFactory owner to register new modules for SecurityToken to use
      * @param _moduleFactory is the address of the module factory to be registered
      */
     function registerModule(address _moduleFactory) external returns(bool);
 
     /**
-     * @notice Called by moduleFactory owner or registry curator to delete a moduleFactory
+     * @notice Called by the ModuleFactory owner or registry curator to delete a ModuleFactory
      * @param _moduleFactory is the address of the module factory to be deleted
      * @return bool
      */
@@ -47,23 +47,23 @@ interface IModuleRegistry {
     function addTagByModuleType(uint8 _moduleType, bytes32[] _tag) external;
 
      /**
-      * @notice remove the tag for specified Module Factory
+      * @notice remove a tag for a Module Factory
       * @param _moduleType Type of module.
       * @param _removedTags List of tags
       */
     function removeTagByModuleType(uint8 _moduleType, bytes32[] _removedTags) external;
 
     /**
-     * @notice Use to get the reputation of the Module factory
-     * @param _factoryAddress Ethereum contract address of the module factory
-     * @return address array which have the list of securityToken's uses that module factory
+     * @notice Used to get the reputation of a Module Factory
+     * @param _factoryAddress address of the Module Factory
+     * @return address array which has the list of securityToken's uses that module factory
      */
     function getReputationOfFactory(address _factoryAddress) public view returns(address[]);
 
     /**
-     * @notice Use to get the list of addresses of Module factory for a particular type
+     * @notice Use to get the list of Module Factory addresses for a given module type
      * @param _moduleType Type of Module
-     * @return address array thal contains the lis of addresses of module factory contracts.
+     * @return address array thal contains the list of addresses of module factory contracts.
      */
     function getModuleListOfType(uint8 _moduleType) public view returns(address[]);
 

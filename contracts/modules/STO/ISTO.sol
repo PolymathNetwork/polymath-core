@@ -2,14 +2,13 @@ pragma solidity ^0.4.24;
 
 import "../../Pausable.sol";
 import "../Module.sol";
-import "../../ReclaimTokens.sol";
+import "../../interfaces/IERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Interface to be implemented by all STO modules
- * @dev NB = order of ReclaimableTokens & Module important as they both override omlyOwner
  */
-contract ISTO is ReclaimTokens, Module, Pausable  {
+contract ISTO is Module, Pausable  {
     using SafeMath for uint256;
 
     enum FundRaiseType { ETH, POLY }
@@ -34,6 +33,18 @@ contract ISTO is ReclaimTokens, Module, Pausable  {
 
     // Event
     event SetFunding(uint8[] _fundRaiseTypes);
+
+    /**
+    * @notice Reclaim ERC20Basic compatible tokens
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    * @param _tokenContract The address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) external onlyOwner {
+        require(_tokenContract != address(0));
+        IERC20 token = IERC20(_tokenContract);
+        uint256 balance = token.balanceOf(address(this));
+        require(token.transfer(msg.sender, balance));
+    }
 
     /**
      * @notice used to verify the investment, whether the investor provided an allowance to the STO or not.

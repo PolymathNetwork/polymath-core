@@ -56,6 +56,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // Use to permanently halt all minting
     bool public mintingFrozen;
 
+    // addresses whitelisted by issuer as controller
+    mapping (address => bool) public isController;
+    mapping (address => uint256) private controllerID;
+    address[] public controllers;
+
     struct ModuleData {
         bytes32 name;
         address moduleAddress;
@@ -110,6 +115,10 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event Minted(address indexed to, uint256 amount);
     event Burnt(address indexed _burner, uint256 _value);
 
+    // Events to log controller actions
+    event LogChangeControllerStatus(address indexed _controller, bool _status);
+    event LogControllerTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _amount, bytes _data);
+
     // Require msg.sender to be the specified module type
     modifier onlyModule(uint8 _moduleType) {
         bool isModuleType = false;
@@ -142,6 +151,14 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     modifier isEnabled(string _nameKey) {
         require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey));
+        _;
+    }
+
+    /**
+     * @notice Revert if called by account which is not a controller
+     */
+    modifier onlyController() {
+        require(isController[msg.sender]);
         _;
     }
 
@@ -719,6 +736,64 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256) {
         return _getValueAt(checkpointBalances[_investor], _checkpointId, balanceOf(_investor));
+    }
+
+    /**
+     * @notice Use to get the list of controller addresses
+     * @return address array containing the list of controller addresses
+     */
+    function getControllers() public view returns (address[]) {
+        return controllers;
+    }
+
+    /**
+     * @notice Use by the issuer ot set the status of a controller addresses
+     * @param _controller address of the controller
+     * @param _status bool representing new status to set
+     */
+    function setControllerStatus(address _controller, bool _status) public onlyOwner {
+        require(isController[_controller] != _status);
+        if (_status == true) {
+            isController[_controller] = true;
+            controllerID[_controller] = controllers.length;
+            controllers.push(_controller);
+        } else {
+            isController[_controller] = false;
+            uint256 i = controllerID[_controller];
+            address last = controllers[controllers.length - 1];
+            controllers[i] = last;
+            controllerID[last] = i;
+
+            delete controllers[controllers.length - 1];
+            delete controllerID[_controller];
+            controllers.length--;
+        }
+        emit LogChangeControllerStatus(_controller, _status);
+    }
+
+    /**
+     * @notice Use by a controller to execute a foced transfer
+     * @param _from address from which to take tokens
+     * @param _to address where to send tokens
+     * @param _value amount of tokens to transfer
+     * @param _data data attached to the transfer by controller for event
+     */
+    function controllerTransfer(address _from, address _to, uint256 _value, bytes _data) public onlyController {
+        require(_value <= balances[_from]);
+        require(_to != address(0));
+
+        _adjustInvestorCount(_from, _to, _value);
+        _adjustBalanceCheckpoints(_from);
+        _adjustBalanceCheckpoints(_to);
+
+        // Consider passing setting to record change in state but not transfer check (could be a part of standard messaging module)
+        // require(verifyTransfer(_from, _to, _value), "Transfer is not valid");
+
+        balances[_from] = balances[_from].sub(_value);
+        balances[_to] = balances[_to].add(_value);
+
+        emit LogControllerTransfer(msg.sender, _from, _to, _value, _data);
+        emit Transfer(_from, _to, _value);
     }
 
 }

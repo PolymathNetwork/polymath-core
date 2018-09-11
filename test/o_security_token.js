@@ -38,6 +38,7 @@ contract('SecurityToken', accounts => {
     let account_fundsReceiver;
     let account_delegate;
     let account_temp;
+    let account_controller;
 
     let balanceOfReceiver;
     // investor Details
@@ -123,16 +124,17 @@ contract('SecurityToken', accounts => {
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
-        account_investor1 = accounts[9];
-        account_investor2 = accounts[6];
-        account_investor3 = accounts[7];
-        account_fundsReceiver = accounts[4];
-        account_delegate = accounts[5];
-        account_temp = accounts[8];
         account_affiliate1 = accounts[2];
         account_affiliate2 = accounts[3];
+        account_fundsReceiver = accounts[4];
+        account_delegate = accounts[5];
+        account_investor2 = accounts[6];
+        account_investor3 = accounts[7];
+        account_temp = accounts[8];
+        account_investor1 = accounts[9];
 
         token_owner = account_issuer;
+        account_controller = account_temp;
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
@@ -1266,6 +1268,177 @@ contract('SecurityToken', accounts => {
                 }
                 assert.ok(errorThrown, message);
             });
+        });
+
+        describe("Force Transfer", async() => {
+
+            it("Should fail to set controller status because msg.sender not owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.setControllerStatus(account_controller, true, {from: account_controller});
+                } catch (error) {
+                    console.log(`         tx revert -> msg.sender not owner`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should fail to set controller status because status unchanged", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.setControllerStatus(account_controller, false, {from: token_owner});
+                } catch (error) {
+                    console.log(`         tx revert -> status unchanged`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully set controller status to true", async() => {
+                let tx1 = await I_SecurityToken.setControllerStatus(account_investor1, true, {from: token_owner});
+                let tx2 = await I_SecurityToken.setControllerStatus(account_controller, true, {from: token_owner});
+                let tx3 = await I_SecurityToken.setControllerStatus(account_investor2, true, {from: token_owner});
+
+                // check event
+                assert.equal(account_investor1, tx1.logs[0].args._controller, "Event not emitted as expected");
+                assert.equal(true, tx1.logs[0].args._status, "Event not emitted as expected");
+                assert.equal(account_controller, tx2.logs[0].args._controller, "Event not emitted as expected");
+                assert.equal(true, tx2.logs[0].args._status, "Event not emitted as expected");
+                assert.equal(account_investor2, tx3.logs[0].args._controller, "Event not emitted as expected");
+                assert.equal(true, tx3.logs[0].args._status, "Event not emitted as expected");
+
+                // check status
+                let status1 = await I_SecurityToken.isController(account_investor1);
+                let status2 = await I_SecurityToken.isController(account_controller);
+                let status3 = await I_SecurityToken.isController(account_investor2);
+                assert.equal(true, status1, "Status not set correctly");
+                assert.equal(true, status2, "Status not set correctly");
+                assert.equal(true, status3, "Status not set correctly");
+
+                // check array
+                let controllers = await I_SecurityToken.getControllers();
+                assert.equal(account_investor1, controllers[0], "Array of controllers not correctly set");
+                assert.equal(account_controller, controllers[1], "Array of controllers not correctly set");
+                assert.equal(account_investor2, controllers[controllers.length - 1], "Array of controllers not correctly set");
+            });
+
+            it("Should successfully set controller status to false", async() => {
+                let tx1 = await I_SecurityToken.setControllerStatus(account_investor1, false, {from: token_owner});
+
+                // check event
+                assert.equal(account_investor1, tx1.logs[0].args._controller, "Event not emitted as expected");
+                assert.equal(false, tx1.logs[0].args._status, "Event not emitted as expected");
+
+                // check status
+                let status1 = await I_SecurityToken.isController(account_investor1);
+                let status2 = await I_SecurityToken.isController(account_controller);
+                let status3 = await I_SecurityToken.isController(account_investor2);
+                assert.equal(false, status1, "Status not set correctly");
+                assert.equal(true, status2, "Status not set correctly");
+                assert.equal(true, status3, "Status not set correctly");
+
+                // check array
+                let controllers = await I_SecurityToken.getControllers();
+                assert.equal(account_investor2, controllers[0], "Array of controllers not correctly set");
+                assert.equal(account_controller, controllers[controllers.length - 1], "Array of controllers not correctly set");
+
+                let tx2 = await I_SecurityToken.setControllerStatus(account_investor2, false, {from: token_owner});
+
+                // check event
+                assert.equal(account_investor2, tx2.logs[0].args._controller, "Event not emitted as expected");
+                assert.equal(false, tx2.logs[0].args._status, "Event not emitted as expected");
+
+                // check status
+                status1 = await I_SecurityToken.isController(account_investor1);
+                status2 = await I_SecurityToken.isController(account_controller);
+                status3 = await I_SecurityToken.isController(account_investor2);
+                assert.equal(false, status1, "Status not set correctly");
+                assert.equal(true, status2, "Status not set correctly");
+                assert.equal(false, status3, "Status not set correctly");
+
+                // check array
+                controllers = await I_SecurityToken.getControllers();
+                assert.equal(account_controller, controllers[0], "Array of controllers not correctly set");
+                assert.equal(account_controller, controllers[controllers.length - 1], "Array of controllers not correctly set");
+            });
+
+            it("Should fail to controllerTransfer because not approved controller", async() => {
+                let errorThrown1 = false;
+                try {
+                    await I_SecurityToken.controllerTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_investor1});
+                } catch (error) {
+                    console.log(`         tx revert -> not approved controller`.grey);
+                    errorThrown1 = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown1, message);
+
+                let errorThrown2 = false;
+                try {
+                    await I_SecurityToken.controllerTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_investor2});
+                } catch (error) {
+                    console.log(`         tx revert -> not approved controller`.grey);
+                    errorThrown2 = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown2, message);
+            });
+
+            it("Should fail to controllerTransfer because insufficient balance", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.controllerTransfer(account_investor2, account_investor1, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
+                } catch (error) {
+                    console.log(`         tx revert -> insufficient balance`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should fail to controllerTransfer because recipient is zero address", async() => {
+                let errorThrown = false;
+                try {
+                    await I_SecurityToken.controllerTransfer(account_investor1, '0x0000000000000000000000000000000000000000', web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
+                } catch (error) {
+                    console.log(`         tx revert -> recipient is zero address`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully controllerTransfer", async() => {
+                let sender = account_investor1;
+                let receiver = account_investor2;
+
+                let start_investorCount = await I_SecurityToken.investorCount.call();
+                let start_balInv1 = await I_SecurityToken.balanceOf.call(account_investor1);
+                let start_balInv2 = await I_SecurityToken.balanceOf.call(account_investor2);
+
+                let tx = await I_SecurityToken.controllerTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
+
+                let end_investorCount = await I_SecurityToken.investorCount.call();
+                let end_balInv1 = await I_SecurityToken.balanceOf.call(account_investor1);
+                let end_balInv2 = await I_SecurityToken.balanceOf.call(account_investor2);
+
+                assert.equal(start_investorCount.add(1).toNumber(), end_investorCount.toNumber(), "Investor count not changed");
+                assert.equal(start_balInv1.sub(web3.utils.toWei("10", "ether")).toNumber(), end_balInv1.toNumber(), "Investor balance not changed");
+                assert.equal(start_balInv2.add(web3.utils.toWei("10", "ether")).toNumber(), end_balInv2.toNumber(), "Investor balance not changed");
+
+                assert.equal(account_controller, tx.logs[0].args._controller, "Event not emitted as expected");
+                assert.equal(account_investor1, tx.logs[0].args._from, "Event not emitted as expected");
+                assert.equal(account_investor2, tx.logs[0].args._to, "Event not emitted as expected");
+                assert.equal(web3.utils.toWei("10", "ether"), tx.logs[0].args._amount, "Event not emitted as expected");
+                assert.equal("reason", web3.utils.hexToUtf8(tx.logs[0].args._data), "Event not emitted as expected");
+
+                assert.equal(account_investor1, tx.logs[1].args.from, "Event not emitted as expected");
+                assert.equal(account_investor2, tx.logs[1].args.to, "Event not emitted as expected");
+                assert.equal(web3.utils.toWei("10", "ether"), tx.logs[1].args.value, "Event not emitted as expected");
+            });
+
         });
 
   });

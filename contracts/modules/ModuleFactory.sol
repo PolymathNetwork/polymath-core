@@ -19,6 +19,11 @@ contract ModuleFactory is IModuleFactory, Ownable {
     bytes32 public name;
     string public title;
 
+    event LogChangeFactorySetupFee(uint256 _oldSetupCost, uint256 _newSetupCost, address _moduleFactory);
+    event LogChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
+    event LogChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
+    event LogGenerateModuleFromFactory(address _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address _creator, uint256 _timestamp);
+
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken

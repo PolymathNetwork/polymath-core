@@ -22,6 +22,8 @@ interface ITickerRegistry {
     /**
      * @notice Check the symbol is reserved or not
      * @param _symbol Symbol of the token
+     * @param _owner is the owner of the token
+     * @param _tokenName is the name of the token
      * @return bool
      */
      function isReserved(string _symbol, address _owner, string _tokenName) external returns(bool);
@@ -61,7 +63,7 @@ interface ITickerRegistry {
 
      /**
      * @notice Use to get the ticker list as per the owner
-     * @param _owner Address which owns the list of tickers 
+     * @param _owner Address which owns the list of tickers
      */
     function getTickersByOwner(address _owner) public view returns(bytes32[]);
 

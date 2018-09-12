@@ -9,7 +9,8 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
+const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
+const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -49,9 +50,11 @@ contract('ModuleRegistry', accounts => {
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
     let I_TickerRegistry;
+    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
-    let I_CappedSTOFactory;
-    let I_STVersion;
+    let I_CappedSTOFactory1;
+    let I_CappedSTOFactory2;
+    let I_STFactory;
     let I_SecurityToken;
     let I_CappedSTO;
     let I_PolyToken;
@@ -60,7 +63,6 @@ contract('ModuleRegistry', accounts => {
     let I_PolymathRegistry;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
-    const swarmHash = "afdandjvvadkva";
     const name = "Demo Token";
     const symbol = "DET";
     const tokenDetails = "This is equity type of issuance";
@@ -84,7 +86,7 @@ contract('ModuleRegistry', accounts => {
     let endTime;
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
-    const fundRaiseType = 0;
+    const fundRaiseType = [0];
     const functionSignature = {
         name: 'configure',
         type: 'function',
@@ -101,8 +103,8 @@ contract('ModuleRegistry', accounts => {
             type: 'uint256',
             name: '_rate'
         },{
-            type: 'uint8',
-            name: '_fundRaiseType',
+            type: 'uint8[]',
+            name: '_fundRaiseTypes',
         },{
             type: 'address',
             name: '_fundsReceiver'
@@ -163,29 +165,57 @@ contract('ModuleRegistry', accounts => {
             "GeneralTransferManagerFactory contract was not deployed"
         );
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
         // Step 8: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
             I_PolymathRegistry.address,
-            I_STVersion.address,
+            I_STFactory.address,
             initRegFee,
             {
                 from: account_polymath
             });
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
+        // Step 10: Deploy the FeatureRegistry
+
+        I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: account_polymath
+            });
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+
+        assert.notEqual(
+            I_FeatureRegistry.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "FeatureRegistry contract was not deployed",
+        );
+
+        // Step 11: update the registries addresses from the PolymathRegistry contract
         await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
         await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
-        // Step 7: Deploy the STversionProxy contract
+        // Printing all the contract addresses
+        console.log(`
+        --------------------- Polymath Network Smart Contracts: ---------------------
+        PolymathRegistry:                  ${PolymathRegistry.address}
+        TickerRegistry:                    ${TickerRegistry.address}
+        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${ModuleRegistry.address}
+        FeatureRegistry:                   ${FeatureRegistry.address}
+
+        STFactory:                         ${STFactory.address}
+        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
+        -----------------------------------------------------------------------------
+        `);
     });
 
     describe("Test case of the module registry", async() => {
@@ -215,10 +245,10 @@ contract('ModuleRegistry', accounts => {
             );
 
 
-            I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
+            I_CappedSTOFactory1 = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
 
             assert.notEqual(
-                I_CappedSTOFactory.address.valueOf(),
+                I_CappedSTOFactory1.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
                 "CappedSTOFactory contract was not deployed"
             );
@@ -278,11 +308,11 @@ contract('ModuleRegistry', accounts => {
 
             assert.equal(tx.logs[0].args._owner, account_polymath);
 
-            tx = await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
+            tx = await I_ModuleRegistry.registerModule(I_CappedSTOFactory1.address, { from: account_polymath });
 
             assert.equal(
                 tx.logs[0].args._moduleFactory,
-                I_CappedSTOFactory.address,
+                I_CappedSTOFactory1.address,
                 "CappedSTOFactory is not registerd successfully"
             );
 
@@ -344,10 +374,10 @@ contract('ModuleRegistry', accounts => {
         });
 
         it("Should successfully verify the module -- false", async() => {
-            let tx = await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, false, { from: account_polymath });
+            let tx = await I_ModuleRegistry.verifyModule(I_CappedSTOFactory1.address, false, { from: account_polymath });
             assert.equal(
                  tx.logs[0].args._moduleFactory,
-                 I_CappedSTOFactory.address,
+                 I_CappedSTOFactory1.address,
                  "Failed in verifying the module"
              );
              assert.equal(
@@ -385,19 +415,19 @@ contract('ModuleRegistry', accounts => {
                 "Failed in verifying the module"
             );
 
-            I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+            I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
-                I_STVersion.address.valueOf(),
+                I_STFactory.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
-                "STVersion contract was not deployed",
+                "STFactory contract was not deployed",
             );
 
             // Deploy the SecurityTokenRegistry
 
             I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
                 I_PolymathRegistry.address,
-                I_STVersion.address,
+                I_STFactory.address,
                 initRegFee,
                 {
                     from: account_polymath
@@ -462,7 +492,7 @@ contract('ModuleRegistry', accounts => {
 
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner });
-            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from : token_owner });
+            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
@@ -502,15 +532,15 @@ contract('ModuleRegistry', accounts => {
 
     });
 
-    describe("test cases for useModule", async() => {
+    describe("test cases for Custom Modules", async() => {
 
-        it("Sholud fail in adding module. Because module is un-verified", async() => {
+        it("Should fail in adding module. Because module is un-verified", async() => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
             let errorThrown = false;
             try {
-                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory1.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
             } catch(error) {
                 errorThrown = true;
                 console.log(`         tx revert -> Module is un-verified`.grey);
@@ -519,20 +549,20 @@ contract('ModuleRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should successfully add the CappedSTO module. Because module is deployed by the owner of ST", async() => {
-            I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: token_owner });
+        it("Should fail to add module because custom modules not allowed", async() => {
+            I_CappedSTOFactory2 = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: token_owner });
 
             assert.notEqual(
-                I_CappedSTOFactory.address.valueOf(),
+                I_CappedSTOFactory2.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
                 "CappedSTOFactory contract was not deployed"
             );
 
-            let tx = await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: token_owner });
+            let tx = await I_ModuleRegistry.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
 
             assert.equal(
                 tx.logs[0].args._moduleFactory,
-                I_CappedSTOFactory.address,
+                I_CappedSTOFactory2.address,
                 "CappedSTOFactory is not registerd successfully"
             );
 
@@ -542,7 +572,29 @@ contract('ModuleRegistry', accounts => {
             endTime = startTime + duration.days(30);
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
-            tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
+            let errorThrown = false;
+            try {
+                tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
+            } catch(error) {
+                errorThrown = true;
+                console.log(`         tx revert -> Module is un-verified`.grey);
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should switch customModulesAllowed to true", async() => {
+            assert.equal(false, await I_FeatureRegistry.getFeatureStatus.call("customModulesAllowed"), "Custom modules should be dissabled by default.");
+            let tx = await I_FeatureRegistry.setFeatureStatus("customModulesAllowed", true, { from: account_polymath });
+            assert.equal(true, await I_FeatureRegistry.getFeatureStatus.call("customModulesAllowed"), "Custom modules should be switched to true.");
+        });
+
+        it("Should successfully add module because custom modules switched on", async() => {
+            startTime = latestTime() + duration.seconds(5000);
+            endTime = startTime + duration.days(30);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+
+            let tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
 
             assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
             assert.equal(
@@ -551,6 +603,91 @@ contract('ModuleRegistry', accounts => {
                 "CappedSTO",
                 "CappedSTOFactory module was not added"
             );
+        });
+
+        it("Should successfully add verified module", async() => {
+            let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, { from: token_owner });
+            assert.equal(tx.logs[2].args._type, permissionManagerKey, "module doesn't get deployed");
+        });
+
+    });
+
+    describe("Test cases for removeModule()", async() => {
+
+        it("Should fail if msg.sender not curator or owner", async() => {
+            let errorThrown = false;
+            try {
+                await I_ModuleRegistry.removeModule(I_CappedSTOFactory2.address, { from: account_temp });
+            } catch(error) {
+                errorThrown = true;
+                console.log(`         tx revert -> Module is un-verified`.grey);
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully remove module and delete data if msg.sender is curator", async() => {
+            let snap = await takeSnapshot();
+
+            let sto1 = await I_ModuleRegistry.moduleList.call(3,0);
+            let sto2 = await I_ModuleRegistry.moduleList.call(3,1);
+
+            assert.equal(sto1,I_CappedSTOFactory1.address);
+            assert.equal(sto2,I_CappedSTOFactory2.address);
+            assert.equal((await I_ModuleRegistry.getModuleListOfType.call(3)).length, 2);
+
+            let tx = await I_ModuleRegistry.removeModule(sto1, { from: account_polymath });
+
+            assert.equal(tx.logs[0].args._moduleFactory, sto1, "Event is not properly emitted for _moduleFactory");
+            assert.equal(tx.logs[0].args._decisionMaker, account_polymath, "Event is not properly emitted for _decisionMaker");
+
+            let sto2_end = await I_ModuleRegistry.moduleList.call(3,0);
+
+            // re-ordering
+            assert.equal(sto2_end,sto2);
+            // delete related data
+            assert.equal(await I_ModuleRegistry.registry.call(sto1), 0);
+            assert.equal(await I_ModuleRegistry.getReputationOfFactory.call(sto1), 0);
+            assert.equal((await I_ModuleRegistry.getModuleListOfType.call(3)).length, 1);
+            assert.equal(await I_ModuleRegistry.verified.call(sto1), false);
+
+            await revertToSnapshot(snap);
+        });
+
+        it("Should successfully remove module and delete data if msg.sender is owner", async() => {
+            let sto1 = await I_ModuleRegistry.moduleList.call(3,0);
+            let sto2 = await I_ModuleRegistry.moduleList.call(3,1);
+
+            assert.equal(sto1,I_CappedSTOFactory1.address);
+            assert.equal(sto2,I_CappedSTOFactory2.address);
+            assert.equal((await I_ModuleRegistry.getModuleListOfType.call(3)).length, 2);
+
+            let tx = await I_ModuleRegistry.removeModule(sto2, { from: token_owner });
+
+            assert.equal(tx.logs[0].args._moduleFactory, sto2, "Event is not properly emitted for _moduleFactory");
+            assert.equal(tx.logs[0].args._decisionMaker, token_owner, "Event is not properly emitted for _decisionMaker");
+
+            let sto1_end = await I_ModuleRegistry.moduleList.call(3,0);
+
+            // re-ordering
+            assert.equal(sto1_end,sto1);
+            // delete related data
+            assert.equal(await I_ModuleRegistry.registry.call(sto2), 0);
+            assert.equal(await I_ModuleRegistry.getReputationOfFactory.call(sto2), 0);
+            assert.equal((await I_ModuleRegistry.getModuleListOfType.call(3)).length, 1);
+            assert.equal(await I_ModuleRegistry.verified.call(sto2), false);
+        });
+
+        it("Should fail if module already removed", async() => {
+            let errorThrown = false;
+            try {
+                await I_ModuleRegistry.removeModule(I_CappedSTOFactory2.address, { from: account_polymath });
+            } catch(error) {
+                errorThrown = true;
+                console.log(`         tx revert -> Module is un-verified`.grey);
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
         });
 
     });

@@ -64,6 +64,10 @@ module.exports = {
     let polymathRegistry = await getPolymathRegistry();
     return await polymathRegistry.methods.getAddress("ModuleRegistry").call();
   },
+  featureRegistry: async function() {
+    let polymathRegistry = await getPolymathRegistry();
+    return await polymathRegistry.methods.getAddress("FeatureRegistry").call();
+  },
   polyToken: async function() {
     let polymathRegistry = await getPolymathRegistry();
     return await polymathRegistry.methods.getAddress("PolyToken").call();

@@ -203,7 +203,7 @@ async function iterateModules(_moduleType) {
 }
 
 async function selectAction() {
-    let options = ['Add a module','Pause / unpause a module','Remove a module','Change module budget','Whitelist an address for a year','Mint tokens','End minting for Issuer','End minting for STO','Exit'];
+    let options = ['Add a module','Pause / unpause a module','Remove a module','Change module budget','Whitelist an address for a year','Mint tokens','Freeze minting permanently','Exit'];
     let index = readlineSync.keyInSelect(options, chalk.yellow('What do you want to do?'), {cancel: false});
     console.log("\nSelected:",options[index]);
     switch (index) {
@@ -226,12 +226,9 @@ async function selectAction() {
             await mintTokens();
             break;
         case 6:
-            await endMintingForIssuer();
+            await freezeMinting();
             break;
         case 7:
-            await endMintingForSTO();
-            break;
-        case 8:
             process.exit();
     }
     displayModules()
@@ -325,9 +322,8 @@ async function whitelist() {
 }
 
 async function mintTokens() {
-    let _flag = await securityToken.methods.finishedIssuerMinting().call();
-    if (_flag) {
-        console.log(chalk.red("Minting is not possible - Minting has been permanently disabled by issuer"));
+    if (await securityToken.methods.mintingFrozen().call()) {
+        console.log(chalk.red("Minting is not possible - Minting has been permanently frozen by issuer"));
         return;
     }
     let result = await securityToken.methods.getModule(3, 0).call();
@@ -354,17 +350,20 @@ async function mintTokens() {
     backToMenu()
 }
 
-async function endMintingForSTO() {
-    let finishMintingSTOAction = securityToken.methods.finishMintingSTO();
-    await common.sendTransaction(Issuer, finishMintingSTOAction, defaultGasPrice);
-    console.log(chalk.green(`\nEnd minting for STO was successful.`));
-    backToMenu();
-}
+async function freezeMinting() {
+    let featureRegistryAddress = await contracts.featureRegistry();
+    let featureRegistryABI = abis.featureRegistry();
+    let featureRegistry = new web3.eth.Contract(featureRegistryABI, featureRegistryAddress);
+    featureRegistry.setProvider(web3.currentProvider);
 
-async function endMintingForIssuer() {
-    let finishMintingIssuerAction = securityToken.methods.finishMintingIssuer();
-    await common.sendTransaction(Issuer, finishMintingIssuerAction, defaultGasPrice);
-    console.log(chalk.green(`\nEnd minting for Issuer was successful.`));
+    if (await featureRegistry.methods.getFeatureStatus('freezeMintingAllowed').call()) {
+        let freezeMintingAction = securityToken.methods.freezeMinting();
+        await common.sendTransaction(Issuer, freezeMintingAction, defaultGasPrice);
+        console.log(chalk.green(`\nFreeze minting was successful.`));
+    } else {
+        console.log(chalk.red(`\nFreeze minting is not allowed by Polymath.`));
+    }
+
     backToMenu();
 }
 

@@ -9,6 +9,7 @@ contract RegistryUpdater is Ownable {
     address public moduleRegistry;
     address public securityTokenRegistry;
     address public tickerRegistry;
+    address public featureRegistry;
     address public polyToken;
 
     constructor (address _polymathRegistry) public {
@@ -20,6 +21,7 @@ contract RegistryUpdater is Ownable {
         moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
         securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
         tickerRegistry = PolymathRegistry(polymathRegistry).getAddress("TickerRegistry");
+        featureRegistry = PolymathRegistry(polymathRegistry).getAddress("FeatureRegistry");
         polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
     }
 

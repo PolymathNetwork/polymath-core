@@ -1,25 +1,16 @@
 pragma solidity ^0.4.24;
 
 import "./ICheckpoint.sol";
+import "../Module.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-
-/////////////////////
-// Module permissions
-/////////////////////
-//                                        Owner       DISTRIBUTE
-// pushDividendPaymentToAddresses           X               X
-// pushDividendPayment                      X               X
-// createDividend                           X
-// createDividendWithCheckpoint             X
-// reclaimDividend                          X
+import "../../interfaces/IERC20.sol";
 
 /**
  * @title Checkpoint module for issuing ERC20 dividends
  */
-contract ERC20DividendCheckpoint is ICheckpoint {
+contract ERC20DividendCheckpoint is ICheckpoint, Module {
     using SafeMath for uint256;
 
     bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
@@ -58,7 +49,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _securityToken, address _polyAddress) public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
@@ -82,7 +73,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
         require(_expiry > now);
         require(_token != address(0));
         require(_amount > 0);
-        require(ERC20(_token).transferFrom(msg.sender, address(this), _amount), "Unable to transfer tokens for dividend");
+        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount), "Unable to transfer tokens for dividend");
         uint256 dividendIndex = dividends.length;
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         uint256 currentSupply = ISecurityToken(securityToken).totalSupply();
@@ -116,7 +107,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
         require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId());
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
-        require(ERC20(_token).transferFrom(msg.sender, address(this), _amount), "Unable to transfer tokens for dividend");
+        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount), "Unable to transfer tokens for dividend");
         dividends.push(
           Dividend(
             _checkpointId,
@@ -186,7 +177,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
         _dividend.claimed[_payee] = true;
         _dividend.claimedAmount = claim.add(_dividend.claimedAmount);
         if (claim > 0) {
-            require(ERC20(_dividend.token).transfer(_payee, claim), "Unable to transfer tokens");
+            require(IERC20(_dividend.token).transfer(_payee, claim), "Unable to transfer tokens");
             emit ERC20DividendClaimed(_payee, _dividendIndex, _dividend.token, claim);
         }
     }
@@ -202,7 +193,7 @@ contract ERC20DividendCheckpoint is ICheckpoint {
         dividends[_dividendIndex].reclaimed = true;
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
-        require(ERC20(dividend.token).transfer(msg.sender, remainingAmount), "Unable to transfer tokens");
+        require(IERC20(dividend.token).transfer(msg.sender, remainingAmount), "Unable to transfer tokens");
         emit ERC20DividendReclaimed(msg.sender, _dividendIndex, dividend.token, remainingAmount);
     }
 

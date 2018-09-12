@@ -9,7 +9,8 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
+const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
+const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -47,9 +48,10 @@ contract('CappedSTO', accounts => {
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
     let I_TickerRegistry;
+    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_CappedSTOFactory;
-    let I_STVersion;
+    let I_STFactory;
     let I_SecurityToken_ETH;
     let I_SecurityToken_POLY;
     let I_CappedSTO_Array_ETH = [];
@@ -58,8 +60,6 @@ contract('CappedSTO', accounts => {
     let I_PolymathRegistry;
     let pauseTime;
 
-    // SecurityToken Details for funds raise Type ETH
-    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Team";
     const symbol = "SAP";
     const tokenDetails = "This is equity type of issuance";
@@ -115,8 +115,8 @@ contract('CappedSTO', accounts => {
             type: 'uint256',
             name: '_rate'
         },{
-            type: 'uint8',
-            name: '_fundRaiseType',
+            type: 'uint8[]',
+            name: '_fundRaiseTypes',
         },{
             type: 'address',
             name: '_fundsReceiver'
@@ -197,6 +197,7 @@ contract('CappedSTO', accounts => {
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: token_owner });
+        await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
 
         // Step 7: Deploy the TickerRegistry
 
@@ -209,21 +210,21 @@ contract('CappedSTO', accounts => {
             "TickerRegistry contract was not deployed",
         );
 
-        // Step 8: Deploy the STversionProxy contract
+        // Step 8: Deploy the STFactory contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
         // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
             I_PolymathRegistry.address,
-            I_STVersion.address,
+            I_STFactory.address,
             initRegFee,
             {
                 from: account_polymath
@@ -236,20 +237,41 @@ contract('CappedSTO', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 10: update the registries addresses from the PolymathRegistry contract
+        // Step 10: Deploy the FeatureRegistry
+
+        I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: account_polymath
+            });
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+
+        assert.notEqual(
+            I_FeatureRegistry.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "FeatureRegistry contract was not deployed",
+        );
+
+        // Step 11: update the registries addresses from the PolymathRegistry contract
         await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
         await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
         await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
-        console.log(`\nPolymath Network Smart Contracts Deployed:\n
-            ModuleRegistry: ${I_ModuleRegistry.address}\n
-            GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}\n
-            GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
-            CappedSTOFactory: ${I_CappedSTOFactory.address}\n
-            TickerRegistry: ${I_TickerRegistry.address}\n
-            STVersionProxy_001: ${I_STVersion.address}\n
-            SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
+        console.log(`
+        --------------------- Polymath Network Smart Contracts: ---------------------
+        PolymathRegistry:                  ${PolymathRegistry.address}
+        TickerRegistry:                    ${TickerRegistry.address}
+        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${ModuleRegistry.address}
+        FeatureRegistry:                   ${FeatureRegistry.address}
+
+        STFactory:                         ${STFactory.address}
+        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
+
+        CappedSTOFactory:                  ${I_CappedSTOFactory.address}
+        -----------------------------------------------------------------------------
         `);
     });
 
@@ -257,7 +279,7 @@ contract('CappedSTO', accounts => {
 
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
-            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, swarmHash, { from : token_owner });
+            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, name, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
@@ -309,7 +331,7 @@ contract('CappedSTO', accounts => {
             let endTime = startTime + duration.days(30);
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
 
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, E_fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, [E_fundRaiseType], account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
@@ -326,7 +348,7 @@ contract('CappedSTO', accounts => {
             let endTime = startTime + duration.days(30);
             await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCost, { from: token_owner});
 
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, E_fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, 0, [E_fundRaiseType], account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
@@ -339,7 +361,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to launch the STO due to startTime > endTime", async () => {
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, E_fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, [E_fundRaiseType], account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
@@ -354,7 +376,7 @@ contract('CappedSTO', accounts => {
         it("Should fail to launch the STO due to cap is of 0 securityToken", async () => {
             let startTime = latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, E_fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [ startTime, endTime, 0, rate, [E_fundRaiseType], account_fundsReceiver]);
             let errorThrown = false;
             try {
             const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
@@ -370,7 +392,7 @@ contract('CappedSTO', accounts => {
         it("Should successfully attach the STO module to the security token", async () => {
             startTime_ETH1 = latestTime() + duration.days(1);
             endTime_ETH1 = startTime_ETH1 + duration.days(30);
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime_ETH1, endTime_ETH1, cap, rate, E_fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime_ETH1, endTime_ETH1, cap, rate, [E_fundRaiseType], account_fundsReceiver]);
             const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 45000000 });
 
             assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
@@ -512,7 +534,7 @@ contract('CappedSTO', accounts => {
               });
 
             assert.equal(
-                (await I_CappedSTO_Array_ETH[0].fundsRaised.call())
+                (await I_CappedSTO_Array_ETH[0].getRaisedEther.call())
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 1
@@ -632,7 +654,7 @@ contract('CappedSTO', accounts => {
               });
 
               assert.equal(
-                (await I_CappedSTO_Array_ETH[0].fundsRaised.call())
+                (await I_CappedSTO_Array_ETH[0].getRaisedEther.call())
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 10
@@ -684,7 +706,7 @@ contract('CappedSTO', accounts => {
             //console.log("WWWW",newBalance,await I_CappedSTO.fundsRaised.call(),balanceOfReceiver);
             let op = (BigNumber(newBalance).minus(balanceOfReceiver)).toNumber();
             assert.equal(
-                (await I_CappedSTO_Array_ETH[0].fundsRaised.call()).toNumber(),
+                (await I_CappedSTO_Array_ETH[0].getRaisedEther.call()).toNumber(),
                 op,
                 "Somewhere raised money get stolen or sent to wrong wallet"
             );
@@ -741,7 +763,7 @@ contract('CappedSTO', accounts => {
 
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
             await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCost, { from: token_owner});
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime_ETH2, endTime_ETH2, cap, rate, E_fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime_ETH2, endTime_ETH2, cap, rate, [E_fundRaiseType], account_fundsReceiver]);
             const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
 
             assert.equal(tx.logs[3].args._type, stoKey, "CappedSTO doesn't get deployed");
@@ -824,7 +846,7 @@ contract('CappedSTO', accounts => {
             await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_issuer, value: web3.utils.toWei('1', 'ether') });
 
             assert.equal(
-                (await I_CappedSTO_Array_ETH[1].fundsRaised.call())
+                (await I_CappedSTO_Array_ETH[1].getRaisedEther.call())
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 1
@@ -850,7 +872,7 @@ contract('CappedSTO', accounts => {
 
             await I_PolyToken.getTokens(cappedSTOSetupCost*19, token_owner);
             await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCost*19, { from: token_owner});
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, E_fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, [E_fundRaiseType], account_fundsReceiver]);
 
             for (var STOIndex = 2; STOIndex < MAX_MODULES; STOIndex++) {
                 const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
@@ -876,7 +898,7 @@ contract('CappedSTO', accounts => {
             for (var STOIndex = 2; STOIndex < MAX_MODULES; STOIndex++) {
                 await I_CappedSTO_Array_ETH[STOIndex].buyTokens(account_investor3, { from : account_investor3, value: web3.utils.toWei('1', 'ether') });
                 assert.equal(
-                    (await I_CappedSTO_Array_ETH[STOIndex].fundsRaised.call())
+                    (await I_CappedSTO_Array_ETH[STOIndex].getRaisedEther.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1
@@ -892,7 +914,7 @@ contract('CappedSTO', accounts => {
 
             it("POLY: Should register the ticker before the generation of the security token", async () => {
                 await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
-                let tx = await I_TickerRegistry.registerTicker(token_owner, P_symbol, P_name, swarmHash, { from : token_owner });
+                let tx = await I_TickerRegistry.registerTicker(token_owner, P_symbol, P_name, { from : token_owner });
                 assert.equal(tx.logs[0].args._owner, token_owner);
                 assert.equal(tx.logs[0].args._symbol, P_symbol);
             });
@@ -933,7 +955,7 @@ contract('CappedSTO', accounts => {
                 await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
                 await I_PolyToken.transfer(I_SecurityToken_POLY.address, cappedSTOSetupCost, { from: token_owner});
 
-                let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime_POLY1, endTime_POLY1, P_cap, P_rate, P_fundRaiseType, account_fundsReceiver]);
+                let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime_POLY1, endTime_POLY1, P_cap, P_rate, [P_fundRaiseType], account_fundsReceiver]);
 
                 const tx = await I_SecurityToken_POLY.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
 
@@ -1016,7 +1038,7 @@ contract('CappedSTO', accounts => {
                 );
 
                 assert.equal(
-                    (await I_CappedSTO_Array_POLY[0].fundsRaised.call())
+                    (await I_CappedSTO_Array_POLY[0].getRaisedPOLY.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1000
@@ -1070,7 +1092,7 @@ contract('CappedSTO', accounts => {
                 );
 
                   assert.equal(
-                    (await I_CappedSTO_Array_POLY[0].fundsRaised.call())
+                    (await I_CappedSTO_Array_POLY[0].getRaisedPOLY.call())
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     10000
@@ -1122,7 +1144,7 @@ contract('CappedSTO', accounts => {
             it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {
                 const balanceRaised = await I_PolyToken.balanceOf.call(account_fundsReceiver);
                 assert.equal(
-                    (await I_CappedSTO_Array_POLY[0].fundsRaised.call()).toNumber(),
+                    (await I_CappedSTO_Array_POLY[0].getRaisedPOLY.call()).toNumber(),
                     balanceRaised,
                     "Somewhere raised money get stolen or sent to wrong wallet"
                 );
@@ -1138,7 +1160,7 @@ contract('CappedSTO', accounts => {
                             "CappedSTO",
                             "Wrong Module added");
                 assert.equal(await I_CappedSTOFactory.getDescription.call(),
-                            "Capped STO",
+                            "Use to collects the funds and once the cap is reached then investment will be no longer entertained",
                             "Wrong Module added");
                 assert.equal(await I_CappedSTOFactory.getTitle.call(),
                             "Capped STO",
@@ -1150,6 +1172,107 @@ contract('CappedSTO', accounts => {
                 assert.equal(web3.utils.hexToString(tags[0]),"Capped");
 
             });
+
+            it("Should fail to change the title -- bad owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_CappedSTOFactory.changeTitle("STO Capped", {from:account_investor1});
+                } catch(error) {
+                    console.log(`         tx revert -> bad owner`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should fail to change the title -- zero length", async() => {
+                let errorThrown = false;
+                try {
+                    await I_CappedSTOFactory.changeTitle("", {from: token_owner});
+                } catch(error) {
+                    console.log(`         tx revert -> bad owner`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully change the title", async() => {
+                await I_CappedSTOFactory.changeTitle("STO Capped", {from: token_owner});
+                assert.equal(await I_CappedSTOFactory.getTitle.call(),
+                            "STO Capped",
+                            "Title doesn't get changed");
+            });
+
+            it("Should fail to change the description -- bad owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_CappedSTOFactory.changeDescription("It is only a STO", {from:account_investor1});
+                } catch(error) {
+                    console.log(`         tx revert -> bad owner`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should fail to change the description -- zero length", async() => {
+                let errorThrown = false;
+                try {
+                    await I_CappedSTOFactory.changeDescription("", {from: token_owner});
+                } catch(error) {
+                    console.log(`         tx revert -> length of string should not be zero`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully change the description", async() => {
+                await I_CappedSTOFactory.changeDescription("It is only a STO", {from: token_owner});
+                assert.equal(await I_CappedSTOFactory.getDescription.call(),
+                            "It is only a STO",
+                            "Description doesn't get changed");
+            });
+
+            it("Should fail to change the name -- bad owner", async() => {
+                let errorThrown = false;
+                try {
+                    await I_CappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), {from:account_investor1});
+                } catch(error) {
+                    console.log(`         tx revert -> bad owner`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should fail to change the name -- zero length", async() => {
+                let errorThrown = false;
+                try {
+                    await I_CappedSTOFactory.changeName(web3.utils.stringToHex(""), {from: token_owner});
+                } catch(error) {
+                    console.log(`         tx revert -> length of string should not be zero`.grey);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
+
+            it("Should successfully change the name", async() => {
+                await I_CappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), {from: token_owner});
+                assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()),
+                            "STOCapped",
+                            "Name doesn't get changed");
+            });
+
+            it("Should successfully change the name", async() => {
+                await I_CappedSTOFactory.changeName(web3.utils.stringToHex("CappedSTO"), {from: token_owner});
+                assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()),
+                            "CappedSTO",
+                            "Name doesn't get changed");
+            });
+
          });
 
          describe("Test cases for the get functions of the capped sto", async() => {
@@ -1190,7 +1313,7 @@ contract('CappedSTO', accounts => {
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
             await I_PolyToken.transfer(I_SecurityToken_POLY.address, cappedSTOSetupCost, { from: token_owner});
 
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime_POLY2, endTime_POLY2, P_cap, P_rate, P_fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime_POLY2, endTime_POLY2, P_cap, P_rate, [P_fundRaiseType], account_fundsReceiver]);
 
             const tx = await I_SecurityToken_POLY.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner, gas: 26000000 });
 
@@ -1260,7 +1383,7 @@ contract('CappedSTO', accounts => {
             );
 
             assert.equal(
-                (await I_CappedSTO_Array_POLY[1].fundsRaised.call())
+                (await I_CappedSTO_Array_POLY[1].getRaisedPOLY.call())
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 polyToInvest

@@ -3,17 +3,6 @@ pragma solidity ^0.4.24;
 import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                                        Owner       WHITELIST      FLAGS
-// changeIssuanceAddress                    X                          X
-// changeAllowAllTransfers                  X                          X
-// changeAllowAllWhitelistTransfers         X                          X
-// changeAllowAllWhitelistIssuances         X                          X
-// modifyWhitelist                          X             X
-// modifyWhitelistMulti                     X             X
-
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
@@ -81,7 +70,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     constructor (address _securityToken, address _polyAddress)
     public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
@@ -173,17 +162,17 @@ contract GeneralTransferManager is ITransferManager {
             }
             if (allowAllWhitelistTransfers) {
                 //Anyone on the whitelist can transfer, regardless of block number
-                return (onWhitelist(_to) && onWhitelist(_from)) ? Result.VALID : Result.NA;
+                return (_onWhitelist(_to) && _onWhitelist(_from)) ? Result.VALID : Result.NA;
             }
             if (allowAllWhitelistIssuances && _from == issuanceAddress) {
-                if (!whitelist[_to].canBuyFromSTO && isSTOAttached()) {
+                if (!whitelist[_to].canBuyFromSTO && _isSTOAttached()) {
                     return Result.NA;
                 }
-                return onWhitelist(_to) ? Result.VALID : Result.NA;
+                return _onWhitelist(_to) ? Result.VALID : Result.NA;
             }
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
-            return ((onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
-                (onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA;
+            return ((_onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
+                (_onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA;
         }
         return Result.NA;
     }
@@ -254,7 +243,7 @@ contract GeneralTransferManager is ITransferManager {
         require(_validFrom <= now, "ValidFrom is too early");
         require(_validTo >= now, "ValidTo is too late");
         bytes32 hash = keccak256(abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo));
-        checkSig(hash, _v, _r, _s);
+        _checkSig(hash, _v, _r, _s);
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
         emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
@@ -263,11 +252,11 @@ contract GeneralTransferManager is ITransferManager {
     /**
      * @notice used to verify the signature
      */
-    function checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
+    function _checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
         address signer = ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash)), _v, _r, _s);
-        require(signer == ISecurityToken(securityToken).owner() || signer == signingAddress, "Incorrect signer");
+        require(signer == Ownable(securityToken).owner() || signer == signingAddress, "Incorrect signer");
     }
 
     /**
@@ -285,7 +274,7 @@ contract GeneralTransferManager is ITransferManager {
             & also checks whether the KYC of investor get expired or not
      * @param _investor Address of the investor
      */
-    function onWhitelist(address _investor) internal view returns(bool) {
+    function _onWhitelist(address _investor) internal view returns(bool) {
         return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) &&
             (whitelist[_investor].expiryTime >= now));
     }
@@ -293,7 +282,7 @@ contract GeneralTransferManager is ITransferManager {
     /**
      * @notice Internal function use to know whether the STO is attached or not
      */
-    function isSTOAttached() internal view returns(bool) {
+    function _isSTOAttached() internal view returns(bool) {
         address _sto;
         (, _sto) = ISecurityToken(securityToken).getModule(3, 0);
         if (_sto == address(0))

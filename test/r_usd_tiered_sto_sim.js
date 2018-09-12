@@ -10,7 +10,8 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
+const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
+const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -20,6 +21,8 @@ const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
+
+const TOLERANCE = 2; // Allow balances to be off by 2 WEI for rounding purposes
 
 contract('USDTieredSTO', accounts => {
     // Accounts Variable declaration
@@ -45,18 +48,18 @@ contract('USDTieredSTO', accounts => {
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
     let I_TickerRegistry;
+    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_USDTieredSTOFactory;
     let I_USDOracle;
     let I_POLYOracle;
-    let I_STVersion;
+    let I_STFactory;
     let I_SecurityToken;
     let I_USDTieredSTO_Array = [];
     let I_PolyToken;
     let I_PolymathRegistry;
 
     // SecurityToken Details for funds raise Type ETH
-    const SWARMHASH = "dagwrgwgvwergwrvwrg";
     const NAME = "Team";
     const SYMBOL = "SAP";
     const TOKENDETAILS = "This is equity type of issuance";
@@ -218,6 +221,7 @@ contract('USDTieredSTO', accounts => {
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_USDTieredSTOFactory.address, { from: ISSUER });
+        await I_ModuleRegistry.verifyModule(I_USDTieredSTOFactory.address, true, { from: POLYMATH });
 
         // Step 7: Deploy the TickerRegistry
 
@@ -230,21 +234,21 @@ contract('USDTieredSTO', accounts => {
             "TickerRegistry contract was not deployed",
         );
 
-        // Step 8: Deploy the STversionProxy contract
+        // Step 8: Deploy the STFactory contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : POLYMATH });
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : POLYMATH });
 
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
         // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
             I_PolymathRegistry.address,
-            I_STVersion.address,
+            I_STFactory.address,
             REGFEE,
             {
                 from: POLYMATH
@@ -257,12 +261,27 @@ contract('USDTieredSTO', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 10: update the registries addresses from the PolymathRegistry contract
+        // Step 10: Deploy the FeatureRegistry
+
+        I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: POLYMATH
+            });
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: POLYMATH});
+
+        assert.notEqual(
+            I_FeatureRegistry.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "FeatureRegistry contract was not deployed",
+        );
+
+        // Step 11: update the registries addresses from the PolymathRegistry contract
         await I_SecurityTokenRegistry.updateFromRegistry({from: POLYMATH});
         await I_ModuleRegistry.updateFromRegistry({from: POLYMATH});
         await I_TickerRegistry.updateFromRegistry({from: POLYMATH});
 
-        // Step 11: Deploy & Register Mock Oracles
+        // Step 12: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY
         I_POLYOracle = await MockOracle.new(I_PolyToken.address, "POLY", "USD", USDPOLY, { from: POLYMATH }); // 25 cents per POLY
         await I_PolymathRegistry.changeAddress("EthUsdOracle", I_USDOracle.address, { from: POLYMATH });
@@ -270,17 +289,21 @@ contract('USDTieredSTO', accounts => {
 
         // Printing all the contract addresses
         console.log(`
-        -------------------- Polymath Network Smart Contracts: --------------------
-        ModuleRegistry:                  ${I_ModuleRegistry.address}
-        GeneralTransferManagerFactory:   ${I_GeneralTransferManagerFactory.address}
-        GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}
-        USDTieredSTOFactory:             ${I_USDTieredSTOFactory.address}
-        TickerRegistry:                  ${I_TickerRegistry.address}
-        STVersionProxy_001:              ${I_STVersion.address}
-        SecurityTokenRegistry:           ${I_SecurityTokenRegistry.address}
-        USDOracle:                       ${I_USDOracle.address}
-        POLYOracle:                      ${I_POLYOracle.address}
-        ---------------------------------------------------------------------------
+        --------------------- Polymath Network Smart Contracts: ---------------------
+        PolymathRegistry:                  ${PolymathRegistry.address}
+        TickerRegistry:                    ${TickerRegistry.address}
+        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${ModuleRegistry.address}
+        FeatureRegistry:                   ${FeatureRegistry.address}
+
+        STFactory:                         ${STFactory.address}
+        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
+
+        USDOracle:                         ${I_USDOracle.address}
+        POLYOracle:                        ${I_POLYOracle.address}
+        USDTieredSTOFactory:               ${I_USDTieredSTOFactory.address}
+        -----------------------------------------------------------------------------
         `);
     });
 
@@ -289,7 +312,7 @@ contract('USDTieredSTO', accounts => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_TickerRegistry.address, REGFEE, { from: ISSUER });
-            let tx = await I_TickerRegistry.registerTicker(ISSUER, SYMBOL, NAME, SWARMHASH, { from : ISSUER });
+            let tx = await I_TickerRegistry.registerTicker(ISSUER, SYMBOL, NAME, { from : ISSUER });
             assert.equal(tx.logs[0].args._owner, ISSUER);
             assert.equal(tx.logs[0].args._symbol, SYMBOL);
         });
@@ -654,33 +677,38 @@ contract('USDTieredSTO', accounts => {
                 // console.log('final_TokenSupply: '+final_TokenSupply.div(10**18).toNumber());
 
                 if (isPoly) {
-                    assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
-                    assert.equal(final_InvestorTokenBal.toNumber(), init_InvestorTokenBal.add(investment_Token).toNumber(), "Investor Token Balance not changed as expected");
-                    assert.equal(final_InvestorETHBal.toNumber(), init_InvestorETHBal.sub(gasCost).toNumber(), "Investor ETH Balance not changed as expected");
-                    assert.equal(final_InvestorPOLYBal.toNumber(), init_InvestorPOLYBal.sub(investment_POLY).toNumber(), "Investor POLY Balance not changed as expected");
-                    assert.equal(final_STOTokenSold.toNumber(), init_STOTokenSold.add(investment_Token).toNumber(), "STO Token Sold not changed as expected");
-                    assert.equal(final_STOETHBal.toNumber(), init_STOETHBal.toNumber(), "STO ETH Balance not changed as expected");
-                    assert.equal(final_STOPOLYBal.toNumber(), init_STOPOLYBal.toNumber(), "STO POLY Balance not changed as expected");
-                    assert.equal(final_RaisedUSD.toNumber(), init_RaisedUSD.add(investment_USD).toNumber(), "Raised USD not changed as expected");
-                    assert.equal(final_RaisedETH.toNumber(), init_RaisedETH.toNumber(), "Raised ETH not changed as expected");
-                    assert.equal(final_RaisedPOLY.toNumber(), init_RaisedPOLY.add(investment_POLY).toNumber(), "Raised POLY not changed as expected");
-                    assert.equal(final_WalletETHBal.toNumber(), init_WalletETHBal.toNumber(), "Wallet ETH Balance not changed as expected");
-                    assert.equal(final_WalletPOLYBal.toNumber(), init_WalletPOLYBal.add(investment_POLY).toNumber(), "Wallet POLY Balance not changed as expected");
+                    assert.closeTo(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), TOLERANCE, "Token Supply not changed as expected");
+                    assert.closeTo(final_InvestorTokenBal.toNumber(), init_InvestorTokenBal.add(investment_Token).toNumber(), TOLERANCE, "Investor Token Balance not changed as expected");
+                    assert.closeTo(final_InvestorETHBal.toNumber(), init_InvestorETHBal.sub(gasCost).toNumber(), TOLERANCE, "Investor ETH Balance not changed as expected");
+                    assert.closeTo(final_InvestorPOLYBal.toNumber(), init_InvestorPOLYBal.sub(investment_POLY).toNumber(), TOLERANCE, "Investor POLY Balance not changed as expected");
+                    assert.closeTo(final_STOTokenSold.toNumber(), init_STOTokenSold.add(investment_Token).toNumber(), TOLERANCE, "STO Token Sold not changed as expected");
+                    assert.closeTo(final_STOETHBal.toNumber(), init_STOETHBal.toNumber(), TOLERANCE, "STO ETH Balance not changed as expected");
+                    assert.closeTo(final_STOPOLYBal.toNumber(), init_STOPOLYBal.toNumber(), TOLERANCE, "STO POLY Balance not changed as expected");
+                    assert.closeTo(final_RaisedUSD.toNumber(), init_RaisedUSD.add(investment_USD).toNumber(), TOLERANCE, "Raised USD not changed as expected");
+                    assert.closeTo(final_RaisedETH.toNumber(), init_RaisedETH.toNumber(), TOLERANCE, "Raised ETH not changed as expected");
+                    assert.closeTo(final_RaisedPOLY.toNumber(), init_RaisedPOLY.add(investment_POLY).toNumber(), TOLERANCE, "Raised POLY not changed as expected");
+                    assert.closeTo(final_WalletETHBal.toNumber(), init_WalletETHBal.toNumber(), TOLERANCE, "Wallet ETH Balance not changed as expected");
+                    assert.closeTo(final_WalletPOLYBal.toNumber(), init_WalletPOLYBal.add(investment_POLY).toNumber(), TOLERANCE, "Wallet POLY Balance not changed as expected");
                 } else {
-                    assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
-                    assert.equal(final_InvestorTokenBal.toNumber(), init_InvestorTokenBal.add(investment_Token).toNumber(), "Investor Token Balance not changed as expected");
-                    assert.equal(final_InvestorETHBal.toNumber(), init_InvestorETHBal.sub(gasCost).sub(investment_ETH).toNumber(), "Investor ETH Balance not changed as expected");
-                    assert.equal(final_InvestorPOLYBal.toNumber(), init_InvestorPOLYBal.toNumber(), "Investor POLY Balance not changed as expected");
-                    assert.equal(final_STOTokenSold.toNumber(), init_STOTokenSold.add(investment_Token).toNumber(), "STO Token Sold not changed as expected");
-                    assert.equal(final_STOETHBal.toNumber(), init_STOETHBal.toNumber(), "STO ETH Balance not changed as expected");
-                    assert.equal(final_STOPOLYBal.toNumber(), init_STOPOLYBal.toNumber(), "STO POLY Balance not changed as expected");
-                    assert.equal(final_RaisedUSD.toNumber(), init_RaisedUSD.add(investment_USD).toNumber(), "Raised USD not changed as expected");
-                    assert.equal(final_RaisedETH.toNumber(), init_RaisedETH.add(investment_ETH).toNumber(), "Raised ETH not changed as expected");
-                    assert.equal(final_RaisedPOLY.toNumber(), init_RaisedPOLY.toNumber(), "Raised POLY not changed as expected");
-                    assert.equal(final_WalletETHBal.toNumber(), init_WalletETHBal.add(investment_ETH).toNumber(), "Wallet ETH Balance not changed as expected");
-                    assert.equal(final_WalletPOLYBal.toNumber(), init_WalletPOLYBal.toNumber(), "Wallet POLY Balance not changed as expected");
+                    assert.closeTo(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), TOLERANCE, "Token Supply not changed as expected");
+                    assert.closeTo(final_InvestorTokenBal.toNumber(), init_InvestorTokenBal.add(investment_Token).toNumber(), TOLERANCE, "Investor Token Balance not changed as expected");
+                    assert.closeTo(final_InvestorETHBal.toNumber(), init_InvestorETHBal.sub(gasCost).sub(investment_ETH).toNumber(), TOLERANCE, "Investor ETH Balance not changed as expected");
+                    assert.closeTo(final_InvestorPOLYBal.toNumber(), init_InvestorPOLYBal.toNumber(), TOLERANCE, "Investor POLY Balance not changed as expected");
+                    assert.closeTo(final_STOTokenSold.toNumber(), init_STOTokenSold.add(investment_Token).toNumber(), TOLERANCE, "STO Token Sold not changed as expected");
+                    assert.closeTo(final_STOETHBal.toNumber(), init_STOETHBal.toNumber(), TOLERANCE, "STO ETH Balance not changed as expected");
+                    assert.closeTo(final_STOPOLYBal.toNumber(), init_STOPOLYBal.toNumber(), TOLERANCE, "STO POLY Balance not changed as expected");
+                    assert.closeTo(final_RaisedUSD.toNumber(), init_RaisedUSD.add(investment_USD).toNumber(), TOLERANCE, "Raised USD not changed as expected");
+                    assert.closeTo(final_RaisedETH.toNumber(), init_RaisedETH.add(investment_ETH).toNumber(), TOLERANCE, "Raised ETH not changed as expected");
+                    assert.closeTo(final_RaisedPOLY.toNumber(), init_RaisedPOLY.toNumber(), TOLERANCE, "Raised POLY not changed as expected");
+                    assert.closeTo(final_WalletETHBal.toNumber(), init_WalletETHBal.add(investment_ETH).toNumber(), TOLERANCE, "Wallet ETH Balance not changed as expected");
+                    assert.closeTo(final_WalletPOLYBal.toNumber(), init_WalletPOLYBal.toNumber(), TOLERANCE, "Wallet POLY Balance not changed as expected");
                 }
             }
         });
     });
 });
+
+function near(x, y, message) {
+    assert.isAtMost(x, y)
+
+}

@@ -14,7 +14,8 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
+const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
+const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -41,7 +42,8 @@ contract('SecurityToken addModule Cap', accounts => {
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
     let I_TickerRegistry;
-    let I_STVersion;
+    let I_FeatureRegistry;
+    let I_STFactory;
     let I_SecurityTokenRegistry;
     let I_SecurityToken;
     let I_PolyToken;
@@ -82,8 +84,8 @@ contract('SecurityToken addModule Cap', accounts => {
             type: 'uint256',
             name: '_rate'
         },{
-            type: 'uint8',
-            name: '_fundRaiseType',
+            type: 'uint8[]',
+            name: '_fundRaiseTypes',
         },{
             type: 'address',
             name: '_fundsReceiver'
@@ -184,8 +186,13 @@ contract('SecurityToken addModule Cap', accounts => {
 
         // (C) : Register the STO Factories
         await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_issuer });
+        await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
+
         await I_ModuleRegistry.registerModule(I_DummySTOFactory.address, { from: account_issuer });
+        await I_ModuleRegistry.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
+
         await I_ModuleRegistry.registerModule(I_PreSaleSTOFactory.address, { from: account_issuer });
+        await I_ModuleRegistry.verifyModule(I_PreSaleSTOFactory.address, true, { from: account_polymath });
 
         // Step 6: Deploy the TickerRegistry
 
@@ -198,21 +205,21 @@ contract('SecurityToken addModule Cap', accounts => {
             "TickerRegistry contract was not deployed",
         );
 
-        // Step 7: Deploy the STversionProxy contract
+        // Step 7: Deploy the STFactory contract
 
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
         // Step 8: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
             I_PolymathRegistry.address,
-            I_STVersion.address,
+            I_STFactory.address,
             initRegFee,
             {
                 from: account_polymath
@@ -225,28 +232,46 @@ contract('SecurityToken addModule Cap', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-         // Step 10: update the registries addresses from the PolymathRegistry contract
-         await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
-         await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
-         await I_TickerRegistry.updateFromRegistry({from: account_polymath});
+        // Step 10: Deploy the FeatureRegistry
+
+        I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: account_polymath
+            });
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+
+        assert.notEqual(
+            I_FeatureRegistry.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "FeatureRegistry contract was not deployed",
+        );
+
+        // Step 11: update the registries addresses from the PolymathRegistry contract
+        await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
+        await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
+        await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
-        console.log(`\n
-    ------ Polymath Network Smart Contracts Deployed: ------
-    ModuleRegistry: ${I_ModuleRegistry.address}
-    GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}
-    GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}
-    CappedSTOFactory: ${I_CappedSTOFactory.address}
-    TickerRegistry: ${I_TickerRegistry.address}
-    STVersionProxy_001: ${I_STVersion.address}
-    SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}
-    --------------------------------------------------------
+        console.log(`
+        --------------------- Polymath Network Smart Contracts: ---------------------
+        PolymathRegistry:                  ${PolymathRegistry.address}
+        TickerRegistry:                    ${TickerRegistry.address}
+        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${ModuleRegistry.address}
+        FeatureRegistry:                   ${FeatureRegistry.address}
+
+        STFactory:                         ${STFactory.address}
+        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
+
+        CappedSTOFactory:                  ${I_CappedSTOFactory.address}
+        -----------------------------------------------------------------------------
         `);
     });
 
     describe("Generate Security Token", async() => {
         // SecurityToken Details for funds raise Type ETH
-        const swarmHash = "dagwrgwgvwergwrvwrg";
         const name = "Team";
         const symbol = "SAP";
         const tokenDetails = "This is equity type of issuance";
@@ -255,7 +280,7 @@ contract('SecurityToken addModule Cap', accounts => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
             await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: account_issuer });
-            let tx = await I_TickerRegistry.registerTicker(account_issuer, symbol, name, swarmHash, { from : account_issuer });
+            let tx = await I_TickerRegistry.registerTicker(account_issuer, symbol, name, { from : account_issuer });
             assert.equal(tx.logs[0].args._owner, account_issuer);
             assert.equal(tx.logs[0].args._symbol, symbol);
         });
@@ -316,7 +341,7 @@ contract('SecurityToken addModule Cap', accounts => {
             const endTime = latestTime() + duration.days(90);
             const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
             const rate = 1000;
-            const fundRaiseType = 0;
+            const fundRaiseType = [0];
             const budget = 0;
             const maxCost = STOSetupCost;
             const cappedBytesSig = web3.eth.abi.encodeFunctionCall(cappedFuncSig, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
@@ -370,7 +395,7 @@ contract('SecurityToken addModule Cap', accounts => {
                     case 0:
                         // Capped STO ETH
                         await I_STO_Array[STOIndex].buyTokens(account_investor1, { from : account_investor1, value: web3.utils.toWei('1', 'ether') });
-                        assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].fundsRaised.call()).toString()), 1);
+                        assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaisedEther.call()).toString()), 1);
                         assert.equal(await I_STO_Array[STOIndex].getNumberInvestors.call(), 1);
                         break;
                     case 1:
@@ -402,4 +427,3 @@ contract('SecurityToken addModule Cap', accounts => {
         });
     });
 });
-

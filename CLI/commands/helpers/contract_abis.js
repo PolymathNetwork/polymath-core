@@ -1,6 +1,7 @@
 let polymathRegistryABI;
 let tickerRegistryABI;
 let securityTokenRegistryABI;
+let featureRegistryABI;
 let securityTokenABI;
 let cappedSTOABI;
 let usdTieredSTOABI;
@@ -15,6 +16,7 @@ try {
     polymathRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/PolymathRegistry.json').toString()).abi;
     tickerRegistryABI           = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
     securityTokenRegistryABI    = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
+    featureRegistryABI          = JSON.parse(require('fs').readFileSync('./build/contracts/FeatureRegistry.json').toString()).abi;
     securityTokenABI            = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
     cappedSTOABI                = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
     usdTieredSTOABI             = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTO.json').toString()).abi;
@@ -38,6 +40,9 @@ module.exports = {
     },
     securityTokenRegistry: function () {
         return securityTokenRegistryABI;
+    },
+    featureRegistry: function () {
+        return featureRegistryABI;
     },
     securityToken: function () {
         return securityTokenABI;

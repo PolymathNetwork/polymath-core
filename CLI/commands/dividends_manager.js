@@ -187,8 +187,8 @@ async function start_explorer(){
 }
 
 async function mintTokens(address, amount){
-  if (await securityToken.methods.finishedIssuerMinting().call()) {
-    console.log(chalk.red("Minting is not possible - Minting has been permanently disabled by issuer"));
+  if (await securityToken.methods.mintingFrozen().call()) {
+    console.log(chalk.red("Minting is not possible - Minting has been permanently frozen by issuer"));
   } else {
     let result = await securityToken.methods.getModule(3, 0).call();
     let isSTOAttached = result[1] != "0x0000000000000000000000000000000000000000";

@@ -46,7 +46,7 @@ interface ISecurityTokenRegistry {
      * @param _securityToken Address of the Security Token
      * @return string, address, bytes32
      */
-    function getSecurityTokenData(address _securityToken) public view returns (string, address, string, uint256);
+    function getSecurityTokenData(address _securityToken) external view returns (string, address, string, uint256);
 
     /**
     * @notice Checks that Security Token is registered

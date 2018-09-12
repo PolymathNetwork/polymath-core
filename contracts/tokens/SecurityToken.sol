@@ -289,7 +289,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bytes32
      * @return address
      */
-    function getAllModulesByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32[], address[]) {
+    function getAllModulesByName(uint8 _moduleType, bytes32 _name) external view returns (bytes32[], address[]) {
         if (modules[_moduleType].length > 0) {
             uint counter = 0;
             for (uint256 i = 0; i < modules[_moduleType].length; i++) {

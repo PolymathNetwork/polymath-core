@@ -169,14 +169,14 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _wallet,
         address _reserveWallet
     ) public onlyFactory {
-        _configureFunding(_fundRaiseTypes);
-        _configureAddresses(_wallet, _reserveWallet);
-        _configureTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
-        _configureTimes(_startTime, _endTime);
-        _configureLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
+        modifyTimes(_startTime, _endTime);
+        modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
+        modifyFunding(_fundRaiseTypes);
+        modifyAddresses(_wallet, _reserveWallet);
+        modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
-    function modifyFunding(uint8[] _fundRaiseTypes) public onlyOwner {
+    function modifyFunding(uint8[] _fundRaiseTypes) public onlyFactoryOrOwner {
         require(now < startTime);
         _configureFunding(_fundRaiseTypes);
     }
@@ -184,9 +184,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     function modifyLimits(
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD
-    ) public onlyOwner {
+    ) public onlyFactoryOrOwner {
         require(now < startTime);
-        _configureLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
+        minimumInvestmentUSD = _minimumInvestmentUSD;
+        nonAccreditedLimitUSD = _nonAccreditedLimitUSD;
+        emit SetLimits(minimumInvestmentUSD, nonAccreditedLimitUSD);
     }
 
     function modifyTiers(
@@ -194,42 +196,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256[] _ratePerTierDiscountPoly,
         uint256[] _tokensPerTierTotal,
         uint256[] _tokensPerTierDiscountPoly
-    ) public onlyOwner {
+    ) public onlyFactoryOrOwner {
         require(now < startTime);
-        _configureTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
-    }
-
-    function modifyTimes(
-        uint256 _startTime,
-        uint256 _endTime
-    ) public onlyOwner {
-        require(now < startTime);
-        _configureTimes(_startTime, _endTime);
-    }
-
-    function modifyAddresses(
-        address _wallet,
-        address _reserveWallet
-    ) public onlyOwner {
-        require(now < startTime);
-        _configureAddresses(_wallet, _reserveWallet);
-    }
-
-    function _configureLimits(
-        uint256 _nonAccreditedLimitUSD,
-        uint256 _minimumInvestmentUSD
-    ) internal {
-        minimumInvestmentUSD = _minimumInvestmentUSD;
-        nonAccreditedLimitUSD = _nonAccreditedLimitUSD;
-        emit SetLimits(minimumInvestmentUSD, nonAccreditedLimitUSD);
-    }
-
-    function _configureTiers(
-        uint256[] _ratePerTier,
-        uint256[] _ratePerTierDiscountPoly,
-        uint256[] _tokensPerTierTotal,
-        uint256[] _tokensPerTierDiscountPoly
-    ) internal {
         require(_tokensPerTierTotal.length > 0);
         require(_ratePerTier.length == _tokensPerTierTotal.length, "Mismatch b/w rates & tokens / tier");
         require(_ratePerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount rates & tokens / tier");
@@ -251,21 +219,23 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         emit SetTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
     }
 
-    function _configureTimes(
+    function modifyTimes(
         uint256 _startTime,
         uint256 _endTime
-    ) internal {
+    ) public onlyFactoryOrOwner {
+        require((startTime == 0) || (now < startTime));
         require((_endTime > _startTime) && (_startTime > now), "Invalid times");
         startTime = _startTime;
         endTime = _endTime;
         emit SetTimes(_startTime, _endTime);
     }
 
-    function _configureAddresses(
+    function modifyAddresses(
         address _wallet,
         address _reserveWallet
-    ) internal {
-        require(_wallet != address(0) && reserveWallet != address(0), "0x address is not allowed");
+    ) public onlyFactoryOrOwner {
+        require(now < startTime);
+        require(_wallet != address(0) && _reserveWallet != address(0), "0x address is not allowed");
         wallet = _wallet;
         reserveWallet = _reserveWallet;
         emit SetAddresses(_wallet, _reserveWallet);
@@ -647,7 +617,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     function getInitFunction() public pure returns (bytes4) {
         //keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],uint256,uint256,uint8[],address,address)") ==
         //0xd31d4f2d09fc7bdefd7ea179aebde3dd53e24265c3c63e17e399bbf85fe873bf
-        return bytes4(0xd31d4f2d);
+        return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],uint256,uint256,uint8[],address,address)"));
     }
 
     function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns (address) {

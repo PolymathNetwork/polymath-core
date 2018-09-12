@@ -53,6 +53,11 @@ contract Module is IModule {
         _;
     }
 
+    modifier onlyFactoryOrOwner {
+        require((msg.sender == Ownable(securityToken).owner()) || (msg.sender == factory), "Sender is not factory or owner");
+        _;
+    }
+
     /**
      * @notice used to withdraw the fee by the factory owner
      */

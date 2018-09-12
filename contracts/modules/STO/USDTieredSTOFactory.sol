@@ -14,7 +14,7 @@ contract USDTieredSTOFactory is ModuleFactory {
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {   
+    {
         version = "1.0.0";
         name = "USDTieredSTO";
         title = "USD Tiered STO";
@@ -31,8 +31,8 @@ contract USDTieredSTOFactory is ModuleFactory {
         //Check valid bytes - can only call module init function
         USDTieredSTO usdTieredSTO = new USDTieredSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(_getSig(_data) == usdTieredSTO.getInitFunction(), "In-valid data");
-        require(address(usdTieredSTO).call(_data), "Un-successfull call");
+        require(_getSig(_data) == usdTieredSTO.getInitFunction(), "Invalid data");
+        require(address(usdTieredSTO).call(_data), "Unsuccessfull call");
         emit LogGenerateModuleFromFactory(address(usdTieredSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(usdTieredSTO);
     }

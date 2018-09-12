@@ -30,8 +30,8 @@ contract DummySTOFactory is ModuleFactory {
         //Check valid bytes - can only call module init function
         DummySTO dummySTO = new DummySTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(_getSig(_data) == dummySTO.getInitFunction(), "Provided data is not valid");
-        require(address(dummySTO).call(_data), "Un-successfull call");
+        require(_getSig(_data) == dummySTO.getInitFunction(), "Invalid data");
+        require(address(dummySTO).call(_data), "Unsuccessfull call");
         emit LogGenerateModuleFromFactory(address(dummySTO), getName(), address(this), msg.sender, setupCost, now);
         return address(dummySTO);
     }

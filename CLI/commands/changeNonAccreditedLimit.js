@@ -56,7 +56,7 @@ async function startScript() {
 
 ///////////////////////////FUNCTION READING THE CSV FILE
 function readFile() {
-  var stream = fs.createReadStream("./CLI/data/accredited_data.csv");
+  var stream = fs.createReadStream("./CLI/data/nonAccreditedLimits_data.csv");
 
   let index = 0;
   console.log(`
@@ -68,14 +68,14 @@ function readFile() {
   var csvStream = csv()
     .on("data", function (data) {
       let isAddress = web3.utils.isAddress(data[0]);
-      let isAccredited = (typeof JSON.parse(data[1].toLowerCase())) == "boolean" ? JSON.parse(data[1].toLowerCase()) : "not-valid";
+      let isNumber = !isNaN(data[1]);
 
-      if (isAddress && (isAccredited != "not-valid") ) {
-        let userArray = new Array()
+      if (isAddress && isNumber) {
+        let userArray = new Array();
         let checksummedAddress = web3.utils.toChecksumAddress(data[0]);
 
-        userArray.push(checksummedAddress)
-        userArray.push(isAccredited)
+        userArray.push(checksummedAddress);
+        userArray.push(data[1]);
 
         allocData.push(userArray);
         fullFileData.push(userArray);
@@ -88,8 +88,8 @@ function readFile() {
         }
       } else {
         let userArray = new Array()
-        userArray.push(data[0])
-        userArray.push(isAccredited);
+        userArray.push(data[0]);
+        userArray.push(data[1]);
 
         badData.push(userArray);
         fullFileData.push(userArray)
@@ -100,14 +100,14 @@ function readFile() {
       distribData.push(allocData);
       allocData = [];
 
-      changeAccredited();
+      changeNonAccreditedLimit();
     });
 
   stream.pipe(csvStream);
 }
 
 // MAIN FUNCTION COMMUNICATING TO BLOCKCHAIN
-async function changeAccredited() {
+async function changeNonAccreditedLimit() {
   // Let's check if token has already been deployed, if it has, skip to STO
   let tokenDeployedAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
   if (tokenDeployedAddress != "0x0000000000000000000000000000000000000000") {
@@ -120,27 +120,27 @@ async function changeAccredited() {
           let usdTieredSTOABI = abis.usdTieredSTO();
           usdTieredSTO = new web3.eth.Contract(usdTieredSTOABI, result[1]);
           console.log(`
--------------------------------------------------------
------ Sending accreditation changes to blockchain -----
--------------------------------------------------------
+--------------------------------------------------------------
+----- Sending non accredited limit changes to blockchain -----
+--------------------------------------------------------------
           `);
           //this for loop will do the batches, so it should run 75, 75, 50 with 200
           for (let i = 0; i < distribData.length; i++) {
             try {
               let investorArray = [];
-              let isAccreditedArray = [];
+              let limitArray = [];
         
               //splitting the user arrays to be organized by input
               for (let j = 0; j < distribData[i].length; j++) {
-                investorArray.push(distribData[i][j][0])
-                isAccreditedArray.push(distribData[i][j][1])
+                investorArray.push(distribData[i][j][0]);
+                limitArray.push(web3.utils.toWei(distribData[i][j][1].toString()));
               }
         
-              let changeAccreditedAction = usdTieredSTO.methods.changeAccredited(investorArray, isAccreditedArray);
-              let r = await common.sendTransaction(Issuer, changeAccreditedAction, defaultGasPrice);
-              console.log(`Batch ${i} - Attempting to change accredited accounts:\n\n`, investorArray, "\n\n");
+              let changeNonAccreditedLimitAction = usdTieredSTO.methods.changeNonAccreditedLimit(investorArray, limitArray);
+              let r = await common.sendTransaction(Issuer, changeNonAccreditedLimitAction, defaultGasPrice);
+              console.log(`Batch ${i} - Attempting to change non accredited limits to accounts:\n\n`, investorArray, "\n\n");
               console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
-              console.log("Change accredited transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");
+              console.log("Change accredited transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString()), "Ether");
               console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
             } catch (err) {
               console.log("ERROR:", err);

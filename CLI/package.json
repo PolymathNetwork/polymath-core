@@ -1,6 +1,6 @@
 {
   "name": "polymath-cli",
-  "version": "1.0.0",
+  "version": "1.4.0",
   "description": "CLI for Polymath-core",
   "main": "polymath-cli.js",
   "scripts": {
@@ -9,6 +9,10 @@
   "author": "Polymath Inc",
   "license": "MIT",
   "dependencies": {
-    "commander": "^2.16.0"
+    "chalk": "^2.4.1",
+    "commander": "^2.16.0",
+    "moment": "^2.22.2",
+    "readline-sync": "^1.4.9",
+    "web3": "^1.0.0-beta.35"
   }
 }

@@ -11,6 +11,8 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract CappedSTO is ISTO, ReentrancyGuard {
     using SafeMath for uint256;
 
+    // Determine whether users can invest on behalf of a beneficiary
+    bool public allowBeneficialInvestments = false;
     // How many token units a buyer gets per wei / base unit of POLY
     uint256 public rate;
     //How many tokens this STO will be allowed to sell to investors
@@ -26,6 +28,8 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     * @param amount amount of tokens purchased
     */
     event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
+
+    event SetAllowBeneficialInvestments(bool _allowed);
 
     constructor (address _securityToken, address _polyAddress) public
     Module(_securityToken, _polyAddress)
@@ -81,10 +85,24 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     }
 
     /**
+     * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
+     * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
+     */
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public onlyOwner {
+        require(_allowBeneficialInvestments != allowBeneficialInvestments, "Does not change value");
+        allowBeneficialInvestments = _allowBeneficialInvestments;
+        emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
+    }
+
+    /**
       * @notice low level token purchase ***DO NOT OVERRIDE***
       * @param _beneficiary Address performing the token purchase
       */
     function buyTokens(address _beneficiary) public payable nonReentrant {
+        if (!allowBeneficialInvestments) {
+            require(_beneficiary == msg.sender, "Beneficiary must match funding provider");
+        }
+
         require(!paused);
         require(fundRaiseType[uint8(FundRaiseType.ETH)], "ETH should be the mode of investment");
 

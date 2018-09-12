@@ -2,16 +2,7 @@
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
-
-// Generate web3 instance
-const Web3 = require('web3');
-if (typeof web3 !== 'undefined') {
-    web3 = new Web3(web3.currentProvider);
-} else {
-    web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-}
-
-let defaultGasPrice;
+var global = require('./common/global');
 
 // Load contract artifacts
 var contracts = require('./helpers/contract_addresses');
@@ -21,16 +12,11 @@ let securityTokenRegistry;
 let securityToken;
 let polyToken;
 
-// Init user address variables
-let Issuer;
-let User;
-
 // Init token info
 let STSymbol;
 let STAddress;
 let STDetails;
 let validSymbol = false;
-let mintingFinished;
 
 // Init Module Info
 let pmModules;
@@ -56,26 +42,21 @@ async function setup() {
     }catch(err){
         console.log(err);
         console.log(chalk.red(`There was a problem getting the contracts. Make sure they are deployed to the selected network.`));
-        process.exit();
+        process.exit(0);
     }
 }
 
 // Start function
-async function executeApp() {
-    await setup();
+async function executeApp(remoteNetwork) {
+    await global.initialize(remoteNetwork);
 
     common.logAsciiBull();
     console.log(chalk.yellow(`******************************************`));
     console.log(chalk.yellow(`Welcome to the Command-Line Module Manager`));
     console.log(chalk.yellow(`******************************************`));
 
-    // Init user accounts
-    let accounts = await web3.eth.getAccounts();
-    Issuer = accounts[0];
-    User = Issuer;
-    defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
-
-    await showUserInfo(User);
+    await setup();
+    await showUserInfo(Issuer.address);
 
     while (!validSymbol) {
         await getSecurityToken();
@@ -85,13 +66,13 @@ async function executeApp() {
 // get token contract based on input symbol
 async function getSecurityToken() {
     STSymbol = readlineSync.question(chalk.yellow(`\nEnter the symbol of the registered security token you issued: `));
-    STAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(STSymbol).call({from: User});
+    STAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(STSymbol).call();
     if (STAddress == "0x0000000000000000000000000000000000000000") {
         console.log(chalk.red(`\nToken symbol provided is not a registered Security Token. Please enter another symbol.`));
         return;
     }
-    STDetails = await securityTokenRegistry.methods.getSecurityTokenData(STAddress).call({from: User});
-    if (STDetails[1] != User) {
+    STDetails = await securityTokenRegistry.methods.getSecurityTokenData(STAddress).call();
+    if (STDetails[1] != Issuer.address) {
         console.log(chalk.red(`\nYou did not issue the Security Token associated with the symbol provided. Please enter another symbol.`));
         return;
     }
@@ -106,12 +87,12 @@ async function getSecurityToken() {
 // display module status
 async function displayModules() {
 
-    await showUserInfo(User);
+    await showUserInfo(Issuer.address);
 
     // Security Token details
-    let displayTokenSymbol = await securityToken.methods.symbol().call({from: User});
-    let displayTokenSupply = await securityToken.methods.totalSupply().call({from: User});
-    let displayUserTokens = await securityToken.methods.balanceOf(User).call({from: User});
+    let displayTokenSymbol = await securityToken.methods.symbol().call();
+    let displayTokenSupply = await securityToken.methods.totalSupply().call();
+    let displayUserTokens = await securityToken.methods.balanceOf(Issuer.address).call();
 
     console.log(`
     **************    Security Token Information    ***************
@@ -200,14 +181,14 @@ async function iterateModules(_moduleType) {
 
     while (!endModule) {
         try {
-            details = await securityToken.methods.getModule(_moduleType,counter).call({from: User});
+            details = await securityToken.methods.getModule(_moduleType,counter).call();
             if (details[1] != "0x0000000000000000000000000000000000000000") {
                 let nameTemp = web3.utils.hexToUtf8(details[0]);
                 let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
                 let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
                 let pausedTemp = false;
                 if (_moduleType == 2 || _moduleType == 3) {
-                    let pausedTemp = await contractTemp.methods.paused().call({from: User});
+                    let pausedTemp = await contractTemp.methods.paused().call();
                 }
                 modules.push(new ModuleInfo(nameTemp,_moduleType,details[1],details[2],pausedTemp,abiTemp,contractTemp));
                 counter += 1;
@@ -311,11 +292,8 @@ async function removeModule() {
     if (index != -1) {
         console.log("\nSelected: ",options[index]);
         let removeModuleAction = securityToken.methods.removeModule(modules[index].module.type,modules[index].index);
-        let GAS = await common.estimateGas(removeModuleAction, User, 2);
-        await removeModuleAction.send({from: User, gas: GAS, gasPrice: defaultGasPrice })
-        .on('receipt', function(receipt){
-            console.log(chalk.green(`\nSuccessfully removed ${modules[index].module.name}.`));
-        });
+        await common.sendTransaction(Issuer, removeModuleAction, defaultGasPrice, 0, 2);
+        console.log(chalk.green(`\nSuccessfully removed ${modules[index].module.name}.`));
     }
     backToMenu()
 }
@@ -334,11 +312,8 @@ async function whitelist() {
         let investor = readlineSync.question(chalk.yellow(`Enter the address to be whitelisted: `));
         let now = await latestTime();
         let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(investor, now, now, now + 31556952, true);
-        let GAS = await common.estimateGas(modifyWhitelistAction, User, 1.2);
-        await modifyWhitelistAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
-        .on('receipt', function(receipt){
-            console.log(chalk.green(`\nWhitelisting successful for ${investor}.`));
-        });
+        await common.sendTransaction(Issuer, modifyWhitelistAction, defaultGasPrice);
+        console.log(chalk.green(`\nWhitelisting successful for ${investor}.`));
     } catch (e) {
         console.log(e);
         console.log(chalk.red(`
@@ -355,7 +330,7 @@ async function mintTokens() {
         console.log(chalk.red("Minting is not possible - Minting has been permanently disabled by issuer"));
         return;
     }
-    let result = await securityToken.methods.getModule(3, 0).call({from: Issuer});
+    let result = await securityToken.methods.getModule(3, 0).call();
     let isSTOAttached = result[1] != "0x0000000000000000000000000000000000000000";
     if (isSTOAttached) {
         console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
@@ -366,11 +341,8 @@ async function mintTokens() {
     let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
     try {
         let mintAction = securityToken.methods.mint(_investor, web3.utils.toWei(_amount));
-        let GAS = await common.estimateGas(mintAction, User, 1.2);
-        await mintAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
-        .on('receipt', function(receipt){
-            console.log(chalk.green(`\nMinting Successful.`));
-        });
+        await common.sendTransaction(Issuer, mintAction, defaultGasPrice);
+        console.log(chalk.green(`\nMinting Successful.`));
     } catch (e) {
         console.log(e);
         console.log(chalk.red(`
@@ -384,21 +356,15 @@ async function mintTokens() {
 
 async function endMintingForSTO() {
     let finishMintingSTOAction = securityToken.methods.finishMintingSTO();
-    let GAS = await common.estimateGas(finishMintingSTOAction, User, 1.2);
-    await finishMintingSTOAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
-    .on('receipt', function(receipt){
-        console.log(chalk.green(`\nEnd minting for STO was successful.`));
-    });
+    await common.sendTransaction(Issuer, finishMintingSTOAction, defaultGasPrice);
+    console.log(chalk.green(`\nEnd minting for STO was successful.`));
     backToMenu();
 }
 
 async function endMintingForIssuer() {
     let finishMintingIssuerAction = securityToken.methods.finishMintingIssuer();
-    let GAS = await common.estimateGas(finishMintingIssuerAction, User, 1.2);
-    await finishMintingIssuerAction.send({ from: User, gas: GAS, gasPrice: defaultGasPrice })
-    .on('receipt', function(receipt){
-        console.log(chalk.green(`\nEnd minting for Issuer was successful.`));
-    });
+    await common.sendTransaction(Issuer, finishMintingIssuerAction, defaultGasPrice);
+    console.log(chalk.green(`\nEnd minting for Issuer was successful.`));
     backToMenu();
 }
 
@@ -418,12 +384,12 @@ async function showUserInfo(_user) {
 }
 
 async function polyBalance(_user) {
-    let balance = await polyToken.methods.balanceOf(_user).call(({from: User}));
+    let balance = await polyToken.methods.balanceOf(_user).call();
     return web3.utils.fromWei(balance);
 }
 
 module.exports = {
-    executeApp: async function() {
-          return executeApp();
+    executeApp: async function(remoteNetwork) {
+          return executeApp(remoteNetwork);
       }
 }

@@ -464,16 +464,16 @@ contract('PreSaleSTO', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should successfully reclaim POLY", async() => {
+          it("Should successfully reclaim POLY", async() => {
+            let value = web3.utils.toWei('100','ether');
+            await I_PolyToken.getTokens(value, account_investor1);
             let initInvestorBalance = await I_PolyToken.balanceOf(account_investor1);
             let initOwnerBalance = await I_PolyToken.balanceOf(token_owner);
             let initContractBalance = await I_PolyToken.balanceOf(I_PreSaleSTO.address);
-            let value = web3.utils.toWei('100','ether');
 
-            await I_PolyToken.getTokens(value, account_investor1);
             await I_PolyToken.transfer(I_PreSaleSTO.address, value, { from: account_investor1 });
             await I_PreSaleSTO.reclaimERC20(I_PolyToken.address, { from: token_owner });
-            assert.equal((await I_PolyToken.balanceOf(account_investor3)).toNumber(), initInvestorBalance.toNumber(), "tokens are not transfered out from investor account");
+            assert.equal((await I_PolyToken.balanceOf(account_investor1)).toNumber(), initInvestorBalance.sub(value).toNumber(), "tokens are not transfered out from investor account");
             assert.equal((await I_PolyToken.balanceOf(token_owner)).toNumber(), initOwnerBalance.add(value).add(initContractBalance).toNumber(), "tokens are not added to the owner account");
             assert.equal((await I_PolyToken.balanceOf(I_PreSaleSTO.address)).toNumber(), 0, "tokens are not trandfered out from STO contract");
         });

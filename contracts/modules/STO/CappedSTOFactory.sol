@@ -14,7 +14,7 @@ contract CappedSTOFactory is ModuleFactory {
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {   
+    {
         version = "1.0.0";
         name = "CappedSTO";
         title = "Capped STO";
@@ -27,12 +27,12 @@ contract CappedSTOFactory is ModuleFactory {
      */
     function deploy(bytes _data) external returns(address) {
         if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
         //Check valid bytes - can only call module init function
         CappedSTO cappedSTO = new CappedSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(_getSig(_data) == cappedSTO.getInitFunction(), "Provided data is not valid");
-        require(address(cappedSTO).call(_data), "Un-successfull call");
+        require(_getSig(_data) == cappedSTO.getInitFunction(), "Invalid data");
+        require(address(cappedSTO).call(_data), "Unsuccessfull call");
         emit LogGenerateModuleFromFactory(address(cappedSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(cappedSTO);
     }

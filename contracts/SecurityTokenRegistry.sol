@@ -137,7 +137,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      * @return string Details of the Token.
      * @return uint256 Timestamp at which Security Token get launched on Polymath platform.
      */
-    function getSecurityTokenData(address _securityToken) public view returns (string, address, string, uint256) {
+    function getSecurityTokenData(address _securityToken) external view returns (string, address, string, uint256) {
         return (
             securityTokens[_securityToken].symbol,
             Ownable(_securityToken).owner(),

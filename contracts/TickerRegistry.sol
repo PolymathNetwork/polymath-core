@@ -236,7 +236,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @notice Use to get the ticker list as per the owner
      * @param _owner Address which owns the list of tickers
      */
-    function getTickersByOwner(address _owner) public view returns(bytes32[]) {
+    function getTickersByOwner(address _owner) external view returns(bytes32[]) {
          uint counter = 0;
          bytes32[] memory tempList = new bytes32[](tokensOwnedByUser[_owner].length);
          for (uint j = 0; j < tokensOwnedByUser[_owner].length; j++) {
@@ -257,7 +257,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @return string
      * @return bool
      */
-    function getDetails(string _symbol) public view returns (address, uint256, uint256, string, bool) {
+    function getDetails(string _symbol) external view returns (address, uint256, uint256, string, bool) {
         string memory symbol = _upper(_symbol);
         if (registeredSymbols[symbol].status == true||registeredSymbols[symbol].expiryDate > now) {
             return

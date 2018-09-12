@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 
-library Utils {
+library Encoder {
     
     function getHash(string _key) internal pure returns (bytes32) {
       return bytes32(keccak256(abi.encodePacked(_key)));

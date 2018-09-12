@@ -330,14 +330,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     }
 
     /**
-    * @dev Allows the current owner to relinquish control of the contract.
-    */
-    function renounceOwnership() external onlyOwner {
-        emit OwnershipRenounced(getAddress("owner"));
-        set("owner", address(0));
-    }
-
-    /**
     * @dev Allows the current owner to transfer control of the contract to a newOwner.
     * @param _newOwner The address to transfer ownership to.
     */

@@ -7,6 +7,7 @@ var abis = require('./helpers/contract_abis');
 
 // App flow
 let tokenSymbol;
+let securityTokenRegistry;
 let securityToken;
 let generalPermissionManager;
 
@@ -39,20 +40,10 @@ async function executeApp(remoteNetwork) {
 
 async function setup(){
   try {
-    let tickerRegistryAddress = await contracts.tickerRegistry();
-    let tickerRegistryABI = abis.tickerRegistry();
-    tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
-    tickerRegistry.setProvider(web3.currentProvider);
-
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
     let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
-
-    let polyTokenAddress = await contracts.polyToken();
-    let polyTokenABI = abis.polyToken();
-    polyToken = new web3.eth.Contract(polyTokenABI, polyTokenAddress);
-    polyToken.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
@@ -191,7 +182,7 @@ async function addNewDelegate() {
   let receipt = await common.sendTransaction(Issuer, addPermissionAction, defaultGasPrice);
   let event = common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'LogAddPermission');
   console.log(`Delegate added succesfully: ${event._delegate} - ${event._details}`);
-  return event;
+  return event._delegate;
 }
 
 async function getModulesWithPermissions() {

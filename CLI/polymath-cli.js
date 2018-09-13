@@ -6,8 +6,7 @@ var investor_portal = require('./commands/investor_portal');
 var module_manager = require('./commands/module_manager');
 var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
-var erc20explorer = require('./commands/checkpoint/erc20Explorer');
-var ethExplorer = require('./commands/checkpoint/ethExplorer');
+var dividends_manager = require('./commands/dividends_manager');
 var strMigrator = require('./commands/strMigrator');
 var program = require('commander');
 const yaml = require('js-yaml');
@@ -85,19 +84,11 @@ program
   });
 
 program
-  .command('erc20explorer')
-  .alias('erc20')
-  .description('Runs erc20Explorer')
-  .action(async function() {
-    await erc20explorer.executeApp(program.remoteNode);
-  });
-
-program
-  .command('ethExplorer')
-  .alias('eth')
-  .description('Runs ethExplorer')
-  .action(async function() {
-    await ethExplorer.executeApp(program.remoteNode);
+  .command('dividends_manager [dividendsType]')
+  .alias('dm')
+  .description('Runs dividends_manager')
+  .action(async function(dividendsType) {
+    await dividends_manager.executeApp(dividendsType, program.remoteNode);
   });
 
 program

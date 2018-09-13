@@ -24,6 +24,7 @@ contract FeatureRegistry is IFeatureRegistry, ReclaimTokens {
 
     /**
      * @notice change a feature status
+     * @dev feature status is set to false by default
      * @param _nameKey is the key for the feature status mapping
      * @param _newStatus is the new feature status
      */

@@ -161,6 +161,11 @@ interface ISecurityToken {
     function freezeMinting() external;
 
     /**
+     * @notice Permanently freeze controller functionality of this security token.
+     */
+    function freezeController() external;
+
+    /**
      * @notice mints new tokens and assigns them to the target investors.
      * Can only be called by the STO attached to the token or by the Issuer (Security Token contract owner)
      * @param _investors A list of addresses to whom the minted tokens will be delivered
@@ -195,5 +200,20 @@ interface ISecurityToken {
         uint256 _maxCost,
         uint256 _budget
     ) external;
+
+    /**
+     * @notice Use by the issuer ot set the controller addresses
+     * @param _controller address of the controller
+     */
+    function setController(address _controller) external;
+
+    /**
+     * @notice Use by a controller to execute a foced transfer
+     * @param _from address from which to take tokens
+     * @param _to address where to send tokens
+     * @param _value amount of tokens to transfer
+     * @param _data data attached to the transfer by controller to emit in event
+     */
+    function controllerTransfer(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
 
 }

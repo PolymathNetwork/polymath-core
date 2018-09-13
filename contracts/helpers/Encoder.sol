@@ -4,7 +4,7 @@ pragma solidity ^0.4.24;
 library Encoder {
     
     function getHash(string _key) internal pure returns (bytes32) {
-      return bytes32(keccak256(abi.encodePacked(_key)));
+        return bytes32(keccak256(abi.encodePacked(_key)));
     }
 
     function getHash(string _key1, address _key2) internal pure returns (bytes32) {
@@ -102,23 +102,23 @@ library Encoder {
   /// @notice getMapAddress(_name, _key[uint256, bool, address, bytes32])
   /// @return bytes32   
     function getMap(string _name, uint256 _key) internal pure returns (bytes32) {
-      return getHash(_name, _key);
+        return getHash(_name, _key);
     }
 
     function getMap(string _name, address _key) internal pure returns (bytes32) {
-      return getHash(_name, _key);
+        return getHash(_name, _key);
     }
 
     function getMap(string _name, string _key) internal pure returns (bytes32) {
-      return getHash(_name, _key);
+        return getHash(_name, _key);
     }
 
     function getMap(string _name, bytes32 _key) internal pure returns (bytes32) {
-      return getHash(_name, _key);
+        return getHash(_name, _key);
     }
 
     function getMap(string _name, bool _key) internal pure returns (bytes32) {
-      return getHash(_name, _key);
+        return getHash(_name, _key);
     }
 
   ////////////////////////////
@@ -135,22 +135,22 @@ library Encoder {
 
   // Adds to mapping(uint256 => bytes32[])
   function pushMapArray(string _name, uint256 _key) internal pure returns(bytes32) {
-      getHash(_name, _key);
+      return getHash(_name, _key);
   }
 
   // Adds to mapping(string => bytes32[])
   function pushMapArray(string _name, string _key) internal pure returns(bytes32) {
-      getHash(_name, _key);
+      return getHash(_name, _key);
   }
 
   // Adds to mapping(bytes32 => bytes32[])
   function pushMapArray(string _name, bytes32 _key) internal pure returns(bytes32) {
-      getHash(_name, _key);
+      return getHash(_name, _key);
   }
 
   // Adds to mapping(address => bytes32[])
   function pushMapArray(string _name, address _key) internal pure returns(bytes32) {
-      getHash(_name, _key);
+      return getHash(_name, _key);
   }
 
   /////////////////////////

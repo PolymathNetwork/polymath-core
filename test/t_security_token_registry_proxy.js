@@ -1,7 +1,7 @@
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { encodeProxyCall } from './helpers/encodeCall';
 
-const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistryV2.sol");
+const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock.sol");

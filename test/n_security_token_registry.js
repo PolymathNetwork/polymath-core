@@ -1,6 +1,7 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
+import { encodeProxyCall } from './helpers/encodeCall';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
@@ -87,8 +88,8 @@ contract('SecurityTokenRegistry', accounts => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = 250 * Math.pow(10, 18);
-    const newRegFee = 300 * Math.pow(10, 18);
+    const initRegFee = web3.utils.toWei("250");
+    const newRegFee =  web3.utils.toWei("300");
 
      // Capped STO details
      const cap = 10000 * Math.pow(10, 18);
@@ -110,31 +111,6 @@ contract('SecurityTokenRegistry', accounts => {
              name: '_someString'
          }]
      };
-
-     const functionSignatureProxy = {
-        name: 'initialize',
-        type: 'function',
-        inputs: [{
-            type:'address',
-            name: '_polymathRegistry'
-        },{
-            type: 'address',
-            name: '_stVersionProxy'
-        },{
-            type: 'uint256',
-            name: '_stLaunchFee'
-        },{
-            type: 'uint256',
-            name: '_tickerRegFee'
-        },{
-            type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
-            name: 'owner'
-        }
-    ]
-    };
 
     before(async() => {
         // Accounts setup
@@ -226,7 +202,6 @@ contract('SecurityTokenRegistry', accounts => {
         // // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
@@ -234,12 +209,12 @@ contract('SecurityTokenRegistry', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-         // Step 10: update the registries addresses from the PolymathRegistry contract
-         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-         let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+        //  // Step 10: update the registries addresses from the PolymathRegistry contract
+        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
+        let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
          await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
          I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);  
-         
+
          // Step 10: Deploy the FeatureRegistry
 
         I_FeatureRegistry = await FeatureRegistry.new(
@@ -247,14 +222,16 @@ contract('SecurityTokenRegistry', accounts => {
             {
                 from: account_polymath
             });
-        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
-
+        
         assert.notEqual(
             I_FeatureRegistry.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
             "FeatureRegistry contract was not deployed",
         );
 
+        //Step 11: update the registries addresses from the PolymathRegistry contract
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
         await I_ModuleRegistry.updateFromRegistry({from: account_polymath});        
 
         console.log(`
@@ -277,10 +254,40 @@ contract('SecurityTokenRegistry', accounts => {
 
     describe(" Test cases of the registerTicker", async() => {
         
-        it("verify the expiry limit", async() => {
+        it("verify the intial parameters", async() => {
+            let intialised = await I_STRProxied.getBoolValues.call(web3.utils.soliditySha3("initialised"));
+            assert.isTrue(intialised, "Should be true");
+
             let expiry = await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("expiryLimit"));
             assert.equal(expiry.toNumber(), 1296000, "Expiry limit should be equal to 15 days");
+
+            let polytoken = await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("polyToken"));
+            assert.equal(polytoken, I_PolyToken.address, "Should be the polytoken address");
+
+            let stlaunchFee = await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("stLaunchFee"));
+            assert.equal(stlaunchFee.toNumber(), initRegFee, "Should be provided reg fee");
+
+            let tickerRegFee = await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("tickerRegFee"));
+            assert.equal(tickerRegFee.toNumber(), tickerRegFee, "Should be provided reg fee");
+
+            let polymathRegistry = await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("polymathRegistry"));
+            assert.equal(polymathRegistry, I_PolymathRegistry.address, "Should be the address of the polymath registry");
+
+            let owner = await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("owner"));
+            assert.equal(owner, account_polymath, "Should be the address of the registry owner");
         });
+
+        it("Can't call the intialize function again", async() => {
+            let errorThrown = false;
+            try {
+                 await I_STRProxied.initialize(I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath);
+            } catch(error) {
+                console.log(`         tx revert -> Can't call the intialize function again`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
 
         it("Should fail to register ticker if tickerRegFee not approved", async() => {
             let errorThrown = false;
@@ -308,12 +315,6 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should register the ticker before the generation of the security token", async () => {
-            let tx = await I_STRProxied.registerTicker(account_temp, symbol, name, { from: account_temp });
-            assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
-            assert.equal(tx.logs[0].args._ticker, symbol, `Symbol should be ${symbol}`);
-        });
-
         it("Should fail to register ticker due to the symbol length is 0", async() => {
             let errorThrown = false;
             try {
@@ -338,6 +339,12 @@ contract('SecurityTokenRegistry', accounts => {
                 ensureException(error);
             }
             assert.ok(errorThrown, message);
+        });
+
+        it("Should register the ticker before the generation of the security token", async () => {
+            let tx = await I_STRProxied.registerTicker(account_temp, symbol, name, { from: account_temp });
+            assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
+            assert.equal(tx.logs[0].args._ticker, symbol, `Symbol should be ${symbol}`);
         });
 
         it("Should fail to register same symbol again", async() => {
@@ -479,8 +486,8 @@ contract('SecurityTokenRegistry', accounts => {
 
         it("Should fail to generate new security token if fee not provided", async() => {
             let errorThrown = false;
+            await I_PolyToken.approve(I_STRProxied.address, 0, { from: token_owner});
             try {
-                await I_PolyToken.approve(I_STRProxied.address, 0, { from: token_owner});
                 let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
             } catch(error) {
                 console.log(`         tx revert -> POLY allowance not provided for registration fee`.grey);
@@ -492,9 +499,9 @@ contract('SecurityTokenRegistry', accounts => {
 
         it("Should fail to generate token if registration is paused", async() => {
             let errorThrown = false;
+            await I_STRProxied.pause({ from: account_polymath});
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             try {
-                await I_STRProxied.pause({ from: account_polymath});
-                await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
                 await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
             } catch(error) {
                 console.log(`         tx revert -> Registration is paused`.grey);
@@ -504,10 +511,45 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should generate the new security token with the same symbol as registered above", async () => {
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
-            let _blockNo = latestBlock();
+        it("Should fail to generate the securityToken -- Because ticker length is 0", async() => {
+            let errorThrown = false;
             await I_STRProxied.unpause({ from: account_polymath});
+            try {
+                await I_STRProxied.generateSecurityToken(name, "", tokenDetails, false, { from: token_owner, gas:60000000  });
+            } catch(error) {
+                console.log(`         tx revert -> Zero ticker length is not allowed`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should fail to generate the securityToken -- Because name length is 0", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.generateSecurityToken("", symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
+            } catch(error) {
+                console.log(`         tx revert -> 0 name length is not allowed`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should fail to generate the securityToken -- Because msg.sender is not the rightful owner of the ticker", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.generateSecurityToken("", symbol, tokenDetails, false, { from: account_temp, gas:60000000  });
+            } catch(error) {
+                console.log(`         tx revert -> Because msg.sender is not the rightful owner of the ticker`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should generate the new security token with the same symbol as registered above", async () => {
+            let _blockNo = latestBlock();
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
@@ -525,6 +567,18 @@ contract('SecurityTokenRegistry', accounts => {
                 "GeneralTransferManager"
             );
         });
+
+        it("Should fail to generate the SecurityToken when token is already deployed with the same symbol", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
+            } catch(error) {
+                console.log(`         tx revert -> Because ticker is already in use`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
 
     });
 
@@ -589,7 +643,7 @@ contract('SecurityTokenRegistry', accounts => {
             );
         });
 
-        it("Should fail to upgrade the logic contract of the STRProxy", async() => {
+        it("Should fail to upgrade the logic contract of the STRProxy -- bad owner", async() => {
             let errorThrown = false;
             await I_STRProxied.pause({from: account_polymath});
             try {
@@ -635,13 +689,16 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should successfully generate token", async() => {
-            let tx = await I_STRProxied.addCustomSecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
-            assert.equal(tx.logs[1].args._ticker, "LOG2", "Symbol should match with the registered symbol");
-            assert.equal(tx.logs[1].args._securityTokenAddress, dummy_token,`Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`);
-            let symbolDetails = await I_STRProxied.getTickerDetails("LOG2");
-            // assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
-            // assert.equal(symbolDetails[3], "LOGAN2", `Name of the symbol should be LOGAN2`);
+        it("Should fail to generate the custom security token -- name should not be 0 length ", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.addCustomSecurityToken("", "LOG", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> name should not be 0 length `.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
         });
 
         it("Should fail if ST address is 0 address", async() => {
@@ -656,163 +713,449 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail if symbol or name of length 0", async() => {
+        it("Should fail if symbol length is 0", async() => {
             let errorThrown = false;
             try {
                 await I_STRProxied.addCustomSecurityToken("", "", account_temp, dummy_token, "I am custom ST",latestTime(), {from: account_polymath});
             } catch(error) {
-                console.log(`         tx revert -> Symbol and name of zero length`.grey);
+                console.log(`         tx revert -> zero length of the symbol is not allowed`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail if symbol is reserved", async() => {
+        it("Should fail to generate the custom ST -- Already present in the polymath ecosystem", async() => {
             let errorThrown = false;
             try {
-                await I_STRProxied.addCustomSecurityToken(name2, symbol2, account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
+                await I_STRProxied.addCustomSecurityToken(name2, symbol2, token_owner, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
             } catch(error) {
-                console.log(`         tx revert -> Symbol is already reserved`.grey);
+                console.log(`         tx revert -> Already present in the polymath ecosystem`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
             assert.ok(errorThrown, message);
+        });
+
+        it("Should fail to generate the custom ST -- deployedAt param is 0", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.addCustomSecurityToken(name2, symbol2, token_owner, dummy_token, "I am custom ST", 0, {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> because deployedAt param is 0`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully generate custom token", async() => {
+            // Register the new ticker -- Fulfiling the TickerStatus.ON condition
+            await I_PolyToken.getTokens(web3.utils.toWei("1000"), account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_temp});
+            await I_STRProxied.registerTicker(account_temp, "LOG", "LOGAN", { from : account_temp });
+            // Generating the ST
+            let tx = await I_STRProxied.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
+            assert.equal(tx.logs[0].args._ticker, "LOG", "Symbol should match with the registered symbol");
+            assert.equal(tx.logs[0].args._securityTokenAddress, dummy_token,`Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`);
+            let symbolDetails = await I_STRProxied.getTickerDetails("LOG");
+            assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
+            assert.equal(symbolDetails[3], "LOGAN", `Name of the symbol should be LOGAN`);
         });
 
         it("Should successfully generate the custom token", async() => {
-            let tx = await I_STRProxied.addCustomSecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
-            assert.equal(tx.logs[1].args._ticker, "LOG", "Symbol should match with the registered symbol");
+            // Fulfilling the TickerStatus.NN condition
+            let tx = await I_STRProxied.addCustomSecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
+            assert.equal(tx.logs[1].args._ticker, "LOG2", "Symbol should match with the registered symbol");
             assert.equal(tx.logs[1].args._securityTokenAddress, dummy_token, `Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`);
-            // let symbolDetails = await I_STRProxied.getTickerDetails("LOG");
-            // assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
-            // assert.equal(symbolDetails[3], "LOGAN", `Name of the symbol should be LOGAN`);
+            assert.equal(tx.logs[0].args._owner, account_temp, `Token owner should be ${account_temp}`);
+            assert.equal(tx.logs[0].args._ticker, "LOG2", `Symbol should be LOG2`);
+            let symbolDetails = await I_STRProxied.getTickerDetails("LOG2");
+            assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
+            assert.equal(symbolDetails[3], "LOGAN2", `Name of the symbol should be LOGAN`);
         });
 
     });
 
-    describe("Generate SecurityToken v3", async() => {
+    describe("Test case for adding new ticker", async() => {
 
-        it("Should add the new custom token in the polymath network", async() => {
-            await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), account_temp);
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_temp});
-            await I_STRProxied.registerTicker(account_temp, "CUST", "custom", {from: account_temp});
-            let tx = await I_STRProxied.addCustomSecurityToken("custom", "CUST", account_temp, accounts[2], "I am custom ST", latestTime(),{from: account_polymath});
-            assert.equal(tx.logs[0].args._ticker, "CUST", "Symbol should match with the registered symbol");
-            assert.equal(tx.logs[0].args._securityTokenAddress, accounts[2], `Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`);
-            let symbolDetails = await I_STRProxied.getTickerDetails("CUST");
+        it("Should add the custom ticker --failed because of bad owner", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.addCustomTicker(token_owner, "ETH", "Ether", latestTime(), (latestTime() + duration.days(10)), {from: account_temp})
+            } catch(error) {
+                console.log(`         tx revert -> failed beacause ticker length should not be 0`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should add the custom ticker --fail ticker length should not be 0", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.addCustomTicker(token_owner, "", "Ether", latestTime(), (latestTime() + duration.days(10)), {from: account_polymath})
+            } catch(error) {
+                console.log(`         tx revert -> failed beacause ticker length should not be 0`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should add the custom ticker --failed because time should not be 0", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.addCustomTicker(token_owner, "ETH", "Ether", 0, (latestTime() + duration.days(10)), {from: account_polymath})
+            } catch(error) {
+                console.log(`         tx revert -> failed because time should not be 0`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should add the custom ticker --failed because registeration date is greater than the expiryDate", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.addCustomTicker(token_owner, "ETH", "Ether", latestTime(), (latestTime() - duration.minutes(10)), {from: account_polymath})
+            } catch(error) {
+                console.log(`         tx revert -> failed because registeration date is greater than the expiryDate`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should add the custom ticker --failed because owner should not be 0x", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.addCustomTicker("0x000000000000000000000000000000000000000000", "ETH", "Ether", latestTime(), (latestTime() + duration.minutes(10)), {from: account_polymath})
+            } catch(error) {
+                console.log(`         tx revert -> failed because owner should not be 0x`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should add the custom ticker --failed because ticker is already exist into the ecosystem", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.addCustomTicker(token_owner, "LOG", "Ether", latestTime(), (latestTime() + duration.minutes(10)), {from: account_polymath})
+            } catch(error) {
+                console.log(`         tx revert -> failed because owner should not be 0x`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should add the new custom ticker", async() => {
+            let tx = await I_STRProxied.addCustomTicker(token_owner, "ETH", "Ether", latestTime(), (latestTime() + duration.minutes(10)), {from: account_polymath});
+            assert.equal(tx.logs[0].args._owner, token_owner, `Should be equal to the ${token_owner}`);
+            assert.equal(tx.logs[0].args._ticker, "ETH", "Should be equal to ETH");
+        })
+
+    });
+
+    describe("Test case for the modifyTickerDetails()", async()=> {
+
+        it("Should able to modify the details --failed because of bad owner", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.modifyTickerDetails(token_owner, "ETH", "PETHER", (latestTime() - duration.days(1)), (latestTime() + duration.days(8)), {from: account_temp});
+            } catch(error) {
+                console.log(`         tx revert -> failed because of bad owner`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should able to modify the details --failed because ticker is already deployed", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.modifyTickerDetails(token_owner, "LOG2", "LOGAN2", (latestTime() - duration.days(1)), (latestTime() + duration.days(8)), {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> failed because ticker is already deployed`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully able to modify the details", async() => {
+            let tx = await I_STRProxied.modifyTickerDetails(account_temp, "ETH", "PETHER", (latestTime() - duration.days(1)), (latestTime() + duration.days(8)), {from: account_polymath});
+            assert.equal(tx.logs[1].args._owner, account_temp, "Should match with the new details put by the msg.sender");
+            assert.equal(tx.logs[1].args._ticker, "ETH", "Should match with the new details put by the msg.sender");
+            assert.equal(tx.logs[1].args._name, "PETHER", "Should match with the new details put by the msg.sender");
+        });
+
+    });
+
+    describe("Test cases for the transferTickerOwnership()", async() => {
+
+        it("Should able to transfer the ticker ownership -- failed because token is not deployed having the same ticker", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.transferTickerOwnership(account_issuer, "ETH", {from: account_temp});
+            } catch(error) {
+                console.log(`         tx revert -> failed because token is not deployed having the same ticker`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should able to transfer the ticker ownership -- failed because new owner of the ticker is not the owner of the token", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.transferTickerOwnership(account_temp, symbol2, {from: token_owner});
+            } catch(error) {
+                console.log(`         tx revert -> failed because new owner of the ticker is not the owner of the token`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should able to transfer the ticker ownership -- failed because new owner is 0x", async() => {
+            let errorThrown = false;
+            await I_SecurityToken002.transferOwnership(account_temp, {from: token_owner});
+            try {
+                await I_STRProxied.transferTickerOwnership("0x00000000000000000000000000000000000000000", symbol2, {from: token_owner});
+            } catch(error) {
+                console.log(`         tx revert -> failed because new owner is 0x`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should able to transfer the ticker ownership -- failed because ticker is of zero length", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.transferTickerOwnership(account_temp, "", {from: token_owner});
+            } catch(error) {
+                console.log(`         tx revert -> failed because ticker is of zero length`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should able to transfer the ticker ownership", async() => {
+            let tx = await I_STRProxied.transferTickerOwnership(account_temp, symbol2, {from: token_owner, gas: 5000000 });
+            assert.equal(tx.logs[0].args._newOwner, account_temp);
+            let symbolDetails = await I_STRProxied.getTickerDetails.call(symbol2);
             assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
-            assert.equal(symbolDetails[3], "custom", `Name of the symbol should be custom`);
+            assert.equal(symbolDetails[3], name2, `Name of the symbol should be ${name2}`);
+        })
+    })
+
+    describe("Test case for the changeSecurityLaunchFee()", async() => {
+
+        it("Should able to change the STLaunchFee-- failed because of bad owner", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.changeSecurityLaunchFee(web3.utils.toWei("500"), {from: account_temp});
+            } catch(error) {
+                console.log(`         tx revert -> failed because of bad owner`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
         });
 
-        it("Should deploy the st vesrion 3", async() => {
-            // Step 7: Deploy the STFactory contract
-
-            I_STFactory003 = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
-
-            assert.notEqual(
-                I_STFactory003.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
-                "STFactory002 contract was not deployed",
-            );
-            await I_STRProxied.setProtocolVersion(I_STFactory003.address, "0.3.0", { from: account_polymath });
-
-            assert.equal(
-                web3.utils.toAscii(await I_STRProxied.getBytes32Values.call(web3.utils.soliditySha3("protocolVersion")))
-                .replace(/\u0000/g, ''),
-                "0.3.0"
-            );
+        it("Should able to change the STLaunchFee-- failed because of putting the same fee", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.changeSecurityLaunchFee(initRegFee, {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> failed because of putting the same fee`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
         });
 
-        it("Should register the ticker before the generation of the security token", async () => {
+        it("Should able to change the STLaunchFee", async() => {
+            let tx = await I_STRProxied.changeSecurityLaunchFee(web3.utils.toWei("500"), {from: account_polymath});
+            assert.equal(tx.logs[0].args._newFee, web3.utils.toWei("500"));
+            let stLaunchFee = await I_STRProxied.getUintValues(web3.utils.soliditySha3("stLaunchFee"));
+            assert.equal(stLaunchFee, web3.utils.toWei("500"));
+        });
+
+    })
+
+    describe("Test cases for the changeExpiryLimit()", async() => {
+
+        it("Should able to change the ExpiryLimit-- failed because of bad owner", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.changeExpiryLimit(duration.days(15), {from: account_temp});
+            } catch(error) {
+                console.log(`         tx revert -> failed because of bad owner`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should able to change the ExpiryLimit-- failed because expirylimit is less than 1 day", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.changeExpiryLimit(duration.minutes(50), {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> failed because expirylimit is less than 1 day`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should able to change the ExpiryLimit", async() => {
+            let tx = await I_STRProxied.changeExpiryLimit(duration.days(20), {from: account_polymath});
+            assert.equal(tx.logs[0].args._newExpiry, duration.days(20));
+            let expiry = await I_STRProxied.getUintValues(web3.utils.soliditySha3("expiryLimit"));
+            assert.equal(expiry, duration.days(20));
+        });
+    })
+
+    describe("Test cases for the changeTickerRegistrationFee()", async() => {
+
+        it("Should able to change the TickerRegFee-- failed because of bad owner", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.changeTickerRegistrationFee(web3.utils.toWei("500"), {from: account_temp});
+            } catch(error) {
+                console.log(`         tx revert -> failed because of bad owner`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should able to change the TickerRegFee-- failed because of putting the same fee", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.changeTickerRegistrationFee(initRegFee, {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> failed because of putting the same fee`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should able to change the TickerRegFee", async() => {
+            let tx = await I_STRProxied.changeTickerRegistrationFee(web3.utils.toWei("400"), {from: account_polymath});
+            assert.equal(tx.logs[0].args._newFee, web3.utils.toWei("400"));
+            let tickerRegFee = await I_STRProxied.getUintValues(web3.utils.soliditySha3("tickerRegFee"));
+            assert.equal(tickerRegFee, web3.utils.toWei("400"));
+        });
+
+        it("Should fail to register the ticker with the old fee", async () => {
+            let errorThrown = false;
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
-            let tx = await I_STRProxied.registerTicker(token_owner, "DET3", name2, { from : token_owner });
-            assert.equal(tx.logs[0].args._owner, token_owner);
-            assert.equal(tx.logs[0].args._ticker, "DET3");
+            try {
+                await I_STRProxied.registerTicker(token_owner, "POLY", "Polymath", { from : token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> failed because of ticker registeration fee gets change`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should register the ticker with the new fee", async() => {
+            await I_PolyToken.getTokens(web3.utils.toWei("1000"), token_owner);
+            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: token_owner});
+            let tx = await I_STRProxied.registerTicker(token_owner, "POLY", "Polymath", { from : token_owner });
+            assert.equal(tx.logs[0].args._owner, token_owner, `Token owner should be ${token_owner}`);
+            assert.equal(tx.logs[0].args._ticker, "POLY", `Symbol should be POLY`);
         });
 
-        it("Should generate the new security token with version 3", async() => {
+        it("Should fail to launch the securityToken with the old launch fee", async() => {
+            let errorThrown = false;
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
-            let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name2, "DET3", tokenDetails, false, { from: token_owner, gas:60000000  });
+            try {
+                await I_STRProxied.generateSecurityToken("Polymath", "POLY", tokenDetails, false, { from: token_owner, gas:60000000  });
+            } catch(error) {
+                console.log(`         tx revert -> failed because of old launch fee`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
+        it("Should launch the the securityToken", async() => {
+            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: token_owner});
+            let tx = await I_STRProxied.generateSecurityToken("Polymath", "POLY", tokenDetails, false, { from: token_owner, gas:60000000  });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, "DET3", "SecurityToken doesn't get deployed");
-
-            I_SecurityToken002 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
-
-            const log = await promisifyLogWatch(I_SecurityToken002.LogModuleAdded({from: _blockNo}), 1);
-
-
-            // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), transferManagerKey);
-            assert.equal(
-                web3.utils.toAscii(log.args._name)
-                .replace(/\u0000/g, ''),
-                "GeneralTransferManager"
-            );
+            assert.equal(tx.logs[1].args._ticker, "POLY", "SecurityToken doesn't get deployed");
         });
-
     });
 
-    describe("Attach modules automatically", async() => {
+    describe("Test case for the update poly token", async() => {
 
-        it("Should intialize the auto attached modules", async () => {
-            let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+        it("Should change the polytoken address -- failed because of bad owner", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.updatePolyTokenAddress(dummy_token, {from: account_temp});
+            } catch(error) {
+                console.log(`         tx revert -> failed because of bad owner`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
 
-            assert.notEqual(
-             I_GeneralTransferManager.address.valueOf(),
-             "0x0000000000000000000000000000000000000000",
-             "GeneralTransferManager contract was not deployed",
-            );
+        it("Should change the polytoken address -- failed because of 0x address", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.updatePolyTokenAddress("0x0000000000000000000000000000000000000000000", {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> failed because 0x address`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
 
-         });
-    });
+        it("Should successfully change the polytoken address", async() => {
+            let _id = await takeSnapshot();
+            await I_STRProxied.updatePolyTokenAddress(dummy_token, {from: account_polymath});
+            assert.equal(await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("polyToken")), dummy_token); 
+            await revertToSnapshot(_id);
+        });
+    })
 
     describe("Test cases for getters", async() => {
 
         it("Should get the security token address", async() => {
-           let address = await I_STRProxied.getSecurityTokenAddress.call("DET");
+           let address = await I_STRProxied.getSecurityTokenAddress.call(symbol);
            assert.equal(address, I_SecurityToken.address);
         });
 
         it("Should get the security token data", async() => {
             let data = await I_STRProxied.getSecurityTokenData.call(I_SecurityToken.address);
-            assert.equal(data[0], "DET");
+            assert.equal(data[0], symbol);
             assert.equal(data[1], token_owner);
         });
+
+        it("Should get the tickers by owner", async() => {
+            let tickersList = await I_STRProxied.getTickersByOwner.call(token_owner);
+            let tickersListArray = await I_STRProxied.getTickersByOwner.call(account_temp);
+            console.log(tickersList);
+            console.log(tickersListArray);
+        })
 
     });
 
     describe("Test cases for IRegistry functionality", async() => {
-
-        describe("Test cases for changeSecurityLaunchFee", async() => {
-
-            it("Should successfully get the registration fee", async() => {
-                let fee = await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("stLaunchFee"));
-                assert.equal(fee, initRegFee)
-            });
-
-            it("Should fail to change the registration fee if msg.sender not owner", async() => {
-                let errorThrown = false;
-                try {
-                    let tx = await I_STRProxied.changeSecurityLaunchFee(400 * Math.pow(10, 18), { from: account_temp });
-                } catch(error) {
-                    console.log(`         tx revert -> Failed to change registrationFee`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
-            });
-
-            it("Should successfully change the registration fee", async() => {
-                await I_STRProxied.changeSecurityLaunchFee(400 * Math.pow(10, 18), { from: account_polymath });
-                let fee = await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("stLaunchFee"));
-                assert.equal(fee, 400 * Math.pow(10, 18));
-            });
-
-        });
 
         describe("Test cases for reclaiming funds", async() => {
 

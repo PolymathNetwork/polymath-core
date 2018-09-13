@@ -11,7 +11,7 @@ contract SecurityTokenRegistryMock is SecurityTokenRegistry {
     /// Alert do not use it for the mainnet release
     function changeTheDeployedAddress(string _ticker, address _newSecurityTokenAddress) public onlyOwner {
         string memory __ticker = Util.upper(_ticker);
-        setMap("tickerToSecurityTokens", __ticker, _newSecurityTokenAddress);
+        set(Encoder.setMap("tickerToSecurityTokens", __ticker), _newSecurityTokenAddress);
     } 
     
 }

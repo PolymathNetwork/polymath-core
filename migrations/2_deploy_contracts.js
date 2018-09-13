@@ -9,8 +9,8 @@ const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpo
 const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol')
-const SecurityTokenRegistryV2 = artifacts.require('./SecurityTokenRegistryV2.sol')
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
+const OldSecurityTokenRegistry = artifacts.require('./OldSecurityTokenRegistry.sol')
 const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol')
 const FeatureRegistry = artifacts.require('./FeatureRegistry.sol')
 const STFactory = artifacts.require('./tokens/STFactory.sol')
@@ -216,10 +216,10 @@ module.exports = function (deployer, network, accounts) {
       return polymathRegistry.changeAddress("FeatureRegistry", FeatureRegistry.address, {from: PolymathAccount});
     }).then(() => {
       // J) Deploy the SecurityTokenRegistry contract (Used to hold the deployed secuirtyToken details. It also act as the interface to deploy the SecurityToken)
-      return deployer.deploy(SecurityTokenRegistry, {from: PolymathAccount})
+      return deployer.deploy(OldSecurityTokenRegistry, {from: PolymathAccount})
     }).then(() => {
       // J) Deploy the SecurityTokenRegistry contract (Used to hold the deployed secuirtyToken details. It also act as the interface to deploy the SecurityToken)
-      return deployer.deploy(SecurityTokenRegistryV2, {from: PolymathAccount})
+      return deployer.deploy(SecurityTokenRegistry, {from: PolymathAccount})
     }).then(() => {
        // Assign the address into the SecurityTokenRegistry key
       return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistry.address, {from: PolymathAccount});

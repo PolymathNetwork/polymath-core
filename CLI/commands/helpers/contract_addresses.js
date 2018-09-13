@@ -103,5 +103,14 @@ module.exports = {
       return "0x7e823f5df6ed1bb6cc005c692febc6aedf3b8889";
     else
       return JSON.parse(require('fs').readFileSync('./build/contracts/ERC20DividendCheckpointFactory.json').toString()).networks[networkId].address;
+  },
+  generalPermissionManagerFactoryAddress: async function() {
+    let networkId = await web3.eth.net.getId();
+    if (networkId == 1)
+      return "0xeba0348e243f2de2f1687060f9c795ac279c66af";
+    else if (networkId == 42)
+      return "0x6f5fec2934a34d2e2374042cca6505f1c87ef79b";
+    else
+      return JSON.parse(require('fs').readFileSync('./build/contracts/GeneralPermissionManagerFactory.json').toString()).networks[networkId].address;
   }
 };

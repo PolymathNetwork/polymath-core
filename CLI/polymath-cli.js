@@ -8,6 +8,7 @@ var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
 var dividends_manager = require('./commands/dividends_manager');
 var strMigrator = require('./commands/strMigrator');
+var permission_manager = require('./commands/permission_manager');
 var program = require('commander');
 const yaml = require('js-yaml');
 const fs = require('fs');
@@ -113,6 +114,14 @@ program
   .description('Runs STR Migrator')
   .action(async function(fromStrAddress, toStrAddress) {
     await strMigrator.executeApp(fromStrAddress, toStrAddress, program.remoteNode);
+  });
+
+program
+  .command('permission_manager')
+  .alias('pm')
+  .description('Runs permission_manager')
+  .action(async function() {
+    await permission_manager.executeApp(program.remoteNode);
   });
 
 program.parse(process.argv);

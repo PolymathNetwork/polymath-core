@@ -5,11 +5,13 @@ let securityTokenABI;
 let cappedSTOABI;
 let usdTieredSTOABI;
 let generalTransferManagerABI;
+let generalPermissionManagerABI;
 let polyTokenABI;
 let cappedSTOFactoryABI;
 let usdTieredSTOFactoryABI;
 let erc20DividendCheckpointABI;
 let etherDividendCheckpointABI;
+let moduleInterfaceABI;
 
 try {
     polymathRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/PolymathRegistry.json').toString()).abi;
@@ -19,14 +21,16 @@ try {
     cappedSTOABI                = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
     usdTieredSTOABI             = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTO.json').toString()).abi;
     generalTransferManagerABI   = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
+    generalPermissionManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralPermissionManager.json').toString()).abi;
     polyTokenABI                = JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).abi;
     cappedSTOFactoryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).abi;
     usdTieredSTOFactoryABI      = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTOFactory.json').toString()).abi;
     erc20DividendCheckpointABI  = JSON.parse(require('fs').readFileSync('./build/contracts/ERC20DividendCheckpoint.json').toString()).abi;
     etherDividendCheckpointABI  = JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpoint.json').toString()).abi;
+    moduleInterfaceABI          = JSON.parse(require('fs').readFileSync('./build/contracts/IModule.json').toString()).abi;
 } catch (err) {
     console.log('\x1b[31m%s\x1b[0m',"Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
-    return;
+    throw err;
 }
 
 module.exports = {
@@ -51,6 +55,9 @@ module.exports = {
     generalTransferManager: function () {
         return generalTransferManagerABI;
     },
+    generalPermissionManager: function () {
+        return generalPermissionManagerABI;
+    },
     polyToken: function () {
         return polyTokenABI;
     },
@@ -65,5 +72,8 @@ module.exports = {
     },
     etherDividendCheckpoint: function () {
         return etherDividendCheckpointABI;
+    },
+    moduleInterface: function () {
+        return moduleInterfaceABI;
     }
 }

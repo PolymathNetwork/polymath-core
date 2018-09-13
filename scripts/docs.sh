@@ -16,7 +16,7 @@ create_docs() {
     if [ "$(git branch | grep -w $latestTag)" == "" ];
     then
     # Check whether the branch is already present or not
-    if [ "$(git branch -r | grep "origin/$latestTag" | wc -l)" -eq 1 ];
+    if [ "$(git branch -r | grep "origin/$latestTag" | wc -l)" -ge 1 ];
     then 
     echo "$latestTag Branch is already present on remote"
     exit 0

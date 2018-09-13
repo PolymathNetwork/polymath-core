@@ -1367,6 +1367,8 @@ contract('SecurityToken', accounts => {
                 assert.equal(account_investor1, tx.logs[0].args._from, "Event not emitted as expected");
                 assert.equal(account_investor2, tx.logs[0].args._to, "Event not emitted as expected");
                 assert.equal(web3.utils.toWei("10", "ether"), tx.logs[0].args._amount, "Event not emitted as expected");
+                console.log(tx.logs[0].args._verifyTransfer);
+                assert.equal(false, tx.logs[0].args._verifyTransfer, "Event not emitted as expected");
                 assert.equal("reason", web3.utils.hexToUtf8(tx.logs[0].args._data), "Event not emitted as expected");
 
                 assert.equal(account_investor1, tx.logs[1].args.from, "Event not emitted as expected");

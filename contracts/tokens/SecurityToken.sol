@@ -118,7 +118,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     // Events to log controller actions
     event LogSetController(address indexed _oldController, address indexed _newController);
-    event LogControllerTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _amount, bytes _data);
+    event LogControllerTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _amount, bool _verifyTransfer, bytes _data);
     event LogFreezeController(uint256 _timestamp);
 
     // Require msg.sender to be the specified module type
@@ -194,6 +194,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         transferFunctions[bytes4(keccak256("transferFrom(address,address,uint256)"))] = true;
         transferFunctions[bytes4(keccak256("mint(address,uint256)"))] = true;
         transferFunctions[bytes4(keccak256("burn(uint256)"))] = true;
+        transferFunctions[bytes4(keccak256("controllerTransfer(address,address,uint256,bytes)"))] = true;
     }
 
     /**
@@ -776,13 +777,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         _adjustBalanceCheckpoints(_from);
         _adjustBalanceCheckpoints(_to);
 
-        // Consider passing setting to record change in state but not transfer check (could be a part of standard messaging module)
-        // require(verifyTransfer(_from, _to, _value), "Transfer is not valid");
+        bool TMcheck = verifyTransfer(_from, _to, _value);
 
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
 
-        emit LogControllerTransfer(msg.sender, _from, _to, _value, _data);
+        emit LogControllerTransfer(msg.sender, _from, _to, _value, TMcheck, _data);
         emit Transfer(_from, _to, _value);
         return true;
     }

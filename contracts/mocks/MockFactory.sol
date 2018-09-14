@@ -26,12 +26,12 @@ contract MockFactory is ModuleFactory {
      */
     function deploy(bytes _data) external returns(address) {
         if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Unable to pay setup cost");
         //Check valid bytes - can only call module init function
         DummySTO dummySTO = new DummySTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == dummySTO.getInitFunction(), "Provided data is not valid");
-        require(address(dummySTO).call(_data), "Un-successfull call");
+        require(Util.getSig(_data) == dummySTO.getInitFunction(), "Invalid initialisation");
+        require(address(dummySTO).call(_data), "Unsuccessfull initialisation");
         return address(dummySTO);
     }
 
@@ -66,7 +66,7 @@ contract MockFactory is ModuleFactory {
     /**
      * @notice Get the version of the Module
      */
-    function getVersion() public view returns(string) {
+    function getVersion() external view returns(string) {
         return version;
     }
 

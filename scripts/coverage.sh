@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
 
-SOLIDITY_COVERAGE=true scripts/test.sh
+rm -rf flat
+
+TRAVIS_PULL_REQUEST=true scripts/test.sh

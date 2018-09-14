@@ -4,6 +4,7 @@ const BigNumber = require('bignumber.js');
 
 import latestTime from './helpers/latestTime';
 import { duration } from './helpers/utils';
+import { encodeProxyCall } from './helpers/encodeCall';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
@@ -21,6 +22,7 @@ const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
+const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol');
 
 contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     // Accounts Variable declaration
@@ -35,11 +37,12 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     let tx;
 
     // Initial fee for ticker registry and security token registry
-    const REGFEE = 250 * Math.pow(10, 18);;
+    const REGFEE = web3.utils.toWei("250");
     const STOSetupCost = 0;
 
     // Module key
     const STOKEY = 3;
+    const TMKEY = 2;
 
     // SecurityToken 1 Details
     const symbol1 = "TOK1";
@@ -70,11 +73,11 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     let I_STRProxiedNew;
 
     let I_SecurityTokenRegistry;
-    let I_UpgradedSecurityTokenRegistry
+    //let I_UpgradedSecurityTokenRegistry
 
     let I_SecurityToken1;
     let I_SecurityToken2;
-    let I_SecurityToken3;
+    //let I_SecurityToken3;
 
     let I_USDTieredSTOFactory;
     let I_USDOracle;
@@ -84,32 +87,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     let I_CappedSTOFactory;
     let I_UpgradedCappedSTOFactory;
     let I_CappedSTO;
-
-
-    const functionSignatureProxy = {
-        name: 'initialize',
-        type: 'function',
-        inputs: [{
-            type:'address',
-            name: '_polymathRegistry'
-        },{
-            type: 'address',
-            name: '_stVersionProxy'
-        },{
-            type: 'uint256',
-            name: '_stLaunchFee'
-        },{
-            type: 'uint256',
-            name: '_tickerRegFee'
-        },{
-            type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
-            name: 'owner'
-        }
-    ]
-    };
+    let I_ManualApprovalTransferManagerFactory;
 
     // Prepare polymath network status
     before(async() => {
@@ -209,7 +187,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
 
        // Step 10: update the registries addresses from the PolymathRegistry contract
        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: POLYMATH});
-       let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, REGFEE, REGFEE, I_PolyToken.address, POLYMATH]);
+       let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, REGFEE, REGFEE, I_PolyToken.address, POLYMATH]);
        await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: POLYMATH});
        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
 
@@ -288,6 +266,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         `);
     });
 
+    /*
     describe("STR Upgrade", async() => {
         // 1 - Pause old STR
         it("Should successfully pause the contract", async() => {
@@ -342,57 +321,55 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
 
         // 5 Migrate data from old STR to new STR
         // 5a - Get tokens from old STR
-        // it("Should successfully get all tokens launched with old SecurityTokenRegistry", async() => {
-        //     let LogNewSecurityToken = await I_SecurityTokenRegistry.LogNewSecurityToken({}, { fromBlock: 0, toBlock: 'latest'});
-        //     let events = await new Promise(function(resolve, reject) {
-        //         LogNewSecurityToken.get(function(error, logs) {
-        //             if (error)
-        //                 reject(error);
-        //             else
-        //                 resolve(logs)
-        //             });
-        //     });
-        //     assert.equal(events.length, 2, "Tokens launched were not got");
-        //     let tok1 = events.find(function(element) {
-        //         return element.args._securityTokenAddress == I_SecurityToken1.address;
-        //     });
-        //     assert.isDefined(tok1, "First token was not found");
-        //     let tok2 = events.find(function(element) {
-        //         return element.args._securityTokenAddress == I_SecurityToken2.address;
-        //     });
-        //     assert.isDefined(tok2, "Second token was not found");
-        // });
-        // // 5b - Migrate data to new STR
-        // it("Should successfully add custom Security Token for first token", async() => {
-        //     let tx = await I_UpgradedSecurityTokenRegistry.addCustomSecurityToken(
-        //         name1,
-        //         symbol1,
-        //         ISSUER1,
-        //         I_SecurityToken1.address,
-        //         tokenDetails1,
-        //         swarmHash1,
-        //         Math.floor(Date.now()/10000),
-        //         {from: POLYMATH}
-        //     );
-        //     assert.equal(tx.logs[0].args._name, name1, "First token name does not match");
-        //     assert.equal(tx.logs[0].args._symbol, symbol1, "First token symbol does not match");
-        //     assert.equal(tx.logs[0].args._securityToken, I_SecurityToken1.address, "First token address does not match");
-        // });
-        // it("Should successfully add custom Security Token for second token", async() => {
-        //     let tx = await I_UpgradedSecurityTokenRegistry.addCustomSecurityToken(
-        //         name2,
-        //         symbol2,
-        //         ISSUER2,
-        //         I_SecurityToken2.address,
-        //         tokenDetails2,
-        //         web3.utils.asciiToHex(swarmHash2),
-        //         Math.floor(Date.now()/10000),
-        //         {from: POLYMATH}
-        //     );
-        //     assert.equal(tx.logs[0].args._name, name2, "Second token name does not match");
-        //     assert.equal(tx.logs[0].args._symbol, symbol2, "Second token symbol does not match");
-        //     assert.equal(tx.logs[0].args._securityToken, I_SecurityToken2.address, "Second token address does not match");
-        // });
+        it("Should successfully get all tokens launched with old SecurityTokenRegistry", async() => {
+            let LogNewSecurityToken = await I_SecurityTokenRegistry.LogNewSecurityToken({}, { fromBlock: 0, toBlock: 'latest'});
+            let events = await new Promise(function(resolve, reject) {
+                LogNewSecurityToken.get(function(error, logs) {
+                    if (error)
+                        reject(error);
+                    else
+                        resolve(logs)
+                    });
+            });
+            assert.equal(events.length, 2, "Tokens launched were not got");
+            let tok1 = events.find(function(element) {
+                return element.args._securityTokenAddress == I_SecurityToken1.address;
+            });
+            assert.isDefined(tok1, "First token was not found");
+            let tok2 = events.find(function(element) {
+                return element.args._securityTokenAddress == I_SecurityToken2.address;
+            });
+            assert.isDefined(tok2, "Second token was not found");
+        });
+        // 5b - Migrate data to new STR
+        it("Should successfully add custom Security Token for first token", async() => {
+            let tx = await I_UpgradedSecurityTokenRegistry.addCustomSecurityToken(
+                name1,
+                symbol1,
+                ISSUER1,
+                I_SecurityToken1.address,
+                tokenDetails1,
+                Math.floor(Date.now()/10000),
+                {from: POLYMATH}
+            );
+            assert.equal(tx.logs[0].args._name, name1, "First token name does not match");
+            assert.equal(tx.logs[0].args._ticker, symbol1, "First token symbol does not match");
+            assert.equal(tx.logs[0].args._securityTokenAddress, I_SecurityToken1.address, "First token address does not match");
+        });
+        it("Should successfully add custom Security Token for second token", async() => {
+            let tx = await I_UpgradedSecurityTokenRegistry.addCustomSecurityToken(
+                name2,
+                symbol2,
+                ISSUER2,
+                I_SecurityToken2.address,
+                tokenDetails2,
+                Math.floor(Date.now()/10000),
+                {from: POLYMATH}
+            );
+            assert.equal(tx.logs[0].args._name, name2, "Second token name does not match");
+            assert.equal(tx.logs[0].args._ticker, symbol2, "Second token symbol does not match");
+            assert.equal(tx.logs[0].args._securityTokenAddress, I_SecurityToken2.address, "Second token address does not match");
+        });
 
         // 6 Unpause both STRs
         // 6a - Unpause old STR
@@ -408,7 +385,8 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             assert.isFalse(status, "SecurityTokenRegistry is paused");
         });
     });
-
+    */
+   
     describe("USDTieredSTOFactory deploy", async() => {
         // Step 1: Deploy Oracles
         // 1a - Deploy POLY Oracle
@@ -437,9 +415,10 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             assert.equal(tx.logs[0].args._nameKey, "EthUsdOracle");
             assert.equal(tx.logs[0].args._newAddress, I_USDOracle.address);
         });
+    });
 
-        // Step 2: Deploy USDTieredSTOFactory\
-        // 2a - Deploy
+    describe("USDTieredSTOFactory deploy", async() => {
+        // Step 1: Deploy USDTieredSTOFactory\
         it("Should successfully deploy USDTieredSTOFactory", async() => {
             I_USDTieredSTOFactory = await USDTieredSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, { from: POLYMATH });
             assert.notEqual(
@@ -450,7 +429,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             let setupCost = await I_USDTieredSTOFactory.setupCost({ from: POLYMATH });
             assert.equal(setupCost, STOSetupCost);
         });
-        // 2b - Register and verify
+        // Step 2: Register and verify
         it("Should successfully register and verify USDTieredSTOFactory contract", async() => {
             let tx = await I_ModuleRegistry.registerModule(I_USDTieredSTOFactory.address, { from: POLYMATH });
             assert.equal(tx.logs[0].args._moduleFactory, I_USDTieredSTOFactory.address);
@@ -490,13 +469,36 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         });
     });
 
+    describe("ManualApprovalTransferManagerFactory deploy", async() => {
+        // Step 1: Deploy new ManualApprovalTransferManager
+        it("Should successfully deploy ManualApprovalTransferManagerFactory", async() => {
+            I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: POLYMATH });
+            assert.notEqual(
+                I_ManualApprovalTransferManagerFactory.address.valueOf(),
+                "0x0000000000000000000000000000000000000000",
+                "ManualApprovalTransferManagerFactory contract was not deployed"
+            );
+        });
+
+        // Step 2: Register and verify
+        it("Should successfully register and verify new ManualApprovalTransferManagerFactory contract", async() => {
+            let tx = await I_ModuleRegistry.registerModule(I_ManualApprovalTransferManagerFactory.address, { from: POLYMATH });
+            assert.equal(tx.logs[0].args._moduleFactory, I_ManualApprovalTransferManagerFactory.address);
+            tx = await I_ModuleRegistry.verifyModule(I_ManualApprovalTransferManagerFactory.address, true, { from: POLYMATH });
+            assert.equal(tx.logs[0].args._moduleFactory, I_ManualApprovalTransferManagerFactory.address);
+            assert.isTrue(tx.logs[0].args._verified);
+        });
+    });
+
     describe("Change ownerships", async() => {
+        /*
         // Step 1:  SecurityTokenRegistry
         it("Should successfully change ownership of new SecurityTokenRegistry contract", async() => {
             let tx = await I_STRProxiedNew.transferOwnership(MULTISIG, { from: POLYMATH });
             assert.equal(tx.logs[0].args.previousOwner, POLYMATH, "Previous owner was not Polymath account");
             assert.equal(tx.logs[0].args.newOwner, MULTISIG, "New owner is not Multisig account");
         });
+        */
 
         // Step 2: Oracles
         it("Should successfully change ownership of both Oracles contract", async() => {
@@ -521,6 +523,13 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             let tx = await I_UpgradedCappedSTOFactory.transferOwnership(MULTISIG, { from: POLYMATH });
             assert.equal(tx.logs[0].args.previousOwner, POLYMATH, "Previous USDTieredSTOFactory owner was not Polymath account");
             assert.equal(tx.logs[0].args.newOwner, MULTISIG, "New USDTieredSTOFactory owner is not Multisig account");
+        });
+
+        // Step 4: ManualApprovalTransferManagerFactory
+        it("Should successfully change ownership of ManualApprovalTransferManagerFactory contract", async() => {
+            let tx = await I_ManualApprovalTransferManagerFactory.transferOwnership(MULTISIG, { from: POLYMATH });
+            assert.equal(tx.logs[0].args.previousOwner, POLYMATH, "Previous ManualApprovalTransferManagerFactory owner was not Polymath account");
+            assert.equal(tx.logs[0].args.newOwner, MULTISIG, "New ManualApprovalTransferManagerFactory owner is not Multisig account");
         });
     });
 
@@ -592,6 +601,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             I_USDTieredSTO = USDTieredSTO.at(tx.logs[2].args._module);
         });
 
+        /*
         // Deploy TOK3
         it("Should successfully deploy third security token", async() => {
             await I_PolyToken.approve(I_STRProxiedNew.address, REGFEE, { from: ISSUER3});
@@ -599,8 +609,9 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             assert.equal(tx.logs[1].args._ticker, symbol3, "SecurityToken doesn't get deployed");
             I_SecurityToken3 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
         });
+        */
 
-        // Launch CappedSTO for TOK3
+        // Launch NewCappedSTO for TOK2
         it("Should successfully launch CappedSTO for third security token", async() => {
             let startTime = latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
@@ -635,9 +646,17 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             };
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, [fundRaiseType], fundsReceiver]);
 
-            let tx = await I_SecurityToken3.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER3 });
+            let tx = await I_SecurityToken2.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER2 });
             assert.equal(tx.logs[2].args._type, STOKEY, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name),"CappedSTO","CappedSTOFactory module was not added");
+        });
+
+        // Attach ManualApprovalTransferManager module for TOK2
+        it("Should successfully attach the ManualApprovalTransferManagerFactory with the second token", async () => {
+            const tx = await I_SecurityToken2.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: ISSUER2 });
+            assert.equal(tx.logs[2].args._type.toNumber(), TMKEY, "ManualApprovalTransferManagerFactory doesn't get deployed");
+            assert.equal(web3.utils.toUtf8(tx.logs[2].args._name), "ManualApprovalTransferManager", "ManualApprovalTransferManagerFactory module was not added");
+            I_ManualApprovalTransferManagerFactory = ManualApprovalTransferManagerFactory.at(tx.logs[2].args._module);
         });
     });
 });

@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./interfaces/IOwner.sol";
 import "./interfaces/ISTFactory.sol";
-import "./interfaces/IPolyToken.sol";
+import "./interfaces/IERC20.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
 import "./storage/OldEternalStorage.sol";
 import "./helpers/Util.sol";
@@ -150,7 +150,7 @@ contract OldSecurityTokenRegistry is ISecurityTokenRegistry, OldEternalStorage {
         require(_checkValidity(ticker, msg.sender, _name), "Non-valid ticker");
         _storeSymbolDetails(ticker, msg.sender, getMapUint("registeredTickers_registrationDate", ticker), getMapUint("registeredTickers_expiryDate", ticker), _name, true);
         if (getUint("stLaunchFee") > 0)
-            require(IPolyToken(getAddress("polyToken")).transferFrom(msg.sender, address(this), getUint("stLaunchFee")), "Sufficent allowance is not provided");
+            require(IERC20(getAddress("polyToken")).transferFrom(msg.sender, address(this), getUint("stLaunchFee")), "Sufficent allowance is not provided");
         address newSecurityTokenAddress = ISTFactory(getSTFactoryAddress()).deployToken(
             _name,
             ticker,
@@ -203,7 +203,7 @@ contract OldSecurityTokenRegistry is ISecurityTokenRegistry, OldEternalStorage {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         if (getUint("tickerRegFee") > 0)
-            require(IPolyToken(getAddress("polyToken")).transferFrom(msg.sender, address(this), getUint("tickerRegFee")), "Sufficent allowance is not provided");
+            require(IERC20(getAddress("polyToken")).transferFrom(msg.sender, address(this), getUint("tickerRegFee")), "Sufficent allowance is not provided");
         string memory ticker = Util.upper(_ticker);
         require(_expiryCheck(ticker), "Ticker is already reserved");
         _addTicker(_owner, ticker, _tokenName, now, now.add(getUint("expiryLimit")), false);
@@ -304,7 +304,7 @@ contract OldSecurityTokenRegistry is ISecurityTokenRegistry, OldEternalStorage {
     */
     function reclaimERC20(address _tokenContract) external onlyOwner {
         require(_tokenContract != address(0));
-        IPolyToken token = IPolyToken(_tokenContract);
+        IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
         require(token.transfer(getAddress("owner"), balance));
     }

@@ -11,7 +11,7 @@ interface IModule {
     function getInitFunction() external pure returns (bytes4);
 
     /**
-     * @notice Return the permissions flag that are associated with Module
+     * @notice Return the permissions flag that are associated with a module
      */
     function getPermissions() external view returns(bytes32[]);
 

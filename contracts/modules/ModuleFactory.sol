@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../interfaces/IPolyToken.sol";
+import "../interfaces/IERC20.sol";
 import "../interfaces/IModuleFactory.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
@@ -10,7 +10,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
  */
 contract ModuleFactory is IModuleFactory, Ownable {
 
-    IPolyToken public polyToken;
+    IERC20 public polyToken;
     uint256 public setupCost;
     uint256 public usageCost;
     uint256 public monthlySubscriptionCost;
@@ -19,7 +19,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     bytes32 public name;
     string public title;
 
-    event LogChangeFactorySetupFee(uint256 _oldSetupcost, uint256 _newSetupCost, address _moduleFactory);
+    event LogChangeFactorySetupFee(uint256 _oldSetupCost, uint256 _newSetupCost, address _moduleFactory);
     event LogChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
     event LogChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
     event LogGenerateModuleFromFactory(address _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address _creator, uint256 _timestamp);
@@ -29,7 +29,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public {
-      polyToken = IPolyToken(_polyAddress);
+      polyToken = IERC20(_polyAddress);
       setupCost = _setupCost;
       usageCost = _usageCost;
       monthlySubscriptionCost = _subscriptionCost;

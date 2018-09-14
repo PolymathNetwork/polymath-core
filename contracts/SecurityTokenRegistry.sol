@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./interfaces/IOwner.sol";
 import "./interfaces/ISTFactory.sol";
-import "./interfaces/IPolyToken.sol";
+import "./interfaces/IERC20.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
 import "./storage/EternalStorage.sol";
 import "./helpers/Util.sol";
@@ -151,7 +151,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(_checkValidity(ticker, msg.sender, _name), "In-valid ticker");
         _storeSymbolDetails(ticker, msg.sender, getUint(Encoder.getMap("registeredTickers_registrationDate", ticker)), getUint(Encoder.getMap("registeredTickers_expiryDate", ticker)), _name, true);
         if (getUint(Encoder.get("stLaunchFee")) > 0)
-            require(IPolyToken(getAddress(Encoder.get("polyToken"))).transferFrom(msg.sender, address(this), getUint(Encoder.get("stLaunchFee"))), "Sufficent allowance is not provided");
+            require(IERC20(getAddress(Encoder.get("polyToken"))).transferFrom(msg.sender, address(this), getUint(Encoder.get("stLaunchFee"))), "Sufficent allowance is not provided");
         address newSecurityTokenAddress = ISTFactory(getSTFactoryAddress()).deployToken(
             _name,
             ticker,
@@ -192,8 +192,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         emit LogNewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender);
     }
 
-    event LogA(string _ticker);
-    event LogD(bytes32 _ticker);
     /**
      * @notice Register the token ticker for its particular owner
      * @notice Once the token ticker is registered to its owner then no other issuer can claim
@@ -206,7 +204,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         if (getUint(Encoder.get("tickerRegFee")) > 0)
-            require(IPolyToken(getAddress(Encoder.get("polyToken"))).transferFrom(msg.sender, address(this), getUint(Encoder.get("tickerRegFee"))), "Sufficent allowance is not provided");
+            require(IERC20(getAddress(Encoder.get("polyToken"))).transferFrom(msg.sender, address(this), getUint(Encoder.get("tickerRegFee"))), "Sufficent allowance is not provided");
         string memory ticker = Util.upper(_ticker);
         require(_expiryCheck(ticker), "Ticker is already reserved");
         _addTicker(_owner, ticker, _tokenName, now, now.add(getUint(Encoder.get("expiryLimit"))), false);
@@ -300,7 +298,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function reclaimERC20(address _tokenContract) external onlyOwner {
         require(_tokenContract != address(0));
-        IPolyToken token = IPolyToken(_tokenContract);
+        IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
         require(token.transfer(getAddress(Encoder.get("owner")), balance));
     }
@@ -406,11 +404,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
          for (uint i = 0; i < _len; i++) {
             //  string memory _ticker = Util.bytes32ToString(getMapArrayBytes32(Encoder.getMapArray("userToTickers", _owner))[i]);
             //  if (getUint(Encoder.getMap("registeredTickers_expiryDate", _ticker)) >= now || getBool(Encoder.getMap("registeredTickers_status", _ticker))) {
-            //      tempList[counter] = getMapArrayBytes32(Encoder.getMapArray("userToTickers", _owner))[i];
-            //      counter ++;
+                 tempList[counter] = getMapArrayBytes32(Encoder.getMapArray("userToTickers", _owner))[i];
+                 counter ++;
             //  }
-            tempList[counter] = getMapArrayBytes32(Encoder.getMapArray("userToTickers", _owner))[i];
-            counter ++;
          }
         return tempList;
     }

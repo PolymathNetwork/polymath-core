@@ -1,6 +1,7 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
+import { encodeProxyCall } from './helpers/encodeCall';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
@@ -76,32 +77,7 @@ contract('ManualApprovalTransferManager', accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = 250 * Math.pow(10, 18);
-
-    const functionSignatureProxy = {
-        name: 'initialize',
-        type: 'function',
-        inputs: [{
-            type:'address',
-            name: '_polymathRegistry'
-        },{
-            type: 'address',
-            name: '_stVersionProxy'
-        },{
-            type: 'uint256',
-            name: '_stLaunchFee'
-        },{
-            type: 'uint256',
-            name: '_tickerRegFee'
-        },{
-            type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
-            name: 'owner'
-        }
-    ]
-    };
+    const initRegFee = web3.utils.toWei("250");
 
     before(async() => {
         // Accounts setup
@@ -225,7 +201,7 @@ contract('ManualApprovalTransferManager', accounts => {
 
         // Step 10: update the registries addresses from the PolymathRegistry contract
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-        let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+        let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
         // Step 10: Deploy the FeatureRegistry

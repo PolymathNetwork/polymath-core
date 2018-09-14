@@ -15,7 +15,7 @@ contract PreSaleSTOFactory is ModuleFactory {
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {   
+    {
         version = "1.0.0";
         name = "PreSaleSTO";
         title = "PreSale STO";
@@ -29,13 +29,13 @@ contract PreSaleSTOFactory is ModuleFactory {
      */
     function deploy(bytes _data) external returns(address) {
         if (setupCost > 0) {
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
         }
         //Check valid bytes - can only call module init function
         PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == preSaleSTO.getInitFunction(), "Provided data is not valid");
-        require(address(preSaleSTO).call(_data), "Un-successfull call");
+        require(Util.getSig(_data) == preSaleSTO.getInitFunction(), "Invalid data");
+        require(address(preSaleSTO).call(_data), "Unsuccessfull call");
         emit LogGenerateModuleFromFactory(address(preSaleSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(preSaleSTO);
     }
@@ -71,7 +71,7 @@ contract PreSaleSTOFactory is ModuleFactory {
     /**
      * @notice Get the version of the Module
      */
-    function getVersion() public view returns(string) {
+    function getVersion() external view returns(string) {
         return version;
     }
 

@@ -1,8 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../interfaces/ISecurityToken.sol";
 import "../interfaces/ITokenBurner.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 contract MockTokenBurner is ITokenBurner {
 

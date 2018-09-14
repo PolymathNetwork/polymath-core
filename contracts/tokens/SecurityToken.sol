@@ -10,7 +10,7 @@ import "../modules/TransferManager/ITransferManager.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "../interfaces/ITokenBurner.sol";
 import "../RegistryUpdater.sol";
-import "../helpers/Util.sol";
+import "../libraries/Util.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";

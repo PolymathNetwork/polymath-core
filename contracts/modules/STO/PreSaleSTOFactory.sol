@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./PreSaleSTO.sol";
 import "../ModuleFactory.sol";
-import "../../helpers/Util.sol";
+import "../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying PreSaleSTO module

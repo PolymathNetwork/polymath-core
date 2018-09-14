@@ -4,7 +4,7 @@ import "./ISTO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "../../interfaces/IOracle.sol";
 import "../../RegistryUpdater.sol";
-import "../../helpers/DecimalMath.sol";
+import "../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 

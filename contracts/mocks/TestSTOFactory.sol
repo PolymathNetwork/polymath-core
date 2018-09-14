@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "../modules/STO/DummySTO.sol";
 import "../modules/ModuleFactory.sol";
-import "../helpers/Util.sol";
+import "../libraries/Util.sol";
 
 contract TestSTOFactory is ModuleFactory {
 

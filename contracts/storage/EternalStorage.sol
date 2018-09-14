@@ -57,63 +57,63 @@ contract EternalStorage {
       return bytes32Storage[_key];
   }
 
-  function deleteMapArrayAddress(bytes32 _key, uint256 _index) internal {
+  function deleteArrayAddress(bytes32 _key, uint256 _index) internal {
       address[] storage array = addressArrayStorage[_key];
       require(_index < array.length, "Index should less than length of the array");
       array[_index] = array[array.length - 1];
       array.length = array.length - 1;
   }
 
-  function deleteMapArrayBytes32(bytes32 _key, uint256 _index) internal {
+  function deleteArrayBytes32(bytes32 _key, uint256 _index) internal {
       bytes32[] storage array = bytes32ArrayStorage[_key];
       require(_index < array.length, "Index should less than length of the array");
       array[_index] = array[array.length - 1];
       array.length = array.length - 1;
   }
 
-  function deleteMapArrayUint(bytes32 _key, uint256 _index) internal {
+  function deleteArrayUint(bytes32 _key, uint256 _index) internal {
       uint256[] storage array = uintArrayStorage[_key];
       require(_index < array.length, "Index should less than length of the array");
       array[_index] = array[array.length - 1];
       array.length = array.length - 1;
   }
 
-  function deleteMapArrayString(bytes32 _key, uint256 _index) internal {
+  function deleteArrayString(bytes32 _key, uint256 _index) internal {
       string[] storage array = stringArrayStorage[_key];
       require(_index < array.length, "Index should less than length of the array");
       array[_index] = array[array.length - 1];
       array.length = array.length - 1;
   }
 
-  function pushMapArray(bytes32 _key, address _value) internal {
+  function pushArray(bytes32 _key, address _value) internal {
       addressArrayStorage[_key].push(_value);
   }
 
-  function pushMapArray(bytes32 _key, bytes32 _value) internal {
+  function pushArray(bytes32 _key, bytes32 _value) internal {
       bytes32ArrayStorage[_key].push(_value);
   }
 
-  function pushMapArray(bytes32 _key, string _value) internal {
+  function pushArray(bytes32 _key, string _value) internal {
       stringArrayStorage[_key].push(_value);
   }
 
-  function pushMapArray(bytes32 _key, uint256 _value) internal {
+  function pushArray(bytes32 _key, uint256 _value) internal {
       uintArrayStorage[_key].push(_value);
   }
 
-  function getMapArrayAddress(bytes32 _key) internal returns(address[]) {
+  function getArrayAddress(bytes32 _key) internal returns(address[]) {
       return addressArrayStorage[_key];
   }
 
-  function getMapArrayBytes32(bytes32 _key) internal returns(bytes32[]) {
+  function getArrayBytes32(bytes32 _key) internal returns(bytes32[]) {
       return bytes32ArrayStorage[_key];
   }
 
-  function getMapArrayString(bytes32 _key) internal returns(string[]) {
+  function getArrayString(bytes32 _key) internal returns(string[]) {
       return stringArrayStorage[_key];
   }
 
-  function getMapArrayUint(bytes32 _key) internal returns(uint[]) {
+  function getArrayUint(bytes32 _key) internal returns(uint[]) {
       return uintArrayStorage[_key];
   }
 

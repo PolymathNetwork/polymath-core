@@ -380,7 +380,7 @@ contract('GeneralPermissionManager', accounts => {
         });
 
         it("Should check the delegate details", async() => {
-            assert.equal(web3.utils.toAscii(await I_GeneralPermissionManager.getDelegateDetails.call(account_delegate))
+            assert.equal(web3.utils.toAscii(await I_GeneralPermissionManager.delegateDetails.call(account_delegate))
                         .replace(/\u0000/g, ''),
                         delegateDetails,
                         "Wrong delegate address get checked");

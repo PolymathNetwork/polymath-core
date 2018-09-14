@@ -25,19 +25,28 @@ library Util {
      * @notice changes the string into bytes32
      * @param _source String that need to convert into bytes32
      */
-    /// Notice - Maximum length for _source will be 32 chars otherwise returned bytes32 value will have lossy value. 
-    function stringToBytes32(string memory _source) internal pure returns (bytes32 result) {
-        bytes memory tempString = bytes(_source);
-        if (tempString.length == 0) {
-            return 0x0;
-        }
-        assembly {
-            result := mload(add(_source, 32))
-        }
+    /// Notice - Maximum length for _source will be 32 chars otherwise returned bytes32 value will have lossy value.
+    function stringToBytes32(string memory _source) internal pure returns (bytes32) {
+        return bytesToBytes32(bytes(_source), 0);
     }
 
     /**
-     * @notice Changes the bytes32 into string 
+     * @notice changes bytes into bytes32
+     * @param _b Bytes that need to convert into bytes32
+     * @param _offset Offset from which to begin conversion
+     */
+    /// Notice - Maximum length for _source will be 32 chars otherwise returned bytes32 value will have lossy value.
+    function bytesToBytes32(bytes _b, uint _offset) internal pure returns (bytes32) {
+        bytes32 result;
+
+        for (uint i = 0; i < _b.length; i++) {
+            result |= bytes32(_b[_offset + i] & 0xFF) >> (i * 8);
+        }
+        return result;
+    }
+
+    /**
+     * @notice Changes the bytes32 into string
      * @param _source that need to convert into string
      */
     function bytes32ToString(bytes32 _source) internal pure returns (string result) {

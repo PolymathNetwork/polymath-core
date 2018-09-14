@@ -27,12 +27,7 @@ library Util {
      */
     /// Notice - Maximum length for _source will be 32 chars otherwise returned bytes32 value will have lossy value.
     function stringToBytes32(string memory _source) internal pure returns (bytes32) {
-        bytes memory tempString = bytes(_source);
-        if (tempString.length == 0) {
-            return 0x0;
-        }
-        result = bytesToBytes32(tempString, 0);
-        return result;
+        return bytesToBytes32(_source, 0);;
     }
 
     /**

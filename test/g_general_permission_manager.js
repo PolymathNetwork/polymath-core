@@ -371,6 +371,18 @@ contract('GeneralPermissionManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should fail in adding the delegate -- no delegate details provided", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, '', { from: account_investor1});
+            } catch(error) {
+                console.log(`         tx revert -> delegate details were not provided`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should fail to provide the permission -- because delegate is not yet added", async() => {
             let errorThrown = false;
             try {

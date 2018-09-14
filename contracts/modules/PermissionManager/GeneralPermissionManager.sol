@@ -54,6 +54,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     * @param _details Details about the delegate i.e `Belongs to financial firm`
     */
     function addDelegate(address _delegate, bytes32 _details) public withPerm(CHANGE_PERMISSION) {
+        require(_details != bytes32(0), "Delegate details not set");
         delegateDetails[_delegate] = _details;
         emit LogAddDelegate(_delegate, _details, now);
     }

@@ -166,7 +166,7 @@ contract('ModuleRegistry', accounts => {
             "STFactory contract was not deployed",
         );
 
-         // Step 9: Deploy the SecurityTokenRegistry
+        // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
 
@@ -189,6 +189,7 @@ contract('ModuleRegistry', accounts => {
             {
                 from: account_polymath
             });
+
         await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
 
         assert.notEqual(
@@ -423,7 +424,6 @@ contract('ModuleRegistry', accounts => {
             );
 
             I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
-            await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
             assert.notEqual(
                 I_SecurityTokenRegistry.address.valueOf(),
@@ -436,6 +436,7 @@ contract('ModuleRegistry', accounts => {
             let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
             await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
             I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+            await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, {from: account_polymath});
 
             await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
         });

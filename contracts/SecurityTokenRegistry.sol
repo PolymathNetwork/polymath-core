@@ -127,6 +127,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(!getBool(Encoder.getKey("initialised")));
         require(_STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0), "0x address is in-valid");
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Fees should not be 0");
+        // address polyToken = _polyToken;
         set(Encoder.getKey("polyToken"), _polyToken);
         set(Encoder.getKey("stLaunchFee"), _stLaunchFee);
         set(Encoder.getKey("tickerRegFee"), _tickerRegFee);
@@ -162,6 +163,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             getAddress(Encoder.getKey("polymathRegistry"))
         );
         _storeSecurityTokenData(newSecurityTokenAddress, ticker, _tokenDetails, now);
+        // tickerToSecurityTokens[ticker] = newSecurityTokenAddress;
         set(Encoder.getKey("tickerToSecurityTokens", ticker), newSecurityTokenAddress);
         emit LogNewSecurityToken(ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender);
     }
@@ -203,6 +205,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function registerTicker(address _owner, string _ticker, string _tokenName) external whenNotPaused {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
+        // accessing the tickerRegFee value
         if (getUint(Encoder.getKey("tickerRegFee")) > 0)
             require(IERC20(getAddress(Encoder.getKey("polyToken"))).transferFrom(msg.sender, address(this), getUint(Encoder.getKey("tickerRegFee"))), "Sufficent allowance is not provided");
         string memory ticker = Util.upper(_ticker);
@@ -241,7 +244,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function modifyTickerDetails(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external onlyOwner {
         string memory ticker = Util.upper(_ticker);
+        // accessing the value of mapping registeredTickers[ticker].status
         require(!getBool(Encoder.getKey("registeredTickers_status", ticker)), "Ticker is already deployed");
+        // accessing the value of mapping registeredTickers[ticker].owner
         if (getAddress(Encoder.getKey("registeredTickers_owner", ticker)) != _owner)
             _transferTickerOwnership(getAddress(Encoder.getKey("registeredTickers_owner", ticker)), _owner, ticker);
         _storeSymbolDetails(ticker, _owner, _registrationDate, _expiryDate, _tokenName, false);
@@ -399,6 +404,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function getTickersByOwner(address _owner) external view returns(bytes32[]) {
          uint counter = 0;
+         // accessing the data structure userTotickers[_owner].length
          uint _len = getArrayBytes32(Encoder.getKey("userToTickers", _owner)).length;
          bytes32[] memory tempList = new bytes32[](_len);
          for (uint i = 0; i < _len; i++) {
@@ -448,6 +454,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function _transferTickerOwnership(address _oldOwner, address _newOwner, string _ticker) internal {
         uint256 _index = uint256(getUint(Encoder.getKey("tickerIndex", _ticker)));
+        // deleting the _index from the data strucutre userToTickers[_oldowner][_index];
         deleteArrayBytes32(Encoder.getKey("userToTickers", _oldOwner), _index);
         if (getArrayBytes32(Encoder.getKey("userToTickers", _oldOwner)).length > _index) {
             bytes32 __ticker =  getArrayBytes32(Encoder.getKey("userToTickers", _oldOwner))[_index];

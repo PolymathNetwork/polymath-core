@@ -18,7 +18,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     /// Event emitted after any permission get changed for the delegate
     event LogChangePermission(address _delegate, address _module, bytes32 _perm, bool _valid, uint256 _timestamp);
     /// Use to notify when delegate is added in permission manager contract
-    event LogAddPermission(address _delegate, bytes32 _details, uint256 _timestamp);
+    event LogAddDelegate(address _delegate, bytes32 _details, uint256 _timestamp);
 
     /// @notice constructor
     constructor (address _securityToken, address _polyAddress) public
@@ -35,7 +35,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
-    * @notice use to check the permission on delegate corresponds to module contract address
+    * @notice Use to check the permission on delegate corresponds to module contract address
     * @param _delegate Ethereum address of the delegate
     * @param _module Ethereum contract address of the module
     * @param _perm Permission flag
@@ -49,13 +49,13 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
-    * @notice use to add the details of the delegate
+    * @notice Use to add a delegate
     * @param _delegate Ethereum address of the delegate
     * @param _details Details about the delegate i.e `Belongs to financial firm`
     */
-    function addPermission(address _delegate, bytes32 _details) public withPerm(CHANGE_PERMISSION) {
+    function addDelegate(address _delegate, bytes32 _details) public withPerm(CHANGE_PERMISSION) {
         delegateDetails[_delegate] = _details;
-        emit LogAddPermission(_delegate, _details, now);
+        emit LogAddDelegate(_delegate, _details, now);
     }
 
   /**

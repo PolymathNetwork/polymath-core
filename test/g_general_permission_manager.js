@@ -359,10 +359,10 @@ contract('GeneralPermissionManager', accounts => {
             assert.equal(web3.utils.toAscii(tx).replace(/\u0000/g, ''),0);
         });
 
-        it("Should fail in adding the permission to the delegate --msg.sender doesn't have permission", async() => {
+        it("Should fail in adding the delegate -- msg.sender doesn't have permission", async() => {
             let errorThrown = false;
             try {
-                let tx = await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_investor1});
+                let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_investor1});
             } catch(error) {
                 console.log(`         tx revert -> msg.sender doesn't have permission`.grey);
                 errorThrown = true;
@@ -371,7 +371,7 @@ contract('GeneralPermissionManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail to provide the permission-- because delegate is not yet added", async() => {
+        it("Should fail to provide the permission -- because delegate is not yet added", async() => {
             let errorThrown = false;
             try {
                 let tx = await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner});
@@ -383,8 +383,8 @@ contract('GeneralPermissionManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should add the permission to the delegate", async() => {
-            let tx = await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: token_owner});
+        it("Should successfuly add the delegate", async() => {
+            let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner});
             assert.equal(tx.logs[0].args._delegate, account_delegate);
         });
 

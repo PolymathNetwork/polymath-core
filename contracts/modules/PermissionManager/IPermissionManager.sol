@@ -9,6 +9,4 @@ interface IPermissionManager {
 
     function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) external returns(bool);
 
-    function getDelegateDetails(address _delegate) external view returns(bytes32);
-
 }

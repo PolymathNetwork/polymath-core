@@ -83,15 +83,6 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
-    * @notice Use to get the details of the delegate
-    * @param _delegate Ethereum address of the delegate
-    * @return Details of the delegate
-    */
-    function getDelegateDetails(address _delegate) external view returns(bytes32) {
-        return delegateDetails[_delegate];
-    }
-
-    /**
     * @notice Use to get the Permission flag related the `this` contract
     * @return Array of permission flags
     */

@@ -57,7 +57,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     bool public mintingFrozen;
 
     // Use to permanently halt controller actions
-    bool public controllerFrozen;
+    bool public controllerDisabled;
 
     // address whitelisted by issuer as controller
     address public controller;
@@ -118,8 +118,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     // Events to log controller actions
     event LogSetController(address indexed _oldController, address indexed _newController);
-    event LogControllerTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _amount, bool _verifyTransfer, bytes _data);
-    event LogFreezeController(uint256 _timestamp);
+    event LogForceTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _amount, bool _verifyTransfer, bytes _data);
+    event LogDisableController(uint256 _timestamp);
 
     // Require msg.sender to be the specified module type
     modifier onlyModule(uint8 _moduleType) {
@@ -161,7 +161,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     modifier onlyController() {
         require(msg.sender == controller);
-        require(!controllerFrozen);
+        require(!controllerDisabled);
         _;
     }
 
@@ -194,7 +194,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         transferFunctions[bytes4(keccak256("transferFrom(address,address,uint256)"))] = true;
         transferFunctions[bytes4(keccak256("mint(address,uint256)"))] = true;
         transferFunctions[bytes4(keccak256("burn(uint256)"))] = true;
-        transferFunctions[bytes4(keccak256("controllerTransfer(address,address,uint256,bytes)"))] = true;
+        transferFunctions[bytes4(keccak256("forceTransfer(address,address,uint256,bytes)"))] = true;
     }
 
     /**
@@ -747,19 +747,20 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _controller address of the controller
      */
     function setController(address _controller) public onlyOwner {
-        require(!controllerFrozen);
+        require(!controllerDisabled);
         emit LogSetController(controller, _controller);
         controller = _controller;
     }
 
     /**
-     * @notice Permanently freeze controller functionality of this security token.
+     * @notice Use by the issuer to permanently disable controller functionality
+     * @dev enabled via feature switch "disableControllerAllowed"
      */
-    function freezeController() external isEnabled("freezeControllerAllowed") onlyOwner {
-        require(!controllerFrozen);
-        controllerFrozen = true;
+    function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
+        require(!controllerDisabled);
+        controllerDisabled = true;
         delete controller;
-        emit LogFreezeController(now);
+        emit LogDisableController(now);
     }
 
     /**
@@ -769,20 +770,18 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _value amount of tokens to transfer
      * @param _data data attached to the transfer by controller to emit in event
      */
-    function controllerTransfer(address _from, address _to, uint256 _value, bytes _data) public onlyController returns(bool) {
-        require(_value <= balances[_from]);
-        require(_to != address(0));
-
+    function forceTransfer(address _from, address _to, uint256 _value, bytes _data) public onlyController returns(bool) {
         _adjustInvestorCount(_from, _to, _value);
+        bool verified = verifyTransfer(_from, _to, _value);
         _adjustBalanceCheckpoints(_from);
         _adjustBalanceCheckpoints(_to);
 
-        bool TMcheck = verifyTransfer(_from, _to, _value);
-
+        require(_to != address(0));
+        require(_value <= balances[_from]);
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
 
-        emit LogControllerTransfer(msg.sender, _from, _to, _value, TMcheck, _data);
+        emit LogForceTransfer(msg.sender, _from, _to, _value, verified, _data);
         emit Transfer(_from, _to, _value);
         return true;
     }

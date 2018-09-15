@@ -202,18 +202,23 @@ interface ISecurityToken {
     ) external;
 
     /**
-     * @notice Use by the issuer ot set the controller addresses
+     * @notice Use by the issuer to set the controller addresses
      * @param _controller address of the controller
      */
     function setController(address _controller) external;
 
     /**
-     * @notice Use by a controller to execute a foced transfer
+     * @notice Use by a controller to execute a forced transfer
      * @param _from address from which to take tokens
      * @param _to address where to send tokens
      * @param _value amount of tokens to transfer
      * @param _data data attached to the transfer by controller to emit in event
      */
-    function controllerTransfer(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
+    function forceTransfer(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
 
+    /**
+     * @notice Use by the issuer to permanently disable controller functionality
+     * @dev enabled via feature switch "disableControllerAllowed"
+     */
+     function disableController() external;
 }

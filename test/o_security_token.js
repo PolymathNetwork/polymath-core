@@ -1309,10 +1309,10 @@ contract('SecurityToken', accounts => {
                 assert.equal(account_controller, controller, "Status not set correctly");
             });
 
-            it("Should fail to controllerTransfer because not approved controller", async() => {
+            it("Should fail to forceTransfer because not approved controller", async() => {
                 let errorThrown1 = false;
                 try {
-                    await I_SecurityToken.controllerTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_investor1});
+                    await I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_investor1});
                 } catch (error) {
                     console.log(`         tx revert -> not approved controller`.grey);
                     errorThrown1 = true;
@@ -1321,10 +1321,10 @@ contract('SecurityToken', accounts => {
                 assert.ok(errorThrown1, message);
             });
 
-            it("Should fail to controllerTransfer because insufficient balance", async() => {
+            it("Should fail to forceTransfer because insufficient balance", async() => {
                 let errorThrown = false;
                 try {
-                    await I_SecurityToken.controllerTransfer(account_investor2, account_investor1, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
+                    await I_SecurityToken.forceTransfer(account_investor2, account_investor1, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
                 } catch (error) {
                     console.log(`         tx revert -> insufficient balance`.grey);
                     errorThrown = true;
@@ -1333,10 +1333,10 @@ contract('SecurityToken', accounts => {
                 assert.ok(errorThrown, message);
             });
 
-            it("Should fail to controllerTransfer because recipient is zero address", async() => {
+            it("Should fail to forceTransfer because recipient is zero address", async() => {
                 let errorThrown = false;
                 try {
-                    await I_SecurityToken.controllerTransfer(account_investor1, address_zero, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
+                    await I_SecurityToken.forceTransfer(account_investor1, address_zero, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
                 } catch (error) {
                     console.log(`         tx revert -> recipient is zero address`.grey);
                     errorThrown = true;
@@ -1345,7 +1345,7 @@ contract('SecurityToken', accounts => {
                 assert.ok(errorThrown, message);
             });
 
-            it("Should successfully controllerTransfer", async() => {
+            it("Should successfully forceTransfer", async() => {
                 let sender = account_investor1;
                 let receiver = account_investor2;
 
@@ -1353,7 +1353,7 @@ contract('SecurityToken', accounts => {
                 let start_balInv1 = await I_SecurityToken.balanceOf.call(account_investor1);
                 let start_balInv2 = await I_SecurityToken.balanceOf.call(account_investor2);
 
-                let tx = await I_SecurityToken.controllerTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
+                let tx = await I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
 
                 let end_investorCount = await I_SecurityToken.investorCount.call();
                 let end_balInv1 = await I_SecurityToken.balanceOf.call(account_investor1);
@@ -1379,7 +1379,7 @@ contract('SecurityToken', accounts => {
             it("Should fail to freeze controller functionality because not owner", async() => {
                 let errorThrown = false;
                 try {
-                    await I_SecurityToken.freezeController({from: account_investor1});
+                    await I_SecurityToken.disableController({from: account_investor1});
                 } catch (error) {
                     console.log(`         tx revert -> not owner`.grey);
                     errorThrown = true;
@@ -1388,12 +1388,12 @@ contract('SecurityToken', accounts => {
                 assert.ok(errorThrown, message);
             });
 
-            it("Should fail to freeze controller functionality because freezeControllerAllowed not activated", async() => {
+            it("Should fail to freeze controller functionality because disableControllerAllowed not activated", async() => {
                 let errorThrown = false;
                 try {
-                    await I_SecurityToken.freezeController({from: token_owner});
+                    await I_SecurityToken.disableController({from: token_owner});
                 } catch (error) {
-                    console.log(`         tx revert -> freezeControllerAllowed not activated`.grey);
+                    console.log(`         tx revert -> disableControllerAllowed not activated`.grey);
                     errorThrown = true;
                     ensureException(error);
                 }
@@ -1401,23 +1401,23 @@ contract('SecurityToken', accounts => {
             });
 
             it("Should successfully freeze controller functionality", async() => {
-                let tx1 = await I_FeatureRegistry.setFeatureStatus("freezeControllerAllowed", true, {from: account_polymath});
+                let tx1 = await I_FeatureRegistry.setFeatureStatus("disableControllerAllowed", true, {from: account_polymath});
 
                 // check event
-                assert.equal("freezeControllerAllowed", tx1.logs[0].args._nameKey, "Event not emitted as expected");
+                assert.equal("disableControllerAllowed", tx1.logs[0].args._nameKey, "Event not emitted as expected");
                 assert.equal(true, tx1.logs[0].args._newStatus, "Event not emitted as expected");
 
-                let tx2 = await I_SecurityToken.freezeController({from: token_owner});
+                let tx2 = await I_SecurityToken.disableController({from: token_owner});
 
                 // check state
                 assert.equal(address_zero, await I_SecurityToken.controller.call(), "State not changed");
-                assert.equal(true, await I_SecurityToken.controllerFrozen.call(), "State not changed");
+                assert.equal(true, await I_SecurityToken.controllerDisabled.call(), "State not changed");
             });
 
             it("Should fail to freeze controller functionality because already frozen", async() => {
                 let errorThrown = false;
                 try {
-                    await I_SecurityToken.freezeController({from: token_owner});
+                    await I_SecurityToken.disableController({from: token_owner});
                 } catch (error) {
                     console.log(`         tx revert -> already frozen`.grey);
                     errorThrown = true;
@@ -1438,10 +1438,10 @@ contract('SecurityToken', accounts => {
                 assert.ok(errorThrown, message);
             });
 
-            it("Should fail to controllerTransfer because controller functionality frozen", async() => {
+            it("Should fail to forceTransfer because controller functionality frozen", async() => {
                 let errorThrown = false;
                 try {
-                    await I_SecurityToken.controllerTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
+                    await I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
                 } catch (error) {
                     console.log(`         tx revert -> recipient is zero address`.grey);
                     errorThrown = true;

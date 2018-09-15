@@ -58,7 +58,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     struct ModuleData {
         bytes32 name;
-        address moduleAddress;
+        address module;
+        address moduleFactory;
+        bool isArchived;
+        uint8 moduleType;
+        uint256 moduleIndex;
+        uint256 nameIndex;
     }
 
     // Structures to maintain checkpoints of balances for governance / dividends
@@ -72,10 +77,14 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     mapping (bytes4 => bool) transferFunctions;
 
-    // Module list should be order agnostic!
-    mapping (uint8 => ModuleData[]) public modules;
+    // Records added modules - module list should be order agnostic!
+    mapping (uint8 => address[]) public modules;
 
-    uint8 public constant MAX_MODULES = 20;
+    // Records information about the module
+    mapping (address => ModuleData) modulesToData;
+
+    // Records added module names - module list should be order agnostic!
+    mapping (bytes32 => address[]) names;
 
     mapping (address => bool) public investorListed;
 
@@ -96,8 +105,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event LogGranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when Module get removed from the securityToken
     event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
+    // Emit when Module get archived from the securityToken
+    event LogModuleArchived(uint8 indexed _type, address _module, uint256 _timestamp);
+    // Emit when Module get unarchived from the securityToken
+    event LogModuleUnarchived(uint8 indexed _type, address _module, uint256 _timestamp);
     // Emit when the budget allocated to a module is changed
-    event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
+    event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _oldBudget, uint256 _budget);
     // Emit when transfers are frozen or unfrozen
     event LogFreezeTransfers(bool _status, uint256 _timestamp);
     // Emit when new checkpoint created
@@ -111,22 +124,21 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event Burnt(address indexed _burner, uint256 _value);
 
     // Require msg.sender to be the specified module type
-    modifier onlyModule(uint8 _moduleType) {
-        bool isModuleType = false;
-        for (uint8 i = 0; i < modules[_moduleType].length; i++) {
-            isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
-        }
-        require(isModuleType, "msg.sender is not correct module type");
+    modifier onlyModule(uint8 _type) {
+        require(modulesToData[msg.sender].module == msg.sender, "Address mismatch");
+        require(modulesToData[msg.sender].moduleType == _type, "Type mismatch");
+        require(!modulesToData[msg.sender].isArchived, "Module archived");
         _;
     }
 
     // Require msg.sender to be the specified module type or the owner of the token
-    modifier onlyModuleOrOwner(uint8 _moduleType) {
-        bool isModuleType = false;
-        for (uint8 i = 0; i < modules[_moduleType].length; i++) {
-            isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
+    modifier onlyModuleOrOwner(uint8 _type) {
+        if (msg.sender == owner) {
+            _;
         }
-        require(msg.sender == owner || isModuleType, "msg.sender is not owner and not correct module type");
+        require(modulesToData[msg.sender].module == msg.sender, "Address mismatch");
+        require(modulesToData[msg.sender].moduleType == _type, "Type mismatch");
+        require(!modulesToData[msg.sender].isArchived, "Module archived");
         _;
     }
 
@@ -208,108 +220,108 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         uint8 moduleType = moduleFactory.getType();
-        require(modules[moduleType].length < MAX_MODULES, "Limit of MAX MODULES is reached");
+        /* require(modules[moduleType].length < MAX_MODULES, "Limit of MAX MODULES is reached"); */
         uint256 moduleCost = moduleFactory.getSetupCost();
         require(moduleCost <= _maxCost, "Max Cost is always be greater than module cost");
         //Approve fee for module
         require(ERC20(polyToken).approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
+        require(modulesToData[module].module == address(0), "Module already exists");
         //Approve ongoing budget
         require(ERC20(polyToken).approve(module, _budget), "Not able to approve the budget");
         //Add to SecurityToken module map
         bytes32 moduleName = moduleFactory.getName();
-        modules[moduleType].push(ModuleData(moduleName, module));
+        modulesToData[module] = ModuleData(moduleName, module, _moduleFactory, false, moduleType, modules[moduleType].length, names[moduleName].length);
+        modules[moduleType].push(module);
+        names[moduleName].push(module);
         //Emit log event
         emit LogModuleAdded(moduleType, moduleName, _moduleFactory, module, moduleCost, _budget, now);
     }
 
     /**
-    * @notice Removes a module attached to the SecurityToken
-    * @param _moduleType is which type of module we are trying to remove
-    * @param _moduleIndex is the index of the module within the chosen type
+    * @notice Archives a module attached to the SecurityToken
+    * @param _module address of module to archive
     */
-    function removeModule(uint8 _moduleType, uint8 _moduleIndex) external onlyOwner {
-        require(_moduleIndex < modules[_moduleType].length,
-        "Module index doesn't exist as per the choosen module type");
-        require(modules[_moduleType][_moduleIndex].moduleAddress != address(0),
-        "Module contract address should not be 0x");
-        //Take the last member of the list, and replace _moduleIndex with this, then shorten the list by one
-        emit LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
-        modules[_moduleType][_moduleIndex] = modules[_moduleType][modules[_moduleType].length - 1];
-        modules[_moduleType].length = modules[_moduleType].length - 1;
+    function archiveModule(address _module) external onlyOwner {
+        require(!modulesToData[_module].isArchived, "Already archived");
+        require(modulesToData[_module].module != address(0), "Module missing");
+        emit LogModuleArchived(modulesToData[_module].moduleType, _module, now);
+        modulesToData[_module].isArchived = true;
+    }
+
+    /**
+    * @notice Unarchives a module attached to the SecurityToken
+    * @param _module address of module to unarchive
+    */
+    function unarchiveModule(address _module) external onlyOwner {
+        require(modulesToData[_module].isArchived, "Already archived");
+        emit LogModuleUnarchived(modulesToData[_module].moduleType, _module, now);
+        modulesToData[_module].isArchived = false;
+    }
+
+    /**
+    * @notice Unarchives a module attached to the SecurityToken
+    * @param _module address of module to unarchive
+    */
+    function removeModule(address _module) external onlyOwner {
+        require(modulesToData[_module].module != address(0), "Module missing");
+        emit LogModuleRemoved(modulesToData[_module].moduleType, _module, now);
+        // Remove from module type list
+        uint256 index = modulesToData[_module].moduleIndex;
+        uint8 moduleType = modulesToData[_module].moduleType;
+        uint256 length = modules[moduleType].length;
+        modules[moduleType][index] = modules[moduleType][length - 1];
+        modules[moduleType].length = length - 1;
+        // Remove from module names list
+        index = modulesToData[_module].nameIndex;
+        bytes32 name = modulesToData[_module].name;
+        length = names[name].length;
+        names[name][index] = names[name][length - 1];
+        names[name].length = length - 1;
+        // Remove from modulesToData
+        delete modulesToData[_module];
+
     }
 
     /**
      * @notice Returns module list for a module type
-     * @param _moduleType is which type of module we are trying to get
-     * @param _moduleIndex is the index of the module within the chosen type
-     * @return bytes32
-     * @return address
-     */
-    function getModule(uint8 _moduleType, uint _moduleIndex) external view returns (bytes32, address) {
-        if (modules[_moduleType].length > 0) {
-            return (
-                modules[_moduleType][_moduleIndex].name,
-                modules[_moduleType][_moduleIndex].moduleAddress
-            );
-        } else {
-            return ("", address(0));
-        }
+     * @param _module address of the module
+     * @return bytes32 name
+     * @return address module address
+     * @return address module factory address
+     * @return bool module archived
+     * @return uint8 module type
+     * @return uint256 module index
+     * @return uint256 name index
 
+     */
+    function getModule(address _module) external view returns (bytes32, address, address, bool, uint8, uint256, uint256) {
+        return (modulesToData[_module].name,
+          modulesToData[_module].module,
+          modulesToData[_module].moduleFactory,
+          modulesToData[_module].isArchived,
+          modulesToData[_module].moduleType,
+          modulesToData[_module].moduleIndex,
+          modulesToData[_module].nameIndex);
     }
 
     /**
-     * @notice returns module list for a module name - will return first match
-     * @param _moduleType is which type of module we are trying to get
-     * @param _name is the name of the module within the chosen type
-     * @return bytes32
-     * @return address
+     * @notice returns module list for a module name
+     * @param _name name of the module
+     * @return address[] list of modules with this name
      */
-    function getModuleByName(uint8 _moduleType, bytes32 _name) external view returns (bytes32, address) {
-        if (modules[_moduleType].length > 0) {
-            for (uint256 i = 0; i < modules[_moduleType].length; i++) {
-                if (modules[_moduleType][i].name == _name) {
-                  return (
-                      modules[_moduleType][i].name,
-                      modules[_moduleType][i].moduleAddress
-                  );
-                }
-            }
-            return ("", address(0));
-        } else {
-            return ("", address(0));
-        }
+    function getModulesByName(bytes32 _name) external view returns (address[]) {
+        return names[_name];
     }
 
     /**
-     * @notice returns module list for a module name - will return first match
-     * @param _moduleType is which type of module we are trying to get
-     * @param _name is the name of the module within the chosen type
-     * @return bytes32
-     * @return address
+     * @notice returns module list for a module type
+     * @param _type type of the module
+     * @return address[] list of modules with this type
      */
-    function getAllModulesByName(uint8 _moduleType, bytes32 _name) external view returns (bytes32[], address[]) {
-        if (modules[_moduleType].length > 0) {
-            uint counter = 0;
-            for (uint256 i = 0; i < modules[_moduleType].length; i++) {
-                if (modules[_moduleType][i].name == _name)
-                    counter++;
-            }
-            address[] memory tempAddressArray = new address[](counter);
-            bytes32[] memory tempBytes32Array = new bytes32[](counter);
-            counter = 0;
-            for (i = 0; i < modules[_moduleType].length; i++) {
-                if (modules[_moduleType][i].name == _name) {
-                    tempAddressArray[counter] = modules[_moduleType][i].moduleAddress;
-                    tempBytes32Array[counter] = modules[_moduleType][i].name;
-                    counter++;
-                }
-            }
-            return (tempBytes32Array, tempAddressArray);
-        } else {
-            return (new bytes32[](0), new address[](0));
-        }
+    function getModulesByType(uint8 _type) external view returns (address[]) {
+        return modules[_type];
     }
 
     /**
@@ -323,20 +335,18 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     /**
     * @notice allows owner to approve more POLY to one of the modules
-    * @param _moduleType module type
-    * @param _moduleIndex module index
+    * @param _module module address
     * @param _budget new budget
     */
-    function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) external onlyOwner {
-        require(_moduleType != 0, "Module type cannot be zero");
-        require(_moduleIndex < modules[_moduleType].length, "Incorrrect module index");
-        uint256 _currentAllowance = IERC20(polyToken).allowance(address(this), modules[_moduleType][_moduleIndex].moduleAddress);
+    function changeModuleBudget(address _module, uint256 _budget) external onlyOwner {
+        require(modulesToData[_module].module != address(0), "Module missing");
+        uint256 _currentAllowance = IERC20(polyToken).allowance(address(this), _module);
         if (_budget < _currentAllowance) {
-            require(IERC20(polyToken).decreaseApproval(modules[_moduleType][_moduleIndex].moduleAddress, _currentAllowance.sub(_budget)), "Insufficient balance to decreaseApproval");
+            require(IERC20(polyToken).decreaseApproval(_module, _currentAllowance.sub(_budget)), "Insufficient balance to decreaseApproval");
         } else {
-            require(IERC20(polyToken).increaseApproval(modules[_moduleType][_moduleIndex].moduleAddress, _budget.sub(_currentAllowance)), "Insufficient balance to increaseApproval");
+            require(IERC20(polyToken).increaseApproval(_module, _budget.sub(_currentAllowance)), "Insufficient balance to increaseApproval");
         }
-        emit LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
+        emit LogModuleBudgetChanged(modulesToData[_module].moduleType, _module, _currentAllowance, _budget);
     }
 
     /**
@@ -527,7 +537,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
             bool isValid = false;
             bool isForceValid = false;
             for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
-                ITransferManager.Result valid = ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount, isTransfer);
+                ITransferManager.Result valid = ITransferManager(modules[TRANSFERMANAGER_KEY][i]).verifyTransfer(_from, _to, _amount, isTransfer);
                 if (valid == ITransferManager.Result.INVALID) {
                     isInvalid = true;
                 }
@@ -602,7 +612,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         }
 
         for (uint8 i = 0; i < modules[PERMISSIONMANAGER_KEY].length; i++) {
-            if (IPermissionManager(modules[PERMISSIONMANAGER_KEY][i].moduleAddress).checkPermission(_delegate, _module, _perm)) {
+            if (IPermissionManager(modules[PERMISSIONMANAGER_KEY][i]).checkPermission(_delegate, _module, _perm)) {
                 return true;
             }
         }

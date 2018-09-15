@@ -588,27 +588,33 @@ contract('SecurityToken', accounts => {
 
     describe("Module related functions", async() => {
         it("Should get the modules of the securityToken by index", async () => {
-            let moduleData = await I_SecurityToken.getModule.call(stoKey, 0);
+            let moduleData = await I_SecurityToken.getModule.call(I_CappedSTO.address);
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "CappedSTO");
             assert.equal(moduleData[1], I_CappedSTO.address);
+            assert.equal(moduleData[2], I_CappedSTOFactory.address);
+            assert.equal(moduleData[3], false);
+            assert.equal(moduleData[4], 3);
+            assert.equal(moduleData[5], 0);
+            assert.equal(moduleData[6], 0);
         });
 
         it("Should get the modules of the securityToken by index (not added into the security token yet)", async () => {
-            let moduleData = await I_SecurityToken.getModule.call(permissionManagerKey, 0);
+            let moduleData = await I_SecurityToken.getModule.call(token_owner);
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "");
             assert.equal(moduleData[1], "0x0000000000000000000000000000000000000000");
         });
 
         it("Should get the modules of the securityToken by name", async () => {
-            let moduleData = await I_SecurityToken.getAllModulesByName.call(stoKey, "CappedSTO");
+            let moduleList = await I_SecurityToken.getModulesByName.call("CappedSTO");
+            assert.equal(moduleList.length == 1, "Only one STO");
+            let moduleData = await I_SecurityToken.getModule.call(moduleList[0]);
             assert.equal(web3.utils.toAscii(moduleData[0][0]).replace(/\u0000/g, ''), "CappedSTO");
             assert.equal(moduleData[1][0], I_CappedSTO.address);
         });
 
         it("Should get the modules of the securityToken by name (not added into the security token yet)", async () => {
-            let moduleData = await I_SecurityToken.getAllModulesByName.call(permissionManagerKey, "GeneralPermissionManager");
-            assert.equal(moduleData[0].length, 0);
-            assert.equal(moduleData[1].length, 0);
+            let moduleData = await I_SecurityToken.getModulesByName.call("GeneralPermissionManager");
+            assert.equal(moduleList.length == 0, "No Permission Manager");
         });
 
         it("Should get the modules of the securityToken by name (not added into the security token yet)", async () => {

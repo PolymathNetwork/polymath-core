@@ -333,7 +333,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @param _newOwner The address to transfer ownership to.
     */
     function transferOwnership(address _newOwner) external onlyOwner {
-        _transferOwnership(_newOwner);
+        require(_newOwner != address(0));
+        emit OwnershipTransferred(getAddress(Encoder.getKey("owner")), _newOwner);
+        set(Encoder.getKey("owner"), _newOwner);
     }
 
     /**
@@ -354,7 +356,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
 
     /**
      * @notice Change the PolyToken address
-     * @param _newAddress Address of the polytoken 
+     * @param _newAddress Address of the polytoken
      */
     function updatePolyTokenAddress(address _newAddress) external onlyOwner {
         require(_newAddress != address(0));
@@ -546,7 +548,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         set(Encoder.getKey("securityTokens_tokenDetails", _securityToken), _tokenDetails);
         set(Encoder.getKey("securityTokens_deployedAt", _securityToken), _deployedAt);
     }
-    
+
     /**
      * @notice Internal function to set the ticker owner
      * @param _owner Address of the owner of ticker
@@ -560,7 +562,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             set(Encoder.getKey("tickerIndex", _ticker), uint256(0));
         }
     }
-    
+
     /**
      * @notice Internal function to set the details of the ticker
      */
@@ -568,16 +570,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         _setTickerOwner(_owner, _ticker);
         _storeSymbolDetails(_ticker, _owner, _registrationDate, _expiryDate, _tokenName, _status);
         emit LogRegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate);
-    }
-
-    /**
-    * @notice Transfers control of the contract to a newOwner.
-    * @param _newOwner The address to transfer ownership to.
-    */
-    function _transferOwnership(address _newOwner) internal {
-        require(_newOwner != address(0));
-        emit OwnershipTransferred(getAddress(Encoder.getKey("owner")), _newOwner);
-        set(Encoder.getKey("owner"), _newOwner);
     }
 
 }

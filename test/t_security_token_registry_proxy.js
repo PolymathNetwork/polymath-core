@@ -98,7 +98,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
         await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
         await I_ModuleRegistry.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
 
-        
+
         // Step 3: Deploy the STFactory contract
 
         I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
@@ -107,7 +107,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
              I_STFactory.address.valueOf(),
              "0x0000000000000000000000000000000000000000",
              "STFactory contract was not deployed",
-        ); 
+        );
 
         // Step 4: Deploy the SecurityTokenRegistry
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
@@ -118,7 +118,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});  
+        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
 
         // Step 10: Deploy the FeatureRegistry
 
@@ -145,11 +145,11 @@ contract ("SecurityTokenRegistryProxy", accounts => {
          PolymathRegistry:                  ${PolymathRegistry.address}
          SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
          SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
- 
+
          STFactory:                         ${STFactory.address}
          GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
          -----------------------------------------------------------------------------
-         `);  
+         `);
     });
 
     describe("Attach the implementation address", async() => {
@@ -169,7 +169,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
         });
 
         it("Verify the initialize data", async() => {
-            assert.equal((await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("expiryLimit"))).toNumber(), 15*24*60*60, "Should equal to 15 days");
+            assert.equal((await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("expiryLimit"))).toNumber(), 60*24*60*60, "Should equal to 60 days");
             assert.equal((await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("tickerRegFee"))).toNumber(), web3.utils.toWei("250"));
         });
 
@@ -284,7 +284,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
             let c = OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
             assert.equal((web3.utils.toAscii(await readStorage(c.address, 11)).replace(/\u0000/g, '')).replace(/\n/, ''), "1.1.0", "Version mis-match");
             assert.equal(await readStorage(c.address, 12), I_SecurityTokenRegistryMock.address, "Implemnted address is not matched");
-            I_STRProxied = await SecurityTokenRegistryMock.at(I_SecurityTokenRegistryProxy.address);  
+            I_STRProxied = await SecurityTokenRegistryMock.at(I_SecurityTokenRegistryProxy.address);
         });
     });
 
@@ -306,7 +306,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
     })
 
     describe("Transfer the ownership of the proxy contract", async() => {
-        
+
         it("Should change the ownership of the contract -- because of bad owner", async()=> {
             let errorThrown = false;
             try {
@@ -316,7 +316,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
                 errorThrown = true;
                 ensureException(error);
             }
-            assert.ok(errorThrown, message); 
+            assert.ok(errorThrown, message);
         });
 
         it("Should change the ownership of the contract -- new address should not be 0x", async()=> {
@@ -328,7 +328,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
                 errorThrown = true;
                 ensureException(error);
             }
-            assert.ok(errorThrown, message); 
+            assert.ok(errorThrown, message);
         });
 
         it("Should change the ownership of the contract", async()=> {
@@ -343,7 +343,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
             let c = OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
             assert.equal((web3.utils.toAscii(await readStorage(c.address, 11)).replace(/\u0000/g, '')).replace(/\n/, ''), "1.2.0", "Version mis-match");
             assert.equal(await readStorage(c.address, 12), I_SecurityTokenRegistry.address, "Implemnted address is not matched");
-            I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);  
+            I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
         });
     })
 

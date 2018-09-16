@@ -690,9 +690,11 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should successfully mint tokens while GTM archived", async () => {
+            let key = await takeSnapshot();
             await I_SecurityToken.mint(1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
-            let balance = await I_SecurityToken.balanceOf(address(1));
-            assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 300);
+            let balance = await I_SecurityToken.balanceOf(1);
+            assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
+            await revertToSnapshot(key);
         });
 
         it("Should successfully unarchive the general transfer manager module from the securityToken", async() => {
@@ -1202,10 +1204,11 @@ contract('SecurityToken', accounts => {
            it("Should check that the list of investors is correct", async ()=> {
                // Hardcode list of expected accounts based on transfers above
                let investorsLength = await I_SecurityToken.getInvestorsLength();
+               console.log(JSON.stringify(investorsLength));
                let expectedAccounts = [account_affiliate1, account_affiliate2, account_investor1, account_temp];
-               assert.equal(investorsLength, 4);
-               console.log("Total Seen Investors: " + investorsLength);
-               for (let i = 0; i < investorsLength; i++) {
+               assert.equal(investorsLength.toNumber(), 4);
+               console.log("Total Seen Investors: " + investorsLength.toNumber());
+               for (let i = 0; i < investorsLength.toNumber(); i++) {
                  let investor = await I_SecurityToken.investors(i);
                  assert.equal(investor, expectedAccounts[i]);
                }

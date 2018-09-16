@@ -111,7 +111,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         set(Encoder.getKey("polyToken"), _polyToken);
         set(Encoder.getKey("stLaunchFee"), _stLaunchFee);
         set(Encoder.getKey("tickerRegFee"), _tickerRegFee);
-        set(Encoder.getKey("expiryLimit"), uint256(60 * 1 days));
+        set(Encoder.getKey("expiryLimit"), uint256(15 * 1 days));
         set(Encoder.getKey("paused"), false);
         set(Encoder.getKey("owner"), _owner);
         set(Encoder.getKey("polymathRegistry"), _polymathRegistry);
@@ -237,7 +237,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     }
 
     /**
-     * @notice Transfer the ownership of the ticker
+     * @notice Transfer the ownership of the ticker.
      * @dev _newOwner Address whom ownership to transfer
      * @dev _ticker Symbol
      */

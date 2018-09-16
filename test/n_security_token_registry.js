@@ -259,7 +259,7 @@ contract('SecurityTokenRegistry', accounts => {
             assert.isTrue(intialised, "Should be true");
 
             let expiry = await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("expiryLimit"));
-            assert.equal(expiry.toNumber(), 5184000, "Expiry limit should be equal to 60 days");
+            assert.equal(expiry.toNumber(), 1296000, "Expiry limit should be equal to 15 days");
 
             let polytoken = await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("polyToken"));
             assert.equal(polytoken, I_PolyToken.address, "Should be the polytoken address");
@@ -994,7 +994,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should able to change the ExpiryLimit-- failed because of bad owner", async() => {
             let errorThrown = false;
             try {
-                await I_STRProxied.changeExpiryLimit(duration.days(60), {from: account_temp});
+                await I_STRProxied.changeExpiryLimit(duration.days(15), {from: account_temp});
             } catch(error) {
                 console.log(`         tx revert -> failed because of bad owner`.grey);
                 errorThrown = true;

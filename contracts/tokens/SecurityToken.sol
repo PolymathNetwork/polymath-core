@@ -56,6 +56,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // Use to permanently halt all minting
     bool public mintingFrozen;
 
+    // Use to permanently halt controller actions
+    bool public controllerDisabled;
+
+    // address whitelisted by issuer as controller
+    address public controller;
+
     struct ModuleData {
         bytes32 name;
         address module;
@@ -123,6 +129,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event Minted(address indexed to, uint256 amount);
     event Burnt(address indexed _burner, uint256 _value);
 
+    // Events to log controller actions
+    event LogSetController(address indexed _oldController, address indexed _newController);
+    event LogForceTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _amount, bool _verifyTransfer, bytes _data);
+    event LogDisableController(uint256 _timestamp);
+
     // Require msg.sender to be the specified module type
     modifier onlyModule(uint8 _type) {
         require(modulesToData[msg.sender].module == msg.sender, "Address mismatch");
@@ -159,6 +170,15 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
+     * @notice Revert if called by account which is not a controller
+     */
+    modifier onlyController() {
+        require(msg.sender == controller);
+        require(!controllerDisabled);
+        _;
+    }
+
+    /**
      * @notice Constructor
      * @param _name Name of the SecurityToken
      * @param _symbol Symbol of the Token
@@ -188,6 +208,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         transferFunctions[bytes4(keccak256("mint(address,uint256)"))] = true;
         transferFunctions[bytes4(keccak256("burn(uint256)"))] = true;
         transferFunctions[bytes4(keccak256("mintMulti(address[],uint256[])"))] = true;
+        transferFunctions[bytes4(keccak256("forceTransfer(address,address,uint256,bytes)"))] = true;
     }
 
     /**
@@ -738,6 +759,50 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256) {
         return _getValueAt(checkpointBalances[_investor], _checkpointId, balanceOf(_investor));
+    }
+
+    /**
+     * @notice Use by the issuer ot set the controller addresses
+     * @param _controller address of the controller
+     */
+    function setController(address _controller) public onlyOwner {
+        require(!controllerDisabled);
+        emit LogSetController(controller, _controller);
+        controller = _controller;
+    }
+
+    /**
+     * @notice Use by the issuer to permanently disable controller functionality
+     * @dev enabled via feature switch "disableControllerAllowed"
+     */
+    function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
+        require(!controllerDisabled);
+        controllerDisabled = true;
+        delete controller;
+        emit LogDisableController(now);
+    }
+
+    /**
+     * @notice Use by a controller to execute a foced transfer
+     * @param _from address from which to take tokens
+     * @param _to address where to send tokens
+     * @param _value amount of tokens to transfer
+     * @param _data data attached to the transfer by controller to emit in event
+     */
+    function forceTransfer(address _from, address _to, uint256 _value, bytes _data) public onlyController returns(bool) {
+        _adjustInvestorCount(_from, _to, _value);
+        bool verified = verifyTransfer(_from, _to, _value);
+        _adjustBalanceCheckpoints(_from);
+        _adjustBalanceCheckpoints(_to);
+
+        require(_to != address(0));
+        require(_value <= balances[_from]);
+        balances[_from] = balances[_from].sub(_value);
+        balances[_to] = balances[_to].add(_value);
+
+        emit LogForceTransfer(msg.sender, _from, _to, _value, verified, _data);
+        emit Transfer(_from, _to, _value);
+        return true;
     }
 
 }

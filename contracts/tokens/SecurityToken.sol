@@ -296,15 +296,20 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint256 length = modules[moduleType].length;
         modules[moduleType][index] = modules[moduleType][length - 1];
         modules[moduleType].length = length - 1;
+        if ((length - 1) != index) {
+            modulesToData[modules[moduleType][index]].moduleIndex = index;
+        }
         // Remove from module names list
         index = modulesToData[_module].nameIndex;
         bytes32 name = modulesToData[_module].name;
         length = names[name].length;
         names[name][index] = names[name][length - 1];
         names[name].length = length - 1;
+        if ((length - 1) != index) {
+            modulesToData[modules[moduleType][index]].nameIndex = index;
+        }
         // Remove from modulesToData
         delete modulesToData[_module];
-
     }
 
     /**

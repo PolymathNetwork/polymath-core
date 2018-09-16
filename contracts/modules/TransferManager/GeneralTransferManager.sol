@@ -161,7 +161,7 @@ contract GeneralTransferManager is ITransferManager {
                 return Result.VALID;
             }
             if (allowAllWhitelistTransfers) {
-                //Anyone on the whitelist can transfer, regardless of block number
+                //Anyone on the whitelist can transfer, regardless of time
                 return (_onWhitelist(_to) && _onWhitelist(_from)) ? Result.VALID : Result.NA;
             }
             if (allowAllWhitelistIssuances && _from == issuanceAddress) {

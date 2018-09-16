@@ -606,10 +606,8 @@ contract('SecurityToken', accounts => {
 
         it("Should get the modules of the securityToken by name", async () => {
             let moduleList = await I_SecurityToken.getModulesByName.call("CappedSTO");
-            console.log(moduleList);
             assert.isTrue(moduleList.length == 1, "Only one STO");
             let moduleData = await I_SecurityToken.getModule.call(moduleList[0]);
-            console.log(moduleData);
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "CappedSTO");
             assert.equal(moduleData[1], I_CappedSTO.address);
         });
@@ -677,6 +675,48 @@ contract('SecurityToken', accounts => {
             let moduleData = await I_SecurityToken.getModule.call(I_GeneralTransferManager.address);
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "GeneralTransferManager");
             assert.equal(moduleData[1], I_GeneralTransferManager.address);
+        });
+
+
+        it("Should successfully archive the general transfer manager module from the securityToken", async() => {
+            let tx = await I_SecurityToken.archiveModule(I_GeneralTransferManager.address, { from : token_owner });
+            assert.equal(tx.logs[0].args._type, transferManagerKey);
+            assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
+            let moduleData = await I_SecurityToken.getModule.call(I_GeneralTransferManager.address);
+            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "GeneralTransferManager");
+            assert.equal(moduleData[1], I_GeneralTransferManager.address);
+            assert.equal(moduleData[2], I_GeneralTransferManagerFactory.address);
+            assert.equal(moduleData[3], true);
+        });
+
+        it("Should successfully mint tokens while GTM archived", async () => {
+            await I_SecurityToken.mint(1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
+            let balance = await I_SecurityToken.balanceOf(address(1));
+            assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 300);
+        });
+
+        it("Should successfully unarchive the general transfer manager module from the securityToken", async() => {
+            let tx = await I_SecurityToken.unarchiveModule(I_GeneralTransferManager.address, { from : token_owner });
+            assert.equal(tx.logs[0].args._type, transferManagerKey);
+            assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
+            let moduleData = await I_SecurityToken.getModule.call(I_GeneralTransferManager.address);
+            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "GeneralTransferManager");
+            assert.equal(moduleData[1], I_GeneralTransferManager.address);
+            assert.equal(moduleData[2], I_GeneralTransferManagerFactory.address);
+            assert.equal(moduleData[3], false);
+        });
+
+        it("Should fail to mint tokens while GTM unarchived", async () => {
+            let errorThrown = false;
+            try {
+              await I_SecurityToken.mint(1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000});
+            } catch(error) {
+                console.log(`       tx -> Failed because GTM`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+
         });
 
         it("Should change the budget of the module - fail incorrect address", async() => {

@@ -81,8 +81,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     mapping (address => Checkpoint[]) public checkpointBalances;
     Checkpoint[] public checkpointTotalSupply;
 
-    mapping (bytes4 => bool) transferFunctions;
-
     // Records added modules - module list should be order agnostic!
     mapping (uint8 => address[]) public modules;
 
@@ -203,12 +201,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         updateFromRegistry();
         tokenDetails = _tokenDetails;
         granularity = _granularity;
-        transferFunctions[bytes4(keccak256("transfer(address,uint256)"))] = true;
-        transferFunctions[bytes4(keccak256("transferFrom(address,address,uint256)"))] = true;
-        transferFunctions[bytes4(keccak256("mint(address,uint256)"))] = true;
-        transferFunctions[bytes4(keccak256("burn(uint256)"))] = true;
-        transferFunctions[bytes4(keccak256("mintMulti(address[],uint256[])"))] = true;
-        transferFunctions[bytes4(keccak256("forceTransfer(address,address,uint256,bytes)"))] = true;
     }
 
     /**
@@ -521,7 +513,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
         _adjustInvestorCount(msg.sender, _to, _value);
-        require(verifyTransfer(msg.sender, _to, _value), "Transfer is not valid");
+        require(_verifyTransfer(msg.sender, _to, _value, true), "Transfer is not valid");
         _adjustBalanceCheckpoints(msg.sender);
         _adjustBalanceCheckpoints(_to);
         require(super.transfer(_to, _value));
@@ -537,7 +529,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
         _adjustInvestorCount(_from, _to, _value);
-        require(verifyTransfer(_from, _to, _value), "Transfer is not valid");
+        require(_verifyTransfer(_from, _to, _value, true), "Transfer is not valid");
         _adjustBalanceCheckpoints(_from);
         _adjustBalanceCheckpoints(_to);
         require(super.transferFrom(_from, _to, _value));
@@ -550,14 +542,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _from sender of transfer
      * @param _to receiver of transfer
      * @param _amount value of transfer
+     * @param _isTransfer whether transfer is being executed
      * @return bool
      */
-    function verifyTransfer(address _from, address _to, uint256 _amount) public checkGranularity(_amount) returns (bool) {
+    function _verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) internal checkGranularity(_amount) returns (bool) {
         if (!transfersFrozen) {
-            bool isTransfer = false;
-            if (transferFunctions[_getSig(msg.data)]) {
-              isTransfer = true;
-            }
             if (modules[TRANSFERMANAGER_KEY].length == 0) {
                 return true;
             }
@@ -570,7 +559,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
                 module = modules[TRANSFERMANAGER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
-                    ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _amount, isTransfer);
+                    ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _amount, _isTransfer);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
                     }
@@ -586,6 +575,18 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
             return unarchived ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
       }
       return false;
+    }
+
+    /**
+     * @notice validate transfer with TransferManager module if it exists
+     * @dev TransferManager module has a key of 2
+     * @param _from sender of transfer
+     * @param _to receiver of transfer
+     * @param _amount value of transfer
+     * @return bool
+     */
+    function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool) {
+        return _verifyTransfer(_from, _to, _amount, false);
     }
 
     /**
@@ -607,7 +608,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function mint(address _investor, uint256 _amount) public onlyModuleOrOwner(STO_KEY) checkGranularity(_amount) isMintingAllowed() returns (bool success) {
         require(_investor != address(0), "Investor address should not be 0x");
         _adjustInvestorCount(address(0), _investor, _amount);
-        require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
+        require(_verifyTransfer(address(0), _investor, _amount, true), "Transfer is not valid");
         _adjustBalanceCheckpoints(_investor);
         _adjustTotalSupplyCheckpoints();
         totalSupply_ = totalSupply_.add(_amount);
@@ -668,7 +669,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function burn(uint256 _value) checkGranularity(_value) public returns (bool) {
         _adjustInvestorCount(msg.sender, address(0), _value);
         require(tokenBurner != address(0), "Token Burner contract address is not set yet");
-        require(verifyTransfer(msg.sender, address(0), _value), "Transfer is not valid");
+        require(_verifyTransfer(msg.sender, address(0), _value, true), "Transfer is not valid");
         require(_value <= balances[msg.sender], "Value should no be greater than the balance of msg.sender");
         _adjustBalanceCheckpoints(msg.sender);
         _adjustTotalSupplyCheckpoints();
@@ -796,7 +797,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function forceTransfer(address _from, address _to, uint256 _value, bytes _data) public onlyController returns(bool) {
         _adjustInvestorCount(_from, _to, _value);
-        bool verified = verifyTransfer(_from, _to, _value);
+        bool verified = _verifyTransfer(_from, _to, _value, true);
         _adjustBalanceCheckpoints(_from);
         _adjustBalanceCheckpoints(_to);
 

@@ -304,14 +304,7 @@ contract('CappedSTO', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken_ETH.modules(transferManagerKey, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-
-           assert.notEqual(
-            I_GeneralTransferManager.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManager contract was not deployed",
-           );
-
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
         it("Should mint the tokens before attaching the STO", async() => {
@@ -865,8 +858,8 @@ contract('CappedSTO', accounts => {
 
     describe("Test cases for reaching limit number of STO modules", async() => {
 
-        it("Should successfully attach STO modules up to the limit and fail at the limit", async () => {
-            const MAX_MODULES = await I_SecurityToken_ETH.MAX_MODULES.call({ from: token_owner });
+        it("Should successfully attach 10 STO modules", async () => {
+            const MAX_MODULES = 10;
             let startTime = latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
 
@@ -881,19 +874,10 @@ contract('CappedSTO', accounts => {
                 I_CappedSTO_Array_ETH.push(CappedSTO.at(tx.logs[3].args._module));
             }
 
-            let errorThrown = false;
-            try {
-                 await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> reached cap number of modules attached`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
         });
 
         it("Should successfully invest in all STO modules attached", async () => {
-            const MAX_MODULES = await I_SecurityToken_ETH.MAX_MODULES.call({ from: token_owner });
+            const MAX_MODULES = 10;
             await increaseTime(duration.days(2));
             for (var STOIndex = 2; STOIndex < MAX_MODULES; STOIndex++) {
                 await I_CappedSTO_Array_ETH[STOIndex].buyTokens(account_investor3, { from : account_investor3, value: web3.utils.toWei('1', 'ether') });
@@ -938,14 +922,7 @@ contract('CappedSTO', accounts => {
 
             it("POLY: Should intialize the auto attached modules", async () => {
                 let moduleData = await I_SecurityToken_POLY.modules(transferManagerKey, 0);
-                I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-
-                assert.notEqual(
-                 I_GeneralTransferManager.address.valueOf(),
-                 "0x0000000000000000000000000000000000000000",
-                 "GeneralTransferManager contract was not deployed",
-                );
-
+                I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
              });
 
              it("POLY: Should successfully attach the STO module to the security token", async () => {

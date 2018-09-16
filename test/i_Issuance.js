@@ -294,13 +294,8 @@ contract('Issuance', accounts => {
 
             it("POLYMATH: Should intialize the auto attached modules", async () => {
                 let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
-                I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+                I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
-                assert.notEqual(
-                 I_GeneralTransferManager.address.valueOf(),
-                 "0x0000000000000000000000000000000000000000",
-                 "GeneralTransferManager contract was not deployed",
-                );
 
              });
 
@@ -360,7 +355,7 @@ contract('Issuance', accounts => {
                  //First attach a permission manager to the token
                  await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, {from: account_polymath});
                  let moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
-                 I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
+                 I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
                  // Add permission to the deletgate (A regesteration process)
                  await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_polymath});
                  // Providing the permission to the delegate

@@ -2,13 +2,13 @@ pragma solidity ^0.4.24;
 
 import "../../Pausable.sol";
 import "../Module.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "../../interfaces/IERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Interface to be implemented by all STO modules
  */
-contract ISTO is Module, Pausable {
+contract ISTO is Module, Pausable  {
     using SafeMath for uint256;
 
     enum FundRaiseType { ETH, POLY }
@@ -33,6 +33,18 @@ contract ISTO is Module, Pausable {
 
     // Event
     event SetFunding(uint8[] _fundRaiseTypes);
+
+    /**
+    * @notice Reclaim ERC20Basic compatible tokens
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    * @param _tokenContract The address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) external onlyOwner {
+        require(_tokenContract != address(0));
+        IERC20 token = IERC20(_tokenContract);
+        uint256 balance = token.balanceOf(address(this));
+        require(token.transfer(msg.sender, balance));
+    }
 
     /**
      * @notice used to verify the investment, whether the investor provided an allowance to the STO or not.
@@ -76,17 +88,6 @@ contract ISTO is Module, Pausable {
      */
     function unpause() public onlyOwner {
         super._unpause();
-    }
-
-    /**
-    * @notice Reclaim ERC20Basic compatible tokens
-    * @param _tokenContract The address of the token contract
-    */
-    function reclaimERC20(address _tokenContract) external onlyOwner {
-        require(_tokenContract != address(0));
-        ERC20Basic token = ERC20Basic(_tokenContract);
-        uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(msg.sender, balance));
     }
 
     function _configureFunding(uint8[] _fundRaiseTypes) internal {

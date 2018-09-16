@@ -43,7 +43,7 @@ interface IModuleFactory {
     /**
      * @notice Get the version of the Module
      */
-    function getVersion() public view returns(string);
+    function getVersion() external view returns(string);
 
     /**
      * @notice Get the Instructions that helped to used the module

@@ -2,7 +2,6 @@ require('babel-register');
 require('babel-polyfill');
 
 const HDWalletProvider = require("truffle-hdwallet-provider-privkey");
-// const privKey = require('fs').readFileSync('./privKey').toString();
 
 module.exports = {
   networks: {
@@ -36,9 +35,9 @@ module.exports = {
       gasPrice: 10000000000
     },
     kovan: {
-      // provider: new HDWalletProvider(privKey, "http://localhost:8545"),
-      host: 'localhost',
-      port: 8545,
+      provider: () => {
+        return new HDWalletProvider(require('fs').readFileSync('./privKey').toString(), "https://kovan.infura.io/")
+      },
       network_id: '42', // Match any network id
       gas: 7900000,
       gasPrice: 10000000000

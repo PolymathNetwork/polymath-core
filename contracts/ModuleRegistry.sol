@@ -169,7 +169,7 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
      * @param _factoryAddress Ethereum contract address of the module factory
      * @return address array which have the list of securityToken's uses that module factory
      */
-    function getReputationOfFactory(address _factoryAddress) public view returns(address[]) {
+    function getReputationOfFactory(address _factoryAddress) external view returns(address[]) {
         return reputation[_factoryAddress];
     }
 
@@ -178,7 +178,7 @@ contract ModuleRegistry is IModuleRegistry, Pausable, RegistryUpdater, ReclaimTo
      * @param _moduleType Type of Module
      * @return address array thal contains the lis of addresses of module factory contracts.
      */
-    function getModuleListOfType(uint8 _moduleType) public view returns(address[]) {
+    function getModuleListOfType(uint8 _moduleType) external view returns(address[]) {
         return moduleList[_moduleType];
     }
 

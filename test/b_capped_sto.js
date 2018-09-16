@@ -799,7 +799,7 @@ contract('CappedSTO', accounts => {
             );
         });
 
-        it("Should successfully invest in second STO", async() => {
+        it("Should successfully whitelist investor 3", async() => {
 
             balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
 
@@ -818,8 +818,32 @@ contract('CappedSTO', accounts => {
 
             // Jump time to beyond STO start
             await increaseTime(duration.days(2));
+        });
 
-            await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_investor3, value: web3.utils.toWei('1', 'ether') });
+        it("Should invest in second STO - fails due to incorrect beneficiary", async() => {
+
+            // Buying on behalf of another user should fail
+            let errorThrown = false;
+            try {
+                 await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_issuer, value: web3.utils.toWei('1', 'ether') });
+            } catch(error) {
+                console.log(`         tx revert -> incorrect beneficiary`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+        });
+
+        it("Should allow non-matching beneficiary", async() => {
+            await I_CappedSTO_Array_ETH[1].changeAllowBeneficialInvestments(true, {from: account_issuer});
+            let allow = await I_CappedSTO_Array_ETH[1].allowBeneficialInvestments();
+            assert.equal(allow, true, "allowBeneficialInvestments should be true");
+        });
+
+        it("Should invest in second STO", async() => {
+
+            await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_issuer, value: web3.utils.toWei('1', 'ether') });
 
             assert.equal(
                 (await I_CappedSTO_Array_ETH[1].getRaisedEther.call())

@@ -58,13 +58,13 @@ interface IModuleRegistry {
      * @param _factoryAddress address of the Module Factory
      * @return address array which has the list of securityToken's uses that module factory
      */
-    function getReputationOfFactory(address _factoryAddress) public view returns(address[]);
+    function getReputationOfFactory(address _factoryAddress) external view returns(address[]);
 
     /**
      * @notice Use to get the list of Module Factory addresses for a given module type
      * @param _moduleType Type of Module
      * @return address array thal contains the list of addresses of module factory contracts.
      */
-    function getModuleListOfType(uint8 _moduleType) public view returns(address[]);
+    function getModuleListOfType(uint8 _moduleType) external view returns(address[]);
 
 }

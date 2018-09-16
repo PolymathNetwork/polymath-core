@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "./interfaces/IERC20.sol";
 import "./interfaces/ITickerRegistry.sol";
 import "./helpers/Util.sol";
 import "./Pausable.sol";
@@ -31,7 +31,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
 
     // Storage of symbols correspond to their details.
     mapping(string => SymbolDetails) registeredSymbols;
-    // Mapping of ticker owner with the list of tickers 
+    // Mapping of ticker owner with the list of tickers
     mapping(address => bytes32[]) public tokensOwnedByUser;
     // Store the location index of the ticker in an array
     mapping(string => uint) tickerIndex;
@@ -48,7 +48,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
     event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
     // Emit when ownership of the ticker get changed
     event LogChangeTickerOwnership(string _ticker, address _oldOwner, address _newOwner);
-    // Emit when a ticker details get modified 
+    // Emit when a ticker details get modified
     event LogModifyTickerDetails(address _owner, string _symbol, string _name, uint256 _registrationDate, uint256 _expiryDate);
     // Registration fee in POLY base 18 decimals
     uint256 public registrationFee;
@@ -74,7 +74,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_symbol).length > 0 && bytes(_symbol).length <= 10, "Ticker length should always between 0 & 10");
         if(registrationFee > 0)
-            require(ERC20(polyToken).transferFrom(msg.sender, address(this), registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(IERC20(polyToken).transferFrom(msg.sender, address(this), registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = _upper(_symbol);
         require(_expiryCheck(symbol), "Ticker is already reserved");
         tokensOwnedByUser[_owner].push(stringToBytes32(symbol));
@@ -111,9 +111,9 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
         registeredSymbols[symbol].status = true;
         return true;
     }
-   
+
     /**
-     * @notice Register the ticker without paying the fee 
+     * @notice Register the ticker without paying the fee
        Once the token symbol is registered to its owner then no other issuer can claim
        Its ownership. If the symbol expires and its issuer hasn't used it, then someone else can take it.
      * @param _owner Owner of the token
@@ -144,7 +144,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @param _registrationDate Date on which ticker get registered
      * @param _expiryDate Expiry date of the ticker
      */
-    function modifyTickerDetails(address _owner, string _symbol, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external onlyOwner { 
+    function modifyTickerDetails(address _owner, string _symbol, string _tokenName, uint256 _registrationDate, uint256 _expiryDate) external onlyOwner {
         string memory symbol = _upper(_symbol);
         require(!registeredSymbols[symbol].status, "Modifying the details of deployed token is not permitted");
         registeredSymbols[symbol] = SymbolDetails(_owner, _registrationDate, _expiryDate, _tokenName, false);
@@ -212,13 +212,13 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
        _len = _len - 1;
        delete tickerIndex[_ticker];
        tokensOwnedByUser[registeredSymbols[_ticker].owner].length = _len;
-       return true;    
+       return true;
     }
 
     /**
      * @notice Transfer the ownership of the ticker
      * @dev _newOwner Address whom ownership to transfer
-     * @dev _ticker Symbol 
+     * @dev _ticker Symbol
      */
     function transferTickerOwnership(address _newOwner, string _ticker) public whenNotPaused {
         string memory ticker = _upper(_ticker);
@@ -234,16 +234,16 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
 
     /**
      * @notice Use to get the ticker list as per the owner
-     * @param _owner Address which owns the list of tickers 
+     * @param _owner Address which owns the list of tickers
      */
-    function getTickersByOwner(address _owner) public view returns(bytes32[]) {
+    function getTickersByOwner(address _owner) external view returns(bytes32[]) {
          uint counter = 0;
          bytes32[] memory tempList = new bytes32[](tokensOwnedByUser[_owner].length);
          for (uint j = 0; j < tokensOwnedByUser[_owner].length; j++) {
              string memory _symbol = bytes32ToString(tokensOwnedByUser[_owner][j]);
              if (registeredSymbols[_symbol].expiryDate >= now || registeredSymbols[_symbol].status == true ) {
                  tempList[counter] = tokensOwnedByUser[_owner][j];
-                 counter ++; 
+                 counter ++;
              }
          }
          return tempList;
@@ -257,7 +257,7 @@ contract TickerRegistry is ITickerRegistry, Util, Pausable, RegistryUpdater, Rec
      * @return string
      * @return bool
      */
-    function getDetails(string _symbol) public view returns (address, uint256, uint256, string, bool) {
+    function getDetails(string _symbol) external view returns (address, uint256, uint256, string, bool) {
         string memory symbol = _upper(_symbol);
         if (registeredSymbols[symbol].status == true||registeredSymbols[symbol].expiryDate > now) {
             return

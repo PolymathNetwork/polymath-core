@@ -64,7 +64,7 @@ interface ISecurityToken {
      * @return bytes32
      * @return address
      */
-    function getAllModulesByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32[], address[]);
+    function getAllModulesByName(uint8 _moduleType, bytes32 _name) external view returns (bytes32[], address[]);
 
     /**
      * @notice Queries totalSupply at a specified checkpoint

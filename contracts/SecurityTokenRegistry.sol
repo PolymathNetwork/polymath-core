@@ -69,7 +69,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
         require(bytes(_name).length > 0 && bytes(_symbol).length > 0, "Name and Symbol string length should be greater than 0");
         require(ITickerRegistry(tickerRegistry).checkValidity(_symbol, msg.sender, _name), "Trying to use non-valid symbol");
         if(registrationFee > 0)
-            require(ERC20(polyToken).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(IERC20(polyToken).transferFrom(msg.sender, this, registrationFee), "Failed transferFrom because of sufficent Allowance is not provided");
         string memory symbol = _upper(_symbol);
         address newSecurityTokenAddress = ISTFactory(protocolVersionST[protocolVersion]).deployToken(
             _name,
@@ -137,7 +137,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, Util, Pausable, Regist
      * @return string Details of the Token.
      * @return uint256 Timestamp at which Security Token get launched on Polymath platform.
      */
-    function getSecurityTokenData(address _securityToken) public view returns (string, address, string, uint256) {
+    function getSecurityTokenData(address _securityToken) external view returns (string, address, string, uint256) {
         return (
             securityTokens[_securityToken].symbol,
             Ownable(_securityToken).owner(),

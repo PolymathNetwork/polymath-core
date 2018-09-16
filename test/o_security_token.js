@@ -497,7 +497,7 @@ contract('SecurityToken', accounts => {
             try {
                 await I_SecurityToken.freezeMinting({from: account_temp});
             } catch(error) {
-                console.log(`         tx revert -> finishMintingIssuer only be called by the owner of the SecurityToken`.grey);
+                console.log(`         tx revert -> freezeMinting only be called by the owner of the SecurityToken`.grey);
                 errorThrown = true;
                 ensureException(error);
             }

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../interfaces/IPolyToken.sol";
+import "../interfaces/IERC20.sol";
 import "../interfaces/IModuleFactory.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
@@ -10,7 +10,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
  */
 contract ModuleFactory is IModuleFactory, Ownable {
 
-    IPolyToken public polyToken;
+    IERC20 public polyToken;
     uint256 public setupCost;
     uint256 public usageCost;
     uint256 public monthlySubscriptionCost;
@@ -29,7 +29,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public {
-      polyToken = IPolyToken(_polyAddress);
+      polyToken = IERC20(_polyAddress);
       setupCost = _setupCost;
       usageCost = _usageCost;
       monthlySubscriptionCost = _subscriptionCost;

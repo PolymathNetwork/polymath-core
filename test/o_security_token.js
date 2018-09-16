@@ -305,7 +305,7 @@ contract('SecurityToken', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
             assert.notEqual(
                 I_GeneralTransferManager.address.valueOf(),
@@ -606,21 +606,22 @@ contract('SecurityToken', accounts => {
 
         it("Should get the modules of the securityToken by name", async () => {
             let moduleList = await I_SecurityToken.getModulesByName.call("CappedSTO");
-            assert.equal(moduleList.length == 1, "Only one STO");
+            console.log(moduleList);
+            assert.isTrue(moduleList.length == 1, "Only one STO");
             let moduleData = await I_SecurityToken.getModule.call(moduleList[0]);
-            assert.equal(web3.utils.toAscii(moduleData[0][0]).replace(/\u0000/g, ''), "CappedSTO");
-            assert.equal(moduleData[1][0], I_CappedSTO.address);
+            console.log(moduleData);
+            assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "CappedSTO");
+            assert.equal(moduleData[1], I_CappedSTO.address);
         });
 
         it("Should get the modules of the securityToken by name (not added into the security token yet)", async () => {
             let moduleData = await I_SecurityToken.getModulesByName.call("GeneralPermissionManager");
-            assert.equal(moduleList.length == 0, "No Permission Manager");
+            assert.isTrue(moduleData.length == 0, "No Permission Manager");
         });
 
         it("Should get the modules of the securityToken by name (not added into the security token yet)", async () => {
-            let moduleData = await I_SecurityToken.getAllModulesByName.call(transferManagerKey, "CountTransferManager");
-            assert.equal(moduleData[0].length, 0);
-            assert.equal(moduleData[1].length, 0);
+            let moduleData = await I_SecurityToken.getModulesByName.call("CountTransferManager");
+            assert.isTrue(moduleData.length == 0, "No Permission Manager");
         });
 
         it("Should fail in updating the token details", async() => {
@@ -643,7 +644,7 @@ contract('SecurityToken', accounts => {
         it("Should successfully remove the general transfer manager module from the securityToken -- fails msg.sender should be Owner", async() => {
             let errorThrown = false;
             try {
-                let tx = await I_SecurityToken.removeModule(transferManagerKey, 0, { from : account_temp });
+                let tx = await I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from : account_temp });
             } catch (error) {
                 console.log(`Test Case passed by restricting the unknown account to call removeModule of the securityToken`);
                 errorThrown = true;
@@ -652,12 +653,12 @@ contract('SecurityToken', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should successful remove the module", async() => {
+        it("Should fail to remove the module - incorrect address", async() => {
             let errorThrown = false;
             try {
-                let tx = await I_SecurityToken.removeModule(transferManagerKey, 6, { from : token_owner });
+                let tx = await I_SecurityToken.removeModule(0, { from : token_owner });
             } catch (error) {
-                console.log(`       tx -> Failed because index doesn't exist`);
+                console.log(`       tx -> Failed because address doesn't exist`);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -666,36 +667,24 @@ contract('SecurityToken', accounts => {
 
         it("Should successfully remove the general transfer manager module from the securityToken", async() => {
             let key = await takeSnapshot();
-            let tx = await I_SecurityToken.removeModule(transferManagerKey, 0, { from : token_owner });
+            let tx = await I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from : token_owner });
             assert.equal(tx.logs[0].args._type, transferManagerKey);
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
             await revertToSnapshot(key);
         });
 
         it("Should verify the revertion of snapshot works properly", async() => {
-            let moduleData = await I_SecurityToken.getModule.call(transferManagerKey, 0);
+            let moduleData = await I_SecurityToken.getModule.call(I_GeneralTransferManager.address);
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ''), "GeneralTransferManager");
             assert.equal(moduleData[1], I_GeneralTransferManager.address);
         });
 
-        it("Should change the budget of the module", async() => {
+        it("Should change the budget of the module - fail incorrect address", async() => {
             let errorThrown = false;
             try {
-                let tx = await I_SecurityToken.changeModuleBudget(0, 0, (100 * Math.pow(10, 18)),{ from : token_owner});
+                let tx = await I_SecurityToken.changeModuleBudget(0, (100 * Math.pow(10, 18)),{ from : token_owner});
             } catch(error) {
-                console.log(`       tx -> Failed because key type is 0`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-         });
-
-         it("Should change the budget of the module", async() => {
-            let errorThrown = false;
-            try {
-                let tx = await I_SecurityToken.changeModuleBudget(stoKey, 5, (100 * Math.pow(10, 18)),{ from : token_owner});
-            } catch(error) {
-                console.log(`       tx -> Failed because module index is not valid`.grey);
+                console.log(`       tx -> Failed because address is 0`.grey);
                 errorThrown = true;
                 ensureException(error);
             }
@@ -703,12 +692,12 @@ contract('SecurityToken', accounts => {
          });
 
 
-        it("Should change the budget of the module", async() => {
-           let tx = await I_SecurityToken.changeModuleBudget(stoKey, 0, (100 * Math.pow(10, 18)),{ from : token_owner});
-           assert.equal(tx.logs[1].args._moduleType, stoKey);
-           assert.equal(tx.logs[1].args._module, I_CappedSTO.address);
-           assert.equal(tx.logs[1].args._budget.dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
-        });
+          it("Should change the budget of the module", async() => {
+             let tx = await I_SecurityToken.changeModuleBudget(I_CappedSTO.address, (100 * Math.pow(10, 18)),{ from : token_owner});
+             assert.equal(tx.logs[1].args._moduleType, stoKey);
+             assert.equal(tx.logs[1].args._module, I_CappedSTO.address);
+             assert.equal(tx.logs[1].args._budget.dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
+          });
 
     });
 
@@ -777,7 +766,7 @@ contract('SecurityToken', accounts => {
                 // Add permission to the deletgate (A regesteration process)
                 await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, {from: token_owner});
                 let moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
-                I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
+                I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
                 try {
                     await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_temp });
                 } catch (error) {

@@ -135,11 +135,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     modifier onlyModuleOrOwner(uint8 _type) {
         if (msg.sender == owner) {
             _;
+        } else {
+          require(modulesToData[msg.sender].module == msg.sender, "Address mismatch");
+          require(modulesToData[msg.sender].moduleType == _type, "Type mismatch");
+          require(!modulesToData[msg.sender].isArchived, "Module archived");
+          _;
         }
-        require(modulesToData[msg.sender].module == msg.sender, "Address mismatch");
-        require(modulesToData[msg.sender].moduleType == _type, "Type mismatch");
-        require(!modulesToData[msg.sender].isArchived, "Module archived");
-        _;
     }
 
     modifier checkGranularity(uint256 _amount) {
@@ -186,6 +187,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         transferFunctions[bytes4(keccak256("transferFrom(address,address,uint256)"))] = true;
         transferFunctions[bytes4(keccak256("mint(address,uint256)"))] = true;
         transferFunctions[bytes4(keccak256("burn(uint256)"))] = true;
+        transferFunctions[bytes4(keccak256("mintMulti(address[],uint256[])"))] = true;
     }
 
     /**

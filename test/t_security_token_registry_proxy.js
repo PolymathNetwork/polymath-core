@@ -169,7 +169,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
         });
 
         it("Verify the initialize data", async() => {
-            assert.equal((await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("expiryLimit"))).toNumber(), 60*24*60*60, "Should equal to 60 days");
+            assert.equal((await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("expiryLimit"))).toNumber(), 15*24*60*60, "Should equal to 60 days");
             assert.equal((await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("tickerRegFee"))).toNumber(), web3.utils.toWei("250"));
         });
 

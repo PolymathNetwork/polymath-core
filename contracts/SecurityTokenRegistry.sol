@@ -472,7 +472,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @notice Modifier to make a function callable only when the contract is paused.
      */
     modifier whenPaused() {
-        require(getBool(Encoder.getKey("paused")), "Should not paused");
+        require(getBool(Encoder.getKey("paused")), "Should not be paused");
         _;
     }
 

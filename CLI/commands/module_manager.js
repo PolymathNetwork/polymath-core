@@ -166,21 +166,18 @@ async function iterateModules(_moduleType) {
     }
 
     let modules = [];
-    let counter = 0;
-    let endModule = false;
-    let details;
 
     let allModules = await securityToken.methods.getModulesByType(_moduleType).call();
 
     for (let i = 0; i < allModules.length; i++) {
         try {
-            details = await securityToken.methods.getModule(allModules[i]).call();
+            let details = await securityToken.methods.getModule(allModules[i]).call();
             let nameTemp = web3.utils.hexToUtf8(details[0]);
             let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
             let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
             let pausedTemp = false;
             if (_moduleType == 2 || _moduleType == 3) {
-                let pausedTemp = await contractTemp.methods.paused().call();
+                pausedTemp = await contractTemp.methods.paused().call();
             }
             modules.push(new ModuleInfo(_moduleType, nameTemp, details[1], details[2], details[3], pausedTemp, abiTemp, contractTemp));
         } catch(error) {
@@ -388,9 +385,8 @@ async function mintTokens() {
         console.log(chalk.red("Minting is not possible - Minting has been permanently frozen by issuer"));
         return;
     }
-    let result = await securityToken.methods.getModule(3, 0).call();
-    let isSTOAttached = result[1] != "0x0000000000000000000000000000000000000000";
-    if (isSTOAttached) {
+    let stoModules = await securityToken.methods.getModulesByType(STO_KEY).call();
+    if (stoModules.length > 0) {
         console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
         return;
     }

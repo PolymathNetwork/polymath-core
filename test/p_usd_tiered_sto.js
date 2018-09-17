@@ -350,13 +350,8 @@ contract('USDTieredSTO', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken.modules(TMKEY, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
-           assert.notEqual(
-            I_GeneralTransferManager.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManager contract was not deployed",
-           );
         });
     });
 

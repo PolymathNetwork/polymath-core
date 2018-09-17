@@ -270,13 +270,7 @@ contract('CountTransferManager', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken.modules(2, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-
-           assert.notEqual(
-            I_GeneralTransferManager.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManager contract was not deployed",
-           );
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
         });
 

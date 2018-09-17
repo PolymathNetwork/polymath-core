@@ -259,14 +259,7 @@ contract('PreSaleSTO', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-
-           assert.notEqual(
-            I_GeneralTransferManager.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManager contract was not deployed",
-           );
-
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
         it("Should fail to launch the STO due to endTime is 0", async () => {

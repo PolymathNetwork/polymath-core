@@ -279,13 +279,7 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken.modules(2, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-
-           assert.notEqual(
-            I_GeneralTransferManager.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManager contract was not deployed",
-           );
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
         });
 
@@ -618,7 +612,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should set a budget for the GeneralTransferManager", async() => {
-            await I_SecurityToken.changeModuleBudget(2, 0, 10 * Math.pow(10, 18), {from: token_owner});
+            await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, 10 * Math.pow(10, 18), {from: token_owner});
             let errorThrown = false;
             try {
                 await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_polymath});

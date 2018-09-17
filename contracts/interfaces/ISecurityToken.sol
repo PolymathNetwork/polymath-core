@@ -44,27 +44,32 @@ interface ISecurityToken {
     function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns (bool);
 
     /**
+     * @notice Returns module list for a module type
+     * @param _module address of the module
+     * @return bytes32 name
+     * @return address module address
+     * @return address module factory address
+     * @return bool module archived
+     * @return uint8 module type
+     * @return uint256 module index
+     * @return uint256 name index
+
+     */
+    function getModule(address _module) external view returns(bytes32, address, address, bool, uint8, uint256, uint256);
+
+    /**
+     * @notice returns module list for a module name
+     * @param _name name of the module
+     * @return address[] list of modules with this name
+     */
+    function getModulesByName(bytes32 _name) external view returns (address[]);
+
+    /**
      * @notice returns module list for a module type
-     * @param _moduleType is which type of module we are trying to access
-     * @param _moduleIndex is the index of the module within the chosen type
+     * @param _type type of the module
+     * @return address[] list of modules with this type
      */
-    function getModule(uint8 _moduleType, uint _moduleIndex) external view returns (bytes32, address);
-
-    /**
-     * @notice returns a module that matches the provided name - will return first match
-     * @param _moduleType is which type of module we are trying to access
-     * @param _name is the name of the module within the chosen type
-     */
-    function getModuleByName(uint8 _moduleType, bytes32 _name) external view returns (bytes32, address);
-
-    /**
-     * @notice returns all the modules that match the provided name within a module type
-     * @param _moduleType is the type of module we are trying to get
-     * @param _name is the name of the module within the chosen type
-     * @return bytes32
-     * @return address
-     */
-    function getAllModulesByName(uint8 _moduleType, bytes32 _name) external view returns (bytes32[], address[]);
+    function getModulesByType(uint8 _type) external view returns (address[]);
 
     /**
      * @notice Queries totalSupply at a specified checkpoint
@@ -119,11 +124,10 @@ interface ISecurityToken {
 
     /**
     * @notice allows owner to approve more POLY to one of the modules
-    * @param _moduleType is the selected module type
-    * @param _moduleIndex is the index of the module in the selected type list
-    * @param _budget is the new budget for the selected module
+    * @param _module module address
+    * @param _budget new budget
     */
-    function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) external;
+    function changeModuleBudget(address _module, uint256 _budget) external;
 
     /**
      * @notice changes the tokenDetails
@@ -182,10 +186,21 @@ interface ISecurityToken {
 
     /**
     * @notice Removes a module attached to the SecurityToken
-    * @param _moduleType is which type of module we are trying to remove
-    * @param _moduleIndex is the index of the module within the chosen type
+    * @param _module address of module to archive
     */
-    function removeModule(uint8 _moduleType, uint8 _moduleIndex) external;
+    function removeModule(address _module) external;
+
+    /**
+    * @notice Archives a module attached to the SecurityToken
+    * @param _module address of module to archive
+    */
+    function archiveModule(address _module) external;
+
+    /**
+    * @notice Unarchives a module attached to the SecurityToken
+    * @param _module address of module to unarchive
+    */
+    function unarchiveModule(address _module) external;
 
     /**
      * @notice Function used to attach the module in security token

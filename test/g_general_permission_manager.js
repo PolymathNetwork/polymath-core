@@ -293,14 +293,7 @@ contract('GeneralPermissionManager', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken.modules(2, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-
-           assert.notEqual(
-            I_GeneralTransferManager.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManager contract was not deployed",
-           );
-
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {

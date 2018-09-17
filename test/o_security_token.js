@@ -654,6 +654,18 @@ contract('SecurityToken', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should fail to remove the module - module not archived", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from : token_owner });
+            } catch (error) {
+                console.log(`       tx -> Failed because address doesn't exist`);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        })
+
         it("Should fail to remove the module - incorrect address", async() => {
             let errorThrown = false;
             try {
@@ -668,6 +680,7 @@ contract('SecurityToken', accounts => {
 
         it("Should successfully remove the general transfer manager module from the securityToken", async() => {
             let key = await takeSnapshot();
+            await I_SecurityToken.archiveModule(I_GeneralTransferManager.address, { from : token_owner });
             let tx = await I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from : token_owner });
             assert.equal(tx.logs[0].args._type, transferManagerKey);
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);

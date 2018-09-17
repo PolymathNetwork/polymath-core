@@ -55,7 +55,7 @@ interface ISecurityToken {
      * @return uint256 name index
 
      */
-    function getModule(address _module) external view;
+    function getModule(address _module) external view returns(bytes32, address, address, bool, uint8, uint256, uint256);
 
     /**
      * @notice returns module list for a module name

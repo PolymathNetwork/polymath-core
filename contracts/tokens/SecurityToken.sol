@@ -132,11 +132,16 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event LogForceTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _amount, bool _verifyTransfer, bytes _data);
     event LogDisableController(uint256 _timestamp);
 
-    // Require msg.sender to be the specified module type
-    modifier onlyModule(uint8 _type) {
+    function isModule(address _module, uint8 _type) internal view returns (bool) {
         require(modulesToData[msg.sender].module == msg.sender, "Address mismatch");
         require(modulesToData[msg.sender].moduleType == _type, "Type mismatch");
         require(!modulesToData[msg.sender].isArchived, "Module archived");
+        return true;
+    }
+
+    // Require msg.sender to be the specified module type
+    modifier onlyModule(uint8 _type) {
+        require(isModule(msg.sender, _type));
         _;
     }
 
@@ -145,10 +150,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         if (msg.sender == owner) {
             _;
         } else {
-          require(modulesToData[msg.sender].module == msg.sender, "Address mismatch");
-          require(modulesToData[msg.sender].moduleType == _type, "Type mismatch");
-          require(!modulesToData[msg.sender].isArchived, "Module archived");
-          _;
+            require(isModule(msg.sender, _type));
+            _;
         }
     }
 
@@ -259,7 +262,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _module address of module to archive
     */
     function archiveModule(address _module) external onlyOwner {
-        require(!modulesToData[_module].isArchived, "Already archived");
+        require(!modulesToData[_module].isArchived, "Module not unarchived");
         require(modulesToData[_module].module != address(0), "Module missing");
         emit LogModuleArchived(modulesToData[_module].moduleType, _module, now);
         modulesToData[_module].isArchived = true;
@@ -270,16 +273,17 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _module address of module to unarchive
     */
     function unarchiveModule(address _module) external onlyOwner {
-        require(modulesToData[_module].isArchived, "Already archived");
+        require(modulesToData[_module].isArchived, "Module not archived");
         emit LogModuleUnarchived(modulesToData[_module].moduleType, _module, now);
         modulesToData[_module].isArchived = false;
     }
 
     /**
-    * @notice Unarchives a module attached to the SecurityToken
+    * @notice Removes a module attached to the SecurityToken
     * @param _module address of module to unarchive
     */
     function removeModule(address _module) external onlyOwner {
+        require(modulesToData[_module].isArchived, "Module not archived");
         require(modulesToData[_module].module != address(0), "Module missing");
         emit LogModuleRemoved(modulesToData[_module].moduleType, _module, now);
         // Remove from module type list

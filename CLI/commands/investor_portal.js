@@ -9,6 +9,8 @@ var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
+const STO_KEY = 3;
+
 let securityTokenRegistry;
 let securityToken;
 let selectedSTO;
@@ -114,15 +116,16 @@ async function inputSymbol(symbol) {
 
         await showTokenInfo();
 
-        let res = await securityToken.methods.getModule(2,0).call();
-        GTMAddress = res[1];
+        let res = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
+        GTMAddress = res[0];
         let generalTransferManagerABI = abis.generalTransferManager();
         generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,GTMAddress);
 
-        res = await securityToken.methods.getModule(3,0).call();
-        STOAddress = res[1];
-        if (STOAddress != "0x0000000000000000000000000000000000000000") {
-            selectedSTO = web3.utils.toAscii(res[0]).replace(/\u0000/g, '');
+        res = await securityToken.methods.getModulesByType(STO_KEY).call();
+        if (res.length > 0) {
+            STOAddress = res[0];
+            let stoModuleData = await securityToken.methods.getModule(STOAddress).call();
+            selectedSTO = web3.utils.toAscii(stoModuleData[0]).replace(/\u0000/g, '');
         } else {
             console.log(chalk.red(`There is no STO module attached to the ${displayTokenSymbol.toUpperCase()} Token. No further actions can be taken.`));
             return;
@@ -463,12 +466,18 @@ async function showCappedSTOInfo() {
     let displayEndTime = await currentSTO.methods.endTime().call();
     displayRate = await currentSTO.methods.rate().call();
     let displayCap = await currentSTO.methods.cap().call();
-    let displayFundsRaised = await currentSTO.methods.fundsRaised().call();
-    let displayTokensSold = await currentSTO.methods.tokensSold().call();
+    let displayTokensSold = await currentSTO.methods.totalTokensSold().call();
     let displayInvestorCount = await currentSTO.methods.investorCount().call();
     let displayTokensRemaining = web3.utils.fromWei(displayCap) - web3.utils.fromWei(displayTokensSold);
 
-    displayRaiseType = await currentSTO.methods.fundRaiseType(0).call() ? 'ETH' : 'POLY';
+    let displayFundsRaised;
+    if (await currentSTO.methods.fundRaiseType(0).call()) {
+        displayRaiseType = 'ETH';
+        displayFundsRaised = await currentSTO.methods.fundsRaisedETH().call();
+    } else {
+        displayRaiseType = 'POLY';
+        displayFundsRaised = await currentSTO.methods.fundsRaisedPOLY().call();
+    }
 
     await generalTransferManager.methods.whitelist(User.address).call({}, function(error, result){
         displayCanBuy = result.canBuyFromSTO;

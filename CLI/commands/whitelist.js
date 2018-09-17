@@ -138,9 +138,8 @@ async function setInvestors() {
     let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, tokenDeployedAddress);
   }
-  await securityToken.methods.getModule(2, 0).call({}, function (error, result) {
-    generalTransferManagerAddress = result[1];
-  });
+  let gmtModules = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
+  let generalTransferManagerAddress = gmtModules[0];
   let generalTransferManagerABI = abis.generalTransferManager();
   let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
 

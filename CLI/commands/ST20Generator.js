@@ -18,6 +18,7 @@ let tokenName;
 let tokenSymbol;
 let selectedSTO;
 
+const STO_KEY = 3;
 const regFee = 250;
 const cappedSTOFee = 20000;
 const usdTieredSTOFee = 100000;
@@ -201,10 +202,9 @@ async function step_token_deploy(){
 }
 
 async function step_Wallet_Issuance(){
-  let result = await securityToken.methods.getModule(3,0).call();
-  let STOAddress = result[1];
-  if (STOAddress != "0x0000000000000000000000000000000000000000") {
-    console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address " + STOAddress + ". Skipping initial minting");
+  let result = await securityToken.methods.getModulesByType(STO_KEY).call();
+  if (result.length > 0) {
+    console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address " + result[0] + ". Skipping initial minting");
   } else {
     let initialMint = await securityToken.getPastEvents('Transfer', {
       filter: {from: "0x0000000000000000000000000000000000000000"}, // Using an array means OR: e.g. 20 or 23
@@ -228,10 +228,7 @@ async function step_Wallet_Issuance(){
       }
 
       // Add address to whitelist
-      let generalTransferManagerAddress;
-      await securityToken.methods.getModule(2,0).call({}, function(error, result){
-        generalTransferManagerAddress = result[1];
-      });
+      let generalTransferManagerAddress = (await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call())[0];
       let generalTransferManagerABI = abis.generalTransferManager();
       generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
        
@@ -285,10 +282,11 @@ async function step_STO_launch() {
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration");
 
-  let result = await securityToken.methods.getModule(3,0).call();
-  STO_Address = result[1];
-  if(STO_Address != "0x0000000000000000000000000000000000000000") {
-    selectedSTO = web3.utils.toAscii(result[0]).replace(/\u0000/g, '');
+  let result = await securityToken.methods.getModulesByType(STO_KEY).call();
+  if (result.length > 0) {
+    STO_Address = result[0];
+    let stoModuleData = await securityToken.methods.getModule(STO_Address).call();
+    selectedSTO = web3.utils.toAscii(stoModuleData[0]).replace(/\u0000/g, '');
     console.log('\x1b[32m%s\x1b[0m',selectedSTO + " has already been created at address " + STO_Address + ". Skipping STO creation");
     switch (selectedSTO) {
       case 'CappedSTO':

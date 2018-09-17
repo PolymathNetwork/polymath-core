@@ -9,6 +9,8 @@ var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
+const STO_KEY = 3;
+
 let securityToken;
 
 ////////////////////////////USER INPUTS//////////////////////////////////////////
@@ -122,19 +124,18 @@ function readFile() {
         let securityTokenABI = abis.securityToken();
         securityToken = new web3.eth.Contract(securityTokenABI, tokenDeployedAddress);
     }
-    await securityToken.methods.getModule(3, 0).call({}, function (error, result) {
-        if (web3.utils.toAscii(result[0]).replace(/\u0000/g, '') == "CappedSTO") {
-            console.log("****************************************************************************************\n");
-            console.log("*************" + chalk.red(" Minting of tokens is only allowed before the STO get attached ") + "************\n");
-            console.log("****************************************************************************************\n");
-            process.exit(0);
-        }
-    });
+    let modules = await securityToken.methods.getModulesByType(STO_KEY).call();
+    if (modules.length > 0) {
+        console.log("****************************************************************************************\n");
+        console.log("*************" + chalk.red(" Minting of tokens is only allowed before the STO get attached ") + "************\n");
+        console.log("****************************************************************************************\n");
+        process.exit(0);
+    }
     console.log(`
     -------------------------------------------------------
     ------------ Mint the tokens to affiliates ------------
     -------------------------------------------------------
-  `);
+    `);
 
   let affiliatesFailedArray = [];
   //this for loop will do the batches, so it should run 75, 75, 50 with 200

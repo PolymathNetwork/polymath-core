@@ -8,6 +8,8 @@ var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
+const STO_KEY = 3;
+
 let securityTokenRegistry;
 let securityToken;
 let polyToken;
@@ -175,30 +177,19 @@ async function iterateModules(_moduleType) {
     }
 
     let modules = [];
-    let counter = 0;
-    let endModule = false;
-    let details;
-
-    while (!endModule) {
-        try {
-            details = await securityToken.methods.getModule(_moduleType,counter).call();
-            if (details[1] != "0x0000000000000000000000000000000000000000") {
-                let nameTemp = web3.utils.hexToUtf8(details[0]);
-                let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
-                let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
-                let pausedTemp = false;
-                if (_moduleType == 2 || _moduleType == 3) {
-                    let pausedTemp = await contractTemp.methods.paused().call();
-                }
-                modules.push(new ModuleInfo(nameTemp,_moduleType,details[1],details[2],pausedTemp,abiTemp,contractTemp));
-                counter += 1;
-            } else {
-                endModule = true;
-            }
-        } catch(error) {
-            endModule = true
+    let moduleAddresses = await securityToken.methods.getModulesByType(_moduleType).call();
+    for (const moduleAddress of moduleAddresses) {
+        let details = await securityToken.methods.getModule(moduleAddress).call();
+        let nameTemp = web3.utils.hexToUtf8(details[0]);
+        let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
+        let contractTemp = new web3.eth.Contract(abiTemp, moduleAddress);
+        let pausedTemp = false;
+        if (_moduleType == 2 || _moduleType == 3) {
+            pausedTemp = await contractTemp.methods.paused().call();
         }
+        modules.push(new ModuleInfo(nameTemp,_moduleType,moduleAddress,details[0],pausedTemp,abiTemp,contractTemp));
     }
+
     return modules;
 }
 
@@ -326,9 +317,8 @@ async function mintTokens() {
         console.log(chalk.red("Minting is not possible - Minting has been permanently frozen by issuer"));
         return;
     }
-    let result = await securityToken.methods.getModule(3, 0).call();
-    let isSTOAttached = result[1] != "0x0000000000000000000000000000000000000000";
-    if (isSTOAttached) {
+    let result = await securityToken.methods.getModulesByType(STO_KEY).call();
+    if (result.length > 0) {
         console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
         return;
     }

@@ -34,7 +34,7 @@ async function setup() {
         let securityTokenRegistryABI = abis.securityTokenRegistry();
         securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
         securityTokenRegistry.setProvider(web3.currentProvider);
-    
+
         let polytokenAddress = await contracts.polyToken();
         let polytokenABI = abis.polyToken();
         polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
@@ -108,16 +108,6 @@ async function displayModules() {
     stoModules = await iterateModules(3);
     cpModules = await iterateModules(4);
 
-    // function ModuleInfo(_name, _moduleType, _address, _locked, _paused, _abi, _contract) {
-    //     this.name = _name;
-    //     this.type = _moduleType;
-    //     this.address = _address;
-    //     this.locked = _locked;
-    //     this.paused = _paused;
-    //     this.abi = _abi;
-    //     this.contract = _contract;
-    // }
-
     // Module Counts
     numPM = pmModules.length;
     numTM = tmModules.length;
@@ -135,28 +125,28 @@ async function displayModules() {
     if (numPM) {
         console.log(chalk.green(`\n    Permission Manager Modules:`));
         for (i=0;i<numPM;i+=1) {
-            console.log(`    - ${pmModules[i].name} is ${(pmModules[i].locked)?'Locked':'Unlocked'} at ${pmModules[i].address}`);
+            console.log(`    - ${pmModules[i].name} is ${(pmModules[i].archived)?'Archived':'Unarchived'} at ${pmModules[i].address}`);
         }
     }
 
     if (numTM) {
         console.log(chalk.green(`\n    Transfer Manager Modules:`));
         for (i=0;i<numTM;i+=1) {
-            console.log(`    - ${tmModules[i].name} is ${(tmModules[i].locked)?'Locked':'Unlocked'} and ${(tmModules[i].paused)?'Paused':'Unpaused'} at ${tmModules[i].address}`);
+            console.log(`    - ${tmModules[i].name} is ${(tmModules[i].archived)?'Archived':'Unarchived'} and ${(tmModules[i].paused)?'Paused':'Unpaused'} at ${tmModules[i].address}`);
         }
     }
 
     if (numSTO) {
         console.log(chalk.green(`\n    STO Modules:`));
         for (i=0;i<numSTO;i+=1) {
-            console.log(`    - ${stoModules[i].name} is ${(stoModules[i].locked)?'Locked':'Unlocked'} and ${(stoModules[i].paused)?'Paused':'Unpaused'} at ${stoModules[i].address}`);
+            console.log(`    - ${stoModules[i].name} is ${(stoModules[i].archived)?'Archived':'Unarchived'} and ${(stoModules[i].paused)?'Paused':'Unpaused'} at ${stoModules[i].address}`);
         }
     }
 
     if (numCP) {
         console.log(chalk.green(`\n    Checkpoint Modules:`));
         for (i=0;i<numCP;i+=1) {
-            console.log(`    - ${cpModules[i].name} is ${(cpModules[i].locked)?'Locked':'Unlocked'} at ${cpModules[i].address}`);
+            console.log(`    - ${cpModules[i].name} is ${(cpModules[i].archived)?'Archived':'Unarchived'} at ${cpModules[i].address}`);
         }
     }
     selectAction();
@@ -164,46 +154,45 @@ async function displayModules() {
 
 async function iterateModules(_moduleType) {
 
-    function ModuleInfo(_name, _moduleType, _address, _locked, _paused, _abi, _contract) {
+    function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused, _abi, _contract) {
         this.name = _name;
         this.type = _moduleType;
         this.address = _address;
-        this.locked = _locked;
+        this.factoryAddress = _factoryAddress;
+        this.archived = _archived;
         this.paused = _paused;
         this.abi = _abi;
         this.contract = _contract;
     }
 
     let modules = [];
-    let counter = 0;
-    let endModule = false;
-    let details;
 
-    while (!endModule) {
+    let allModules = await securityToken.methods.getModulesByType(_moduleType).call();
+
+    for (let i = 0; i < allModules.length; i++) {
         try {
-            details = await securityToken.methods.getModule(_moduleType,counter).call();
-            if (details[1] != "0x0000000000000000000000000000000000000000") {
-                let nameTemp = web3.utils.hexToUtf8(details[0]);
-                let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
-                let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
-                let pausedTemp = false;
-                if (_moduleType == 2 || _moduleType == 3) {
-                    let pausedTemp = await contractTemp.methods.paused().call();
-                }
-                modules.push(new ModuleInfo(nameTemp,_moduleType,details[1],details[2],pausedTemp,abiTemp,contractTemp));
-                counter += 1;
-            } else {
-                endModule = true;
+            let details = await securityToken.methods.getModule(allModules[i]).call();
+            let nameTemp = web3.utils.hexToUtf8(details[0]);
+            let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
+            let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
+            let pausedTemp = false;
+            if (_moduleType == 2 || _moduleType == 3) {
+                pausedTemp = await contractTemp.methods.paused().call();
             }
+            modules.push(new ModuleInfo(_moduleType, nameTemp, details[1], details[2], details[3], pausedTemp, abiTemp, contractTemp));
         } catch(error) {
-            endModule = true
+          console.log(error);
+          console.log(chalk.red(`
+            *************************
+            Unable to iterate over module type - unexpected error
+            *************************`));
         }
     }
     return modules;
 }
 
 async function selectAction() {
-    let options = ['Add a module','Pause / unpause a module','Remove a module','Change module budget','Whitelist an address for a year','Mint tokens','Freeze minting permanently','Exit'];
+    let options = ['Add a module','Pause / unpause a module','Archive a module','Unarchive a module','Remove a module','Change module budget','Whitelist an address for a year','Mint tokens','Freeze minting permanently','Exit'];
     let index = readlineSync.keyInSelect(options, chalk.yellow('What do you want to do?'), {cancel: false});
     console.log("\nSelected:",options[index]);
     switch (index) {
@@ -214,21 +203,27 @@ async function selectAction() {
             await pauseModule();
             break;
         case 2:
-            await removeModule();
+            await archiveModule();
             break;
         case 3:
-            await changeBudget();
+            await unarchiveModule();
             break;
         case 4:
-            await whitelist();
+            await removeModule();
             break;
         case 5:
-            await mintTokens();
+            await changeBudget();
             break;
         case 6:
-            await freezeMinting();
+            await whitelist();
             break;
         case 7:
+            await mintTokens();
+            break;
+        case 8:
+            await freezeMinting();
+            break;
+        case 9:
             process.exit();
     }
     displayModules()
@@ -262,33 +257,97 @@ async function pauseModule() {
     backToMenu();
 }
 
-async function removeModule() {
+async function archiveModule() {
 
-    function ModuleInfo(_module, _index) {
+    function ModuleInfo(_module) {
         this.module = _module;
-        this.index = _index;
     }
     let options = [];
     let modules = [];
 
-    function pushModules(_numModules, _arrayModules) {
-        if (_numModules > 0) {
-            for (i=0;i<_numModules;i+=1) {
-                options.push(_arrayModules[i].name);
-                modules.push(new ModuleInfo(_arrayModules[i],i));
+    function pushModules(_arrayModules) {
+        for (i=0;i<_arrayModules.length;i+=1) {
+            if (!_arrayModules[i].isArchived) {
+              options.push(_arrayModules[i].name);
+              modules.push(new ModuleInfo(_arrayModules[i]));
             }
         }
     }
 
-    pushModules(numPM,pmModules);
-    pushModules(numTM,tmModules);
-    pushModules(numSTO,stoModules);
-    pushModules(numCP,cpModules);
+    pushModules(pmModules);
+    pushModules(tmModules);
+    pushModules(stoModules);
+    pushModules(cpModules);
+
+    let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to archive?'));
+    if (index != -1) {
+        console.log("\nSelected: ",options[index]);
+        let archiveModuleAction = securityToken.methods.archiveModule(modules[index].module.address);
+        await common.sendTransaction(Issuer, archiveModuleAction, defaultGasPrice, 0, 2);
+        console.log(chalk.green(`\nSuccessfully archived ${modules[index].module.name}.`));
+    }
+    backToMenu()
+}
+
+async function unarchiveModule() {
+
+    function ModuleInfo(_module) {
+        this.module = _module;
+    }
+    let options = [];
+    let modules = [];
+
+    function pushModules(_arrayModules) {
+        for (i=0;i<_arrayModules.length;i+=1) {
+            if (_arrayModules[i].archived) {
+              options.push(_arrayModules[i].name);
+              modules.push(new ModuleInfo(_arrayModules[i]));
+            }
+        }
+    }
+
+    pushModules(pmModules);
+    pushModules(tmModules);
+    pushModules(stoModules);
+    pushModules(cpModules);
+
+    let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to unarchive?'));
+    if (index != -1) {
+        console.log("\nSelected: ",options[index]);
+        let unarchiveModuleAction = securityToken.methods.unarchiveModule(modules[index].module.address);
+        await common.sendTransaction(Issuer, unarchiveModuleAction, defaultGasPrice, 0, 2);
+        console.log(chalk.green(`\nSuccessfully unarchived ${modules[index].module.name}.`));
+    }
+    backToMenu()
+}
+
+
+async function removeModule() {
+
+    function ModuleInfo(_module) {
+        this.module = _module;
+    }
+    let options = [];
+    let modules = [];
+
+    function pushModules(_arrayModules) {
+        for (i=0;i<_arrayModules.length;i+=1) {
+            if (_arrayModules[i].archived) {
+              options.push(_arrayModules[i].name);
+              modules.push(new ModuleInfo(_arrayModules[i]));
+            }
+        }
+    }
+
+    pushModules(pmModules);
+    pushModules(tmModules);
+    pushModules(stoModules);
+    pushModules(cpModules);
 
     let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to remove?'));
     if (index != -1) {
         console.log("\nSelected: ",options[index]);
-        let removeModuleAction = securityToken.methods.removeModule(modules[index].module.type,modules[index].index);
+        let removeModuleAction = securityToken.methods.removeModule(modules[index].module.address);
         await common.sendTransaction(Issuer, removeModuleAction, defaultGasPrice, 0, 2);
         console.log(chalk.green(`\nSuccessfully removed ${modules[index].module.name}.`));
     }
@@ -326,13 +385,12 @@ async function mintTokens() {
         console.log(chalk.red("Minting is not possible - Minting has been permanently frozen by issuer"));
         return;
     }
-    let result = await securityToken.methods.getModule(3, 0).call();
-    let isSTOAttached = result[1] != "0x0000000000000000000000000000000000000000";
-    if (isSTOAttached) {
+    let stoModules = await securityToken.methods.getModulesByType(STO_KEY).call();
+    if (stoModules.length > 0) {
         console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
         return;
     }
-    
+
     let _investor = readlineSync.question(chalk.yellow(`Enter the address to receive the tokens: `));
     let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
     try {
@@ -346,7 +404,7 @@ async function mintTokens() {
     Minting was not successful - Please make sure beneficiary address has been whitelisted
     **************************`));
     }
-    
+
     backToMenu()
 }
 

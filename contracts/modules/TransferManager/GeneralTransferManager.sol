@@ -161,7 +161,7 @@ contract GeneralTransferManager is ITransferManager {
                 return Result.VALID;
             }
             if (allowAllWhitelistTransfers) {
-                //Anyone on the whitelist can transfer, regardless of block number
+                //Anyone on the whitelist can transfer, regardless of time
                 return (_onWhitelist(_to) && _onWhitelist(_from)) ? Result.VALID : Result.NA;
             }
             if (allowAllWhitelistIssuances && _from == issuanceAddress) {
@@ -283,11 +283,8 @@ contract GeneralTransferManager is ITransferManager {
      * @notice Internal function use to know whether the STO is attached or not
      */
     function _isSTOAttached() internal view returns(bool) {
-        address _sto;
-        (, _sto) = ISecurityToken(securityToken).getModule(3, 0);
-        if (_sto == address(0))
-            return false;
-        return true;
+        bool attached = ISecurityToken(securityToken).getModulesByType(3).length > 0;
+        return attached;
     }
 
 }

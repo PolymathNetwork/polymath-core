@@ -23,7 +23,17 @@ interface ISecurityTokenRegistry {
      * @param _tokenDetails off-chain details of the token
      * @param _deployedAt Timestamp at which security token comes deployed on the ethereum blockchain
      */
-    function addCustomSecurityToken(string _name, string _ticker, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt) external;
+    function modifySecurityToken(string _name, string _ticker, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt) external;
+
+    /**
+     * @notice Register the token ticker for its particular owner
+     * @notice Once the token ticker is registered to its owner then no other issuer can claim
+     * @notice its ownership. If the ticker expires and its issuer hasn't used it, then someone else can take it.
+     * @param _owner Address of the owner of the token
+     * @param _ticker token ticker
+     * @param _tokenName Name of the token
+     */
+    function registerTicker(address _owner, string _ticker, string _tokenName) external;
 
     /**
     * @notice Changes the protocol version and the SecurityToken contract

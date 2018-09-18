@@ -24,7 +24,11 @@ contract SingleTradeVolumeRestrictionFactory is IModuleFactory {
   function deploy(bytes _data) external returns(address) {
       if (setupCost > 0)
           require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-      return address(new SingleTradeVolumeRestrictionManager(msg.sender, address(polyToken)));
+      SingleTradeVolumeRestrictionManager singleTradeVolumeRestrictionManager = new SingleTradeVolumeRestrictionManager(msg.sender, address(polyToken));
+      require(getSig(_data) == singleTradeVolumeRestrictionManager.getInitFunction(), "Provided data is not valid");
+      require(address(singleTradeVolumeRestrictionManager).call(_data), "Un-successfull call");
+      emit LogGenerateModuleFromFactory(address(singleTradeVolumeRestrictionManager), getName(), address(this), msg.sender, now);
+      return address(singleTradeVolumeRestrictionManager);
   }
 
   /**

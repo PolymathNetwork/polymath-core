@@ -1,4 +1,3 @@
-const ModuleRegistry = artifacts.require('./ModuleRegistry.sol')
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
@@ -6,7 +5,7 @@ const PercentageTransferManagerFactory = artifacts.require('./PercentageTransfer
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
-const ModuleRegistryV2 = artifacts.require('./ModuleRegistryV2.sol');
+const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
@@ -121,20 +120,16 @@ const functionSignatureProxyMR = {
     return polymathRegistry.changeAddress("PolyToken", PolyToken, {from: PolymathAccount})
     .then(() => {
       // A) Deploy the ModuleRegistry Contract (It contains the list of verified ModuleFactory)
-      // console.log("test" + PolymathRegistry.address);
-      return deployer.deploy(ModuleRegistry, polymathRegistry.address, {from: PolymathAccount});
-    }).then(() => {
-      return deployer.deploy(ModuleRegistryV2, {from: PolymathAccount});
+      return deployer.deploy(ModuleRegistry, {from: PolymathAccount});
     }).then(() => {
       return deployer.deploy(ModuleRegistryProxy, {from: PolymathAccount});
     }).then(() => {
       let bytesProxyMR = web3.eth.abi.encodeFunctionCall(functionSignatureProxyMR, [PolymathRegistry.address, PolymathAccount]);
-      ModuleRegistryProxy.at(ModuleRegistryProxy.address).upgradeToAndCall("1.0.0", ModuleRegistryV2.address, bytesProxyMR, {from: PolymathAccount});
+      ModuleRegistryProxy.at(ModuleRegistryProxy.address).upgradeToAndCall("1.0.0", ModuleRegistry.address, bytesProxyMR, {from: PolymathAccount});
     }).then(() => {
-      return ModuleRegistry.deployed().then((_moduleRegistry) => {
-        moduleRegistry = _moduleRegistry;
+      moduleRegistry = ModuleRegistry.at(ModuleRegistryProxy.address);
       // Add module registry to polymath registry
-      return polymathRegistry.changeAddress("ModuleRegistry", ModuleRegistry.address, {from: PolymathAccount});
+      return polymathRegistry.changeAddress("ModuleRegistry", ModuleRegistryProxy.address, {from: PolymathAccount});
     }).then(() => {
       // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
       // manager attach with the securityToken contract at the time of deployment)
@@ -248,7 +243,7 @@ const functionSignatureProxyMR = {
      return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistryProxy.address, {from: PolymathAccount});
     }).then(() => {
       // Update all addresses into the registry contract by calling the function updateFromregistry
-      return ModuleRegistry.at(ModuleRegistry.address).updateFromRegistry({from: PolymathAccount});
+      return moduleRegistry.updateFromRegistry({from: PolymathAccount});
     }).then(() => {
       // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
       return deployer.deploy(CappedSTOFactory, PolyToken, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})
@@ -285,6 +280,7 @@ const functionSignatureProxyMR = {
       SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
       SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
       ModuleRegistry:                    ${ModuleRegistry.address}
+      ModuleRegistryProxy:               ${moduleRegistry.address}
       FeatureRegistry:                   ${FeatureRegistry.address}
 
       ETHOracle:                         ${ETHOracle}
@@ -310,6 +306,5 @@ const functionSignatureProxyMR = {
       // -------- END OF POLYMATH NETWORK Configuration -------//
     });
   });
-});
 });
 }

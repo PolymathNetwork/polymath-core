@@ -16,7 +16,7 @@ contract PolymathRegistry is ReclaimTokens {
      * @param _nameKey is the key for the contract address mapping
      * @return address
      */
-    function getAddress(string _nameKey) view public returns(address) {
+    function getAddress(string _nameKey) view external returns(address) {
         bytes32 key = keccak256(bytes(_nameKey));
         require(storedAddresses[key] != address(0), "Invalid address key");
         return storedAddresses[key];
@@ -27,7 +27,7 @@ contract PolymathRegistry is ReclaimTokens {
      * @param _nameKey is the key for the contract address mapping
      * @param _newAddress is the new contract address
      */
-    function changeAddress(string _nameKey, address _newAddress) public onlyOwner {
+    function changeAddress(string _nameKey, address _newAddress) external onlyOwner {
         bytes32 key = keccak256(bytes(_nameKey));
         emit LogChangeAddress(_nameKey, storedAddresses[key], _newAddress);
         storedAddresses[key] = _newAddress;

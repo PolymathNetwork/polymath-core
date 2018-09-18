@@ -2,6 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./CountTransferManager.sol";
 import "../ModuleFactory.sol";
+import "../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying CountTransferManager module
@@ -30,7 +31,7 @@ contract CountTransferManagerFactory is ModuleFactory {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         CountTransferManager countTransferManager = new CountTransferManager(msg.sender, address(polyToken));
-        require(_getSig(_data) == countTransferManager.getInitFunction(), "Provided data is not valid");
+        require(Util.getSig(_data) == countTransferManager.getInitFunction(), "Provided data is not valid");
         require(address(countTransferManager).call(_data), "Un-successfull call");
         emit LogGenerateModuleFromFactory(address(countTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(countTransferManager);

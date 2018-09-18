@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "../modules/STO/DummySTO.sol";
 import "../modules/ModuleFactory.sol";
-
+import "../libraries/Util.sol";
 
 contract TestSTOFactory is ModuleFactory {
 
@@ -30,7 +30,7 @@ contract TestSTOFactory is ModuleFactory {
         //Check valid bytes - can only call module init function
         DummySTO dummySTO = new DummySTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(_getSig(_data) == dummySTO.getInitFunction(), "Provided data is not valid");
+        require(Util.getSig(_data) == dummySTO.getInitFunction(), "Provided data is not valid");
         require(address(dummySTO).call(_data), "Un-successfull call");
         return address(dummySTO);
     }

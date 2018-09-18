@@ -2,6 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./PreSaleSTO.sol";
 import "../ModuleFactory.sol";
+import "../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying PreSaleSTO module
@@ -33,7 +34,7 @@ contract PreSaleSTOFactory is ModuleFactory {
         //Check valid bytes - can only call module init function
         PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(_getSig(_data) == preSaleSTO.getInitFunction(), "Invalid data");
+        require(Util.getSig(_data) == preSaleSTO.getInitFunction(), "Invalid data");
         require(address(preSaleSTO).call(_data), "Unsuccessfull call");
         emit LogGenerateModuleFromFactory(address(preSaleSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(preSaleSTO);

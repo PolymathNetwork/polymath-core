@@ -43,7 +43,6 @@ contract('SecurityToken addModule Cap', accounts => {
     let I_GeneralTransferManagerFactory;
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
-    let I_TickerRegistry;
     let I_FeatureRegistry;
     let I_STFactory;
     let I_STRProxied;

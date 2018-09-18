@@ -51,7 +51,6 @@ contract('Issuance', accounts => {
     let I_GeneralPermissionManager;
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
-    let I_TickerRegistry;
     let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_CappedSTOFactory;

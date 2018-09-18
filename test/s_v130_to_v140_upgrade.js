@@ -66,7 +66,6 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     let I_GeneralTransferManagerFactory;
     let I_GeneralPermissionManagerFactory;
     let I_SecurityTokenRegistryProxy;
-    let I_TickerRegistry;
     let I_FeatureRegistry;
     let I_STFactory;
     let I_STRProxied;
@@ -266,127 +265,6 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         `);
     });
 
-    /*
-    describe("STR Upgrade", async() => {
-        // 1 - Pause old STR
-        it("Should successfully pause the contract", async() => {
-            await I_STRProxied.pause({ from: POLYMATH });
-            let status = await I_STRProxied.getBoolValues.call(web3.utils.soliditySha3("paused"));
-            assert.isTrue(status, "SecurityTokenRegistry is not paused");
-        });
-
-        // 2 - Deploy new STR
-        it("Should successfully deploy upgraded SecurityTokenRegistry contract", async() => {
-            I_UpgradedSecurityTokenRegistry = await SecurityTokenRegistry.new({from: POLYMATH });
-     
-            assert.notEqual(
-                I_UpgradedSecurityTokenRegistry.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
-                "SecurityTokenRegistry contract was not deployed",
-            );
-            await I_SecurityTokenRegistryProxy.upgradeTo("1.1.0", I_UpgradedSecurityTokenRegistry.address, {from: POLYMATH});
-            I_STRProxiedNew = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
-        });
-
-        ///// No Need of these steps with the upgrade approach ///////
-
-        // // 3 - Pause new STR
-        // it("Should successfully pause the upgraded contract", async() => {
-        //     await I_STRProxiedNew.pause({ from: POLYMATH });
-        //     let status = await I_STRProxiedNew.paused.call();
-        //     assert.isOk(status, "SecurityTokenRegistry is not paused");
-        // });
-
-        // // 4 - Update PolymathRegistry
-        // // 4a - ChangeAddress
-        // it("Should successfully change SecurityTokenRegistry address on PolymathRegistry", async() => {
-        //     tx = await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_UpgradedSecurityTokenRegistry.address, {from: POLYMATH});
-        //     assert.equal(tx.logs[0].args._nameKey, "SecurityTokenRegistry");
-        //     assert.equal(tx.logs[0].args._newAddress, I_UpgradedSecurityTokenRegistry.address);
-        // });
-
-        // 4b - UpdateFromRegistry
-        // it("Should successfully change SecurityTokenRegistry address on PolymathRegistry", async() => {
-        //     let strAddress;
-        //     await I_UpgradedSecurityTokenRegistry.updateFromRegistry({from: POLYMATH});
-        //     strAddress = await I_UpgradedSecurityTokenRegistry.securityTokenRegistry.call({from: POLYMATH});
-        //     assert.equal(strAddress, I_UpgradedSecurityTokenRegistry.address, "SecurityTokenRegistry address was not updated");
-        //     await I_ModuleRegistry.updateFromRegistry({from: POLYMATH});
-        //     strAddress = await I_ModuleRegistry.securityTokenRegistry.call({from: POLYMATH});
-        //     assert.equal(strAddress, I_UpgradedSecurityTokenRegistry.address, "SecurityTokenRegistry address was not updated");
-        //     await I_TickerRegistry.updateFromRegistry({from: POLYMATH});
-        //     strAddress = await I_TickerRegistry.securityTokenRegistry.call({from: POLYMATH});
-        //     assert.equal(strAddress, I_UpgradedSecurityTokenRegistry.address, "SecurityTokenRegistry address was not updated");
-        // });
-
-        // 5 Migrate data from old STR to new STR
-        // 5a - Get tokens from old STR
-        it("Should successfully get all tokens launched with old SecurityTokenRegistry", async() => {
-            let LogNewSecurityToken = await I_SecurityTokenRegistry.LogNewSecurityToken({}, { fromBlock: 0, toBlock: 'latest'});
-            let events = await new Promise(function(resolve, reject) {
-                LogNewSecurityToken.get(function(error, logs) {
-                    if (error)
-                        reject(error);
-                    else
-                        resolve(logs)
-                    });
-            });
-            assert.equal(events.length, 2, "Tokens launched were not got");
-            let tok1 = events.find(function(element) {
-                return element.args._securityTokenAddress == I_SecurityToken1.address;
-            });
-            assert.isDefined(tok1, "First token was not found");
-            let tok2 = events.find(function(element) {
-                return element.args._securityTokenAddress == I_SecurityToken2.address;
-            });
-            assert.isDefined(tok2, "Second token was not found");
-        });
-        // 5b - Migrate data to new STR
-        it("Should successfully add custom Security Token for first token", async() => {
-            let tx = await I_UpgradedSecurityTokenRegistry.addCustomSecurityToken(
-                name1,
-                symbol1,
-                ISSUER1,
-                I_SecurityToken1.address,
-                tokenDetails1,
-                Math.floor(Date.now()/10000),
-                {from: POLYMATH}
-            );
-            assert.equal(tx.logs[0].args._name, name1, "First token name does not match");
-            assert.equal(tx.logs[0].args._ticker, symbol1, "First token symbol does not match");
-            assert.equal(tx.logs[0].args._securityTokenAddress, I_SecurityToken1.address, "First token address does not match");
-        });
-        it("Should successfully add custom Security Token for second token", async() => {
-            let tx = await I_UpgradedSecurityTokenRegistry.addCustomSecurityToken(
-                name2,
-                symbol2,
-                ISSUER2,
-                I_SecurityToken2.address,
-                tokenDetails2,
-                Math.floor(Date.now()/10000),
-                {from: POLYMATH}
-            );
-            assert.equal(tx.logs[0].args._name, name2, "Second token name does not match");
-            assert.equal(tx.logs[0].args._ticker, symbol2, "Second token symbol does not match");
-            assert.equal(tx.logs[0].args._securityTokenAddress, I_SecurityToken2.address, "Second token address does not match");
-        });
-
-        // 6 Unpause both STRs
-        // 6a - Unpause old STR
-        // it("Should successfully unpause the old SecurityTokenRegistry contract", async() => {
-        //     await I_UpgradedSecurityTokenRegistry.unpause({ from: POLYMATH });
-        //     let status = await I_UpgradedSecurityTokenRegistry.paused.call();
-        //     assert.isFalse(status, "SecurityTokenRegistry is paused");
-        // });
-        // 6b - Unpause the STR
-        it("Should successfully unpause the contract", async() => {
-            await I_STRProxiedNew.unpause({ from: POLYMATH });
-            let status = await I_STRProxied.getBoolValues.call(web3.utils.soliditySha3("paused"));
-            assert.isFalse(status, "SecurityTokenRegistry is paused");
-        });
-    });
-    */
-   
     describe("USDTieredSTOFactory deploy", async() => {
         // Step 1: Deploy Oracles
         // 1a - Deploy POLY Oracle

@@ -53,7 +53,6 @@ contract('EtherDividendCheckpoint', accounts => {
     let I_GeneralTransferManager;
     let I_ExchangeTransferManager;
     let I_ModuleRegistry;
-    let I_TickerRegistry;
     let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_STRProxied;

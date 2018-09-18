@@ -120,6 +120,9 @@ async function start_explorer() {
           ));
           break;
       }
+    } else {
+      console.log(chalk.red(`Controller featueres are permanently disabled for this token.`))
+      tokenSymbol = undefined;
     }
   }
 

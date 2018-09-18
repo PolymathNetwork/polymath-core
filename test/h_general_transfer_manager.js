@@ -3,6 +3,7 @@ import { duration, ensureException, promisifyLogWatch, latestBlock } from './hel
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 import {signData} from './helpers/signData';
 import { pk }  from './helpers/testprivateKey';
+import { encodeProxyCall } from './helpers/encodeCall';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
@@ -64,7 +65,6 @@ contract('GeneralTransferManager', accounts => {
     let I_PolymathRegistry;
 
     // SecurityToken Details
-    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Team";
     const symbol = "sap";
     const tokenDetails = "This is equity type of issuance";
@@ -77,7 +77,7 @@ contract('GeneralTransferManager', accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = 250 * Math.pow(10, 18);
+    const initRegFee = web3.utils.toWei("250");
 
     // Dummy STO details
     const startTime = latestTime() + duration.seconds(5000);           // Start time will be 5000 seconds more than the latest time
@@ -101,31 +101,6 @@ contract('GeneralTransferManager', accounts => {
             name: '_someString'
         }
         ]
-    };
-
-    const functionSignatureProxy = {
-        name: 'initialize',
-        type: 'function',
-        inputs: [{
-            type:'address',
-            name: '_polymathRegistry'
-        },{
-            type: 'address',
-            name: '_stVersionProxy'
-        },{
-            type: 'uint256',
-            name: '_stLaunchFee'
-        },{
-            type: 'uint256',
-            name: '_tickerRegFee'
-        },{
-            type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
-            name: 'owner'
-        }
-    ]
     };
 
     before(async() => {
@@ -231,7 +206,7 @@ contract('GeneralTransferManager', accounts => {
 
         // Step 10: update the registries addresses from the PolymathRegistry contract
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-        let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+        let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);    
         
@@ -304,13 +279,7 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken.modules(2, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-
-           assert.notEqual(
-            I_GeneralTransferManager.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManager contract was not deployed",
-           );
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
         });
 
@@ -627,6 +596,54 @@ contract('GeneralTransferManager', accounts => {
 
             let tx = await I_GeneralTransferManager.changeSigningAddress(account_polymath, {from: account_delegate});
             assert.equal(tx.logs[0].args._signingAddress, account_polymath);
+        });
+
+        it("Should fail to pull fees as no budget set", async() => {
+
+            let errorThrown = false;
+            try {
+                await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> No budget set`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should set a budget for the GeneralTransferManager", async() => {
+            await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, 10 * Math.pow(10, 18), {from: token_owner});
+            let errorThrown = false;
+            try {
+                await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> No balance on token`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+            await I_PolyToken.getTokens(10 * Math.pow(10, 18), token_owner);
+            await I_PolyToken.transfer(I_SecurityToken.address, 10 * Math.pow(10, 18), {from: token_owner});
+        });
+
+
+        it("Factory owner should pull fees - fails as not permissioned by issuer", async() => {
+            let errorThrown = false;
+            try {
+                await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_delegate});
+            } catch(error) {
+                console.log(`         tx revert -> Incorrect permissions`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+        });
+
+        it("Factory owner should pull fees", async() => {
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FEE_ADMIN", true, {from: token_owner});
+            let balanceBefore = await I_PolyToken.balanceOf(account_polymath);
+            await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_delegate});
+            let balanceAfter = await I_PolyToken.balanceOf(account_polymath);
+            assert.equal(balanceBefore.add(web3.utils.toWei('1','ether')).toNumber(), balanceAfter.toNumber(), "Fee is transferred");
         });
 
         it("Should change the white list transfer variable", async() => {

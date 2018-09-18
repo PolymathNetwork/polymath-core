@@ -1,6 +1,7 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
+import { encodeProxyCall } from './helpers/encodeCall';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
@@ -74,7 +75,7 @@ contract('Issuance', accounts => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = 250 * Math.pow(10, 18);
+    const initRegFee = web3.utils.toWei("250");
 
     // Capped STO details
     //let startTime;           // Start time will be 5000 seconds more than the latest time
@@ -107,31 +108,6 @@ contract('Issuance', accounts => {
             name: '_fundsReceiver'
         }
         ]
-    };
-
-    const functionSignatureProxy = {
-        name: 'initialize',
-        type: 'function',
-        inputs: [{
-            type:'address',
-            name: '_polymathRegistry'
-        },{
-            type: 'address',
-            name: '_stVersionProxy'
-        },{
-            type: 'uint256',
-            name: '_stLaunchFee'
-        },{
-            type: 'uint256',
-            name: '_tickerRegFee'
-        },{
-            type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
-            name: 'owner'
-        }
-    ]
     };
 
     before(async() => {
@@ -207,6 +183,7 @@ contract('Issuance', accounts => {
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: token_owner });
+        await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
 
         // Step 7: Deploy the STFactory contract
 
@@ -231,7 +208,7 @@ contract('Issuance', accounts => {
 
         // Step 10: update the registries addresses from the PolymathRegistry contract
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-        let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+        let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);    
 
@@ -308,13 +285,8 @@ contract('Issuance', accounts => {
 
             it("POLYMATH: Should intialize the auto attached modules", async () => {
                 let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
-                I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+                I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
-                assert.notEqual(
-                 I_GeneralTransferManager.address.valueOf(),
-                 "0x0000000000000000000000000000000000000000",
-                 "GeneralTransferManager contract was not deployed",
-                );
 
              });
 
@@ -331,6 +303,7 @@ contract('Issuance', accounts => {
 
                 // (C) : Register the STOFactory
                 await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
+                await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
 
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [(latestTime() + duration.seconds(5000)), (latestTime() + duration.days(30)), cap, rate, fundRaiseType, account_fundsReceiver]);
 
@@ -373,7 +346,7 @@ contract('Issuance', accounts => {
                  //First attach a permission manager to the token
                  await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, {from: account_polymath});
                  let moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
-                 I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData[1]);
+                 I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
                  // Add permission to the deletgate (A regesteration process)
                  await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_polymath});
                  // Providing the permission to the delegate

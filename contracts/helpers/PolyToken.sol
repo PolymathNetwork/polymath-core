@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../interfaces/IPolyToken.sol";
+import "../interfaces/IERC20.sol";
 
 /*
 Copyright (c) 2016 Smart Contract Solutions, Inc.
@@ -64,7 +64,7 @@ library SafeMath {
  * @dev Implementation of the basic standard token.
  * @dev https://github.com/ethereum/EIPs/issues/20
  */
-contract PolyToken is IPolyToken {
+contract PolyToken is IERC20 {
   using SafeMath for uint256;
 
   // Poly Token parameters

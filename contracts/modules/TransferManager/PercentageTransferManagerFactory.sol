@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./PercentageTransferManager.sol";
 import "../ModuleFactory.sol";
-import "../../helpers/Util.sol";
+import "../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying PercentageTransferManager module
@@ -70,7 +70,7 @@ contract PercentageTransferManagerFactory is ModuleFactory {
     /**
      * @notice Get the version of the Module
      */
-    function getVersion() public view returns(string) {
+    function getVersion() external view returns(string) {
         return version;
     }
 

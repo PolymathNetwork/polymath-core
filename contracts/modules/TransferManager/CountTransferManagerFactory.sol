@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./CountTransferManager.sol";
 import "../ModuleFactory.sol";
-import "../../helpers/Util.sol";
+import "../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying CountTransferManager module
@@ -69,7 +69,7 @@ contract CountTransferManagerFactory is ModuleFactory {
     /**
      * @notice Get the version of the Module
      */
-    function getVersion() public view returns(string) {
+    function getVersion() external view returns(string) {
         return version;
     }
 

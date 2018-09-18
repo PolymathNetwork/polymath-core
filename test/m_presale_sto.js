@@ -1,6 +1,7 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
+import { encodeProxyCall } from './helpers/encodeCall';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const PreSaleSTOFactory = artifacts.require('./PreSaleSTOFactory.sol');
@@ -74,7 +75,7 @@ contract('PreSaleSTO', accounts => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = 250 * Math.pow(10, 18);
+    const initRegFee = web3.utils.toWei("250");
 
     // PreSale STO details
     let endTime;                                      // Start time will be 5000 seconds more than the latest time
@@ -85,31 +86,6 @@ contract('PreSaleSTO', accounts => {
             type: 'uint256',
             name: '_endTime'
         }]
-    };
-
-    const functionSignatureProxy = {
-        name: 'initialize',
-        type: 'function',
-        inputs: [{
-            type:'address',
-            name: '_polymathRegistry'
-        },{
-            type: 'address',
-            name: '_stVersionProxy'
-        },{
-            type: 'uint256',
-            name: '_stLaunchFee'
-        },{
-            type: 'uint256',
-            name: '_tickerRegFee'
-        },{
-            type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
-            name: 'owner'
-        }
-    ]
     };
 
     before(async() => {
@@ -186,6 +162,7 @@ contract('PreSaleSTO', accounts => {
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_PreSaleSTOFactory.address, { from: token_owner });
+        await I_ModuleRegistry.verifyModule(I_PreSaleSTOFactory.address, true, { from: account_polymath });
 
         // Step 7: Deploy the STFactory contract
 
@@ -209,7 +186,7 @@ contract('PreSaleSTO', accounts => {
 
        // Step 10: update the registries addresses from the PolymathRegistry contract
        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-       let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+       let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
        await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
         // Step 10: Deploy the FeatureRegistry
@@ -282,14 +259,7 @@ contract('PreSaleSTO', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-
-           assert.notEqual(
-            I_GeneralTransferManager.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManager contract was not deployed",
-           );
-
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
         it("Should fail to launch the STO due to endTime is 0", async () => {
@@ -477,16 +447,16 @@ contract('PreSaleSTO', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should successfully reclaim POLY", async() => {
+          it("Should successfully reclaim POLY", async() => {
+            let value = web3.utils.toWei('100','ether');
+            await I_PolyToken.getTokens(value, account_investor1);
             let initInvestorBalance = await I_PolyToken.balanceOf(account_investor1);
             let initOwnerBalance = await I_PolyToken.balanceOf(token_owner);
             let initContractBalance = await I_PolyToken.balanceOf(I_PreSaleSTO.address);
-            let value = web3.utils.toWei('100','ether');
 
-            await I_PolyToken.getTokens(value, account_investor1);
             await I_PolyToken.transfer(I_PreSaleSTO.address, value, { from: account_investor1 });
             await I_PreSaleSTO.reclaimERC20(I_PolyToken.address, { from: token_owner });
-            assert.equal((await I_PolyToken.balanceOf(account_investor3)).toNumber(), initInvestorBalance.toNumber(), "tokens are not transfered out from investor account");
+            assert.equal((await I_PolyToken.balanceOf(account_investor1)).toNumber(), initInvestorBalance.sub(value).toNumber(), "tokens are not transfered out from investor account");
             assert.equal((await I_PolyToken.balanceOf(token_owner)).toNumber(), initOwnerBalance.add(value).add(initContractBalance).toNumber(), "tokens are not added to the owner account");
             assert.equal((await I_PolyToken.balanceOf(I_PreSaleSTO.address)).toNumber(), 0, "tokens are not trandfered out from STO contract");
         });

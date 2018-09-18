@@ -1,26 +1,18 @@
 var fs = require('fs');
 var csv = require('fast-csv');
 var BigNumber = require('bignumber.js');
-const Web3 = require('web3');
-var chalk = require('chalk');
 var common = require('./common/common_functions');
+var global = require('./common/global');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
-////////////////////////////WEB3//////////////////////////////////////////
-if (typeof web3 !== 'undefined') {
-  web3 = new Web3(web3.currentProvider);
-} else {
-  // set the provider you want from Web3.providers
-  web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-}
-
 ////////////////////////////USER INPUTS//////////////////////////////////////////
 let tokenSymbol = process.argv.slice(2)[0]; //token symbol
 let BATCH_SIZE = process.argv.slice(2)[1]; //batch size
 if (!BATCH_SIZE) BATCH_SIZE = 70;
+let remoteNetwork = process.argv.slice(2)[2];
 
 /////////////////////////GLOBAL VARS//////////////////////////////////////////
 
@@ -35,15 +27,13 @@ let badData = new Array();
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-let Issuer;
-let accounts;
-let defaultGasPrice;
-
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
 startScript();
 
 async function startScript() {
+  await global.initialize(remoteNetwork);
+
   try {
     let tickerRegistryAddress = await contracts.tickerRegistry();
     let tickerRegistryABI = abis.tickerRegistry();
@@ -134,14 +124,10 @@ function readFile() {
 
 ////////////////////////MAIN FUNCTION COMMUNICATING TO BLOCKCHAIN
 async function setInvestors() {
-  accounts = await web3.eth.getAccounts();
-  Issuer = accounts[0];
-  defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
-
   let tokenDeployed = false;
   let tokenDeployedAddress;
   // Let's check if token has already been deployed, if it has, skip to STO
-  await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({ from: Issuer }, function (error, result) {
+  await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({}, function (error, result) {
     if (result != "0x0000000000000000000000000000000000000000") {
       console.log('\x1b[32m%s\x1b[0m', "Token deployed at address " + result + ".");
       tokenDeployedAddress = result;
@@ -152,9 +138,8 @@ async function setInvestors() {
     let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, tokenDeployedAddress);
   }
-  await securityToken.methods.getModule(2, 0).call({ from: Issuer }, function (error, result) {
-    generalTransferManagerAddress = result[1];
-  });
+  let gmtModules = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
+  let generalTransferManagerAddress = gmtModules[0];
   let generalTransferManagerABI = abis.generalTransferManager();
   let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
 
@@ -186,8 +171,7 @@ async function setInvestors() {
       //toTimes is ability to buy coins TOwards your account (3rd row in csv, 3rd parameter in modifyWhiteList() )
       //expiryTime is time at which KYC of investor get expired (4th row in csv, 4rd parameter in modifyWhiteList() )
       let modifyWhitelistMultiAction = generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray);
-      let GAS = await common.estimateGas(modifyWhitelistMultiAction, Issuer, 1.2);
-      let r = await modifyWhitelistMultiAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice })
+      let r = await common.sendTransaction(Issuer, modifyWhitelistMultiAction, defaultGasPrice);
       console.log(`Batch ${i} - Attempting to modifyWhitelist accounts:\n\n`, investorArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
       console.log("Whitelist transaxction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");
@@ -206,8 +190,6 @@ async function setInvestors() {
   let investorData_Events = new Array();
   let investorObjectLookup = {};
 
-
-  // var events = await generalTransferManager.LogModifyWhitelist({ from: Issuer }, { fromBlock: 0, toBlock: 'latest' });
   let event_data = await generalTransferManager.getPastEvents('LogModifyWhitelist', {
     fromBlock: 0,
     toBlock: 'latest'

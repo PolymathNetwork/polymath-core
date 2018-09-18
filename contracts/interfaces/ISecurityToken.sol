@@ -24,12 +24,14 @@ interface ISecurityToken {
     /**
      * @notice mints new tokens and assigns them to the target _investor.
      * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+     * @param _investor address the tokens will be minted to
+     * @param _amount is the amount of tokens that will be minted to the investor
      */
     function mint(address _investor, uint256 _amount) external returns (bool success);
 
     /**
      * @notice Burn function used to burn the securityToken
-     * @param _value No. of token that get burned
+     * @param _value No. of tokens that get burned
      */
     function burn(uint256 _value) external returns (bool success);
 
@@ -42,36 +44,41 @@ interface ISecurityToken {
     function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns (bool);
 
     /**
+     * @notice Returns module list for a module type
+     * @param _module address of the module
+     * @return bytes32 name
+     * @return address module address
+     * @return address module factory address
+     * @return bool module archived
+     * @return uint8 module type
+     * @return uint256 module index
+     * @return uint256 name index
+
+     */
+    function getModule(address _module) external view returns(bytes32, address, address, bool, uint8, uint256, uint256);
+
+    /**
+     * @notice returns module list for a module name
+     * @param _name name of the module
+     * @return address[] list of modules with this name
+     */
+    function getModulesByName(bytes32 _name) external view returns (address[]);
+
+    /**
      * @notice returns module list for a module type
-     * @param _moduleType is which type of module we are trying to remove
-     * @param _moduleIndex is the index of the module within the chosen type
+     * @param _type type of the module
+     * @return address[] list of modules with this type
      */
-    function getModule(uint8 _moduleType, uint _moduleIndex) external view returns (bytes32, address);
+    function getModulesByType(uint8 _type) external view returns (address[]);
 
     /**
-     * @notice returns module list for a module name - will return first match
-     * @param _moduleType is which type of module we are trying to remove
-     * @param _name is the name of the module within the chosen type
-     */
-    function getModuleByName(uint8 _moduleType, bytes32 _name) external view returns (bytes32, address);
-
-    /**
-     * @notice returns All module list for a module name 
-     * @param _moduleType is which type of module we are trying to get
-     * @param _name is the name of the module within the chosen type
-     * @return bytes32
-     * @return address
-     */
-    function getAllModulesByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32[], address[]);
-
-    /**
-     * @notice Queries totalSupply as of a defined checkpoint
+     * @notice Queries totalSupply at a specified checkpoint
      * @param _checkpointId Checkpoint ID to query as of
      */
     function totalSupplyAt(uint256 _checkpointId) external view returns (uint256);
 
     /**
-     * @notice Queries balances as of a defined checkpoint
+     * @notice Queries balances at a specified checkpoint
      * @param _investor Investor to query balance for
      * @param _checkpointId Checkpoint ID to query as of
      */
@@ -84,7 +91,7 @@ interface ISecurityToken {
 
     /**
      * @notice gets length of investors array
-     * NB - this length may differ from investorCount if list has not been pruned of zero balance investors
+     * NB - this length may differ from investorCount if the list has not been pruned of zero-balance investors
      * @return length
      */
     function getInvestorsLength() external view returns (uint256);
@@ -96,14 +103,14 @@ interface ISecurityToken {
     function currentCheckpointId() external view returns (uint256);
 
     /**
-    * @notice gets investor at a particular index
+    * @notice gets an investor at a particular index
     * @param _index index to return address from
     * @return investor address
     */
     function investors(uint256 _index) external view returns (address);
 
     /**
-    * @notice gets number of investors
+    * @notice gets the number of investors
     * @return count of investors
     */
     function investorCount() external view returns (uint256);
@@ -117,14 +124,13 @@ interface ISecurityToken {
 
     /**
     * @notice allows owner to approve more POLY to one of the modules
-    * @param _moduleType module type
-    * @param _moduleIndex module index
+    * @param _module module address
     * @param _budget new budget
     */
-    function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) external;
+    function changeModuleBudget(address _module, uint256 _budget) external;
 
     /**
-     * @notice change the tokenDetails
+     * @notice changes the tokenDetails
      * @param _newTokenDetails New token details
      */
     function updateTokenDetails(string _newTokenDetails) external;
@@ -159,26 +165,42 @@ interface ISecurityToken {
     function freezeMinting() external;
 
     /**
-     * @notice mints new tokens and assigns them to the target _investor.
-     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
-     * @param _investors A list of addresses to whom the minted tokens will be dilivered
-     * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
+     * @notice Permanently freeze controller functionality of this security token.
+     */
+    function freezeController() external;
+
+    /**
+     * @notice mints new tokens and assigns them to the target investors.
+     * Can only be called by the STO attached to the token or by the Issuer (Security Token contract owner)
+     * @param _investors A list of addresses to whom the minted tokens will be delivered
+     * @param _amounts A list of the amount of tokens to mint to corresponding addresses from _investor[] list
      * @return success
      */
     function mintMulti(address[] _investors, uint256[] _amounts) external returns (bool success);
 
     /**
-     * @notice used to set the token Burner address. It only be called by the owner
+     * @notice used to set the token Burner address. It can only be called by the owner
      * @param _tokenBurner Address of the token burner contract
      */
     function setTokenBurner(address _tokenBurner) external;
 
     /**
     * @notice Removes a module attached to the SecurityToken
-    * @param _moduleType is which type of module we are trying to remove
-    * @param _moduleIndex is the index of the module within the chosen type
+    * @param _module address of module to archive
     */
-    function removeModule(uint8 _moduleType, uint8 _moduleIndex) external;
+    function removeModule(address _module) external;
+
+    /**
+    * @notice Archives a module attached to the SecurityToken
+    * @param _module address of module to archive
+    */
+    function archiveModule(address _module) external;
+
+    /**
+    * @notice Unarchives a module attached to the SecurityToken
+    * @param _module address of module to unarchive
+    */
+    function unarchiveModule(address _module) external;
 
     /**
      * @notice Function used to attach the module in security token
@@ -194,4 +216,24 @@ interface ISecurityToken {
         uint256 _budget
     ) external;
 
+    /**
+     * @notice Use by the issuer to set the controller addresses
+     * @param _controller address of the controller
+     */
+    function setController(address _controller) external;
+
+    /**
+     * @notice Use by a controller to execute a forced transfer
+     * @param _from address from which to take tokens
+     * @param _to address where to send tokens
+     * @param _value amount of tokens to transfer
+     * @param _data data attached to the transfer by controller to emit in event
+     */
+    function forceTransfer(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
+
+    /**
+     * @notice Use by the issuer to permanently disable controller functionality
+     * @dev enabled via feature switch "disableControllerAllowed"
+     */
+     function disableController() external;
 }

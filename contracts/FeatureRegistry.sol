@@ -24,12 +24,13 @@ contract FeatureRegistry is IFeatureRegistry, ReclaimTokens {
 
     /**
      * @notice change a feature status
+     * @dev feature status is set to false by default
      * @param _nameKey is the key for the feature status mapping
      * @param _newStatus is the new feature status
      */
     function setFeatureStatus(string _nameKey, bool _newStatus) public onlyOwner {
         bytes32 key = keccak256(bytes(_nameKey));
-        require(featureStatus[key] != _newStatus, "New feature status must be different than existing status");
+        require(featureStatus[key] != _newStatus, "Status unchanged");
         emit LogChangeFeatureStatus(_nameKey, _newStatus);
         featureStatus[key] = _newStatus;
     }

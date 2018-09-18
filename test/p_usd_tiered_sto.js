@@ -1,6 +1,7 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
+import { encodeProxyCall } from './helpers/encodeCall';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
@@ -61,7 +62,6 @@ contract('USDTieredSTO', accounts => {
     let I_PolymathRegistry;
 
     // SecurityToken Details for funds raise Type ETH
-    const SWARMHASH = "dagwrgwgvwergwrvwrg";
     const NAME = "Team";
     const SYMBOL = "SAP";
     const TOKENDETAILS = "This is equity type of issuance";
@@ -72,7 +72,7 @@ contract('USDTieredSTO', accounts => {
     const STOKEY = 3;
 
     // Initial fee for ticker registry and security token registry
-    const REGFEE = 250 * Math.pow(10, 18);
+    const REGFEE = web3.utils.toWei("250");
     const STOSetupCost = 0;
 
     // MockOracle USD prices
@@ -142,31 +142,6 @@ contract('USDTieredSTO', accounts => {
             type: 'address',
             name: '_reserveWallet'
         }]
-    };
-
-    const functionSignatureProxy = {
-        name: 'initialize',
-        type: 'function',
-        inputs: [{
-            type:'address',
-            name: '_polymathRegistry'
-        },{
-            type: 'address',
-            name: '_stVersionProxy'
-        },{
-            type: 'uint256',
-            name: '_stLaunchFee'
-        },{
-            type: 'uint256',
-            name: '_tickerRegFee'
-        },{
-            type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
-            name: 'owner'
-        }
-    ]
     };
 
     async function convert(_stoID, _tier, _discount, _currencyFrom, _currencyTo, _amount) {
@@ -273,6 +248,7 @@ contract('USDTieredSTO', accounts => {
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_USDTieredSTOFactory.address, { from: ISSUER });
+        await I_ModuleRegistry.verifyModule(I_USDTieredSTOFactory.address, true, { from: POLYMATH });
 
         // Step 8: Deploy the STFactory contract
 
@@ -297,7 +273,7 @@ contract('USDTieredSTO', accounts => {
  
         // Step 10: update the registries addresses from the PolymathRegistry contract
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: POLYMATH});
-        let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, REGFEE, REGFEE, I_PolyToken.address, POLYMATH]);
+        let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, REGFEE, REGFEE, I_PolyToken.address, POLYMATH]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: POLYMATH});
         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
  
@@ -374,13 +350,8 @@ contract('USDTieredSTO', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken.modules(TMKEY, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
-           assert.notEqual(
-            I_GeneralTransferManager.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManager contract was not deployed",
-           );
         });
     });
 
@@ -1599,11 +1570,19 @@ contract('USDTieredSTO', accounts => {
             assert.equal((await I_USDTieredSTO_Array[stoId].investorInvestedPOLY.call(ACCREDITED1)).toNumber(), init_investorInvestedPOLY.add(investment_POLY).toNumber(), "investorInvestedPOLY not changed as expected");
         });
 
+        it("should successfully modify NONACCREDITED cap for NONACCREDITED1", async() => {
+            let stoId = 0;
+            let tierId = 0;
+            console.log("Current investment: " + (await I_USDTieredSTO_Array[stoId].investorInvestedUSD.call(NONACCREDITED1)).toNumber());
+            await I_USDTieredSTO_Array[stoId].changeNonAccreditedLimit([NONACCREDITED1], [_nonAccreditedLimitUSD[stoId].div(2)], {from: ISSUER});
+            console.log("Current limit: " + (await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSDOverride(NONACCREDITED1)).toNumber());
+        });
+
         it("should successfully buy a partial amount and refund balance when reaching NONACCREDITED cap", async() => {
             let stoId = 0;
             let tierId = 0;
 
-            let investment_USD = _nonAccreditedLimitUSD[stoId];
+            let investment_USD = (await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSDOverride(NONACCREDITED1));//_nonAccreditedLimitUSD[stoId];
             let investment_Token = await convert(stoId, tierId, false, "USD", "TOKEN", investment_USD);
             let investment_ETH = await convert(stoId, tierId, false, "USD", "ETH", investment_USD);
             let investment_POLY = await convert(stoId, tierId, false, "USD", "POLY", investment_USD);
@@ -1612,6 +1591,8 @@ contract('USDTieredSTO', accounts => {
             let refund_Token = await convert(stoId, tierId, false, "USD", "TOKEN", refund_USD);
             let refund_ETH = await convert(stoId, tierId, false, "USD", "ETH", refund_USD);
             let refund_POLY = await convert(stoId, tierId, false, "USD", "POLY", refund_USD);
+
+            console.log("Expected refund in tokens: " + refund_Token.toNumber());
 
             let snap = await takeSnapshot();
 

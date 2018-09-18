@@ -1,6 +1,7 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
+import { encodeProxyCall } from './helpers/encodeCall';
 
 // Import contract ABIs
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
@@ -61,7 +62,7 @@ contract('SecurityToken addModule Cap', accounts => {
     let message = "Transaction Should Fail!";
 
     // Initial fees
-    const initRegFee = 25 * Math.pow(10, 18);
+    const initRegFee = web3.utils.toWei("250");
     const STOSetupCost = 200 * Math.pow(10, 18);
 
     // Module keys
@@ -120,31 +121,6 @@ contract('SecurityToken addModule Cap', accounts => {
             name: '_endTime'
         }]
     }
-
-    const functionSignatureProxy = {
-        name: 'initialize',
-        type: 'function',
-        inputs: [{
-            type:'address',
-            name: '_polymathRegistry'
-        },{
-            type: 'address',
-            name: '_stVersionProxy'
-        },{
-            type: 'uint256',
-            name: '_stLaunchFee'
-        },{
-            type: 'uint256',
-            name: '_tickerRegFee'
-        },{
-            type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
-            name: 'owner'
-        }
-    ]
-    };
 
     before(async() => {
         // Accounts setup
@@ -213,8 +189,13 @@ contract('SecurityToken addModule Cap', accounts => {
 
         // (C) : Register the STO Factories
         await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_issuer });
+        await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
+
         await I_ModuleRegistry.registerModule(I_DummySTOFactory.address, { from: account_issuer });
+        await I_ModuleRegistry.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
+
         await I_ModuleRegistry.registerModule(I_PreSaleSTOFactory.address, { from: account_issuer });
+        await I_ModuleRegistry.verifyModule(I_PreSaleSTOFactory.address, true, { from: account_polymath });
 
         // Step 7: Deploy the STFactory contract
 
@@ -238,7 +219,7 @@ contract('SecurityToken addModule Cap', accounts => {
  
         // Step 10: update the registries addresses from the PolymathRegistry contract
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-        let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+        let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
  
@@ -314,13 +295,8 @@ contract('SecurityToken addModule Cap', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
-            assert.notEqual(
-                I_GeneralTransferManager.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
-                "GeneralTransferManager contract was not deployed",
-            );
         });
 
         it("Should whitelist account_investor1", async() => {
@@ -347,7 +323,7 @@ contract('SecurityToken addModule Cap', accounts => {
     describe("Add STO and verify transfer", async() => {
 
         it("Should attach STO modules up to the max number, then fail", async() => {
-            const MAX_MODULES = await I_SecurityToken.MAX_MODULES.call({ from: account_issuer });
+            const MAX_MODULES = 10;
             const startTime = latestTime() + duration.days(1);
             const endTime = latestTime() + duration.days(90);
             const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
@@ -387,19 +363,10 @@ contract('SecurityToken addModule Cap', accounts => {
                 }
             }
 
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.addModule(I_CappedSTOFactory.address, cappedBytesSig, maxCost, budget, { from: account_issuer });
-            } catch(error) {
-                console.log(`         tx revert -> reached cap number of modules attached`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
         });
 
         it("Should successfully invest in all modules attached", async() => {
-            const MAX_MODULES = await I_SecurityToken.MAX_MODULES.call({ from: account_issuer });
+            const MAX_MODULES = 10;
             await increaseTime(duration.days(2));
             for (var STOIndex = 0; STOIndex < MAX_MODULES; STOIndex++) {
                 switch (STOIndex % 3) {

@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./DummySTO.sol";
 import "../ModuleFactory.sol";
-import "../../helpers/Util.sol";
+import "../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying DummySTO module
@@ -15,7 +15,7 @@ contract DummySTOFactory is ModuleFactory {
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {   
+    {
         version = "1.0.0";
         name = "DummySTO";
         title = "Dummy STO";
@@ -27,12 +27,12 @@ contract DummySTOFactory is ModuleFactory {
      */
     function deploy(bytes _data) external returns(address) {
         if (setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
         //Check valid bytes - can only call module init function
         DummySTO dummySTO = new DummySTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == dummySTO.getInitFunction(), "Provided data is not valid");
-        require(address(dummySTO).call(_data), "Un-successfull call");
+        require(Util.getSig(_data) == dummySTO.getInitFunction(), "Invalid data");
+        require(address(dummySTO).call(_data), "Unsuccessfull call");
         emit LogGenerateModuleFromFactory(address(dummySTO), getName(), address(this), msg.sender, setupCost, now);
         return address(dummySTO);
     }
@@ -68,7 +68,7 @@ contract DummySTOFactory is ModuleFactory {
     /**
      * @notice Get the version of the Module
      */
-    function getVersion() public view returns(string) {
+    function getVersion() external view returns(string) {
         return version;
     }
 

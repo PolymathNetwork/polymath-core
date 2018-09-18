@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "../interfaces/IModule.sol";
 import "../interfaces/ISecurityToken.sol";
-import "../interfaces/IPolyToken.sol";
+import "../interfaces/IERC20.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /**
@@ -17,7 +17,7 @@ contract Module is IModule {
 
     bytes32 public constant FEE_ADMIN = "FEE_ADMIN";
 
-    IPolyToken public polyToken;
+    IERC20 public polyToken;
 
     /**
      * @notice Constructor
@@ -27,7 +27,7 @@ contract Module is IModule {
     constructor (address _securityToken, address _polyAddress) public {
         securityToken = _securityToken;
         factory = msg.sender;
-        polyToken = IPolyToken(_polyAddress);
+        polyToken = IERC20(_polyAddress);
     }
 
     //Allows owner, factory or permissioned delegate
@@ -53,11 +53,16 @@ contract Module is IModule {
         _;
     }
 
+    modifier onlyFactoryOrOwner {
+        require((msg.sender == Ownable(securityToken).owner()) || (msg.sender == factory), "Sender is not factory or owner");
+        _;
+    }
+
     /**
      * @notice used to withdraw the fee by the factory owner
      */
     function takeFee(uint256 _amount) public withPerm(FEE_ADMIN) returns(bool) {
-        require(polyToken.transferFrom(address(this), Ownable(factory).owner(), _amount), "Unable to take fee");
+        require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), _amount), "Unable to take fee");
         return true;
     }
 }

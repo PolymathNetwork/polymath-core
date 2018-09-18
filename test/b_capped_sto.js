@@ -1,6 +1,7 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
+import { encodeProxyCall } from './helpers/encodeCall';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
@@ -79,7 +80,7 @@ contract('CappedSTO', accounts => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = 250 * Math.pow(10, 18);
+    const initRegFee = web3.utils.toWei("250");
 
     // Capped STO details
     let startTime_ETH1;
@@ -124,31 +125,6 @@ contract('CappedSTO', accounts => {
             name: '_fundsReceiver'
         }
         ]
-    };
-
-    const functionSignatureProxy = {
-        name: 'initialize',
-        type: 'function',
-        inputs: [{
-            type:'address',
-            name: '_polymathRegistry'
-        },{
-            type: 'address',
-            name: '_stVersionProxy'
-        },{
-            type: 'uint256',
-            name: '_stLaunchFee'
-        },{
-            type: 'uint256',
-            name: '_tickerRegFee'
-        },{
-            type: 'address',
-            name: '_polyToken'
-        },{
-            type: 'address',
-            name: 'owner'
-        }
-    ]
     };
 
     before(async() => {
@@ -224,6 +200,7 @@ contract('CappedSTO', accounts => {
 
         // (C) : Register the STOFactory
         await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: token_owner });
+        await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
 
         // Step 8: Deploy the STFactory contract
 
@@ -245,7 +222,7 @@ contract('CappedSTO', accounts => {
 
         // Step 10: update the registries addresses from the PolymathRegistry contract
          I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-         let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+         let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
          await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
          I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);    
 
@@ -315,14 +292,7 @@ contract('CappedSTO', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken_ETH.modules(transferManagerKey, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-
-           assert.notEqual(
-            I_GeneralTransferManager.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManager contract was not deployed",
-           );
-
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
         it("Should mint the tokens before attaching the STO", async() => {
@@ -809,7 +779,7 @@ contract('CappedSTO', accounts => {
             );
         });
 
-        it("Should successfully invest in second STO", async() => {
+        it("Should successfully whitelist investor 3", async() => {
 
             balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
 
@@ -828,8 +798,32 @@ contract('CappedSTO', accounts => {
 
             // Jump time to beyond STO start
             await increaseTime(duration.days(2));
+        });
 
-            await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_investor3, value: web3.utils.toWei('1', 'ether') });
+        it("Should invest in second STO - fails due to incorrect beneficiary", async() => {
+
+            // Buying on behalf of another user should fail
+            let errorThrown = false;
+            try {
+                 await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_issuer, value: web3.utils.toWei('1', 'ether') });
+            } catch(error) {
+                console.log(`         tx revert -> incorrect beneficiary`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+        });
+
+        it("Should allow non-matching beneficiary", async() => {
+            await I_CappedSTO_Array_ETH[1].changeAllowBeneficialInvestments(true, {from: account_issuer});
+            let allow = await I_CappedSTO_Array_ETH[1].allowBeneficialInvestments();
+            assert.equal(allow, true, "allowBeneficialInvestments should be true");
+        });
+
+        it("Should invest in second STO", async() => {
+
+            await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_issuer, value: web3.utils.toWei('1', 'ether') });
 
             assert.equal(
                 (await I_CappedSTO_Array_ETH[1].getRaisedEther.call())
@@ -851,8 +845,8 @@ contract('CappedSTO', accounts => {
 
     describe("Test cases for reaching limit number of STO modules", async() => {
 
-        it("Should successfully attach STO modules up to the limit and fail at the limit", async () => {
-            const MAX_MODULES = await I_SecurityToken_ETH.MAX_MODULES.call({ from: token_owner });
+        it("Should successfully attach 10 STO modules", async () => {
+            const MAX_MODULES = 10;
             let startTime = latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
 
@@ -867,19 +861,10 @@ contract('CappedSTO', accounts => {
                 I_CappedSTO_Array_ETH.push(CappedSTO.at(tx.logs[3].args._module));
             }
 
-            let errorThrown = false;
-            try {
-                 await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> reached cap number of modules attached`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
         });
 
         it("Should successfully invest in all STO modules attached", async () => {
-            const MAX_MODULES = await I_SecurityToken_ETH.MAX_MODULES.call({ from: token_owner });
+            const MAX_MODULES = 10;
             await increaseTime(duration.days(2));
             for (var STOIndex = 2; STOIndex < MAX_MODULES; STOIndex++) {
                 await I_CappedSTO_Array_ETH[STOIndex].buyTokens(account_investor3, { from : account_investor3, value: web3.utils.toWei('1', 'ether') });
@@ -924,14 +909,7 @@ contract('CappedSTO', accounts => {
 
             it("POLY: Should intialize the auto attached modules", async () => {
                 let moduleData = await I_SecurityToken_POLY.modules(transferManagerKey, 0);
-                I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-
-                assert.notEqual(
-                 I_GeneralTransferManager.address.valueOf(),
-                 "0x0000000000000000000000000000000000000000",
-                 "GeneralTransferManager contract was not deployed",
-                );
-
+                I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
              });
 
              it("POLY: Should successfully attach the STO module to the security token", async () => {

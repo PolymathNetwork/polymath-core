@@ -101,24 +101,36 @@ async function start_explorer() {
             },
             limitMessage: "Must be a valid address",
           });
+          let fromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(from).call());
+          console.log(chalk.yellow(`Balance of ${from}: ${fromBalance} ${tokenSymbol}`));
           let to = readlineSync.question('Enter address where to send tokens: ', {
             limit: function(input) {
               return web3.utils.isAddress(input);
             },
             limitMessage: "Must be a valid address",
           });
-          let amount = readlineSync.question('Enter amount of tokens to transfer: ');
+          let toBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(to).call());
+          console.log(chalk.yellow(`Balance of ${to}: ${toBalance} ${tokenSymbol}`));
+          let amount = readlineSync.question('Enter amount of tokens to transfer: ', {
+            limit: function(input) {
+              return parseInt(input) <= parseInt(fromBalance);
+            },
+            limitMessage: `Amount must be less or equal than ${fromBalance} ${tokenSymbol}`,
+          });
           let data = readlineSync.question('Enter the data attached to the transfer by controller to emit in event: ');
           let forceTransferAction = securityToken.methods.forceTransfer(from, to, web3.utils.toWei(amount), web3.utils.asciiToHex(data));
-          let forceTransferReceipt = await common.sendTransaction(Issuer, forceTransferAction, defaultGasPrice);
+          let forceTransferReceipt = await common.sendTransaction(Issuer, forceTransferAction, defaultGasPrice, 0, 1.5);
           let forceTransferEvent = common.getEventFromLogs(securityToken._jsonInterface, forceTransferReceipt.logs, 'LogForceTransfer');
-          console.log(chalk.green(`
-  ${forceTransferEvent._controller} has successfully forced a transfer of ${web3.utils.fromWei(forceTransferEvent._amount)} ${tokenSymbol} 
+          console.log(chalk.green(`  ${forceTransferEvent._controller} has successfully forced a transfer of ${web3.utils.fromWei(forceTransferEvent._amount)} ${tokenSymbol} 
   from ${forceTransferEvent._from} to ${forceTransferEvent._to} 
   Verified transfer: ${forceTransferEvent._verifyTransfer}
-  Data: ${web3.utils.hexToAscii(forceTransferEvent._data)}`
-          ));
+  Data: ${web3.utils.hexToAscii(forceTransferEvent._data)}
+          `));
+          console.log(`Balance of ${from} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(from).call())} ${tokenSymbol}`);
+          console.log(`Balance of ${to} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(to).call())} ${tokenSymbol}`);
           break;
+          default:
+            process.exit(0);
       }
     } else {
       console.log(chalk.red(`Controller featueres are permanently disabled for this token.`))

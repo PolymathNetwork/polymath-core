@@ -8,7 +8,7 @@ See also frequently asked questions tagged with Polymath on Stack Exchange and R
 
 # Please Report bugs!
 
-Do not open an issue on Github if you think your discovered bug could be a security-relevant vulnerability. Please, read our security policy instead.
+Do not open an issue on Github if you think your discovered bug could be a security-relevant vulnerability. In the case of the discovery of high security venerabilities, pleasse email us the issue privately at team@polymath.network.
 
 Otherwise, just create a new issue in our repository and follow the template below: 
 

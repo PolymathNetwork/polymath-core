@@ -6,6 +6,8 @@ const PercentageTransferManagerFactory = artifacts.require('./PercentageTransfer
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
+const ModuleRegistryV2 = artifacts.require('./ModuleRegistryV2.sol');
+const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol')
@@ -97,6 +99,19 @@ module.exports = function (deployer, network, accounts) {
 ]
 };
 
+const functionSignatureProxyMR = {
+  name: 'initialize',
+  type: 'function',
+  inputs: [{
+      type:'address',
+      name: '_polymathRegistry'
+  },{
+      type: 'address',
+      name: '_owner'
+  }
+]
+};
+
 
   // POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
   // A) Deploy the PolymathRegistry contract
@@ -108,6 +123,13 @@ module.exports = function (deployer, network, accounts) {
       // A) Deploy the ModuleRegistry Contract (It contains the list of verified ModuleFactory)
       // console.log("test" + PolymathRegistry.address);
       return deployer.deploy(ModuleRegistry, polymathRegistry.address, {from: PolymathAccount});
+    }).then(() => {
+      return deployer.deploy(ModuleRegistryV2, {from: PolymathAccount});
+    }).then(() => {
+      return deployer.deploy(ModuleRegistryProxy, {from: PolymathAccount});
+    }).then(() => {
+      let bytesProxyMR = web3.eth.abi.encodeFunctionCall(functionSignatureProxyMR, [PolymathRegistry.address, PolymathAccount]);
+      ModuleRegistryProxy.at(ModuleRegistryProxy.address).upgradeToAndCall("1.0.0", ModuleRegistryV2.address, bytesProxyMR, {from: PolymathAccount});
     }).then(() => {
       return ModuleRegistry.deployed().then((_moduleRegistry) => {
         moduleRegistry = _moduleRegistry;

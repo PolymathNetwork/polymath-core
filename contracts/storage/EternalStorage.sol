@@ -160,6 +160,30 @@ contract EternalStorage {
   }
 
   /////////////////////////
+  //// Set Array functions
+  ////////////////////////
+  /// @notice use to intialize the array
+  /// Ex1- mapping (address => address[]) public reputation;
+  /// reputation[0x1] = new address[](0); It can be replaced as
+  /// setArray(hash('reputation', 0x1), new address[](0)); 
+  
+  function setArray(bytes32 _key, address[] _value) internal {
+      addressArrayStorage[_key] = _value;
+  }
+
+  function setArray(bytes32 _key, uint256[] _value) internal {
+      uintArrayStorage[_key] = _value;
+  }
+
+  function setArray(bytes32 _key, bytes32[] _value) internal {
+      bytes32ArrayStorage[_key] = _value;
+  }
+
+  function setArray(bytes32 _key, string[] _value) internal {
+      stringArrayStorage[_key] = _value;
+  }
+
+  /////////////////////////
   /// getArray functions
   /////////////////////////
   /// @notice Get functions to get the array of the required data type

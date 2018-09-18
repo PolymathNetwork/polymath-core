@@ -296,7 +296,8 @@ async function showUserInfoForUSDTieredSTO()
     console.log(`    - Accredited:            ${(displayIsUserAccredited)?"YES":"NO"}`)
     
     if (!await currentSTO.methods.accredited(User.address).call()) {
-        let displayNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
+        let displayOverrideNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSDOverride(User.address).call())
+        let displayNonAccreditedLimitUSD = displayOverrideNonAccreditedLimitUSD != 0 ? displayOverrideNonAccreditedLimitUSD : web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
         let displayTokensRemainingAllocation = displayNonAccreditedLimitUSD - displayInvestorInvestedUSD;
         console.log(`    - Remaining allocation:  ${(displayTokensRemainingAllocation > 0 ? displayTokensRemainingAllocation : 0)} USD`);
     }
@@ -430,7 +431,7 @@ async function showUSDTieredSTOInfo() {
     - Tiers:                       ${tiersLength}`
     + displayTiers + `
     - Minimum Investment:          ${displayMinimumInvestmentUSD} USD
-    - Non Accredited Limit:        ${displayNonAccreditedLimitUSD} USD
+    - Default NonAccredited Limit: ${displayNonAccreditedLimitUSD} USD
     -----------------------------------------------------------------------
     - ${timeTitle}              ${timeRemaining}
     - Tokens Sold:                 ${displayTokensSold} ${displayTokenSymbol}`

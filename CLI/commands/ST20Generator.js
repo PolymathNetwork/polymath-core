@@ -352,6 +352,25 @@ async function cappedSTO_launch() {
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - Capped STO in No. of Tokens");
 
+  let stoFee = cappedSTOFee;
+  let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call();
+  let requiredAmount = web3.utils.toWei(stoFee.toString(), "ether");
+  if (parseInt(contractBalance) < parseInt(requiredAmount)) {
+    let transferAmount = parseInt(requiredAmount) - parseInt(contractBalance);
+    let ownerBalance = await polyToken.methods.balanceOf(Issuer.address).call();
+    if(parseInt(ownerBalance) < transferAmount) {
+      console.log(chalk.red(`\n**************************************************************************************************************************************************`));
+      console.log(chalk.red(`Not enough balance to pay the CappedSTO fee, Requires ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(ownerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
+      console.log(chalk.red(`**************************************************************************************************************************************************\n`));
+      process.exit(0);
+    } else {
+      let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
+      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice);
+      let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
+      console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
+    }
+  }
+
   let cap;
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('cap')) {
     cap = _stoConfig.cap.toString();
@@ -432,24 +451,6 @@ async function cappedSTO_launch() {
     ]
   }, [startTime, endTime, web3.utils.toWei(cap, 'ether'), rate, raiseType, wallet]);
 
-  let stoFee = cappedSTOFee;
-  let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call();
-  let requiredAmount = web3.utils.toWei(stoFee.toString(), "ether");
-  if (parseInt(contractBalance) < parseInt(requiredAmount)) {
-    let transferAmount = parseInt(requiredAmount) - parseInt(contractBalance);
-    let ownerBalance = await polyToken.methods.balanceOf(Issuer.address).call();
-    if(parseInt(ownerBalance) < transferAmount) {
-      console.log(chalk.red(`\n**************************************************************************************************************************************************`));
-      console.log(chalk.red(`Not enough balance to pay the CappedSTO fee, Requires ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(ownerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
-      console.log(chalk.red(`**************************************************************************************************************************************************\n`));
-      process.exit(0);
-    } else {
-      let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice);
-      let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
-      console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
-    }
-  }
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
@@ -704,11 +705,11 @@ function limitsConfigUSDTieredSTO() {
     }));
   }
 
-  let nonAccreditedLimit = 10000;
+  let nonAccreditedLimit = 2500;
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('nonAccreditedLimitUSD')) {
     limits.nonAccreditedLimitUSD = web3.utils.toWei(_stoConfig.nonAccreditedLimitUSD.toString());
   } else {
-    limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the limit for non accredited insvestors in USD? (${nonAccreditedLimit}): `, {
+    limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the default limit for non accredited insvestors in USD? (${nonAccreditedLimit}): `, {
       limit: function(input) {
         return new BigNumber(web3.utils.toWei(input)).gte(limits.minimumInvestmentUSD);
       },
@@ -724,6 +725,25 @@ async function usdTieredSTO_launch() {
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - USD Tiered STO");
 
+  let stoFee = usdTieredSTOFee;
+  let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call();
+  let requiredAmount = web3.utils.toWei(stoFee.toString(), "ether");
+  if (parseInt(contractBalance) < parseInt(requiredAmount)) {
+    let transferAmount = parseInt(requiredAmount) - parseInt(contractBalance);
+    let ownerBalance = await polyToken.methods.balanceOf(Issuer.address).call();
+    if(parseInt(ownerBalance) < transferAmount) {
+      console.log(chalk.red(`\n**************************************************************************************************************************************************`));
+      console.log(chalk.red(`Not enough balance to pay the ${selectedSTO} fee, Requires ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(ownerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
+      console.log(chalk.red(`**************************************************************************************************************************************************\n`));
+      process.exit(0);
+    } else {
+      let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
+      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 1.5);
+      let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
+      console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
+    }
+  }
+  
   let funding = fundingConfigUSDTieredSTO();
   let addresses = addressesConfigUSDTieredSTO();
   let tiers = tiersConfigUSDTieredSTO(funding.raiseType.includes(1));
@@ -782,24 +802,6 @@ async function usdTieredSTO_launch() {
     addresses.reserveWallet
   ]);
 
-  let stoFee = usdTieredSTOFee;
-  let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call();
-  let requiredAmount = web3.utils.toWei(stoFee.toString(), "ether");
-  if (parseInt(contractBalance) < parseInt(requiredAmount)) {
-    let transferAmount = parseInt(requiredAmount) - parseInt(contractBalance);
-    let ownerBalance = await polyToken.methods.balanceOf(Issuer.address).call();
-    if(parseInt(ownerBalance) < transferAmount) {
-      console.log(chalk.red(`\n**************************************************************************************************************************************************`));
-      console.log(chalk.red(`Not enough balance to pay the ${selectedSTO} fee, Requires ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(ownerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
-      console.log(chalk.red(`**************************************************************************************************************************************************\n`));
-      process.exit(0);
-    } else {
-      let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 1.5);
-      let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
-      console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
-    }
-  }
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
@@ -998,7 +1000,9 @@ async function usdTieredSTO_configure() {
     console.log(chalk.red(`STO is finalized`));
   } else {
     let options = [];
-    options.push('Finalize STO', 'Change accredited account', 'Change accredited in batch');
+    options.push('Finalize STO', 
+      'Change accredited account', 'Change accredited in batch', 
+      'Change non accredited limit for an account', 'Change non accredited limits in batch');
 
     // If STO is not started, you can modify configuration
     let now = Math.floor(Date.now() / 1000);
@@ -1036,22 +1040,34 @@ async function usdTieredSTO_configure() {
           shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75`);
           break;
         case 3:
+          let account = readlineSync.question('Enter the address to change non accredited limit: ');
+          let limit = readlineSync.question(`Enter the limit in USD: `);
+          let accounts = [account];
+          let limits = [web3.utils.toWei(limit)];
+          let changeNonAccreditedLimitAction = currentSTO.methods.changeNonAccreditedLimit(accounts, limits);
+          // 2 GAS?
+          await common.sendTransaction(Issuer, changeNonAccreditedLimitAction, defaultGasPrice);
+          break;
+        case 4:
+          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75`);
+          break;
+        case 5:
           await modfifyTimes();
           await usdTieredSTO_status();
           break;
-        case 4:
+        case 6:
           await modfifyTiers();
           await usdTieredSTO_status();
           break;
-        case 5:
+        case 7:
           await modfifyAddresses();
           await usdTieredSTO_status();
           break;
-        case 6:
+        case 8:
           await modfifyLimits();
           await usdTieredSTO_status();
           break;
-        case 7:
+        case 9:
           await modfifyFunding();
           await usdTieredSTO_status();
           break;

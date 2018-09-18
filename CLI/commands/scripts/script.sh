@@ -12,4 +12,8 @@ elif [ $1 = "Accredit" ];
 then
 echo "Running the $1 script";
 node $PWD/CLI/commands/accredit.js $2 $3
+elif [ $1 = "NonAccreditedLimit" ];
+then
+echo "Running the $1 script";
+node $PWD/CLI/commands/changeNonAccreditedLimit.js $2 $3
 fi

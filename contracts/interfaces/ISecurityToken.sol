@@ -165,11 +165,6 @@ interface ISecurityToken {
     function freezeMinting() external;
 
     /**
-     * @notice Permanently freeze controller functionality of this security token.
-     */
-    function freezeController() external;
-
-    /**
      * @notice mints new tokens and assigns them to the target investors.
      * Can only be called by the STO attached to the token or by the Issuer (Security Token contract owner)
      * @param _investors A list of addresses to whom the minted tokens will be delivered

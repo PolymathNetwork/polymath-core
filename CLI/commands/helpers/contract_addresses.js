@@ -52,10 +52,6 @@ module.exports = {
     let networkId = await web3.eth.net.getId();
     return getPolymathRegistryAddress(networkId);
   },
-  tickerRegistry: async function() {
-    let polymathRegistry = await getPolymathRegistry();
-    return await polymathRegistry.methods.getAddress("TickerRegistry").call();
-  },
   securityTokenRegistry: async function() {
     let polymathRegistry = await getPolymathRegistry();
     return await polymathRegistry.methods.getAddress("SecurityTokenRegistry").call();

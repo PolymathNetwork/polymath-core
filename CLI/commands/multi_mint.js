@@ -37,12 +37,7 @@ startScript();
 async function startScript() {
   await global.initialize(remoteNetwork);
 
-  try {
-    let tickerRegistryAddress = await contracts.tickerRegistry();
-    let tickerRegistryABI = abis.tickerRegistry();
-    tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
-    tickerRegistry.setProvider(web3.currentProvider);
-    
+  try {    
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
     let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);

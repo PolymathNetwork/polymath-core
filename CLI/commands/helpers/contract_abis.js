@@ -1,5 +1,4 @@
 let polymathRegistryABI;
-let tickerRegistryABI;
 let securityTokenRegistryABI;
 let featureRegistryABI;
 let securityTokenABI;
@@ -14,7 +13,6 @@ let etherDividendCheckpointABI;
 
 try {
     polymathRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/PolymathRegistry.json').toString()).abi;
-    tickerRegistryABI           = JSON.parse(require('fs').readFileSync('./build/contracts/TickerRegistry.json').toString()).abi;
     securityTokenRegistryABI    = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
     featureRegistryABI          = JSON.parse(require('fs').readFileSync('./build/contracts/FeatureRegistry.json').toString()).abi;
     securityTokenABI            = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
@@ -34,9 +32,6 @@ try {
 module.exports = {
     polymathRegistry: function () {
         return polymathRegistryABI;
-    },
-    tickerRegistry: function () {
-        return tickerRegistryABI;
     },
     securityTokenRegistry: function () {
         return securityTokenRegistryABI;

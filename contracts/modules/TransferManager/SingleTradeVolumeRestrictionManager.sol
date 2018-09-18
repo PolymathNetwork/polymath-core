@@ -34,23 +34,27 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
 
   function verifyTransfer(address _from, address _to, uint256 _amount, bool /* _isTransfer */) public returns(Result) {
     bool validTransfer;
+
     if(paused) {
       return Result.NA;
     }
+
     if(exemptWallets[_from]) return Result.NA;
+
     if(specialTransferLimitWallets[_from]) {
       if(globalTransferLimitInPercentage) {
-        validTransfer = (_amount.mul(100).div(securityToken.totalSupply())) <= specialTransferLimits[_from];
+        validTransfer = (_amount.mul(100).div(ISecurityToken(securityToken).totalSupply())) <= specialTransferLimits[_from];
       } else {
-        validTransfer = (_amount <= specialTransferLimits[_from];
+        validTransfer = _amount <= specialTransferLimits[_from];
       }
     } else {
       if(globalTransferLimitInPercentage) {
-        validTransfer = (_amount.mul(100).div(securityToken.totalSupply())) <= globalTransferLimit;
+        validTransfer = (_amount.mul(100).div(ISecurityToken(securityToken).totalSupply())) <= globalTransferLimit;
       } else {
         validTransfer = _amount <= globalTransferLimit;
       }
     }
+
     if(validTransfer) return Result.NA;
     return Result.INVALID;
   }

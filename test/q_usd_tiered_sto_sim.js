@@ -238,19 +238,19 @@ contract('USDTieredSTO', accounts => {
         // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: POLYMATH });
- 
+
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
             "SecurityTokenRegistry contract was not deployed",
         );
- 
+
         // Step 10: update the registries addresses from the PolymathRegistry contract
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: POLYMATH});
         let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, REGFEE, REGFEE, I_PolyToken.address, POLYMATH]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: POLYMATH});
         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
- 
+
 
         // Step 10: Deploy the FeatureRegistry
 
@@ -627,8 +627,8 @@ contract('USDTieredSTO', accounts => {
                 let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
                 let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
                 let init_RaisedUSD = await I_USDTieredSTO_Array[stoId].fundsRaisedUSD.call();
-                let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
-                let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
+                let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaised.call(0);
+                let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaised.call(1);
                 let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
                 let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
@@ -653,8 +653,8 @@ contract('USDTieredSTO', accounts => {
                 let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
                 let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
                 let final_RaisedUSD = await I_USDTieredSTO_Array[stoId].fundsRaisedUSD.call();
-                let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
-                let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
+                let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaised.call(0);
+                let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaised.call(1);
                 let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
                 let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 

@@ -21,6 +21,9 @@ const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
+let ETH = 0;
+let POLY = 1;
+let DAI = 2;
 
 contract('CappedSTO', accounts => {
     // Accounts Variable declaration
@@ -224,7 +227,7 @@ contract('CappedSTO', accounts => {
          I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
          let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
          await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
-         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);    
+         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
 
         // Step 10: Deploy the FeatureRegistry
 
@@ -405,7 +408,7 @@ contract('CappedSTO', accounts => {
                 "STO Configuration doesn't set as expected"
             );
             assert.equal(
-                await I_CappedSTO_Array_ETH[0].fundRaiseType.call(E_fundRaiseType),
+                await I_CappedSTO_Array_ETH[0].fundRaiseTypes.call(E_fundRaiseType),
                 true,
                 "STO Configuration doesn't set as expected"
             );
@@ -514,13 +517,13 @@ contract('CappedSTO', accounts => {
               });
 
             assert.equal(
-                (await I_CappedSTO_Array_ETH[0].getRaisedEther.call())
+                (await I_CappedSTO_Array_ETH[0].getRaised.call(ETH))
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 1
             );
 
-            assert.equal(await I_CappedSTO_Array_ETH[0].getNumberInvestors.call(), 1);
+            assert.equal(await I_CappedSTO_Array_ETH[0].investorCount.call(), 1);
 
             assert.equal(
                 (await I_SecurityToken_ETH.balanceOf(account_investor1))
@@ -634,13 +637,13 @@ contract('CappedSTO', accounts => {
               });
 
               assert.equal(
-                (await I_CappedSTO_Array_ETH[0].getRaisedEther.call())
+                (await I_CappedSTO_Array_ETH[0].getRaised.call(ETH))
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 10
             );
 
-            assert.equal(await I_CappedSTO_Array_ETH[0].getNumberInvestors.call(), 2);
+            assert.equal(await I_CappedSTO_Array_ETH[0].investorCount.call(), 2);
 
             assert.equal(
                 (await I_SecurityToken_ETH.balanceOf(account_investor2))
@@ -686,18 +689,18 @@ contract('CappedSTO', accounts => {
             //console.log("WWWW",newBalance,await I_CappedSTO.fundsRaised.call(),balanceOfReceiver);
             let op = (BigNumber(newBalance).minus(balanceOfReceiver)).toNumber();
             assert.equal(
-                (await I_CappedSTO_Array_ETH[0].getRaisedEther.call()).toNumber(),
+                (await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).toNumber(),
                 op,
                 "Somewhere raised money get stolen or sent to wrong wallet"
             );
         });
 
         it("Should get the raised amount of ether", async() => {
-            assert.equal(await I_CappedSTO_Array_ETH[0].getRaisedEther.call(), web3.utils.toWei('10','ether'));
+            assert.equal(await I_CappedSTO_Array_ETH[0].getRaised.call(ETH), web3.utils.toWei('10','ether'));
         });
 
         it("Should get the raised amount of poly", async() => {
-            assert.equal((await I_CappedSTO_Array_ETH[0].getRaisedPOLY.call()).toNumber(), web3.utils.toWei('0','ether'));
+            assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(POLY)).toNumber(), web3.utils.toWei('0','ether'));
          });
 
     });
@@ -773,7 +776,7 @@ contract('CappedSTO', accounts => {
                 "STO Configuration doesn't set as expected"
             );
             assert.equal(
-                await I_CappedSTO_Array_ETH[1].fundRaiseType.call(E_fundRaiseType),
+                await I_CappedSTO_Array_ETH[1].fundRaiseTypes.call(E_fundRaiseType),
                 true,
                 "STO Configuration doesn't set as expected"
             );
@@ -826,13 +829,13 @@ contract('CappedSTO', accounts => {
             await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_issuer, value: web3.utils.toWei('1', 'ether') });
 
             assert.equal(
-                (await I_CappedSTO_Array_ETH[1].getRaisedEther.call())
+                (await I_CappedSTO_Array_ETH[1].getRaised.call(ETH))
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 1
             );
 
-            assert.equal(await I_CappedSTO_Array_ETH[1].getNumberInvestors.call(), 1);
+            assert.equal(await I_CappedSTO_Array_ETH[1].investorCount.call(), 1);
 
             assert.equal(
                 (await I_SecurityToken_ETH.balanceOf(account_investor3))
@@ -869,12 +872,12 @@ contract('CappedSTO', accounts => {
             for (var STOIndex = 2; STOIndex < MAX_MODULES; STOIndex++) {
                 await I_CappedSTO_Array_ETH[STOIndex].buyTokens(account_investor3, { from : account_investor3, value: web3.utils.toWei('1', 'ether') });
                 assert.equal(
-                    (await I_CappedSTO_Array_ETH[STOIndex].getRaisedEther.call())
+                    (await I_CappedSTO_Array_ETH[STOIndex].getRaised.call(ETH))
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1
                 );
-                assert.equal(await I_CappedSTO_Array_ETH[STOIndex].getNumberInvestors.call(), 1);
+                assert.equal(await I_CappedSTO_Array_ETH[STOIndex].investorCount.call(), 1);
             }
         });
     });
@@ -954,7 +957,7 @@ contract('CappedSTO', accounts => {
                     "STO Configuration doesn't set as expected"
                 );
                 assert.equal(
-                    await I_CappedSTO_Array_POLY[0].fundRaiseType.call(P_fundRaiseType),
+                    await I_CappedSTO_Array_POLY[0].fundRaiseTypes.call(P_fundRaiseType),
                     true,
                     "STO Configuration doesn't set as expected"
                 );
@@ -1002,13 +1005,13 @@ contract('CappedSTO', accounts => {
                 );
 
                 assert.equal(
-                    (await I_CappedSTO_Array_POLY[0].getRaisedPOLY.call())
+                    (await I_CappedSTO_Array_POLY[0].getRaised.call(POLY))
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1000
                 );
 
-                assert.equal(await I_CappedSTO_Array_POLY[0].getNumberInvestors.call(), 1);
+                assert.equal(await I_CappedSTO_Array_POLY[0].investorCount.call(), 1);
 
                 assert.equal(
                     (await I_SecurityToken_POLY.balanceOf(account_investor1))
@@ -1056,13 +1059,13 @@ contract('CappedSTO', accounts => {
                 );
 
                   assert.equal(
-                    (await I_CappedSTO_Array_POLY[0].getRaisedPOLY.call())
+                    (await I_CappedSTO_Array_POLY[0].getRaised.call(POLY))
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     10000
                 );
 
-                assert.equal(await I_CappedSTO_Array_POLY[0].getNumberInvestors.call(), 2);
+                assert.equal(await I_CappedSTO_Array_POLY[0].investorCount.call(), 2);
 
                 assert.equal(
                     (await I_SecurityToken_POLY.balanceOf(account_investor2))
@@ -1108,7 +1111,7 @@ contract('CappedSTO', accounts => {
             it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {
                 const balanceRaised = await I_PolyToken.balanceOf.call(account_fundsReceiver);
                 assert.equal(
-                    (await I_CappedSTO_Array_POLY[0].getRaisedPOLY.call()).toNumber(),
+                    (await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).toNumber(),
                     balanceRaised,
                     "Somewhere raised money get stolen or sent to wrong wallet"
                 );
@@ -1245,15 +1248,15 @@ contract('CappedSTO', accounts => {
              });
 
              it("Should get the raised amount of ether", async() => {
-                assert.equal(await I_CappedSTO_Array_POLY[0].getRaisedEther.call(), web3.utils.toWei('0','ether'));
+                assert.equal(await I_CappedSTO_Array_POLY[0].getRaised.call(ETH), web3.utils.toWei('0','ether'));
              });
 
              it("Should get the raised amount of poly", async() => {
-                assert.equal((await I_CappedSTO_Array_POLY[0].getRaisedPOLY.call()).toNumber(), web3.utils.toWei('10000','ether'));
+                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).toNumber(), web3.utils.toWei('10000','ether'));
              });
 
              it("Should get the investors", async() => {
-                assert.equal(await I_CappedSTO_Array_POLY[0].getNumberInvestors.call(),2);
+                assert.equal(await I_CappedSTO_Array_POLY[0].investorCount.call(),2);
              });
 
              it("Should get the listed permissions", async() => {
@@ -1308,7 +1311,7 @@ contract('CappedSTO', accounts => {
                 "STO Configuration doesn't set as expected"
             );
             assert.equal(
-                await I_CappedSTO_Array_POLY[1].fundRaiseType.call(P_fundRaiseType),
+                await I_CappedSTO_Array_POLY[1].fundRaiseTypes.call(P_fundRaiseType),
                 true,
                 "STO Configuration doesn't set as expected"
             );
@@ -1347,13 +1350,13 @@ contract('CappedSTO', accounts => {
             );
 
             assert.equal(
-                (await I_CappedSTO_Array_POLY[1].getRaisedPOLY.call())
+                (await I_CappedSTO_Array_POLY[1].getRaised.call(POLY))
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 polyToInvest
             );
 
-            assert.equal(await I_CappedSTO_Array_POLY[1].getNumberInvestors.call(), 1);
+            assert.equal(await I_CappedSTO_Array_POLY[1].investorCount.call(), 1);
 
             assert.equal(
                 (await I_SecurityToken_POLY.balanceOf(account_investor3))

@@ -68,20 +68,6 @@ contract DummySTO is ISTO {
     }
 
     /**
-     * @notice Return ETH raised by the STO
-     */
-    function getRaisedEther() public view returns (uint256) {
-        return 0;
-    }
-
-    /**
-     * @notice Return POLY raised by the STO
-     */
-    function getRaisedPOLY() public view returns (uint256) {
-        return 0;
-    }
-
-    /**
      * @notice Return the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256) {

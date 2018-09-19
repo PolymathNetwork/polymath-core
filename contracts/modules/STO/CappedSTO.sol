@@ -58,7 +58,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         uint256 _endTime,
         uint256 _cap,
         uint256 _rate,
-        uint8[] _fundRaiseTypes,
+        FundRaiseType[] _fundRaiseTypes,
         address _fundsReceiver
     )
     public
@@ -74,7 +74,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         cap = _cap;
         rate = _rate;
         wallet = _fundsReceiver;
-        _configureFunding(_fundRaiseTypes);
+        _setFundRaiseType(_fundRaiseTypes);
     }
 
     /**
@@ -104,7 +104,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         }
 
         require(!paused);
-        require(fundRaiseType[uint8(FundRaiseType.ETH)], "ETH should be the mode of investment");
+        require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "ETH should be the mode of investment");
 
         uint256 weiAmount = msg.value;
         _processTx(_beneficiary, weiAmount);
@@ -119,8 +119,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
       */
     function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant{
         require(!paused);
-        require(fundRaiseType[uint8(FundRaiseType.POLY)], "POLY should be the mode of investment");
-        require(verifyInvestment(msg.sender, _investedPOLY), "Not valid Investment");
+        require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "POLY should be the mode of investment");
         _processTx(msg.sender, _investedPOLY);
         _forwardPoly(msg.sender, wallet, _investedPOLY);
         _postValidatePurchase(msg.sender, _investedPOLY);
@@ -132,20 +131,6 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     */
     function capReached() public view returns (bool) {
         return totalTokensSold >= cap;
-    }
-
-    /**
-     * @notice Return ETH raised by the STO
-     */
-    function getRaisedEther() public view returns (uint256) {
-        return fundsRaisedETH;
-    }
-
-    /**
-     * @notice Return POLY raised by the STO
-     */
-    function getRaisedPOLY() public view returns (uint256) {
-        return fundsRaisedPOLY;
     }
 
     /**
@@ -179,10 +164,10 @@ contract CappedSTO is ISTO, ReentrancyGuard {
             endTime,
             cap,
             rate,
-            (fundRaiseType[uint8(FundRaiseType.POLY)]) ? fundsRaisedPOLY: fundsRaisedETH,
+            (fundRaiseTypes[uint8(FundRaiseType.POLY)]) ? fundsRaised[uint8(FundRaiseType.POLY)]: fundsRaised[uint8(FundRaiseType.ETH)],
             investorCount,
             totalTokensSold,
-            (fundRaiseType[uint8(FundRaiseType.POLY)])
+            (fundRaiseTypes[uint8(FundRaiseType.POLY)])
         );
     }
 
@@ -201,10 +186,10 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         uint256 tokens = _getTokenAmount(_investedAmount);
 
         // update state
-        if (fundRaiseType[uint8(FundRaiseType.POLY)]) {
-            fundsRaisedPOLY = fundsRaisedPOLY.add(_investedAmount);
+        if (fundRaiseTypes[uint8(FundRaiseType.POLY)]) {
+            fundsRaised[uint8(FundRaiseType.POLY)] = fundsRaised[uint8(FundRaiseType.POLY)].add(_investedAmount);
         } else {
-            fundsRaisedETH = fundsRaisedETH.add(_investedAmount);
+            fundsRaised[uint8(FundRaiseType.ETH)] = fundsRaised[uint8(FundRaiseType.ETH)].add(_investedAmount);
         }
         totalTokensSold = totalTokensSold.add(tokens);
 

@@ -9,7 +9,6 @@ var abis = require('./helpers/contract_abis');
 // App flow
 let tokenSymbol;
 let securityToken;
-let tickerRegistry;
 let securityTokenRegistry;
 
 async function executeApp(remoteNetwork) {
@@ -32,11 +31,6 @@ async function executeApp(remoteNetwork) {
 
 async function setup(){
   try {
-    let tickerRegistryAddress = await contracts.tickerRegistry();
-    let tickerRegistryABI = abis.tickerRegistry();
-    tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
-    tickerRegistry.setProvider(web3.currentProvider);
-
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
     let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);

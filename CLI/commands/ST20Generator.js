@@ -7,7 +7,6 @@ var abis = require('./helpers/contract_abis');
 var common = require('./common/common_functions');
 var global = require('./common/global');
 
-let tickerRegistryAddress;
 let securityTokenRegistryAddress;
 let cappedSTOFactoryAddress;
 let usdTieredSTOFactoryAddress;
@@ -25,7 +24,6 @@ const usdTieredSTOFee = 100000;
 const tokenDetails = "";
 ////////////////////////
 // Artifacts
-let tickerRegistry;
 let securityTokenRegistry;
 let polyToken;
 let securityToken;
@@ -70,11 +68,6 @@ async function executeApp(tokenConfig, mintingConfig, stoConfig, remoteNetwork) 
 
 async function setup(){
   try {
-    tickerRegistryAddress = await contracts.tickerRegistry();
-    let tickerRegistryABI = abis.tickerRegistry();
-    tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
-    tickerRegistry.setProvider(web3.currentProvider);
-    
     securityTokenRegistryAddress = await contracts.securityTokenRegistry();
     let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
@@ -117,7 +110,7 @@ async function step_ticker_reg(){
       tokenSymbol = readlineSync.question('Enter the symbol for your new token: '); 
     }
 
-    await tickerRegistry.methods.getDetails(tokenSymbol).call({}, function(error, result){
+    await securityTokenRegistry.methods.getTickerDetails(tokenSymbol).call({}, function(error, result){
       if (new BigNumber(result[1]).toNumber() == 0) {
         available = true;
       } else if (result[0] == Issuer.address) {
@@ -131,8 +124,8 @@ async function step_ticker_reg(){
   }
 
   if (!alreadyRegistered) {
-    await step_approval(tickerRegistryAddress, regFee);
-    let registerTickerAction = tickerRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "");
+    await step_approval(securityTokenRegistryAddress, regFee);
+    let registerTickerAction = securityTokenRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "");
     await common.sendTransaction(Issuer, registerTickerAction, defaultGasPrice);
   }
 }

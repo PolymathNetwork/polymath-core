@@ -18,14 +18,19 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     /*
         // Mapping used to hold the type of module factory corresponds to the address of the Module factory contract
         mapping (address => uint8) public registry;
+
         // Mapping used to hold the reputation of the factory
         mapping (address => address[]) public reputation;
+
         // Mapping contain the list of addresses of Module factory for a particular type
         mapping (uint8 => address[]) public moduleList;
+
         // Mapping to store the index of the moduleFactory in the moduleList
         mapping(address => uint8) private moduleListIndex;
+
         // contains the list of verified modules
         mapping (address => bool) public verified;
+
         // Contains the list of the available tags corresponds to the module type
         mapping (uint8 => bytes32[]) public availableTags;
     */
@@ -90,7 +95,6 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         require(_owner != address(0) && _polymathRegistry != address(0), "0x address is in-valid");
         set(Encoder.getKey("polymathRegistry"), _polymathRegistry);
         set(Encoder.getKey("owner"), _owner);
-        _updateFromRegistry(_polymathRegistry);
         set(Encoder.getKey("initialised"), true);
     }
 
@@ -232,10 +236,44 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     /**
      * @notice Use to get the list of addresses of Module factory for a particular type
      * @param _moduleType Type of Module
-     * @return address array thal contains the lis of addresses of module factory contracts.
+     * @return address array that contains the list of addresses of module factory contracts.
      */
     function getModuleListOfType(uint8 _moduleType) external view returns(address[]) {
         return getArrayAddress(Encoder.getKey('moduleList', uint256(_moduleType)));
+    }
+
+    /**
+     * @notice Use to get the list of available Module factory addresses for a particular type
+     * @param _moduleType Type of Module
+     * @param _securityToken Address of securityToken
+     * @return address array that contains the list of available addresses of module factory contracts.
+     */
+    function getAvailableModulesOfType(uint8 _moduleType, address _securityToken) external view returns (address[]) {
+        uint256 _len = getArrayAddress(Encoder.getKey('moduleList', uint256(_moduleType))).length;
+        address[] memory _addressList = getArrayAddress(Encoder.getKey('moduleList', uint256(_moduleType)));
+        uint256 counter = 0;
+        for (uint256 i = 0; i < _len; i++) {
+            if (IFeatureRegistry(getAddress(Encoder.getKey('featureRegistry'))).getFeatureStatus("customModulesAllowed")) {
+                if (IOwner(_addressList[i]).owner() == IOwner(_securityToken).owner())
+                    counter++;
+            }
+            else if (getBool(Encoder.getKey('verified', _addressList[i]))) {
+                counter ++;
+            }
+        }
+        address[] memory _tempArray = new address[](counter);
+        counter = 0;
+        for (uint256 j = 0; j < _tempArray.length; j++) {
+            if (IFeatureRegistry(getAddress(Encoder.getKey('featureRegistry'))).getFeatureStatus("customModulesAllowed")) {
+                if (IOwner(_addressList[j]).owner() == IOwner(_securityToken).owner())
+                    _tempArray[counter] = _addressList[j];
+                    counter ++;
+            }
+            else if (getBool(Encoder.getKey('verified', _addressList[j]))) {
+                _tempArray[counter] = _addressList[j];
+                counter ++;
+            }
+        }
     }
 
     /**
@@ -268,14 +306,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     /**
      * @notice Use to get the latest contract address of the regstries
      */
-
     function updateFromRegistry() onlyOwner external {
         address _polymathRegistry = getAddress(Encoder.getKey('polymathRegistry'));
-        _updateFromRegistry(_polymathRegistry);
-    }
-
-    function _updateFromRegistry(address _polymathRegistry) internal {
-        set(Encoder.getKey('moduleRegistry'), IPolymathRegistry(_polymathRegistry).getAddress("ModuleRegistry"));
         set(Encoder.getKey('securityTokenRegistry'), IPolymathRegistry(_polymathRegistry).getAddress("SecurityTokenRegistry"));
         set(Encoder.getKey('featureRegistry'), IPolymathRegistry(_polymathRegistry).getAddress("FeatureRegistry"));
         set(Encoder.getKey('polyToken'), IPolymathRegistry(_polymathRegistry).getAddress("PolyToken"));

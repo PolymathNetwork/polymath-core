@@ -67,4 +67,12 @@ interface IModuleRegistry {
      */
     function getModuleListOfType(uint8 _moduleType) external view returns(address[]);
 
+     /**
+     * @notice Use to get the list of available Module factory addresses for a particular type
+     * @param _moduleType Type of Module
+     * @param _securityToken Address of securityToken
+     * @return address array that contains the list of available addresses of module factory contracts.
+     */
+     function getAvailableModulesOfType(uint8 _moduleType, address _securityToken) external view returns (address[]);
+
 }

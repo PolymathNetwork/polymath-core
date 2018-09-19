@@ -1,13 +1,14 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
-import { encodeProxyCall } from './helpers/encodeCall';
+import { encodeProxyCall, encodeMRProxyCall } from './helpers/encodeCall';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO = artifacts.require('./CappedSTO.sol');
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
+const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
@@ -51,6 +52,7 @@ contract('ModuleRegistry', accounts => {
     let I_SecurityTokenRegistryProxy;
     let I_GeneralPermissionManager;
     let I_GeneralTransferManager;
+    let I_ModuleRegistryProxy;
     let I_ModuleRegistry;
     let I_TickerRegistry;
     let I_FeatureRegistry;
@@ -58,6 +60,7 @@ contract('ModuleRegistry', accounts => {
     let I_CappedSTOFactory1;
     let I_CappedSTOFactory2;
     let I_STFactory;
+    let I_MRProxied;
     let I_SecurityToken;
     let I_STRProxied;
     let I_CappedSTO;
@@ -91,6 +94,7 @@ contract('ModuleRegistry', accounts => {
     const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
     const rate = 1000;
     const fundRaiseType = [0];
+
     const functionSignature = {
         name: 'configure',
         type: 'function',
@@ -137,16 +141,26 @@ contract('ModuleRegistry', accounts => {
        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
 
+       // Step 2: Deploy the FeatureRegistry
+
+        I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: account_polymath
+            });
+
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+
        // STEP 2: Deploy the ModuleRegistry
+     
+       I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
+       I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
 
-       I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:account_polymath});
-       await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: account_polymath});
+       let bytesMRProxy = encodeMRProxyCall([I_PolymathRegistry.address, account_polymath]);
+       await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, {from: account_polymath});
+       I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
 
-        assert.notEqual(
-            I_ModuleRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "ModuleRegistry contract was not deployed"
-        );
+       await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, {from: account_polymath});
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
@@ -182,15 +196,7 @@ contract('ModuleRegistry', accounts => {
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
 
-        // Step 10: Deploy the FeatureRegistry
-
-        I_FeatureRegistry = await FeatureRegistry.new(
-            I_PolymathRegistry.address,
-            {
-                from: account_polymath
-            });
-
-        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+        
 
         assert.notEqual(
             I_FeatureRegistry.address.valueOf(),
@@ -199,8 +205,8 @@ contract('ModuleRegistry', accounts => {
         );
 
         // Step 11: update the registries addresses from the PolymathRegistry contract
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, {from: account_polymath});
-        await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
+        await I_MRProxied.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`
@@ -209,6 +215,7 @@ contract('ModuleRegistry', accounts => {
         SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
         SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
         ModuleRegistry:                    ${ModuleRegistry.address}
+        ModuleRegistryProxy:               ${ModuleRegistryProxy.address}
         FeatureRegistry:                   ${FeatureRegistry.address}
 
         STFactory:                         ${STFactory.address}
@@ -221,20 +228,11 @@ contract('ModuleRegistry', accounts => {
     describe("Test case of the module registry", async() => {
 
         it("Should verify the ownership of the module registry", async () => {
-            let _owner = await I_ModuleRegistry.owner.call();
+            let _owner = await I_MRProxied.getAddressValues.call(web3.utils.soliditySha3("owner"));
             assert.equal(_owner, account_polymath, "Unauthenticated user deployed the contract");
         });
 
         it("Should successfully deployed the Module Fatories", async () => {
-
-            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
-
-            assert.notEqual(
-                I_GeneralTransferManagerFactory.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
-                "GeneralTransferManagerFactory contract was not deployed"
-            );
-
 
             I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
@@ -276,8 +274,8 @@ contract('ModuleRegistry', accounts => {
         it("Should fail to register module if registration is paused", async() => {
             let errorThrown = false;
             try {
-                await I_ModuleRegistry.pause({ from: account_polymath});
-                await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+                await I_MRProxied.pause({ from: account_polymath});
+                await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
             } catch(error) {
                 console.log(`         tx revert -> Registration is paused`.grey);
                 errorThrown = true;
@@ -287,8 +285,8 @@ contract('ModuleRegistry', accounts => {
         });
 
         it("Should succssfully register the module", async() => {
-            await I_ModuleRegistry.unpause({ from: account_polymath});
-            let tx = await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+            await I_MRProxied.unpause({ from: account_polymath});
+            let tx = await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
 
             assert.equal(
                 tx.logs[0].args._moduleFactory,
@@ -298,7 +296,7 @@ contract('ModuleRegistry', accounts => {
 
             assert.equal(tx.logs[0].args._owner, account_polymath);
 
-            tx = await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
+            tx = await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
 
             assert.equal(
                 tx.logs[0].args._moduleFactory,
@@ -308,7 +306,7 @@ contract('ModuleRegistry', accounts => {
 
             assert.equal(tx.logs[0].args._owner, account_polymath);
 
-            tx = await I_ModuleRegistry.registerModule(I_CappedSTOFactory1.address, { from: account_polymath });
+            tx = await I_MRProxied.registerModule(I_CappedSTOFactory1.address, { from: account_polymath });
 
             assert.equal(
                 tx.logs[0].args._moduleFactory,
@@ -323,7 +321,7 @@ contract('ModuleRegistry', accounts => {
         it("Should fail in registering the same module again", async() => {
             let errorThrown = false;
             try {
-                await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
+                await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
             } catch(error) {
                 console.log(`         tx revert -> Already Registered Module factory`.grey);
                 errorThrown = true;
@@ -335,7 +333,7 @@ contract('ModuleRegistry', accounts => {
         it("Should fail in registering the module-- type = 0", async() => {
             let errorThrown = false;
             try {
-                await I_ModuleRegistry.registerModule(I_MockFactory.address, { from: account_polymath });
+                await I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath });
             } catch(error) {
                 console.log(`         tx revert -> Module factory of 0 type`.grey);
                 errorThrown = true;
@@ -343,7 +341,7 @@ contract('ModuleRegistry', accounts => {
             }
             assert.ok(errorThrown, message);
         });
-    });
+     });
 
     describe("Test cases for verify module", async() => {
 
@@ -403,7 +401,7 @@ contract('ModuleRegistry', accounts => {
     describe("Deploy the security token registry contract", async() => {
 
         it("Should successfully deploy the STR", async() => {
-            let tx = await I_ModuleRegistry.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+            let tx = await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
            assert.equal(
                 tx.logs[0].args._moduleFactory,
                 I_GeneralTransferManagerFactory.address,
@@ -436,9 +434,9 @@ contract('ModuleRegistry', accounts => {
             let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
             await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
             I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
-            await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, {from: account_polymath});
+            await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
 
-            await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
+            await I_MRProxied.updateFromRegistry({from: account_polymath});
         });
 
     });
@@ -448,7 +446,7 @@ contract('ModuleRegistry', accounts => {
         it("Should fail in adding the tag. Because msg.sender is not the owner", async() => {
             let errorThrown = false;
             try {
-                await I_ModuleRegistry.addTagByModuleType(3,["Non-Refundable","Capped","ETH","POLY"],{from: account_temp});
+                await I_MRProxied.addTagByModuleType(3,["Non-Refundable","Capped","ETH","POLY"],{from: account_temp});
             } catch(error) {
                 console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
                 errorThrown = true;
@@ -458,15 +456,15 @@ contract('ModuleRegistry', accounts => {
         });
 
         it("Should successfully add the tag", async() => {
-            await I_ModuleRegistry.addTagByModuleType(3,["Non-Refundable","Capped","ETH","POLY"],{from: account_polymath});
-            let tags = await I_ModuleRegistry.getTagByModuleType.call(3);
+            await I_MRProxied.addTagByModuleType(3,["Non-Refundable","Capped","ETH","POLY"],{from: account_polymath});
+            let tags = await I_MRProxied.getTagByModuleType.call(3);
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''),"Non-Refundable");
         });
 
         it("Should fail in removing the tag from the list", async() => {
             let errorThrown = false;
             try {
-                await I_ModuleRegistry.removeTagByModuleType(3,["Capped", "ETH"], {from: account_investor1});
+                await I_MRProxied.removeTagByModuleType(3,["Capped", "ETH"], {from: account_investor1});
             } catch(error) {
                 console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
                 errorThrown = true;
@@ -476,8 +474,8 @@ contract('ModuleRegistry', accounts => {
         });
 
         it("Should remove the tag from the list", async() => {
-            await I_ModuleRegistry.removeTagByModuleType(3,["Capped", "ETH"], {from:account_polymath});
-            let tags = await I_ModuleRegistry.getTagByModuleType.call(3);
+            await I_MRProxied.removeTagByModuleType(3,["Capped", "ETH"], {from:account_polymath});
+            let tags = await I_MRProxied.getTagByModuleType.call(3);
             assert.equal(web3.utils.toAscii(tags[1]).replace(/\u0000/g, ''),"");
         });
 

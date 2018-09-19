@@ -1,18 +1,19 @@
 pragma solidity ^0.4.24;
 
 import "../../Pausable.sol";
-import "../../interfaces/IModule.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "../Module.sol";
+import "../../interfaces/IERC20.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Interface to be implemented by all STO modules
  */
-contract ISTO is IModule, Pausable {
+contract ISTO is Module, Pausable  {
     using SafeMath for uint256;
 
-    enum FundRaiseType { ETH, POLY }
-    mapping (uint8 => bool) public fundRaiseType;
+    enum FundRaiseType { ETH, POLY, DAI }
+    mapping (uint8 => bool) public fundRaiseTypes;
+    mapping (uint8 => uint256) public fundsRaised;
 
     // Start time of the STO
     uint256 public startTime;
@@ -20,30 +21,34 @@ contract ISTO is IModule, Pausable {
     uint256 public endTime;
     // Time STO was paused
     uint256 public pausedTime;
+    // Number of individual investors
+    uint256 public investorCount;
+    // Address where ETH & POLY funds are delivered
+    address public wallet;
+     // Final amount of tokens sold
+    uint256 public totalTokensSold;
+
+    // Event
+    event SetFundRaiseTypes(FundRaiseType[] _fundRaiseTypes);
 
     /**
-     * @notice use to verify the investment, whether the investor provide the allowance to the STO or not.
-     * @param _beneficiary Ethereum address of the beneficiary, who wants to buy the st-20
-     * @param _fundsAmount Amount invested by the beneficiary
-     */
-    function verifyInvestment(address _beneficiary, uint256 _fundsAmount) public view returns(bool) {
-        return polyToken.allowance(_beneficiary, address(this)) >= _fundsAmount;
+    * @notice Reclaim ERC20Basic compatible tokens
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    * @param _tokenContract The address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) external onlyOwner {
+        require(_tokenContract != address(0));
+        IERC20 token = IERC20(_tokenContract);
+        uint256 balance = token.balanceOf(address(this));
+        require(token.transfer(msg.sender, balance));
     }
 
     /**
      * @notice Return ETH raised by the STO
      */
-    function getRaisedEther() public view returns (uint256);
-
-    /**
-     * @notice Return POLY raised by the STO
-     */
-    function getRaisedPOLY() public view returns (uint256);
-
-    /**
-     * @notice Return the total no. of investors
-     */
-    function getNumberInvestors() public view returns (uint256);
+    function getRaised(FundRaiseType _fundRaiseType) public view returns (uint256) {
+        return fundsRaised[uint8(_fundRaiseType)];
+    }
 
     /**
      * @notice Return the total no. of tokens sold
@@ -65,15 +70,16 @@ contract ISTO is IModule, Pausable {
         super._unpause();
     }
 
-    /**
-    * @notice Reclaim ERC20Basic compatible tokens
-    * @param _tokenContract The address of the token contract
-    */
-    function reclaimERC20(address _tokenContract) external onlyOwner {
-        require(_tokenContract != address(0));
-        ERC20Basic token = ERC20Basic(_tokenContract);
-        uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(msg.sender, balance));
+    function _setFundRaiseType(FundRaiseType[] _fundRaiseTypes) internal {
+        // FundRaiseType[] parameter type ensures only valid values for _fundRaiseTypes
+        require(_fundRaiseTypes.length > 0, "Raise type not specified");
+        fundRaiseTypes[uint8(FundRaiseType.ETH)] = false;
+        fundRaiseTypes[uint8(FundRaiseType.POLY)] = false;
+        fundRaiseTypes[uint8(FundRaiseType.DAI)] = false;
+        for (uint8 j = 0; j < _fundRaiseTypes.length; j++) {
+            fundRaiseTypes[uint8(_fundRaiseTypes[j])] = true;
+        }
+        emit SetFundRaiseTypes(_fundRaiseTypes);
     }
 
 }

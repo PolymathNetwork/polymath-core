@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
 import "./ManualApprovalTransferManager.sol";
-import "../../interfaces/IModuleFactory.sol";
+import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying ManualApprovalTransferManager module
  */
-contract ManualApprovalTransferManagerFactory is IModuleFactory {
+contract ManualApprovalTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -16,9 +16,12 @@ contract ManualApprovalTransferManagerFactory is IModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {
-
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    {   
+        version = "1.0.0";
+        name = "ManualApprovalTransferManager";
+        title = "Manual Approval Transfer Manager";
+        description = "Manage transfers using single approvals / blocking";
     }
 
      /**
@@ -29,7 +32,7 @@ contract ManualApprovalTransferManagerFactory is IModuleFactory {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address manualTransferManager = new ManualApprovalTransferManager(msg.sender, address(polyToken));
-        emit LogGenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, now);
+        emit LogGenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(manualTransferManager);
     }
 
@@ -44,21 +47,35 @@ contract ManualApprovalTransferManagerFactory is IModuleFactory {
      * @notice Get the name of the Module
      */
     function getName() public view returns(bytes32) {
-        return "ManualApprovalTransferManager";
+        return name;
     }
 
     /**
      * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
-        return "Manage transfers using single approvals / blocking";
+        return description;
     }
 
     /**
      * @notice Get the title of the Module
      */
     function getTitle() public view returns(string) {
-        return "Manual Approval Transfer Manager";
+        return title;
+    }
+    
+    /**
+     * @notice Get the version of the Module
+     */
+    function getVersion() external view returns(string) {
+        return version;
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCost() external view returns (uint256) {
+        return setupCost;
     }
 
     /**

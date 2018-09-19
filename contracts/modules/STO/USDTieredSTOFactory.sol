@@ -1,22 +1,25 @@
 pragma solidity ^0.4.24;
 
 import "./USDTieredSTO.sol";
-import "../../interfaces/IModuleFactory.sol";
-import "../../interfaces/IModule.sol";
+import "../ModuleFactory.sol";
+import "../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying CappedSTO module
  */
-contract USDTieredSTOFactory is IModuleFactory {
+contract USDTieredSTOFactory is ModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-
+        version = "1.0.0";
+        name = "USDTieredSTO";
+        title = "USD Tiered STO";
+        description = "USD Tiered STO";
     }
 
      /**
@@ -25,13 +28,13 @@ contract USDTieredSTOFactory is IModuleFactory {
      */
     function deploy(bytes _data) external returns(address) {
         if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
         //Check valid bytes - can only call module init function
         USDTieredSTO usdTieredSTO = new USDTieredSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(getSig(_data) == usdTieredSTO.getInitFunction(), "Provided data is not valid");
-        require(address(usdTieredSTO).call(_data), "Un-successfull call");
-        emit LogGenerateModuleFromFactory(address(usdTieredSTO), getName(), address(this), msg.sender, now);
+        require(Util.getSig(_data) == usdTieredSTO.getInitFunction(), "Invalid data");
+        require(address(usdTieredSTO).call(_data), "Unsuccessfull call");
+        emit LogGenerateModuleFromFactory(address(usdTieredSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(usdTieredSTO);
     }
 
@@ -46,21 +49,35 @@ contract USDTieredSTOFactory is IModuleFactory {
      * @notice Get the name of the Module
      */
     function getName() public view returns(bytes32) {
-        return "USDTieredSTO";
+        return name;
     }
 
     /**
      * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
-        return "USD Tiered STO";
+        return description;
     }
 
     /**
      * @notice Get the title of the Module
      */
     function getTitle() public view returns(string) {
-        return "USD Tiered STO";
+        return title;
+    }
+
+    /**
+     * @notice Get the version of the Module
+     */
+    function getVersion() external view returns(string) {
+        return version;
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCost() external view returns (uint256) {
+        return setupCost;
     }
 
     /**

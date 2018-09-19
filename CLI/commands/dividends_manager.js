@@ -14,10 +14,14 @@ var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
+const STO_KEY = 3;
+
 // App flow
 let tokenSymbol;
 let securityToken;
 let polyToken;
+let tickerRegistry;
+let securityTokenRegistry;
 let generalTransferManager;
 let currentDividendsModule;
 
@@ -42,11 +46,6 @@ async function executeApp(type, remoteNetwork) {
 
 async function setup(){
   try {
-    let tickerRegistryAddress = await contracts.tickerRegistry();
-    let tickerRegistryABI = abis.tickerRegistry();
-    tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
-    tickerRegistry.setProvider(web3.currentProvider);
-
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
     let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
@@ -78,11 +77,11 @@ async function start_explorer(){
     securityToken = new web3.eth.Contract(securityTokenABI,result);
 
     // Get the GTM
-    result = await securityToken.methods.getModule(2, 0).call();
-    if (result[1] == "0x0000000000000000000000000000000000000000") {
+    result = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
+    if (result.length == 0) {
       console.log(chalk.red(`General Transfer Manager is not attached.`));
     } else {
-      generalTransferManagerAddress = result[1];
+      generalTransferManagerAddress = result[0];
       let generalTransferManagerABI = abis.generalTransferManager();
       generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
       generalTransferManager.setProvider(web3.currentProvider);
@@ -187,12 +186,11 @@ async function start_explorer(){
 }
 
 async function mintTokens(address, amount){
-  if (await securityToken.methods.finishedIssuerMinting().call()) {
-    console.log(chalk.red("Minting is not possible - Minting has been permanently disabled by issuer"));
+  if (await securityToken.methods.mintingFrozen().call()) {
+    console.log(chalk.red("Minting is not possible - Minting has been permanently frozen by issuer"));
   } else {
-    let result = await securityToken.methods.getModule(3, 0).call();
-    let isSTOAttached = result[1] != "0x0000000000000000000000000000000000000000";
-    if (isSTOAttached) {
+    let result = await securityToken.methods.getModulesByType(STO_KEY).call();
+    if (result.length > 0) {
       console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
     } else {
       await whitelistAddress(address);
@@ -367,9 +365,9 @@ async function isDividendsModuleAttached() {
     dividendsModuleName = 'EtherDividendCheckpoint';
   }
 
-  let result = await securityToken.methods.getModuleByName(4, web3.utils.toHex(dividendsModuleName)).call();
-  let dividendsModuleAddress = result[1];
-  if (dividendsModuleAddress != "0x0000000000000000000000000000000000000000") {
+  let result = await securityToken.methods.getModulesByName(web3.utils.toHex(dividendsModuleName)).call();
+  if (result.length > 0) {
+    let dividendsModuleAddress = result[0];
     let dividendsModuleABI;
     if (dividendsType == 'POLY') {
       dividendsModuleABI = abis.erc20DividendCheckpoint();

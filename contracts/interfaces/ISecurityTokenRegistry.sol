@@ -96,4 +96,53 @@ interface ISecurityTokenRegistry {
      */
     function getTickerDetails(string _ticker) external view returns (address, uint256, uint256, string, bool);
 
+    /**
+     * @notice Modify the ticker details. Only polymath account has the ability
+     * to do so. Only allowed to modify the tickers which are not yet deployed
+     * @param _owner Owner of the token
+     * @param _ticker token ticker
+     * @param _tokenName Name of the token
+     * @param _registrationDate Date on which ticker get registered
+     * @param _expiryDate Expiry date of the ticker
+     * @param _status Token deployed status
+     */
+    function modifyTicker(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate, bool _status) external;
+
+     /**
+     * @notice Remove the ticker details and associated ownership & security token mapping
+     * @param _ticker token ticker
+     */
+    function removeTicker(string _ticker) external;
+
+    /**
+     * @notice Transfer the ownership of the ticker
+     * @dev _newOwner Address whom ownership to transfer
+     * @dev _ticker Ticker
+     */
+    function transferTickerOwnership(address _newOwner, string _ticker) external;
+
+    /**
+     * @notice Change the expiry time for the token ticker
+     * @param _newExpiry new time period for token ticker expiry
+     */
+    function changeExpiryLimit(uint256 _newExpiry) external;
+
+    /**
+    * @notice set the ticker registration fee in POLY tokens
+    * @param _tickerRegFee registration fee in POLY tokens (base 18 decimals)
+    */
+   function changeTickerRegistrationFee(uint256 _tickerRegFee) external;
+
+   /**
+    * @notice set the ticker registration fee in POLY tokens
+    * @param _stLaunchFee registration fee in POLY tokens (base 18 decimals)
+    */
+   function changeSecurityLaunchFee(uint256 _stLaunchFee) external;
+
+    /**
+     * @notice Change the PolyToken address
+     * @param _newAddress Address of the polytoken
+     */
+    function updatePolyTokenAddress(address _newAddress) external;
+
 }

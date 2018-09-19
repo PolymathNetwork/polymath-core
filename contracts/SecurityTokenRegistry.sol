@@ -147,7 +147,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _expiryDate Expiry date of the ticker
      * @param _status Token deployed status
      */
-    function modifyTicker(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate, bool _status) public onlyOwner {
+    function modifyTicker(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate, bool _status) external onlyOwner {
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         require(_expiryDate != 0 && _registrationDate != 0, "Dates should not be 0");
         require(_registrationDate <= _expiryDate, "Registration date should < expiry date");
@@ -177,7 +177,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @notice Remove the ticker details and associated ownership & security token mapping
      * @param _ticker token ticker
      */
-    function removeTicker(string _ticker) public onlyOwner {
+    function removeTicker(string _ticker) external onlyOwner {
         string memory ticker = Util.upper(_ticker);
         address owner = getAddress(Encoder.getKey("registeredTickers_owner", ticker));
         require(owner != address(0), "Ticker does not exist");

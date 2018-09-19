@@ -51,11 +51,6 @@ contract ISTO is Module, Pausable  {
     }
 
     /**
-     * @notice Return the total no. of investors
-     */
-    function getNumberInvestors() public view returns (uint256);
-
-    /**
      * @notice Return the total no. of tokens sold
      */
     function getTokensSold() public view returns (uint256);
@@ -78,8 +73,10 @@ contract ISTO is Module, Pausable  {
     function _setFundRaiseType(FundRaiseType[] _fundRaiseTypes) internal {
         // FundRaiseType[] parameter type ensures only valid values for _fundRaiseTypes
         require(_fundRaiseTypes.length > 0, "Raise type not specified");
+        fundRaiseTypes[uint8(FundRaiseType.ETH)] = false;
+        fundRaiseTypes[uint8(FundRaiseType.POLY)] = false;
+        fundRaiseTypes[uint8(FundRaiseType.DAI)] = false;
         for (uint8 j = 0; j < _fundRaiseTypes.length; j++) {
-            require(!fundRaiseTypes[uint8(_fundRaiseTypes[j])], "Duplicated raise types");
             fundRaiseTypes[uint8(_fundRaiseTypes[j])] = true;
         }
         emit SetFundRaiseTypes(_fundRaiseTypes);

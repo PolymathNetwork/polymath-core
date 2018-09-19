@@ -171,20 +171,21 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _reserveWallet
     ) public onlyFactory {
         modifyTimes(_startTime, _endTime);
-        // NB - modifyFunding must come before modifyTiers
-        modifyFunding(_fundRaiseTypes, _ratePerTier.length);
+        // NB - modifyFunding must come after modifyTiers
         modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
+        modifyFunding(_fundRaiseTypes);
         modifyAddresses(_wallet, _reserveWallet);
         modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
-    function modifyFunding(FundRaiseType[] _fundRaiseTypes, uint256 _numberOfTiers) public onlyFactoryOrOwner {
+    function modifyFunding(FundRaiseType[] _fundRaiseTypes) public onlyFactoryOrOwner {
         require(now < startTime);
         _setFundRaiseType(_fundRaiseTypes);
-        mintedPerTierTotal = new uint256[](_numberOfTiers);
-        mintedPerTierDiscountPoly = new uint256[](_numberOfTiers);
+        uint256 length = getNumberOfTiers();
+        mintedPerTierTotal = new uint256[](length);
+        mintedPerTierDiscountPoly = new uint256[](length);
         for (uint8 i = 0; i < _fundRaiseTypes.length; i++) {
-            mintedPerTier[uint8(_fundRaiseTypes[i])] = new uint256[](_numberOfTiers);
+            mintedPerTier[uint8(_fundRaiseTypes[i])] = new uint256[](length);
         }
     }
 
@@ -326,7 +327,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _beneficiary Address where security tokens will be sent
       */
     function buyWithETH(address _beneficiary) public payable validETH {
-        uint256 rate = IOracle(_getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
+        uint256 rate = getRate(FundRaiseType.ETH);
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, msg.value, rate, FundRaiseType.ETH);
         // Modify storage
         investorInvested[_beneficiary][uint8(FundRaiseType.ETH)] = investorInvested[_beneficiary][uint8(FundRaiseType.ETH)].add(spentValue);
@@ -344,7 +345,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY {
-        uint256 rate = IOracle(_getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
+        uint256 rate = getRate(FundRaiseType.POLY);
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _investedPOLY, rate, FundRaiseType.POLY);
         // Modify storage
         investorInvested[_beneficiary][uint8(FundRaiseType.POLY)] = investorInvested[_beneficiary][uint8(FundRaiseType.POLY)].add(spentValue);
@@ -361,11 +362,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       */
     function buyWithDAI(address _beneficiary, uint256 _investedDAI) public validPOLY {
         // Assume a conversion rate of 1 - 1 with USD
-        uint256 rate = 1 * 10**18;
+        uint256 rate = getRate(FundRaiseType.DAI);
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _investedDAI, rate, FundRaiseType.DAI);
         // Modify storage
         investorInvested[_beneficiary][uint8(FundRaiseType.DAI)] = investorInvested[_beneficiary][uint8(FundRaiseType.DAI)].add(spentValue);
-        fundsRaised[uint8(FundRaiseType.POLY)] = fundsRaised[uint8(FundRaiseType.POLY)].add(spentValue);
+        fundsRaised[uint8(FundRaiseType.DAI)] = fundsRaised[uint8(FundRaiseType.DAI)].add(spentValue);
         // Forward DAI to issuer wallet
         require(daiToken.transferFrom(msg.sender, wallet, spentValue));
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, FundRaiseType.DAI, _investedDAI, spentValue, rate);
@@ -447,6 +448,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
                 (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], discountRemaining, _investedUSD, _tier);
             _investedUSD = _investedUSD.sub(spentUSD);
             mintedPerTierDiscountPoly[_tier] = mintedPerTierDiscountPoly[_tier].add(tierPurchasedTokens);
+            mintedPerTier[uint8(FundRaiseType.POLY)][_tier] = mintedPerTier[uint8(FundRaiseType.POLY)][_tier].add(tierPurchasedTokens);
             mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
@@ -510,20 +512,38 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         return (mintedPerTierTotal[mintedPerTierTotal.length - 1] == tokensPerTierTotal[tokensPerTierTotal.length - 1]);
     }
 
-    /**
-     * @notice Return USD raised by the STO
-     * @return uint256 Amount of USD raised
-     */
-    function getRaisedUSD() public view returns (uint256) {
-        return fundsRaisedUSD;
+    function getRate(FundRaiseType _fundRaiseType) public view returns (uint256){
+        if (_fundRaiseType == FundRaiseType.ETH) {
+            return IOracle(_getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
+        } else if (_fundRaiseType == FundRaiseType.POLY) {
+            return IOracle(_getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
+        } else if (_fundRaiseType == FundRaiseType.DAI) {
+            return 1 * 10**18;
+        } else {
+            revert("Incorrect funding");
+        }
     }
 
     /**
-     * @notice Return the total no. of investors
-     * @return uint256 Investor count
+     * @notice This function converts from ETH or POLY to USD
+     * @param _fundRaiseType Currency key
+     * @param _amount Value to convert to USD
+     * @return uint256 Value in USD
      */
-    function getNumberInvestors() public view returns (uint256) {
-        return investorCount;
+    function convertToUSD(FundRaiseType _fundRaiseType, uint256 _amount) public view returns(uint256) {
+        uint256 rate = getRate(_fundRaiseType);
+        return DecimalMath.mul(_amount, rate);
+    }
+
+    /**
+     * @notice This function converts from USD to ETH or POLY
+     * @param _fundRaiseType Currency key
+     * @param _amount Value to convert from USD
+     * @return uint256 Value in ETH or POLY
+     */
+    function convertFromUSD(FundRaiseType _fundRaiseType, uint256 _amount) public view returns(uint256) {
+      uint256 rate = getRate(_fundRaiseType);
+        return DecimalMath.div(_amount, rate);
     }
 
     /**
@@ -553,7 +573,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @notice Return the total no. of tokens sold for ETH
      * @return uint256 Total number of tokens sold for ETH
      */
-    function getTokensSold(FundRaiseType _fundRaiseType) public view returns (uint256) {
+    function getTokensSoldFor(FundRaiseType _fundRaiseType) public view returns (uint256) {
         uint256 tokensSold;
         for (uint8 i = 0; i < mintedPerTier[uint8(_fundRaiseType)].length; i++) {
             tokensSold = tokensSold.add(mintedPerTier[uint8(_fundRaiseType)][i]);
@@ -584,7 +604,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     function getInitFunction() public pure returns (bytes4) {
         //keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],uint256,uint256,uint8[],address,address)") ==
         //0xd31d4f2d09fc7bdefd7ea179aebde3dd53e24265c3c63e17e399bbf85fe873bf
-        return bytes4(keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],uint256,uint256,uint8[],address,address)"));
+        return 0xd31d4f2d;
     }
 
     function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns (address) {

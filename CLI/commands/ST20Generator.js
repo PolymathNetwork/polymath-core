@@ -1,5 +1,6 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js');
+var moment = require('moment');
 var chalk = require('chalk');
 const shell = require('shelljs');
 var contracts = require('./helpers/contract_addresses');
@@ -107,7 +108,7 @@ async function step_ticker_reg(){
     if (typeof _tokenConfig !== 'undefined' && _tokenConfig.hasOwnProperty('symbol')) {
       tokenSymbol = _tokenConfig.symbol;
     } else {
-      tokenSymbol = readlineSync.question('Enter the symbol for your new token: '); 
+      tokenSymbol = await selectTicker(false);
     }
 
     await securityTokenRegistry.methods.getTickerDetails(tokenSymbol).call({}, function(error, result){
@@ -1119,6 +1120,32 @@ async function currentBalance(from) {
     let balance = await polyToken.methods.balanceOf(from).call();
     let balanceInPoly = new BigNumber(balance).dividedBy(new BigNumber(10).pow(18));
     return balanceInPoly;
+}
+
+async function selectTicker(includeCreate) {
+  let result;
+  let userTickers = await securityTokenRegistry.methods.getTickersByOwner(Issuer.address).call();
+  let options = await Promise.all(userTickers.map(async function (t) {
+    let ticker = web3.utils.hexToAscii(t);
+    let tickerDetails = await securityTokenRegistry.methods.getTickerDetails(ticker).call();
+    let tickerInfo = tickerDetails[4] ? 'Token launched' : `Expiry at: ${moment.unix(tickerDetails[2]).format('MMMM Do YYYY, HH:mm:ss')}`;
+    return `${ticker}
+    ${tickerInfo}`;
+  }));
+  if (includeCreate) {
+    options.push('Register a new ticker');
+  }
+  
+  let index = readlineSync.keyInSelect(options, 'Select a ticker:');
+  if (index == -1) {
+    process.exit(0);
+  } else if (includeCreate && index == options.length - 1) {
+    result = readlineSync.question('Enter a symbol for your new ticker: '); 
+  } else {
+    result = userTickers[index];
+  }
+  
+  return result;
 }
 
 module.exports = {

@@ -25,7 +25,7 @@ const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 
 const TOLERANCE = 2; // Allow balances to be off by 2 WEI for rounding purposes
 
-contract('USDTieredSTO', accounts => {
+contract('USDTieredSTO Sim', accounts => {
     // Accounts Variable declaration
     let POLYMATH;
     let ISSUER;
@@ -59,6 +59,7 @@ contract('USDTieredSTO', accounts => {
     let I_SecurityToken;
     let I_USDTieredSTO_Array = [];
     let I_PolyToken;
+    let I_DaiToken;
     let I_PolymathRegistry;
 
     // SecurityToken Details for funds raise Type ETH
@@ -91,6 +92,7 @@ contract('USDTieredSTO', accounts => {
     let _fundRaiseTypes = [];
     let _wallet = [];
     let _reserveWallet = [];
+    let _usdToken = [];
 
     /* function configure(
         uint256 _startTime,
@@ -103,7 +105,8 @@ contract('USDTieredSTO', accounts => {
         uint256 _minimumInvestmentUSD,
         uint8[] _fundRaiseTypes,
         address _wallet,
-        address _reserveWallet
+        address _reserveWallet,
+        address _usdToken
     ) */
     const functionSignature = {
         name: 'configure',
@@ -141,6 +144,9 @@ contract('USDTieredSTO', accounts => {
         },{
             type: 'address',
             name: '_reserveWallet'
+        },{
+            type: 'address',
+            name: '_usdToken'
         }]
     };
 
@@ -170,6 +176,7 @@ contract('USDTieredSTO', accounts => {
         // Step 1: Deploy the token Faucet
         I_PolyToken = await PolyTokenFaucet.new();
         await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: POLYMATH})
+        I_DaiToken = await PolyTokenFaucet.new();
 
         // STEP 2: Deploy the ModuleRegistry
         I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:POLYMATH});
@@ -351,11 +358,12 @@ contract('USDTieredSTO', accounts => {
             _fundRaiseTypes.push([0,1]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
+            _usdToken.push(I_DaiToken.address);
 
             let config = [
                 _startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId],
                 _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId],
-                _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]
+                _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId], _usdToken[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);

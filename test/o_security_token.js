@@ -780,7 +780,7 @@ contract('SecurityToken', accounts => {
                     });
 
                 assert.equal(
-                    (await I_CappedSTO.getRaisedEther.call())
+                    (await I_CappedSTO.getRaised.call(0))
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1

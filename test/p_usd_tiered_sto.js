@@ -669,9 +669,10 @@ contract('USDTieredSTO', accounts => {
             assert.equal(await I_USDTieredSTO_Array[stoId].startTime.call(),tempTime1,"STO Configuration doesn't set as expected");
             assert.equal(await I_USDTieredSTO_Array[stoId].endTime.call(),tempTime2,"STO Configuration doesn't set as expected");
 
-            await I_USDTieredSTO_Array[stoId].modifyAddresses("0x0000000000000000000000000400000000000000", "0x0000000000000000000003000000000000000000", { from: ISSUER });
+            await I_USDTieredSTO_Array[stoId].modifyAddresses("0x0000000000000000000000000400000000000000", "0x0000000000000000000003000000000000000000", "0x0000000000000000000000000000000000000000", { from: ISSUER });
             assert.equal(await I_USDTieredSTO_Array[stoId].wallet.call(),"0x0000000000000000000000000400000000000000","STO Configuration doesn't set as expected");
             assert.equal(await I_USDTieredSTO_Array[stoId].reserveWallet.call(),"0x0000000000000000000003000000000000000000","STO Configuration doesn't set as expected");
+            assert.equal(await I_USDTieredSTO_Array[stoId].usdToken.call(),"0x0000000000000000000000000000000000000000","STO Configuration doesn't set as expected");
         });
 
         it("Should fail to change config after endTime", async() => {
@@ -721,7 +722,7 @@ contract('USDTieredSTO', accounts => {
 
             let errorThrown5 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].modifyAddresses("0x0000000000000000000000000400000000000000", "0x0000000000000000000003000000000000000000", { from: ISSUER });
+                await I_USDTieredSTO_Array[stoId].modifyAddresses("0x0000000000000000000000000400000000000000", "0x0000000000000000000003000000000000000000", I_DaiToken.address, { from: ISSUER });
             } catch(error) {
                 errorThrown5 = true;
                 ensureException(error);
@@ -791,7 +792,7 @@ contract('USDTieredSTO', accounts => {
             // NONACCREDITED DAI
             let errorThrown5 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].buyWithDAI(NONACCREDITED1, investment_DAI, {from: NONACCREDITED1});
+                await I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, {from: NONACCREDITED1});
             } catch(error) {
                 errorThrown5 = true;
                 ensureException(error);
@@ -821,7 +822,7 @@ contract('USDTieredSTO', accounts => {
             // ACCREDITED DAI
             let errorThrown6 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].buyWithDAI(ACCREDITED1, investment_DAI, {from: ACCREDITED1});
+                await I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, {from: ACCREDITED1});
             } catch(error) {
                 errorThrown6 = true;
                 ensureException(error);
@@ -886,7 +887,7 @@ contract('USDTieredSTO', accounts => {
             // NONACCREDITED DAI
             let errorThrown5 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].buyWithDAI(NONACCREDITED1, investment_DAI, {from: NONACCREDITED1});
+                await I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, {from: NONACCREDITED1});
             } catch(error) {
                 errorThrown5 = true;
                 ensureException(error);
@@ -916,7 +917,7 @@ contract('USDTieredSTO', accounts => {
             // ACCREDITED DAI
             let errorThrown6 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].buyWithDAI(ACCREDITED1, investment_DAI, {from: ACCREDITED1});
+                await I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, {from: ACCREDITED1});
             } catch(error) {
                 errorThrown6 = true;
                 ensureException(error);
@@ -985,7 +986,7 @@ contract('USDTieredSTO', accounts => {
             // NONACCREDITED DAI
             let errorThrown5 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].buyWithDAI(NONACCREDITED1, investment_DAI, {from: NONACCREDITED1});
+                await I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, {from: NONACCREDITED1});
             } catch(error) {
                 errorThrown5 = true;
                 ensureException(error);
@@ -1015,7 +1016,7 @@ contract('USDTieredSTO', accounts => {
             // ACCREDITED DAI
             let errorThrown6 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].buyWithDAI(ACCREDITED1, investment_DAI, {from: ACCREDITED1});
+                await I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, {from: ACCREDITED1});
             } catch(error) {
                 errorThrown6 = true;
                 ensureException(error);
@@ -1085,7 +1086,7 @@ contract('USDTieredSTO', accounts => {
             // NONACCREDITED DAI
             let errorThrown5 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].buyWithDAI(NONACCREDITED1, investment_DAI, {from: NONACCREDITED1});
+                await I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, {from: NONACCREDITED1});
             } catch(error) {
                 errorThrown5 = true;
                 ensureException(error);
@@ -1116,7 +1117,7 @@ contract('USDTieredSTO', accounts => {
             // ACCREDITED DAI
             let errorThrown6 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].buyWithDAI(ACCREDITED1, investment_DAI, {from: ACCREDITED1});
+                await I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, {from: ACCREDITED1});
             } catch(error) {
                 errorThrown6 = true;
                 ensureException(error);
@@ -1129,11 +1130,11 @@ contract('USDTieredSTO', accounts => {
 
             await I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH });
             await I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, {from: NONACCREDITED1});
-            await I_USDTieredSTO_Array[stoId].buyWithDAI(NONACCREDITED1, investment_DAI, {from: NONACCREDITED1});
+            await I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, {from: NONACCREDITED1});
 
             await I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH });
             await I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, {from: ACCREDITED1});
-            await I_USDTieredSTO_Array[stoId].buyWithDAI(ACCREDITED1, investment_DAI, {from: ACCREDITED1});
+            await I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, {from: ACCREDITED1});
 
             await revertToSnapshot(snapId);
         });
@@ -1196,7 +1197,7 @@ contract('USDTieredSTO', accounts => {
             // NONACCREDITED DAI
             let errorThrown5 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].buyWithDAI(NONACCREDITED1, investment_DAI, {from: NONACCREDITED1});
+                await I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, {from: NONACCREDITED1});
             } catch(error) {
                 errorThrown5 = true;
                 ensureException(error);
@@ -1226,7 +1227,7 @@ contract('USDTieredSTO', accounts => {
             // ACCREDITED POLY
             let errorThrown6 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].buyWithDAI(ACCREDITED1, investment_DAI, {from: ACCREDITED1});
+                await I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, {from: ACCREDITED1});
             } catch(error) {
                 errorThrown6 = true;
                 ensureException(error);

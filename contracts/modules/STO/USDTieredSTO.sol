@@ -168,9 +168,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD,
         FundRaiseType[] _fundRaiseTypes,
-        address _usdToken,
         address _wallet,
-        address _reserveWallet
+        address _reserveWallet,
+        address _usdToken
     ) public onlyFactory {
         modifyTimes(_startTime, _endTime);
         // NB - modifyTiers must come before modifyFunding
@@ -608,9 +608,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return bytes4 Configure function signature
      */
     function getInitFunction() public pure returns (bytes4) {
-        //keccak256("configure(uint256,uint256,uint256[],uint256[],uint256[],uint256[],uint256,uint256,uint8[],address,address)") ==
-        //0xd31d4f2d09fc7bdefd7ea179aebde3dd53e24265c3c63e17e399bbf85fe873bf
-        return 0xd31d4f2d;
+        return 0xb0ff041e;
     }
 
     function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns (address) {

@@ -22,7 +22,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     string public ETH_ORACLE = "EthUsdOracle";
     mapping (bytes32 => mapping (bytes32 => string)) oracleKeys;
 
-    IERC20 public constant daiToken = IERC20(0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359);
+    IERC20 public usdToken;
 
     // Determine whether users can invest on behalf of a beneficiary
     bool public allowBeneficialInvestments = false;
@@ -98,7 +98,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
     event SetAddresses(
         address indexed _wallet,
-        address indexed _reserveWallet
+        address indexed _reserveWallet,
+        address indexed _usdToken
     );
     event SetLimits(
         uint256 _nonAccreditedLimitUSD,
@@ -167,14 +168,16 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD,
         FundRaiseType[] _fundRaiseTypes,
+        address _usdToken,
         address _wallet,
         address _reserveWallet
     ) public onlyFactory {
         modifyTimes(_startTime, _endTime);
-        // NB - modifyFunding must come after modifyTiers
+        // NB - modifyTiers must come before modifyFunding
         modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
+        // NB - modifyFunding must come before modifyAddresses
         modifyFunding(_fundRaiseTypes);
-        modifyAddresses(_wallet, _reserveWallet);
+        modifyAddresses(_wallet, _reserveWallet, _usdToken);
         modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
@@ -236,13 +239,18 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
     function modifyAddresses(
         address _wallet,
-        address _reserveWallet
+        address _reserveWallet,
+        address _usdToken
     ) public onlyFactoryOrOwner {
         require(now < startTime);
         require(_wallet != address(0) && _reserveWallet != address(0), "0x address is not allowed");
+        if (fundRaiseTypes[uint8(FundRaiseType.DAI)]) {
+            require(_usdToken != address(0), "0x usdToken address is not allowed");
+        }
         wallet = _wallet;
         reserveWallet = _reserveWallet;
-        emit SetAddresses(_wallet, _reserveWallet);
+        usdToken = IERC20(_usdToken);
+        emit SetAddresses(_wallet, _reserveWallet, _usdToken);
     }
 
     ////////////////////
@@ -345,14 +353,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY {
-        uint256 rate = getRate(FundRaiseType.POLY);
-        (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _investedPOLY, rate, FundRaiseType.POLY);
-        // Modify storage
-        investorInvested[_beneficiary][uint8(FundRaiseType.POLY)] = investorInvested[_beneficiary][uint8(FundRaiseType.POLY)].add(spentValue);
-        fundsRaised[uint8(FundRaiseType.POLY)] = fundsRaised[uint8(FundRaiseType.POLY)].add(spentValue);
-        // Forward POLY to issuer wallet
-        require(polyToken.transferFrom(msg.sender, wallet, spentValue));
-        emit FundsReceived(msg.sender, _beneficiary, spentUSD, FundRaiseType.POLY, _investedPOLY, spentValue, rate);
+        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY);
     }
 
     /**
@@ -360,16 +361,21 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _beneficiary Address where security tokens will be sent
       * @param _investedDAI Amount of POLY invested
       */
-    function buyWithDAI(address _beneficiary, uint256 _investedDAI) public validPOLY {
-        // Assume a conversion rate of 1 - 1 with USD
-        uint256 rate = getRate(FundRaiseType.DAI);
-        (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _investedDAI, rate, FundRaiseType.DAI);
+    function buyWithUSD(address _beneficiary, uint256 _investedDAI) public validPOLY {
+        _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI);
+    }
+
+    function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType) internal {
+        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.DAI, "POLY & DAI supported");
+        uint256 rate = getRate(_fundRaiseType);
+        (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _tokenAmount, rate, _fundRaiseType);
         // Modify storage
-        investorInvested[_beneficiary][uint8(FundRaiseType.DAI)] = investorInvested[_beneficiary][uint8(FundRaiseType.DAI)].add(spentValue);
-        fundsRaised[uint8(FundRaiseType.DAI)] = fundsRaised[uint8(FundRaiseType.DAI)].add(spentValue);
+        investorInvested[_beneficiary][uint8(_fundRaiseType)] = investorInvested[_beneficiary][uint8(_fundRaiseType)].add(spentValue);
+        fundsRaised[uint8(_fundRaiseType)] = fundsRaised[uint8(_fundRaiseType)].add(spentValue);
         // Forward DAI to issuer wallet
-        require(daiToken.transferFrom(msg.sender, wallet, spentValue));
-        emit FundsReceived(msg.sender, _beneficiary, spentUSD, FundRaiseType.DAI, _investedDAI, spentValue, rate);
+        IERC20 token = _fundRaiseType == FundRaiseType.POLY ? polyToken : usdToken;
+        require(token.transferFrom(msg.sender, wallet, spentValue));
+        emit FundsReceived(msg.sender, _beneficiary, spentUSD, _fundRaiseType, _tokenAmount, spentValue, rate);
     }
 
     /**

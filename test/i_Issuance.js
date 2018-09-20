@@ -209,7 +209,7 @@ contract('Issuance', accounts => {
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
         let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
-        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);    
+        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
 
         // Step 10: Deploy the FeatureRegistry
 
@@ -376,13 +376,13 @@ contract('Issuance', accounts => {
                   });
 
                 assert.equal(
-                    (await I_CappedSTO.getRaisedEther.call())
+                    (await I_CappedSTO.getRaised.call(0))
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1
                 );
 
-                assert.equal(await I_CappedSTO.getNumberInvestors.call(), 1);
+                assert.equal(await I_CappedSTO.investorCount.call(), 1);
 
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor1))
@@ -427,13 +427,13 @@ contract('Issuance', accounts => {
                   });
 
                 assert.equal(
-                    (await I_CappedSTO.getRaisedEther.call())
+                    (await I_CappedSTO.getRaised.call(0))
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     2
                 );
 
-                assert.equal(await I_CappedSTO.getNumberInvestors.call(), 2);
+                assert.equal(await I_CappedSTO.investorCount.call(), 2);
 
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor2))

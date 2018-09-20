@@ -207,8 +207,8 @@ contract('GeneralTransferManager', accounts => {
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
         let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
-        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);    
-        
+        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+
           // Step 10: Deploy the FeatureRegistry
 
         I_FeatureRegistry = await FeatureRegistry.new(
@@ -860,15 +860,15 @@ contract('GeneralTransferManager', accounts => {
     describe("Test cases for the get functions of the dummy sto", async() => {
 
         it("Should get the raised amount of ether", async() => {
-           assert.equal(await I_DummySTO.getRaisedEther.call(), web3.utils.toWei('0','ether'));
+           assert.equal(await I_DummySTO.getRaised.call(0), web3.utils.toWei('0','ether'));
         });
 
         it("Should get the raised amount of poly", async() => {
-           assert.equal((await I_DummySTO.getRaisedPOLY.call()).toNumber(), web3.utils.toWei('0','ether'));
+           assert.equal((await I_DummySTO.getRaised.call(1)).toNumber(), web3.utils.toWei('0','ether'));
         });
 
         it("Should get the investors", async() => {
-           assert.equal((await I_DummySTO.getNumberInvestors.call()).toNumber(), 2);
+           assert.equal((await I_DummySTO.investorCount.call()).toNumber(), 2);
         });
 
         it("Should get the listed permissions", async() => {

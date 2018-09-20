@@ -44,7 +44,7 @@ contract ISTO is Module, Pausable  {
     }
 
     /**
-     * @notice Return ETH raised by the STO
+     * @notice Return funds raised by the STO
      */
     function getRaised(FundRaiseType _fundRaiseType) public view returns (uint256) {
         return fundsRaised[uint8(_fundRaiseType)];

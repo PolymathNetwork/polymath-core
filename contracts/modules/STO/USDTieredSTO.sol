@@ -157,6 +157,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @param _fundRaiseTypes Types of currency used to collect the funds
      * @param _wallet Ethereum account address to hold the funds
      * @param _reserveWallet Ethereum account address to receive unsold tokens
+     * @param _usdToken Contract address of the stable coin 
      */
     function configure(
         uint256 _startTime,

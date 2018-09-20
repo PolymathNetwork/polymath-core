@@ -786,7 +786,7 @@ contract('SecurityToken', accounts => {
                     1
                 );
 
-                assert.equal(await I_CappedSTO.getNumberInvestors.call(), 1);
+                assert.equal(await I_CappedSTO.investorCount.call(), 1);
 
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor1))

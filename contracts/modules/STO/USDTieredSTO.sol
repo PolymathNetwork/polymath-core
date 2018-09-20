@@ -127,7 +127,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     modifier validPOLY {
-        require(_getOracle(bytes32("POLY"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
+        require(_getOracle(bytes32("POLY"), bytes32("USD")) != address(0), "Invalid POLYUSD Oracle");
         require(fundRaiseTypes[uint8(FundRaiseType.POLY)]);
         _;
     }
@@ -361,7 +361,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _beneficiary Address where security tokens will be sent
       * @param _investedDAI Amount of POLY invested
       */
-    function buyWithUSD(address _beneficiary, uint256 _investedDAI) public validPOLY {
+    function buyWithUSD(address _beneficiary, uint256 _investedDAI) public validDAI {
         _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI);
     }
 
@@ -427,7 +427,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
         }
 
-        // Calculate spent in base currency (ETH or POLY)
+        // Calculate spent in base currency (ETH, DAI or POLY)
         uint256 spentValue;
         if (spentUSD == 0) {
             spentValue = 0;

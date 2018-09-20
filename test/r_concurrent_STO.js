@@ -373,12 +373,12 @@ contract('Concurrent STO', accounts => {
                         // Capped STO ETH
                         await I_STO_Array[STOIndex].buyTokens(account_investor1, { from : account_investor1, value: web3.utils.toWei('1', 'ether') });
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(0)).toString()), 1);
-                        assert.equal(await I_STO_Array[STOIndex].getNumberInvestors.call(), 1);
+                        assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         break;
                     case 1:
                         // Dummy STO
                         await I_STO_Array[STOIndex].generateTokens(account_investor1, web3.utils.toWei('1000'), { from : account_issuer });
-                        assert.equal(await I_STO_Array[STOIndex].getNumberInvestors.call(), 1);
+                        assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
                             (await I_STO_Array[STOIndex].investors.call(account_investor1))
                             .dividedBy(new BigNumber(10).pow(18))
@@ -391,7 +391,7 @@ contract('Concurrent STO', accounts => {
                         await I_STO_Array[STOIndex].allocateTokens(account_investor1, web3.utils.toWei('1000'), web3.utils.toWei('1'), 0, { from : account_issuer });
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(0)).toString()), 1);
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(1)).toString()), 0);
-                        assert.equal(await I_STO_Array[STOIndex].getNumberInvestors.call(), 1);
+                        assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
                             (await I_STO_Array[STOIndex].investors.call(account_investor1))
                             .dividedBy(new BigNumber(10).pow(18))

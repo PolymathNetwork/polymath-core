@@ -114,7 +114,7 @@ async function step_ticker_reg(){
     let details = await securityTokenRegistry.methods.getTickerDetails(tokenSymbol).call();
     if (new BigNumber(details[1]).toNumber() == 0) {
       available = true;
-      await step_approval(securityTokenRegistryAddress, regFee);
+      await approvePoly(securityTokenRegistryAddress, regFee);
       let registerTickerAction = securityTokenRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "");
       await common.sendTransaction(Issuer, registerTickerAction, defaultGasPrice);
     } else if (details[0] == Issuer.address) {
@@ -123,25 +123,19 @@ async function step_ticker_reg(){
       console.log('\n\x1b[31m%s\x1b[0m',"Token Symbol has already been registered, please choose another symbol");
     }
   }
-}
 
-async function step_approval(spender, fee) {
-  polyBalance = await polyToken.methods.balanceOf(Issuer.address).call();
-  let requiredAmount = web3.utils.toWei(fee.toString(), "ether");
-  if (parseInt(polyBalance) >= parseInt(requiredAmount)) {
-    let allowance = await polyToken.methods.allowance(spender, Issuer.address).call();
-    if (allowance == web3.utils.toWei(fee.toString(), "ether")) {
-      return true;
-    } else {
-      let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
-      await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
-    }
-  } else {
-      let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);
-      console.log(chalk.red(`\n*****************************************************************************************************************************************`));
-      console.log(chalk.red(`Not enough balance to Pay the Fee, Require ${(new BigNumber(requiredBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(polyBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
-      console.log(chalk.red(`******************************************************************************************************************************************\n`));
-      process.exit(0);
+  if (typeof _tokenConfig === 'undefined' && readlineSync.keyInYNStrict(`Do you want to transfer the ownership of ${tokenSymbol} ticker?`)) {
+    let newOwner = readlineSync.question('Enter the address that will be the new owner: ', {
+      limit: function(input) {
+        return web3.utils.isAddress(input);
+      },
+      limitMessage: "Must be a valid address"
+    });
+    let transferTickerOwnershipAction = securityTokenRegistry.methods.transferTickerOwnership(newOwner, tokenSymbol);
+    let receipt = await common.sendTransaction(Issuer, transferTickerOwnershipAction, defaultGasPrice, 0, 1.5);
+    let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'LogChangeTickerOwnership');
+    console.log(chalk.green(`Ownership trasferred successfully. The new owner is ${event._newOwner}`));
+    process.exit(0);
   }
 }
 
@@ -179,7 +173,7 @@ async function step_token_deploy(){
         divisibility = true;
     }
 
-    await step_approval(securityTokenRegistryAddress, launchFee);
+    await approvePoly(securityTokenRegistryAddress, launchFee);
     let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, web3.utils.fromAscii(tokenDetails), divisibility);
     let receipt = await common.sendTransaction(Issuer, generateSecurityTokenAction, defaultGasPrice);
     let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'LogNewSecurityToken');
@@ -1139,6 +1133,26 @@ async function selectTicker(includeCreate) {
   }
   
   return result;
+}
+
+async function approvePoly(spender, fee) {
+  polyBalance = await polyToken.methods.balanceOf(Issuer.address).call();
+  let requiredAmount = web3.utils.toWei(fee.toString(), "ether");
+  if (parseInt(polyBalance) >= parseInt(requiredAmount)) {
+    let allowance = await polyToken.methods.allowance(spender, Issuer.address).call();
+    if (allowance == web3.utils.toWei(fee.toString(), "ether")) {
+      return true;
+    } else {
+      let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
+      await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
+    }
+  } else {
+      let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);
+      console.log(chalk.red(`\n*****************************************************************************************************************************************`));
+      console.log(chalk.red(`Not enough balance to Pay the Fee, Require ${(new BigNumber(requiredBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(polyBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
+      console.log(chalk.red(`******************************************************************************************************************************************\n`));
+      process.exit(0);
+  }
 }
 
 module.exports = {

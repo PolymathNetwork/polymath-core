@@ -49,7 +49,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     uint256[] public mintedPerTierTotal;
 
     // How many tokens have been minted in each tier (relative to totalSupply) for each fund raise type
-    mapping (uint8 => uint256[]) mintedPerTier;
+    mapping (uint8 => uint256[]) public mintedPerTier;
 
     // How many tokens have been minted in each tier (relative to totalSupply) at discounted POLY rate
     uint256[] public mintedPerTierDiscountPoly;
@@ -157,7 +157,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @param _fundRaiseTypes Types of currency used to collect the funds
      * @param _wallet Ethereum account address to hold the funds
      * @param _reserveWallet Ethereum account address to receive unsold tokens
-     * @param _usdToken Contract address of the stable coin 
+     * @param _usdToken Contract address of the stable coin
      */
     function configure(
         uint256 _startTime,

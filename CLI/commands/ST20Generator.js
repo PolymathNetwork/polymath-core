@@ -22,10 +22,14 @@ const regFee = 250;
 const cappedSTOFee = 20000;
 const usdTieredSTOFee = 100000;
 const tokenDetails = "";
+const ETH = 0;
+const POLY = 1;
+const DAI = 2;
 ////////////////////////
 // Artifacts
 let securityTokenRegistry;
 let polyToken;
+let daiToken;
 let securityToken;
 let generalTransferManager;
 let currentSTO;
@@ -77,6 +81,10 @@ async function setup(){
     let polytokenABI = abis.polyToken();
     polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
     polyToken.setProvider(web3.currentProvider);
+
+    //TODO: Use proper DAI token here
+    daiToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
+    daiToken.setProvider(web3.currentProvider);
 
     cappedSTOFactoryAddress = await contracts.cappedSTOFactoryAddress();
     let cappedSTOFactoryABI = abis.cappedSTOFactory();
@@ -464,11 +472,11 @@ async function cappedSTO_status() {
   let raiseType = await currentSTO.methods.fundRaiseTypes(0).call();
   if (raiseType) {
     displayRaiseType = 'ETH';
-    displayFundsRaised = await currentSTO.methods.fundsRaisedETH().call();
+    displayFundsRaised = await currentSTO.methods.fundsRaised(ETH).call();
     displayWalletBalance = web3.utils.fromWei(await web3.eth.getBalance(displayWallet));
   } else {
     displayRaiseType = 'POLY';
-    displayFundsRaised = await currentSTO.methods.fundsRaisedPOLY().call();
+    displayFundsRaised = await currentSTO.methods.fundsRaised(POLY).call();
     displayWalletBalance = await currentBalance(displayWallet);
   }
   let displayTokensSold = await currentSTO.methods.totalTokensSold().call();
@@ -753,7 +761,7 @@ async function usdTieredSTO_launch() {
   let tiers = tiersConfigUSDTieredSTO(funding.raiseType.includes(1));
   let limits = limitsConfigUSDTieredSTO();
   let times = timesConfigUSDTieredSTO();
-
+  let polytokenAddress = await contracts.polyToken();
   let bytesSTO = web3.eth.abi.encodeFunctionCall( {
     name: 'configure',
     type: 'function',
@@ -791,6 +799,9 @@ async function usdTieredSTO_launch() {
       },{
         type: 'address',
         name: '_reserveWallet'
+      },{
+        type: 'address',
+        name: '_usdToken'
       }
     ]
   }, [times.startTime,
@@ -803,7 +814,8 @@ async function usdTieredSTO_launch() {
     limits.minimumInvestmentUSD,
     funding.raiseType,
     addresses.wallet,
-    addresses.reserveWallet
+    addresses.reserveWallet,
+    polytokenAddress
   ]);
 
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
@@ -824,6 +836,7 @@ async function usdTieredSTO_status() {
   let displayMinimumInvestmentUSD = web3.utils.fromWei(await currentSTO.methods.minimumInvestmentUSD().call());
   let ethRaise = await currentSTO.methods.fundRaiseTypes(0).call();
   let polyRaise = await currentSTO.methods.fundRaiseTypes(1).call();
+  let daiRaise = await currentSTO.methods.fundRaiseTypes(2).call();
   let displayWallet = await currentSTO.methods.wallet().call();
   let displayReserveWallet = await currentSTO.methods.reserveWallet().call();
   let displayTokensSold = web3.utils.fromWei(await currentSTO.methods.getTokensSold().call());
@@ -842,10 +855,16 @@ async function usdTieredSTO_status() {
 
     let displayMintedPerTierETH = "";
     if (ethRaise) {
-      let mintedPerTierETH = await currentSTO.methods.mintedPerTierETH(t).call();
+      let mintedPerTierETH = await currentSTO.methods.mintedPerTier(0, t).call();
 
       displayMintedPerTierETH = `
         Sold for ETH:              ${web3.utils.fromWei(mintedPerTierETH)} ${displayTokenSymbol}`
+    }
+    if (daiRaise) {
+      let mintedPerTierDAI = await currentSTO.methods.mintedPerTier(2, t).call();
+
+      displayMintedPerTierDAI = `
+        Sold for DAI:              ${web3.utils.fromWei(mintedPerTierDAI)} ${displayTokenSymbol}`
     }
 
     let displayMintedPerTierPOLY = "";
@@ -865,7 +884,7 @@ async function usdTieredSTO_status() {
         displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
       }
 
-      let mintedPerTierRegularPOLY = await currentSTO.methods.mintedPerTierRegularPoly(t).call();
+      let mintedPerTierRegularPOLY = await currentSTO.methods.mintedPerTier(1, t).call();
       let mintedPerTierPOLYTotal = new BigNumber(web3.utils.fromWei(mintedPerTierRegularPOLY)).add(new BigNumber(web3.utils.fromWei(mintedPerTierDiscountPoly)));
       displayMintedPerTierPOLY = `
         Sold for POLY:             ${mintedPerTierPOLYTotal} ${displayTokenSymbol} ${displayDiscountMinted}`
@@ -879,7 +898,8 @@ async function usdTieredSTO_status() {
     displayMintedPerTier = displayMintedPerTier + `
     - Tokens minted in Tier ${t+1}:     ${web3.utils.fromWei(mintedPerTierTotal)} ${displayTokenSymbol}`
     + displayMintedPerTierETH
-    + displayMintedPerTierPOLY;
+    + displayMintedPerTierPOLY
+    + displayMintedPerTierDAI;
   }
 
   let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call());
@@ -891,24 +911,25 @@ async function usdTieredSTO_status() {
   if (ethRaise) {
     let balance = await web3.eth.getBalance(displayWallet);
     let walletBalanceETH = web3.utils.fromWei(balance, "ether");
-    let walletBalanceETH_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('ETH'), balance).call());
+    let walletBalanceETH_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(ETH, balance).call());
     displayWalletBalanceETH = `
         Balance ETH:               ${walletBalanceETH} ETH (${walletBalanceETH_USD} USD)`;
     balance = await web3.eth.getBalance(displayReserveWallet);
     let reserveWalletBalanceETH = web3.utils.fromWei(balance,"ether");
-    let reserveWalletBalanceETH_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('ETH'), balance).call());
+    let reserveWalletBalanceETH_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(ETH, balance).call());
     displayReserveWalletBalanceETH = `
         Balance ETH:               ${reserveWalletBalanceETH} ETH (${reserveWalletBalanceETH_USD} USD)`;
-    let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaisedETH().call());
+    let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaised(ETH).call());
     displayFundsRaisedETH = `
         ETH:                       ${fundsRaisedETH} ETH`;
 
-    //Only show sold for ETH if POLY raise is allowed too
-    if (polyRaise) {
-      let tokensSoldETH = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForETH().call());
+    //Only show sold for ETH if POLY / DAI raise is allowed too
+    if (polyRaise || daiRaise) {
+      let tokensSoldETH = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(0).call());
       displayTokensSoldETH = `
         Sold for ETH:              ${tokensSoldETH} ${displayTokenSymbol}`;
     }
+
   }
 
   let displayWalletBalancePOLY = '';
@@ -917,27 +938,54 @@ async function usdTieredSTO_status() {
   let displayTokensSoldPOLY = '';
   if (polyRaise) {
     let walletBalancePOLY = await currentBalance(displayWallet);
-    let walletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(walletBalancePOLY.toString())).call());
+    let walletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(POLY, web3.utils.toWei(walletBalancePOLY.toString())).call());
     displayWalletBalancePOLY = `
         Balance POLY               ${walletBalancePOLY} POLY (${walletBalancePOLY_USD} USD)`;
     let reserveWalletBalancePOLY = await currentBalance(displayReserveWallet);
-    let reserveWalletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(web3.utils.fromAscii('POLY'), web3.utils.toWei(reserveWalletBalancePOLY.toString())).call());
+    let reserveWalletBalancePOLY_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(POLY, web3.utils.toWei(reserveWalletBalancePOLY.toString())).call());
     displayReserveWalletBalancePOLY = `
         Balance POLY               ${reserveWalletBalancePOLY} POLY (${reserveWalletBalancePOLY_USD} USD)`;
-    let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaisedPOLY().call());
+    let fundsRaisedPOLY = web3.utils.fromWei(await currentSTO.methods.fundsRaised(POLY).call());
     displayFundsRaisedPOLY = `
         POLY:                      ${fundsRaisedPOLY} POLY`;
 
     //Only show sold for POLY if ETH raise is allowed too
-    if (ethRaise) {
-      let tokensSoldPOLY = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForPOLY().call());
+    if (ethRaise || daiRaise) {
+      let tokensSoldPOLY = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(1).call());
       displayTokensSoldPOLY = `
         Sold for POLY:             ${tokensSoldPOLY} ${displayTokenSymbol}`;
     }
   }
 
+  let displayWalletBalanceDAI = '';
+  let displayReserveWalletBalanceDAI = '';
+  let displayFundsRaisedDAI = '';
+  let displayTokensSoldDAI = '';
+  if (daiRaise) {
+    let walletBalanceDAI = await currentBalance(displayWallet);
+    let walletBalanceDAI_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(DAI, web3.utils.toWei(walletBalanceDAI.toString())).call());
+    displayWalletBalanceDAI = `
+        Balance DAI               ${walletBalanceDAI} DAI (${walletBalanceDAI_USD} USD)`;
+    let reserveWalletBalanceDAI = await currentBalance(displayReserveWallet);
+    let reserveWalletBalanceDAI_USD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(DAI, web3.utils.toWei(reserveWalletBalanceDAI.toString())).call());
+    displayReserveWalletBalanceDAI = `
+        Balance DAI               ${reserveWalletBalanceDAI} DAI (${reserveWalletBalanceDAI_USD} USD)`;
+    let fundsRaisedDAI = web3.utils.fromWei(await currentSTO.methods.fundsRaised(DAI).call());
+    displayFundsRaisedDAI = `
+        DAI:                      ${fundsRaisedDAI} DAI`;
+
+    //Only show sold for DAI if ETH raise is allowed too
+    if (ethRaise || polyRaise) {
+      let tokensSoldDAI = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(1).call());
+      displayTokensSoldDAI = `
+        Sold for DAI:              ${tokensSoldDAI} ${displayTokenSymbol}`;
+    }
+  }
+
   let displayRaiseType;
-  if (ethRaise && polyRaise) {
+  if (daiRaise && ethRaise && polyRaise) {
+    displayRaiseType = "DAI and ETH and POLY";
+  } else if (ethRaise && polyRaise) {
     displayRaiseType = "ETH and POLY";
   } else if (ethRaise) {
     displayRaiseType = "ETH";
@@ -972,9 +1020,11 @@ async function usdTieredSTO_status() {
     - Non Accredited Limit:        ${displayNonAccreditedLimitUSD} USD
     - Wallet:                      ${displayWallet}`
     + displayWalletBalanceETH
+    + displayWalletBalanceDAI
     + displayWalletBalancePOLY + `
     - Reserve Wallet:              ${displayReserveWallet}`
     + displayReserveWalletBalanceETH
+    + displayReserveWalletBalanceDAI
     + displayReserveWalletBalancePOLY + `
 
     --------------------------------------
@@ -982,12 +1032,14 @@ async function usdTieredSTO_status() {
     - Is Finalized:                ${displayIsFinalized}
     - Tokens Sold:                 ${displayTokensSold} ${displayTokenSymbol}`
     + displayTokensSoldETH
+    + displayTokensSoldDAI
     + displayTokensSoldPOLY + `
     - Current Tier:                ${displayCurrentTier}`
     + displayMintedPerTier + `
     - Investor count:              ${displayInvestorCount}
     - Funds Raised`
     + displayFundsRaisedETH
+    + displayFundsRaisedDAI
     + displayFundsRaisedPOLY + `
         USD:                       ${displayFundsRaisedUSD} USD
   `);

@@ -389,6 +389,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         if (!allowBeneficialInvestments) {
             require(_beneficiary == msg.sender, "Beneficiary must match funder");
         }
+
         require(isOpen(), "STO is not open");
         require(_investmentValue > 0, "No funds were sent");
 
@@ -405,7 +406,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             if (investedUSD.add(investorInvestedUSD[_beneficiary]) > investorLimitUSD)
                 investedUSD = investorLimitUSD.sub(investorInvestedUSD[_beneficiary]);
         }
-
         uint256 spentUSD;
         // Iterate over each tier and process payment
         for (uint8 i = currentTier; i < ratePerTier.length; i++) {
@@ -446,7 +446,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 tierSpentUSD;
         uint256 tierPurchasedTokens;
         // Check whether there are any remaining discounted tokens
-        if ((_fundRaiseType == FundRaiseType.POLY) && tokensPerTierDiscountPoly[_tier] > mintedPerTierDiscountPoly[_tier]) {
+        if ((_fundRaiseType == FundRaiseType.POLY) && (tokensPerTierDiscountPoly[_tier] > mintedPerTierDiscountPoly[_tier])) {
             uint256 discountRemaining = tokensPerTierDiscountPoly[_tier].sub(mintedPerTierDiscountPoly[_tier]);
             uint256 totalRemaining = tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]);
             if (totalRemaining < discountRemaining)
@@ -519,7 +519,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         return (mintedPerTierTotal[mintedPerTierTotal.length - 1] == tokensPerTierTotal[tokensPerTierTotal.length - 1]);
     }
 
-    function getRate(FundRaiseType _fundRaiseType) public view returns (uint256){
+    function getRate(FundRaiseType _fundRaiseType) public view returns (uint256) {
         if (_fundRaiseType == FundRaiseType.ETH) {
             return IOracle(_getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
         } else if (_fundRaiseType == FundRaiseType.POLY) {

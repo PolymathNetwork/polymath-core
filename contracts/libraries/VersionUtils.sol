@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 /**
- * @Title Helper library use to compare or validate the semantic versions
+ * @title Helper library use to compare or validate the semantic versions
  */
 
 library VersionUtils {

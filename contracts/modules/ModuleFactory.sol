@@ -116,7 +116,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     function changeSTVersionBounds(bytes32 _boundType, uint8[] _newVersion) external onlyOwner {
         require(_boundType == bytes32("lowerBound") || _boundType == bytes32("upperBound"));
         require(_newVersion.length == 3);
-        if (compatibleSTVersionRange[_boundType] != 0) { 
+        if (compatibleSTVersionRange[_boundType] != uint24(0)) { 
             uint8[] memory _currentVersion = VersionUtils.unpack(compatibleSTVersionRange[_boundType]);
             require(VersionUtils.isValidVersion(_currentVersion, _newVersion), "Failed because of in-valid version");
         }

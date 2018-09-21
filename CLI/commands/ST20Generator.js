@@ -116,7 +116,7 @@ async function step_ticker_reg(){
       available = true;
       await approvePoly(securityTokenRegistryAddress, regFee);
       let registerTickerAction = securityTokenRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "");
-      await common.sendTransaction(Issuer, registerTickerAction, defaultGasPrice);
+      await common.sendTransaction(Issuer, registerTickerAction, defaultGasPrice, 0, 1.5);
     } else if (details[0] == Issuer.address) {
       available = true;
     } else {
@@ -174,7 +174,7 @@ async function step_token_deploy(){
     }
 
     await approvePoly(securityTokenRegistryAddress, launchFee);
-    let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, web3.utils.fromAscii(tokenDetails), divisibility);
+    let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility);
     let receipt = await common.sendTransaction(Issuer, generateSecurityTokenAction, defaultGasPrice);
     let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'LogNewSecurityToken');
     console.log(`Deployed Token at address: ${event._securityTokenAddress}`);

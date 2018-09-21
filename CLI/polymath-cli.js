@@ -8,6 +8,7 @@ var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
 var dividends_manager = require('./commands/dividends_manager');
 var transfer_manager = require('./commands/transfer_manager');
+var contract_manager = require('./commands/contract_manager');
 var strMigrator = require('./commands/strMigrator');
 var program = require('commander');
 const yaml = require('js-yaml');
@@ -98,6 +99,14 @@ program
   .description('Runs transfer_manager')
   .action(async function() {
     await transfer_manager.executeApp(program.remoteNode);
+  });
+
+program
+  .command('contract_manager')
+  .alias('cm')
+  .description('Runs contract_manager')
+  .action(async function() {
+    await contract_manager.executeApp(program.remoteNode);
   });
 
 program

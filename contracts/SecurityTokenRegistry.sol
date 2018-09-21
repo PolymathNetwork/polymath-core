@@ -8,6 +8,7 @@ import "./interfaces/ISecurityTokenRegistry.sol";
 import "./storage/EternalStorage.sol";
 import "./libraries/Util.sol";
 import "./libraries/Encoder.sol";
+import "./libraries/VersionUtils.sol";
 
 /**
  * @title Registry contract for issuers to register their security tokens
@@ -21,6 +22,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
        uint256 public stLaunchFee;
        uint256 public tickerRegFee;
        uint256 public expiryLimit;
+       uint256 public latestProtocolVersion;
        bool public paused;
        address public owner;
        address public polymathRegistry;
@@ -31,6 +33,13 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
        mapping(string => TickerDetails) registeredTickers;
        mapping(address => SecurityTokenData) securityTokens;
        mapping(bytes32 => address) protocolVersionST;
+       mapping(uint256 => ProtocolVersion) versionData;
+
+       struct ProtocolVersion {
+           uint8 major;
+           uint8 minor;
+           uint8 patch;
+       }
 
        struct TickerDetails {
            address owner;
@@ -110,7 +119,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         set(Encoder.getKey("paused"), false);
         set(Encoder.getKey("owner"), _owner);
         set(Encoder.getKey("polymathRegistry"), _polymathRegistry);
-        _setProtocolVersion(_STFactory, "0.0.1");
+        _setProtocolVersion(_STFactory, uint8(0), uint8(0), uint8(1));
         set(Encoder.getKey("initialised"), true);
     }
 
@@ -523,10 +532,12 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
     * @notice Changing versions does not affect existing tokens.
     * @param _STFactoryAddress Address of the proxy.
-    * @param _version new version of the proxy which is used to deploy the securityToken.
+    * @param _major Major version of the proxy.
+    * @param _minor Minor version of the proxy.
+    * @param _patch Patch version of the proxy
     */
-    function setProtocolVersion(address _STFactoryAddress, bytes32 _version) external onlyOwner {
-        _setProtocolVersion(_STFactoryAddress, _version);
+    function setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external onlyOwner {
+        _setProtocolVersion(_STFactoryAddress, _major, _minor, _patch);
     }
 
     /**
@@ -534,16 +545,29 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
     * @notice Changing versions does not affect existing tokens.
     */
-    function _setProtocolVersion(address _STFactoryAddress, bytes32 _version) internal {
-        set(Encoder.getKey("protocolVersion"), _version);
-        set(Encoder.getKey("protocolVersionST", getBytes32(Encoder.getKey("protocolVersion"))), _STFactoryAddress);
+    function _setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) internal {
+        uint8[] memory _version = new uint8[](3);
+        _version[0] = _major;
+        _version[1] = _minor;
+        _version[2] = _patch;
+        uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
+        require(VersionUtils.isValidVersion(getProtocolVersion(), _version),"In-valid version");
+        set(Encoder.getKey("latestVersion"), uint256(_packedVersion));
+        set(Encoder.getKey("protocolVersionST", getUint(Encoder.getKey("latestVersion"))), _STFactoryAddress);
     }
 
     /**
      * @notice Get the current STFactory Address
      */
     function getSTFactoryAddress() public view returns(address) {
-        return getAddress(Encoder.getKey("protocolVersionST", getBytes32(Encoder.getKey("protocolVersion"))));
+        return getAddress(Encoder.getKey("protocolVersionST", getUint(Encoder.getKey("latestVersion"))));
+    }
+
+    /**
+     * @notice get Protocol version
+     */
+    function getProtocolVersion() public view returns(uint8[]) {
+        return VersionUtils.unpack(uint24(getUint(Encoder.getKey("latestVersion"))));
     }
 
     /**

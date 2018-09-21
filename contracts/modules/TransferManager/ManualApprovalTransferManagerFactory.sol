@@ -22,6 +22,8 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
         name = "ManualApprovalTransferManager";
         title = "Manual Approval Transfer Manager";
         description = "Manage transfers using single approvals / blocking";
+        compatibleSTVersionRange[bytes32("lowerBound")] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange[bytes32("upperBound")] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**

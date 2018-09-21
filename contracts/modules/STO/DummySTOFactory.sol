@@ -20,6 +20,8 @@ contract DummySTOFactory is ModuleFactory {
         name = "DummySTO";
         title = "Dummy STO";
         description = "Dummy STO";
+        compatibleSTVersionRange[bytes32("lowerBound")] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange[bytes32("upperBound")] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
     /**
      * @notice used to launch the Module with the help of factory

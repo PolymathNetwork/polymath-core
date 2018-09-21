@@ -74,8 +74,27 @@ interface IModuleFactory {
     function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) external;
 
     /**
+     * @notice Function use to change the lower and upper bound of the compatible version st
+     * @param _boundType Type of bound
+     * @param _newVersion new version array
+     */
+    function changeSTVersionBounds(bytes32 _boundType, uint8[] _newVersion) external;
+
+    /**
      * @notice Get the setup cost of the module
      */
     function getSetupCost() external view returns (uint256);
+
+    /**
+     * @notice use to get the lower bound
+     * @return lower bound
+     */
+    function getLowerSTVersionBounds() external view returns(uint8[]);
+
+     /**
+     * @notice use to get the upper bound
+     * @return upper bound
+     */
+    function getUpperSTVersionBounds() external view returns(uint8[]);
 
 }

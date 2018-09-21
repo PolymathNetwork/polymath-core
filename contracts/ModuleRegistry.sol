@@ -6,6 +6,7 @@ import "./interfaces/ISecurityTokenRegistry.sol";
 import "./interfaces/IPolymathRegistry.sol";
 import "./interfaces/IFeatureRegistry.sol";
 import "./interfaces/IERC20.sol";
+import "./libraries/VersionUtils.sol";
 import "./storage/EternalStorage.sol";
 import "./libraries/Encoder.sol";
 import "./interfaces/IOwner.sol";
@@ -114,6 +115,11 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
             } else {
                 require(getBool(Encoder.getKey('verified', _moduleFactory)), "ModuleFactory must be verified");
             }
+            uint8[] memory _latestVersion = ISecurityTokenRegistry(getAddress(Encoder.getKey('securityTokenRegistry'))).getProtocolVersion();
+            uint8[] memory _lowerBound = IModuleFactory(_moduleFactory).getLowerSTVersionBounds();
+            uint8[] memory _upperBound = IModuleFactory(_moduleFactory).getUpperSTVersionBounds();
+            require(VersionUtils.compareLowerBound(_lowerBound, _latestVersion), "Should not below the lower bound of ST");
+            require(VersionUtils.compareUpperBound(_upperBound, _latestVersion), "Should not above the upper bound of ST");
             require(getUint(Encoder.getKey('registry',_moduleFactory)) != 0, "ModuleFactory type should not be 0");
             pushArray(Encoder.getKey('reputation', _moduleFactory), msg.sender);
             emit LogModuleUsed(_moduleFactory, msg.sender);

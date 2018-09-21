@@ -3,6 +3,7 @@ pragma solidity ^0.4.24;
 import "../interfaces/IERC20.sol";
 import "../interfaces/IModuleFactory.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "../libraries/VersionUtils.sol";
 
 /**
  * @title Interface that any module factory contract should implement
@@ -19,10 +20,18 @@ contract ModuleFactory is IModuleFactory, Ownable {
     bytes32 public name;
     string public title;
 
+    // @notice Allow only two variables to store
+    // 1. lowerBound 
+    // 2. upperBound
+    // @dev (0.0.0 will act as the wildcard) 
+    // @dev uint24 consists packed value of uint8 _major, uint8 _minor, uint8 _patch
+    mapping(bytes32 => uint24) compatibleSTVersionRange;
+
     event LogChangeFactorySetupFee(uint256 _oldSetupCost, uint256 _newSetupCost, address _moduleFactory);
     event LogChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
     event LogChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
     event LogGenerateModuleFromFactory(address _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address _creator, uint256 _timestamp);
+    event ChangeSTVersionBound(bytes32 _boundType, uint8 _major, uint8 _minor, uint8 _patch);
 
     /**
      * @notice Constructor
@@ -97,6 +106,38 @@ contract ModuleFactory is IModuleFactory, Ownable {
     function changeVersion(string _newVersion) public onlyOwner {
         require(bytes(_newVersion).length > 0 );
         version = _newVersion;
+    }
+
+    /**
+     * @notice Function use to change the lower and upper bound of the compatible version st
+     * @param _boundType Type of bound
+     * @param _newVersion new version array
+     */
+    function changeSTVersionBounds(bytes32 _boundType, uint8[] _newVersion) external onlyOwner {
+        require(_boundType == bytes32("lowerBound") || _boundType == bytes32("upperBound"));
+        require(_newVersion.length == 3);
+        if (compatibleSTVersionRange[_boundType] != 0) { 
+            uint8[] memory _currentVersion = VersionUtils.unpack(compatibleSTVersionRange[_boundType]);
+            require(VersionUtils.isValidVersion(_currentVersion, _newVersion), "Failed because of in-valid version");
+        }
+        compatibleSTVersionRange[_boundType] = VersionUtils.pack(_newVersion[0], _newVersion[1], _newVersion[2]);
+        emit ChangeSTVersionBound(_boundType, _newVersion[0], _newVersion[1], _newVersion[2]);
+    }
+
+    /**
+     * @notice use to get the lower bound
+     * @return lower bound
+     */
+    function getLowerSTVersionBounds() external view returns(uint8[]) {
+       return VersionUtils.unpack(compatibleSTVersionRange[bytes32("lowerBound")]);
+    }
+
+    /**
+     * @notice use to get the upper bound
+     * @return upper bound
+     */
+    function getUpperSTVersionBounds() external view returns(uint8[]) {
+        return VersionUtils.unpack(compatibleSTVersionRange[bytes32("upperBound")]);
     }
 
 }

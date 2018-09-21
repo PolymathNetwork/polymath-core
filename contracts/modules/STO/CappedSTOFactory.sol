@@ -20,6 +20,8 @@ contract CappedSTOFactory is ModuleFactory {
         name = "CappedSTO";
         title = "Capped STO";
         description = "Use to collects the funds and once the cap is reached then investment will be no longer entertained";
+        compatibleSTVersionRange[bytes32("lowerBound")] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange[bytes32("upperBound")] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**

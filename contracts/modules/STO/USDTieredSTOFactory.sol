@@ -20,6 +20,8 @@ contract USDTieredSTOFactory is ModuleFactory {
         name = "USDTieredSTO";
         title = "USD Tiered STO";
         description = "USD Tiered STO";
+        compatibleSTVersionRange[bytes32("lowerBound")] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange[bytes32("upperBound")] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**

@@ -39,10 +39,12 @@ interface ISecurityTokenRegistry {
     * @notice Changes the protocol version and the SecurityToken contract
     * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
     * @notice Changing versions does not affect existing tokens.
-    * @param _STFactoryAddress is the address of the ST Factory
-    * @param _version is the version name of the ST
+    * @param _STFactoryAddress Address of the proxy.
+    * @param _major Major version of the proxy.
+    * @param _minor Minor version of the proxy.
+    * @param _patch Patch version of the proxy
     */
-    function setProtocolVersion(address _STFactoryAddress, bytes32 _version) external;
+    function setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external;
 
     /**
     * @notice Check that Security Token is registered
@@ -96,4 +98,8 @@ interface ISecurityTokenRegistry {
      */
     function getTickerDetails(string _ticker) external view returns (address, uint256, uint256, string, bool);
 
+    /**
+     * @notice get Protocol version
+     */
+    function getProtocolVersion() public view returns(uint8[]);
 }

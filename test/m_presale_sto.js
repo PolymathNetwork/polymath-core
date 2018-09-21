@@ -345,7 +345,7 @@ contract('PreSaleSTO', accounts => {
             await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether'), 0, {from: account_issuer, gas: 60000000});
 
             assert.equal(
-                (await I_PreSaleSTO.getRaisedEther.call())
+                (await I_PreSaleSTO.getRaised.call(0))
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 1
@@ -404,7 +404,7 @@ contract('PreSaleSTO', accounts => {
             await I_PreSaleSTO.allocateTokensMulti([account_investor2, account_investor3], [web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether')], [0,0], [web3.utils.toWei('1000', 'ether'), web3.utils.toWei('1000', 'ether')], {from: account_issuer, gas: 60000000});
 
             assert.equal(
-                (await I_PreSaleSTO.getRaisedPOLY.call())
+                (await I_PreSaleSTO.getRaised.call(1))
                 .dividedBy(new BigNumber(10).pow(18))
                 .toNumber(),
                 2000

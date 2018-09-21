@@ -104,7 +104,7 @@ async function inputSymbol(symbol) {
     } else {
         STSymbol = symbol;
     }
-    
+
     if (STSymbol == "") process.exit();
 
     STAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(STSymbol).call();
@@ -169,8 +169,8 @@ async function investUsdTieredSTO(currency, amount) {
     if (typeof amount === 'undefined') {
         let investorInvestedUSD = web3.utils.fromWei(await currentSTO.methods.investorInvestedUSD(User.address).call());
         let minimumInvestmentUSD = await currentSTO.methods.minimumInvestmentUSD().call();
-        let minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(web3.utils.fromAscii(raiseType), minimumInvestmentUSD).call();      
-        cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `), {   
+        let minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(web3.utils.fromAscii(raiseType), minimumInvestmentUSD).call();
+        cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `), {
             limit: function(input) {
                 return investorInvestedUSD != 0 || input > web3.utils.fromWei(minimumInvestmentRaiseType);
             },
@@ -229,7 +229,7 @@ async function investCappedSTO(currency, amount) {
 
     let costWei = web3.utils.toWei(cost.toString());
     if (displayRaiseType == 'POLY') {
-        let userBalance = await polyBalance(User.address); 
+        let userBalance = await polyBalance(User.address);
         if (parseInt(userBalance) >= parseInt(cost)) {
             let allowance = await polyToken.methods.allowance(STOAddress, User.address).call();
             if (allowance < costWei) {
@@ -279,17 +279,17 @@ async function showTokenInfo() {
 
 async function showUserInfoForUSDTieredSTO()
 {
-    if (await currentSTO.methods.fundRaiseType(0).call()) {
+    if (await currentSTO.methods.fundRaiseTypes(0).call()) {
         let displayInvestorInvestedETH = web3.utils.fromWei(await currentSTO.methods.investorInvestedETH(User.address).call());
         console.log(`    - Invested in ETH:       ${displayInvestorInvestedETH} ETH`);
     }
-    if (await currentSTO.methods.fundRaiseType(1).call()) {
+    if (await currentSTO.methods.fundRaiseTypes(1).call()) {
         let displayInvestorInvestedPOLY = web3.utils.fromWei(await currentSTO.methods.investorInvestedPOLY(User.address).call());
         console.log(`    - Invested in POLY:      ${displayInvestorInvestedPOLY} POLY`);
     }
     let displayInvestorInvestedUSD = web3.utils.fromWei(await currentSTO.methods.investorInvestedUSD(User.address).call());
     console.log(`    - Invested in USD:       ${displayInvestorInvestedUSD} USD`);
-    
+
     await generalTransferManager.methods.whitelist(User.address).call({}, function(error, result){
         displayCanBuy = result.canBuyFromSTO;
     });
@@ -297,7 +297,7 @@ async function showUserInfoForUSDTieredSTO()
 
     let displayIsUserAccredited = await currentSTO.methods.accredited(User.address).call();
     console.log(`    - Accredited:            ${(displayIsUserAccredited)?"YES":"NO"}`)
-    
+
     if (!await currentSTO.methods.accredited(User.address).call()) {
         let displayOverrideNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSDOverride(User.address).call())
         let displayNonAccreditedLimitUSD = displayOverrideNonAccreditedLimitUSD != 0 ? displayOverrideNonAccreditedLimitUSD : web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
@@ -313,15 +313,15 @@ async function showUSDTieredSTOInfo() {
     let displayCurrentTier = parseInt(await currentSTO.methods.currentTier().call()) + 1;
     let displayNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
     let displayMinimumInvestmentUSD = web3.utils.fromWei(await currentSTO.methods.minimumInvestmentUSD().call());
-    let ethRaise = await currentSTO.methods.fundRaiseType(0).call();
-    let polyRaise = await currentSTO.methods.fundRaiseType(1).call();
+    let ethRaise = await currentSTO.methods.fundRaiseTypes(0).call();
+    let polyRaise = await currentSTO.methods.fundRaiseTypes(1).call();
     let displayTokensSold = web3.utils.fromWei(await currentSTO.methods.getTokensSold().call());
     let displayInvestorCount = await currentSTO.methods.investorCount().call();
     let displayIsFinalized = await currentSTO.methods.isFinalized().call();
     let displayIsOpen = await currentSTO.methods.isOpen().call();
     let displayTokenSymbol = await securityToken.methods.symbol().call();
 
-    let tiersLength = await currentSTO.methods.getNumberOfTiers().call();
+    let tiersLength = await currentSTO.methods.investorCount().call();
 
     let displayTiers = "";
     let displayMintedPerTier = "";
@@ -333,7 +333,7 @@ async function showUSDTieredSTOInfo() {
         let displayMintedPerTierETH = "";
         if (ethRaise) {
           let mintedPerTierETH = await currentSTO.methods.mintedPerTierETH(t).call();
-    
+
           displayMintedPerTierETH = `
         Sold for ETH:              ${web3.utils.fromWei(mintedPerTierETH)} ${displayTokenSymbol}`
         }
@@ -367,7 +367,7 @@ async function showUSDTieredSTOInfo() {
         Rate:                      ${web3.utils.fromWei(ratePerTier, 'ether')} USD per Token`
         + displayDiscountTokens;
     displayMintedPerTier = displayMintedPerTier + `
-    - Tokens minted in Tier ${t+1}:     ${web3.utils.fromWei(mintedPerTierTotal)} ${displayTokenSymbol}` 
+    - Tokens minted in Tier ${t+1}:     ${web3.utils.fromWei(mintedPerTierTotal)} ${displayTokenSymbol}`
     + displayMintedPerTierETH
     + displayMintedPerTierPOLY;}
 
@@ -379,7 +379,7 @@ async function showUSDTieredSTOInfo() {
         let fundsRaisedETH = web3.utils.fromWei(await currentSTO.methods.fundsRaisedETH().call());
         displayFundsRaisedETH = `
         ETH:                       ${fundsRaisedETH} ETH`;
-        
+
         //Only show sold for ETH if POLY raise is allowed too
         if (polyRaise) {
             let tokensSoldETH = web3.utils.fromWei(await currentSTO.methods.getTokensSoldForETH().call());
@@ -471,7 +471,7 @@ async function showCappedSTOInfo() {
     let displayTokensRemaining = web3.utils.fromWei(displayCap) - web3.utils.fromWei(displayTokensSold);
 
     let displayFundsRaised;
-    if (await currentSTO.methods.fundRaiseType(0).call()) {
+    if (await currentSTO.methods.fundRaiseTypes(0).call()) {
         displayRaiseType = 'ETH';
         displayFundsRaised = await currentSTO.methods.fundsRaisedETH().call();
     } else {

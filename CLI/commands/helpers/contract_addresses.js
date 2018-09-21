@@ -77,6 +77,11 @@ module.exports = {
     else
       return JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).networks[networkId].address;
   },
+  daiToken: async function() {
+    //TODO: Add a proper test DAI token here
+    let polymathRegistry = await getPolymathRegistry();
+    return await polymathRegistry.methods.getAddress("PolyToken").call();
+  },
   usdTieredSTOFactoryAddress: async function() {
     let networkId = await web3.eth.net.getId();
     if (networkId == 1)

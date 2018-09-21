@@ -25,7 +25,7 @@ const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 
 const TOLERANCE = 2; // Allow balances to be off by 2 WEI for rounding purposes
 
-contract('USDTieredSTO', accounts => {
+contract('USDTieredSTO Sim', accounts => {
     // Accounts Variable declaration
     let POLYMATH;
     let ISSUER;
@@ -59,6 +59,7 @@ contract('USDTieredSTO', accounts => {
     let I_SecurityToken;
     let I_USDTieredSTO_Array = [];
     let I_PolyToken;
+    let I_DaiToken;
     let I_PolymathRegistry;
 
     // SecurityToken Details for funds raise Type ETH
@@ -91,6 +92,7 @@ contract('USDTieredSTO', accounts => {
     let _fundRaiseTypes = [];
     let _wallet = [];
     let _reserveWallet = [];
+    let _usdToken = [];
 
     /* function configure(
         uint256 _startTime,
@@ -103,7 +105,8 @@ contract('USDTieredSTO', accounts => {
         uint256 _minimumInvestmentUSD,
         uint8[] _fundRaiseTypes,
         address _wallet,
-        address _reserveWallet
+        address _reserveWallet,
+        address _usdToken
     ) */
     const functionSignature = {
         name: 'configure',
@@ -141,6 +144,9 @@ contract('USDTieredSTO', accounts => {
         },{
             type: 'address',
             name: '_reserveWallet'
+        },{
+            type: 'address',
+            name: '_usdToken'
         }]
     };
 
@@ -170,6 +176,7 @@ contract('USDTieredSTO', accounts => {
         // Step 1: Deploy the token Faucet
         I_PolyToken = await PolyTokenFaucet.new();
         await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: POLYMATH})
+        I_DaiToken = await PolyTokenFaucet.new();
 
         // STEP 2: Deploy the ModuleRegistry
         I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:POLYMATH});
@@ -238,19 +245,19 @@ contract('USDTieredSTO', accounts => {
         // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: POLYMATH });
- 
+
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
             "SecurityTokenRegistry contract was not deployed",
         );
- 
+
         // Step 10: update the registries addresses from the PolymathRegistry contract
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: POLYMATH});
         let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, REGFEE, REGFEE, I_PolyToken.address, POLYMATH]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: POLYMATH});
         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
- 
+
 
         // Step 10: Deploy the FeatureRegistry
 
@@ -348,14 +355,15 @@ contract('USDTieredSTO', accounts => {
             ]); // [ 0 Token, 1000 Token, 1500 Token ]
             _nonAccreditedLimitUSD.push(BigNumber(10*10**18)); // 20 USD
             _minimumInvestmentUSD.push(BigNumber(0));          // 1 wei USD
-            _fundRaiseTypes.push([0,1]);
+            _fundRaiseTypes.push([0,1,2]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
+            _usdToken.push(I_DaiToken.address);
 
             let config = [
                 _startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId],
                 _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId],
-                _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]
+                _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId], _usdToken[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -477,12 +485,14 @@ contract('USDTieredSTO', accounts => {
                 }
 
                 let log_remaining = USD_remaining;
-                let isPoly = Math.random() >= 0.5;
+                let isPoly = Math.random() >= 0.33;
+                let isDai = Math.random() >= 0.33;
 
                 let Token_counter = BigNumber(getRandomInt(1*10**10,50*10**10)).mul(10**8);
                 let investment_USD = BigNumber(0);
                 let investment_ETH = BigNumber(0);
                 let investment_POLY = BigNumber(0);
+                let investment_DAI = BigNumber(0);
                 let investment_Token = BigNumber(0);
 
                 let Tokens_total = [];
@@ -497,6 +507,8 @@ contract('USDTieredSTO', accounts => {
                 let USD_Tier;
                 let POLY_Tier;
                 let ETH_Tier;
+                let DAI_Tier;
+
 
                 let USD_overflow;
                 let Token_overflow;
@@ -546,8 +558,26 @@ contract('USDTieredSTO', accounts => {
                                 investment_USD = investment_USD.add(USD_Tier);
                                 investment_POLY = investment_POLY.add(POLY_Tier);
                             }
+                        } else if (isDai) {
+                            // 3. DAI (consume up to cap then skip to next tier)
+                            Token_Tier = BigNumber.min([Tokens_total[tier], Token_counter]);
+                            USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier].div(10**18));
+                            if (USD_Tier.gte(USD_remaining)) {
+                                USD_overflow = USD_Tier.sub(USD_remaining);
+                                Token_overflow = USD_overflow.mul(10**18).div(_ratePerTier[stoId][tier]);
+                                USD_Tier = USD_Tier.sub(USD_overflow);
+                                Token_Tier = Token_Tier.sub(Token_overflow);
+                                Token_counter = BigNumber(0);
+                            }
+                            DAI_Tier = USD_Tier.round(0);
+                            USD_remaining = USD_remaining.sub(USD_Tier);
+                            Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
+                            Token_counter = Token_counter.sub(Token_Tier);
+                            investment_Token = investment_Token.add(Token_Tier);
+                            investment_USD = investment_USD.add(USD_Tier);
+                            investment_DAI = investment_USD;
                         } else {
-                            // 3. ETH (consume up to cap then skip to next tier)
+                            // 4. ETH (consume up to cap then skip to next tier)
                             Token_Tier = BigNumber.min([Tokens_total[tier], Token_counter]);
                             USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier].div(10**18));
                             if (USD_Tier.gte(USD_remaining)) {
@@ -569,13 +599,15 @@ contract('USDTieredSTO', accounts => {
                     tier++
                 }
 
-                await processInvestment(_investor, investment_Token, investment_USD, investment_POLY, investment_ETH, isPoly, log_remaining, Tokens_total, Tokens_discount, tokensSold);
+                await processInvestment(_investor, investment_Token, investment_USD, investment_POLY, investment_DAI, investment_ETH, isPoly, isDai, log_remaining, Tokens_total, Tokens_discount, tokensSold);
             }
 
             async function investFAIL(_investor) {
-                let isPoly = Math.random() >= 0.5;
+                let isPoly = Math.random() >= 0.3;
+                let isDAI = Math.random() >= 0.3;
                 let investment_POLY = BigNumber(40*10**18);   // 10 USD = 40 POLY
                 let investment_ETH = BigNumber(0.02*10**18);  // 10 USD = 0.02 ETH
+                let investment_DAI = BigNumber(10*10**18);  // 10 USD = DAI DAI
 
                 let errorThrown = false;
                 try {
@@ -583,8 +615,11 @@ contract('USDTieredSTO', accounts => {
                         await I_PolyToken.getTokens(investment_POLY, _investor);
                         await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, {from: _investor});
                         await I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, { from: _investor, gasPrice: GAS_PRICE });
-                    } else
-                        await I_USDTieredSTO_Array[stoId].buyWithETH(_investor, { from: _investor, value: investment_ETH, gasPrice: GAS_PRICE });
+                    } else if (isDAI) {
+                        await I_DaiToken.getTokens(investment_DAI, _investor);
+                        await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, {from: _investor});
+                        await I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE });
+                    } else await I_USDTieredSTO_Array[stoId].buyWithETH(_investor, { from: _investor, value: investment_ETH, gasPrice: GAS_PRICE });
                 } catch(error) {
                     errorThrown = true;
                     console.log(`Purchase failed as expected: ${_investor}`.yellow);
@@ -593,10 +628,11 @@ contract('USDTieredSTO', accounts => {
                 assert.ok(errorThrown, MESSAGE);
             }
 
-            async function processInvestment(_investor, investment_Token, investment_USD, investment_POLY, investment_ETH, isPoly, log_remaining, Tokens_total, Tokens_discount, tokensSold) {
+            async function processInvestment(_investor, investment_Token, investment_USD, investment_POLY, investment_DAI, investment_ETH, isPoly, isDai, log_remaining, Tokens_total, Tokens_discount, tokensSold) {
               investment_Token = investment_Token.round(0);
               investment_USD = investment_USD.round(0);
               investment_POLY = investment_POLY.round(0);
+              investment_DAI = investment_DAI.round(0);
               investment_ETH = investment_ETH.round(0);
                 console.log(`
             ------------------- New Investment -------------------
@@ -608,6 +644,7 @@ contract('USDTieredSTO', accounts => {
             Token Investment:       ${investment_Token.div(10**18)}
             USD Investment:         ${investment_USD.div(10**18)}
             POLY Investment:        ${investment_POLY.div(10**18)}
+            DAI Investment:         ${investment_DAI.div(10**18)}
             ETH Investment:         ${investment_ETH.div(10**18)}
             ------------------------------------------------------
                 `);
@@ -615,6 +652,9 @@ contract('USDTieredSTO', accounts => {
                 if (isPoly) {
                     await I_PolyToken.getTokens(investment_POLY, _investor);
                     await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, {from: _investor});
+                } else if (isDai) {
+                    await I_DaiToken.getTokens(investment_DAI, _investor);
+                    await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, {from: _investor});
                 }
 
                 // console.log(await I_USDTieredSTO_Array[stoId].isOpen());
@@ -623,14 +663,18 @@ contract('USDTieredSTO', accounts => {
                 let init_InvestorTokenBal = await I_SecurityToken.balanceOf(_investor);
                 let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(_investor));
                 let init_InvestorPOLYBal = await I_PolyToken.balanceOf(_investor);
+                let init_InvestorDAIBal = await I_DaiToken.balanceOf(_investor);
                 let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
                 let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
                 let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
+                let init_STODAIBal = await I_DaiToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
                 let init_RaisedUSD = await I_USDTieredSTO_Array[stoId].fundsRaisedUSD.call();
-                let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
-                let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
+                let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaised.call(0);
+                let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaised.call(1);
+                let init_RaisedDAI = await I_USDTieredSTO_Array[stoId].fundsRaised.call(2);
                 let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
                 let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
+                let init_WalletDAIBal = await I_DaiToken.balanceOf(WALLET);
 
                 let tx;
                 let gasCost = BigNumber(0);
@@ -639,24 +683,33 @@ contract('USDTieredSTO', accounts => {
                     tx = await I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, { from: _investor, gasPrice: GAS_PRICE });
                     gasCost = BigNumber(GAS_PRICE).mul(tx.receipt.gasUsed);
                     console.log(`buyWithPOLY: ${investment_Token.div(10**18)} tokens for ${investment_POLY.div(10**18)} POLY by ${_investor}`.yellow);
+                } else if (isDai && investment_DAI.gt(10)) {
+                    tx = await I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE });
+                    gasCost = BigNumber(GAS_PRICE).mul(tx.receipt.gasUsed);
+                    console.log(`buyWithUSD: ${investment_Token.div(10**18)} tokens for ${investment_DAI.div(10**18)} DAI by ${_investor}`.yellow);
                 } else if (investment_ETH.gt(0)) {
                     tx = await I_USDTieredSTO_Array[stoId].buyWithETH(_investor, { from: _investor, value: investment_ETH, gasPrice: GAS_PRICE });
                     gasCost = BigNumber(GAS_PRICE).mul(tx.receipt.gasUsed);
                     console.log(`buyWithETH: ${investment_Token.div(10**18)} tokens for ${investment_ETH.div(10**18)} ETH by ${_investor}`.yellow);
                 }
+                console.log(investment_POLY.toNumber());
 
                 let final_TokenSupply = await I_SecurityToken.totalSupply();
                 let final_InvestorTokenBal = await I_SecurityToken.balanceOf(_investor);
                 let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(_investor));
                 let final_InvestorPOLYBal = await I_PolyToken.balanceOf(_investor);
+                let final_InvestorDAIBal = await I_DaiToken.balanceOf(_investor);
                 let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
                 let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
                 let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
+                let final_STODAIBal = await I_DaiToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
                 let final_RaisedUSD = await I_USDTieredSTO_Array[stoId].fundsRaisedUSD.call();
-                let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
-                let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
+                let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaised.call(0);
+                let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaised.call(1);
+                let final_RaisedDAI = await I_USDTieredSTO_Array[stoId].fundsRaised.call(2);
                 let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
                 let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
+                let final_WalletDAIBal = await I_DaiToken.balanceOf(WALLET);
 
                 // console.log('init_TokenSupply: '+init_TokenSupply.div(10**18).toNumber());
                 // console.log('final_TokenSupply: '+final_TokenSupply.div(10**18).toNumber());
@@ -674,6 +727,19 @@ contract('USDTieredSTO', accounts => {
                     assert.closeTo(final_RaisedPOLY.toNumber(), init_RaisedPOLY.add(investment_POLY).toNumber(), TOLERANCE, "Raised POLY not changed as expected");
                     assert.closeTo(final_WalletETHBal.toNumber(), init_WalletETHBal.toNumber(), TOLERANCE, "Wallet ETH Balance not changed as expected");
                     assert.closeTo(final_WalletPOLYBal.toNumber(), init_WalletPOLYBal.add(investment_POLY).toNumber(), TOLERANCE, "Wallet POLY Balance not changed as expected");
+                } else if (isDai) {
+                    assert.closeTo(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), TOLERANCE, "Token Supply not changed as expected");
+                    assert.closeTo(final_InvestorTokenBal.toNumber(), init_InvestorTokenBal.add(investment_Token).toNumber(), TOLERANCE, "Investor Token Balance not changed as expected");
+                    assert.closeTo(final_InvestorETHBal.toNumber(), init_InvestorETHBal.sub(gasCost).toNumber(), TOLERANCE, "Investor ETH Balance not changed as expected");
+                    assert.closeTo(final_InvestorDAIBal.toNumber(), init_InvestorDAIBal.sub(investment_DAI).toNumber(), TOLERANCE, "Investor DAI Balance not changed as expected");
+                    assert.closeTo(final_STOTokenSold.toNumber(), init_STOTokenSold.add(investment_Token).toNumber(), TOLERANCE, "STO Token Sold not changed as expected");
+                    assert.closeTo(final_STOETHBal.toNumber(), init_STOETHBal.toNumber(), TOLERANCE, "STO ETH Balance not changed as expected");
+                    assert.closeTo(final_STODAIBal.toNumber(), init_STODAIBal.toNumber(), TOLERANCE, "STO DAI Balance not changed as expected");
+                    assert.closeTo(final_RaisedUSD.toNumber(), init_RaisedUSD.add(investment_USD).toNumber(), TOLERANCE, "Raised USD not changed as expected");
+                    assert.closeTo(final_RaisedETH.toNumber(), init_RaisedETH.toNumber(), TOLERANCE, "Raised ETH not changed as expected");
+                    assert.closeTo(final_RaisedDAI.toNumber(), init_RaisedDAI.add(investment_DAI).toNumber(), TOLERANCE, "Raised DAI not changed as expected");
+                    assert.closeTo(final_WalletETHBal.toNumber(), init_WalletETHBal.toNumber(), TOLERANCE, "Wallet ETH Balance not changed as expected");
+                    assert.closeTo(final_WalletDAIBal.toNumber(), init_WalletDAIBal.add(investment_DAI).toNumber(), TOLERANCE, "Wallet DAI Balance not changed as expected");
                 } else {
                     assert.closeTo(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), TOLERANCE, "Token Supply not changed as expected");
                     assert.closeTo(final_InvestorTokenBal.toNumber(), init_InvestorTokenBal.add(investment_Token).toNumber(), TOLERANCE, "Investor Token Balance not changed as expected");

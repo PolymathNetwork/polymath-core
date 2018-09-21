@@ -27,7 +27,7 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
-contract('SecurityToken addModule Cap', accounts => {
+contract('Concurrent STO', accounts => {
     // Accounts variable declaration
     let account_polymath;
     let account_issuer;
@@ -209,19 +209,19 @@ contract('SecurityToken addModule Cap', accounts => {
         // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
- 
+
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
             "SecurityTokenRegistry contract was not deployed",
         );
- 
+
         // Step 10: update the registries addresses from the PolymathRegistry contract
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
         let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
- 
+
 
         // Step 10: Deploy the FeatureRegistry
 
@@ -372,13 +372,13 @@ contract('SecurityToken addModule Cap', accounts => {
                     case 0:
                         // Capped STO ETH
                         await I_STO_Array[STOIndex].buyTokens(account_investor1, { from : account_investor1, value: web3.utils.toWei('1', 'ether') });
-                        assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaisedEther.call()).toString()), 1);
-                        assert.equal(await I_STO_Array[STOIndex].getNumberInvestors.call(), 1);
+                        assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(0)).toString()), 1);
+                        assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         break;
                     case 1:
                         // Dummy STO
                         await I_STO_Array[STOIndex].generateTokens(account_investor1, web3.utils.toWei('1000'), { from : account_issuer });
-                        assert.equal(await I_STO_Array[STOIndex].getNumberInvestors.call(), 1);
+                        assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
                             (await I_STO_Array[STOIndex].investors.call(account_investor1))
                             .dividedBy(new BigNumber(10).pow(18))
@@ -389,9 +389,9 @@ contract('SecurityToken addModule Cap', accounts => {
                     case 2:
                         // Pre Sale STO
                         await I_STO_Array[STOIndex].allocateTokens(account_investor1, web3.utils.toWei('1000'), web3.utils.toWei('1'), 0, { from : account_issuer });
-                        assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaisedEther.call()).toString()), 1);
-                        assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaisedPOLY.call()).toString()), 0);
-                        assert.equal(await I_STO_Array[STOIndex].getNumberInvestors.call(), 1);
+                        assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(0)).toString()), 1);
+                        assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(1)).toString()), 0);
+                        assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
                             (await I_STO_Array[STOIndex].investors.call(account_investor1))
                             .dividedBy(new BigNumber(10).pow(18))

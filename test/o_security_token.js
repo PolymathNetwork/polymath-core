@@ -780,13 +780,13 @@ contract('SecurityToken', accounts => {
                     });
 
                 assert.equal(
-                    (await I_CappedSTO.getRaisedEther.call())
+                    (await I_CappedSTO.getRaised.call(0))
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1
                 );
 
-                assert.equal(await I_CappedSTO.getNumberInvestors.call(), 1);
+                assert.equal(await I_CappedSTO.investorCount.call(), 1);
 
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor1))
@@ -1022,13 +1022,13 @@ contract('SecurityToken', accounts => {
                 });
 
                 assert.equal(
-                    (await I_CappedSTO.getRaisedEther.call())
+                    (await I_CappedSTO.getRaised.call(0))
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     2
                 );
 
-                assert.equal(await I_CappedSTO.getNumberInvestors.call(), 2);
+                assert.equal(await I_CappedSTO.investorCount.call(), 2);
 
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor1))

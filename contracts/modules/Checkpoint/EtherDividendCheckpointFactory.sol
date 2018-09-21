@@ -34,7 +34,7 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address ethDividendCheckpoint = new EtherDividendCheckpoint(msg.sender, address(polyToken));
-        emit LogGenerateModuleFromFactory(ethDividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(ethDividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return ethDividendCheckpoint;
     }
 

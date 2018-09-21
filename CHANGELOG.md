@@ -22,7 +22,8 @@ All notable changes to this project will be documented in this file.
 * Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230    
   
 ## Removed 
-* Remove `swarmHash` from the `registerTicker(), addCustomTicker(), generateSecurityToken(), addCustomSecurityToken()` functions of TickerRegistry.sol and SecurityTokenRegistry.sol. #230   
+* Remove `swarmHash` from the `registerTicker(), addCustomTicker(), generateSecurityToken(), addCustomSecurityToken()` functions of TickerRegistry.sol and SecurityTokenRegistry.sol. #230  
+* Remove `Log` prefix from all the event present in the ecosystem. 
 
 ======
 

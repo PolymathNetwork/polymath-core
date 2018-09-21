@@ -16,9 +16,9 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     bytes32 public constant CHANGE_PERMISSION = "CHANGE_PERMISSION";
 
     /// Event emitted after any permission get changed for the delegate
-    event LogChangePermission(address _delegate, address _module, bytes32 _perm, bool _valid, uint256 _timestamp);
+    event ChangePermission(address _delegate, address _module, bytes32 _perm, bool _valid, uint256 _timestamp);
     /// Use to notify when delegate is added in permission manager contract
-    event LogAddPermission(address _delegate, bytes32 _details, uint256 _timestamp);
+    event AddPermission(address _delegate, bytes32 _details, uint256 _timestamp);
 
     /// @notice constructor
     constructor (address _securityToken, address _polyAddress) public
@@ -55,7 +55,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     */
     function addPermission(address _delegate, bytes32 _details) public withPerm(CHANGE_PERMISSION) {
         delegateDetails[_delegate] = _details;
-        emit LogAddPermission(_delegate, _details, now);
+        emit AddPermission(_delegate, _details, now);
     }
 
   /**
@@ -78,7 +78,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     {
         require(delegateDetails[_delegate] != bytes32(0), "Delegate details not set");
         perms[_module][_delegate][_perm] = _valid;
-        emit LogChangePermission(_delegate, _module, _perm, _valid, now);
+        emit ChangePermission(_delegate, _module, _perm, _valid, now);
         return true;
     }
 

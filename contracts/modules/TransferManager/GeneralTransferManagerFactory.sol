@@ -32,7 +32,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address generalTransferManager = new GeneralTransferManager(msg.sender, address(polyToken));
-        emit LogGenerateModuleFromFactory(address(generalTransferManager), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(generalTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(generalTransferManager);
     }
 

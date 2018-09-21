@@ -9,7 +9,7 @@ contract PolymathRegistry is ReclaimTokens {
 
     mapping (bytes32 => address) public storedAddresses;
 
-    event LogChangeAddress(string _nameKey, address indexed _oldAddress, address indexed _newAddress);
+    event ChangeAddress(string _nameKey, address indexed _oldAddress, address indexed _newAddress);
 
     /**
      * @notice Get the contract address
@@ -29,7 +29,7 @@ contract PolymathRegistry is ReclaimTokens {
      */
     function changeAddress(string _nameKey, address _newAddress) external onlyOwner {
         bytes32 key = keccak256(bytes(_nameKey));
-        emit LogChangeAddress(_nameKey, storedAddresses[key], _newAddress);
+        emit ChangeAddress(_nameKey, storedAddresses[key], _newAddress);
         storedAddresses[key] = _newAddress;
     }
 

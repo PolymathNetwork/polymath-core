@@ -27,10 +27,10 @@ contract ModuleFactory is IModuleFactory, Ownable {
     // @dev uint24 consists packed value of uint8 _major, uint8 _minor, uint8 _patch
     mapping(bytes32 => uint24) compatibleSTVersionRange;
 
-    event LogChangeFactorySetupFee(uint256 _oldSetupCost, uint256 _newSetupCost, address _moduleFactory);
-    event LogChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
-    event LogChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
-    event LogGenerateModuleFromFactory(address _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address _creator, uint256 _timestamp);
+    event ChangeFactorySetupFee(uint256 _oldSetupCost, uint256 _newSetupCost, address _moduleFactory);
+    event ChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
+    event ChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
+    event GenerateModuleFromFactory(address _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address _creator, uint256 _timestamp);
     event ChangeSTVersionBound(bytes32 _boundType, uint8 _major, uint8 _minor, uint8 _patch);
 
     /**
@@ -49,7 +49,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _newSetupCost new setup cost
      */
     function changeFactorySetupFee(uint256 _newSetupCost) public onlyOwner {
-        emit LogChangeFactorySetupFee(setupCost, _newSetupCost, address(this));
+        emit ChangeFactorySetupFee(setupCost, _newSetupCost, address(this));
         setupCost = _newSetupCost;
     }
 
@@ -58,7 +58,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _newUsageCost new usage cost
      */
     function changeFactoryUsageFee(uint256 _newUsageCost) public onlyOwner {
-        emit LogChangeFactoryUsageFee(usageCost, _newUsageCost, address(this));
+        emit ChangeFactoryUsageFee(usageCost, _newUsageCost, address(this));
         usageCost = _newUsageCost;
     }
 
@@ -67,7 +67,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _newSubscriptionCost new subscription cost
      */
     function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) public onlyOwner {
-        emit LogChangeFactorySubscriptionFee(monthlySubscriptionCost, _newSubscriptionCost, address(this));
+        emit ChangeFactorySubscriptionFee(monthlySubscriptionCost, _newSubscriptionCost, address(this));
         monthlySubscriptionCost = _newSubscriptionCost;
 
     }

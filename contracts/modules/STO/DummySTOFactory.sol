@@ -35,7 +35,7 @@ contract DummySTOFactory is ModuleFactory {
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == dummySTO.getInitFunction(), "Invalid data");
         require(address(dummySTO).call(_data), "Unsuccessfull call");
-        emit LogGenerateModuleFromFactory(address(dummySTO), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(dummySTO), getName(), address(this), msg.sender, setupCost, now);
         return address(dummySTO);
     }
 

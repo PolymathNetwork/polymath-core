@@ -36,7 +36,7 @@ contract USDTieredSTOFactory is ModuleFactory {
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == usdTieredSTO.getInitFunction(), "Invalid data");
         require(address(usdTieredSTO).call(_data), "Unsuccessfull call");
-        emit LogGenerateModuleFromFactory(address(usdTieredSTO), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(usdTieredSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(usdTieredSTO);
     }
 

@@ -45,13 +45,13 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      // Emit when ecosystem get unpaused
     event Unpause(uint256 _timestamp);
     // Emit when Module been used by the securityToken
-    event LogModuleUsed(address indexed _moduleFactory, address indexed _securityToken);
+    event ModuleUsed(address indexed _moduleFactory, address indexed _securityToken);
     // Emit when the Module Factory get registered with the ModuleRegistry contract
-    event LogModuleRegistered(address indexed _moduleFactory, address indexed _owner);
+    event ModuleRegistered(address indexed _moduleFactory, address indexed _owner);
     // Emit when the module get verified by the Polymath team
-    event LogModuleVerified(address indexed _moduleFactory, bool _verified);
+    event ModuleVerified(address indexed _moduleFactory, bool _verified);
     // Emit when a moduleFactory is removed by Polymath or moduleFactory owner
-    event LogModuleRemoved(address indexed _moduleFactory, address indexed _decisionMaker);
+    event ModuleRemoved(address indexed _moduleFactory, address indexed _decisionMaker);
 
     ///////////////
     //// Modifiers
@@ -122,7 +122,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
             require(VersionUtils.compareUpperBound(_upperBound, _latestVersion), "Should not above the upper bound of ST");
             require(getUint(Encoder.getKey('registry',_moduleFactory)) != 0, "ModuleFactory type should not be 0");
             pushArray(Encoder.getKey('reputation', _moduleFactory), msg.sender);
-            emit LogModuleUsed(_moduleFactory, msg.sender);
+            emit ModuleUsed(_moduleFactory, msg.sender);
         }
     }
 
@@ -140,7 +140,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         set(Encoder.getKey('moduleListIndex', _moduleFactory), getArrayAddress(Encoder.getKey('moduleList', uint256(moduleType))).length);
         pushArray(Encoder.getKey('moduleList', uint256(moduleType)), _moduleFactory);
         setArray(Encoder.getKey('reputation', _moduleFactory), new address[](0));
-        emit LogModuleRegistered (_moduleFactory, IOwner(_moduleFactory).owner());
+        emit ModuleRegistered (_moduleFactory, IOwner(_moduleFactory).owner());
         return true;
     }
 
@@ -176,7 +176,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         set(Encoder.getKey('verified', _moduleFactory), false);
         // delete moduleListIndex[_moduleFactory];
         set(Encoder.getKey('moduleListIndex', _moduleFactory), uint256(0));
-        emit LogModuleRemoved (_moduleFactory, msg.sender);
+        emit ModuleRemoved (_moduleFactory, msg.sender);
         return true;
     }
 
@@ -191,7 +191,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         //Must already have been registered
         require(getUint(Encoder.getKey('registry', _moduleFactory)) != uint256(0), "Module factory should have been already registered");
         set(Encoder.getKey('verified', _moduleFactory), _verified);
-        emit LogModuleVerified(_moduleFactory, _verified);
+        emit ModuleVerified(_moduleFactory, _verified);
         return true;
     }
 

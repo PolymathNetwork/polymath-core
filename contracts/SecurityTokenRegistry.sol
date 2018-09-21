@@ -64,21 +64,21 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      // Emit when ecosystem get unpaused
     event Unpause(uint256 _timestamp);
     // Emit when the ticker is removed from the registry
-    event LogTickerRemoved(string _ticker, uint256 _removedAt, address _removedBy);
+    event TickerRemoved(string _ticker, uint256 _removedAt, address _removedBy);
     // Emit when the token ticker expiry get changed
-    event LogChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
+    event ChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
      // Emit when changeSecurityLaunchFee is called
-    event LogChangeSecurityLaunchFee(uint256 _oldFee, uint256 _newFee);
+    event ChangeSecurityLaunchFee(uint256 _oldFee, uint256 _newFee);
     // Emit when changeTickerRegistrationFee is called
-    event LogChangeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee);
+    event ChangeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee);
     // Emit when ownership get transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     // Emit when ownership of the ticker get changed
-    event LogChangeTickerOwnership(string _ticker, address indexed _oldOwner, address indexed _newOwner);
+    event ChangeTickerOwnership(string _ticker, address indexed _oldOwner, address indexed _newOwner);
     // Emit when a ticker details get modified
-    event LogModifyTickerDetails(address _owner, string _ticker, string _name, uint256 _registrationDate, uint256 _expiryDate, bool _status);
+    event ModifyTickerDetails(address _owner, string _ticker, string _name, uint256 _registrationDate, uint256 _expiryDate, bool _status);
     // Emit at the time of launching of new security token
-    event LogNewSecurityToken(
+    event NewSecurityToken(
         string _ticker,
         string _name,
         address indexed _securityTokenAddress,
@@ -88,7 +88,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         bool _fromAdmin
     );
     // Emit after the ticker registration
-    event LogRegisterTicker(
+    event RegisterTicker(
         address indexed _owner,
         string _ticker,
         string _name,
@@ -179,7 +179,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             set(Encoder.getKey("tickerToSecurityToken", _ticker), address(0));
         }
         _storeTickerDetails(_ticker, _owner, _registrationDate, _expiryDate, _tokenName, _status);
-        emit LogRegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, true);
+        emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, true);
     }
 
     /**
@@ -193,7 +193,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         _deleteTickerOwnership(owner, ticker);
         set(Encoder.getKey("tickerToSecurityToken", ticker), address(0));
         _storeTickerDetails(ticker, address(0), 0, 0, "", false);
-        emit LogTickerRemoved(_ticker, now, msg.sender);
+        emit TickerRemoved(_ticker, now, msg.sender);
     }
 
     /**
@@ -217,7 +217,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function _addTicker(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate, bool _status, bool _fromAdmin) internal {
         _setTickerOwner(_owner, _ticker);
         _storeTickerDetails(_ticker, _owner, _registrationDate, _expiryDate, _tokenName, _status);
-        emit LogRegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin);
+        emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin);
     }
 
     /**
@@ -269,7 +269,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function _transferTickerOwnership(address _oldOwner, address _newOwner, string _ticker) internal {
         _deleteTickerOwnership(_oldOwner, _ticker);
         _setTickerOwner(_newOwner, _ticker);
-        emit LogChangeTickerOwnership(_ticker, _oldOwner, _newOwner);
+        emit ChangeTickerOwnership(_ticker, _oldOwner, _newOwner);
     }
 
     function _deleteTickerOwnership(address _owner, string _ticker) internal {
@@ -289,7 +289,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function changeExpiryLimit(uint256 _newExpiry) external onlyOwner {
         require(_newExpiry >= 1 days, "Expiry should >= 1 day");
-        emit LogChangeExpiryLimit(getUint(Encoder.getKey('expiryLimit')), _newExpiry);
+        emit ChangeExpiryLimit(getUint(Encoder.getKey('expiryLimit')), _newExpiry);
         set(Encoder.getKey('expiryLimit'), _newExpiry);
     }
 
@@ -372,7 +372,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
 
         _storeSecurityTokenData(newSecurityTokenAddress, ticker, _tokenDetails, now);
         set(Encoder.getKey("tickerToSecurityToken", ticker), newSecurityTokenAddress);
-        emit LogNewSecurityToken(ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false);
+        emit NewSecurityToken(ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false);
     }
 
     /**
@@ -394,7 +394,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         _modifyTicker(_owner, ticker, _name, getUint(Encoder.getKey("registeredTickers_registrationDate", ticker)), getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)), true);
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
-        emit LogNewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true);
+        emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true);
     }
 
     /**
@@ -502,7 +502,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
    function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
        require(getUint(Encoder.getKey('tickerRegFee')) != _tickerRegFee);
-       emit LogChangeTickerRegistrationFee(getUint(Encoder.getKey('tickerRegFee')), _tickerRegFee);
+       emit ChangeTickerRegistrationFee(getUint(Encoder.getKey('tickerRegFee')), _tickerRegFee);
        set(Encoder.getKey('tickerRegFee'), _tickerRegFee);
    }
 
@@ -512,7 +512,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
    function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
        require(getUint(Encoder.getKey("stLaunchFee")) != _stLaunchFee);
-       emit LogChangeSecurityLaunchFee(getUint(Encoder.getKey("stLaunchFee")), _stLaunchFee);
+       emit ChangeSecurityLaunchFee(getUint(Encoder.getKey("stLaunchFee")), _stLaunchFee);
        set(Encoder.getKey("stLaunchFee"), _stLaunchFee);
    }
 

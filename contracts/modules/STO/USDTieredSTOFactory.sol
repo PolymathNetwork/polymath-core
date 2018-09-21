@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./USDTieredSTO.sol";
+import "../../interfaces/IUSDTieredSTOProxy.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
 
@@ -8,6 +8,8 @@ import "../../libraries/Util.sol";
  * @title Factory for deploying CappedSTO module
  */
 contract USDTieredSTOFactory is ModuleFactory {
+
+    address public USDTieredSTOProxyAddress;
 
     /**
      * @notice Constructor
@@ -32,10 +34,10 @@ contract USDTieredSTOFactory is ModuleFactory {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
         //Check valid bytes - can only call module init function
-        USDTieredSTO usdTieredSTO = new USDTieredSTO(msg.sender, address(polyToken));
+        address usdTieredSTO = IUSDTieredSTOProxy(USDTieredSTOProxyAddress).deploySTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == usdTieredSTO.getInitFunction(), "Invalid data");
-        require(address(usdTieredSTO).call(_data), "Unsuccessfull call");
+        require(Util.getSig(_data) == IUSDTieredSTOProxy(USDTieredSTOProxyAddress).getInitFunction(usdTieredSTO), "Invalid data");
+        require(IUSDTieredSTOProxy(USDTieredSTOProxyAddress).initialize(usdTieredSTO, _data), "Unsuccessfull call");
         emit GenerateModuleFromFactory(address(usdTieredSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(usdTieredSTO);
     }
@@ -99,6 +101,15 @@ contract USDTieredSTOFactory is ModuleFactory {
         availableTags[2] = "POLY";
         availableTags[3] = "ETH";
         return availableTags;
+    }
+
+    /**
+     * @notice Function use to set the proxy address 
+     * @param _proxyAddress Address of the proxy factory contract
+     */
+    function setProxyFactoryAddress(address _proxyAddress) public onlyOwner {
+        require(_proxyAddress != address(0));
+        USDTieredSTOProxyAddress = _proxyAddress;
     }
 
 }

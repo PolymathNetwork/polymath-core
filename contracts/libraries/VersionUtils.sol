@@ -12,7 +12,7 @@ library VersionUtils {
      * @param _new Array holds the latest version of the ST
      * @return bool 
      */
-    function isValidVersion(uint8[] _current, uint8[] _new) public pure returns(bool) {
+    function isValidVersion(uint8[] _current, uint8[] _new) internal pure returns(bool) {
         require(_current.length == _new.length);
         bool[] memory _temp = new bool[](_current.length);
         uint8 counter = 0;
@@ -52,7 +52,7 @@ library VersionUtils {
      * @param _version2 Array holds the latest version of the ST
      * @return bool 
      */
-    function compareLowerBound(uint8[] _version1, uint8[] _version2) public pure returns(bool) {
+    function compareLowerBound(uint8[] _version1, uint8[] _version2) internal pure returns(bool) {
         require(_version1.length == _version2.length);
         uint counter = 0;
         for (uint8 j = 0; j< _version1.length; j++) {
@@ -83,7 +83,7 @@ library VersionUtils {
      * @param _version2 Array holds the latest version of the ST
      * @return bool 
      */
-    function compareUpperBound(uint8[] _version1, uint8[] _version2) public pure returns(bool) {
+    function compareUpperBound(uint8[] _version1, uint8[] _version2) internal pure returns(bool) {
         require(_version1.length == _version2.length);
         uint counter = 0;
         for (uint8 j = 0; j< _version1.length; j++) {
@@ -115,7 +115,7 @@ library VersionUtils {
      * @param _minor Minor version
      * @param _patch Patch version
      */
-    function pack(uint8 _major, uint8 _minor, uint8 _patch) public pure returns(uint24) {
+    function pack(uint8 _major, uint8 _minor, uint8 _patch) internal pure returns(uint24) {
         return (uint24(_major) << 16) | (uint24(_minor) << 8) | uint24(_patch);
     }
 
@@ -123,7 +123,7 @@ library VersionUtils {
      * @notice Use to convert packed data into uint8 array
      * @param _packedVersion Packed data
      */
-    function unpack(uint24 _packedVersion) public pure returns (uint8[]) {
+    function unpack(uint24 _packedVersion) internal pure returns (uint8[]) {
         uint8[] memory _unpackVersion = new uint8[](3);
         _unpackVersion[0] = uint8(_packedVersion >> 16);
         _unpackVersion[1] = uint8(_packedVersion >> 8);

@@ -2,6 +2,7 @@ const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
+const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.sol');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
@@ -257,8 +258,14 @@ const functionSignatureProxyMR = {
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
     return moduleRegistry.verifyModule(CappedSTOFactory.address, true, {from: PolymathAccount})
     }).then(() => {
+      // Deploy the proxy factory
+      return deployer.deploy(USDTieredSTOProxyFactory, {from: PolymathAccount});
+    }).then(() => {
       // H) Deploy the USDTieredSTOFactory (Use to generate the USDTieredSTOFactory contract which will used to collect the funds ).
-    return deployer.deploy(USDTieredSTOFactory, PolyToken, usdTieredSTOSetupCost, 0, 0, {from: PolymathAccount})
+      return deployer.deploy(USDTieredSTOFactory, PolyToken, usdTieredSTOSetupCost, 0, 0, {from: PolymathAccount})
+    }).then(() => {
+      // Set proxy factory address into the USDTieredSTOFactory contract
+      return USDTieredSTOFactory.at(USDTieredSTOFactory.address).setProxyFactoryAddress(USDTieredSTOProxyFactory.address, {from: PolymathAccount});
     }).then(() => {
       // I) Register the USDTieredSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the USDTieredSTOFactory contract.

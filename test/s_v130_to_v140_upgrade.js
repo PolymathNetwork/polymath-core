@@ -271,7 +271,6 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         // Step 1: Deploy Oracles
         // 1a - Deploy POLY Oracle
         it("Should successfully deploy POLY Oracle and register on PolymathRegistry", async() => {
-            console.log("hello");
             I_POLYOracle = await PolyOracle.new({ from: POLYMATH, value: web3.utils.toWei("1")});
             console.log(I_POLYOracle.address);
             assert.notEqual(
@@ -285,7 +284,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         });
         // 1b - Deploy ETH Oracle
         it("Should successfully deploy ETH Oracle and register on PolymathRegistry", async() => {
-            I_USDOracle = await ETHOracle.new({ from: POLYMATH });
+            I_USDOracle = await ETHOracle.new("0x216d678c14be600cb88338e763bb57755ca2b1cf", "0x0000000000000000000000000000000000000000", "ETH", { from: POLYMATH });
             assert.notEqual(
                 I_USDOracle.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",

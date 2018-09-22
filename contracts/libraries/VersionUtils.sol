@@ -7,7 +7,7 @@ pragma solidity ^0.4.24;
 library VersionUtils {
     
     /**
-     * @notice This function use to validate the inputted version
+     * @notice This function is used to validate the version submitted
      * @param _current Array holds the present version of ST
      * @param _new Array holds the latest version of the ST
      * @return bool 

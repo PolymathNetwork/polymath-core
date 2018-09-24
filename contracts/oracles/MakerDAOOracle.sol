@@ -34,6 +34,7 @@ contract MakerDAOOracle is IOracle, Ownable {
       * @param _medianizer Address of Maker medianizer
       */
     function changeMedianier(address _medianizer) public onlyOwner {
+        require(_medianizer != address(0), "0x not allowed");
         emit LogChangeMedianizer(_medianizer, medianizer, now);
         medianizer = _medianizer;
     }

@@ -49,16 +49,6 @@ contract DividendCheckpoint is ICheckpoint, Module {
     }
 
     /**
-     * @notice Constructor
-     * @param _securityToken Address of the security token
-     * @param _polyAddress Address of the polytoken
-     */
-    constructor (address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
-    {
-    }
-
-    /**
     * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */

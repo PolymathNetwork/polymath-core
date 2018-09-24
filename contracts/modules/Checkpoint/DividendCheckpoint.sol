@@ -5,12 +5,12 @@ import "../Module.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
-import "../../interfaces/IERC20.sol";
 
 /**
- * @title Checkpoint module for issuing ERC20 dividends
+ * @title Checkpoint module for issuing ether dividends
+ * @dev abstract contract
  */
-contract ERC20DividendCheckpoint is ICheckpoint, Module {
+contract DividendCheckpoint is ICheckpoint, Module {
     using SafeMath for uint256;
 
     uint256 public EXCLUDED_ADDRESS_LIMIT = 50;
@@ -20,20 +20,25 @@ contract ERC20DividendCheckpoint is ICheckpoint, Module {
       uint256 checkpointId;
       uint256 created; // Time at which the dividend was created
       uint256 maturity; // Time after which dividend can be claimed - set to 0 to bypass
-      address token; // Address of ERC20 token that dividend is denominated in
-      uint256 amount; // Dividend amount in base token amounts
+      uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer - set to very high value to bypass
+      uint256 amount; // Dividend amount in WEI
       uint256 claimedAmount; // Amount of dividend claimed so far
       uint256 totalSupply; // Total supply at the associated checkpoint (avoids recalculating this)
-      bool reclaimed;
+      bool reclaimed;  // True if expiry has passed and issuer has reclaimed remaining dividend
+      uint256 dividendWithheld;
+      uint256 dividendWithheldReclaimed;
       mapping (address => bool) claimed; // List of addresses which have claimed dividend
+      mapping (address => bool) excluded; // List of addresses which cannot claim dividends
     }
 
     // List of all dividends
     Dividend[] public dividends;
 
-    event ERC20DividendDeposited(address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 _totalSupply, uint256 _dividendIndex);
-    event ERC20DividendClaimed(address indexed _payee, uint256 _dividendIndex, address _token, uint256 _amount);
-    event ERC20DividendReclaimed(address indexed _claimer, uint256 _dividendIndex, address _token, uint256 _claimedAmount);
+    // Mapping from address to withholding tax as a percentage * 10**16
+    mapping (address => uint256) public withholdingTax;
+
+    // Total amount of ETH withheld per investor
+    mapping (address => uint256) public investorWithheld;
 
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
@@ -62,66 +67,28 @@ contract ERC20DividendCheckpoint is ICheckpoint, Module {
     }
 
     /**
-     * @notice Creates a dividend and checkpoint for the dividend
-     * @param _maturity Time from which dividend can be paid
-     * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
-     * @param _token Address of ERC20 token in which dividend is to be denominated
-     * @param _amount Amount of specified token for dividend
+     * @notice Function to set withholding tax rates for investors
+     * @param _investors addresses of investor
+     * @param _withholding withholding tax for individual investors (multiplied by 10**16)
      */
-    function createDividend(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount) public onlyOwner {
-        require(_expiry > _maturity);
-        require(_expiry > now);
-        require(_token != address(0));
-        require(_amount > 0);
-        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount), "Unable to transfer tokens for dividend");
-        uint256 dividendIndex = dividends.length;
-        uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
-        uint256 currentSupply = ISecurityToken(securityToken).totalSupply();
-        dividends.push(
-          Dividend(
-            checkpointId,
-            now,
-            _maturity,
-            _expiry,
-            _token,
-            _amount,
-            0,
-            currentSupply,
-            false
-          )
-        );
-        emit ERC20DividendDeposited(msg.sender, checkpointId, now, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex);
+    function setWithholding(address[] _investors, uint256[] _withholding) public onlyOwner {
+        require(_investors.length == _withholding.length);
+        for (uint256 i = 0; i < _investors.length; i++) {
+            require(_withholding[i] <= 10**18);
+            withholdingTax[_investors[i]] = _withholding[i];
+        }
     }
 
     /**
-     * @notice Creates a dividend with a provided checkpoint
-     * @param _maturity Time from which dividend can be paid
-     * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
-     * @param _token Address of ERC20 token in which dividend is to be denominated
-     * @param _amount Amount of specified token for dividend
-     * @param _checkpointId Checkpoint id from which to create dividends
+     * @notice Function to set withholding tax rates for investors
+     * @param _investors addresses of investor
+     * @param _withholding withholding tax for all investors (multiplied by 10**16)
      */
-    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 _checkpointId) payable public onlyOwner {
-        require(_expiry > _maturity);
-        require(_expiry > now);
-        require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId());
-        uint256 dividendIndex = dividends.length;
-        uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
-        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount), "Unable to transfer tokens for dividend");
-        dividends.push(
-          Dividend(
-            _checkpointId,
-            now,
-            _maturity,
-            _expiry,
-            _token,
-            _amount,
-            0,
-            currentSupply,
-            false
-          )
-        );
-        emit ERC20DividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex);
+    function setWithholdingFixed(address[] _investors, uint256 _withholding) public onlyOwner {
+        require(_withholding <= 10**18);
+        for (uint256 i = 0; i < _investors.length; i++) {
+            withholdingTax[_investors[i]] = _withholding;
+        }
     }
 
     /**
@@ -132,7 +99,7 @@ contract ERC20DividendCheckpoint is ICheckpoint, Module {
     function pushDividendPaymentToAddresses(uint256 _dividendIndex, address[] _payees) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
-            if (!dividend.claimed[_payees[i]]) {
+            if ((!dividend.claimed[_payees[i]]) && (!dividend.excluded[_payees[i]])) {
                 _payDividend(_payees[i], dividend, _dividendIndex);
             }
         }
@@ -149,7 +116,7 @@ contract ERC20DividendCheckpoint is ICheckpoint, Module {
         uint256 numberInvestors = ISecurityToken(securityToken).getInvestorsLength();
         for (uint256 i = _start; i < Math.min256(numberInvestors, _start.add(_iterations)); i++) {
             address payee = ISecurityToken(securityToken).investors(i);
-            if (!dividend.claimed[payee]) {
+            if ((!dividend.claimed[payee]) && (!dividend.excluded[payee])) {
                 _payDividend(payee, dividend, _dividendIndex);
             }
         }
@@ -162,7 +129,8 @@ contract ERC20DividendCheckpoint is ICheckpoint, Module {
     function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
-        require(!dividend.claimed[msg.sender], "Dividend already reclaimed");
+        require(!dividend.claimed[msg.sender], "Dividend already claimed by msg.sender");
+        require(!dividend.excluded[msg.sender], "msg.sender excluded from Dividend");
         _payDividend(msg.sender, dividend, _dividendIndex);
     }
 
@@ -172,30 +140,13 @@ contract ERC20DividendCheckpoint is ICheckpoint, Module {
      * @param _dividend storage with previously issued dividends
      * @param _dividendIndex Dividend to pay
      */
-    function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
-        uint256 claim = calculateDividend(_dividendIndex, _payee);
-        _dividend.claimed[_payee] = true;
-        _dividend.claimedAmount = claim.add(_dividend.claimedAmount);
-        if (claim > 0) {
-            require(IERC20(_dividend.token).transfer(_payee, claim), "Unable to transfer tokens");
-            emit ERC20DividendClaimed(_payee, _dividendIndex, _dividend.token, claim);
-        }
-    }
+    function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal;
 
     /**
      * @notice Issuer can reclaim remaining unclaimed dividend amounts, for expired dividends
      * @param _dividendIndex Dividend to reclaim
      */
-    function reclaimDividend(uint256 _dividendIndex) public onlyOwner {
-        require(_dividendIndex < dividends.length, "Incorrect dividend index");
-        require(now >= dividends[_dividendIndex].expiry, "Dividend expiry is in the future");
-        require(!dividends[_dividendIndex].reclaimed, "Dividend already claimed");
-        dividends[_dividendIndex].reclaimed = true;
-        Dividend storage dividend = dividends[_dividendIndex];
-        uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
-        require(IERC20(dividend.token).transfer(msg.sender, remainingAmount), "Unable to transfer tokens");
-        emit ERC20DividendReclaimed(msg.sender, _dividendIndex, dividend.token, remainingAmount);
-    }
+    function reclaimDividend(uint256 _dividendIndex) external;
 
     /**
      * @notice Calculate amount of dividends claimable
@@ -203,19 +154,22 @@ contract ERC20DividendCheckpoint is ICheckpoint, Module {
      * @param _payee Affected investor address
      * @return unit256
      */
-    function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256) {
+    function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256, uint256) {
+        require(_dividendIndex < dividends.length, "Incorrect dividend index");
         Dividend storage dividend = dividends[_dividendIndex];
-        if (dividend.claimed[_payee]) {
-            return 0;
+        if (dividend.claimed[_payee] || dividend.excluded[_payee]) {
+            return (0, 0);
         }
-        uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividends[_dividendIndex].checkpointId);
-        return balance.mul(dividends[_dividendIndex].amount).div(dividends[_dividendIndex].totalSupply);
+        uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividend.checkpointId);
+        uint256 claim = balance.mul(dividend.amount).div(dividend.totalSupply);
+        uint256 withheld = claim.mul(withholdingTax[_payee]).div(uint256(10**18));
+        return (claim, withheld);
     }
 
     /**
      * @notice Get the index according to the checkpoint id
      * @param _checkpointId Checkpoint id to query
-     * @return uint256
+     * @return uint256[]
      */
     function getDividendIndex(uint256 _checkpointId) public view returns(uint256[]) {
         uint256 counter = 0;
@@ -235,6 +189,12 @@ contract ERC20DividendCheckpoint is ICheckpoint, Module {
        }
        return index;
     }
+
+    /**
+     * @notice Allows issuer to withdraw withheld tax
+     * @param _dividendIndex Dividend to withdraw from
+     */
+    function withdrawWithholding(uint256 _dividendIndex) external;
 
     /**
      * @notice Return the permissions flag that are associated with STO

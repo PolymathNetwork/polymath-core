@@ -1,24 +1,15 @@
 pragma solidity ^0.4.24;
 
 import "./ICheckpoint.sol";
+import "../Module.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                                        Owner       DISTRIBUTE
-// pushDividendPaymentToAddresses           X               X
-// pushDividendPayment                      X               X
-// createDividend                           X
-// createDividendWithCheckpoint             X
-// reclaimDividend                          X
-
 /**
  * @title Checkpoint module for issuing ether dividends
  */
-contract EtherDividendCheckpoint is ICheckpoint {
+contract EtherDividendCheckpoint is ICheckpoint, Module {
     using SafeMath for uint256;
 
     uint256 public EXCLUDED_ADDRESS_LIMIT = 50;
@@ -70,7 +61,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _securityToken, address _polyAddress) public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
@@ -78,7 +69,7 @@ contract EtherDividendCheckpoint is ICheckpoint {
     * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */
-    function getInitFunction() public returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(0);
     }
 

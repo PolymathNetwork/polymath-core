@@ -1,0 +1,35 @@
+securityToken:
+    # symbol -> security token symbol
+    symbol: CAP
+    # name -> security token name
+    name: CAP Token
+    # divisible -> true for divisible token, false for non-divisible
+    divisible: true
+
+initialMint:
+    # multimint -> whitelist and mint tokens to a list of affiliates (true) or only to a single wallet (false)
+    multimint: true
+    # singleMint -> Only valid if multimint = false
+    singleMint:
+        # wallet -> address that will be whitelisted
+        wallet: ''
+        # allowedToBuy -> true to allow wallet to buy tokens from the STO
+        allowedToBuy: true
+        # tokenAmount -> tokens minted to wallet
+        tokenAmount: 500000
+
+sto:
+    # type -> 0 for cappedSTO, 1 for USDTieredSTO, 2 for select STO later
+    type: 0
+    # cap -> 
+    cap: 500000
+    # startTime -> start time for the STO (Unix Epoch time)
+    startTime: ''
+    # endTime -> end time for the STO (Unix Epoch time)
+    endTime: ''
+    # wallet -> address that will receive the funds from the STO
+    wallet: ''
+    # raiseType -> 0 for ETH, 1 for POLY
+    raiseType: 0
+    # rate -> rate for the STO
+    rate: 1000

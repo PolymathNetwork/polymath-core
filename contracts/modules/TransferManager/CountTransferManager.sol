@@ -2,13 +2,6 @@ pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                           Owner       ADMIN
-// changeHolderCount           X           X
-
-
 /**
  * @title Transfer Manager for limiting maximum number of token holders
  */
@@ -28,7 +21,7 @@ contract CountTransferManager is ITransferManager {
      */
     constructor (address _securityToken, address _polyAddress)
     public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
@@ -58,7 +51,7 @@ contract CountTransferManager is ITransferManager {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
 

@@ -3,15 +3,6 @@ pragma solidity ^0.4.24;
 import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                                        Owner       TRANSFER_APPROVAL
-// addManualApproval                        X                 X
-// addManualBlocking                        X                 X
-// revokeManualApproval                     X                 X
-// revokeManualBlocking                     X                 X
-
 /**
  * @title Transfer Manager module for manually approving or blocking transactions between accounts
  */
@@ -77,14 +68,14 @@ contract ManualApprovalTransferManager is ITransferManager {
      */
     constructor (address _securityToken, address _polyAddress)
     public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(0);
     }
 
@@ -97,6 +88,8 @@ contract ManualApprovalTransferManager is ITransferManager {
     * c) Buyer's purchase lockup is over
     */
     function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result) {
+        // function must only be called by the associated security token if _isTransfer == true
+        require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
         // manual blocking takes precidence over manual approval
         if (!paused) {
             if (manualBlockings[_from][_to].expiryTime >= now) {
@@ -120,10 +113,10 @@ contract ManualApprovalTransferManager is ITransferManager {
     * @param _expiryTime is the time until which the transfer is allowed
     */
     function addManualApproval(address _from, address _to, uint256 _allowance, uint256 _expiryTime) public withPerm(TRANSFER_APPROVAL) {
-        //Passing a _expiryTime == 0 into this function, is equivalent to removing the manual approval.
         require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         require(_expiryTime > now, "Invalid expiry time");
+        require(manualApprovals[_from][_to].allowance == 0, "Approval already exists");
         manualApprovals[_from][_to] = ManualApproval(_allowance, _expiryTime);
         emit LogAddManualApproval(_from, _to, _allowance, _expiryTime, msg.sender);
     }
@@ -135,10 +128,10 @@ contract ManualApprovalTransferManager is ITransferManager {
     * @param _expiryTime is the time until which the transfer is blocked
     */
     function addManualBlocking(address _from, address _to, uint256 _expiryTime) public withPerm(TRANSFER_APPROVAL) {
-        //Passing a _expiryTime == 0 into this function, is equivalent to removing the manual blocking.
         require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         require(_expiryTime > now, "Invalid expiry time");
+        require(manualApprovals[_from][_to].expiryTime == 0, "Blocking already exists");
         manualBlockings[_from][_to] = ManualBlocking(_expiryTime);
         emit LogAddManualBlocking(_from, _to, _expiryTime, msg.sender);
     }

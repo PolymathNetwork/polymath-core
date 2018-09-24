@@ -1,0 +1,57 @@
+securityToken:
+    # symbol -> security token symbol
+    symbol: TIE
+    # name -> security token name
+    name: TIEred Token
+    # divisible -> true for divisible token, false for non-divisible
+    divisible: true
+
+initialMint:
+    # multimint -> whitelist and mint tokens to a list of affiliates (true) or only to a single wallet (false)
+    multimint: true
+    # singleMint -> Only valid if multimint = false
+    singleMint:
+        # wallet -> address that will be whitelisted
+        wallet: ''
+        # allowedToBuy -> true to allow wallet to buy tokens from the STO
+        allowedToBuy: true
+        # tokenAmount -> tokens minted to wallet
+        tokenAmount: 500000
+
+sto:
+    # type -> 0 for cappedSTO, 1 for USDTieredSTO, 2 for select STO later
+    type: 1
+    
+    # fundings
+    # fundigType -> P for POLY, E for ETH, B for both
+    fundingType: B
+    
+    # addresses
+    # wallet -> address that will receive the funds from the STO
+    wallet: ''
+    # reserveWallet -> address that will receive remaining tokens in the case the cap is not met
+    reserveWallet: ''
+    
+    # tiers
+    # numberOfTiers -> total of tiers for the STO
+    numberOfTiers: 3
+    # tokensPerTiers -> total tokens for each tier
+    tokensPerTiers: !!seq [ 190000000, 100000000, 200000000 ]
+    # ratePerTiers -> rate for each tier (in USD)
+    ratePerTiers: !!seq [ 0.05, 0.10, 0.15 ]
+    # discountedTokensPerTiers -> tokens for discounted rate for POLY investments (relative to tokensPerTier). 0 for no discounted tokens
+    discountedTokensPerTiers: !!seq [ 0, 0, 100000000 ]
+    # discountedRatePerTiers -> discounted rate for POLY investments for each tier. 0 for no discounted rate
+    discountedRatePerTiers: !!seq [ 0, 0, 0.075 ]
+    
+    # limits
+    # minimumInvestmentUSD -> minimum investment (in USD)
+    minimumInvestmentUSD: 5
+    # nonAccreditedLimitUSD -> limit for non accredited insvestors (in USD)
+    nonAccreditedLimitUSD: 10000
+    
+    #times
+    # startTime -> start time for the STO (Unix Epoch time)
+    startTime: ''
+    # endTime -> end time for the STO (Unix Epoch time)
+    endTime: ''

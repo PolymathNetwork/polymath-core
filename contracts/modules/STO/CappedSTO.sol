@@ -1,29 +1,20 @@
 pragma solidity ^0.4.24;
 
 import "./ISTO.sol";
-import "../../interfaces/IST20.sol";
+import "../../interfaces/ISecurityToken.sol";
+import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title STO module for standard capped crowdsale
  */
-contract CappedSTO is ISTO {
+contract CappedSTO is ISTO, ReentrancyGuard {
     using SafeMath for uint256;
 
-    // Address where funds are collected and tokens are issued to
-    address public wallet;
-
+    // Determine whether users can invest on behalf of a beneficiary
+    bool public allowBeneficialInvestments = false;
     // How many token units a buyer gets per wei / base unit of POLY
     uint256 public rate;
-
-    // Amount of funds raised
-    uint256 public fundsRaised;
-
-    uint256 public investorCount;
-
-    // Amount of tokens sold
-    uint256 public tokensSold;
-
     //How many tokens this STO will be allowed to sell to investors
     uint256 public cap;
 
@@ -38,8 +29,10 @@ contract CappedSTO is ISTO {
     */
     event TokenPurchase(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
 
+    event SetAllowBeneficialInvestments(bool _allowed);
+
     constructor (address _securityToken, address _polyAddress) public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
@@ -57,7 +50,7 @@ contract CappedSTO is ISTO {
      * @param _endTime Unix timestamp at which offering get ended
      * @param _cap Maximum No. of tokens for sale
      * @param _rate Token units a buyer gets per wei / base unit of POLY
-     * @param _fundRaiseType Type of currency used to collect the funds
+     * @param _fundRaiseTypes Type of currency used to collect the funds
      * @param _fundsReceiver Ethereum account address to hold the funds
      */
     function configure(
@@ -65,7 +58,7 @@ contract CappedSTO is ISTO {
         uint256 _endTime,
         uint256 _cap,
         uint256 _rate,
-        uint8 _fundRaiseType,
+        FundRaiseType[] _fundRaiseTypes,
         address _fundsReceiver
     )
     public
@@ -75,28 +68,43 @@ contract CappedSTO is ISTO {
         require(_fundsReceiver != address(0), "Zero address is not permitted");
         require(_startTime >= now && _endTime > _startTime, "Date parameters are not valid");
         require(_cap > 0, "Cap should be greater than 0");
+        require(_fundRaiseTypes.length == 1, "It only selects single fund raise type");
         startTime = _startTime;
         endTime = _endTime;
         cap = _cap;
         rate = _rate;
         wallet = _fundsReceiver;
-        _check(_fundRaiseType);
+        _setFundRaiseType(_fundRaiseTypes);
     }
 
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public returns (bytes4) {
-        return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8,address)"));
+    function getInitFunction() public pure returns (bytes4) {
+        return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8[],address)"));
+    }
+
+    /**
+     * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
+     * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
+     */
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public onlyOwner {
+        require(_allowBeneficialInvestments != allowBeneficialInvestments, "Does not change value");
+        allowBeneficialInvestments = _allowBeneficialInvestments;
+        emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
     }
 
     /**
       * @notice low level token purchase ***DO NOT OVERRIDE***
       * @param _beneficiary Address performing the token purchase
       */
-    function buyTokens(address _beneficiary) public payable {
+    function buyTokens(address _beneficiary) public payable nonReentrant {
+        if (!allowBeneficialInvestments) {
+            require(_beneficiary == msg.sender, "Beneficiary must match funding provider");
+        }
+
         require(!paused);
-        require(fundraiseType == FundraiseType.ETH, "ETH should be the mode of investment");
+        require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "ETH should be the mode of investment");
 
         uint256 weiAmount = msg.value;
         _processTx(_beneficiary, weiAmount);
@@ -109,10 +117,9 @@ contract CappedSTO is ISTO {
       * @notice low level token purchase
       * @param _investedPOLY Amount of POLY invested
       */
-    function buyTokensWithPoly(uint256 _investedPOLY) public {
+    function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant{
         require(!paused);
-        require(fundraiseType == FundraiseType.POLY, "POLY should be the mode of investment");
-        require(verifyInvestment(msg.sender, _investedPOLY), "Not valid Investment");
+        require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "POLY should be the mode of investment");
         _processTx(msg.sender, _investedPOLY);
         _forwardPoly(msg.sender, wallet, _investedPOLY);
         _postValidatePurchase(msg.sender, _investedPOLY);
@@ -123,34 +130,14 @@ contract CappedSTO is ISTO {
     * @return bool Whether the cap was reached
     */
     function capReached() public view returns (bool) {
-        return tokensSold >= cap;
+        return totalTokensSold >= cap;
     }
 
     /**
-     * @notice Return ETH raised by the STO
+     * @notice Return the total no. of tokens sold
      */
-    function getRaisedEther() public view returns (uint256) {
-        if (fundraiseType == FundraiseType.ETH)
-            return fundsRaised;
-        else
-            return 0;
-    }
-
-    /**
-     * @notice Return POLY raised by the STO
-     */
-    function getRaisedPOLY() public view returns (uint256) {
-        if (fundraiseType == FundraiseType.POLY)
-            return fundsRaised;
-        else
-            return 0;
-    }
-
-    /**
-     * @notice Return the total no. of investors
-     */
-    function getNumberInvestors() public view returns (uint256) {
-        return investorCount;
+    function getTokensSold() public view returns (uint256) {
+        return totalTokensSold;
     }
 
     /**
@@ -170,10 +157,10 @@ contract CappedSTO is ISTO {
             endTime,
             cap,
             rate,
-            fundsRaised,
+            (fundRaiseTypes[uint8(FundRaiseType.POLY)]) ? fundsRaised[uint8(FundRaiseType.POLY)]: fundsRaised[uint8(FundRaiseType.ETH)],
             investorCount,
-            tokensSold,
-            (fundraiseType == FundraiseType.POLY)
+            totalTokensSold,
+            (fundRaiseTypes[uint8(FundRaiseType.POLY)])
         );
     }
 
@@ -192,8 +179,12 @@ contract CappedSTO is ISTO {
         uint256 tokens = _getTokenAmount(_investedAmount);
 
         // update state
-        fundsRaised = fundsRaised.add(_investedAmount);
-        tokensSold = tokensSold.add(tokens);
+        if (fundRaiseTypes[uint8(FundRaiseType.POLY)]) {
+            fundsRaised[uint8(FundRaiseType.POLY)] = fundsRaised[uint8(FundRaiseType.POLY)].add(_investedAmount);
+        } else {
+            fundsRaised[uint8(FundRaiseType.ETH)] = fundsRaised[uint8(FundRaiseType.ETH)].add(_investedAmount);
+        }
+        totalTokensSold = totalTokensSold.add(tokens);
 
         _processPurchase(_beneficiary, tokens);
         emit TokenPurchase(msg.sender, _beneficiary, _investedAmount, tokens);
@@ -210,7 +201,7 @@ contract CappedSTO is ISTO {
     function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal view {
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
         require(_investedAmount != 0, "Amount invested should not be equal to 0");
-        require(tokensSold.add(_getTokenAmount(_investedAmount)) <= cap, "Investment more than cap is not allowed");
+        require(totalTokensSold.add(_getTokenAmount(_investedAmount)) <= cap, "Investment more than cap is not allowed");
         require(now >= startTime && now <= endTime, "Offering is closed/Not yet started");
     }
 
@@ -229,7 +220,7 @@ contract CappedSTO is ISTO {
     * @param _tokenAmount Number of tokens to be emitted
     */
     function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-        require(IST20(securityToken).mint(_beneficiary, _tokenAmount), "Error in minting the tokens");
+        require(ISecurityToken(securityToken).mint(_beneficiary, _tokenAmount), "Error in minting the tokens");
     }
 
     /**
@@ -268,21 +259,6 @@ contract CappedSTO is ISTO {
     */
     function _forwardFunds() internal {
         wallet.transfer(msg.value);
-    }
-
-    /**
-     * @notice Internal function used to check the type of fund raise currency
-     * @param _fundraiseType Type of currency used to collect the funds
-     */
-    function _check(uint8 _fundraiseType) internal {
-        require(_fundraiseType == 0 || _fundraiseType == 1, "Not a valid fundraise type");
-        if (_fundraiseType == 0) {
-            fundraiseType = FundraiseType.ETH;
-        }
-        if (_fundraiseType == 1) {
-            require(address(polyToken) != address(0), "Address of the polyToken should not be 0x");
-            fundraiseType = FundraiseType.POLY;
-        }
     }
 
     /**

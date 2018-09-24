@@ -248,7 +248,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(_newOwner != address(0), "Address should not be 0x");
         require(getAddress(Encoder.getKey("registeredTickers_owner", ticker)) == msg.sender, "Not authorised");
         _transferTickerOwnership(msg.sender, _newOwner, ticker);
-        set(Encoder.getKey("registeredTickers_owner", _ticker), _newOwner);
+        set(Encoder.getKey("registeredTickers_owner", ticker), _newOwner);
     }
 
     /**
@@ -347,7 +347,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker should not be expired");
 
         // No need to update the _name - this is the token name, not the ticker name
-        set(Encoder.getKey("registeredTickers_status", _ticker), true);
+        set(Encoder.getKey("registeredTickers_status", ticker), true);
 
         if (getUint(Encoder.getKey("stLaunchFee")) > 0)
             require(IERC20(getAddress(Encoder.getKey("polyToken"))).transferFrom(msg.sender, address(this), getUint(Encoder.getKey("stLaunchFee"))), "Sufficent allowance is not provided");
@@ -412,8 +412,8 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @return address
      */
     function getSecurityTokenAddress(string _ticker) public view returns (address) {
-        string memory __ticker = Util.upper(_ticker);
-        return getAddress(Encoder.getKey("tickerToSecurityToken", __ticker));
+        string memory ticker = Util.upper(_ticker);
+        return getAddress(Encoder.getKey("tickerToSecurityToken", ticker));
     }
 
      /**

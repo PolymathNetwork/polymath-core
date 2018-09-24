@@ -45,14 +45,14 @@ async function executeApp(tokenConfig, mintingConfig, stoConfig, remoteNetwork) 
   _stoConfig = stoConfig;
 
   await global.initialize(remoteNetwork);
- 
+
   common.logAsciiBull();
   console.log("********************************************");
   console.log("Welcome to the Command-Line ST-20 Generator.");
   console.log("********************************************");
   console.log("The following script will create a new ST-20 according to the parameters you enter.");
   console.log("Issuer Account: " + Issuer.address + "\n");
-  
+
   await setup();
 
   try {
@@ -101,10 +101,10 @@ async function step_ticker_reg(){
 
   let available = false;
   let regFee = web3.utils.fromWei(await securityTokenRegistry.methods.getUintValues(web3.utils.soliditySha3(REG_FEE_KEY)).call());
-  
+
   while (!available) {
     console.log(chalk.green(`\nRegistering the new token symbol requires ${regFee} POLY & deducted from '${Issuer.address}', Current balance is ${(await currentBalance(Issuer.address))} POLY\n`));
-    
+
     if (typeof _tokenConfig !== 'undefined' && _tokenConfig.hasOwnProperty('symbol')) {
       tokenSymbol = _tokenConfig.symbol;
     } else {
@@ -148,20 +148,20 @@ async function step_token_deploy(){
     securityToken = new web3.eth.Contract(securityTokenABI, tokenAddress);
   } else {
     console.log('\n\x1b[34m%s\x1b[0m',"Token Creation - Token Deployment");
-    
+
     let launchFee = web3.utils.fromWei(await securityTokenRegistry.methods.getUintValues(web3.utils.soliditySha3(LAUNCH_FEE_KEY)).call());
     console.log(chalk.green(`\nToken deployment requires ${launchFee} POLY & deducted from '${Issuer.address}', Current balance is ${(await currentBalance(Issuer.address))} POLY\n`));
-    
+
     if (typeof _tokenConfig !== 'undefined' && _tokenConfig.hasOwnProperty('name')) {
       tokenName = _tokenConfig.name;
     } else {
       tokenName = readlineSync.question('Enter the name for your new token: ');
     }
     if (tokenName == "") tokenName = 'default';
-    
+
     console.log("\n");
     console.log('\x1b[34m%s\x1b[0m',"Select the Token divisibility type");
-    
+
     let divisibility;
     if (typeof _tokenConfig !== 'undefined' && _tokenConfig.hasOwnProperty('divisible')) {
       divisibility = _tokenConfig.divisible;
@@ -200,7 +200,7 @@ async function step_Wallet_Issuance(){
       console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Minting for Issuer");
 
       console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control or you can trasfer to affiliates");
-      
+
       let multimint;
       if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('multimint')) {
         multimint = _mintingConfig.multimint;
@@ -213,7 +213,7 @@ async function step_Wallet_Issuance(){
       let generalTransferManagerAddress = (await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call())[0];
       let generalTransferManagerABI = abis.generalTransferManager();
       generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
-       
+
       if (multimint)
         await multi_mint_tokens();
       else {
@@ -242,7 +242,7 @@ async function step_Wallet_Issuance(){
           issuerTokens = readlineSync.question('How many tokens do you plan to mint for the wallet you entered? (500.000): ');
         }
         if (issuerTokens == "") issuerTokens = '500000';
-        
+
         let mintAction = securityToken.methods.mint(mintWallet, web3.utils.toWei(issuerTokens,"ether"));
         await common.sendTransaction(Issuer, mintAction, defaultGasPrice);
       }
@@ -392,7 +392,7 @@ async function cappedSTO_launch() {
     raiseType = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise or leave empty for Ether raise (E):');
     if (raiseType.toUpperCase() == 'P' ) {
       raiseType = [1];
-    } else { 
+    } else {
       raiseType = [0];
     }
   }
@@ -435,7 +435,7 @@ async function cappedSTO_launch() {
   let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
-  
+
   STO_Address = event._module;
   let cappedSTOABI = abis.cappedSTO();
   currentSTO = new web3.eth.Contract(cappedSTOABI, STO_Address);
@@ -608,7 +608,7 @@ function tiersConfigUSDTieredSTO(polyRaise) {
         defaultInput: defaultRatePerTier[i]
       }));
     }
-    
+
     let isTPTDPDefined = (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('discountedTokensPerTiers') && i < _stoConfig.discountedTokensPerTiers.length); //If it's defined by config file
     let isRPTDPDefined = (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('discountedRatePerTiers') && i < _stoConfig.discountedRatePerTiers.length); //If it's defined by config file
     //If funds can be raised in POLY and discounts are defined in config file or are choosen by user
@@ -624,7 +624,7 @@ function tiersConfigUSDTieredSTO(polyRaise) {
           defaultInput: defaultTokensPerTierDiscountPoly[i]
         }));
       }
-      
+
       if (isRPTDPDefined) {
         tiers.ratePerTierDiscountPoly[i] = web3.utils.toWei(_stoConfig.discountedRatePerTiers[i].toString());
       } else {
@@ -733,7 +733,7 @@ async function usdTieredSTO_launch() {
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }
   }
-  
+
   let funding = fundingConfigUSDTieredSTO();
   let addresses = addressesConfigUSDTieredSTO();
   let tiers = tiersConfigUSDTieredSTO(funding.raiseType.includes(1));
@@ -796,7 +796,7 @@ async function usdTieredSTO_launch() {
   let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
-  
+
   STO_Address = event._module;
   let usdTieredSTOABI = abis.usdTieredSTO();
   currentSTO = new web3.eth.Contract(usdTieredSTOABI,STO_Address);
@@ -990,8 +990,8 @@ async function usdTieredSTO_configure() {
     console.log(chalk.red(`STO is finalized`));
   } else {
     let options = [];
-    options.push('Finalize STO', 
-      'Change accredited account', 'Change accredited in batch', 
+    options.push('Finalize STO',
+      'Change accredited account', 'Change accredited in batch',
       'Change non accredited limit for an account', 'Change non accredited limits in batch');
 
     // If STO is not started, you can modify configuration
@@ -1009,7 +1009,7 @@ async function usdTieredSTO_configure() {
           let reserveWallet = await currentSTO.methods.reserveWallet().call();
           let isVerified = await generalTransferManager.methods.verifyTransfer(STO_Address, reserveWallet, 0, false).call();
           if (isVerified == "2") {
-            if (readlineSync.keyInYNStrict()) { 
+            if (readlineSync.keyInYNStrict()) {
               let finalizeAction = currentSTO.methods.finalize();
               await common.sendTransaction(Issuer, finalizeAction, defaultGasPrice);
             }
@@ -1122,16 +1122,16 @@ async function selectTicker(includeCreate) {
   if (includeCreate) {
     options.push('Register a new ticker');
   }
-  
+
   let index = readlineSync.keyInSelect(options, 'Select a ticker:');
   if (index == -1) {
     process.exit(0);
   } else if (includeCreate && index == options.length - 1) {
-    result = readlineSync.question('Enter a symbol for your new ticker: '); 
+    result = readlineSync.question('Enter a symbol for your new ticker: ');
   } else {
     result = userTickers[index];
   }
-  
+
   return result;
 }
 

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import '../interfaces/IOracle.sol';
-import '../external/Medianizer.sol';
+import '../external/IMedianizer.sol';
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract MakerDAOOracle is IOracle, Ownable {
@@ -67,7 +67,7 @@ contract MakerDAOOracle is IOracle, Ownable {
         if (manualOverride) {
             return manualPrice;
         }
-        (bytes32 price, bool valid) = Medianizer(medianizer).peek();
+        (bytes32 price, bool valid) = IMedianizer(medianizer).peek();
         require(valid, "MakerDAO Oracle returning invalid value");
         return uint256(price);
     }

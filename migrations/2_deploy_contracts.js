@@ -9,6 +9,7 @@ const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpo
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol')
+const VolumeDumpingRestrictionTransferManagerFactory = artifacts.require('./VolumeDumpingRestrictionManagerFactory.sol');
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol')
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
@@ -162,6 +163,10 @@ module.exports = function (deployer, network, accounts) {
     // to track the percentage of investment the investors could do for a particular security token)
     return deployer.deploy(PercentageTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
   }).then(() => {
+    // D) Deploy the VolumeDumpingRestrictionTransferManagerFactory Contract (Factory used to generate the VolumeDumpingRestrictionTransferManager contract use
+    // to track the percentage of investment the investors could do for a particular security token)
+    return deployer.deploy(VolumeDumpingRestrictionTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+  }).then(() => {
     // D) Deploy the EtherDividendCheckpointFactory Contract (Factory used to generate the EtherDividendCheckpoint contract use
     // to provide the functionality of the dividend in terms of ETH)
     return deployer.deploy(EtherDividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
@@ -293,7 +298,7 @@ module.exports = function (deployer, network, accounts) {
   }).then(() => {
     console.log('\n');
     console.log(`
-    ----------------------- Polymath Network Smart Contracts: -----------------------
+    --------------------- Polymath Network Smart Contracts: ---------------------
     PolymathRegistry:                     ${PolymathRegistry.address}
     SecurityTokenRegistry (Proxy):        ${SecurityTokenRegistryProxy.address}
     ModuleRegistry (Proxy):               ${ModuleRegistryProxy.address}
@@ -315,9 +320,11 @@ module.exports = function (deployer, network, accounts) {
     ManualApprovalTransferManagerFactory: ${ManualApprovalTransferManagerFactory.address}
     EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
+    VolumeDumpingRestrictionTransferManagerFactory:
+                                          ${VolumeDumpingRestrictionTransferManagerFactory.address}
     ---------------------------------------------------------------------------------
     `);
     console.log('\n');
-    // -------- END OF POLYMATH NETWORK Configuration -------//
+    });
   });
 }

@@ -6,6 +6,7 @@ var investor_portal = require('./commands/investor_portal');
 var module_manager = require('./commands/module_manager');
 var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
+var transfer_ownership = require('./commands/transfer_ownership');
 var dividends_manager = require('./commands/dividends_manager');
 var transfer_manager = require('./commands/transfer_manager');
 var contract_manager = require('./commands/contract_manager');
@@ -75,6 +76,14 @@ program
   .description('Transfer ST tokens to another account')
   .action(async function(tokenSymbol, transferTo, transferAmount) {
     await transfer.executeApp(tokenSymbol, transferTo, transferAmount, program.remoteNode);
+  });
+
+program
+  .command('transfer_ownership <contractAddress> <transferTo>')
+  .alias('to')
+  .description('Transfer Ownership of an own contract to another account')
+  .action(async function(contractAddress, transferTo) {
+    await transfer_ownership.executeApp(contractAddress, transferTo, program.remoteNode);
   });
 
 program

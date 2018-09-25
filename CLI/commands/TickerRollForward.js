@@ -20,14 +20,13 @@ let failed_tickers = [];
 let totalGas = BigNumber(0);
 
 let polyToken;
-let tickerRegistry;
-let tickerRegistryAddress;
+let securityTokenRegistry;
+let securityTokenRegistryAddress;
 
-function Ticker(_owner, _symbol, _name, _swarmHash) {
+function Ticker(_owner, _symbol, _name) {
     this.owner = _owner;
     this.symbol = _symbol;
     this.name = _name;
-    this.swarmHash = _swarmHash;
 }
 
 function FailedRegistration(_ticker, _error) {
@@ -50,10 +49,10 @@ startScript();
 async function startScript() {
   await global.initialize(remoteNetwork);
 
-  let tickerRegistryAddress = await contracts.tickerRegistry();
-  let tickerRegistryABI = abis.tickerRegistry();
-  tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
-  tickerRegistry.setProvider(web3.currentProvider);
+  securityTokenRegistryAddress = await contracts.securityTokenRegistry();
+  let securityTokenRegistryABI = abis.securityTokenRegistry();
+  securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+  securityTokenRegistry.setProvider(web3.currentProvider);
 
   let polytokenAddress = await contracts.polyToken();
   let polytokenABI = abis.polyToken();
@@ -79,7 +78,7 @@ async function readFile() {
 async function registerTickers() {
   // Poly approval for registration fees
   let polyBalance = BigNumber(await polyToken.methods.balanceOf(Issuer.address).call());
-  let fee = await tickerRegistry.methods.registrationFee().call();
+  let fee = await securityTokenRegistry.methods.getUintValues(web3.utils.toHex('tickerRegFee')).call();
   let totalFee = BigNumber(ticker_data.length).mul(fee);
 
   if (totalFee.gt(polyBalance)) {
@@ -88,7 +87,7 @@ async function registerTickers() {
     console.log(chalk.red(`*******************************************************************************\n`));
     process.exit(0);
   } else {
-    let approveAction = polyToken.methods.approve(tickerRegistryAddress, totalFee);
+    let approveAction = polyToken.methods.approve(securityTokenRegistryAddress, totalFee);
     let receipt = await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
     totalGas = totalGas.add(receipt.gasUsed);
   }
@@ -106,7 +105,7 @@ async function registerTickers() {
     }
 
     // validate ticker
-    await tickerRegistry.methods.getDetails(ticker_data[i].symbol).call({}, function(error, result){
+    await securityTokenRegistry.methods.getTickerDetails(ticker_data[i].symbol).call({}, function(error, result){
       if (result[1] != 0) {
         failed_tickers.push(` ${i} is already registered`);
         valid = false;
@@ -115,7 +114,7 @@ async function registerTickers() {
 
     if (valid) {
       try {
-        let registerTickerAction = tickerRegistry.methods.registerTicker(owner, ticker_data[i].symbol, ticker_data[i].name, ticker_data[i].swarmHash);
+        let registerTickerAction = securityTokenRegistry.methods.registerTicker(owner, ticker_data[i].symbol, ticker_data[i].name);
         let receipt = await common.sendTransaction(Issuer, registerTickerAction, defaultGasPrice);
         registered_tickers.push(ticker_data[i]);
         console.log(ticker_data[i]);

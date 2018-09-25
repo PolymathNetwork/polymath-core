@@ -52,10 +52,6 @@ module.exports = {
     let networkId = await web3.eth.net.getId();
     return getPolymathRegistryAddress(networkId);
   },
-  tickerRegistry: async function() {
-    let polymathRegistry = await getPolymathRegistry();
-    return await polymathRegistry.methods.getAddress("TickerRegistry").call();
-  },
   securityTokenRegistry: async function() {
     let polymathRegistry = await getPolymathRegistry();
     return await polymathRegistry.methods.getAddress("SecurityTokenRegistry").call();
@@ -63,6 +59,10 @@ module.exports = {
   moduleRegistry: async function() {
     let polymathRegistry = await getPolymathRegistry();
     return await polymathRegistry.methods.getAddress("ModuleRegistry").call();
+  },
+  featureRegistry: async function() {
+    let polymathRegistry = await getPolymathRegistry();
+    return await polymathRegistry.methods.getAddress("FeatureRegistry").call();
   },
   polyToken: async function() {
     let polymathRegistry = await getPolymathRegistry();
@@ -76,6 +76,11 @@ module.exports = {
       return "0x4527f1629b1d32ad8b900edebb766967c9c78715"; // Updated to 1.4.0
     else
       return JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).networks[networkId].address;
+  },
+  daiToken: async function() {
+    //TODO: Add a proper test DAI token here
+    let polymathRegistry = await getPolymathRegistry();
+    return await polymathRegistry.methods.getAddress("PolyToken").call();
   },
   usdTieredSTOFactoryAddress: async function() {
     let networkId = await web3.eth.net.getId();

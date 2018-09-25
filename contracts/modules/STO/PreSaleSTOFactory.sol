@@ -1,22 +1,25 @@
 pragma solidity ^0.4.24;
 
 import "./PreSaleSTO.sol";
-import "../../interfaces/IModuleFactory.sol";
-import "../../interfaces/IModule.sol";
+import "../ModuleFactory.sol";
+import "../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying PreSaleSTO module
  */
-contract PreSaleSTOFactory is IModuleFactory {
+contract PreSaleSTOFactory is ModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-
+        version = "1.0.0";
+        name = "PreSaleSTO";
+        title = "PreSale STO";
+        description = "Allows Issuer to configure pre-sale token allocations";
     }
 
     /**
@@ -26,14 +29,14 @@ contract PreSaleSTOFactory is IModuleFactory {
      */
     function deploy(bytes _data) external returns(address) {
         if (setupCost > 0) {
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
         }
         //Check valid bytes - can only call module init function
         PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(getSig(_data) == preSaleSTO.getInitFunction(), "Provided data is not valid");
-        require(address(preSaleSTO).call(_data), "Un-successfull call");
-        emit LogGenerateModuleFromFactory(address(preSaleSTO), getName(), address(this), msg.sender, now);
+        require(Util.getSig(_data) == preSaleSTO.getInitFunction(), "Invalid data");
+        require(address(preSaleSTO).call(_data), "Unsuccessfull call");
+        emit LogGenerateModuleFromFactory(address(preSaleSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(preSaleSTO);
     }
 
@@ -48,21 +51,35 @@ contract PreSaleSTOFactory is IModuleFactory {
      * @notice Get the name of the Module
      */
     function getName() public view returns(bytes32) {
-        return "PreSaleSTO";
+        return name;
     }
 
     /**
      * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
-        return "Allows Issuer to configure pre-sale token allocations";
+        return description;
     }
 
     /**
      * @notice Get the title of the Module
      */
     function getTitle() public view returns(string) {
-        return "PreSale STO";
+        return title;
+    }
+
+    /**
+     * @notice Get the version of the Module
+     */
+    function getVersion() external view returns(string) {
+        return version;
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCost() external view returns (uint256) {
+        return setupCost;
     }
 
     /**

@@ -55,7 +55,7 @@ interface ISecurityTokenRegistry {
     * @dev Allows the current owner to transfer control of the contract to a newOwner.
     * @param _newOwner The address to transfer ownership to.
     */
-    function transferOwnership(address _newOwner) external; 
+    function transferOwnership(address _newOwner) external;
 
     /**
      * @notice Get security token address by ticker name
@@ -84,6 +84,13 @@ interface ISecurityTokenRegistry {
      * @param _owner Address which owns the list of tickers
      */
     function getTickersByOwner(address _owner) external view returns(bytes32[]);
+
+    /**
+     * @notice Returns the list of tokens owned by the selected address
+     * @param _owner is the address which owns the list of tickers
+     * @dev Intention is that this is called off-chain so block gas limit is not relevant
+     */
+    function getTokensByOwner(address _owner) external returns(address[]);
 
     /**
      * @notice Returns the owner and timestamp for a given ticker

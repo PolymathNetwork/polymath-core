@@ -7,6 +7,8 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 * Added withholding tax to ether & erc20 dividends
+* Generalised MakerDAO oracle to allow different instances referencing different currencies
+* Added DAI as a fundraising currency to USDTieredSTO
 * `transferTickerOwnership()` function is introduced in `TickerRegistry` to transfer the ticker ownership after the registeration #191.
 * `getTickersByOwner()` function is used to get the list of tickers owned by the issuer #189.   
 * New function `addCustomTicker()` is used the add the Ticker in tickerRegistry. To avail the facility to Registry owner to add the tokens without paying the fee #190.  

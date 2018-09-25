@@ -28,17 +28,22 @@ contract DividendCheckpoint is ICheckpoint, Module {
       uint256 dividendWithheld;
       uint256 dividendWithheldReclaimed;
       mapping (address => bool) claimed; // List of addresses which have claimed dividend
-      mapping (address => bool) excluded; // List of addresses which cannot claim dividends
+      mapping (address => bool) dividendExcluded; // List of addresses which cannot claim dividends
     }
 
     // List of all dividends
     Dividend[] public dividends;
+
+    // List of addresses which cannot claim dividends
+    address[] public excluded;
 
     // Mapping from address to withholding tax as a percentage * 10**16
     mapping (address => uint256) public withholdingTax;
 
     // Total amount of ETH withheld per investor
     mapping (address => uint256) public investorWithheld;
+
+    event SetExcludedAddresses(address[] _excluded, uint256 _timestamp);
 
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
@@ -62,11 +67,21 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _withholding withholding tax for individual investors (multiplied by 10**16)
      */
     function setWithholding(address[] _investors, uint256[] _withholding) public onlyOwner {
-        require(_investors.length == _withholding.length);
+        require(_investors.length == _withholding.length, "Mismatched input lengths");
         for (uint256 i = 0; i < _investors.length; i++) {
             require(_withholding[i] <= 10**18);
             withholdingTax[_investors[i]] = _withholding[i];
         }
+    }
+
+    /**
+     * @notice Function to clear and set list of excluded addresses used for future dividends
+     * @param _investors addresses of investor
+     */
+    function setExcluded(address[] _excluded) public onlyOwner {
+        require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many excluded addresses");
+        excluded = _excluded;
+        emit SetExcludedAddresses(excluded, now);
     }
 
     /**
@@ -89,7 +104,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     function pushDividendPaymentToAddresses(uint256 _dividendIndex, address[] _payees) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
-            if ((!dividend.claimed[_payees[i]]) && (!dividend.excluded[_payees[i]])) {
+            if ((!dividend.claimed[_payees[i]]) && (!dividend.dividendExcluded[_payees[i]])) {
                 _payDividend(_payees[i], dividend, _dividendIndex);
             }
         }
@@ -106,7 +121,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
         uint256 numberInvestors = ISecurityToken(securityToken).getInvestorsLength();
         for (uint256 i = _start; i < Math.min256(numberInvestors, _start.add(_iterations)); i++) {
             address payee = ISecurityToken(securityToken).investors(i);
-            if ((!dividend.claimed[payee]) && (!dividend.excluded[payee])) {
+            if ((!dividend.claimed[payee]) && (!dividend.dividendExcluded[payee])) {
                 _payDividend(payee, dividend, _dividendIndex);
             }
         }
@@ -120,7 +135,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     {
         Dividend storage dividend = dividends[_dividendIndex];
         require(!dividend.claimed[msg.sender], "Dividend already claimed by msg.sender");
-        require(!dividend.excluded[msg.sender], "msg.sender excluded from Dividend");
+        require(!dividend.dividendExcluded[msg.sender], "msg.sender excluded from Dividend");
         _payDividend(msg.sender, dividend, _dividendIndex);
     }
 
@@ -147,7 +162,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256, uint256) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
         Dividend storage dividend = dividends[_dividendIndex];
-        if (dividend.claimed[_payee] || dividend.excluded[_payee]) {
+        if (dividend.claimed[_payee] || dividend.dividendExcluded[_payee]) {
             return (0, 0);
         }
         uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividend.checkpointId);

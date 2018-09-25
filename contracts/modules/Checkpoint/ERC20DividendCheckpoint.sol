@@ -34,9 +34,8 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _token Address of ERC20 token in which dividend is to be denominated
      * @param _amount Amount of specified token for dividend
      */
-    function createDividend(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, address[] _excluded) external onlyOwner {
-        uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
-        createDividendWithCheckpoint(_maturity, _expiry, _token, _amount, checkpointId, _excluded);
+    function createDividend(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount) external onlyOwner {
+        createDividendWithExclusions(_maturity, _expiry, _token, _amount, excluded);
     }
 
     /**
@@ -47,7 +46,33 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _amount Amount of specified token for dividend
      * @param _checkpointId Checkpoint id from which to create dividends
      */
-    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 _checkpointId, address[] _excluded) payable public onlyOwner {
+    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 _checkpointId) external onlyOwner {
+        createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, _checkpointId, excluded);
+    }
+
+    /**
+     * @notice Creates a dividend and checkpoint for the dividend
+     * @param _maturity Time from which dividend can be paid
+     * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
+     * @param _token Address of ERC20 token in which dividend is to be denominated
+     * @param _amount Amount of specified token for dividend
+     * @param _excluded List of addresses to exclude
+     */
+    function createDividendWithExclusions(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, address[] _excluded) public onlyOwner {
+        uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
+        createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, checkpointId, _excluded);
+    }
+
+    /**
+     * @notice Creates a dividend with a provided checkpoint
+     * @param _maturity Time from which dividend can be paid
+     * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
+     * @param _token Address of ERC20 token in which dividend is to be denominated
+     * @param _amount Amount of specified token for dividend
+     * @param _checkpointId Checkpoint id from which to create dividends
+     * @param _excluded List of addresses to exclude
+     */
+    function createDividendWithCheckpointAndExclusions(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 _checkpointId, address[] _excluded) public onlyOwner {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
         require(_expiry > _maturity, "Expiry is before maturity");
         require(_expiry > now, "Expiry is in the past");
@@ -76,7 +101,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
           )
         );
         for (uint256 j = 0; j < _excluded.length; j++) {
-            dividends[dividends.length - 1].excluded[_excluded[j]] = true;
+            dividends[dividends.length - 1].dividendExcluded[_excluded[j]] = true;
         }
         dividendTokens[dividendIndex] = _token;
         emit ERC20DividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex);

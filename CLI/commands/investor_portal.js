@@ -466,7 +466,7 @@ async function investUsdTieredSTO(currency, amount) {
         let minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(FUND_RAISE_TYPES[raiseType], minimumInvestmentUSD).call();
         cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `), {
             limit: function(input) {
-                return investorInvestedUSD != 0 || input > web3.utils.fromWei(minimumInvestmentRaiseType);
+                return investorInvestedUSD != 0 || parseInt(input) > parseInt(web3.utils.fromWei(minimumInvestmentRaiseType));
             },
             limitMessage: `Amount must be greater than minimum investment (${web3.utils.fromWei(minimumInvestmentRaiseType)} ${raiseType} = ${web3.utils.fromWei(minimumInvestmentUSD)} USD)`
         });

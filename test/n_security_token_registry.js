@@ -614,6 +614,9 @@ contract('SecurityTokenRegistry', accounts => {
             let _blockNo = latestBlock();
             let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, { from: token_owner, gas:60000000  });
 
+            console.log(await I_STRProxied.getTokensByOwner(token_owner));
+            assert.isTrue(false);
+
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol2, "SecurityToken doesn't get deployed");
 

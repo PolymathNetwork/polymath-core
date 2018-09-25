@@ -330,9 +330,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
          }
         return tempList;
     }
-    event Log(uint256 _log);
-    event LogA(address _log);
-    event LogB(bytes32 _log);
 
     /**
      * @notice Returns the list of tokens owned by the selected address
@@ -343,20 +340,15 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         // Loop over all active users, then all associated tickers of those users
         // This ensures we find tokens, even if their owner has been modified
         address[] memory activeUsers = getArrayAddress(Encoder.getKey("activeUsers"));
-        emit Log(activeUsers.length);
         bytes32[] memory tickers;
         address token;
         uint256 count = 0;
         uint256 i = 0;
         uint256 j = 0;
         for (i = 0; i < activeUsers.length; i++) {
-            emit LogA(activeUsers[i]);
             tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
-            emit Log(tickers.length);
             for (j = 0; j < tickers.length; j++) {
-                emit LogB(tickers[j]);
                 token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
-                emit LogA(token);
                 if (token != address(0)) {
                     if (IOwnable(token).owner() == _owner) {
                         count = count + 1;
@@ -364,7 +356,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
                 }
             }
         }
-        emit Log(count);
         uint256 index = 0;
         address[] memory result = new address[](count);
         for (i = 0; i < activeUsers.length; i++) {

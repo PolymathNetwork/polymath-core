@@ -76,7 +76,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     /**
      * @notice Function to clear and set list of excluded addresses used for future dividends
-     * @param _investors addresses of investor
+     * @param _excluded addresses of investor
      */
     function setExcluded(address[] _excluded) public onlyOwner {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many excluded addresses");

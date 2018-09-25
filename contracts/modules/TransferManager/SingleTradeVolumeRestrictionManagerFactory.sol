@@ -2,7 +2,8 @@ pragma solidity ^0.4.24;
 
 import "../../interfaces/IModuleFactory.sol";
 import "./SingleTradeVolumeRestrictionManager.sol";
-contract SingleTradeVolumeRestrictionFactory is IModuleFactory {
+contract SingleTradeVolumeRestrictionManagerFactory is IModuleFactory {
+
 
   /**
    * @notice Constructor
@@ -56,14 +57,14 @@ contract SingleTradeVolumeRestrictionFactory is IModuleFactory {
    * @notice Get the title of the Module
    */
   function getTitle() public  view returns(string) {
-      return "Single Trade Volume Restriction";
+      return "Single Trade Volume Restriction Manager";
   }
 
   /**
    * @notice Get the Instructions that help to use the module
    */
   function getInstructions() public view returns(string) {
-      return "Allows an issuer to impose volume restriction on a single trade";
+      return "Allows an issuer to impose volume restriction on a single trade. Init function takes two parameters. First parameter is a bool indicating if restriction is in percentage. The second parameter is the value in percentage or amount of tokens";
   }
 
   /**

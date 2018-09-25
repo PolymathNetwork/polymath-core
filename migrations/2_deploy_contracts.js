@@ -20,6 +20,7 @@ const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18))
 const usdTieredSTOSetupCost = new BigNumber(100000).times(new BigNumber(10).pow(18));   // 100K POLY fee
 const initRegFee = new BigNumber(250).times(new BigNumber(10).pow(18));      // 250 POLY fee for registering ticker or security token in registry
 let PolyToken;
+let UsdToken;
 let ETHOracle;
 let POLYOracle;
 
@@ -34,6 +35,11 @@ module.exports = function (deployer, network, accounts) {
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
     PolymathAccount = accounts[0]
     PolyToken = DevPolyToken.address // Development network polytoken address
+    deployer.deploy(DevPolyToken, {from: PolymathAccount}).then(() => {
+      DevPolyToken.deployed().then((mockedUSDToken) => {
+        UsdToken = mockedUSDToken.address;
+      });
+    });
     deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
         POLYOracle = mockedOracle.address;

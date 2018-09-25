@@ -31,7 +31,7 @@ const FUND_RAISE_TYPES = {
 // Artifacts
 let securityTokenRegistry;
 let polyToken;
-let daiToken;
+let usdToken;
 let securityToken;
 let generalTransferManager;
 let currentSTO;
@@ -85,8 +85,9 @@ async function setup(){
     polyToken.setProvider(web3.currentProvider);
 
     //TODO: Use proper DAI token here
-    daiToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
-    daiToken.setProvider(web3.currentProvider);
+    let usdTokenAddress = await contracts.usdToken();
+    usdToken = new web3.eth.Contract(polytokenABI, usdTokenAddress);
+    usdToken.setProvider(web3.currentProvider);
 
     cappedSTOFactoryAddress = await contracts.cappedSTOFactoryAddress();
     let cappedSTOFactoryABI = abis.cappedSTOFactory();
@@ -537,22 +538,22 @@ function fundingConfigUSDTieredSTO() {
   }
 
   if (selectedFunding == 'E') {
-    funding.raiseType = [0];
+    funding.raiseType = [FUND_RAISE_TYPES.ETH];
   }
   else if (selectedFunding == 'P') {
-    funding.raiseType = [1];
+    funding.raiseType = [FUND_RAISE_TYPES.POLY];
   }
   else if (selectedFunding == 'D') {
-    funding.raiseType = [2];
+    funding.raiseType = [FUND_RAISE_TYPES.DAI];
   }
   else {
-    funding.raiseType = [0, 1, 2];
+    funding.raiseType = [FUND_RAISE_TYPES.ETH, FUND_RAISE_TYPES.POLY, FUND_RAISE_TYPES.DAI];
   }
 
   return funding;
 }
 
-function addressesConfigUSDTieredSTO() {
+function addressesConfigUSDTieredSTO(usdTokenRaise) {
   let addresses = {};
 
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('wallet')) {
@@ -580,6 +581,23 @@ function addressesConfigUSDTieredSTO() {
     });
   }
   if (addresses.reserveWallet == "") addresses.reserveWallet = Issuer.address;
+
+  if (usdTokenRaise) {
+    if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('usdToken')) {
+      addresses.usdToken = _stoConfig.usdToken;
+    } else {
+      addresses.usdToken = readlineSync.question('Enter the address of the USD Token or stable coin (' + usdToken.options.address + '): ', {
+        limit: function(input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address",
+        defaultInput: usdToken.options.address
+      });
+    }
+    if (addresses.usdToken == "") addresses.usdToken = usdToken.options.address;
+  } else {
+    addresses.usdToken = '0x0000000000000000000000000000000000000000';
+  } 
 
   return addresses;
 }
@@ -759,11 +777,10 @@ async function usdTieredSTO_launch() {
   }
 
   let funding = fundingConfigUSDTieredSTO();
-  let addresses = addressesConfigUSDTieredSTO();
-  let tiers = tiersConfigUSDTieredSTO(funding.raiseType.includes(1));
+  let addresses = addressesConfigUSDTieredSTO(funding.raiseType.includes(FUND_RAISE_TYPES.DAI));
+  let tiers = tiersConfigUSDTieredSTO(funding.raiseType.includes(FUND_RAISE_TYPES.POLY));
   let limits = limitsConfigUSDTieredSTO();
   let times = timesConfigUSDTieredSTO();
-  let polytokenAddress = await contracts.polyToken();
   let bytesSTO = web3.eth.abi.encodeFunctionCall( {
     name: 'configure',
     type: 'function',
@@ -817,7 +834,7 @@ async function usdTieredSTO_launch() {
     funding.raiseType,
     addresses.wallet,
     addresses.reserveWallet,
-    polytokenAddress
+    addresses.usdToken
   ]);
 
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
@@ -1073,13 +1090,13 @@ async function modfifyFunding() {
 }
 
 async function modfifyAddresses() {
-  let addresses = addressesConfigUSDTieredSTO();
-  let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.wallet, addresses.reserveWallet);
+  let addresses = addressesConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(FUND_RAISE_TYPES.DAI).call());
+  let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.wallet, addresses.reserveWallet, addresses.usdToken);
   await common.sendTransaction(Issuer, modifyAddressesAction, defaultGasPrice);
 }
 
 async function modfifyTiers() {
-  let tiers = tiersConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(1).call());
+  let tiers = tiersConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(FUND_RAISE_TYPES.POLY).call());
   let modifyTiersAction = currentSTO.methods.modifyTiers(
     tiers.ratePerTier,
     tiers.ratePerTierDiscountPoly,
@@ -1099,7 +1116,7 @@ async function getBalance(from, type) {
     case 'POLY':
       return await polyToken.methods.balanceOf(from).call();
     case 'DAI':
-      return await daiToken.methods.balanceOf(from).call();
+      return await usdToken.methods.balanceOf(from).call();
   }
 }
 

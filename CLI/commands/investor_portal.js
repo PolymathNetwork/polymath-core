@@ -21,7 +21,7 @@ let securityToken;
 let selectedSTO;
 let currentSTO;
 let polyToken;
-let daiToken;
+let usdToken;
 let generalTransferManager;
 
 let raiseTypes = [];
@@ -95,9 +95,9 @@ async function setup() {
         polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
         polyToken.setProvider(web3.currentProvider);
 
-        //TODO: Use proper DAI token here
-        daiToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
-        daiToken.setProvider(web3.currentProvider);
+        let usdTokenAddress = await contracts.usdToken();
+        usdToken = new web3.eth.Contract(polytokenABI, usdTokenAddress);
+        usdToken.setProvider(web3.currentProvider);
     } catch (err) {
         console.log(err);
         console.log(chalk.red(`There was a problem getting the contracts. Make sure they are deployed to the selected network.`));
@@ -169,7 +169,7 @@ async function showUserInfo(_user) {
         console.log(`    - ETH balance:\t     ${web3.utils.fromWei(await web3.eth.getBalance(_user))}`);
     }
     if (await currentSTO.methods.fundRaiseTypes(FUND_RAISE_TYPES.DAI)) {
-        console.log(`    - DAI balance:\t     ${await daiBalance(_user)}`);
+        console.log(`    - DAI balance:\t     ${await usdBalance(_user)}`);
     }
 }
 
@@ -493,6 +493,22 @@ async function investUsdTieredSTO(currency, amount) {
             console.log(chalk.red(`Please purchase a smaller amount of tokens or access the POLY faucet to get the POLY to complete this txn.`));
             process.exit();
         }
+    } else if (raiseType == 'DAI') {
+        let userBalance = await usdBalance(User.address);
+        if (parseInt(userBalance) >= parseInt(cost)) {
+            let allowance = await usdToken.methods.allowance(STOAddress, User.address).call();
+            if (allowance < costWei) {
+                let approveAction = usdToken.methods.approve(STOAddress, costWei);
+                await common.sendTransaction(User, approveAction, defaultGasPrice);
+            }
+            let actionBuyWithUSD = currentSTO.methods.buyWithUSD(User.address, costWei);
+            let receipt = await common.sendTransaction(User, actionBuyWithUSD, defaultGasPrice, 0, 1.5);
+            logTokensPurchasedUSDTieredSTO(receipt);
+        } else {
+            console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} DAI but have ${userBalance} DAI.`));
+            console.log(chalk.red(`Please purchase a smaller amount of tokens.`));
+            process.exit();
+        } 
     } else {
         let actionBuyWithETH = currentSTO.methods.buyWithETH(User.address);
         let receipt = await common.sendTransaction(User, actionBuyWithETH, defaultGasPrice, costWei);
@@ -508,8 +524,8 @@ async function polyBalance(_user) {
     return web3.utils.fromWei(balance);
 }
 
-async function daiBalance(_user) {
-    let balance = await daiToken.methods.balanceOf(_user).call();
+async function usdBalance(_user) {
+    let balance = await usdToken.methods.balanceOf(_user).call();
     return web3.utils.fromWei(balance);
 }
 

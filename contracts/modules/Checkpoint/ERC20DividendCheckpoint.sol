@@ -119,7 +119,9 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         _dividend.claimedAmount = claim.add(_dividend.claimedAmount);
         uint256 claimAfterWithheld = claim.sub(withheld);
         if (claimAfterWithheld > 0) {
-            require(IERC20(dividendTokens[_dividendIndex]).transfer(_payee, claim), "Unable to transfer tokens");
+            require(IERC20(dividendTokens[_dividendIndex]).transfer(_payee, claimAfterWithheld), "Unable to transfer tokens");
+            _dividend.dividendWithheld = _dividend.dividendWithheld.add(withheld);
+            investorWithheld[_payee] = investorWithheld[_payee].add(withheld);
             emit ERC20DividendClaimed(_payee, _dividendIndex, dividendTokens[_dividendIndex], claim, withheld);
         }
     }

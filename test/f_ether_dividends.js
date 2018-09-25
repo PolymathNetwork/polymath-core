@@ -365,7 +365,7 @@ contract('EtherDividendCheckpoint', accounts => {
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
             try {
-                let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, [], {from: token_owner});
+                let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, {from: token_owner});
             } catch(error) {
                 console.log(`       tx -> failed because msg.value = 0`.grey);
                 ensureException(error);
@@ -379,7 +379,7 @@ contract('EtherDividendCheckpoint', accounts => {
             let maturity = latestTime();
             let expiry = latestTime() - duration.days(10);
             try {
-                let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, [], {from: token_owner, value: web3.utils.toWei('1.5', 'ether')});
+                let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, {from: token_owner, value: web3.utils.toWei('1.5', 'ether')});
             } catch(error) {
                 console.log(`       tx -> failed because maturity > expiry`.grey);
                 ensureException(error);
@@ -393,7 +393,7 @@ contract('EtherDividendCheckpoint', accounts => {
             let maturity = latestTime() - duration.days(2);
             let expiry = latestTime() - duration.days(1);
             try {
-                let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, [], {from: token_owner, value: web3.utils.toWei('1.5', 'ether')});
+                let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, {from: token_owner, value: web3.utils.toWei('1.5', 'ether')});
             } catch(error) {
                 console.log(`       tx -> failed because now > expiry`.grey);
                 ensureException(error);
@@ -409,7 +409,7 @@ contract('EtherDividendCheckpoint', accounts => {
         it("Create new dividend", async() => {
             let maturity = latestTime() + duration.days(1);
             let expiry = latestTime() + duration.days(10);
-            let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, [], {from: token_owner, value: web3.utils.toWei('1.5', 'ether')});
+            let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, {from: token_owner, value: web3.utils.toWei('1.5', 'ether')});
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 1, "Dividend should be created at checkpoint 1");
         });
 
@@ -511,7 +511,7 @@ contract('EtherDividendCheckpoint', accounts => {
         it("Create new dividend", async() => {
             let maturity = latestTime() + duration.days(1);
             let expiry = latestTime() + duration.days(10);
-            let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, [], {from: token_owner, value: web3.utils.toWei('1.5', 'ether')});
+            let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, {from: token_owner, value: web3.utils.toWei('1.5', 'ether')});
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 2, "Dividend should be created at checkpoint 1");
         });
 
@@ -577,7 +577,7 @@ contract('EtherDividendCheckpoint', accounts => {
         it("Create another new dividend", async() => {
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
-            let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, [], {from: token_owner, value: web3.utils.toWei('11', 'ether')});
+            let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, {from: token_owner, value: web3.utils.toWei('11', 'ether')});
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 3, "Dividend should be created at checkpoint 2");
         });
 
@@ -663,7 +663,7 @@ contract('EtherDividendCheckpoint', accounts => {
             let expiry = latestTime() + duration.days(2);
             let tx = await I_SecurityToken.createCheckpoint({from: token_owner});
             try {
-                tx = await I_EtherDividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, 4, [], {from: token_owner, value: 0});
+                tx = await I_EtherDividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, 4, {from: token_owner, value: 0});
             } catch(error) {
                 console.log(`       tx -> failed because msg.value is 0`.grey);
                 ensureException(error);
@@ -677,7 +677,7 @@ contract('EtherDividendCheckpoint', accounts => {
             let maturity = latestTime();
             let expiry = latestTime() - duration.days(10);
             try {
-                tx = await I_EtherDividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, 4, [], {from: token_owner, value: web3.utils.toWei('11', 'ether')});
+                tx = await I_EtherDividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, 4, {from: token_owner, value: web3.utils.toWei('11', 'ether')});
             } catch(error) {
                 console.log(`       tx -> failed because maturity > expiry`.grey);
                 ensureException(error);
@@ -691,7 +691,7 @@ contract('EtherDividendCheckpoint', accounts => {
             let maturity = latestTime() - duration.days(5);
             let expiry = latestTime() - duration.days(2);
             try {
-                tx = await I_EtherDividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, 4, [], {from: token_owner, value: web3.utils.toWei('11', 'ether')});
+                tx = await I_EtherDividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, 4, {from: token_owner, value: web3.utils.toWei('11', 'ether')});
             } catch(error) {
                 console.log(`       tx -> failed because now > expiry`.grey);
                 ensureException(error);
@@ -705,7 +705,7 @@ contract('EtherDividendCheckpoint', accounts => {
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(2);
             try {
-                tx = await I_EtherDividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, 5, [], {from: token_owner, value: web3.utils.toWei('11', 'ether')});
+                tx = await I_EtherDividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, 5, {from: token_owner, value: web3.utils.toWei('11', 'ether')});
             } catch(error) {
                 console.log(`       tx -> failed because checkpoint id > current checkpoint`.grey);
                 ensureException(error);
@@ -718,7 +718,7 @@ contract('EtherDividendCheckpoint', accounts => {
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
             let tx = await I_SecurityToken.createCheckpoint({from: token_owner});
-            tx = await I_EtherDividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, 4, [account_investor1], {from: token_owner, value: web3.utils.toWei('10', 'ether')});
+            tx = await I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(maturity, expiry, 4, [account_investor1], {from: token_owner, value: web3.utils.toWei('10', 'ether')});
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 4, "Dividend should be created at checkpoint 3");
         });
 

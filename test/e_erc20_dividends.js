@@ -734,6 +734,10 @@ contract('ERC20DividendCheckpoint', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Set withholding tax of 20% on account_temp and 10% on investor2", async() => {
+            await I_ERC20DividendCheckpoint.setWithholding([account_temp, account_investor2], [BigNumber(20*10**16), BigNumber(10*10**16)], {from: token_owner});
+        });
+
         it("Create another new dividend with explicit checkpoint and exclusion", async() => {
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
@@ -782,6 +786,10 @@ contract('ERC20DividendCheckpoint', accounts => {
             assert.equal(dividendAmount2[0].toNumber(), web3.utils.toWei("2", "ether"));
             assert.equal(dividendAmount3[0].toNumber(), web3.utils.toWei("7", "ether"));
             assert.equal(dividendAmount_temp[0].toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal(dividendAmount1[1].toNumber(), web3.utils.toWei("0", "ether"));
+            assert.equal(dividendAmount2[1].toNumber(), web3.utils.toWei("0.2", "ether"));
+            assert.equal(dividendAmount3[1].toNumber(), web3.utils.toWei("0", "ether"));
+            assert.equal(dividendAmount_temp[1].toNumber(), web3.utils.toWei("0.2", "ether"));
         });
 
         it("Investor 2 claims dividend", async() => {
@@ -795,7 +803,7 @@ contract('ERC20DividendCheckpoint', accounts => {
             let investor3BalanceAfter1 = BigNumber(await I_PolyToken.balanceOf(account_investor3));
             let tempBalanceAfter1 = BigNumber(await web3.eth.getBalance(account_temp));
             assert.equal(investor1BalanceAfter1.sub(investor1Balance).toNumber(), 0);
-            assert.equal(investor2BalanceAfter1.sub(investor2Balance).toNumber(), web3.utils.toWei('2', 'ether'));
+            assert.equal(investor2BalanceAfter1.sub(investor2Balance).toNumber(), web3.utils.toWei('1.8', 'ether'));
             assert.equal(investor3BalanceAfter1.sub(investor3Balance).toNumber(), 0);
             assert.equal(tempBalanceAfter1.sub(tempBalance).toNumber(), 0);
         });
@@ -813,7 +821,7 @@ contract('ERC20DividendCheckpoint', accounts => {
             assert.equal(investor1BalanceAfter2.sub(investor1BalanceAfter1).toNumber(), 0);
             assert.equal(investor2BalanceAfter2.sub(investor2BalanceAfter1).toNumber(), 0);
             assert.equal(investor3BalanceAfter2.sub(investor3BalanceAfter1).toNumber(), 0);
-            assert.equal(tempBalanceAfter2.sub(tempBalanceAfter1).toNumber(), web3.utils.toWei('1', 'ether'));
+            assert.equal(tempBalanceAfter2.sub(tempBalanceAfter1).toNumber(), web3.utils.toWei('0.8', 'ether'));
             //Check fully claimed
             assert.equal((await I_ERC20DividendCheckpoint.dividends(3))[5].toNumber(), web3.utils.toWei('3', 'ether'));
         });
@@ -823,7 +831,14 @@ contract('ERC20DividendCheckpoint', accounts => {
             let dividendAmount2 = await I_ERC20DividendCheckpoint.calculateDividend.call(3, account_investor2);
             assert.equal(dividendAmount1[0].toNumber(), 0);
             assert.equal(dividendAmount2[0].toNumber(), 0);
-         });
+        });
+
+        it("Issuer reclaims withholding tax", async() => {
+            let issuerBalance = BigNumber(await I_PolyToken.balanceOf(token_owner));
+            await I_ERC20DividendCheckpoint.withdrawWithholding(3, {from: token_owner, gasPrice: 0});
+            let issuerBalanceAfter = BigNumber(await I_PolyToken.balanceOf(token_owner));
+            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), web3.utils.toWei('0.4', 'ether'))
+        });
 
          it("Issuer unable to reclaim dividend (expiry not passed)", async() => {
             let errorThrown = false;

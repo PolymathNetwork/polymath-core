@@ -4,7 +4,7 @@ import { encodeProxyCall } from './helpers/encodeCall';
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
-const GeneralPermissionManagerfactory = artifacts.require('./GeneralPermissionManagerfactory.sol');
+const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const ModuleRegistryMock = artifacts.require("./ModuleRegistryMock.sol");
 const OwnedUpgradeabilityProxy = artifacts.require('./OwnedUpgradeabilityProxy.sol');
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
@@ -181,12 +181,12 @@ contract ("ModuleRegistryProxy", accounts => {
 
         it("Register and verify the new module", async() => {
 
-            I_GeneralPermissionManagerfactory = await GeneralPermissionManagerfactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
+            I_GeneralPermissionManagerfactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
             assert.notEqual(
                 I_GeneralPermissionManagerfactory.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
-                "GeneralPermissionManagerfactory contract was not deployed"
+                "GeneralPermissionManagerFactory contract was not deployed"
             );
 
             await I_MRProxied.registerModule(I_GeneralPermissionManagerfactory.address, { from: account_polymath });

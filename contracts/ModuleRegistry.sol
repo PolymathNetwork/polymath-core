@@ -13,7 +13,7 @@ import "./interfaces/IOwner.sol";
 
 /**
 * @title Registry contract to store registered modules
-* @notice Anyone can register modules, but only those "approved" by Polymath will be available for issuers to add
+* @notice Only Polymath can register and verify module factories to make them available for issuers to attach.
 */
 contract ModuleRegistry is IModuleRegistry, EternalStorage {
     /*
@@ -23,16 +23,16 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         // Mapping used to hold the reputation of the factory
         mapping (address => address[]) public reputation;
 
-        // Mapping contain the list of addresses of Module factory for a particular type
+        // Mapping containing the list of addresses of Module Factories of a particular type
         mapping (uint8 => address[]) public moduleList;
 
-        // Mapping to store the index of the moduleFactory in the moduleList
+        // Mapping to store the index of the Module Factory in the moduleList
         mapping(address => uint8) private moduleListIndex;
 
         // contains the list of verified modules
         mapping (address => bool) public verified;
 
-        // Contains the list of the available tags corresponds to the module type
+        // Contains the list of the available tags corresponding to each module type
         mapping (uint8 => bytes32[]) public availableTags;
     */
 
@@ -40,17 +40,17 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     // Events
     //////////
 
-    // Emit when ecosystem get paused
+    // Emit when network becomes paused
     event Pause(uint256 _timestammp);
-     // Emit when ecosystem get unpaused
+     // Emit when network becomes unpaused
     event Unpause(uint256 _timestamp);
-    // Emit when Module been used by the securityToken
+    // Emit when Module is used by the SecurityToken
     event ModuleUsed(address indexed _moduleFactory, address indexed _securityToken);
-    // Emit when the Module Factory get registered with the ModuleRegistry contract
+    // Emit when the Module Factory gets registered on the ModuleRegistry contract
     event ModuleRegistered(address indexed _moduleFactory, address indexed _owner);
-    // Emit when the module get verified by the Polymath team
+    // Emit when the module gets verified by Polymath
     event ModuleVerified(address indexed _moduleFactory, bool _verified);
-    // Emit when a moduleFactory is removed by Polymath or moduleFactory owner
+    // Emit when a ModuleFactory is removed by Polymath
     event ModuleRemoved(address indexed _moduleFactory, address indexed _decisionMaker);
 
     ///////////////
@@ -100,8 +100,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice Called by a security token to check if the ModuleFactory is verified or appropriate custom module
-     * @dev ModuleFactory reputation increases by one every time it is deployed
+     * @notice Called by a SecurityToken to check if the ModuleFactory is verified or appropriate custom module
+     * @dev ModuleFactory reputation increases by one every time it is deployed(used) by a ST.
      * @dev Any module can be added during token creation without being registered if it is defined in the token proxy deployment contract
      * @dev The feature switch for custom modules is labelled "customModulesAllowed"
      * @param _moduleFactory is the address of the relevant module factory
@@ -127,7 +127,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice Called by moduleFactory owner to register new modules for SecurityToken to use
+     * @notice Called by the ModuleFactory owner to register new modules for SecurityTokens to use
      * @param _moduleFactory is the address of the module factory to be registered
      * @return bool
      */
@@ -145,8 +145,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice Called by moduleFactory owner or registry curator to delete a moduleFactory
-     * @param _moduleFactory is the address of the module factory to be deleted
+     * @notice Called by the ModuleFactory owner or registry curator to delete a ModuleFactory from the registry
+     * @param _moduleFactory is the address of the module factory to be deleted from the registry
      * @return bool
      */
     function removeModule(address _moduleFactory) external whenNotPaused returns(bool) {
@@ -181,10 +181,11 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-    * @notice Called by Polymath to verify modules for SecurityToken to use.
+    * @notice Called by Polymath to verify Module Factories for SecurityTokens to use.
     * @notice A module can not be used by an ST unless first approved/verified by Polymath
     * @notice (The only exception to this is that the author of the module is the owner of the ST)
-    * @param _moduleFactory is the address of the module factory to be registered
+    * @notice -> Only if Polymath enabled the feature.
+    * @param _moduleFactory is the address of the module factory to be verified
     * @return bool
     */
     function verifyModule(address _moduleFactory, bool _verified) external onlyOwner returns(bool) {
@@ -196,9 +197,9 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice Add the tag for specified Module Factory
-     * @param _moduleType Type of module.
-     * @param _tag List of tags
+     * @notice Adds a list of tags for the specified Module Factory
+     * @param _moduleType is the module type.
+     * @param _tag is the list of tags to add.
      */
     function addTagByModuleType(uint8 _moduleType, bytes32[] _tag) external onlyOwner {
          for (uint8 i = 0; i < _tag.length; i++) {
@@ -207,9 +208,9 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      }
 
     /**
-     * @notice remove the tag for specified Module Factory
-     * @param _moduleType Type of module.
-     * @param _removedTags List of tags
+     * @notice Removes the tag for specified Module Factory
+     * @param _moduleType is the module type.
+     * @param _removedTags is the list of tags to remove
      */
     function removeTagByModuleType(uint8 _moduleType, bytes32[] _removedTags) external onlyOwner {
         for (uint8 i = 0; i < getArrayBytes32(Encoder.getKey('availableTags', uint256(_moduleType))).length; i++) {
@@ -222,8 +223,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice Use to get all the tags releated to the functionality of the Module Factory.
-     * @param _moduleType Type of module
+     * @notice Returns all the tags related to the functionality of the entered Module Factory.
+     * @param _moduleType is the module type
      * @return bytes32 array
      */
     function getTagByModuleType(uint8 _moduleType) public view returns(bytes32[]) {
@@ -231,16 +232,16 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice Use to get the reputation of the Module factory
-     * @param _factoryAddress Ethereum contract address of the module factory
-     * @return address array which have the list of securityToken's uses that module factory
+     * @notice Returns the reputation of the entered Module Factory
+     * @param _factoryAddress is the address of the module factory
+     * @return address array which contains the list of securityTokens that use that module factory
      */
     function getReputationOfFactory(address _factoryAddress) external view returns(address[]) {
         return getArrayAddress(Encoder.getKey('reputation', _factoryAddress));
     }
 
     /**
-     * @notice Use to get the list of addresses of Module factory for a particular type
+     * @notice Returns the list of addresses of Module Factory of a particular type
      * @param _moduleType Type of Module
      * @return address array that contains the list of addresses of module factory contracts.
      */
@@ -249,9 +250,9 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice Use to get the list of available Module factory addresses for a particular type
-     * @param _moduleType Type of Module
-     * @param _securityToken Address of securityToken
+     * @notice Returns the list of available Module factory addresses of a particular type for a given token.
+     * @param _moduleType is the module type to look for
+     * @param _securityToken is the address of SecurityToken
      * @return address array that contains the list of available addresses of module factory contracts.
      */
     function getAvailableModulesOfType(uint8 _moduleType, address _securityToken) external view returns (address[]) {
@@ -312,7 +313,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice Use to get the latest contract address of the regstries
+     * @notice Used to get the latest contract address of the registries
      */
     function updateFromRegistry() onlyOwner external {
         address _polymathRegistry = getAddress(Encoder.getKey('polymathRegistry'));

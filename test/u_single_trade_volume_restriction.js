@@ -273,11 +273,11 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
             await increaseTime(5000);
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei('4', 'ether'), { from: token_owner });
+            await I_SecurityToken.mint(account_investor1, web3.utils.toWei('100', 'ether'), { from: token_owner });
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor1)).toNumber(),
-                web3.utils.toWei('4', 'ether')
+                web3.utils.toWei('100', 'ether')
             );
         });
 
@@ -306,7 +306,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
             );
         });
 //
-      it("Should successfully attach the SingleTradeVolumeRestrictionManager with the security token", async () => {
+      it("Fails to attach the SingleTradeVolumeRestrictionManager with the security token due to fees not paid", async () => {
         let managerArgs = web3.eth.abi.encodeFunctionCall({
             name: 'configure',
             type: 'function',
@@ -332,34 +332,9 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
           assert.ok(errorThrown, message);
       });
 
-      it("Should successfully attach the Paid SingleTradeVolumeRestrictionManager with the security token", async () => {
-          let errorThrown = false;
-          let managerArgs = web3.eth.abi.encodeFunctionCall({
-              name: 'configure',
-              type: 'function',
-              inputs: [{
-                  type: 'bool',
-                  name: '_isTransferLimitInPercentage'
-              },
-              {
-                type: 'uint256',
-                name: '_globalTransferLimitInPercentageOrToken'
-              }
-              ]
-          }, [true, 7 * 10 ** 16]);
-          await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
-          try {
-              const tx = await I_SecurityToken.addModule(P_SingleTradeVolumeRestrictionManagerFactory.address, managerArgs, web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-          } catch(error) {
-              console.log(`       tx -> failed because Token is not paid`.grey);
-              ensureException(error);
-              errorThrown = true;
-          }
-          assert.ok(errorThrown, message);
-      });
 
-      it("Should successfully attach the SingleTradeVolumeRestrictionManager with the security token", async () => {
-          let snapId = await takeSnapshot();
+
+      it("Should successfully attach the Paid SingleTradeVolumeRestrictionManager with the security token", async () => {
           let managerArgs = web3.eth.abi.encodeFunctionCall({
               name: 'configure',
               type: 'function',
@@ -383,7 +358,6 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
               "SingleTradeVolumeRestrictionManagerFactory module was not added"
           );
           P_SingleTradeVolumeRestrictionManager = SingleTradeVolumeRestrictionManager.at(tx.logs[3].args._module);
-          await revertToSnapshot(snapId);
       });
 
       it("Should successfully attach the SingleTradeVolumeRestrictionManager with the security token", async () => {
@@ -527,17 +501,18 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
           let tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInTokens(89);
         } catch(e) {
           errorThrown = true;
+          ensureException(e);
         }
         assert.ok(errorThrown, true, "Global limit can be set by non-admins");
         tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInPercentage(40, {from:token_owner});
         assert.equal(tx.logs[0].args._percentage, 40, "Global Limit not set");
-
       });
 
-      it('should be able to transfer tokens', async () => {
-        // await I_SingleTradeVolumeRestrictionManager.pause({from: token_owner })
-        // await I_SingleTradeVolumeRestrictionPercentageManager.pause({from: token_owner })
-        // await P_SingleTradeVolumeRestrictionManager.pause({from: token_owner });
+      it('should be able to transfer tokens SingleTradeVolumeRestriction', async () => {
+        await I_SingleTradeVolumeRestrictionManager.unpause({from: token_owner })
+        await I_SingleTradeVolumeRestrictionPercentageManager.pause({from: token_owner })
+        await P_SingleTradeVolumeRestrictionManager.pause({from: token_owner });
+
         await I_GeneralTransferManager.modifyWhitelist(
           account_investor3,
           latestTime(),
@@ -561,7 +536,102 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
               gas: 6000000
           }
         );
+
+        await I_GeneralTransferManager.modifyWhitelist(
+          account_investor5,
+          latestTime(),
+          latestTime(),
+          latestTime() + duration.days(10),
+          true,
+          {
+              from: account_issuer,
+              gas: 6000000
+          }
+        );
+
+        //setting a max of 5 tokens
+        await I_SingleTradeVolumeRestrictionManager.changeGlobalLimitInTokens(web3.utils.toWei('5', 'ether'), {from: token_owner})
+        let errorThrown = false;
+        try {
+          await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('6', 'ether'), {from: account_investor1 });
+        } catch(e) {
+          errorThrown = true;
+          ensureException(e);
+        }
+        assert.ok(errorThrown, true, "Transfer should have not happened");
+        await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('4', 'ether'), {from: account_investor1});
+        assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei('4', 'ether'));
+
+        // exempt wallet
+        await I_SingleTradeVolumeRestrictionManager.addExemptWallet(account_investor1, { from: token_owner });
+        await I_SecurityToken.transfer(account_investor5, web3.utils.toWei('7', 'ether'), {from: account_investor1});
+        assert.equal((await I_SecurityToken.balanceOf(account_investor5)).toNumber(), web3.utils.toWei('7', 'ether'));
+
+        //special limits wallet
+        await I_SingleTradeVolumeRestrictionManager.setTransferLimitForWallet(account_investor5, web3.utils.toWei('5', 'ether'), {from: token_owner});
+        errorThrown = false;
+        try {
+          await I_SecurityToken.transfer(account_investor4, web3.utils.toWei('7', 'ether'), {from: account_investor5});
+        } catch(e) {
+          errorThrown = true;
+          ensureException(e);
+        }
+        assert.ok(errorThrown, true, "Transfer should have not happened");
+        await I_SecurityToken.transfer(account_investor4, web3.utils.toWei('4', 'ether'), {from: account_investor5 })
+        assert.equal((await I_SecurityToken.balanceOf(account_investor4)).toNumber(), web3.utils.toWei('4', 'ether'))
       })
+
+      it('should be able to transfer tokens (percentage transfer limit)', async () => {
+        await I_SingleTradeVolumeRestrictionManager.pause({from: token_owner });
+        let balance = (await I_SecurityToken.balanceOf(account_investor2)).toNumber();
+        await I_SecurityToken.transfer(account_investor1, balance, {from: account_investor2 });
+
+
+        balance = (await I_SecurityToken.balanceOf(account_investor3)).toNumber();
+
+        await I_SecurityToken.transfer(account_investor1, balance, {from: account_investor3 });
+
+
+        balance = (await I_SecurityToken.balanceOf(account_investor4)).toNumber();
+        await I_SecurityToken.transfer(account_investor1, balance, {from: account_investor4 });
+
+        balance = (await I_SecurityToken.balanceOf(account_investor5)).toNumber();
+        await I_SecurityToken.transfer(account_investor1, balance, {from: account_investor5 });
+
+        await I_SingleTradeVolumeRestrictionPercentageManager.unpause({from: token_owner });
+        // //
+        await I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInPercentage(49 * 10 ** 16, {from: token_owner});
+
+        let errorThrown = false;
+        try {
+          // more than the limit
+          await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('90', 'ether'), {from:account_investor1});
+        } catch(e) {
+          ensureException(e);
+          errorThrown = true;
+        }
+        assert.ok(errorThrown, true, "Transfer above limit happened");
+
+
+        await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('20', 'ether'), {from: account_investor1});
+        assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei('20', 'ether'))
+
+        await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentage(account_investor1, 5 * 10 ** 16, {from : token_owner});
+        errorThrown = false;
+        try {
+          await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('35', 'ether'), {from: account_investor1});
+        } catch(e) {
+          ensureException(e);
+          errorThrown = true;
+        }
+        assert.ok(errorThrown, true, "transfer happened above limit");
+
+        await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('1', 'ether'), {from: account_investor1});
+        assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei('1', 'ether'));
+      });
+
+
+
     });
 
     describe("SingleTradeVolumeRestrictionManager Factory test cases", async() => {

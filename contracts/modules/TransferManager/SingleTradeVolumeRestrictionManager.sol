@@ -15,9 +15,9 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
   using SafeMath for uint256;
 
   bool public isTransferLimitInPercentage;
-
   uint256 public globalTransferLimit;
 
+  // should be multipled by 10^16. if the transfer percentage is 20%, then globalTransferLimitInPercentage should be 20*10^16
   uint256 public globalTransferLimitInPercentage;
 
   mapping(address=>bool) public exemptWallets;
@@ -50,7 +50,6 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
   /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
   function verifyTransfer(address _from, address /* _to */, uint256 _amount, bool /* _isTransfer */) public returns(Result) {
     bool validTransfer;
-
     if(paused) {
       return Result.NA;
     }
@@ -70,7 +69,6 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
         validTransfer = _amount <= globalTransferLimit;
       }
     }
-
     if(validTransfer) return Result.NA;
     return Result.INVALID;
   }
@@ -84,7 +82,6 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     require(_globalTransferLimitInPercentageOrToken > 0, "global transfer limit has to greater than 0");
     isTransferLimitInPercentage = _isTransferLimitInPercentage;
     if(isTransferLimitInPercentage) {
-      require(_globalTransferLimitInPercentageOrToken <= 100, "Global transfer limit has be less than 0");
       globalTransferLimitInPercentage = _globalTransferLimitInPercentageOrToken;
     } else {
       globalTransferLimit = _globalTransferLimitInPercentageOrToken;
@@ -107,7 +104,6 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
   */
   function changeGlobalLimitInPercentage(uint256 _newGlobalTransferLimitInPercentage) public withPerm(ADMIN) {
     require(isTransferLimitInPercentage, "Transfer limit not set in Percentage");
-    require(_newGlobalTransferLimitInPercentage <= 100, "Transfer Limit has to be <= 100");
     globalTransferLimitInPercentage = _newGlobalTransferLimitInPercentage;
     emit LogGlobalTransferLimitInPercentageSet(_newGlobalTransferLimitInPercentage);
   }

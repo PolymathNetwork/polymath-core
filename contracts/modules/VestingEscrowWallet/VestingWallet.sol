@@ -108,8 +108,8 @@ contract VestingWallet is Ownable {
     uint256[] _startDate,
     uint256[] _vestingFrequency
   )
-      public
-      onlyOwner
+    public
+    onlyOwner
   {
       require(_target.length == _totalAllocation.length &&
               _target.length == _vestingDuration.length &&

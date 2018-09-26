@@ -2,10 +2,10 @@ pragma solidity ^0.4.24;
 
 import "./VestingEscrowWallet.sol";
 import "../ModuleFactory.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../../libraries/Util.sol";
 
 /**
- * @title Factory for deploying VotingEscrowWallet
+ * @title Factory for deploying VestingEscrowWallet
  */
 contract VestingEscrowWalletFactory is ModuleFactory {
 
@@ -17,8 +17,8 @@ contract VestingEscrowWalletFactory is ModuleFactory {
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
-        name = "VotingEscrowWallet";
-        title = "Voting Escrow Wallet";
+        name = "VestingEscrowWallet";
+        title = "Vesting Escrow Wallet";
         description = "Allows Issuer to program an automated token vesting schedule for employees and/or affiliates so that Tokens get delivered to their wallets as contractually defined.";
     }
 
@@ -28,16 +28,14 @@ contract VestingEscrowWalletFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        if (setupCost > 0) {
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
-        }
-        //Check valid bytes - can only call module init function
+        if(setupCost > 0)
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         VestingEscrowWallet vestingEscrowWallet = new VestingEscrowWallet(msg.sender, address(polyToken));
-        //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == vestingEscrowWallet.getInitFunction(), "Invalid data");
-        require(address(vestingEscrowWallet).call(_data), "Unsuccessfull call");
+        require(Util.getSig(_data) == vestingEscrowWallet.getInitFunction(), "Provided data is not valid");
+        require(address(vestingEscrowWallet).call(_data), "Un-successfull call");
         emit LogGenerateModuleFromFactory(address(vestingEscrowWallet), getName(), address(this), msg.sender, setupCost, now);
         return address(vestingEscrowWallet);
+
     }
 
     /**
@@ -94,7 +92,8 @@ contract VestingEscrowWalletFactory is ModuleFactory {
      */
     function getTags() public view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](1);
-        availableTags[0] = "Presale";  // TODO: Change this when Github quesiton gets answered
+        availableTags[0] = "Vested Wallet";
+        availableTags[1] = "Escrow";
         return availableTags;
     }
 

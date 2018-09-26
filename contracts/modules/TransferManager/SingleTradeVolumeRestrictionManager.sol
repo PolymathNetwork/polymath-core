@@ -1,15 +1,10 @@
 pragma solidity ^0.4.24;
 import "./ITransferManager.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                           Owner       ADMIN
-// changeGlobalLimit           X           X
-// addExemptWallet             X           X
-// removeExemptWallet          X           X
-// setTransferLimitForWallet   X           X
-// removeTransferLimitForWallet X          X
+/**
+ * @title Transfer Manager for limiting volume of tokens in a single trade
+ */
 
 contract SingleTradeVolumeRestrictionManager is ITransferManager {
   using SafeMath for uint256;

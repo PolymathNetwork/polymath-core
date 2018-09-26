@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./interfaces/IOwner.sol";
+import "./interfaces/IOwnable.sol";
 import "./interfaces/ISTFactory.sol";
 import "./interfaces/IERC20.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
@@ -24,6 +24,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
        bool public paused;
        address public owner;
        address public polymathRegistry;
+
+       address[] public activeUsers;
+       mapping(address => bool) public seenUsers;
 
        mapping(address => bytes32[]) userToTickers;
        mapping(string => address) tickerToSecurityToken;
@@ -143,6 +146,11 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             require(IERC20(getAddress(Encoder.getKey("polyToken"))).transferFrom(msg.sender, address(this), getUint(Encoder.getKey("tickerRegFee"))), "Sufficent allowance is not provided");
         string memory ticker = Util.upper(_ticker);
         require(_tickerAvailable(ticker), "Ticker is already reserved");
+        // Check whether ticker was previously registered (and expired)
+        address previousOwner = getAddress(Encoder.getKey("registeredTickers_owner", _ticker));
+        if (previousOwner != address(0)) {
+            _deleteTickerOwnership(previousOwner, _ticker);
+        }
         _addTicker(_owner, ticker, _tokenName, now, now.add(getUint(Encoder.getKey("expiryLimit"))), false, false);
     }
 
@@ -232,6 +240,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         uint256 length = uint256(getArrayBytes32(Encoder.getKey("userToTickers", _owner)).length);
         pushArray(Encoder.getKey("userToTickers", _owner), Util.stringToBytes32(_ticker));
         set(Encoder.getKey("tickerIndex", _ticker), length);
+        if (!getBool(Encoder.getKey("seenUsers", _owner))) {
+            pushArray(Encoder.getKey("activeUsers"), _owner);
+            set(Encoder.getKey("seenUsers", _owner), true);
+        }
     }
 
     /**
@@ -280,6 +292,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function _deleteTickerOwnership(address _owner, string _ticker) internal {
         uint256 _index = uint256(getUint(Encoder.getKey("tickerIndex", _ticker)));
+        assert(_index < getArrayBytes32(Encoder.getKey("userToTickers", _owner)).length);
         // deleting the _index from the data strucutre userToTickers[_oldowner][_index];
         deleteArrayBytes32(Encoder.getKey("userToTickers", _owner), _index);
 
@@ -316,6 +329,48 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
              }
          }
         return tempList;
+    }
+
+    /**
+     * @notice Returns the list of tokens owned by the selected address
+     * @param _owner is the address which owns the list of tickers
+     * @dev Intention is that this is called off-chain so block gas limit is not relevant
+     */
+    function getTokensByOwner(address _owner) external view returns(address[]) {
+        // Loop over all active users, then all associated tickers of those users
+        // This ensures we find tokens, even if their owner has been modified
+        address[] memory activeUsers = getArrayAddress(Encoder.getKey("activeUsers"));
+        bytes32[] memory tickers;
+        address token;
+        uint256 count = 0;
+        uint256 i = 0;
+        uint256 j = 0;
+        for (i = 0; i < activeUsers.length; i++) {
+            tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
+            for (j = 0; j < tickers.length; j++) {
+                token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
+                if (token != address(0)) {
+                    if (IOwnable(token).owner() == _owner) {
+                        count = count + 1;
+                    }
+                }
+            }
+        }
+        uint256 index = 0;
+        address[] memory result = new address[](count);
+        for (i = 0; i < activeUsers.length; i++) {
+            tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
+            for (j = 0; j < tickers.length; j++) {
+                token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
+                if (token != address(0)) {
+                    if (IOwnable(token).owner() == _owner) {
+                        result[index] = token;
+                        index = index + 1;
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     /**
@@ -442,7 +497,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function getSecurityTokenData(address _securityToken) external view returns (string, address, string, uint256) {
         return (
             getString(Encoder.getKey("securityTokens_ticker", _securityToken)),
-            IOwner(_securityToken).owner(),
+            IOwnable(_securityToken).owner(),
             getString(Encoder.getKey("securityTokens_tokenDetails", _securityToken)),
             getUint(Encoder.getKey("securityTokens_deployedAt", _securityToken))
         );

@@ -37,7 +37,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
   * @param _polyAddress Address of the polytoken
   */
   constructor(address _securityToken, address _polyAddress) public
-  IModule(_securityToken, _polyAddress)
+  Module(_securityToken, _polyAddress)
   {
 
   }

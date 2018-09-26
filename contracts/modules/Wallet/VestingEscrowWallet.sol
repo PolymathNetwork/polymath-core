@@ -127,6 +127,55 @@ contract VestingEscrowWallet is Ownable {
   }
 
   /**
+  * @notice Cancel a vesting schedule for an employee or affiliate
+  * @param _target Address of the employee or the affiliate
+  * @param _whichVestingSchedule Index of the vesting schedule for the target
+  */
+  function cancelVestingSchedule(address _target, uint256 _whichVestingSchedule)
+    public
+    onlyOwner
+  {
+    VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
+
+    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+
+    bytes32 _vestingId = _vestingSchedule.vestingId;
+    uint256 _tokensCollected = _vestingSchedule.totalTokensRemaining;
+    delete individualVestingDetails[_target][_whichVestingSchedule];  // TODO: Change this to a flag depending on Github response
+
+    emit VestingCancelled(
+      _target,
+      _whichVestingSchedule,
+      _vestingId,
+      _tokensCollected,
+      block.timestamp
+    );
+
+    // TODO: Return tokens to issuer. Asked what to do on Github
+  }
+
+  /**
+  * @notice Collect vested tokens
+  * @param _whichVestingSchedule Index of the vesting schedule for the target
+  */
+  function collectTokens(uint256 _whichVestingSchedule)
+    public
+  {
+    VestingSchedule memory _vestingSchedule = individualVestingDetails[msg.sender][_whichVestingSchedule];
+
+    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+    require(_vestingSchedule.totalTokensRemaining != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+
+    uint256 currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
+    uint256 tokensToDistribute = _calculateTokensToDistribute(currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.totalTokensReleased);
+
+    _vestingSchedule.totalTokensReleased += tokensToDistribute;
+    _vestingSchedule.totalTokensRemaining -= tokensToDistribute;
+
+    // TODO: Send tokens to target.
+  }
+
+  /**
   * @notice Initiate a vesting schedule for an employee or affiliate
   * @param _target Address of the employee or the affiliate
   * @param _totalAllocation Total number of tokens allocated for the target
@@ -198,56 +247,6 @@ contract VestingEscrowWallet is Ownable {
 
     // Send tokens to contract here (see lucidchart -> assumptions -> 2)
   }
-
-  /**
-  * @notice Cancel a vesting schedule for an employee or affiliate
-  * @param _target Address of the employee or the affiliate
-  * @param _whichVestingSchedule Index of the vesting schedule for the target
-  */
-  function cancelVestingSchedule(address _target, uint256 _whichVestingSchedule)
-    public
-    onlyOwner
-  {
-    VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
-
-    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
-
-    bytes32 _vestingId = _vestingSchedule.vestingId;
-    uint256 _tokensCollected = _vestingSchedule.totalTokensRemaining;
-    delete individualVestingDetails[_target][_whichVestingSchedule];  // TODO: Change this to a flag depending on Github response
-
-    emit VestingCancelled(
-      _target,
-      _whichVestingSchedule,
-      _vestingId,
-      _tokensCollected,
-      block.timestamp
-    );
-
-    // TODO: Return tokens to issuer. Asked what to do on Github
-  }
-
-  /**
-  * @notice Collect vested tokens
-  * @param _whichVestingSchedule Index of the vesting schedule for the target
-  */
-  function collectTokens(uint256 _whichVestingSchedule)
-    public
-  {
-    VestingSchedule memory _vestingSchedule = individualVestingDetails[msg.sender][_whichVestingSchedule];
-
-    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
-    require(_vestingSchedule.totalTokensRemaining != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
-
-    uint256 currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
-    uint256 tokensToDistribute = _calculateTokensToDistribute(currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.totalTokensReleased);
-
-    _vestingSchedule.totalTokensReleased += tokensToDistribute;
-    _vestingSchedule.totalTokensRemaining -= tokensToDistribute;
-
-    // TODO: Send tokens to target.
-  }
-
   // TODO: May need to push tokens as well. Asked on Github.
 
   /**

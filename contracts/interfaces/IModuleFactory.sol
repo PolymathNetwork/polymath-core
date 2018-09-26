@@ -16,6 +16,7 @@ interface IModuleFactory {
         uint256 _setupCost,
         uint256 _timestamp
     );
+    event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
 
     //Should create an instance of the Module, or throw
     function deploy(bytes _data) external returns(address);
@@ -78,7 +79,7 @@ interface IModuleFactory {
      * @param _boundType Type of bound
      * @param _newVersion new version array
      */
-    function changeSTVersionBounds(bytes32 _boundType, uint8[] _newVersion) external;
+    function changeSTVersionBounds(string _boundType, uint8[] _newVersion) external;
 
     /**
      * @notice Get the setup cost of the module

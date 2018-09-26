@@ -112,7 +112,6 @@ const functionSignatureProxyMR = {
 ]
 };
 
-
   // POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
   // A) Deploy the PolymathRegistry contract
   return deployer.deploy(PolymathRegistry, {from: PolymathAccount}).then(() => {
@@ -125,7 +124,7 @@ const functionSignatureProxyMR = {
     }).then(() => {
       return deployer.deploy(ModuleRegistryProxy, {from: PolymathAccount});
     }).then(() => {
-      let bytesProxyMR = web3.eth.abi.encodeFunctionCall(functionSignatureProxyMR, [PolymathRegistry.address, PolymathAccount]);
+      let bytesProxyMR = web3.eth.abi.encodeFunctionCall(functionSignatureProxyMR, [polymathRegistry.address, PolymathAccount]);
       ModuleRegistryProxy.at(ModuleRegistryProxy.address).upgradeToAndCall("1.0.0", ModuleRegistry.address, bytesProxyMR, {from: PolymathAccount});
     }).then(() => {
       moduleRegistry = ModuleRegistry.at(ModuleRegistryProxy.address);
@@ -262,10 +261,7 @@ const functionSignatureProxyMR = {
       return deployer.deploy(USDTieredSTOProxyFactory, {from: PolymathAccount});
     }).then(() => {
       // H) Deploy the USDTieredSTOFactory (Use to generate the USDTieredSTOFactory contract which will used to collect the funds ).
-      return deployer.deploy(USDTieredSTOFactory, PolyToken, usdTieredSTOSetupCost, 0, 0, {from: PolymathAccount})
-    }).then(() => {
-      // Set proxy factory address into the USDTieredSTOFactory contract
-      return USDTieredSTOFactory.at(USDTieredSTOFactory.address).setProxyFactoryAddress(USDTieredSTOProxyFactory.address, {from: PolymathAccount});
+      return deployer.deploy(USDTieredSTOFactory, PolyToken, usdTieredSTOSetupCost, 0, 0, USDTieredSTOProxyFactory.address, {from: PolymathAccount})
     }).then(() => {
       // I) Register the USDTieredSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the USDTieredSTOFactory contract.
@@ -287,7 +283,7 @@ const functionSignatureProxyMR = {
       SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
       SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
       ModuleRegistry:                    ${ModuleRegistry.address}
-      ModuleRegistryProxy:               ${moduleRegistry.address}
+      ModuleRegistryProxy:               ${ModuleRegistryProxy.address}
       FeatureRegistry:                   ${FeatureRegistry.address}
 
       ETHOracle:                         ${ETHOracle}
@@ -299,6 +295,7 @@ const functionSignatureProxyMR = {
 
       CappedSTOFactory:                  ${CappedSTOFactory.address}
       USDTieredSTOFactory:               ${USDTieredSTOFactory.address}
+      USDTieredSTOProxyFactory:          ${USDTieredSTOProxyFactory.address}
 
       CountTransferManagerFactory:       ${CountTransferManagerFactory.address}
       PercentageTransferManagerFactory:  ${PercentageTransferManagerFactory.address}

@@ -25,13 +25,13 @@ contract ModuleFactory is IModuleFactory, Ownable {
     // 2. upperBound
     // @dev (0.0.0 will act as the wildcard) 
     // @dev uint24 consists packed value of uint8 _major, uint8 _minor, uint8 _patch
-    mapping(bytes32 => uint24) compatibleSTVersionRange;
+    mapping(string => uint24) compatibleSTVersionRange;
 
     event ChangeFactorySetupFee(uint256 _oldSetupCost, uint256 _newSetupCost, address _moduleFactory);
     event ChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
     event ChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
     event GenerateModuleFromFactory(address _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address _creator, uint256 _timestamp);
-    event ChangeSTVersionBound(bytes32 _boundType, uint8 _major, uint8 _minor, uint8 _patch);
+    event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
 
     /**
      * @notice Constructor
@@ -113,8 +113,9 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _boundType Type of bound
      * @param _newVersion new version array
      */
-    function changeSTVersionBounds(bytes32 _boundType, uint8[] _newVersion) external onlyOwner {
-        require(_boundType == bytes32("lowerBound") || _boundType == bytes32("upperBound"));
+    function changeSTVersionBounds(string _boundType, uint8[] _newVersion) external onlyOwner {
+        require(keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("lowerBound")) || keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("upperBound")),
+        "Must be a valid bound type");
         require(_newVersion.length == 3);
         if (compatibleSTVersionRange[_boundType] != uint24(0)) { 
             uint8[] memory _currentVersion = VersionUtils.unpack(compatibleSTVersionRange[_boundType]);
@@ -129,7 +130,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @return lower bound
      */
     function getLowerSTVersionBounds() external view returns(uint8[]) {
-       return VersionUtils.unpack(compatibleSTVersionRange[bytes32("lowerBound")]);
+       return VersionUtils.unpack(compatibleSTVersionRange["lowerBound"]);
     }
 
     /**
@@ -137,7 +138,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @return upper bound
      */
     function getUpperSTVersionBounds() external view returns(uint8[]) {
-        return VersionUtils.unpack(compatibleSTVersionRange[bytes32("upperBound")]);
+        return VersionUtils.unpack(compatibleSTVersionRange["upperBound"]);
     }
 
 }

@@ -22,8 +22,8 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
         name = "EtherDividendCheckpoint";
         title = "Ether Dividend Checkpoint";
         description = "Create ETH dividends for token holders at a specific checkpoint";
-        compatibleSTVersionRange[bytes32("lowerBound")] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange[bytes32("upperBound")] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
     /**

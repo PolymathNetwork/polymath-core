@@ -137,7 +137,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint8 moduleType = moduleFactory.getType();
         require(moduleType != 0, "Factory moduleType should not equal to 0");
         set(Encoder.getKey('registry', _moduleFactory), uint256(moduleType));
-        set(Encoder.getKey('moduleListIndex', _moduleFactory), getArrayAddress(Encoder.getKey('moduleList', uint256(moduleType))).length);
+        set(Encoder.getKey('moduleListIndex', _moduleFactory), uint256(getArrayAddress(Encoder.getKey('moduleList', uint256(moduleType))).length));
         pushArray(Encoder.getKey('moduleList', uint256(moduleType)), _moduleFactory);
         setArray(Encoder.getKey('reputation', _moduleFactory), new address[](0));
         emit ModuleRegistered (_moduleFactory, IOwner(_moduleFactory).owner());
@@ -260,7 +260,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint256 counter = 0;
         for (uint256 i = 0; i < _len; i++) {
             if (IFeatureRegistry(getAddress(Encoder.getKey('featureRegistry'))).getFeatureStatus("customModulesAllowed")) {
-                if (IOwner(_addressList[i]).owner() == IOwner(_securityToken).owner())
+                if (IOwner(_addressList[i]).owner() == IOwner(_securityToken).owner() || getBool(Encoder.getKey('verified', _addressList[i])))
                     counter++;
             }
             else if (getBool(Encoder.getKey('verified', _addressList[i]))) {
@@ -269,17 +269,19 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         }
         address[] memory _tempArray = new address[](counter);
         counter = 0;
-        for (uint256 j = 0; j < _tempArray.length; j++) {
+        for (uint256 j = 0; j < _len; j++) {
             if (IFeatureRegistry(getAddress(Encoder.getKey('featureRegistry'))).getFeatureStatus("customModulesAllowed")) {
-                if (IOwner(_addressList[j]).owner() == IOwner(_securityToken).owner())
+                if (IOwner(_addressList[j]).owner() == IOwner(_securityToken).owner() || getBool(Encoder.getKey('verified', _addressList[j]))) {
                     _tempArray[counter] = _addressList[j];
                     counter ++;
+                }
             }
             else if (getBool(Encoder.getKey('verified', _addressList[j]))) {
                 _tempArray[counter] = _addressList[j];
                 counter ++;
             }
         }
+        return _tempArray;
     }
 
     /**

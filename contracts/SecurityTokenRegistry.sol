@@ -115,7 +115,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         set(Encoder.getKey("polyToken"), _polyToken);
         set(Encoder.getKey("stLaunchFee"), _stLaunchFee);
         set(Encoder.getKey("tickerRegFee"), _tickerRegFee);
-        set(Encoder.getKey("expiryLimit"), uint256(15 * 1 days));
+        set(Encoder.getKey("expiryLimit"), uint256(60 * 1 days));
         set(Encoder.getKey("paused"), false);
         set(Encoder.getKey("owner"), _owner);
         set(Encoder.getKey("polymathRegistry"), _polymathRegistry);
@@ -356,7 +356,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker should not be expired");
 
         // No need to update the _name - this is the token name, not the ticker name
-        set(Encoder.getKey("registeredTickers_status", _ticker), true);
+        set(Encoder.getKey("registeredTickers_status", ticker), true);
 
         if (getUint(Encoder.getKey("stLaunchFee")) > 0)
             require(IERC20(getAddress(Encoder.getKey("polyToken"))).transferFrom(msg.sender, address(this), getUint(Encoder.getKey("stLaunchFee"))), "Sufficent allowance is not provided");

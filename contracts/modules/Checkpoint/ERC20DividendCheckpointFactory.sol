@@ -22,8 +22,8 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
         name = "ERC20DividendCheckpoint";
         title = "ERC20 Dividend Checkpoint";
         description = "Create ERC20 dividends for token holders at a specific checkpoint";
-        compatibleSTVersionRange[bytes32("lowerBound")] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange[bytes32("upperBound")] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
     /**

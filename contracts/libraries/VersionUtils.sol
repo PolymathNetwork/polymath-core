@@ -13,7 +13,6 @@ library VersionUtils {
      * @return bool 
      */
     function isValidVersion(uint8[] _current, uint8[] _new) internal pure returns(bool) {
-        require(_current.length == _new.length);
         bool[] memory _temp = new bool[](_current.length);
         uint8 counter = 0;
         for (uint8 i = 0; i < _current.length; i++) {
@@ -56,7 +55,7 @@ library VersionUtils {
         require(_version1.length == _version2.length);
         uint counter = 0;
         for (uint8 j = 0; j< _version1.length; j++) {
-            if (_version1[i] == 0)
+            if (_version1[j] == 0)
                 counter ++;
         }
         if (counter != _version1.length) {
@@ -87,7 +86,7 @@ library VersionUtils {
         require(_version1.length == _version2.length);
         uint counter = 0;
         for (uint8 j = 0; j< _version1.length; j++) {
-            if (_version1[i] == 0)
+            if (_version1[j] == 0)
                 counter ++;
         }
         if (counter != _version1.length) {
@@ -128,6 +127,7 @@ library VersionUtils {
         _unpackVersion[0] = uint8(_packedVersion >> 16);
         _unpackVersion[1] = uint8(_packedVersion >> 8);
         _unpackVersion[2] = uint8(_packedVersion);
+        return _unpackVersion;
     }
     
 

@@ -92,6 +92,34 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     );
 
     /////////////////////////////
+    // Modifiers
+    /////////////////////////////
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(msg.sender == getAddress(Encoder.getKey("owner")));
+        _;
+    }
+
+    /**
+     * @notice Modifier to make a function callable only when the contract is not paused.
+     */
+    modifier whenNotPaused() {
+        require(!getBool(Encoder.getKey("paused")), "Already paused");
+        _;
+    }
+
+    /**
+     * @notice Modifier to make a function callable only when the contract is paused.
+     */
+    modifier whenPaused() {
+        require(getBool(Encoder.getKey("paused")), "Should not be paused");
+        _;
+    }
+
+    /////////////////////////////
     // Initialization
     /////////////////////////////
 
@@ -110,7 +138,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _polyToken is the address of the POLY ERC20 token
      * @param _owner is the owner of the STR
      */
-    function initialize(address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner) payable public {
+    function initialize(address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner) payable external {
         require(!getBool(Encoder.getKey("initialised")));
         require(_STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0), "0x address is in-valid");
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Fees should not be 0");
@@ -481,7 +509,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _ticker is the ticker of the security token
      * @return address
      */
-    function getSecurityTokenAddress(string _ticker) public view returns (address) {
+    function getSecurityTokenAddress(string _ticker) external view returns (address) {
         string memory __ticker = Util.upper(_ticker);
         return getAddress(Encoder.getKey("tickerToSecurityToken", __ticker));
     }
@@ -506,30 +534,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     /////////////////////////////
     // Ownership, lifecycle & Utility
     /////////////////////////////
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        require(msg.sender == getAddress(Encoder.getKey("owner")));
-        _;
-    }
-
-    /**
-     * @notice Modifier to make a function callable only when the contract is not paused.
-     */
-    modifier whenNotPaused() {
-        require(!getBool(Encoder.getKey("paused")), "Already paused");
-        _;
-    }
-
-    /**
-     * @notice Modifier to make a function callable only when the contract is paused.
-     */
-    modifier whenPaused() {
-        require(getBool(Encoder.getKey("paused")), "Should not be paused");
-        _;
-    }
 
     /**
     * @dev Allows the current owner to transfer control of the contract to a newOwner.

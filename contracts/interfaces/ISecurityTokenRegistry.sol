@@ -62,7 +62,7 @@ interface ISecurityTokenRegistry {
      * @param _ticker Symbol of the Scurity token
      * @return address
      */
-    function getSecurityTokenAddress(string _ticker) public view returns (address);
+    function getSecurityTokenAddress(string _ticker) external view returns (address);
 
      /**
      * @notice Get security token data by its address
@@ -77,7 +77,7 @@ interface ISecurityTokenRegistry {
     /**
      * @notice Get the current STFactory Address
      */
-    function getSTFactoryAddress() public view returns(address);
+    function getSTFactoryAddress() external view returns(address);
 
     /**
      * @notice Use to get the ticker list as per the owner

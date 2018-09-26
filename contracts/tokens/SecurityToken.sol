@@ -134,9 +134,9 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event LogDisableController(uint256 _timestamp);
 
     function isModule(address _module, uint8 _type) internal view returns (bool) {
-        require(modulesToData[msg.sender].module == msg.sender, "Address mismatch");
-        require(modulesToData[msg.sender].moduleType == _type, "Type mismatch");
-        require(!modulesToData[msg.sender].isArchived, "Module archived");
+        require(modulesToData[_module].module == _module, "Address mismatch");
+        require(modulesToData[_module].moduleType == _type, "Type mismatch");
+        require(!modulesToData[_module].isArchived, "Module archived");
         return true;
     }
 

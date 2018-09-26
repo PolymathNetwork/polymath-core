@@ -101,17 +101,16 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      */
     function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
         (uint256 claim, uint256 withheld) = calculateDividend(_dividendIndex, _payee);
-        _dividend.claimed[_payee] = true;
-        _dividend.claimedAmount = _dividend.claimedAmount.add(claim);
+        _dividend.claimed[_payee] = true;      
         uint256 claimAfterWithheld = claim.sub(withheld);
         if (claimAfterWithheld > 0) {
             if (_payee.send(claimAfterWithheld)) {
+              _dividend.claimedAmount = _dividend.claimedAmount.add(claim);
               _dividend.dividendWithheld = _dividend.dividendWithheld.add(withheld);
               investorWithheld[_payee] = investorWithheld[_payee].add(withheld);
               emit EtherDividendClaimed(_payee, _dividendIndex, claim, withheld);
             } else {
               _dividend.claimed[_payee] = false;
-              _dividend.claimedAmount = _dividend.claimedAmount.sub(claim);
               emit EtherDividendClaimFailed(_payee, _dividendIndex, claim, withheld);
             }
         }

@@ -86,6 +86,13 @@ interface ISecurityTokenRegistry {
     function getTickersByOwner(address _owner) external view returns(bytes32[]);
 
     /**
+     * @notice Returns the list of tokens owned by the selected address
+     * @param _owner is the address which owns the list of tickers
+     * @dev Intention is that this is called off-chain so block gas limit is not relevant
+     */
+    function getTokensByOwner(address _owner) external view returns(address[]);
+
+    /**
      * @notice Returns the owner and timestamp for a given ticker
      * @param _ticker ticker
      * @return address

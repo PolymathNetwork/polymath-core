@@ -62,6 +62,14 @@ contract DividendCheckpoint is ICheckpoint, Module {
     }
 
     /**
+     * @notice Return the default excluded addresses
+     * @return List of excluded addresses
+     */
+    function getDefaultExcluded() external view returns (address[]) {
+        return excluded;
+    }
+
+    /**
      * @notice Function to set withholding tax rates for investors
      * @param _investors addresses of investor
      * @param _withholding withholding tax for individual investors (multiplied by 10**16)
@@ -157,7 +165,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @notice Calculate amount of dividends claimable
      * @param _dividendIndex Dividend to calculate
      * @param _payee Affected investor address
-     * @return unit256
+     * @return claim, withheld amounts
      */
     function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256, uint256) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");

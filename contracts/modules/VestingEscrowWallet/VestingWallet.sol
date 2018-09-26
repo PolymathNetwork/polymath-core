@@ -27,8 +27,8 @@ contract VestingWallet is Ownable {
     uint256 totalTokensReleased;
     // Total number of tokens remaining to collect
     uint256 totalTokensRemaining;
-    // Number of tokens to release to the target per period
-    uint256 tokensPerPeriod;
+    // Number of tokens to release to the target per tranche
+    uint256 tokensPerTranche;
   }
 
   mapping(address => uint256) public individualVestingCount;
@@ -44,7 +44,7 @@ contract VestingWallet is Ownable {
     uint256 vestingFrequency,
     uint256 totalTokensReleased,
     uint256 totalTokensRemaining,
-    uint256 tokensPerPeriod
+    uint256 tokensPerTranche
   );
 
   event VestingCancelled(
@@ -101,7 +101,8 @@ contract VestingWallet is Ownable {
   * @param _vestingDuration Total duration of the vesting schedule
   * @param _startDate Start date of the vesting schedule
   * @param _vestingFrequency Frequency of release of tokens
-  */  function initiateVestingSchedule(
+  */
+  function initiateVestingSchedule(
     address[] _target,
     uint256[] _totalAllocation,
     uint256[] _vestingDuration,
@@ -152,8 +153,8 @@ contract VestingWallet is Ownable {
     require(_vestingDuration % _vestingFrequency == 0, "The vesting frequency should be a multiple of the vesting duration");
     // require(securityToken.balanceOf[address(this)] >= _totalAllocation, "Tokens must have been already sent to the smart contract");
 
-    uint256 _numPeriods = _vestingDuration.div(_vestingFrequency);
-    uint256 _tokensPerPeriod = _totalAllocation.div(_numPeriods);   // TODO: Edge cases/truncation. If uneven, take this into account. I asked on Github
+    uint256 _numTranches = _vestingDuration.div(_vestingFrequency);
+    uint256 _tokensPerTranche = _totalAllocation.div(_numTranches);   // TODO: Edge cases/truncation. If uneven, take this into account. I asked on Github
 
     bytes32 _vestingId = keccak256(
       abi.encodePacked(
@@ -180,7 +181,7 @@ contract VestingWallet is Ownable {
       vestingFrequency: _vestingFrequency,
       totalTokensReleased: _totalTokensReleased,
       totalTokensRemaining: _totalTokensRemaining,
-      tokensPerPeriod: _tokensPerPeriod
+      tokensPerTranche: _tokensPerTranche
     });
 
     emit VestingStarted(
@@ -192,8 +193,10 @@ contract VestingWallet is Ownable {
       _vestingFrequency,
       _totalTokensReleased,
       _totalTokensRemaining,
-      _tokensPerPeriod
+      _tokensPerTranche
     );
+
+    // Send tokens to contract here (see lucidchart -> assumptions -> 2)
   }
 
   /**
@@ -236,8 +239,8 @@ contract VestingWallet is Ownable {
     require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
     require(_vestingSchedule.totalTokensRemaining != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
 
-    uint256 currentPeriod = _calculateCurrentPeriod(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
-    uint256 tokensToDistribute = _calculateTokensToDistribute(currentPeriod, _vestingSchedule.tokensPerPeriod, _vestingSchedule.totalTokensReleased);
+    uint256 currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
+    uint256 tokensToDistribute = _calculateTokensToDistribute(currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.totalTokensReleased);
 
     _vestingSchedule.totalTokensReleased += tokensToDistribute;
     _vestingSchedule.totalTokensRemaining -= tokensToDistribute;
@@ -245,7 +248,14 @@ contract VestingWallet is Ownable {
     // TODO: Send tokens to target.
   }
 
-  function _calculateCurrentPeriod(
+  // TODO: May need to push tokens as well. Asked on Github.
+
+  /**
+  * @notice Calculate the current tranche the user is on
+  * @param _startDate Start date of the vesting period
+  * @param _vestingDuration Total duration of the vesting schedule
+  */
+  function _calculateCurrentTranche(
     uint256 _startDate,
     uint256 _vestingDuration
   )
@@ -258,16 +268,22 @@ contract VestingWallet is Ownable {
     : (now.sub(_startDate)).div(_vestingDuration);
   }
 
+  /**
+  * @notice Calculate the number of tokens to distribute per transaction
+  * @param _currentTranche Current tranche of the vesting schedule
+  * @param _tokensPerTranche Number of tokens to distribute in each tranche
+  * @param _totalTokensReleased Number of tokens released thus far
+  */
   function _calculateTokensToDistribute(
-    uint256 _currentPeriod,
-    uint256 _tokensPerPeriod,
+    uint256 _currentTranche,
+    uint256 _tokensPerTranche,
     uint256 _totalTokensReleased
   )
     internal
     view
     returns (uint256)
   {
-    uint256 _tokensToDistribute = _currentPeriod.mul(_tokensPerPeriod);
+    uint256 _tokensToDistribute = _currentTranche.mul(_tokensPerTranche);
     return _tokensToDistribute.sub(_totalTokensReleased);
   }
 }

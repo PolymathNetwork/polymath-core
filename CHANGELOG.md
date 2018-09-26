@@ -6,7 +6,9 @@ All notable changes to this project will be documented in this file.
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
-* `transferTickerOwnership()` function is introduced in `TickerRegistry` to transfer the ticker ownership after the registeration #191. 
+* Generalised MakerDAO oracle to allow different instances referencing different currencies
+* Added DAI as a fundraising currency to USDTieredSTO
+* `transferTickerOwnership()` function is introduced in `TickerRegistry` to transfer the ticker ownership after the registeration #191.
 * `getTickersByOwner()` function is used to get the list of tickers owned by the issuer #189.   
 * New function `addCustomTicker()` is used the add the Ticker in tickerRegistry. To avail the facility to Registry owner to add the tokens without paying the fee #190.  
 * Adding the functionality to change the `version`,`name`,`description`,`title` of a Module factory.   
@@ -18,7 +20,7 @@ All notable changes to this project will be documented in this file.
 * Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230         
 
 ## Fixed
-* Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs. 
+* Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
 * Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230    
   
 ## Removed 
@@ -81,7 +83,7 @@ allowed)
 * Minor CLI fixes
 * Change in the datastructure of SymbolDetails new variable `expiredTimestamp` introduced and change the variable name `timestamp` to `registeredTimestamp` in Tickerregistry.sol #192.      
 * Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions
-* Bug in ManualApprovalTransferManager that allowed anyone to reduce anyone's transfer allowance 
+* Bug in ManualApprovalTransferManager that allowed anyone to reduce anyone's transfer allowance
 
 =======
 # v1.3.0  

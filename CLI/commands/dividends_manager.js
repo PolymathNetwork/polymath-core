@@ -109,54 +109,46 @@ async function start_explorer(){
       }
 
       let index = readlineSync.keyInSelect(options, 'What do you want to do?');
-      console.log('Selected:', index != -1 ? options[index] : 'Cancel', '\n');
-      switch (index) {
-        case 0:
-          // Mint tokens
+      let selected = index != -1 ? options[index] : 'Cancel';
+      console.log('Selected:', selected, '\n');
+      switch (selected) {
+        case 'Mint tokens':
           let _to =  readlineSync.question('Enter beneficiary of minting: ');
           let _amount =  readlineSync.question('Enter amount of tokens to mint: ');
           await mintTokens(_to,_amount);
         break;
-        case 1:
-          // Transfer tokens
+        case 'Transfer tokens':
           let _to2 =  readlineSync.question('Enter beneficiary of tranfer: ');
           let _amount2 =  readlineSync.question('Enter amount of tokens to transfer: ');
           await transferTokens(_to2,_amount2);
         break;
-        case 2:
-          // Create checkpoint
+        case 'Create checkpoint':
           let createCheckpointAction = securityToken.methods.createCheckpoint();
           await common.sendTransaction(Issuer, createCheckpointAction, defaultGasPrice);
         break;
-        case 3:
-          // Create Dividends
+        case 'Create dividends':
           let dividend =  readlineSync.question(`How much ${dividendsType} would you like to distribute to token holders?: `);
           await checkBalance(dividend);
           let checkpointId = currentCheckpoint == 0 ? 0 : await selectCheckpoint(true); // If there are no checkpoints, it must create a new one
           await createDividends(dividend, checkpointId);
         break;
-        case 4:
-          // Explore account at checkpoint
+        case 'Explore account at checkpoint':
           let _address =  readlineSync.question('Enter address to explore: ');
           let _checkpoint = await selectCheckpoint(false);
           await exploreAddress(_address, _checkpoint);
         break;
-        case 5:
-          // Explore total supply at checkpoint
+        case 'Explore total supply at checkpoint':
           let _checkpoint2 = await selectCheckpoint(false);
           await exploreTotalSupply(_checkpoint2);
         break;
-        break;
-        case 6:
-          // Push dividends to account
+        case 'Push dividends to accounts':
           let _dividend = await selectDividend({valid: true, expired: false, reclaimed: false});
           if (_dividend !== null) {
             let _addresses = readlineSync.question('Enter addresses to push dividends to (ex- add1,add2,add3,...): ');
             await pushDividends(_dividend, _addresses);
           }
         break;
-        case 7:
-          //explore balance
+        case `Explore ${dividendsType} balance`:
           let _address3 =  readlineSync.question('Enter address to explore: ');
           let _dividend3 = await selectDividend();
           if (_dividend3 !== null) {
@@ -168,14 +160,13 @@ async function start_explorer(){
             `);
           }
         break;
-        case 8:
-          // Reclaimed dividends after expiry
+        case 'Reclaim expired dividends':
           let _dividend4 = await selectDividend({expired: true, reclaimed: false});
           if (_dividend4 !== null) {
             await reclaimedDividend(_dividend4);
           }
           break;
-        case -1:
+        case 'Cancel':
           process.exit(0);
           break;
       }

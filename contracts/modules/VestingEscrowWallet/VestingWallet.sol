@@ -95,6 +95,37 @@ contract VestingWallet is Ownable {
   // }
 
   /**
+  * @notice Initiate a vesting schedule for any number of employees or affiliates
+  * @param _target Address of the employee or the affiliate
+  * @param _totalAllocation Total number of tokens allocated for the target
+  * @param _vestingDuration Total duration of the vesting schedule
+  * @param _startDate Start date of the vesting schedule
+  * @param _vestingFrequency Frequency of release of tokens
+  */  function initiateVestingSchedule(
+    address[] _target,
+    uint256[] _totalAllocation,
+    uint256[] _vestingDuration,
+    uint256[] _startDate,
+    uint256[] _vestingFrequency
+  )
+      public
+      onlyOwner
+  {
+      require(_target.length == _totalAllocation.length &&
+              _target.length == _vestingDuration.length &&
+              _target.length == _startDate.length &&
+              _target.length == _vestingFrequency.length);
+
+      for (uint i = 0; i <= _target.length; i++) {
+          _initiateVestingScheduleIterate(_target[i],
+                                          _totalAllocation[i],
+                                          _vestingDuration[i],
+                                          _startDate[i],
+                                          _vestingFrequency[i]);
+      }
+  }
+
+  /**
   * @notice Initiate a vesting schedule for an employee or affiliate
   * @param _target Address of the employee or the affiliate
   * @param _totalAllocation Total number of tokens allocated for the target
@@ -102,15 +133,14 @@ contract VestingWallet is Ownable {
   * @param _startDate Start date of the vesting schedule
   * @param _vestingFrequency Frequency of release of tokens
   */
-  function initiateVestingSchedule(
+  function _initiateVestingScheduleIterate(
     address _target,
     uint256 _totalAllocation,
     uint256 _vestingDuration,
     uint256 _startDate,
     uint256 _vestingFrequency
   )
-    public
-    onlyOwner
+    internal
   {
     require(_target != address(0), "The target should be a valid addrss");
     require(_totalAllocation != 0, "The total allocation should not be 0");

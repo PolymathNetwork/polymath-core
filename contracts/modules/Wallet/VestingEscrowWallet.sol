@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
+import "./IWallet.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /**
  * @title Escrow wallet for distributing tokens on a vesting schedule
  */
-contract VestingEscrowWallet is Ownable {
+contract VestingEscrowWallet is IWallet {
   using SafeMath for uint;
 
   bytes32 public constant ISSUER = "ISSUER";
@@ -67,32 +67,18 @@ contract VestingEscrowWallet is Ownable {
    * @param _securityToken Address of the security token
    * @param _polyAddress Address of the polytoken
    */
-  // constructor (address _securityToken, address _polyAddress)
-  //   public
-  //   Module(_securityToken, _polyAddress)
-  // {
-  // }
+  constructor (address _securityToken, address _polyAddress)
+    public
+    Module(_securityToken, _polyAddress)
+  {
+  }
 
   /**
-  * @notice Function used to intialize the differnet variables
-  * @param _startTime Unix timestamp at which offering get started
-  * @param _endTime Unix timestamp at which offering get ended
-  * @param _cap Maximum No. of tokens for sale
-  * @param _someString Any string that contails the details
-  */
-  // function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public onlyFactory {
-  //   startTime = _startTime;
-  //   endTime = _endTime;
-  //   cap = _cap;
-  //   someString = _someString;
-  // }
-
-  /**
-  * @notice This function returns the signature of configure function
-  */
-  // function getInitFunction() public pure returns (bytes4) {
-  //   return bytes4(keccak256("configure(uint256,uint256,uint256,string)"));
-  // }
+   * @notice This function returns the signature of configure function
+   */
+  function getInitFunction() public pure returns (bytes4) {
+      return bytes4(0);
+  }
 
   /**
   * @notice Initiate a vesting schedule for any number of employees or affiliates
@@ -158,10 +144,32 @@ contract VestingEscrowWallet is Ownable {
   * @notice Collect vested tokens
   * @param _whichVestingSchedule Index of the vesting schedule for the target
   */
-  function collectTokens(uint256 _whichVestingSchedule)
+  function collectVestedTokens(uint256 _whichVestingSchedule)
     public
   {
     VestingSchedule memory _vestingSchedule = individualVestingDetails[msg.sender][_whichVestingSchedule];
+
+    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+    require(_vestingSchedule.totalTokensRemaining != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+
+    uint256 currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
+    uint256 tokensToDistribute = _calculateTokensToDistribute(currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.totalTokensReleased);
+
+    _vestingSchedule.totalTokensReleased += tokensToDistribute;
+    _vestingSchedule.totalTokensRemaining -= tokensToDistribute;
+
+    // TODO: Send tokens to target.
+  }
+
+  /**
+  * @notice Push vested tokens
+  * @param _target Address of the employee or the affiliate
+  * @param _whichVestingSchedule Index of the vesting schedule for the target
+  */
+  function pushVestedTokens(address _target, uint256 _whichVestingSchedule)
+    public
+  {
+    VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
 
     require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
     require(_vestingSchedule.totalTokensRemaining != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
@@ -247,7 +255,6 @@ contract VestingEscrowWallet is Ownable {
 
     // Send tokens to contract here (see lucidchart -> assumptions -> 2)
   }
-  // TODO: May need to push tokens as well. Asked on Github.
 
   /**
   * @notice Calculate the current tranche the user is on

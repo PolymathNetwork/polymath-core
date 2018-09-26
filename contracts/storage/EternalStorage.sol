@@ -1,8 +1,8 @@
 pragma solidity ^0.4.24;
 
 contract EternalStorage {
-    
-    /// @notice Internal mappings use to store all kind on data into the contract  
+
+    /// @notice Internal mappings use to store all kind on data into the contract
   mapping(bytes32 => uint256) internal uintStorage;
   mapping(bytes32 => string) internal stringStorage;
   mapping(bytes32 => address) internal addressStorage;
@@ -21,34 +21,34 @@ contract EternalStorage {
    //// set functions
    //////////////////
    /// @notice Set the key values using the Overloaded `set` functions
-   /// Ex- string version = "0.0.1"; replace to 
+   /// Ex- string version = "0.0.1"; replace to
    /// set(keccak256(abi.encodePacked("version"), "0.0.1");
    /// same for the other variables as well some more example listed below
-   /// ex1 - address securityTokenAddress = 0x123; replace to 
+   /// ex1 - address securityTokenAddress = 0x123; replace to
    /// set(keccak256(abi.encodePacked("securityTokenAddress"), 0x123);
-   /// ex2 - bytes32 tokenDetails = "I am ST20"; replace to  
+   /// ex2 - bytes32 tokenDetails = "I am ST20"; replace to
    /// set(keccak256(abi.encodePacked("tokenDetails"), "I am ST20");
    /// ex3 - mapping(string => address) ownedToken;
    /// set(keccak256(abi.encodePacked("ownedToken", "Chris")), 0x123);
-   /// ex4 - mapping(string => uint) tokenIndex; 
+   /// ex4 - mapping(string => uint) tokenIndex;
    /// tokenIndex["TOKEN"] = 1; replace to set(keccak256(abi.encodePacked("tokenIndex", "TOKEN"), 1);
    /// ex5 - mapping(string => SymbolDetails) registeredSymbols; where SymbolDetails is the structure having different type of values as
    /// {uint256 date, string name, address owner} etc.
    /// registeredSymbols["TOKEN"].name = "MyFristToken"; replace to set(keccak256(abi.encodePacked("registeredSymbols_name", "TOKEN"), "MyFirstToken");
    /// More generalized- set(keccak256(abi.encodePacked("registeredSymbols_<struct variable>", "keyname"), "value");
-  
+
   function set(bytes32 _key, uint256 _value) internal {
       uintStorage[_key] = _value;
   }
-  
+
   function set(bytes32 _key, address _value) internal {
       addressStorage[_key] = _value;
   }
-  
+
   function set(bytes32 _key, bool _value) internal {
       boolStorage[_key] = _value;
   }
-  
+
   function set(bytes32 _key, bytes32 _value) internal {
       bytes32Storage[_key] = _value;
   }
@@ -68,23 +68,23 @@ contract EternalStorage {
   /// Ex3 - mapping(string => SymbolDetails) registeredSymbols; where SymbolDetails is the structure having different type of values as
   /// {uint256 date, string name, address owner} etc.
   /// string _name = getString(keccak256(abi.encodePacked("registeredSymbols_name", "TOKEN"));
-  
+
   function getBool(bytes32 _key) internal view returns (bool) {
       return boolStorage[_key];
   }
-  
+
   function getUint(bytes32 _key) internal view returns (uint256) {
       return uintStorage[_key];
   }
-  
+
   function getAddress(bytes32 _key) internal view returns (address) {
       return addressStorage[_key];
   }
-  
+
   function getString(bytes32 _key) internal view returns (string) {
       return stringStorage[_key];
   }
-  
+
   function getBytes32(bytes32 _key) internal view returns (bytes32) {
       return bytes32Storage[_key];
   }
@@ -95,11 +95,11 @@ contract EternalStorage {
   ////////////////////////////
   /// @notice Function use to delete the array element.
   /// Ex1- mapping(address => bytes32[]) tokensOwnedByOwner;
-  /// For deleting the item from array developers needs to create a funtion for that similarly 
+  /// For deleting the item from array developers needs to create a funtion for that similarly
   /// in this case we have the helper function deleteArrayBytes32() which will do it for us
   /// deleteArrayBytes32(keccak256(abi.encodePacked("tokensOwnedByOwner", 0x1), 3); -- it will delete the index 3
-  
- 
+
+
   //Deletes from mapping (bytes32 => array[]) at index _index
   function deleteArrayAddress(bytes32 _key, uint256 _index) internal {
       address[] storage array = addressArrayStorage[_key];
@@ -123,7 +123,7 @@ contract EternalStorage {
       array[_index] = array[array.length - 1];
       array.length = array.length - 1;
   }
-  
+
   //Deletes from mapping (bytes32 => string[]) at index _index
   function deleteArrayString(bytes32 _key, uint256 _index) internal {
       string[] storage array = stringArrayStorage[_key];
@@ -139,7 +139,7 @@ contract EternalStorage {
   /// Ex1- mapping(address => bytes32[]) tokensOwnedByTicker;
   /// tokensOwnedByTicker[owner] = tokensOwnedByTicker[owner].push("xyz"); replace with
   /// pushArray(keccak256(abi.encodePacked("tokensOwnedByTicker", owner), "xyz");
-  
+
   /// @notice use to store the values for the array
   /// @param _key bytes32 type
   /// @param _value [uint256, string, bytes32, address] any of the data type in array
@@ -192,19 +192,19 @@ contract EternalStorage {
   /// Ex2- uint256 _len =  tokensOwnedByOwner[0x1].length; replace with
   /// getArrayBytes32(keccak256(abi.encodePacked("tokensOwnedByOwner", 0x1)).length;
 
-  function getArrayAddress(bytes32 _key) internal returns(address[]) {
+  function getArrayAddress(bytes32 _key) internal view returns(address[]) {
       return addressArrayStorage[_key];
   }
 
-  function getArrayBytes32(bytes32 _key) internal returns(bytes32[]) {
+  function getArrayBytes32(bytes32 _key) internal view returns(bytes32[]) {
       return bytes32ArrayStorage[_key];
   }
 
-  function getArrayString(bytes32 _key) internal returns(string[]) {
+  function getArrayString(bytes32 _key) internal view returns(string[]) {
       return stringArrayStorage[_key];
   }
 
-  function getArrayUint(bytes32 _key) internal returns(uint[]) {
+  function getArrayUint(bytes32 _key) internal view returns(uint[]) {
       return uintArrayStorage[_key];
   }
 
@@ -236,5 +236,5 @@ contract EternalStorage {
   function getBytesValues(bytes32 _variable) public view returns(bytes) {
       return bytesStorage[_variable];
   }
-  
+
 }

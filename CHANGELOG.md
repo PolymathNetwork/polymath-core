@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
+* Added `getTokensByOwner` to STR
 * Added withholding tax to ether & erc20 dividends
 * Generalised MakerDAO oracle to allow different instances referencing different currencies
 * Added DAI as a fundraising currency to USDTieredSTO

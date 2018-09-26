@@ -9,7 +9,7 @@ import "./interfaces/IERC20.sol";
 import "./libraries/VersionUtils.sol";
 import "./storage/EternalStorage.sol";
 import "./libraries/Encoder.sol";
-import "./interfaces/IOwner.sol";
+import "./interfaces/IOwnable.sol";
 
 /**
 * @title Registry contract to store registered modules
@@ -110,7 +110,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         // This if statement is required to be able to add modules from the token proxy contract during deployment
         if (ISecurityTokenRegistry(getAddress(Encoder.getKey('securityTokenRegistry'))).isSecurityToken(msg.sender)) {
             if (IFeatureRegistry(getAddress(Encoder.getKey('featureRegistry'))).getFeatureStatus("customModulesAllowed")) {
-                require(getBool(Encoder.getKey('verified', _moduleFactory)) || IOwner(_moduleFactory).owner() == IOwner(msg.sender).owner(),
+                require(getBool(Encoder.getKey('verified', _moduleFactory)) || IOwnable(_moduleFactory).owner() == IOwnable(msg.sender).owner(),
                 "ModuleFactory must be verified or SecurityToken owner must be ModuleFactory owner");
             } else {
                 require(getBool(Encoder.getKey('verified', _moduleFactory)), "ModuleFactory must be verified");
@@ -140,7 +140,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         set(Encoder.getKey('moduleListIndex', _moduleFactory), uint256(getArrayAddress(Encoder.getKey('moduleList', uint256(moduleType))).length));
         pushArray(Encoder.getKey('moduleList', uint256(moduleType)), _moduleFactory);
         setArray(Encoder.getKey('reputation', _moduleFactory), new address[](0));
-        emit ModuleRegistered (_moduleFactory, IOwner(_moduleFactory).owner());
+        emit ModuleRegistered (_moduleFactory, IOwnable(_moduleFactory).owner());
         return true;
     }
 
@@ -153,7 +153,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint256 moduleType = getUint(Encoder.getKey('registry', _moduleFactory));
 
         require(moduleType != 0, "Module factory should be registered");
-        require(msg.sender == IOwner(_moduleFactory).owner() || msg.sender == getAddress(Encoder.getKey('owner')),
+        require(msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == getAddress(Encoder.getKey('owner')),
         "msg.sender must be moduleFactory owner or registry curator");
 
         uint256 index = getUint(Encoder.getKey('moduleListIndex', _moduleFactory));
@@ -260,7 +260,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint256 counter = 0;
         for (uint256 i = 0; i < _len; i++) {
             if (IFeatureRegistry(getAddress(Encoder.getKey('featureRegistry'))).getFeatureStatus("customModulesAllowed")) {
-                if (IOwner(_addressList[i]).owner() == IOwner(_securityToken).owner() || getBool(Encoder.getKey('verified', _addressList[i])))
+                if (IOwnable(_addressList[i]).owner() == IOwnable(_securityToken).owner() || getBool(Encoder.getKey('verified', _addressList[i])))
                     counter++;
             }
             else if (getBool(Encoder.getKey('verified', _addressList[i]))) {
@@ -271,7 +271,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         counter = 0;
         for (uint256 j = 0; j < _len; j++) {
             if (IFeatureRegistry(getAddress(Encoder.getKey('featureRegistry'))).getFeatureStatus("customModulesAllowed")) {
-                if (IOwner(_addressList[j]).owner() == IOwner(_securityToken).owner() || getBool(Encoder.getKey('verified', _addressList[j]))) {
+                if (IOwnable(_addressList[j]).owner() == IOwnable(_securityToken).owner() || getBool(Encoder.getKey('verified', _addressList[j]))) {
                     _tempArray[counter] = _addressList[j];
                     counter ++;
                 }

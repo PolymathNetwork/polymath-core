@@ -71,7 +71,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
         uint256 excludedSupply = 0;
         for (uint256 i = 0; i < _excluded.length; i++) {
-            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOf(_excluded[i]));
+            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOfAt(_excluded[i], _checkpointId));
         }
         dividends.push(
           Dividend(

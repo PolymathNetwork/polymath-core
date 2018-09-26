@@ -7,6 +7,7 @@ var module_manager = require('./commands/module_manager');
 var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
 var dividends_manager = require('./commands/dividends_manager');
+var transfer_manager = require('./commands/transfer_manager');
 var strMigrator = require('./commands/strMigrator');
 var program = require('commander');
 const yaml = require('js-yaml');
@@ -89,6 +90,14 @@ program
   .description('Runs dividends_manager')
   .action(async function(dividendsType) {
     await dividends_manager.executeApp(dividendsType, program.remoteNode);
+  });
+
+program
+  .command('transfer_manager')
+  .alias('tm')
+  .description('Runs transfer_manager')
+  .action(async function() {
+    await transfer_manager.executeApp(program.remoteNode);
   });
 
 program

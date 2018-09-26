@@ -52,10 +52,6 @@ module.exports = {
     let networkId = await web3.eth.net.getId();
     return getPolymathRegistryAddress(networkId);
   },
-  tickerRegistry: async function() {
-    let polymathRegistry = await getPolymathRegistry();
-    return await polymathRegistry.methods.getAddress("TickerRegistry").call();
-  },
   securityTokenRegistry: async function() {
     let polymathRegistry = await getPolymathRegistry();
     return await polymathRegistry.methods.getAddress("SecurityTokenRegistry").call();
@@ -64,9 +60,22 @@ module.exports = {
     let polymathRegistry = await getPolymathRegistry();
     return await polymathRegistry.methods.getAddress("ModuleRegistry").call();
   },
+  featureRegistry: async function() {
+    let polymathRegistry = await getPolymathRegistry();
+    return await polymathRegistry.methods.getAddress("FeatureRegistry").call();
+  },
   polyToken: async function() {
     let polymathRegistry = await getPolymathRegistry();
     return await polymathRegistry.methods.getAddress("PolyToken").call();
+  },
+  usdToken: async function() {
+    let networkId = await web3.eth.net.getId();
+    if (networkId == 1)
+      return "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359";
+    else if (networkId == 42)
+      return "0xc4375b7de8af5a38a93548eb8453a498222c4ff2";
+    else
+      return JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).networks[networkId].address;
   },
   cappedSTOFactoryAddress: async function() {
     let networkId = await web3.eth.net.getId();
@@ -76,6 +85,11 @@ module.exports = {
       return "0x4527f1629b1d32ad8b900edebb766967c9c78715"; // Updated to 1.4.0
     else
       return JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).networks[networkId].address;
+  },
+  daiToken: async function() {
+    //TODO: Add a proper test DAI token here
+    let polymathRegistry = await getPolymathRegistry();
+    return await polymathRegistry.methods.getAddress("PolyToken").call();
   },
   usdTieredSTOFactoryAddress: async function() {
     let networkId = await web3.eth.net.getId();

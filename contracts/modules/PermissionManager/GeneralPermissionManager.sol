@@ -1,19 +1,12 @@
 pragma solidity ^0.4.24;
 
 import "./IPermissionManager.sol";
-
-/////////////////////
-// Module permissions
-/////////////////////
-//                          Owner       CHANGE_PERMISSION
-// addPermission              X               X
-// changePermission           X               X
-//
+import "../Module.sol";
 
 /**
  * @title Permission Manager module for core permissioning functionality
  */
-contract GeneralPermissionManager is IPermissionManager {
+contract GeneralPermissionManager is IPermissionManager, Module {
 
     // Mapping used to hold the permissions on the modules provided to delegate
     mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;
@@ -29,7 +22,7 @@ contract GeneralPermissionManager is IPermissionManager {
 
     /// @notice constructor
     constructor (address _securityToken, address _polyAddress) public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
@@ -48,7 +41,7 @@ contract GeneralPermissionManager is IPermissionManager {
     * @param _perm Permission flag
     * @return bool
     */
-    function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
+    function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns(bool) {
         if (delegateDetails[_delegate] != bytes32(0)) {
             return perms[_module][_delegate][_perm];
         }else
@@ -79,7 +72,7 @@ contract GeneralPermissionManager is IPermissionManager {
         bytes32 _perm,
         bool _valid
     )
-    public
+    external
     withPerm(CHANGE_PERMISSION)
     returns(bool)
     {
@@ -94,7 +87,7 @@ contract GeneralPermissionManager is IPermissionManager {
     * @param _delegate Ethereum address of the delegate
     * @return Details of the delegate
     */
-    function getDelegateDetails(address _delegate) public view returns(bytes32) {
+    function getDelegateDetails(address _delegate) external view returns(bytes32) {
         return delegateDetails[_delegate];
     }
 

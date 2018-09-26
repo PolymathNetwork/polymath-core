@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
 import "./ERC20DividendCheckpoint.sol";
-import "../../interfaces/IModuleFactory.sol";
+import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying ERC20DividendCheckpoint module
  */
-contract ERC20DividendCheckpointFactory is IModuleFactory {
+contract ERC20DividendCheckpointFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -16,9 +16,12 @@ contract ERC20DividendCheckpointFactory is IModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {
-
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    {   
+        version = "1.0.0";
+        name = "ERC20DividendCheckpoint";
+        title = "ERC20 Dividend Checkpoint";
+        description = "Create ERC20 dividends for token holders at a specific checkpoint";
     }
 
     /**
@@ -28,7 +31,9 @@ contract ERC20DividendCheckpointFactory is IModuleFactory {
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        return address(new ERC20DividendCheckpoint(msg.sender, address(polyToken)));
+        address erc20DividendCheckpoint = new ERC20DividendCheckpoint(msg.sender, address(polyToken));
+        emit LogGenerateModuleFromFactory(erc20DividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
+        return erc20DividendCheckpoint;
     }
 
     /**
@@ -42,21 +47,35 @@ contract ERC20DividendCheckpointFactory is IModuleFactory {
      * @notice Get the name of the Module
      */
     function getName() public view returns(bytes32) {
-        return "ERC20DividendCheckpoint";
+        return name;
     }
 
     /**
      * @notice Get the description of the Module
      */
     function getDescription() public view returns(string) {
-        return "Create ERC20 dividends for token holders at a specific checkpoint";
+        return description;
     }
 
     /**
      * @notice Get the title of the Module
      */
     function getTitle() public  view returns(string) {
-        return "ERC20 Dividend Checkpoint";
+        return title;
+    }
+
+    /**
+     * @notice Get the version of the Module
+     */
+    function getVersion() external view returns(string) {
+        return version;
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCost() external view returns (uint256) {
+        return setupCost;
     }
 
     /**

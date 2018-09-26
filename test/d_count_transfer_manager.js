@@ -1,13 +1,15 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
-import { error } from 'util';
+import { encodeProxyCall } from './helpers/encodeCall';
+
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
-const TickerRegistry = artifacts.require('./TickerRegistry.sol');
-const STVersion = artifacts.require('./STVersionProxy001.sol');
+const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
+const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
+const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -40,6 +42,7 @@ contract('CountTransferManager', accounts => {
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
+    let I_SecurityTokenRegistryProxy;
     let P_CountTransferManagerFactory;
     let P_CountTransferManager;
     let I_GeneralTransferManagerFactory;
@@ -49,15 +52,15 @@ contract('CountTransferManager', accounts => {
     let I_GeneralTransferManager;
     let I_ExchangeTransferManager;
     let I_ModuleRegistry;
-    let I_TickerRegistry;
+    let I_STRProxied;
+    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
-    let I_STVersion;
+    let I_STFactory;
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
 
     // SecurityToken Details
-    const swarmHash = "dagwrgwgvwergwrvwrg";
     const name = "Team";
     const symbol = "sap";
     const tokenDetails = "This is equity type of issuance";
@@ -70,7 +73,7 @@ contract('CountTransferManager', accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = 250 * Math.pow(10, 18);
+    const initRegFee = web3.utils.toWei("250");
 
     // CountTransferManager details
     const holderCount = 2;           // Maximum number of token holders
@@ -105,9 +108,9 @@ contract('CountTransferManager', accounts => {
          I_PolyToken = await PolyTokenFaucet.new();
          await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
          await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
- 
+
          // STEP 2: Deploy the ModuleRegistry
- 
+
          I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:account_polymath});
          await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: account_polymath});
 
@@ -171,37 +174,20 @@ contract('CountTransferManager', accounts => {
         await I_ModuleRegistry.registerModule(P_CountTransferManagerFactory.address, { from: account_polymath });
         await I_ModuleRegistry.verifyModule(P_CountTransferManagerFactory.address, true, { from: account_polymath });
 
-        // Step 6: Deploy the TickerRegistry
+        // Step 7: Deploy the STFactory contract
 
-        I_TickerRegistry = await TickerRegistry.new(I_PolymathRegistry.address, initRegFee, { from: account_polymath });
-        await I_PolymathRegistry.changeAddress("TickerRegistry", I_TickerRegistry.address, {from: account_polymath});
-
-        assert.notEqual(
-            I_TickerRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "TickerRegistry contract was not deployed",
-        );
-
-        // Step 7: Deploy the STversionProxy contract
-
-        I_STVersion = await STVersion.new(I_GeneralTransferManagerFactory.address);
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address);
 
         assert.notEqual(
-            I_STVersion.address.valueOf(),
+            I_STFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "STVersion contract was not deployed",
+            "STFactory contract was not deployed",
         );
 
         // Step 9: Deploy the SecurityTokenRegistry
 
-        I_SecurityTokenRegistry = await SecurityTokenRegistry.new(
-            I_PolymathRegistry.address,
-            I_STVersion.address,
-            initRegFee,
-            {
-                from: account_polymath
-            });
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
+        // Deploy the SecurityTokenregistry
+        I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
 
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
@@ -210,35 +196,62 @@ contract('CountTransferManager', accounts => {
         );
 
         // Step 10: update the registries addresses from the PolymathRegistry contract
-        await I_SecurityTokenRegistry.updateFromRegistry({from: account_polymath});
+         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
+         let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
+         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);   
+        
+
+        // Step 10: Deploy the FeatureRegistry
+
+        I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: account_polymath
+            });
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+
+        assert.notEqual(
+            I_FeatureRegistry.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "FeatureRegistry contract was not deployed",
+        );
+
+        // Step 11: update the registries addresses from the PolymathRegistry contract
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, {from: account_polymath});
         await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
-        await I_TickerRegistry.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
-        console.log(`\nPolymath Network Smart Contracts Deployed:\n
-            ModuleRegistry: ${I_ModuleRegistry.address}\n
-            GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}\n
-            CountTransferManagerFactory: ${I_CountTransferManagerFactory.address}\n
-            GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
-            TickerRegistry: ${I_TickerRegistry.address}\n
-            STVersionProxy_001: ${I_STVersion.address}\n
-            SecurityTokenRegistry: ${I_SecurityTokenRegistry.address}\n
+        console.log(`
+        --------------------- Polymath Network Smart Contracts: ---------------------
+        PolymathRegistry:                  ${PolymathRegistry.address}
+        SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
+        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${ModuleRegistry.address}
+        FeatureRegistry:                   ${FeatureRegistry.address}
+
+        STFactory:                         ${STFactory.address}
+        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
+
+        CountTransferManagerFactory:       ${I_CountTransferManagerFactory.address}
+        -----------------------------------------------------------------------------
         `);
     });
 
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
-            await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner});
-            let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, contact, swarmHash, { from : token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
+            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
-            assert.equal(tx.logs[0].args._symbol, symbol.toUpperCase());
+            assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner});
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             let _blockNo = latestBlock();
-            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
@@ -257,13 +270,7 @@ contract('CountTransferManager', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
            let moduleData = await I_SecurityToken.modules(2, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
-
-           assert.notEqual(
-            I_GeneralTransferManager.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManager contract was not deployed",
-           );
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
         });
 

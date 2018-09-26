@@ -35,11 +35,6 @@ async function startScript() {
   await global.initialize(remoteNetwork);
 
   try {
-    let tickerRegistryAddress = await contracts.tickerRegistry();
-    let tickerRegistryABI = abis.tickerRegistry();
-    tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
-    tickerRegistry.setProvider(web3.currentProvider);
-    
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
     let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
@@ -138,9 +133,8 @@ async function setInvestors() {
     let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, tokenDeployedAddress);
   }
-  await securityToken.methods.getModule(2, 0).call({}, function (error, result) {
-    generalTransferManagerAddress = result[1];
-  });
+  let gmtModules = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
+  let generalTransferManagerAddress = gmtModules[0];
   let generalTransferManagerABI = abis.generalTransferManager();
   let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
 

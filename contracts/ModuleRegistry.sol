@@ -118,8 +118,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
             uint8[] memory _latestVersion = ISecurityTokenRegistry(getAddress(Encoder.getKey('securityTokenRegistry'))).getProtocolVersion();
             uint8[] memory _lowerBound = IModuleFactory(_moduleFactory).getLowerSTVersionBounds();
             uint8[] memory _upperBound = IModuleFactory(_moduleFactory).getUpperSTVersionBounds();
-            require(VersionUtils.compareLowerBound(_lowerBound, _latestVersion), "Should not below the lower bound of ST");
-            require(VersionUtils.compareUpperBound(_upperBound, _latestVersion), "Should not above the upper bound of ST");
+            require(VersionUtils.compareLowerBound(_lowerBound, _latestVersion), "Version should not be below the lower bound of ST version requirement");
+            require(VersionUtils.compareUpperBound(_upperBound, _latestVersion), "Version should not be above the upper bound of ST version requirement");
             require(getUint(Encoder.getKey('registry',_moduleFactory)) != 0, "ModuleFactory type should not be 0");
             pushArray(Encoder.getKey('reputation', _moduleFactory), msg.sender);
             emit ModuleUsed(_moduleFactory, msg.sender);
@@ -154,7 +154,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
 
         require(moduleType != 0, "Module factory should be registered");
         require(msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == getAddress(Encoder.getKey('owner')),
-        "msg.sender must be moduleFactory owner or registry curator");
+        "msg.sender must be the Module Factory owner or registry curator");
 
         uint256 index = getUint(Encoder.getKey('moduleListIndex', _moduleFactory));
         uint256 last = getArrayAddress(Encoder.getKey('moduleList', moduleType)).length - 1;
@@ -176,7 +176,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         set(Encoder.getKey('verified', _moduleFactory), false);
         // delete moduleListIndex[_moduleFactory];
         set(Encoder.getKey('moduleListIndex', _moduleFactory), uint256(0));
-        emit ModuleRemoved (_moduleFactory, msg.sender);
+        emit ModuleRemoved(_moduleFactory, msg.sender);
         return true;
     }
 
@@ -189,8 +189,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     * @return bool
     */
     function verifyModule(address _moduleFactory, bool _verified) external onlyOwner returns(bool) {
-        //Must already have been registered
-        require(getUint(Encoder.getKey('registry', _moduleFactory)) != uint256(0), "Module factory should have been already registered");
+        require(getUint(Encoder.getKey('registry', _moduleFactory)) != uint256(0), "Module factory must be registered");
         set(Encoder.getKey('verified', _moduleFactory), _verified);
         emit ModuleVerified(_moduleFactory, _verified);
         return true;
@@ -297,7 +296,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice called by the owner to pause, triggers stopped state
+     * @notice Called by the owner to pause, triggers stopped state
      */
     function pause() external whenNotPaused onlyOwner {
         set(Encoder.getKey("paused"), true);
@@ -305,7 +304,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice called by the owner to unpause, returns to normal state
+     * @notice Called by the owner to unpause, returns to normal state
      */
     function unpause() external whenPaused onlyOwner {
         set(Encoder.getKey("paused"), false);
@@ -313,7 +312,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice Used to get the latest contract address of the registries
+     * @notice Stores the contract addresses of other key contracts from the PolymathRegistry
      */
     function updateFromRegistry() onlyOwner external {
         address _polymathRegistry = getAddress(Encoder.getKey('polymathRegistry'));

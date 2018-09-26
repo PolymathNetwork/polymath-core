@@ -177,7 +177,7 @@ contract VestingWallet is Ownable {
   {
     VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
 
-    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");
+    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
 
     bytes32 _vestingId = _vestingSchedule.vestingId;
     uint256 _tokensCollected = _vestingSchedule.totalTokensRemaining;
@@ -192,5 +192,52 @@ contract VestingWallet is Ownable {
     );
 
     // TODO: Return tokens to issuer. Asked what to do on Github
+  }
+
+  /**
+  * @notice Collect vested tokens
+  * @param _whichVestingSchedule Index of the vesting schedule for the target
+  */
+  function collectTokens(uint256 _whichVestingSchedule)
+    public
+  {
+    VestingSchedule memory _vestingSchedule = individualVestingDetails[msg.sender][_whichVestingSchedule];
+
+    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+    require(_vestingSchedule.totalTokensRemaining != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+
+    uint256 currentPeriod = _calculateCurrentPeriod(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
+    uint256 tokensToDistribute = _calculateTokensToDistribute(currentPeriod, _vestingSchedule.tokensPerPeriod, _vestingSchedule.totalTokensReleased);
+
+    _vestingSchedule.totalTokensReleased += tokensToDistribute;
+    _vestingSchedule.totalTokensRemaining -= tokensToDistribute;
+
+    // TODO: Send tokens to target.
+  }
+
+  function _calculateCurrentPeriod(
+    uint256 _startDate,
+    uint256 _vestingDuration
+  )
+    internal
+    view
+    returns (uint256)
+  {
+    return now < _startDate
+    ? 0
+    : (now.sub(_startDate)).div(_vestingDuration);
+  }
+
+  function _calculateTokensToDistribute(
+    uint256 _currentPeriod,
+    uint256 _tokensPerPeriod,
+    uint256 _totalTokensReleased
+  )
+    internal
+    view
+    returns (uint256)
+  {
+    uint256 _tokensToDistribute = _currentPeriod.mul(_tokensPerPeriod);
+    return _tokensToDistribute.sub(_totalTokensReleased);
   }
 }

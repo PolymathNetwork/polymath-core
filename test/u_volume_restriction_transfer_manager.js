@@ -335,7 +335,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should successfully attach the VolumeRestrictionTransferManagerr factory with the security token", async () => {
+        it("Should successfully attach the VolumeRestrictionTransferManager factory with the security token", async () => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             try {
@@ -419,27 +419,37 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await I_VolumeRestrictionTransferManager.unpause({from: token_owner});
         })
 
-        it("Should not be able to transfer between existing token holders over limit", async() => {
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 });
-            } catch(error) {
-                console.log(`         tx revert -> Too many holders`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
-        });
+        // it("Should not be able to transfer between existing token holders over limit", async() => {
+        //     let errorThrown = false;
+        //     try {
+        //         await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 });
+        //     } catch(error) {
+        //         console.log(`         tx revert -> Too many holders`.grey);
+        //         ensureException(error);
+        //         errorThrown = true;
+        //     }
+        //     assert.ok(errorThrown, message);
+        // });
 
-        // it("Modify holder percentage to 100", async() => {
-        //     // Add the Investor in to the whitelist
-        //     // Mint some tokens
-        //     await I_PercentageTransferManager.changeHolderPercentage(100 * 10**16, { from: token_owner });
+        // it("Create a lockup and attempt a transfer", async() => {
 
-        //     assert.equal(
-        //         (await I_PercentageTransferManager.maxHolderPercentage()).toNumber(),
-        //         100 * 10**16
-        //     );
+        //     let balance = await I_SecurityToken.balanceOf(account_investor2)
+        //     console.log('balance is ',balance.toString())
+
+        //     // // create a lockup for their entire balance
+        //     // // over 16 seconds total, with 4 periods of 4 seconds each.
+        //     // await I_VolumeRestrictionTransferManager.addLockup(account_investor1, 16, 4, 0, balance, { from: token_owner });
+            
+
+        //     // let errorThrown = false;
+        //     // try {
+        //         // await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
+        //     // } catch(error) {
+        //     //     console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+        //     //     ensureException(error);
+        //     //     errorThrown = true;
+        //     // }
+        //     // assert.ok(errorThrown, message);
         // });
 
         // it("Should be able to transfer between existing token holders up to limit", async() => {

@@ -48,7 +48,7 @@ contract VolumeRestrictionTransferManager is ITransferManager {
     
     /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
     function verifyTransfer(address  _from, address /* _to*/, uint256  _amount, bool /* _isTransfer */) public returns(Result) {
-        if (!paused) {
+        if (!paused && _from != address(0)) {
             // get total amount allowed right now
             uint allowedAmount = _currentAllowedAmount(_from);
             if (_amount <= allowedAmount) {

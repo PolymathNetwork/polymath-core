@@ -132,12 +132,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // Change the STR address in the event of a upgrade
     event ChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
     // Events to log minting and burning
-    event Minted(address indexed to, uint256 amount);
+    event Minted(address indexed _to, uint256 _value);
     event Burnt(address indexed _burner, uint256 _value);
 
     // Events to log controller actions
     event SetController(address indexed _oldController, address indexed _newController);
-    event ForceTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _amount, bool _verifyTransfer, bytes _data);
+    event ForceTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _value, bool _verifyTransfer, bytes _data);
     event DisableController(uint256 _timestamp);
 
     function isModule(address _module, uint8 _type) internal view returns (bool) {
@@ -163,8 +163,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         }
     }
 
-    modifier checkGranularity(uint256 _amount) {
-        require(_amount % granularity == 0, "Unable to modify token balances at this granularity");
+    modifier checkGranularity(uint256 _value) {
+        require(_value % granularity == 0, "Unable to modify token balances at this granularity");
         _;
     }
 
@@ -360,10 +360,10 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     /**
     * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
-    * @param _amount amount of POLY to withdraw
+    * @param _value amount of POLY to withdraw
     */
-    function withdrawPoly(uint256 _amount) external onlyOwner {
-        require(ERC20(polyToken).transfer(owner, _amount), "In-sufficient balance");
+    function withdrawPoly(uint256 _value) external onlyOwner {
+        require(ERC20(polyToken).transfer(owner, _value), "In-sufficient balance");
     }
 
     /**
@@ -540,13 +540,17 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _value value of transfer
      * @return bool success
      */
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-        _adjustInvestorCount(_from, _to, _value);
-        require(_verifyTransfer(_from, _to, _value, true), "Transfer is not valid");
-        _adjustBalanceCheckpoints(_from);
-        _adjustBalanceCheckpoints(_to);
+    function transferFrom(address _from, address _to, uint256 _value) public returns(bool) {
+        require(_updateTransfer(_from, _to, _value), "Transfer is not valid");
         require(super.transferFrom(_from, _to, _value));
         return true;
+    }
+
+    function _updateTransfer(address _from, address _to, uint256 _value) internal returns(bool) {
+        _adjustInvestorCount(_from, _to, _value);
+        _adjustBalanceCheckpoints(_from);
+        _adjustBalanceCheckpoints(_to);
+        return _verifyTransfer(_from, _to, _value, true);
     }
 
     /**
@@ -554,11 +558,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @dev TransferManager module has a key of 2
      * @param _from sender of transfer
      * @param _to receiver of transfer
-     * @param _amount value of transfer
+     * @param _value value of transfer
      * @param _isTransfer whether transfer is being executed
      * @return bool
      */
-    function _verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) internal checkGranularity(_amount) returns (bool) {
+    function _verifyTransfer(address _from, address _to, uint256 _value, bool _isTransfer) internal checkGranularity(_value) returns (bool) {
         if (!transfersFrozen) {
             if (modules[TRANSFERMANAGER_KEY].length == 0) {
                 return true;
@@ -572,7 +576,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
                 module = modules[TRANSFERMANAGER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
-                    ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _amount, _isTransfer);
+                    ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _isTransfer);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
                     }
@@ -595,11 +599,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @dev TransferManager module has a key of 2
      * @param _from sender of transfer
      * @param _to receiver of transfer
-     * @param _amount value of transfer
+     * @param _value value of transfer
      * @return bool
      */
-    function verifyTransfer(address _from, address _to, uint256 _amount) public returns (bool) {
-        return _verifyTransfer(_from, _to, _amount, false);
+    function verifyTransfer(address _from, address _to, uint256 _value) public returns (bool) {
+        return _verifyTransfer(_from, _to, _value, false);
     }
 
     /**
@@ -615,19 +619,19 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice mints new tokens and assigns them to the target _investor.
      * @dev Can only be called by the issuer or STO attached to the token
      * @param _investor Address where the minted tokens will be delivered
-     * @param _amount Number of tokens be minted
+     * @param _value Number of tokens be minted
      * @return success
      */
-    function mint(address _investor, uint256 _amount) public onlyModuleOrOwner(STO_KEY) checkGranularity(_amount) isMintingAllowed() returns (bool success) {
+    function mint(address _investor, uint256 _value) public onlyModuleOrOwner(STO_KEY) checkGranularity(_value) isMintingAllowed() returns (bool success) {
         require(_investor != address(0), "Investor address should not be 0x");
-        _adjustInvestorCount(address(0), _investor, _amount);
-        require(_verifyTransfer(address(0), _investor, _amount, true), "Transfer is not valid");
+        _adjustInvestorCount(address(0), _investor, _value);
+        require(_verifyTransfer(address(0), _investor, _value, true), "Transfer is not valid");
         _adjustBalanceCheckpoints(_investor);
         _adjustTotalSupplyCheckpoints();
-        totalSupply_ = totalSupply_.add(_amount);
-        balances[_investor] = balances[_investor].add(_amount);
-        emit Minted(_investor, _amount);
-        emit Transfer(address(0), _investor, _amount);
+        totalSupply_ = totalSupply_.add(_value);
+        balances[_investor] = balances[_investor].add(_value);
+        emit Minted(_investor, _value);
+        emit Transfer(address(0), _investor, _value);
         return true;
     }
 
@@ -635,13 +639,13 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice mints new tokens and assigns them to the target _investor.
      * @dev Can only be called by the issuer or STO attached to the token.
      * @param _investors A list of addresses to whom the minted tokens will be dilivered
-     * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
+     * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _amounts) external onlyModuleOrOwner(STO_KEY) returns (bool success) {
-        require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
+    function mintMulti(address[] _investors, uint256[] _values) external onlyModuleOrOwner(STO_KEY) returns (bool success) {
+        require(_investors.length == _values.length, "Mis-match in the length of the arrays");
         for (uint256 i = 0; i < _investors.length; i++) {
-            mint(_investors[i], _amounts[i]);
+            mint(_investors[i], _values[i]);
         }
         return true;
     }
@@ -675,25 +679,40 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         tokenBurner = ITokenBurner(_tokenBurner);
     }
 
+    function _burn(address _from, uint256 _value) internal returns (bool) {
+        require(tokenBurner != address(0), "Token Burner contract address is not set yet");
+        require(_value <= balances[_from], "Value too high");
+        _updateTransfer(_from, address(0), _value);
+
+        // no need to require value <= totalSupply, since that would imply the
+        // sender's balance is greater than the totalSupply, which *should* be an assertion failure
+        balances[_from] = balances[_from].sub(_value);
+        totalSupply_ = totalSupply_.sub(_value);
+        require(tokenBurner.burn(_from, _value), "Token burner failed");
+        emit Burnt(_from, _value);
+        emit Transfer(_from, address(0), _value);
+        return true;
+    }
+
     /**
      * @notice Burn function used to burn the securityToken
      * @param _value No. of token that get burned
      */
     function burn(uint256 _value) checkGranularity(_value) public returns (bool) {
-        _adjustInvestorCount(msg.sender, address(0), _value);
-        require(tokenBurner != address(0), "Token Burner contract address is not set yet");
-        require(_verifyTransfer(msg.sender, address(0), _value, true), "Transfer is not valid");
-        require(_value <= balances[msg.sender], "Value should no be greater than the balance of msg.sender");
-        _adjustBalanceCheckpoints(msg.sender);
-        _adjustTotalSupplyCheckpoints();
-        // no need to require value <= totalSupply, since that would imply the
-        // sender's balance is greater than the totalSupply, which *should* be an assertion failure
+        require(_burn(msg.sender, _value));
+        return true;
+    }
 
-        balances[msg.sender] = balances[msg.sender].sub(_value);
-        require(tokenBurner.burn(msg.sender, _value), "Token burner process is not validated");
-        totalSupply_ = totalSupply_.sub(_value);
-        emit Burnt(msg.sender, _value);
-        emit Transfer(msg.sender, address(0), _value);
+    /**
+     * @notice Burn function used to burn the securityToken on behalf of someone else
+     * @param _from Address for whom to burn tokens
+     * @param _value No. of token that get burned
+     */
+    function burnFrom(address _from, uint256 _value) checkGranularity(_value) public returns (bool) {
+        require(_value <= balances[_from]);
+        require(_value <= allowed[_from][msg.sender]);
+        require(_burn(_from, _value));
+        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
         return true;
     }
 
@@ -797,13 +816,9 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _data data attached to the transfer by controller to emit in event
      */
     function forceTransfer(address _from, address _to, uint256 _value, bytes _data) public onlyController returns(bool) {
-        _adjustInvestorCount(_from, _to, _value);
-        bool verified = _verifyTransfer(_from, _to, _value, true);
-        _adjustBalanceCheckpoints(_from);
-        _adjustBalanceCheckpoints(_to);
-
         require(_to != address(0));
         require(_value <= balances[_from]);
+        bool verified = _updateTransfer(_from, _to, _value);
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
 

@@ -72,19 +72,25 @@ start_testrpc() {
 
 if testrpc_running; then
   echo "Using existing testrpc instance"
-  bridge_running
-  if bridge_running; then
-    echo "Using existing ethereum-bridge instance"
-  else
-    echo "Runnning the new ethereum-bridge instance"
-    start_bridge
+  # Do not start ethereum bridge unless it is a cron job from travis
+  if [ "$TRAVIS_EVENT_TYPE" = "cron" ]; then
+    bridge_running
+    if bridge_running; then
+      echo "Using existing ethereum-bridge instance"
+    else
+      echo "Runnning the new ethereum-bridge instance"
+      start_bridge
+    fi
   fi
 else
   echo "Starting our own testrpc instance"
   start_testrpc
-  echo "Starting our own ethereum-bridge instance"
-  sleep 10
-  start_bridge
+  # Do not start ethereum bridge unless it is a cron job from travis
+  if [ "$TRAVIS_EVENT_TYPE" = "cron" ]; then
+    echo "Starting our own ethereum-bridge instance"
+    sleep 10
+    start_bridge
+  fi
 fi
 
 if ! [ -z "${TRAVIS_PULL_REQUEST+x}" ] && [ "$TRAVIS_PULL_REQUEST" != false ]; then
@@ -94,5 +100,10 @@ if ! [ -z "${TRAVIS_PULL_REQUEST+x}" ] && [ "$TRAVIS_PULL_REQUEST" != false ]; t
     cat coverage/lcov.info | node_modules/.bin/coveralls
   fi
 else
-  node_modules/.bin/truffle test `ls test/*.js`
+  # Do not run a_poly_oracle,js tests unless it is a cron job from travis
+  if [ "$TRAVIS_EVENT_TYPE" = "cron" ]; then
+    node_modules/.bin/truffle test `ls test/*.js`
+  else
+    node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js`
+  fi
 fi

@@ -116,9 +116,14 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @notice Modifier to make a function callable only when the contract is not paused.
      */
     modifier whenNotPaused() {
-        require(!getBool(Encoder.getKey("paused")), "Already paused");
-        _;
+        if (msg.sender == getAddress(Encoder.getKey("owner"))) 
+          _;
+        else {
+            require(!getBool(Encoder.getKey("paused")), "Already paused");
+            _;
+        }
     }
+
 
     /**
      * @notice Modifier to make a function callable only when the contract is paused.
@@ -557,7 +562,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     /**
     * @notice called by the owner to pause, triggers stopped state
     */
-    function pause() external whenNotPaused onlyOwner {
+    function pause() external onlyOwner {
         set(Encoder.getKey("paused"), true);
         emit Pause(now);
     }

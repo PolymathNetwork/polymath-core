@@ -19,6 +19,8 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
         name = "GeneralPermissionManager";
         title = "General Permission Manager";
         description = "Manage permissions within the Security Token and attached modules";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
     /**
@@ -29,7 +31,7 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address permissionManager = new GeneralPermissionManager(msg.sender, address(polyToken));
-        emit LogGenerateModuleFromFactory(address(permissionManager), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(permissionManager), getName(), address(this), msg.sender, setupCost, now);
         return permissionManager;
     }
 

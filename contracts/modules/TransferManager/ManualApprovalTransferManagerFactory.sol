@@ -22,6 +22,8 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
         name = "ManualApprovalTransferManager";
         title = "Manual Approval Transfer Manager";
         description = "Manage transfers using single approvals / blocking";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**
@@ -32,7 +34,7 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address manualTransferManager = new ManualApprovalTransferManager(msg.sender, address(polyToken));
-        emit LogGenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(manualTransferManager);
     }
 

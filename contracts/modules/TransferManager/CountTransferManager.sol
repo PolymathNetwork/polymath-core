@@ -12,7 +12,7 @@ contract CountTransferManager is ITransferManager {
 
     bytes32 public constant ADMIN = "ADMIN";
 
-    event LogModifyHolderCount(uint256 _oldHolderCount, uint256 _newHolderCount);
+    event ModifyHolderCount(uint256 _oldHolderCount, uint256 _newHolderCount);
 
     /**
      * @notice Constructor
@@ -60,7 +60,7 @@ contract CountTransferManager is ITransferManager {
     * @param _maxHolderCount is the new maximum amount a holder can hold
     */
     function changeHolderCount(uint256 _maxHolderCount) public withPerm(ADMIN) {
-        emit LogModifyHolderCount(maxHolderCount, _maxHolderCount);
+        emit ModifyHolderCount(maxHolderCount, _maxHolderCount);
         maxHolderCount = _maxHolderCount;
     }
 

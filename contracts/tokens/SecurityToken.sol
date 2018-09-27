@@ -28,7 +28,14 @@ import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
-    bytes32 public constant securityTokenVersion = "0.0.2";
+    // Use to hold the version
+    struct SemanticVersion {
+        uint8 major;
+        uint8 minor;
+        uint8 patch;
+    }
+
+    SemanticVersion public securityTokenVersion;
 
     // off-chain hash
     string public tokenDetails;
@@ -205,6 +212,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         updateFromRegistry();
         tokenDetails = _tokenDetails;
         granularity = _granularity;
+        securityTokenVersion = SemanticVersion(0,0,2);
     }
 
     /**
@@ -802,6 +810,17 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         emit ForceTransfer(msg.sender, _from, _to, _value, verified, _data);
         emit Transfer(_from, _to, _value);
         return true;
+    }
+
+    /**
+     * @notice Use to get the version of the securityToken
+     */
+    function getVersion() external view returns(uint8[]) {
+        uint8[] memory _version = new uint8[](3);
+        _version[0] = securityTokenVersion.major;
+        _version[1] = securityTokenVersion.minor;
+        _version[2] = securityTokenVersion.patch;
+        return _version;
     }
 
 }

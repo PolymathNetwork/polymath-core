@@ -10,6 +10,7 @@ import "./libraries/VersionUtils.sol";
 import "./storage/EternalStorage.sol";
 import "./libraries/Encoder.sol";
 import "./interfaces/IOwnable.sol";
+import "./interfaces/ISecurityToken.sol";
 
 /**
 * @title Registry contract to store registered modules
@@ -115,7 +116,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
             } else {
                 require(getBool(Encoder.getKey('verified', _moduleFactory)), "ModuleFactory must be verified");
             }
-            uint8[] memory _latestVersion = ISecurityTokenRegistry(getAddress(Encoder.getKey('securityTokenRegistry'))).getProtocolVersion();
+            uint8[] memory _latestVersion = ISecurityToken(msg.sender).getVersion();
             uint8[] memory _lowerBound = IModuleFactory(_moduleFactory).getLowerSTVersionBounds();
             uint8[] memory _upperBound = IModuleFactory(_moduleFactory).getUpperSTVersionBounds();
             require(VersionUtils.compareLowerBound(_lowerBound, _latestVersion), "Should not below the lower bound of ST");
@@ -129,9 +130,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     /**
      * @notice Called by the ModuleFactory owner to register new modules for SecurityTokens to use
      * @param _moduleFactory is the address of the module factory to be registered
-     * @return bool
      */
-    function registerModule(address _moduleFactory) external whenNotPaused returns(bool) {
+    function registerModule(address _moduleFactory) external whenNotPaused {
         require(getUint(Encoder.getKey('registry', _moduleFactory)) == 0, "Module factory should not be pre-registered");
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         uint8 moduleType = moduleFactory.getType();
@@ -139,17 +139,14 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         set(Encoder.getKey('registry', _moduleFactory), uint256(moduleType));
         set(Encoder.getKey('moduleListIndex', _moduleFactory), uint256(getArrayAddress(Encoder.getKey('moduleList', uint256(moduleType))).length));
         pushArray(Encoder.getKey('moduleList', uint256(moduleType)), _moduleFactory);
-        setArray(Encoder.getKey('reputation', _moduleFactory), new address[](0));
         emit ModuleRegistered (_moduleFactory, IOwnable(_moduleFactory).owner());
-        return true;
     }
 
     /**
      * @notice Called by the ModuleFactory owner or registry curator to delete a ModuleFactory from the registry
      * @param _moduleFactory is the address of the module factory to be deleted from the registry
-     * @return bool
      */
-    function removeModule(address _moduleFactory) external whenNotPaused returns(bool) {
+    function removeModule(address _moduleFactory) external whenNotPaused {
         uint256 moduleType = getUint(Encoder.getKey('registry', _moduleFactory));
 
         require(moduleType != 0, "Module factory should be registered");
@@ -163,7 +160,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         // pop from array and re-order
         if (index != last) {
             // moduleList[moduleType][index] = temp;
-            addressArrayStorage[Encoder.getKey('moduleList', moduleType)][index] = temp;
+            setArrayIndexValue(Encoder.getKey('moduleList', moduleType), index, temp); 
             set(Encoder.getKey('moduleListIndex', temp), index);
         }
         deleteArrayAddress(Encoder.getKey('moduleList', moduleType), last);
@@ -177,7 +174,6 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         // delete moduleListIndex[_moduleFactory];
         set(Encoder.getKey('moduleListIndex', _moduleFactory), uint256(0));
         emit ModuleRemoved (_moduleFactory, msg.sender);
-        return true;
     }
 
     /**
@@ -198,6 +194,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
 
     /**
      * @notice Adds a list of tags for the specified Module Factory
+     * @dev This function is susceptible to hit the block gas limit if too many tags get added.
      * @param _moduleType is the module type.
      * @param _tag is the list of tags to add.
      */
@@ -209,6 +206,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
 
     /**
      * @notice Removes the tag for specified Module Factory
+     * @dev This function is susceptible to hit the block gas limit if too many tags get removed.
      * @param _moduleType is the module type.
      * @param _removedTags is the list of tags to remove
      */

@@ -208,6 +208,29 @@ contract EternalStorage {
       return uintArrayStorage[_key];
   }
 
+  ///////////////////////////////////
+  /// setArrayIndexValue() functions
+  ///////////////////////////////////
+  /// @notice set the value of particular index of the address array
+  /// Ex1- mapping(bytes32 => address[]) moduleList;
+  /// general way is -- moduleList[moduleType][index] = temp; 
+  /// It can be re-write as -- setArrayIndexValue(keccak256(abi.encodePacked('moduleList', moduleType)), index, temp); 
+
+  function setArrayIndexValue(bytes32 _key, uint256 _index, address _value) internal {
+      addressArrayStorage[_key][_index] = _value;
+  }
+
+  function setArrayIndexValue(bytes32 _key, uint256 _index, uint256 _value) internal {
+      uintArrayStorage[_key][_index] = _value;
+  }
+
+  function setArrayIndexValue(bytes32 _key, uint256 _index, bytes32 _value) internal {
+      bytes32ArrayStorage[_key][_index] = _value;
+  }
+
+  function setArrayIndexValue(bytes32 _key, uint256 _index, string _value) internal {
+      stringArrayStorage[_key][_index] = _value;
+  }
 
     /////////////////////////////
     /// Public getters functions

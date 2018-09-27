@@ -159,7 +159,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         set(Encoder.getKey("paused"), false);
         set(Encoder.getKey("owner"), _owner);
         set(Encoder.getKey("polymathRegistry"), _polymathRegistry);
-        _setProtocolVersion(_STFactory, uint8(0), uint8(0), uint8(1));
+        _setProtocolVersion(_STFactory, uint8(0), uint8(0), uint8(2));
         set(Encoder.getKey("initialised"), true);
     }
 

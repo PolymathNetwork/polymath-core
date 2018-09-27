@@ -15,14 +15,13 @@ interface IModuleRegistry {
      * @notice Called by the ModuleFactory owner to register new modules for SecurityToken to use
      * @param _moduleFactory is the address of the module factory to be registered
      */
-    function registerModule(address _moduleFactory) external returns(bool);
+    function registerModule(address _moduleFactory) external;
 
     /**
      * @notice Called by the ModuleFactory owner or registry curator to delete a ModuleFactory
      * @param _moduleFactory is the address of the module factory to be deleted
-     * @return bool
      */
-    function removeModule(address _moduleFactory) external returns(bool);
+    function removeModule(address _moduleFactory) external;
 
     /**
      * @notice Use to get all the tags releated to the functionality of the Module Factory.

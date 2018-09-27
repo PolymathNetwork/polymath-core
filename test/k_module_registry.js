@@ -463,6 +463,8 @@ contract('ModuleRegistry', accounts => {
                 I_TestSTOFactory = await TestSTOFactory.new(I_PolyToken.address, 0, 0, 0, {from: account_polymath});
                 await I_MRProxied.registerModule(I_TestSTOFactory.address, {from: token_owner});
                 await I_MRProxied.verifyModule(I_TestSTOFactory.address, true, {from: account_polymath});
+                // Taking the snapshot the revert the changes from here
+                let id = await takeSnapshot();
                 await I_TestSTOFactory.changeSTVersionBounds("lowerBound", [0,1,0], {from: account_polymath});
                 let _lstVersion = await I_TestSTOFactory.getLowerSTVersionBounds.call()
                 assert.equal(_lstVersion[2],0);
@@ -477,13 +479,14 @@ contract('ModuleRegistry', accounts => {
                     ensureException(error);
                 }
                 assert.ok(errorThrown, message);
+                await revertToSnapshot(id);
             })
 
             it("Should failed in adding the TestSTOFactory module because not compatible with the current protocol version --upper", async() => {
-                await I_TestSTOFactory.changeSTVersionBounds("upperBound", [1,0,0], {from: account_polymath});
+                await I_TestSTOFactory.changeSTVersionBounds("upperBound", [0,0,1], {from: account_polymath});
                 let _ustVersion = await I_TestSTOFactory.getUpperSTVersionBounds.call()
-                assert.equal(_ustVersion[0],1);
-                assert.equal(_ustVersion[1],0);
+                assert.equal(_ustVersion[0],0);
+                assert.equal(_ustVersion[2],1);
                 await I_STRProxied.setProtocolVersion(I_STFactory.address, 1, 0, 1);
 
                 // Generate the new securityToken

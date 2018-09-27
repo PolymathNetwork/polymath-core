@@ -282,7 +282,6 @@ contract('SecurityToken', accounts => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let _blockNo = latestBlock();
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
-
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
@@ -780,13 +779,13 @@ contract('SecurityToken', accounts => {
                     });
 
                 assert.equal(
-                    (await I_CappedSTO.getRaisedEther.call())
+                    (await I_CappedSTO.getRaised.call(0))
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     1
                 );
 
-                assert.equal(await I_CappedSTO.getNumberInvestors.call(), 1);
+                assert.equal(await I_CappedSTO.investorCount.call(), 1);
 
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor1))
@@ -1022,13 +1021,13 @@ contract('SecurityToken', accounts => {
                 });
 
                 assert.equal(
-                    (await I_CappedSTO.getRaisedEther.call())
+                    (await I_CappedSTO.getRaised.call(0))
                     .dividedBy(new BigNumber(10).pow(18))
                     .toNumber(),
                     2
                 );
 
-                assert.equal(await I_CappedSTO.getNumberInvestors.call(), 2);
+                assert.equal(await I_CappedSTO.investorCount.call(), 2);
 
                 assert.equal(
                     (await I_SecurityToken.balanceOf(account_investor1))

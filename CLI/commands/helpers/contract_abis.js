@@ -2,6 +2,7 @@ let polymathRegistryABI;
 let securityTokenRegistryABI;
 let featureRegistryABI;
 let securityTokenABI;
+let stoInterfaceABI;
 let cappedSTOABI;
 let usdTieredSTOABI;
 let generalTransferManagerABI;
@@ -17,6 +18,7 @@ try {
     securityTokenRegistryABI    = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
     featureRegistryABI          = JSON.parse(require('fs').readFileSync('./build/contracts/FeatureRegistry.json').toString()).abi;
     securityTokenABI            = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
+    stoInterfaceABI             = JSON.parse(require('fs').readFileSync('./build/contracts/ISTO.json').toString()).abi;
     cappedSTOABI                = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
     usdTieredSTOABI             = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTO.json').toString()).abi;
     generalTransferManagerABI   = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
@@ -43,6 +45,9 @@ module.exports = {
     },
     securityToken: function () {
         return securityTokenABI;
+    },
+    stoInterface: function () {
+        return stoInterfaceABI;
     },
     cappedSTO: function () {
         return cappedSTOABI;

@@ -43,20 +43,6 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
-     * @notice Return ETH raised by the STO
-     */
-    function getRaisedEther() public view returns (uint256) {
-        return fundsRaisedETH;
-    }
-
-    /**
-     * @notice Return POLY raised by the STO
-     */
-    function getRaisedPOLY() public view returns (uint256) {
-        return fundsRaisedPOLY;
-    }
-
-    /**
      * @notice Return the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256) {
@@ -93,8 +79,8 @@ contract PreSaleSTO is ISTO {
         ISecurityToken(securityToken).mint(_investor, _amount);
         investors[_investor] = investors[_investor].add(_amount);
         investorCount = investorCount.add(1);
-        fundsRaisedETH = fundsRaisedETH.add(_etherContributed);
-        fundsRaisedPOLY = fundsRaisedPOLY.add(_polyContributed);
+        fundsRaised[uint8(FundRaiseType.ETH)] = fundsRaised[uint8(FundRaiseType.ETH)].add(_etherContributed);
+        fundsRaised[uint8(FundRaiseType.POLY)] = fundsRaised[uint8(FundRaiseType.POLY)].add(_polyContributed);
         totalTokensSold = totalTokensSold.add(_amount);
         emit TokensAllocated(_investor, _amount);
     }

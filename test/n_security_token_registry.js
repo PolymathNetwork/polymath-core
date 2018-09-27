@@ -618,6 +618,9 @@ contract('SecurityTokenRegistry', accounts => {
             assert.equal(tx.logs[1].args._ticker, symbol2, "SecurityToken doesn't get deployed");
 
             I_SecurityToken002 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+            let tokens = await I_STRProxied.getTokensByOwner.call(token_owner);
+            assert.equal(tokens[0], I_SecurityToken.address);
+            assert.equal(tokens[1], I_SecurityToken002.address);
 
             const log = await promisifyLogWatch(I_SecurityToken002.LogModuleAdded({from: _blockNo}), 1);
             // Verify that GeneralTransferManager module get added successfully or not
@@ -1084,7 +1087,7 @@ contract('SecurityTokenRegistry', accounts => {
             let tickersList = await I_STRProxied.getTickersByOwner.call(token_owner);
             assert.equal(tickersList.length, 4);
             let tickersListArray = await I_STRProxied.getTickersByOwner.call(account_temp);
-            assert.equal(tickersListArray.length, 3);
+            assert.equal(tickersListArray.length, 2);
         });
 
     });

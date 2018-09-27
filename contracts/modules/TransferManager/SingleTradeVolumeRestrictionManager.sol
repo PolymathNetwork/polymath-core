@@ -71,7 +71,6 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     * @param _globalTransferLimitInPercentageOrToken transfer limit per single transaction.
     */
     function configure(bool _isTransferLimitInPercentage, uint256 _globalTransferLimitInPercentageOrToken) public onlyFactory {
-        require(_globalTransferLimitInPercentageOrToken > 0, "global transfer limit has to greater than 0");
         isTransferLimitInPercentage = _isTransferLimitInPercentage;
         if (isTransferLimitInPercentage) {
             changeGlobalLimitInPercentage(_globalTransferLimitInPercentageOrToken);

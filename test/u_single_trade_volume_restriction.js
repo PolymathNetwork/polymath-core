@@ -564,12 +564,62 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
             }
             assert.ok(errorThrown, "Non Admins cannot set transfer limits");
 
+            errorThrown = false;
+            try {
+                let tx = await I_SingleTradeVolumeRestrictionManager.setTransferLimitForWallet(accounts[4], 0, {
+                    from: token_owner
+                });
+            } catch(e) {
+                errorThrown = true;
+                ensureException(e);
+            }
+            assert.ok(errorThrown, "Transfer limit cannot be set to 0")
+            errorThrown = false;
+            try {
+                let tx = await I_SingleTradeVolumeRestrictionManager.setTransferLimitInPercentage(accounts[4], 10, {
+                    from: token_owner
+                });
+            } catch(e) {
+                errorThrown = true;
+                ensureException(e);
+            }
+            assert.ok(errorThrown, "Transfer limit cannot be set in percentage")
             let tx = await I_SingleTradeVolumeRestrictionManager.setTransferLimitForWallet(accounts[4], 100, {
                 from: token_owner
             });
             assert.equal(tx.logs[0].args._wallet, accounts[4]);
             assert.equal(tx.logs[0].args._amount, 100);
 
+            errorThrown = false;
+            try {
+                tx = await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentage(accounts[4], 0, {
+                    from: token_owner
+                });
+            } catch(e) {
+                errorThrown = true;
+                ensureException(e);
+            }
+            errorThrown = false
+            try {
+                tx = await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentage(accounts[4], 101 * 10 ** 16, {
+                    from: token_owner
+                });
+            } catch(e) {
+                errorThrown = true;
+                ensureException(e);
+            }
+            assert.ok(errorThrown, "Transfer limit can not be set to more 0")
+            errorThrown = false;
+            try {
+                tx = await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitForWallet(accounts[4], 1, {
+                    from: token_owner
+                });
+            } catch(e) {
+                errorThrown = true;
+                ensureException(e);
+            }
+
+            assert.ok(errorThrown, "Transfer limit in tokens can not be set for a  manager that has transfer limit set as percentage")
             tx = await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentage(accounts[4], 50, {
                 from: token_owner
             });
@@ -585,6 +635,15 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 errorThrown = true;
             }
             assert.ok(errorThrown, "Non Admins cannot set/remove transfer limits");
+
+            errorThrown = false;
+            try {
+                let tx = await I_SingleTradeVolumeRestrictionManager.removeTransferLimitForWallet(accounts[0], {from: token_owner});
+            } catch (e) {
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, "Non Admins cannot set/remove transfer limits");
+
             let tx = await I_SingleTradeVolumeRestrictionManager.removeTransferLimitForWallet(accounts[4], {
                 from: token_owner
             });
@@ -640,6 +699,15 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 ensureException(e);
             }
             assert.ok(errorThrown, "cannot change global limit in tokens if transfer limit is set to percentage");
+
+            errorThrown = false;
+            try {
+                let tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInTokens(0, {from: token_owner});
+            } catch(e) {
+                errorThrown = true;
+                ensureException(e);
+            }
+            assert.ok(errorThrown, "Cannot set global limit in tokens to 0");
 
             tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInPercentage(40, {
                 from: token_owner

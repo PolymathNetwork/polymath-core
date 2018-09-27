@@ -231,4 +231,9 @@ interface ISecurityToken {
      * @dev enabled via feature switch "disableControllerAllowed"
      */
      function disableController() external;
+
+     /**
+     * @notice Use to get the version of the securityToken
+     */
+     function getVersion() external view returns(uint8[]);
 }

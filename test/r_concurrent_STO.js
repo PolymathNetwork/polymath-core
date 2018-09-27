@@ -1,7 +1,7 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
-import { encodeProxyCall } from './helpers/encodeCall';
+import { encodeProxyCall, encodeModuleCall } from './helpers/encodeCall';
 
 // Import contract ABIs
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
@@ -12,6 +12,7 @@ const PreSaleSTOFactory = artifacts.require('./PreSaleSTOFactory.sol');
 const PreSaleSTO = artifacts.require('./PreSaleSTO.sol');
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
+const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
@@ -42,9 +43,11 @@ contract('Concurrent STO', accounts => {
     let I_GeneralPermissionManager;
     let I_GeneralTransferManagerFactory;
     let I_GeneralTransferManager;
+    let I_ModuleRegistryProxy;
     let I_ModuleRegistry;
     let I_FeatureRegistry;
     let I_STFactory;
+    let I_MRProxied;
     let I_STRProxied;
     let I_SecurityTokenRegistry;
     let I_SecurityToken;
@@ -70,57 +73,12 @@ contract('Concurrent STO', accounts => {
 
     // Configure function signature for STO deployment
 
-    const cappedFuncSig = {
-        name: 'configure',
-        type: 'function',
-        inputs: [{
-            type: 'uint256',
-            name: '_startTime'
-        },{
-            type: 'uint256',
-            name: '_endTime'
-        },{
-            type: 'uint256',
-            name: '_cap'
-        },{
-            type: 'uint256',
-            name: '_rate'
-        },{
-            type: 'uint8[]',
-            name: '_fundRaiseTypes',
-        },{
-            type: 'address',
-            name: '_fundsReceiver'
-        }]
-    };
-
-    const dummyFuncSig = {
-        name: 'configure',
-        type: 'function',
-        inputs: [{
-            type: 'uint256',
-            name: '_startTime'
-        },{
-            type: 'uint256',
-            name: '_endTime'
-        },{
-            type: 'uint256',
-            name: '_cap'
-        },{
-            type: 'string',
-            name: '_someString'
-        }]
-    }
-
-    const presaleFuncSig = {
-        name: 'configure',
-        type: 'function',
-        inputs: [{
-            type: 'uint256',
-            name: '_endTime'
-        }]
-    }
-
+    const CappedSTOParameters = ['uint256', 'uint256', 'uint256', 'uint256', 'uint8[]', 'address'];
+    const STRProxyParameters = ['address', 'address', 'uint256', 'uint256', 'address', 'address'];
+    const MRProxyParameters = ['address', 'address'];
+    const DummySTOParameters = ['uint256', 'uint256', 'uint256', 'string'];
+    const PresaleSTOParameters = ['uint256'];
+    
     before(async() => {
         // Accounts setup
         account_polymath = accounts[0];
@@ -137,12 +95,24 @@ contract('Concurrent STO', accounts => {
 
         // Step 1: Deploy the token Faucet and Mint tokens for token_owner
         I_PolyToken = await PolyTokenFaucet.new();
-        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
+        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), account_issuer);
 
-        // STEP 2: Deploy the ModuleRegistry
+         // Step 2: Deploy the FeatureRegistry
 
-        I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:account_polymath});
-        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: account_polymath});
+         I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: account_polymath
+            });
+
+        // STEP 3: Deploy the ModuleRegistry
+     
+        I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
+        // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
+        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
+        let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, account_polymath]);
+        await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, {from: account_polymath});
+        I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
@@ -179,24 +149,24 @@ contract('Concurrent STO', accounts => {
         // STEP 5: Register the Modules with the ModuleRegistry contract
 
         // (A) :  Register the GeneralTransferManagerFactory
-        await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-        await I_ModuleRegistry.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
 
         // (B) :  Register the GeneralDelegateManagerFactory
-        await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_ModuleRegistry.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
 
         // (C) : Register the STO Factories
-        await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: account_issuer });
-        await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
+        await I_MRProxied.registerModule(I_CappedSTOFactory.address, { from: account_issuer });
+        await I_MRProxied.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
 
-        await I_ModuleRegistry.registerModule(I_DummySTOFactory.address, { from: account_issuer });
-        await I_ModuleRegistry.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
+        await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_issuer });
+        await I_MRProxied.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
 
-        await I_ModuleRegistry.registerModule(I_PreSaleSTOFactory.address, { from: account_issuer });
-        await I_ModuleRegistry.verifyModule(I_PreSaleSTOFactory.address, true, { from: account_polymath });
+        await I_MRProxied.registerModule(I_PreSaleSTOFactory.address, { from: account_issuer });
+        await I_MRProxied.verifyModule(I_PreSaleSTOFactory.address, true, { from: account_polymath });
 
-        // Step 7: Deploy the STFactory contract
+        // Step 8: Deploy the STFactory contract
 
         I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
@@ -206,7 +176,7 @@ contract('Concurrent STO', accounts => {
             "STFactory contract was not deployed",
         );
 
-        // Step 9: Deploy the SecurityTokenRegistry
+        // Step 9: Deploy the SecurityTokenRegistry contract
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
 
@@ -216,31 +186,18 @@ contract('Concurrent STO', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 10: update the registries addresses from the PolymathRegistry contract
-        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-        let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
-        await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
-        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
-
-
-        // Step 10: Deploy the FeatureRegistry
-
-        I_FeatureRegistry = await FeatureRegistry.new(
-            I_PolymathRegistry.address,
-            {
-                from: account_polymath
-            });
-        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
-
-        assert.notEqual(
-            I_FeatureRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "FeatureRegistry contract was not deployed",
-        );
+        // Step 10: Deploy the proxy and attach the implementation contract to it.
+         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
+         let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
+         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
 
         // Step 11: update the registries addresses from the PolymathRegistry contract
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, {from: account_polymath});
-        await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
+        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
+        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, {from: account_polymath});
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
+        await I_MRProxied.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`
@@ -249,6 +206,7 @@ contract('Concurrent STO', accounts => {
         SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
         SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
         ModuleRegistry:                    ${ModuleRegistry.address}
+        ModuleRegistryProxy:               ${ModuleRegistryProxy.address}
         FeatureRegistry:                   ${FeatureRegistry.address}
 
         STFactory:                         ${STFactory.address}
@@ -285,7 +243,7 @@ contract('Concurrent STO', accounts => {
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.LogModuleAdded({from: _blockNo}), 1);
+            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._type.toNumber(), transferManagerKey);
@@ -325,14 +283,14 @@ contract('Concurrent STO', accounts => {
             const MAX_MODULES = 10;
             const startTime = latestTime() + duration.days(1);
             const endTime = latestTime() + duration.days(90);
-            const cap = new BigNumber(10000).times(new BigNumber(10).pow(18));
+            const cap = web3.utils.toWei("10000");
             const rate = 1000;
             const fundRaiseType = [0];
             const budget = 0;
             const maxCost = STOSetupCost;
-            const cappedBytesSig = web3.eth.abi.encodeFunctionCall(cappedFuncSig, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-            const dummyBytesSig = web3.eth.abi.encodeFunctionCall(dummyFuncSig, [startTime, endTime, cap, 'Hello']);
-            const presaleBytesSig = web3.eth.abi.encodeFunctionCall(presaleFuncSig, [endTime]);
+            const cappedBytesSig = encodeModuleCall(CappedSTOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+            const dummyBytesSig = encodeModuleCall(DummySTOParameters, [startTime, endTime, cap, 'Hello']);
+            const presaleBytesSig = encodeModuleCall(PresaleSTOParameters, [endTime]);
 
             for (var STOIndex = 0; STOIndex < MAX_MODULES; STOIndex++) {
                 await I_PolyToken.getTokens(STOSetupCost, account_issuer);

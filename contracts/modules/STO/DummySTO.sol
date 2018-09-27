@@ -15,7 +15,7 @@ contract DummySTO is ISTO {
     uint256 public cap;
     string public someString;
 
-    event LogGenerateTokens(address _investor, uint256 _amount);
+    event GenerateTokens(address _investor, uint256 _amount);
 
     mapping (address => uint256) public investors;
 
@@ -64,7 +64,7 @@ contract DummySTO is ISTO {
         }
         //TODO: Add SafeMath maybe
         investors[_investor] = investors[_investor] + _amount;
-        emit LogGenerateTokens (_investor, _amount);
+        emit GenerateTokens (_investor, _amount);
     }
 
     /**

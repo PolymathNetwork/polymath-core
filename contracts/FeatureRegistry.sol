@@ -10,7 +10,7 @@ contract FeatureRegistry is IFeatureRegistry, ReclaimTokens {
 
     mapping (bytes32 => bool) public featureStatus;
 
-    event LogChangeFeatureStatus(string _nameKey, bool _newStatus);
+    event ChangeFeatureStatus(string _nameKey, bool _newStatus);
 
     /**
      * @notice Get the status of a feature
@@ -31,7 +31,7 @@ contract FeatureRegistry is IFeatureRegistry, ReclaimTokens {
     function setFeatureStatus(string _nameKey, bool _newStatus) public onlyOwner {
         bytes32 key = keccak256(bytes(_nameKey));
         require(featureStatus[key] != _newStatus, "Status unchanged");
-        emit LogChangeFeatureStatus(_nameKey, _newStatus);
+        emit ChangeFeatureStatus(_nameKey, _newStatus);
         featureStatus[key] = _newStatus;
     }
 

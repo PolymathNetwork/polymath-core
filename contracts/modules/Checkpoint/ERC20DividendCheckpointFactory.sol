@@ -22,6 +22,8 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
         name = "ERC20DividendCheckpoint";
         title = "ERC20 Dividend Checkpoint";
         description = "Create ERC20 dividends for token holders at a specific checkpoint";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
     /**
@@ -32,7 +34,7 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address erc20DividendCheckpoint = new ERC20DividendCheckpoint(msg.sender, address(polyToken));
-        emit LogGenerateModuleFromFactory(erc20DividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(erc20DividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return erc20DividendCheckpoint;
     }
 

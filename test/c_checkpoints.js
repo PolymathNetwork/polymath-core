@@ -315,7 +315,9 @@ contract('Checkpoints', accounts => {
                 ts.push(totalSupply);
                 console.log("Checkpoint: " + (j + 1) + " Balances: " + JSON.stringify(cps[cps.length - 1]) + " TotalSupply: " + JSON.stringify(totalSupply));
                 await I_SecurityToken.createCheckpoint({ from: token_owner });
-                console.log("Checkpoint Times: " + (await I_SecurityToken.getCheckpointTimes()));
+                let checkpointTimes = (await I_SecurityToken.getCheckpointTimes());
+                assert.isEqual(checkpointTimes.length, (j + 1));
+                console.log("Checkpoint Times: " + checkpointTimes);
                 let txs = Math.floor(Math.random() * 3);
                 for (let i = 0; i < txs; i++) {
                     let sender;

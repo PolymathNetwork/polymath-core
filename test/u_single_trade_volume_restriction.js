@@ -604,8 +604,17 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
             } catch (e) {
                 errorThrown = true;
             }
-            assert.ok(errorThrown);
+            assert.ok(errorThrown, "only owner is allowed");
 
+            errorThrown = false;
+
+            try {
+                let tx = await I_SingleTradeVolumeRestrictionManager.changeGlobalLimitInPercentage(100 * 10 ** 18, {from: token_owner});
+            } catch(e) {
+                ensureException(e);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, "Cannot change global limit in percentage when set to tokens");
 
             let tx = await I_SingleTradeVolumeRestrictionManager.changeGlobalLimitInTokens(10, {
                 from: token_owner
@@ -621,6 +630,17 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 ensureException(e);
             }
             assert.ok(errorThrown, "Global limit can be set by non-admins");
+
+            errorThrown = false;
+
+            try {
+                let tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInTokens(89, {from: token_owner});
+            } catch (e) {
+                errorThrown = true;
+                ensureException(e);
+            }
+            assert.ok(errorThrown, "cannot change global limit in tokens if transfer limit is set to percentage");
+
             tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInPercentage(40, {
                 from: token_owner
             });
@@ -720,14 +740,14 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
 
             errorThrown = false;
             try {
-                tx = await P_SingleTradeVolumeRestrictionManager.setTransferLimitForWalletMulti([], tokenLimits, {
+                tx = await P_SingleTradeVolumeRestrictionManager.setTransferLimitForWalletMulti([accounts[0]], tokenLimits, {
                     from: token_owner
                 });
             } catch(e) {
                 errorThrown = true;
                 ensureException(e);
             }
-
+            assert.ok(errorThrown, "wallet array length dont match");
 
             tx = await P_SingleTradeVolumeRestrictionManager.setTransferLimitForWalletMulti(wallets, tokenLimits, {
                 from: token_owner
@@ -738,7 +758,16 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 assert.equal(logs[i].args._wallet, wallets[i], "transfer limit not set for wallet");
                 assert.equal(logs[i].args._amount.toNumber(), tokenLimits[i]);
             }
-
+            errorThrown = false
+            try {
+                await P_SingleTradeVolumeRestrictionManager.removeTransferLimitForWalletMulti([], {
+                    from: token_owner
+                });
+            } catch(e) {
+                ensureException(e);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, "Wallets cannot be empty");
             tx = await P_SingleTradeVolumeRestrictionManager.removeTransferLimitForWalletMulti(wallets, {
                 from: token_owner
             });
@@ -748,6 +777,27 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 assert.equal(logs[i].args._wallet, wallets[i], "transfer limit not removed for wallet");
             }
 
+            errorThrown = false;
+            try {
+                await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentageMulti([], percentageLimits, {
+                    from: token_owner
+                });
+            } catch(e) {
+                errorThrown = true;
+                ensureException(e);
+            }
+            assert.ok(errorThrown, "wallets cannot be empty");
+
+            errorThrown = false;
+            try {
+                await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentageMulti(wallets, [], {
+                    from: token_owner
+                });
+            } catch(e) {
+                errorThrown = true;
+                ensureException(e);
+            }
+            assert.ok(errorThrown, "wallets and amounts dont match be empty");
             tx = await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentageMulti(wallets, percentageLimits, {
                 from: token_owner
             });

@@ -110,6 +110,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     */
     function changeGlobalLimitInTokens(uint256 _newGlobalTransferLimit) public withPerm(ADMIN) {
         require(!isTransferLimitInPercentage, "Transfer limit not set in tokens");
+        require(_newGlobalTransferLimit > 0, "Transfer limit has to greater than zero");
         emit GlobalTransferLimitInTokensSet(_newGlobalTransferLimit, globalTransferLimit);
         globalTransferLimit = _newGlobalTransferLimit;
 
@@ -123,7 +124,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     */
     function changeGlobalLimitInPercentage(uint256 _newGlobalTransferLimitInPercentage) public withPerm(ADMIN) {
         require(isTransferLimitInPercentage, "Transfer limit not set in Percentage");
-        require(_newGlobalTransferLimitInPercentage <= 100 * 10 ** 16);
+        require(_newGlobalTransferLimitInPercentage > 0 &&  _newGlobalTransferLimitInPercentage <= 100 * 10 ** 16);
         emit GlobalTransferLimitInPercentageSet(_newGlobalTransferLimitInPercentage, globalTransferLimitInPercentage);
         globalTransferLimitInPercentage = _newGlobalTransferLimitInPercentage;
 

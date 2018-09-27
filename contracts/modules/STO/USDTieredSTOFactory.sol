@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./USDTieredSTO.sol";
+import "../../interfaces/IUSDTieredSTOProxy.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
 
@@ -9,17 +9,23 @@ import "../../libraries/Util.sol";
  */
 contract USDTieredSTOFactory is ModuleFactory {
 
+    address public USDTieredSTOProxyAddress;
+
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _proxyFactoryAddress) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {
+    {   
+        require(_proxyFactoryAddress != address(0), "0x address is not allowed");
+        USDTieredSTOProxyAddress = _proxyFactoryAddress;
         version = "1.0.0";
         name = "USDTieredSTO";
         title = "USD Tiered STO";
         description = "USD Tiered STO";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**
@@ -29,13 +35,15 @@ contract USDTieredSTOFactory is ModuleFactory {
     function deploy(bytes _data) external returns(address) {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
+        require(USDTieredSTOProxyAddress != address(0), "Proxy contract should be pre-set");
         //Check valid bytes - can only call module init function
-        USDTieredSTO usdTieredSTO = new USDTieredSTO(msg.sender, address(polyToken));
+        address usdTieredSTO = IUSDTieredSTOProxy(USDTieredSTOProxyAddress).deploySTO(msg.sender, address(polyToken), address(this));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == usdTieredSTO.getInitFunction(), "Invalid data");
+        require(Util.getSig(_data) == IUSDTieredSTOProxy(USDTieredSTOProxyAddress).getInitFunction(usdTieredSTO), "Invalid data");
         require(address(usdTieredSTO).call(_data), "Unsuccessfull call");
-        emit LogGenerateModuleFromFactory(address(usdTieredSTO), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(usdTieredSTO, getName(), address(this), msg.sender, setupCost, now);
         return address(usdTieredSTO);
+        // return 0xca35b7d915458ef540ade6068dfe2f44e8fa733c;
     }
 
     /**

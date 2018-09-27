@@ -20,6 +20,8 @@ contract CappedSTOFactory is ModuleFactory {
         name = "CappedSTO";
         title = "Capped STO";
         description = "Use to collects the funds and once the cap is reached then investment will be no longer entertained";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**
@@ -34,7 +36,7 @@ contract CappedSTOFactory is ModuleFactory {
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == cappedSTO.getInitFunction(), "Invalid data");
         require(address(cappedSTO).call(_data), "Unsuccessfull call");
-        emit LogGenerateModuleFromFactory(address(cappedSTO), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(cappedSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(cappedSTO);
     }
 

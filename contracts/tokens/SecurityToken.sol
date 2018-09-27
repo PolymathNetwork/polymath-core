@@ -81,6 +81,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     mapping (address => Checkpoint[]) public checkpointBalances;
     Checkpoint[] public checkpointTotalSupply;
+    uint256[] public checkpointTimes;
 
     // Records added modules - module list should be order agnostic!
     mapping (uint8 => address[]) public modules;
@@ -696,8 +697,17 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
         require(currentCheckpointId < 2**256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
+        checkpointTimes.push(now);
         emit LogCheckpointCreated(currentCheckpointId, now);
         return currentCheckpointId;
+    }
+
+    /**
+     * @notice Gets list of times that checkpoints were created
+     * @return List of checkpoint times
+     */
+    function getCheckpointTimes() external view returns(uint256[]) {
+        return checkpointTimes;
     }
 
     /**

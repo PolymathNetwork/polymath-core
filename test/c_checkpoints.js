@@ -152,8 +152,8 @@ contract('Checkpoints', accounts => {
          I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
          let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
          await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
-         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);   
-        
+         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+
          // Step 10: Deploy the FeatureRegistry
         I_FeatureRegistry = await FeatureRegistry.new(
             I_PolymathRegistry.address,
@@ -315,6 +315,7 @@ contract('Checkpoints', accounts => {
                 ts.push(totalSupply);
                 console.log("Checkpoint: " + (j + 1) + " Balances: " + JSON.stringify(cps[cps.length - 1]) + " TotalSupply: " + JSON.stringify(totalSupply));
                 await I_SecurityToken.createCheckpoint({ from: token_owner });
+                console.log("Checkpoint Times: " + (await I_SecurityToken.getCheckpointTimes()));
                 let txs = Math.floor(Math.random() * 3);
                 for (let i = 0; i < txs; i++) {
                     let sender;

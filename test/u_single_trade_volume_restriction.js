@@ -675,6 +675,14 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
             }
             assert.ok(errorThrown, "Cannot change global limit in percentage when set to tokens");
 
+            errorThrown = false;
+            try {
+                await I_SingleTradeVolumeRestrictionManager.changeGlobalLimitInTokens(0, {from:token_owner});
+            } catch(e) {
+                errorThrown = true;
+                ensureException(e);
+            }
+            assert.ok(errorThrown, "Global limit cannot be set to 0");
             let tx = await I_SingleTradeVolumeRestrictionManager.changeGlobalLimitInTokens(10, {
                 from: token_owner
             });

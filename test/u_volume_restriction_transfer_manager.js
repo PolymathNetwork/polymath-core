@@ -78,19 +78,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
 
-    // PercentageTransferManager details
-    const holderPercentage = 70 * 10**16;           // Maximum number of token holders
-
-    let bytesSTO = web3.eth.abi.encodeFunctionCall({
-        name: 'configure',
-        type: 'function',
-        inputs: [{
-            type: 'uint256',
-            name: '_maxHolderPercentage'
-        }
-        ]
-    }, [holderPercentage]);
-
     before(async() => {
         // Accounts setup
         account_polymath = accounts[0];
@@ -327,19 +314,19 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner });
+            await I_SecurityToken.mint(account_investor2, web3.utils.toWei('10', 'ether'), { from: token_owner });
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor2)).toNumber(),
-                web3.utils.toWei('1', 'ether')
+                web3.utils.toWei('10', 'ether')
             );
         });
 
-        it("Should successfully attach the VolumeRestrictionTransferManager factory with the security token", async () => {
+        it("Should unsuccessfully attach the VolumeRestrictionTransferManager factory with the security token", async () => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             try {
-                const tx = await I_SecurityToken.addModule(P_VolumeRestrictionTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, { from: token_owner });
+                const tx = await I_SecurityToken.addModule(P_VolumeRestrictionTransferManagerFactory.address, 0, web3.utils.toWei("500", "ether"), 0, { from: token_owner });
             } catch(error) {
                 console.log(`       tx -> failed because Token is not paid`.grey);
                 ensureException(error);
@@ -351,7 +338,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should successfully attach the VolumeRestrictionTransferManager factory with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
-            const tx = await I_SecurityToken.addModule(P_VolumeRestrictionTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(P_VolumeRestrictionTransferManagerFactory.address, 0, web3.utils.toWei("500", "ether"), 0, { from: token_owner });
             assert.equal(tx.logs[3].args._type.toNumber(), transferManagerKey, "VolumeRestrictionTransferManagerFactory doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
@@ -364,7 +351,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should successfully attach the VolumeRestrictionTransferManager with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_VolumeRestrictionTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_VolumeRestrictionTransferManagerFactory.address, 0, 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "VolumeRestrictionTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
@@ -431,37 +418,123 @@ contract('VolumeRestrictionTransferManager', accounts => {
         //     assert.ok(errorThrown, message);
         // });
 
-        // it("Create a lockup and attempt a transfer", async() => {
+        it("Should prevent the transfer of tokens in a lockup", async() => {
 
-        //     let balance = await I_SecurityToken.balanceOf(account_investor2)
-        //     console.log('balance is ',balance.toString())
+            let balance = await I_SecurityToken.balanceOf(account_investor2)
+            console.log('balance is ',balance.toString())
 
-        //     // // create a lockup for their entire balance
-        //     // // over 16 seconds total, with 4 periods of 4 seconds each.
-        //     // await I_VolumeRestrictionTransferManager.addLockup(account_investor1, 16, 4, 0, balance, { from: token_owner });
+            // create a lockup for their entire balance
+            // over 16 seconds total, with 4 periods of 4 seconds each.
+            await I_VolumeRestrictionTransferManager.addLockup(account_investor2, 16, 4, 0, balance, { from: token_owner });
             
 
-        //     // let errorThrown = false;
-        //     // try {
-        //         // await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
-        //     // } catch(error) {
-        //     //     console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
-        //     //     ensureException(error);
-        //     //     errorThrown = true;
-        //     // }
-        //     // assert.ok(errorThrown, message);
-        // });
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
 
-        // it("Should be able to transfer between existing token holders up to limit", async() => {
-        //     await I_PercentageTransferManager.modifyWhitelist(account_investor3, false, { from: token_owner });
-        //     await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 });
-        // });
+        it("Should allow the transfer of tokens in a lockup if a period has passed", async() => {
 
-        // it("Should be able to whitelist address and then transfer regardless of holders", async() => {
-        //   await I_PercentageTransferManager.changeHolderPercentage(30 * 10**16, { from: token_owner });
-        //   await I_PercentageTransferManager.modifyWhitelist(account_investor1, true, { from: token_owner });
-        //   await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('2', 'ether'), { from: account_investor3 });
-        // });
+            // wait 4 seconds
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+        });
+
+        it("Should prevent the transfer of tokens if the amount is larger than the amount allowed by lockups", async() => {
+
+            let balance = await I_SecurityToken.balanceOf(account_investor2)
+            console.log('balance is ',balance.toString())
+
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor1, balance, { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should allow the transfer of all tokens in a lockup if the entire lockup has passed", async() => {
+
+            let balance = await I_SecurityToken.balanceOf(account_investor2)
+            console.log('balance is ',balance.toString())
+
+            // wait 12 more seconds
+            await new Promise(resolve => setTimeout(resolve, 12000));
+
+            await I_SecurityToken.transfer(account_investor1, balance, { from: account_investor2 });
+        });
+
+        it("Should prevent the transfer of tokens in an edited lockup", async() => {
+
+            let balance = await I_SecurityToken.balanceOf(account_investor1)
+            console.log('balance is ',balance.toString())
+
+            // create a lockup for their entire balance
+            // over 16 seconds total, with 4 periods of 4 seconds each.
+            await I_VolumeRestrictionTransferManager.addLockup(account_investor1, 16, 4, 0, balance, { from: token_owner });
+
+            // let blockNumber = await web3.eth.getBlockNumber();
+            // console.log('blockNumber',blockNumber)
+            let now = await web3.eth.getBlock('latest')
+            console.log('now is ',now)
+            now = now.timestamp;
+            
+
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+            // check and get the lockup
+            let lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor1);
+            assert.equal(lockUpCount, 1)
+            let lockUp = await I_VolumeRestrictionTransferManager.getLockUp(account_investor1, 0);
+            console.log(lockUp);
+            // elements in lockup array are uint lockUpPeriodSeconds, uint releaseFrequencySeconds, uint startTime, uint totalAmount
+            assert.equal(lockUp[0].toString(), '16');
+            assert.equal(lockUp[1].toString(), '4');
+            assert.equal(lockUp[2].toNumber(), now);
+            assert.equal(lockUp[3].toString(), balance.toString());
+
+            // edit the lockup
+            await I_VolumeRestrictionTransferManager.editLockup(account_investor1, 0, 8, 4, lockUp[2], balance, { from: token_owner });
+
+            // attempt a transfer
+            errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('5', 'ether'), { from: account_investor1 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+
+            // wait 4 seconds
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            // transfer should succeed
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('5', 'ether'), { from: account_investor1 });
+
+        });
+
+
 
         it("Should get the permission", async() => {
             let perm = await I_VolumeRestrictionTransferManager.getPermissions.call();

@@ -290,7 +290,7 @@ module.exports = function (deployer, network, accounts) {
       USDTieredSTOFactory:               ${USDTieredSTOFactory.address}
 
       CountTransferManagerFactory:       ${CountTransferManagerFactory.address}
-VolumeRestrictionTransferManagerFactory: ${VolumeRestrictionTransferManagerFactory.address}
+      VolumeRestrictionTransferManagerFactory: ${VolumeRestrictionTransferManagerFactory.address}
       PercentageTransferManagerFactory:  ${PercentageTransferManagerFactory.address}
       ManualApprovalTransferManagerFactory:
                                          ${ManualApprovalTransferManagerFactory.address}

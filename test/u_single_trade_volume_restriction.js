@@ -419,7 +419,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                         name: '_globalTransferLimitInPercentageOrToken'
                     }
                 ]
-            }, [true, 90]);
+            }, [false, 90]);
             await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {
                 from: token_owner
             });
@@ -635,6 +635,59 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
             }
             assert.ok(errorThrown, true, "Global limit in tokens cannot be set when limit is in percentage");
         });
+
+        it('should perform batch updates', async () => {
+            let wallets = [accounts[0], accounts[1], accounts[2]];
+            let tokenLimits = [1, 2, 3];
+            let percentageLimits = [5, 6, 7];
+
+            // add exempt wallet multi
+            let tx = await P_SingleTradeVolumeRestrictionManager.addExemptWalletMulti(wallets, {
+                from: token_owner
+            });
+            let logs = tx.logs.filter(log => log.event === 'ExemptWalletAdded');
+            assert.equal(logs.length, wallets.length, "Batch Exempt wallets not added");
+            for (let i = 0; i < logs.length; i++) {
+                assert.equal(logs[i].args._wallet, wallets[i], "Wallet not added as exempt wallet");
+            }
+
+            // remove exempt wallet multi
+            tx = await P_SingleTradeVolumeRestrictionManager.removeExemptWalletMulti(wallets, {
+                from: token_owner
+            })
+            logs = tx.logs.filter(log => log.event === 'ExemptWalletRemoved');
+            assert.equal(logs.length, wallets.length, "Batch Exempt wallets not removed");
+
+            for (let i = 0; i < logs.length; i++) {
+                assert.equal(logs[i].args._wallet, wallets[i], "Wallet not added as exempt wallet");
+            }
+
+            tx = await P_SingleTradeVolumeRestrictionManager.setTransferLimitForWalletMulti(wallets, tokenLimits, {
+                from: token_owner
+            });
+            logs = tx.logs.filter(log => log.event == 'TransferLimitInTokensSet');
+            assert.equal(wallets.length, logs.length, "Transfer limit not set");
+            for (let i = 0; i < wallets.length; i++) {
+                assert.equal(logs[i].args._wallet, wallets[i], "transfer limit not set for wallet");
+                assert.equal(logs[i].args._amount.toNumber(), tokenLimits[i]);
+            }
+
+            tx = await P_SingleTradeVolumeRestrictionManager.removeTransferLimitForWalletMulti(wallets, { from:token_owner });
+            logs = tx.logs.filter(log => log.event === 'TransferLimitRemoved');
+            assert.equal(logs.length, wallets.length, "Transfer limit not removed");
+            for (let i = 0; i < wallets.length; i++) {
+                assert.equal(logs[i].args._wallet, wallets[i], "transfer limit not removed for wallet");
+            }
+
+            tx = await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentageMulti(wallets, percentageLimits, {from:token_owner});
+            logs = tx.logs.filter(log => log.event == 'TransferLimitInPercentageSet');
+            assert.equal(logs.length, wallets.length, "transfer limits not set for wallets");
+
+            for (let i = 0; i< wallets.length; i++) {
+                assert.equal(logs[i].args._wallet, wallets[i], "Transfer limit not set for wallet");
+                assert.equal(logs[i].args._percentage.toNumber(), percentageLimits[i]);
+            }
+        })
 
         it('should be able to transfer tokens SingleTradeVolumeRestriction', async () => {
             await I_SingleTradeVolumeRestrictionManager.unpause({

@@ -18,8 +18,6 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
 
     mapping(address=>bool) public exemptWallets;
 
-    mapping(address => bool) public specialTransferLimitWallets;
-
     mapping(address => uint) public specialTransferLimits;
 
     event ExemptWalletAdded(address _wallet);
@@ -49,7 +47,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
 
         if(exemptWallets[_from] || paused) return Result.NA;
 
-        if(specialTransferLimitWallets[_from]) {
+        if(specialTransferLimits[_from] > 0) {
             if (isTransferLimitInPercentage) {
                 validTransfer = (_amount.mul(10**18).div(ISecurityToken(securityToken).totalSupply())) <= specialTransferLimits[_from];
             } else {
@@ -156,8 +154,8 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     * @dev the manager has to be configured to use limits in tokens
     */
     function setTransferLimitForWallet(address _wallet, uint _transferLimit) public withPerm(ADMIN) {
+        require(_transferLimit > 0, "Transfer limit has to be greater than 0");
         require(!isTransferLimitInPercentage, "Transfer limit not in token amount");
-        specialTransferLimitWallets[_wallet] = true;
         specialTransferLimits[_wallet] = _transferLimit;
         emit TransferLimitInTokensSet(_wallet, _transferLimit);
     }
@@ -171,7 +169,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     */
     function setTransferLimitInPercentage(address _wallet, uint _transferLimitInPercentage) public withPerm(ADMIN) {
         require(isTransferLimitInPercentage, "Transfer limit not in percentage");
-        specialTransferLimitWallets[_wallet] = true;
+        require(_transferLimitInPercentage > 0 && _transferLimitInPercentage <= 100 * 10 ** 16, "Transfer limit not in required range");
         specialTransferLimits[_wallet] = _transferLimitInPercentage;
         emit TransferLimitInPercentageSet(_wallet, _transferLimitInPercentage);
     }
@@ -182,8 +180,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     * @param _wallet wallet address
     */
     function removeTransferLimitForWallet(address _wallet) public withPerm(ADMIN) {
-        require(specialTransferLimitWallets[_wallet], "Wallet Address does not have a transfer limit");
-        specialTransferLimitWallets[_wallet] = false;
+        require(specialTransferLimits[_wallet] > 0 , "Wallet Address does not have a transfer limit");
         specialTransferLimits[_wallet] = 0;
         emit TransferLimitRemoved(_wallet);
     }

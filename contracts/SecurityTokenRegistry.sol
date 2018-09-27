@@ -320,7 +320,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function _transferTickerOwnership(address _oldOwner, address _newOwner, string _ticker) internal {
         if(getBool(Encoder.getKey("registeredTickers_status", _ticker)))
-            require(IOwner(getSecurityTokenAddress(_ticker)).owner() == _newOwner, "If the token exists, the ticker can only be transferred to its owner");
+            require(IOwnable(getAddress(Encoder.getKey("tickerToSecurityToken", _ticker))).owner() == _newOwner, "If the token exists, the ticker can only be transferred to its owner");
 
         _deleteTickerOwnership(_oldOwner, _ticker);
         _setTickerOwner(_newOwner, _ticker);
@@ -522,8 +522,8 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @return address
      */
     function getSecurityTokenAddress(string _ticker) external view returns (address) {
-        string memory __ticker = Util.upper(_ticker);
-        return getAddress(Encoder.getKey("tickerToSecurityToken", __ticker));
+        string memory ticker = Util.upper(_ticker);
+        return getAddress(Encoder.getKey("tickerToSecurityToken", ticker));
     }
 
      /**

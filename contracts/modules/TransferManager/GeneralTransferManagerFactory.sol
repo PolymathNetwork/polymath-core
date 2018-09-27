@@ -19,6 +19,8 @@ contract GeneralTransferManagerFactory is ModuleFactory {
         name = "GeneralTransferManager";
         title = "General Transfer Manager";
         description = "Manage transfers using a time based whitelist";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
 
@@ -30,7 +32,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address generalTransferManager = new GeneralTransferManager(msg.sender, address(polyToken));
-        emit LogGenerateModuleFromFactory(address(generalTransferManager), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(generalTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(generalTransferManager);
     }
 

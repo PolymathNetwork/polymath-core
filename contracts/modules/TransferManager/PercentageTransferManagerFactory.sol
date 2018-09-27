@@ -20,6 +20,8 @@ contract PercentageTransferManagerFactory is ModuleFactory {
         name = "PercentageTransferManager";
         title = "Percentage Transfer Manager";
         description = "Restrict the number of investors";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
     /**
@@ -33,7 +35,7 @@ contract PercentageTransferManagerFactory is ModuleFactory {
         PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender, address(polyToken));
         require(Util.getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
         require(address(percentageTransferManager).call(_data), "Un-successfull call");
-        emit LogGenerateModuleFromFactory(address(percentageTransferManager), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(percentageTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(percentageTransferManager);
 
     }

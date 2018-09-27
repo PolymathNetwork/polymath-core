@@ -27,7 +27,8 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     event TransferLimitRemoved(address _wallet);
     event GlobalTransferLimitInTokensSet(uint256 _amount, uint256 _oldAmount);
     event GlobalTransferLimitInPercentageSet(uint256 _percentage, uint256 _oldPercentage);
-
+    event TransferLimitChangedToTokens();
+    event TransferLimitChangedtoPercentage();
     bytes32 constant public ADMIN = "ADMIN";
 
    /**
@@ -79,6 +80,29 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
         }
     }
 
+    /**
+    * @notice Changes the manager to use transfer limit as Percentages
+    * @param _newGlobalTransferLimitInPercentage uint256 new global Transfer Limit In Percentage.
+    * @dev specialTransferLimits set for wallets have to re-configured
+    */
+    function changeTransferLimitToPercentage(uint256 _newGlobalTransferLimitInPercentage) public withPerm(ADMIN) {
+        require(!isTransferLimitInPercentage, "Transfer limit already in percentage");
+        isTransferLimitInPercentage = true;
+        changeGlobalLimitInPercentage(_newGlobalTransferLimitInPercentage);
+        emit TransferLimitChangedtoPercentage();
+    }
+
+    /**
+    * @notice Changes the manager to use transfer limit as tokens
+    * @param _newGlobalTransferLimit uint256 new global Transfer Limit in tokens.
+    * @dev specialTransferLimits set for wallets have to re-configured
+    */
+    function changeTransferLimitToTokens(uint _newGlobalTransferLimit) public withPerm(ADMIN) {
+        require(isTransferLimitInPercentage, "Transfer limit already in tokens");
+        isTransferLimitInPercentage = false;
+        changeGlobalLimitInTokens(_newGlobalTransferLimit);
+        emit TransferLimitChangedToTokens();
+    }
     /**
     * @notice Change the global transfer limit
     * @param _newGlobalTransferLimit new transfer limit in tokens

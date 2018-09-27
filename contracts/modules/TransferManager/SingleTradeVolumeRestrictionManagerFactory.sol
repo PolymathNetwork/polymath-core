@@ -42,6 +42,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
 
     /**
     * @notice Type of the Module factory
+    * @return uint8
     */
     function getType() public view returns(uint8) {
         return 2;
@@ -49,6 +50,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
 
     /**
     * @notice Get the name of the Module
+    * @return bytes32
     */
     function getName() public view returns(bytes32) {
         return name;
@@ -56,6 +58,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
 
     /**
     * @notice Get the description of the Module
+    * @return string
     */
     function getDescription() public view returns(string) {
         return description;
@@ -63,6 +66,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
 
     /**
     * @notice Get the title of the Module
+    * @return string
     */
     function getTitle() public  view returns(string) {
         return title;
@@ -70,6 +74,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
 
     /**
     * @notice Get the Instructions that help to use the module
+    * @return string
     */
     function getInstructions() public view returns(string) {
         return "Allows an issuer to impose volume restriction on a single trade. Init function takes two parameters. First parameter is a bool indicating if restriction is in percentage. The second parameter is the value in percentage or amount of tokens";
@@ -77,6 +82,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
 
     /**
     * @notice Get the version of the Module
+    * @return string
     */
     function getVersion() external view returns(string) {
         return version;
@@ -84,12 +90,14 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
 
     /**
     * @notice Get the setup cost of the module
+    * return uint256
     */
     function getSetupCost() external view returns (uint256) {
         return setupCost;
     }
     /**
     * @notice Get the tags related to the module factory
+    * @return bytes32[]
     */
     function getTags() public view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](3);

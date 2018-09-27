@@ -43,7 +43,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
 
     }
 
-    /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
+    /// @notice Used to verify the transfer transaction according to the rule implemented in the transfer manager
     function verifyTransfer(address _from, address /* _to */, uint256 _amount, bool /* _isTransfer */) public returns(Result) {
         bool validTransfer;
 

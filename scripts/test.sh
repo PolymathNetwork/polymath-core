@@ -104,6 +104,6 @@ else
   if [ "$TRAVIS_EVENT_TYPE" = "cron" ]; then
     node_modules/.bin/truffle test `ls test/*.js`
   else
-    node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js`
+    node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js -and ! -name s_v130_to_v140_upgrade.js`
   fi
 fi

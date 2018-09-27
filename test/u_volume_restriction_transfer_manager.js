@@ -267,7 +267,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
     });
 
-    describe("Buy tokens using on-chain whitelist", async() => {
+    describe("Buy tokens using on-chain whitelist and test locking them up and attempting to transfer", async() => {
 
         it("Should Buy the tokens", async() => {
             // Add the Investor in to the whitelist
@@ -421,7 +421,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should prevent the transfer of tokens in a lockup", async() => {
 
             let balance = await I_SecurityToken.balanceOf(account_investor2)
-            console.log('balance is ',balance.toString())
+            // console.log('balance is ',balance.toString())
 
             // create a lockup for their entire balance
             // over 16 seconds total, with 4 periods of 4 seconds each.
@@ -450,7 +450,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should prevent the transfer of tokens if the amount is larger than the amount allowed by lockups", async() => {
 
             let balance = await I_SecurityToken.balanceOf(account_investor2)
-            console.log('balance is ',balance.toString())
+            // console.log('balance is ',balance.toString())
 
             let errorThrown = false;
             try {
@@ -466,7 +466,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should allow the transfer of all tokens in a lockup if the entire lockup has passed", async() => {
 
             let balance = await I_SecurityToken.balanceOf(account_investor2)
-            console.log('balance is ',balance.toString())
+            // console.log('balance is ',balance.toString())
 
             // wait 12 more seconds
             await new Promise(resolve => setTimeout(resolve, 12000));
@@ -477,7 +477,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should prevent the transfer of tokens in an edited lockup", async() => {
 
             let balance = await I_SecurityToken.balanceOf(account_investor1)
-            console.log('balance is ',balance.toString())
+            // console.log('balance is ',balance.toString())
 
             // create a lockup for their entire balance
             // over 16 seconds total, with 4 periods of 4 seconds each.
@@ -535,7 +535,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should be possible to remove a lockup", async() => {
 
             let acct1Balance = await I_SecurityToken.balanceOf(account_investor1)
-            console.log('acct1Balance is ',acct1Balance.toString())
+            // console.log('acct1Balance is ',acct1Balance.toString())
 
             let errorThrown = false;
             try {
@@ -569,10 +569,10 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             let balancesBefore = {}
             balancesBefore[account_investor2] = await I_SecurityToken.balanceOf(account_investor2)
-            console.log('balance investor2 is ',balancesBefore[account_investor2].toString())
+            // console.log('balance investor2 is ',balancesBefore[account_investor2].toString())
 
             balancesBefore[account_investor3] = await I_SecurityToken.balanceOf(account_investor3)
-            console.log('balance investor3 is ',balancesBefore[account_investor3].toString())
+            // console.log('balance investor3 is ',balancesBefore[account_investor3].toString())
 
             let lockUpCountsBefore = {}
             
@@ -652,6 +652,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should get the permission", async() => {
             let perm = await I_VolumeRestrictionTransferManager.getPermissions.call();
             assert.equal(perm.length, 1);
+            // console.log(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ''))
+            assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ''), "ADMIN")
         });
 
     });

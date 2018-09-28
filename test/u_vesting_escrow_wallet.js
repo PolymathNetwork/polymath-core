@@ -13,8 +13,6 @@ const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
-const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol');
-const ERC20DividendCheckpoint = artifacts.require('./ERC20DividendCheckpoint');
 const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFactory.sol');
 const VestingEscrowWallet = artifacts.require('./VestingEscrowWallet.sol');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
@@ -30,10 +28,10 @@ contract('VestingEscrowWallet', accounts => {
     let account_polymath;
     let account_issuer;
     let token_owner;
-    let account_investor1;
-    let account_investor2;
-    let account_investor3;
-    let account_investor4;
+    let employee1;
+    let employee2;
+    let employee3;
+    let employee4;
     let account_temp;
 
     // investor Details
@@ -48,13 +46,9 @@ contract('VestingEscrowWallet', accounts => {
     let I_GeneralTransferManagerFactory;
     let I_SecurityTokenRegistryProxy;
     let I_VestingEscrowWalletFactory;
-    let I_ERC20DividendCheckpointFactory;
-    let P_ERC20DividendCheckpointFactory;
-    let P_ERC20DividendCheckpoint;
     let P_VestingEscrowWalletFactory;
     let P_VestingEscrowWallet;
     let I_GeneralPermissionManager;
-    let I_ERC20DividendCheckpoint;
     let I_VestingEscrowWallet;
     let I_GeneralTransferManager;
     let I_ExchangeTransferManager;
@@ -91,10 +85,10 @@ contract('VestingEscrowWallet', accounts => {
 
         token_owner = account_issuer;
 
-        account_investor1 = accounts[6];
-        account_investor2 = accounts[7];
-        account_investor3 = accounts[8];
-        account_investor4 = accounts[9];
+        employee1 = accounts[6];
+        employee2 = accounts[7];
+        employee3 = accounts[8];
+        employee4 = accounts[9];
         account_temp = accounts[2];
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -134,22 +128,6 @@ contract('VestingEscrowWallet', accounts => {
             "0x0000000000000000000000000000000000000000",
             "GeneralDelegateManagerFactory contract was not deployed"
         );
-
-        // // STEP 4: Deploy the ERC20DividendCheckpoint
-        // P_ERC20DividendCheckpointFactory = await ERC20DividendCheckpointFactory.new(I_PolyToken.address, web3.utils.toWei("500","ether"), 0, 0, {from:account_polymath});
-        // assert.notEqual(
-        //     P_ERC20DividendCheckpointFactory.address.valueOf(),
-        //     "0x0000000000000000000000000000000000000000",
-        //     "ERC20DividendCheckpointFactory contract was not deployed"
-        // );
-        //
-        // // STEP 4: Deploy the ERC20DividendCheckpoint
-        // I_ERC20DividendCheckpointFactory = await ERC20DividendCheckpointFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
-        // assert.notEqual(
-        //     I_ERC20DividendCheckpointFactory.address.valueOf(),
-        //     "0x0000000000000000000000000000000000000000",
-        //     "ERC20DividendCheckpointFactory contract was not deployed"
-        // );
 
         // STEP 4: Deploy the VestingWallet
         P_VestingEscrowWalletFactory = await VestingEscrowWalletFactory.new(I_PolyToken.address, web3.utils.toWei("500","ether"), 0, 0, {from:account_polymath});
@@ -247,81 +225,120 @@ contract('VestingEscrowWallet', accounts => {
 
     describe("Generate the SecurityToken", async() => {
 
-        it("Should register the ticker before the generation of the security token", async () => {
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from : token_owner });
-            assert.equal(tx.logs[0].args._owner, token_owner);
-            assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
-        });
+      it("Should register the ticker before the generation of the security token", async () => {
+          await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+          let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from : token_owner });
+          assert.equal(tx.logs[0].args._owner, token_owner);
+          assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
+      });
 
-        it("Should generate the new security token with the same symbol as registered above", async () => {
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
+      it("Should generate the new security token with the same symbol as registered above", async () => {
+          await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+          let _blockNo = latestBlock();
+          let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
 
-            // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+          // Verify the successful generation of the security token
+          assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+          I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.LogModuleAdded({from: _blockNo}), 1);
-            // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), 2);
-            assert.equal(
-                web3.utils.toAscii(log.args._name)
-                .replace(/\u0000/g, ''),
-                "GeneralTransferManager"
-            );
-        });
+          const log = await promisifyLogWatch(I_SecurityToken.LogModuleAdded({from: _blockNo}), 1);
+          // Verify that GeneralTransferManager module get added successfully or not
+          assert.equal(log.args._type.toNumber(), 2);
+          assert.equal(
+              web3.utils.toAscii(log.args._name)
+              .replace(/\u0000/g, ''),
+              "GeneralTransferManager"
+          );
+      });
 
-        it("Should intialize the auto attached modules", async () => {
-           let moduleData = await I_SecurityToken.modules(2, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+      it("Should intialize the auto attached modules", async () => {
+         let moduleData = await I_SecurityToken.modules(2, 0);
+         I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
-        });
+      });
 
-        it("Should successfully attach the VestingEscrowWallet with the security token", async () => {
-            let errorThrown = false;
-            try {
-                const tx = await I_SecurityToken.addModule(P_VestingEscrowWalletFactory.address, "", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-            } catch(error) {
-                console.log(`       tx -> failed because Token is not paid`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
-        });
+      it("Should successfully attach the VestingEscrowWallet with the security token", async () => {
+          let errorThrown = false;
+          try {
+              const tx = await I_SecurityToken.addModule(P_VestingEscrowWalletFactory.address, "", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
+          } catch(error) {
+              console.log(`       tx -> failed because Token is not paid`.grey);
+              ensureException(error);
+              errorThrown = true;
+          }
+          assert.ok(errorThrown, message);
+      });
 
-        it("Should successfully attach the VestingEscrowWallet with the security token", async () => {
-            let snapId = await takeSnapshot()
-            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
-            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
-            const tx = await I_SecurityToken.addModule(P_VestingEscrowWalletFactory.address, "", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-            assert.equal(tx.logs[3].args._type.toNumber(), walletKey, "VestingEscrowWallet doesn't get deployed");
-            assert.equal(
-                web3.utils.toAscii(tx.logs[3].args._name)
-                .replace(/\u0000/g, ''),
-                "VestingEscrowWallet",
-                "VestingEscrowWallet module was not added"
-            );
-            P_ERC20DividendCheckpoint = VestingEscrowWallet.at(tx.logs[3].args._module);
-            await revertToSnapshot(snapId);
-        });
+      it("Should successfully attach the VestingEscrowWallet with the security token", async () => {
+          let snapId = await takeSnapshot()
+          await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+          await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
+          const tx = await I_SecurityToken.addModule(P_VestingEscrowWalletFactory.address, "", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
+          assert.equal(tx.logs[3].args._type.toNumber(), walletKey, "VestingEscrowWallet doesn't get deployed");
+          assert.equal(
+              web3.utils.toAscii(tx.logs[3].args._name)
+              .replace(/\u0000/g, ''),
+              "VestingEscrowWallet",
+              "VestingEscrowWallet module was not added"
+          );
+          P_VestingEscrowWallet = VestingEscrowWallet.at(tx.logs[3].args._module);
+          await revertToSnapshot(snapId);
+      });
 
-        it("Should successfully attach the VestingEscrowWallet with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_VestingEscrowWalletFactory.address, "", 0, 0, { from: token_owner });
-            assert.equal(tx.logs[2].args._type.toNumber(), walletKey, "VestingEscrowWallet doesn't get deployed");
-            assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name)
-                .replace(/\u0000/g, ''),
-                "VestingEscrowWallet",
-                "VestingEscrowWallet module was not added"
-            );
-            I_ERC20DividendCheckpoint = VestingEscrowWallet.at(tx.logs[2].args._module);
-        });
+      it("Should successfully attach the VestingEscrowWallet with the security token", async () => {
+        const tx = await I_SecurityToken.addModule(I_VestingEscrowWalletFactory.address, "", 0, 0, { from: token_owner });
+        assert.equal(tx.logs[2].args._type.toNumber(), walletKey, "VestingEscrowWallet doesn't get deployed");
+        assert.equal(
+            web3.utils.toAscii(tx.logs[2].args._name)
+            .replace(/\u0000/g, ''),
+            "VestingEscrowWallet",
+            "VestingEscrowWallet module was not added"
+        );
+        I_VestingEscrowWallet = VestingEscrowWallet.at(tx.logs[2].args._module);
+      });
     });
 
-    describe("Check Dividend payouts", async() => {
+    describe("Check Escrow Wallet", async() => {
+      context("Create Template", async() => {
+        it("Create a vesting schedule template", async() => {
+          let vestingDuration = latestTime() + duration.years(4);
+          let vestingFrequency = latestTime() + (duration.years(1)/4);
+          let amount = '10000';
+          let tx = await I_VestingEscrowWallet.createTemplate(web3.utils.toWei(amount, 'ether'), vestingDuration, vestingFrequency, {from: token_owner});
+          assert.equal(tx.logs[0].args.templateNumber.toNumber(), 0, "Template should be created at number 0");
+        });
+        it("Create two more vesting schdule templates", async() => {
+          let vestingDuration = latestTime() + duration.years(4);
+          let vestingFrequency = latestTime() + (duration.years(1)/4);
+          let amount = ['25000', '50000'];
+          let tx = await I_VestingEscrowWallet.createTemplate(web3.utils.toWei(amount[0], 'ether'), vestingDuration, vestingFrequency, {from: token_owner});
+          assert.equal(tx.logs[0].args.templateNumber.toNumber(), 1, "Template should be created at number 1");
+          tx = await I_VestingEscrowWallet.createTemplate(web3.utils.toWei(amount[1], 'ether'), vestingDuration, vestingFrequency, {from: token_owner});
+          assert.equal(tx.logs[0].args.templateNumber.toNumber(), 2, "Template should be created at number 2");
+        });
+        it("Should fail to create a vesting schedule template", async() => {
+          let errorThrown = false;
+          let vestingDuration = latestTime() + duration.years(4);
+          let vestingFrequency = latestTime() + (duration.years(1)/4);
+          let amount = '10000';
+          try {
+            let tx = await I_VestingEscrowWallet.createTemplate(web3.utils.toWei(amount, 'ether'), vestingDuration, vestingFrequency, {from: employee1});
+          } catch(error) {
+              console.log(`       tx -> failed because caller is not the issuer`.grey);
+              ensureException(error);
+              errorThrown = true;
+          }
+          assert.ok(errorThrown, message);
+        });
+        it("Increment the templateCount", async() => {
+          let vestingDuration = latestTime() + duration.years(4);
+          let vestingFrequency = latestTime() + (duration.years(1)/4);
+          let amount = '10000';
+          let count = await I_VestingEscrowWallet.templateCount.call();
+          assert.equal(count.toNumber(), 3, "Template count should be 3");
+        });
+      })
 
         // it("Buy some tokens for account_investor1 (1 ETH)", async() => {
         //     // Add the Investor in to the whitelist

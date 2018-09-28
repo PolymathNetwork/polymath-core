@@ -6,6 +6,7 @@ const PercentageTransferManagerFactory = artifacts.require('./PercentageTransfer
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
+const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFactory.sol')
 const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol')
@@ -138,6 +139,10 @@ module.exports = function (deployer, network, accounts) {
       // to provide the functionality of the dividend in terms of ERC20 token)
       return deployer.deploy(ERC20DividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
     }).then(() => {
+      // D) Deploy the VestingEscrowWalletFactory Contract (Factory used to generate the VestingEscrowWallet contract use
+      // to provide the functionality of a vesting wallet)
+      return deployer.deploy(VestingEscrowWalletFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    }).then(() => {
         // D) Deploy the ManualApprovalTransferManagerFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
         // to manual approve the transfer that will overcome the other transfer restrictions)
         return deployer.deploy(ManualApprovalTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
@@ -170,6 +175,10 @@ module.exports = function (deployer, network, accounts) {
       // So any securityToken can use that factory to generate the ERC20DividendCheckpoint contract.
       return moduleRegistry.registerModule(ERC20DividendCheckpointFactory.address, {from: PolymathAccount});
     }).then(() => {
+      // E) Register the VestingEscrowWalletFactory in the ModuleRegistry to make the factory available at the protocol level.
+      // So any securityToken can use that factory to generate the VestingEscrowWallet contract.
+      return moduleRegistry.registerModule(VestingEscrowWalletFactory.address, {from: PolymathAccount});
+    }).then(() => {
       // F) Once the GeneralTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
@@ -199,6 +208,11 @@ module.exports = function (deployer, network, accounts) {
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
       return moduleRegistry.verifyModule(ERC20DividendCheckpointFactory.address, true, {from: PolymathAccount});
+    }).then(() => {
+      // G) Once the VestingEscrowWalletFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+      // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+      return moduleRegistry.verifyModule(VestingEscrowWalletFactory.address, true, {from: PolymathAccount});
     }).then(() => {
       // G) Once the ManualApprovalTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
@@ -282,6 +296,8 @@ module.exports = function (deployer, network, accounts) {
 
       EtherDividendCheckpointFactory:    ${EtherDividendCheckpointFactory.address}
       ERC20DividendCheckpointFactory:    ${ERC20DividendCheckpointFactory.address}
+
+      VestingEscrowWalletFactory:        ${VestingEscrowWalletFactory.address}
       -----------------------------------------------------------------------------
       `);
       console.log('\n');

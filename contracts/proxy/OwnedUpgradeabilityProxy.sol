@@ -7,10 +7,10 @@ import './UpgradeabilityProxy.sol';
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
 contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
-  
+
   // Owner of the contract
   address private __upgradeabilityOwner;
-  
+
   /**
   * @dev Event to show ownership has been transferred
   * @param _previousOwner representing the address of the previous owner
@@ -63,7 +63,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
    * @dev Tells the address of the proxy owner
    * @return the address of the proxy owner
    */
-  function proxyOwner() external view ifOwner returns (address) {
+  function proxyOwner() external ifOwner returns (address) {
     return _upgradeabilityOwner();
   }
 
@@ -71,7 +71,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
   * @dev Tells the version name of the current implementation
   * @return string representing the name of the current version
   */
-  function version() external view ifOwner returns (string) {
+  function version() external ifOwner returns (string) {
     return __version;
   }
 
@@ -79,7 +79,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
   * @dev Tells the address of the current implementation
   * @return address of the current implementation
   */
-  function implementation() external view ifOwner returns (address) {
+  function implementation() external ifOwner returns (address) {
     _implementation();
   }
 

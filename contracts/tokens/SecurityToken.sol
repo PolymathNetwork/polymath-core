@@ -28,7 +28,14 @@ import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
-    bytes32 public constant securityTokenVersion = "0.0.2";
+    // Use to hold the version
+    struct SemanticVersion {
+        uint8 major;
+        uint8 minor;
+        uint8 patch;
+    }
+
+    SemanticVersion public securityTokenVersion;
 
     // off-chain hash
     string public tokenDetails;
@@ -81,6 +88,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     mapping (address => Checkpoint[]) public checkpointBalances;
     Checkpoint[] public checkpointTotalSupply;
+    uint256[] public checkpointTimes;
 
     // Records added modules - module list should be order agnostic!
     mapping (uint8 => address[]) public modules;
@@ -94,7 +102,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     mapping (address => bool) public investorListed;
 
     // Emit at the time when module get added
-    event LogModuleAdded(
+    event ModuleAdded(
         uint8 indexed _type,
         bytes32 _name,
         address _moduleFactory,
@@ -105,38 +113,38 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     );
 
     // Emit when the token details get updated
-    event LogUpdateTokenDetails(string _oldDetails, string _newDetails);
+    event UpdateTokenDetails(string _oldDetails, string _newDetails);
     // Emit when the granularity get changed
-    event LogGranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
+    event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when Module get removed from the securityToken
-    event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
+    event ModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
     // Emit when Module get archived from the securityToken
-    event LogModuleArchived(uint8 indexed _type, address _module, uint256 _timestamp);
+    event ModuleArchived(uint8 indexed _type, address _module, uint256 _timestamp);
     // Emit when Module get unarchived from the securityToken
-    event LogModuleUnarchived(uint8 indexed _type, address _module, uint256 _timestamp);
+    event ModuleUnarchived(uint8 indexed _type, address _module, uint256 _timestamp);
     // Emit when the budget allocated to a module is changed
-    event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _oldBudget, uint256 _budget);
+    event ModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _oldBudget, uint256 _budget);
     // Emit when transfers are frozen or unfrozen
-    event LogFreezeTransfers(bool _status, uint256 _timestamp);
+    event FreezeTransfers(bool _status, uint256 _timestamp);
     // Emit when new checkpoint created
-    event LogCheckpointCreated(uint256 indexed _checkpointId, uint256 _timestamp);
+    event CheckpointCreated(uint256 indexed _checkpointId, uint256 _timestamp);
     // Emit when is permanently frozen by the issuer
-    event LogFreezeMinting(uint256 _timestamp);
+    event FreezeMinting(uint256 _timestamp);
     // Change the STR address in the event of a upgrade
-    event LogChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
+    event ChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
     // Events to log minting and burning
     event Minted(address indexed to, uint256 amount);
     event Burnt(address indexed _burner, uint256 _value);
 
     // Events to log controller actions
-    event LogSetController(address indexed _oldController, address indexed _newController);
-    event LogForceTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _amount, bool _verifyTransfer, bytes _data);
-    event LogDisableController(uint256 _timestamp);
+    event SetController(address indexed _oldController, address indexed _newController);
+    event ForceTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _amount, bool _verifyTransfer, bytes _data);
+    event DisableController(uint256 _timestamp);
 
     function isModule(address _module, uint8 _type) internal view returns (bool) {
-        require(modulesToData[msg.sender].module == msg.sender, "Address mismatch");
-        require(modulesToData[msg.sender].moduleType == _type, "Type mismatch");
-        require(!modulesToData[msg.sender].isArchived, "Module archived");
+        require(modulesToData[_module].module == _module, "Address mismatch");
+        require(modulesToData[_module].moduleType == _type, "Type mismatch");
+        require(!modulesToData[_module].isArchived, "Module archived");
         return true;
     }
 
@@ -205,6 +213,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         updateFromRegistry();
         tokenDetails = _tokenDetails;
         granularity = _granularity;
+        securityTokenVersion = SemanticVersion(0,0,2);
     }
 
     /**
@@ -255,7 +264,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         modules[moduleType].push(module);
         names[moduleName].push(module);
         //Emit log event
-        emit LogModuleAdded(moduleType, moduleName, _moduleFactory, module, moduleCost, _budget, now);
+        emit ModuleAdded(moduleType, moduleName, _moduleFactory, module, moduleCost, _budget, now);
     }
 
     /**
@@ -265,7 +274,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function archiveModule(address _module) external onlyOwner {
         require(!modulesToData[_module].isArchived, "Module not unarchived");
         require(modulesToData[_module].module != address(0), "Module missing");
-        emit LogModuleArchived(modulesToData[_module].moduleType, _module, now);
+        emit ModuleArchived(modulesToData[_module].moduleType, _module, now);
         modulesToData[_module].isArchived = true;
     }
 
@@ -275,7 +284,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     */
     function unarchiveModule(address _module) external onlyOwner {
         require(modulesToData[_module].isArchived, "Module not archived");
-        emit LogModuleUnarchived(modulesToData[_module].moduleType, _module, now);
+        emit ModuleUnarchived(modulesToData[_module].moduleType, _module, now);
         modulesToData[_module].isArchived = false;
     }
 
@@ -286,7 +295,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function removeModule(address _module) external onlyOwner {
         require(modulesToData[_module].isArchived, "Module not archived");
         require(modulesToData[_module].module != address(0), "Module missing");
-        emit LogModuleRemoved(modulesToData[_module].moduleType, _module, now);
+        emit ModuleRemoved(modulesToData[_module].moduleType, _module, now);
         // Remove from module type list
         uint256 index = modulesToData[_module].moduleIndex;
         uint8 moduleType = modulesToData[_module].moduleType;
@@ -371,7 +380,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         } else {
             require(IERC20(polyToken).increaseApproval(_module, _budget.sub(_currentAllowance)), "Insufficient balance to increaseApproval");
         }
-        emit LogModuleBudgetChanged(modulesToData[_module].moduleType, _module, _currentAllowance, _budget);
+        emit ModuleBudgetChanged(modulesToData[_module].moduleType, _module, _currentAllowance, _budget);
     }
 
     /**
@@ -379,7 +388,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _newTokenDetails New token details
      */
     function updateTokenDetails(string _newTokenDetails) external onlyOwner {
-        emit LogUpdateTokenDetails(tokenDetails, _newTokenDetails);
+        emit UpdateTokenDetails(tokenDetails, _newTokenDetails);
         tokenDetails = _newTokenDetails;
     }
 
@@ -389,7 +398,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     */
     function changeGranularity(uint256 _granularity) external onlyOwner {
         require(_granularity != 0, "Granularity can not be 0");
-        emit LogGranularityChanged(granularity, _granularity);
+        emit GranularityChanged(granularity, _granularity);
         granularity = _granularity;
     }
 
@@ -450,7 +459,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function freezeTransfers() external onlyOwner {
         require(!transfersFrozen);
         transfersFrozen = true;
-        emit LogFreezeTransfers(true, now);
+        emit FreezeTransfers(true, now);
     }
 
     /**
@@ -459,7 +468,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function unfreezeTransfers() external onlyOwner {
         require(transfersFrozen);
         transfersFrozen = false;
-        emit LogFreezeTransfers(false, now);
+        emit FreezeTransfers(false, now);
     }
 
     /**
@@ -600,7 +609,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function freezeMinting() external isMintingAllowed() isEnabled("freezeMintingAllowed") onlyOwner {
         mintingFrozen = true;
-        emit LogFreezeMinting(now);
+        emit FreezeMinting(now);
     }
 
     /**
@@ -696,8 +705,17 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
         require(currentCheckpointId < 2**256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
-        emit LogCheckpointCreated(currentCheckpointId, now);
+        checkpointTimes.push(now);
+        emit CheckpointCreated(currentCheckpointId, now);
         return currentCheckpointId;
+    }
+
+    /**
+     * @notice Gets list of times that checkpoints were created
+     * @return List of checkpoint times
+     */
+    function getCheckpointTimes() external view returns(uint256[]) {
+        return checkpointTimes;
     }
 
     /**
@@ -766,7 +784,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function setController(address _controller) public onlyOwner {
         require(!controllerDisabled);
-        emit LogSetController(controller, _controller);
+        emit SetController(controller, _controller);
         controller = _controller;
     }
 
@@ -778,7 +796,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         require(!controllerDisabled);
         controllerDisabled = true;
         delete controller;
-        emit LogDisableController(now);
+        emit DisableController(now);
     }
 
     /**
@@ -799,9 +817,20 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
 
-        emit LogForceTransfer(msg.sender, _from, _to, _value, verified, _data);
+        emit ForceTransfer(msg.sender, _from, _to, _value, verified, _data);
         emit Transfer(_from, _to, _value);
         return true;
+    }
+
+    /**
+     * @notice Use to get the version of the securityToken
+     */
+    function getVersion() external view returns(uint8[]) {
+        uint8[] memory _version = new uint8[](3);
+        _version[0] = securityTokenVersion.major;
+        _version[1] = securityTokenVersion.minor;
+        _version[2] = securityTokenVersion.patch;
+        return _version;
     }
 
 }

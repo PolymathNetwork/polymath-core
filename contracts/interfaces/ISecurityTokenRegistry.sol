@@ -39,10 +39,12 @@ interface ISecurityTokenRegistry {
     * @notice Changes the protocol version and the SecurityToken contract
     * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
     * @notice Changing versions does not affect existing tokens.
-    * @param _STFactoryAddress is the address of the ST Factory
-    * @param _version is the version name of the ST
+    * @param _STFactoryAddress Address of the proxy.
+    * @param _major Major version of the proxy.
+    * @param _minor Minor version of the proxy.
+    * @param _patch Patch version of the proxy
     */
-    function setProtocolVersion(address _STFactoryAddress, bytes32 _version) external;
+    function setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external;
 
     /**
     * @notice Check that Security Token is registered
@@ -55,14 +57,14 @@ interface ISecurityTokenRegistry {
     * @dev Allows the current owner to transfer control of the contract to a newOwner.
     * @param _newOwner The address to transfer ownership to.
     */
-    function transferOwnership(address _newOwner) external; 
+    function transferOwnership(address _newOwner) external;
 
     /**
      * @notice Get security token address by ticker name
      * @param _ticker Symbol of the Scurity token
      * @return address
      */
-    function getSecurityTokenAddress(string _ticker) public view returns (address);
+    function getSecurityTokenAddress(string _ticker) external view returns (address);
 
      /**
      * @notice Get security token data by its address
@@ -77,13 +79,25 @@ interface ISecurityTokenRegistry {
     /**
      * @notice Get the current STFactory Address
      */
-    function getSTFactoryAddress() public view returns(address);
+    function getSTFactoryAddress() external view returns(address);
+
+    /**
+     * @notice get Protocol version
+     */
+    function getProtocolVersion() public view returns(uint8[]);
 
     /**
      * @notice Use to get the ticker list as per the owner
      * @param _owner Address which owns the list of tickers
      */
     function getTickersByOwner(address _owner) external view returns(bytes32[]);
+
+    /**
+     * @notice Returns the list of tokens owned by the selected address
+     * @param _owner is the address which owns the list of tickers
+     * @dev Intention is that this is called off-chain so block gas limit is not relevant
+     */
+    function getTokensByOwner(address _owner) external view returns(address[]);
 
     /**
      * @notice Returns the owner and timestamp for a given ticker

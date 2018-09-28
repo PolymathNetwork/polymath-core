@@ -1,10 +1,11 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
-import { encodeProxyCall } from './helpers/encodeCall';
+import { encodeProxyCall, encodeModuleCall } from './helpers/encodeCall';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
+const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
@@ -50,10 +51,12 @@ contract('PercentageTransferManager', accounts => {
     let I_GeneralPermissionManager;
     let I_PercentageTransferManager;
     let I_GeneralTransferManager;
+    let I_ModuleRegistryProxy;
     let I_ModuleRegistry;
     let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_STRProxied;
+    let I_MRProxied;
     let I_STFactory;
     let I_SecurityToken;
     let I_PolyToken;
@@ -87,6 +90,9 @@ contract('PercentageTransferManager', accounts => {
         ]
     }, [holderPercentage]);
 
+    const STRProxyParameters = ['address', 'address', 'uint256', 'uint256', 'address', 'address'];
+    const MRProxyParameters = ['address', 'address'];
+
     before(async() => {
         // Accounts setup
         account_polymath = accounts[0];
@@ -106,20 +112,25 @@ contract('PercentageTransferManager', accounts => {
         // Step 1: Deploy the token Faucet and Mint tokens for token_owner
         I_PolyToken = await PolyTokenFaucet.new();
         await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
-        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
 
-        // STEP 2: Deploy the ModuleRegistry
+         // Step 2: Deploy the FeatureRegistry
 
-        I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:account_polymath});
-        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: account_polymath});
+         I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: account_polymath
+            });
 
-        assert.notEqual(
-            I_ModuleRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "ModuleRegistry contract was not deployed"
-        );
-
-        // STEP 2: Deploy the GeneralTransferManagerFactory
+        // STEP 3: Deploy the ModuleRegistry
+     
+        I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
+        // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
+        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
+        let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, account_polymath]);
+        await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, {from: account_polymath});
+        I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
+       
+        // STEP 4(a): Deploy the GeneralTransferManagerFactory
 
         I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
@@ -129,7 +140,7 @@ contract('PercentageTransferManager', accounts => {
             "GeneralTransferManagerFactory contract was not deployed"
         );
 
-        // STEP 3: Deploy the GeneralDelegateManagerFactory
+        // STEP 4(b): Deploy the GeneralDelegateManagerFactory
 
         I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
@@ -139,8 +150,7 @@ contract('PercentageTransferManager', accounts => {
             "GeneralDelegateManagerFactory contract was not deployed"
         );
 
-
-        // STEP 4: Deploy the PercentageTransferManager
+        // STEP 4(c): Deploy the PercentageTransferManager
         I_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
         assert.notEqual(
             I_PercentageTransferManagerFactory.address.valueOf(),
@@ -148,7 +158,7 @@ contract('PercentageTransferManager', accounts => {
             "PercentageTransferManagerFactory contract was not deployed"
         );
 
-        // STEP 4: Deploy the PercentageTransferManager
+        // STEP 4(d): Deploy the PercentageTransferManager
         P_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(I_PolyToken.address, web3.utils.toWei("500", "ether"), 0, 0, {from:account_polymath});
         assert.notEqual(
             P_PercentageTransferManagerFactory.address.valueOf(),
@@ -160,32 +170,32 @@ contract('PercentageTransferManager', accounts => {
         // STEP 5: Register the Modules with the ModuleRegistry contract
 
         // (A) :  Register the GeneralTransferManagerFactory
-        await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-        await I_ModuleRegistry.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
 
         // (B) :  Register the GeneralDelegateManagerFactory
-        await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_ModuleRegistry.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
 
         // (C) : Register the PercentageTransferManagerFactory
-        await I_ModuleRegistry.registerModule(I_PercentageTransferManagerFactory.address, { from: account_polymath });
-        await I_ModuleRegistry.verifyModule(I_PercentageTransferManagerFactory.address, true, { from: account_polymath });
+        await I_MRProxied.registerModule(I_PercentageTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_PercentageTransferManagerFactory.address, true, { from: account_polymath });
 
         // (C) : Register the Paid PercentageTransferManagerFactory
-        await I_ModuleRegistry.registerModule(P_PercentageTransferManagerFactory.address, { from: account_polymath });
-        await I_ModuleRegistry.verifyModule(P_PercentageTransferManagerFactory.address, true, { from: account_polymath });
+        await I_MRProxied.registerModule(P_PercentageTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(P_PercentageTransferManagerFactory.address, true, { from: account_polymath });
 
-        // Step 7: Deploy the STFactory contract
+       // Step 6: Deploy the STFactory contract
 
-        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address);
+       I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
-        assert.notEqual(
-            I_STFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "STFactory contract was not deployed",
-        );
+       assert.notEqual(
+           I_STFactory.address.valueOf(),
+           "0x0000000000000000000000000000000000000000",
+           "STFactory contract was not deployed",
+       );
 
-       // Step 9: Deploy the SecurityTokenRegistry
+       // Step 7: Deploy the SecurityTokenRegistry contract
 
        I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
 
@@ -195,30 +205,18 @@ contract('PercentageTransferManager', accounts => {
            "SecurityTokenRegistry contract was not deployed",
        );
 
-       // Step 10: update the registries addresses from the PolymathRegistry contract
-       I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-       let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
-       await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
-       I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+       // Step 8: Deploy the proxy and attach the implementation contract to it.
+        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
+        let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+        await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
+        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
 
-        // Step 10: Deploy the FeatureRegistry
-
-        I_FeatureRegistry = await FeatureRegistry.new(
-            I_PolymathRegistry.address,
-            {
-                from: account_polymath
-            });
-        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
-
-        assert.notEqual(
-            I_FeatureRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "FeatureRegistry contract was not deployed",
-        );
-
-        // Step 11: update the registries addresses from the PolymathRegistry contract
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, {from: account_polymath});
-        await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
+       // Step 9: update the registries addresses from the PolymathRegistry contract
+       await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
+       await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, {from: account_polymath});
+       await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+       await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
+       await I_MRProxied.updateFromRegistry({from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`
@@ -227,6 +225,7 @@ contract('PercentageTransferManager', accounts => {
         SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
         SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
         ModuleRegistry:                    ${ModuleRegistry.address}
+        ModuleRegistryProxy:               ${ModuleRegistryProxy.address}
         FeatureRegistry:                   ${FeatureRegistry.address}
 
         STFactory:                         ${STFactory.address}
@@ -257,7 +256,7 @@ contract('PercentageTransferManager', accounts => {
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.LogModuleAdded({from: _blockNo}), 1);
+            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._type.toNumber(), 2);

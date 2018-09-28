@@ -30,11 +30,8 @@ module.exports = {
           Issuer = await web3.eth.accounts.privateKeyToAccount("0x" + privKey);
         } else {
           web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-          let accounts = await web3.eth.getAccounts();
-          Issuer = {
-            address: accounts[0],
-            privateKey: require('fs').readFileSync('./privKeyLocal').toString()
-          };
+          let privKeyLocal = require('fs').readFileSync('./privKeyLocal').toString()
+          Issuer = await web3.eth.accounts.privateKeyToAccount("0x" + privKeyLocal);
         }
         defaultGasPrice = getGasPrice(await web3.eth.net.getId());
       }

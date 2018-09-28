@@ -20,7 +20,6 @@ const STO_KEY = 3;
 let tokenSymbol;
 let securityToken;
 let polyToken;
-let tickerRegistry;
 let securityTokenRegistry;
 let generalTransferManager;
 let currentDividendsModule;

@@ -506,18 +506,12 @@ async function selectCheckpoint(includeCreate) {
 
 async function getCheckpoints() {
   let result = [];
-  /*
-  let currentCheckpoint = await securityToken.methods.currentCheckpointId().call();
-  for (let index = 1; index <= currentCheckpoint; index++) {
-    result.push(checkpoint(index).call());
-  }
-  */
-
-  let events = await securityToken.getPastEvents('CheckpointCreated', { fromBlock: 0});
-  for (let event of events) {
+  
+  let checkPointsTimestamps = await securityToken.methods.getCheckpointTimes().call();
+  for (let index = 0; index < checkPointsTimestamps.length; index++) {
     let checkpoint = {};
-    checkpoint.id = event.returnValues._checkpointId;
-    checkpoint.timestamp = moment.unix(event.returnValues._timestamp).format('MMMM Do YYYY, HH:mm:ss');
+    checkpoint.id = index + 1;
+    checkpoint.timestamp = moment.unix(checkPointsTimestamps[index]).format('MMMM Do YYYY, HH:mm:ss');
     result.push(checkpoint);
   }
 

@@ -20,6 +20,8 @@ contract PreSaleSTOFactory is ModuleFactory {
         name = "PreSaleSTO";
         title = "PreSale STO";
         description = "Allows Issuer to configure pre-sale token allocations";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
     /**
@@ -36,7 +38,7 @@ contract PreSaleSTOFactory is ModuleFactory {
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == preSaleSTO.getInitFunction(), "Invalid data");
         require(address(preSaleSTO).call(_data), "Unsuccessfull call");
-        emit LogGenerateModuleFromFactory(address(preSaleSTO), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(preSaleSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(preSaleSTO);
     }
 

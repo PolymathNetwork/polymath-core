@@ -15,14 +15,13 @@ interface IModuleRegistry {
      * @notice Called by the ModuleFactory owner to register new modules for SecurityToken to use
      * @param _moduleFactory is the address of the module factory to be registered
      */
-    function registerModule(address _moduleFactory) external returns(bool);
+    function registerModule(address _moduleFactory) external;
 
     /**
      * @notice Called by the ModuleFactory owner or registry curator to delete a ModuleFactory
      * @param _moduleFactory is the address of the module factory to be deleted
-     * @return bool
      */
-    function removeModule(address _moduleFactory) external returns(bool);
+    function removeModule(address _moduleFactory) external;
 
     /**
      * @notice Use to get all the tags releated to the functionality of the Module Factory.
@@ -66,5 +65,18 @@ interface IModuleRegistry {
      * @return address array thal contains the list of addresses of module factory contracts.
      */
     function getModuleListOfType(uint8 _moduleType) external view returns(address[]);
+
+    /**
+     * @notice Use to get the list of available Module factory addresses for a particular type
+     * @param _moduleType Type of Module
+     * @param _securityToken Address of securityToken
+     * @return address array that contains the list of available addresses of module factory contracts.
+     */
+     function getAvailableModulesOfType(uint8 _moduleType, address _securityToken) external view returns (address[]);
+
+    /**
+     * @notice Use to get the latest contract address of the regstries
+     */
+    function updateFromRegistry() external;
 
 }

@@ -14,6 +14,7 @@ contract VestingEscrowWallet is IWallet {
   address public treasury;
   address public securityToken;
   uint256 public numExcessTokens;
+  uint256 public templateCount;
 
   struct VestingSchedule {
     // ID of the vesting schedule
@@ -38,8 +39,18 @@ contract VestingEscrowWallet is IWallet {
     uint256 tokensPerTranche;
   }
 
+  struct VestingTemplate {
+    // Total number of vesting tokens at start of vesting period
+    uint256 totalAllocation;
+    // Length of the vesting period
+    uint256 vestingDuration;
+    // Vesting frequency of the tokens
+    uint256 vestingFrequency;
+  }
+
   mapping(address => uint256) public individualVestingCount;
   mapping(address => mapping(uint256 => VestingSchedule)) public individualVestingDetails;
+  mapping(uint256 => VestingTemplate) public vestingTemplates;
 
   /* Events */
   event VestingStarted(
@@ -109,6 +120,27 @@ contract VestingEscrowWallet is IWallet {
   }
 
   /**
+  * @notice Create a template to be used for the creation of new vesting schedules
+  * @param _totalAllocation Total number of tokens allocated for the target
+  * @param _vestingDuration Total duration of the vesting schedule
+  * @param _vestingFrequency Frequency of release of tokens
+  */
+  function createTemplate(
+    uint256 _totalAllocation,
+    uint256 _vestingDuration,
+    uint256 _vestingFrequency
+  )
+    public
+    onlyOwner
+  {
+    vestingTemplates[templateCount].totalAllocation = _totalAllocation;
+    vestingTemplates[templateCount].vestingDuration = _vestingDuration;
+    vestingTemplates[templateCount].vestingFrequency = _vestingFrequency;
+
+    templateCount += 1;
+  }
+
+  /**
   * @notice Initiate a vesting schedule for any number of employees or affiliates
   * @param _target Address of the employee or the affiliate
   * @param _totalAllocation Total number of tokens allocated for the target
@@ -126,18 +158,44 @@ contract VestingEscrowWallet is IWallet {
     public
     onlyOwner
   {
-      require(_target.length == _totalAllocation.length &&
-              _target.length == _vestingDuration.length &&
-              _target.length == _startDate.length &&
-              _target.length == _vestingFrequency.length);
+    require(_target.length == _totalAllocation.length &&
+            _target.length == _vestingDuration.length &&
+            _target.length == _startDate.length &&
+            _target.length == _vestingFrequency.length);
 
-      for (uint i = 0; i <= _target.length; i++) {
-          _initiateVestingScheduleIterate(_target[i],
-                                          _totalAllocation[i],
-                                          _vestingDuration[i],
-                                          _startDate[i],
-                                          _vestingFrequency[i]);
-      }
+    for (uint i = 0; i <= _target.length; i++) {
+        _initiateVestingScheduleIterate(_target[i],
+                                        _totalAllocation[i],
+                                        _vestingDuration[i],
+                                        _startDate[i],
+                                        _vestingFrequency[i]);
+    }
+  }
+
+  /**
+  * @notice Initiate a vesting schedule for any number of employees from a template
+  * @param _target Address of the employee or the affiliate
+  * @param _templateNumber Template number to use
+  * @param _startDate Start date of the vesting schedule
+  */
+  function initiateVestingSchedule(
+    address[] _target,
+    uint256   _templateNumber,
+    uint256   _startDate
+  )
+    public
+    onlyOwner
+  {
+    VestingTemplate memory _vestingTemplate = vestingTemplates[_templateNumber];
+
+    for (uint i = 0; i <= _target.length; i++) {
+      require(_target[i] != address(0));
+      _initiateVestingScheduleIterate(_target[i],
+                                      _vestingTemplate.totalAllocation,
+                                      _vestingTemplate.vestingDuration,
+                                      _startDate,
+                                      _vestingTemplate.vestingFrequency);
+    }
   }
 
   /**
@@ -158,9 +216,9 @@ contract VestingEscrowWallet is IWallet {
     uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
     uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.numClaimedVestedTokens);
     uint256 _numUnvestedTokens = _vestingSchedule.numUnvestedTokens.sub(_tokensToDistribute);
-    uint256 _numVestedTokens = _vestingSchedule.numClaimedVestedTokens.add(_tokensToDistribute);
     delete individualVestingDetails[_target][_whichVestingSchedule];
 
+    // Send vested, unclaimed tokens to the target
     require(ISecurityToken(securityToken).transferFrom(
       address(this),
       _target,
@@ -184,8 +242,6 @@ contract VestingEscrowWallet is IWallet {
       _isReclaiming,
       block.timestamp
     );
-
-    // TODO: Return tokens to issuer. Asked what to do on Github
   }
 
   /**
@@ -252,20 +308,6 @@ contract VestingEscrowWallet is IWallet {
     );
   }
 
-  /**
-  * @notice Edit an existing vesting schedule
-  * @param _target Address of the employee or the affiliate
-  * @param _whichVestingSchedule Index of the vesting schedule for the target
-  */
-  function editVestingSchedule(address _target, uint256 _whichVestingSchedule)
-    public
-    onlyOwner
-  {
-    VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
-
-    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
-
-  }
   /**
   * @notice Initiate a vesting schedule for an employee or affiliate
   * @param _target Address of the employee or the affiliate
@@ -380,7 +422,7 @@ contract VestingEscrowWallet is IWallet {
     uint256 _numClaimedVestedTokens
   )
     internal
-    view
+    pure
     returns (uint256)
   {
     uint256 _tokensToDistribute = _currentTranche.mul(_tokensPerTranche);

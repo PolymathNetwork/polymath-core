@@ -510,7 +510,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(lockUp[3].toString(), balance.toString());
 
             // edit the lockup
-            await I_VolumeRestrictionTransferManager.editLockUp(account_investor1, 0, 8, 4, lockUp[2], balance, { from: token_owner });
+            await I_VolumeRestrictionTransferManager.editLockUp(account_investor1, 0, 8, 4, 0, balance, { from: token_owner });
 
             // attempt a transfer
             errorThrown = false;

@@ -15,6 +15,7 @@ import {
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
+const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
@@ -67,6 +68,8 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
     let P_SingleTradeVolumeRestrictionManager;
     let I_SingleTradeVolumeRestrictionPercentageManager;
     let I_ModuleRegistry;
+    let I_MRProxied;
+    let I_ModuleRegistryProxy;
     let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_STRProxied;
@@ -74,6 +77,9 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
+
+    const STRProxyParameters = ['address', 'address', 'uint256', 'uint256', 'address', 'address'];
+    const MRProxyParameters = ['address', 'address'];
 
     // SecurityToken Details
     const swarmHash = "dagwrgwgvwergwrvwrg";
@@ -114,24 +120,27 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
         // Step 1: Deploy the token Faucet and Mint tokens for token_owner
         I_PolyToken = await PolyTokenFaucet.new();
         await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
-        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {
-            from: account_polymath
-        })
+
+        I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address, {
+                from: account_polymath
+            });
 
         // STEP 2: Deploy the ModuleRegistry
 
-        I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {
-            from: account_polymath
-        });
-        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {
+        I_ModuleRegistry = await ModuleRegistry.new({
             from: account_polymath
         });
 
-        assert.notEqual(
-            I_ModuleRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "ModuleRegistry contract was not deployed"
-        );
+        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({
+            from: account_polymath
+        });
+        let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, account_polymath]);
+        await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, {
+            from: account_polymath
+        });
+        I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
+
 
         // STEP 2: Deploy the GeneralTransferManagerFactory
 
@@ -178,42 +187,42 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
             "SingleTradeVolumeRestrictionManagerFactory contract was not deployed"
         );
 
-        // STEP 5: Register the Modules with the ModuleRegistry contract
-
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, {
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, {
             from: account_polymath
         });
-        await I_ModuleRegistry.verifyModule(I_GeneralTransferManagerFactory.address, true, {
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, {
             from: account_polymath
         });
 
         // (B) :  Register the GeneralDelegateManagerFactory
-        await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, {
+        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, {
             from: account_polymath
         });
-        await I_ModuleRegistry.verifyModule(I_GeneralPermissionManagerFactory.address, true, {
-            from: account_polymath
-        });
-
-        // (C) : Register SingleTradeVolumeRestrictionManagerFactory
-        await I_ModuleRegistry.registerModule(I_SingleTradeVolumeRestrictionManagerFactory.address, {
-            from: account_polymath
-        });
-        await I_ModuleRegistry.verifyModule(I_SingleTradeVolumeRestrictionManagerFactory.address, true, {
+        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, {
             from: account_polymath
         });
 
-        await I_ModuleRegistry.registerModule(P_SingleTradeVolumeRestrictionManagerFactory.address, {
+        // (C) : Register the SingleTradeVolumeRestrictionManagerFactory
+        await I_MRProxied.registerModule(I_SingleTradeVolumeRestrictionManagerFactory.address, {
             from: account_polymath
         });
-        await I_ModuleRegistry.verifyModule(P_SingleTradeVolumeRestrictionManagerFactory.address, true, {
+        await I_MRProxied.verifyModule(I_SingleTradeVolumeRestrictionManagerFactory.address, true, {
             from: account_polymath
         });
 
-        // Step 7: Deploy the STFactory contract
+        // (C) : Register the Paid SingleTradeVolumeRestrictionManagerFactory
+        await I_MRProxied.registerModule(P_SingleTradeVolumeRestrictionManagerFactory.address, {
+            from: account_polymath
+        });
+        await I_MRProxied.verifyModule(P_SingleTradeVolumeRestrictionManagerFactory.address, true, {
+            from: account_polymath
+        });
 
-        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address);
+        // Step 6: Deploy the STFactory contract
+
+        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {
+            from: account_polymath
+        });
 
         assert.notEqual(
             I_STFactory.address.valueOf(),
@@ -221,7 +230,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
             "STFactory contract was not deployed",
         );
 
-        // Step 9: Deploy the SecurityTokenRegistry
+        // Step 7: Deploy the SecurityTokenRegistry contract
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({
             from: account_polymath
@@ -233,36 +242,30 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 10: update the registries addresses from the PolymathRegistry contract
+        // Step 8: Deploy the proxy and attach the implementation contract to it.
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({
             from: account_polymath
         });
-        let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+        let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
             from: account_polymath
         });
         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
-        // Step 10: Deploy the FeatureRegistry
 
-        I_FeatureRegistry = await FeatureRegistry.new(
-            I_PolymathRegistry.address, {
-                from: account_polymath
-            });
+        // Step 9: update the registries addresses from the PolymathRegistry contract
+        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {
+            from: account_polymath
+        })
+        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, {
+            from: account_polymath
+        });
         await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {
             from: account_polymath
         });
-
-        assert.notEqual(
-            I_FeatureRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "FeatureRegistry contract was not deployed",
-        );
-
-        // Step 11: update the registries addresses from the PolymathRegistry contract
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, {
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {
             from: account_polymath
         });
-        await I_ModuleRegistry.updateFromRegistry({
+        await I_MRProxied.updateFromRegistry({
             from: account_polymath
         });
     })
@@ -294,7 +297,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.LogModuleAdded({
+            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({
                 from: _blockNo
             }), 1);
 
@@ -569,7 +572,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 let tx = await I_SingleTradeVolumeRestrictionManager.setTransferLimitForWallet(accounts[4], 0, {
                     from: token_owner
                 });
-            } catch(e) {
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -579,7 +582,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 let tx = await I_SingleTradeVolumeRestrictionManager.setTransferLimitInPercentage(accounts[4], 10, {
                     from: token_owner
                 });
-            } catch(e) {
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -595,7 +598,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 tx = await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentage(accounts[4], 0, {
                     from: token_owner
                 });
-            } catch(e) {
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -604,7 +607,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 tx = await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentage(accounts[4], 101 * 10 ** 16, {
                     from: token_owner
                 });
-            } catch(e) {
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -614,7 +617,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 tx = await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitForWallet(accounts[4], 1, {
                     from: token_owner
                 });
-            } catch(e) {
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -638,7 +641,9 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
 
             errorThrown = false;
             try {
-                let tx = await I_SingleTradeVolumeRestrictionManager.removeTransferLimitForWallet(accounts[0], {from: token_owner});
+                let tx = await I_SingleTradeVolumeRestrictionManager.removeTransferLimitForWallet(accounts[0], {
+                    from: token_owner
+                });
             } catch (e) {
                 errorThrown = true;
             }
@@ -668,8 +673,10 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
             errorThrown = false;
 
             try {
-                let tx = await I_SingleTradeVolumeRestrictionManager.changeGlobalLimitInPercentage(100 * 10 ** 18, {from: token_owner});
-            } catch(e) {
+                let tx = await I_SingleTradeVolumeRestrictionManager.changeGlobalLimitInPercentage(100 * 10 ** 18, {
+                    from: token_owner
+                });
+            } catch (e) {
                 ensureException(e);
                 errorThrown = true;
             }
@@ -677,8 +684,10 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
 
             errorThrown = false;
             try {
-                await I_SingleTradeVolumeRestrictionManager.changeGlobalLimitInTokens(0, {from:token_owner});
-            } catch(e) {
+                await I_SingleTradeVolumeRestrictionManager.changeGlobalLimitInTokens(0, {
+                    from: token_owner
+                });
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -701,7 +710,9 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
             errorThrown = false;
 
             try {
-                let tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInTokens(89, {from: token_owner});
+                let tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInTokens(89, {
+                    from: token_owner
+                });
             } catch (e) {
                 errorThrown = true;
                 ensureException(e);
@@ -710,8 +721,10 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
 
             errorThrown = false;
             try {
-                let tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInTokens(0, {from: token_owner});
-            } catch(e) {
+                let tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInTokens(0, {
+                    from: token_owner
+                });
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -765,7 +778,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 await P_SingleTradeVolumeRestrictionManager.addExemptWalletMulti([], {
                     from: token_owner
                 });
-            } catch(e) {
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -786,7 +799,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 await P_SingleTradeVolumeRestrictionManager.removeExemptWalletMulti([], {
                     from: token_owner
                 });
-            } catch(e) {
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -808,7 +821,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 tx = await P_SingleTradeVolumeRestrictionManager.setTransferLimitForWalletMulti([], tokenLimits, {
                     from: token_owner
                 });
-            } catch(e) {
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -819,7 +832,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 tx = await P_SingleTradeVolumeRestrictionManager.setTransferLimitForWalletMulti([accounts[0]], tokenLimits, {
                     from: token_owner
                 });
-            } catch(e) {
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -839,7 +852,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 await P_SingleTradeVolumeRestrictionManager.removeTransferLimitForWalletMulti([], {
                     from: token_owner
                 });
-            } catch(e) {
+            } catch (e) {
                 ensureException(e);
                 errorThrown = true;
             }
@@ -858,7 +871,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentageMulti([], percentageLimits, {
                     from: token_owner
                 });
-            } catch(e) {
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -869,7 +882,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentageMulti(wallets, [], {
                     from: token_owner
                 });
-            } catch(e) {
+            } catch (e) {
                 errorThrown = true;
                 ensureException(e);
             }
@@ -943,7 +956,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 errorThrown = true;
                 ensureException(e);
             }
-            assert.ok(errorThrown,"Transfer should have not happened");
+            assert.ok(errorThrown, "Transfer should have not happened");
             await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('4', 'ether'), {
                 from: account_investor1
             });
@@ -971,7 +984,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 errorThrown = true;
                 ensureException(e);
             }
-            assert.ok(errorThrown,"Transfer should have not happened");
+            assert.ok(errorThrown, "Transfer should have not happened");
             await I_SecurityToken.transfer(account_investor4, web3.utils.toWei('4', 'ether'), {
                 from: account_investor5
             })
@@ -1108,6 +1121,8 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
             assert.equal(title, "Single Trade Volume Restriction Manager", "Wrong Module added");
             let inst = await I_SingleTradeVolumeRestrictionManagerFactory.getInstructions.call();
             assert.equal(inst, "Allows an issuer to impose volume restriction on a single trade. Init function takes two parameters. First parameter is a bool indicating if restriction is in percentage. The second parameter is the value in percentage or amount of tokens", "Wrong Module added");
+            let version = await I_SingleTradeVolumeRestrictionManagerFactory.getVersion.call();
+            assert.equal(version, "1.0.0", "Version not correct");
         });
 
         it("Should get the tags of the factory", async () => {

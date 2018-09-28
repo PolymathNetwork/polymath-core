@@ -20,6 +20,8 @@ contract DummySTOFactory is ModuleFactory {
         name = "DummySTO";
         title = "Dummy STO";
         description = "Dummy STO";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
     /**
      * @notice used to launch the Module with the help of factory
@@ -33,7 +35,7 @@ contract DummySTOFactory is ModuleFactory {
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == dummySTO.getInitFunction(), "Invalid data");
         require(address(dummySTO).call(_data), "Unsuccessfull call");
-        emit LogGenerateModuleFromFactory(address(dummySTO), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(dummySTO), getName(), address(this), msg.sender, setupCost, now);
         return address(dummySTO);
     }
 

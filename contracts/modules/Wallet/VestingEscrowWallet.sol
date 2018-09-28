@@ -70,20 +70,27 @@ contract VestingEscrowWallet is IWallet {
    * @notice Constructor
    * @param _securityToken Address of the security token
    * @param _polyAddress Address of the polytoken
-   * @param _treasury Address of the token treasury
    */
-  constructor (address _securityToken, address _polyAddress, addreess _treasury)
+  constructor (address _securityToken, address _polyAddress)
     public
     Module(_securityToken, _polyAddress)
   {
-    treasury = _treasury;
   }
 
   /**
-   * @notice This function returns the signature of configure function
+   * @notice Function used to initialize the different variables
+   * @param _treasury Treasury wallet to send excess funds
+   */
+  function configure(address _treasury) public onlyFactory {
+      require(_treasury != 0, "Treasury should not be 0");
+      treasury = _treasury;
+  }
+
+  /**
+   * @notice This function returns the signature of the configure function
    */
   function getInitFunction() public pure returns (bytes4) {
-      return bytes4(0);
+      return bytes4(keccak256("configure(address)"));
   }
 
   /**
@@ -142,11 +149,11 @@ contract VestingEscrowWallet is IWallet {
     require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
 
     bytes32 _vestingId = _vestingSchedule.vestingId;
-    uint256 _tokensCollected = _vestingSchedule.totalTokensRemaining;
     uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
     uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.totalTokensReleased);
-
-    delete individualVestingDetails[_target][_whichVestingSchedule];  // TODO: Change this to a flag depending on Github response
+    uint256 _totalTokensRemaining = _vestingSchedule.totalTokensRemaining.sub(_tokensToDistribute);
+    uint256 _totalTokensReleased = _vestingSchedule.totalTokensReleased.add(_tokensToDistribute);
+    delete individualVestingDetails[_target][_whichVestingSchedule];
 
     require(ISecurityToken(securityToken).transferFrom(
       address(this),
@@ -158,16 +165,16 @@ contract VestingEscrowWallet is IWallet {
       require(ISecurityToken(securityToken).transferFrom(
         address(this),
         treasury,
-        _tokensToDistribute), "Unable to transfer tokens");
+        _totalTokensRemaining), "Unable to transfer tokens");
     } else {
-      numExcessTokens = numExcessTokens.add(_tokensToDistribute);
+      numExcessTokens = numExcessTokens.add(_totalTokensRemaining);
     }
 
     emit VestingCancelled(
       _target,
       _whichVestingSchedule,
       _vestingId,
-      _tokensCollected,
+      _totalTokensReleased,
       _isReclaiming,
       block.timestamp
     );

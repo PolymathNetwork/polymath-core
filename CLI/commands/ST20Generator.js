@@ -144,7 +144,7 @@ async function step_ticker_reg(){
     });
     let transferTickerOwnershipAction = securityTokenRegistry.methods.transferTickerOwnership(newOwner, tokenSymbol);
     let receipt = await common.sendTransaction(Issuer, transferTickerOwnershipAction, defaultGasPrice, 0, 1.5);
-    let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'LogChangeTickerOwnership');
+    let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'ChangeTickerOwnership');
     console.log(chalk.green(`Ownership trasferred successfully. The new owner is ${event._newOwner}`));
     process.exit(0);
   }
@@ -187,7 +187,7 @@ async function step_token_deploy(){
     await approvePoly(securityTokenRegistryAddress, launchFee);
     let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility);
     let receipt = await common.sendTransaction(Issuer, generateSecurityTokenAction, defaultGasPrice);
-    let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'LogNewSecurityToken');
+    let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'NewSecurityToken');
     console.log(`Deployed Token at address: ${event._securityTokenAddress}`);
     let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, event._securityTokenAddress);
@@ -444,7 +444,7 @@ async function cappedSTO_launch() {
 
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
-  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
+  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
 
   STO_Address = event._module;
@@ -828,7 +828,7 @@ async function usdTieredSTO_launch() {
 
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
-  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
+  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
 
   STO_Address = event._module;

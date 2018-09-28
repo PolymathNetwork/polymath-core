@@ -185,7 +185,7 @@ async function setInvestors() {
   let investorData_Events = new Array();
   let investorObjectLookup = {};
 
-  let event_data = await generalTransferManager.getPastEvents('LogModifyWhitelist', {
+  let event_data = await generalTransferManager.getPastEvents('ModifyWhitelist', {
     fromBlock: 0,
     toBlock: 'latest'
   }, function (error, events) {

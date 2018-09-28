@@ -475,7 +475,7 @@ async function addDividendsModule() {
 
     let addModuleAction = securityToken.methods.addModule(dividendsFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
     let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
-    let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
+    let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
     console.log(`Module deployed at address: ${event._module}`);
     currentDividendsModule = new web3.eth.Contract(dividendsModuleABI, event._module);
     currentDividendsModule.setProvider(web3.currentProvider);
@@ -504,7 +504,7 @@ async function getCheckpoints() {
   }
   */
 
-  let events = await securityToken.getPastEvents('LogCheckpointCreated', { fromBlock: 0});
+  let events = await securityToken.getPastEvents('CheckpointCreated', { fromBlock: 0});
   for (let event of events) {
     let checkpoint = {};
     checkpoint.id = event.returnValues._checkpointId;

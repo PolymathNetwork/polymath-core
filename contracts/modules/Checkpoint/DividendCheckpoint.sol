@@ -43,7 +43,9 @@ contract DividendCheckpoint is ICheckpoint, Module {
     // Total amount of ETH withheld per investor
     mapping (address => uint256) public investorWithheld;
 
-    event SetExcludedAddresses(address[] _excluded, uint256 _timestamp);
+    event SetDefaultExcludedAddresses(address[] _excluded, uint256 _timestamp);
+    event SetWithholding(address[] _investors, uint256[] _withholding, uint256 _timestamp);
+    event SetWithholdingFixed(address[] _investors, uint256 _withholding, uint256 _timestamp);
 
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
@@ -62,26 +64,35 @@ contract DividendCheckpoint is ICheckpoint, Module {
     }
 
     /**
-     * @notice Function to set withholding tax rates for investors
-     * @param _investors addresses of investor
-     * @param _withholding withholding tax for individual investors (multiplied by 10**16)
+     * @notice Return the default excluded addresses
+     * @return List of excluded addresses
      */
-    function setWithholding(address[] _investors, uint256[] _withholding) public onlyOwner {
-        require(_investors.length == _withholding.length, "Mismatched input lengths");
-        for (uint256 i = 0; i < _investors.length; i++) {
-            require(_withholding[i] <= 10**18);
-            withholdingTax[_investors[i]] = _withholding[i];
-        }
+    function getDefaultExcluded() external view returns (address[]) {
+        return excluded;
     }
 
     /**
      * @notice Function to clear and set list of excluded addresses used for future dividends
      * @param _excluded addresses of investor
      */
-    function setExcluded(address[] _excluded) public onlyOwner {
+    function setDefaultExcluded(address[] _excluded) public onlyOwner {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many excluded addresses");
         excluded = _excluded;
-        emit SetExcludedAddresses(excluded, now);
+        emit SetDefaultExcludedAddresses(excluded, now);
+    }
+
+    /**
+     * @notice Function to set withholding tax rates for investors
+     * @param _investors addresses of investor
+     * @param _withholding withholding tax for individual investors (multiplied by 10**16)
+     */
+    function setWithholding(address[] _investors, uint256[] _withholding) public onlyOwner {
+        require(_investors.length == _withholding.length, "Mismatched input lengths");
+        emit SetWithholding(_investors, _withholding, now);
+        for (uint256 i = 0; i < _investors.length; i++) {
+            require(_withholding[i] <= 10**18, "Incorrect withholding tax");
+            withholdingTax[_investors[i]] = _withholding[i];
+        }
     }
 
     /**
@@ -90,7 +101,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _withholding withholding tax for all investors (multiplied by 10**16)
      */
     function setWithholdingFixed(address[] _investors, uint256 _withholding) public onlyOwner {
-        require(_withholding <= 10**18);
+        require(_withholding <= 10**18, "Incorrect withholding tax");
+        emit SetWithholdingFixed(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
             withholdingTax[_investors[i]] = _withholding;
         }
@@ -157,7 +169,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @notice Calculate amount of dividends claimable
      * @param _dividendIndex Dividend to calculate
      * @param _payee Affected investor address
-     * @return unit256
+     * @return claim, withheld amounts
      */
     function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256, uint256) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");

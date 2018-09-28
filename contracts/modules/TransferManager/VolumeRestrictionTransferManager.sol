@@ -62,7 +62,7 @@ contract VolumeRestrictionTransferManager is ITransferManager {
     
     // lets the owner / admin create a volume restriction lockup.
     // takes a userAddress and lock up params, and creates a lockup for the user.  See the LockUp struct def for info on what each parameter actually is
-    function addLockup(address userAddress, uint lockUpPeriodSeconds, uint releaseFrequencySeconds, uint startTime, uint totalAmount) public withPerm(ADMIN) {
+    function addLockUp(address userAddress, uint lockUpPeriodSeconds, uint releaseFrequencySeconds, uint startTime, uint totalAmount) public withPerm(ADMIN) {
         
         // if a startTime of 0 is passed in, then start now.
         if (startTime == 0) {
@@ -91,7 +91,7 @@ contract VolumeRestrictionTransferManager is ITransferManager {
     }
 
     // same as addLockup, but takes an array for each parameter
-    function addLockupMulti(address[] userAddresses, uint[] lockUpPeriodsSeconds, uint[] releaseFrequenciesSeconds, uint[] startTimes, uint[] totalAmounts) public withPerm(ADMIN) {
+    function addLockUpMulti(address[] userAddresses, uint[] lockUpPeriodsSeconds, uint[] releaseFrequenciesSeconds, uint[] startTimes, uint[] totalAmounts) public withPerm(ADMIN) {
         
         // make sure input params are sane
         require(
@@ -103,13 +103,13 @@ contract VolumeRestrictionTransferManager is ITransferManager {
         );
 
         for (uint i = 0; i < userAddresses.length; i++) {
-            addLockup(userAddresses[i], lockUpPeriodsSeconds[i], releaseFrequenciesSeconds[i], startTimes[i], totalAmounts[i]);
+            addLockUp(userAddresses[i], lockUpPeriodsSeconds[i], releaseFrequenciesSeconds[i], startTimes[i], totalAmounts[i]);
         }
 
     }
     
     // remove a user's lock up
-    function removeLockup(address userAddress, uint lockUpIndex) public withPerm(ADMIN) {
+    function removeLockUp(address userAddress, uint lockUpIndex) public withPerm(ADMIN) {
         LockUp[] storage userLockUps = lockUps[userAddress];
         LockUp memory toRemove = userLockUps[lockUpIndex];
 
@@ -122,15 +122,13 @@ contract VolumeRestrictionTransferManager is ITransferManager {
             LockUpOperationType.Remove
         );
 
-        if (lockUpIndex < userLockUps.length) {
-            // move the last element in the array into the index that is desired to be removed.  
-            userLockUps[lockUpIndex] = userLockUps[userLockUps.length - 1];
-            // delete the last element
-            userLockUps.length--;
-        }
+        // move the last element in the array into the index that is desired to be removed.  
+        userLockUps[lockUpIndex] = userLockUps[userLockUps.length - 1];
+        // delete the last element
+        userLockUps.length--;
     }
 
-    function editLockup(address userAddress, uint lockUpIndex, uint lockUpPeriodSeconds, uint releaseFrequencySeconds, uint startTime, uint totalAmount) public withPerm(ADMIN) {
+    function editLockUp(address userAddress, uint lockUpIndex, uint lockUpPeriodSeconds, uint releaseFrequencySeconds, uint startTime, uint totalAmount) public withPerm(ADMIN) {
         
         // if a startTime of 0 is passed in, then start now.
         if (startTime == 0) {
@@ -208,8 +206,8 @@ contract VolumeRestrictionTransferManager is ITransferManager {
             totalSum = totalSum.add(aLockUp.totalAmount);
 
             // check if lockup has entirely passed
-            if (now >= aLockUp.startTime.add(aLockUp.lockUpPeriodSeconds)) {
-                // lockup has passed.  allow all.
+            if (now >= aLockUp.startTime.add(aLockUp.lockUpPeriodSeconds) || now < aLockUp.startTime) {
+                // lockup has passed, or not started yet.  allow all.
                 allowedSum = allowedSum.add(aLockUp.totalAmount);
             } else {
                 // lockup is still active. calculate how many to allow to be withdrawn right now

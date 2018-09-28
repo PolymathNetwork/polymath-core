@@ -425,7 +425,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             // create a lockup for their entire balance
             // over 16 seconds total, with 4 periods of 4 seconds each.
-            await I_VolumeRestrictionTransferManager.addLockup(account_investor2, 16, 4, 0, balance, { from: token_owner });
+            await I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 16, 4, 0, balance, { from: token_owner });
             
 
             let errorThrown = false;
@@ -481,7 +481,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             // create a lockup for their entire balance
             // over 16 seconds total, with 4 periods of 4 seconds each.
-            await I_VolumeRestrictionTransferManager.addLockup(account_investor1, 16, 4, 0, balance, { from: token_owner });
+            await I_VolumeRestrictionTransferManager.addLockUp(account_investor1, 16, 4, 0, balance, { from: token_owner });
 
             // let blockNumber = await web3.eth.getBlockNumber();
             // console.log('blockNumber',blockNumber)
@@ -510,7 +510,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(lockUp[3].toString(), balance.toString());
 
             // edit the lockup
-            await I_VolumeRestrictionTransferManager.editLockup(account_investor1, 0, 8, 4, lockUp[2], balance, { from: token_owner });
+            await I_VolumeRestrictionTransferManager.editLockUp(account_investor1, 0, 8, 4, lockUp[2], balance, { from: token_owner });
 
             // attempt a transfer
             errorThrown = false;
@@ -552,7 +552,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(lockUpCount, 1)
 
             // remove the lockup
-            await I_VolumeRestrictionTransferManager.removeLockup(account_investor1, 0, { from: token_owner });
+            await I_VolumeRestrictionTransferManager.removeLockUp(account_investor1, 0, { from: token_owner });
             
 
            lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor1);
@@ -565,7 +565,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(acct2BalanceAfter.sub(acct2BalanceBefore).toString(), acct1Balance.toString())
         });
 
-        it("Should be possible create multiple lockups at once", async() => {
+        it("Should be possible to create multiple lockups at once", async() => {
 
             let balancesBefore = {}
             balancesBefore[account_investor2] = await I_SecurityToken.balanceOf(account_investor2)
@@ -585,7 +585,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(lockUpCountsBefore[account_investor3], 0)
 
             // create lockups for their entire balances
-            await I_VolumeRestrictionTransferManager.addLockupMulti(
+            await I_VolumeRestrictionTransferManager.addLockUpMulti(
                 [account_investor2, account_investor3], 
                 [16, 8],
                 [2, 2],
@@ -647,6 +647,104 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         });
 
+        it("Should revert if the parameters are bad when creating multiple lockups", async() => {
+            let errorThrown = false;
+            try {
+                // pass in the wrong number of params.  txn should revert
+            await I_VolumeRestrictionTransferManager.addLockUpMulti(
+                [account_investor2, account_investor3], 
+                [16, 8],
+                [2], // this array should have 2 elements but it has 1, which should cause a revert
+                [0, 0],
+                [web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether')],
+                { from: token_owner }
+            ); 
+            } catch(error) {
+                console.log(`         tx revert -> passed in wrong number of array elements`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should be possible to create and edit a lockup with a specific start time in the future", async() => {
+
+            // remove all lockups for account 2
+            let lockUpsLength = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor2);
+            assert.equal(lockUpsLength, 2);
+            await I_VolumeRestrictionTransferManager.removeLockUp(account_investor2, 0, { from: token_owner });
+            await I_VolumeRestrictionTransferManager.removeLockUp(account_investor2, 0, { from: token_owner });
+            lockUpsLength = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor2);
+            assert.equal(lockUpsLength, 0);
+
+            let now = (await web3.eth.getBlock('latest')).timestamp
+
+            let balance = await I_SecurityToken.balanceOf(account_investor2)
+            // console.log('balance is ' + balance)
+
+            let startTime = now + 4
+
+            await I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 16, 4, startTime, balance, { from: token_owner });
+
+            // try a transfer.  it should pass because the lockup hasn't started yet.
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+
+            // wait 4 seconds for the lockup to begin
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            // try another transfer.  it should fail because the lockup has begun
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+
+            // edit the lockup
+            now = (await web3.eth.getBlock('latest')).timestamp
+
+            // check and get the lockup
+            let lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor2);
+            assert.equal(lockUpCount, 1)
+
+            let lockUp = await I_VolumeRestrictionTransferManager.getLockUp(account_investor2, 0);
+            // console.log(lockUp);
+            // elements in lockup array are uint lockUpPeriodSeconds, uint releaseFrequencySeconds, uint startTime, uint totalAmount
+            assert.equal(lockUp[0].toString(), '16');
+            assert.equal(lockUp[1].toString(), '4');
+            assert.equal(lockUp[2].toNumber(), startTime);
+            assert.equal(lockUp[3].toString(), balance.toString());
+
+            // edit the lockup
+            await I_VolumeRestrictionTransferManager.editLockUp(account_investor2, 0, 8, 4, now + 4, balance, { from: token_owner });
+
+            // try a transfer.  it should pass because again, the lockup hasn't started yet.
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+
+            // wait 4 seconds for the lockup to begin
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            // try another transfer.  it should fail because the lockup has begun
+            errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+
+        it("Should get configuration function signature", async() => {
+            let sig = await I_VolumeRestrictionTransferManager.getInitFunction.call();
+            assert.equal(web3.utils.hexToNumber(sig), 0);
+        });
 
 
         it("Should get the permission", async() => {

@@ -55,6 +55,7 @@ contract VestingEscrowWallet is IWallet {
     uint256 indexed whichVestingShedule,
     bytes32 indexed vestingId,
     uint256 tokensCollected,
+    bool    tokensReclaimed,
     uint256 cancellationTime
   );
 
@@ -167,6 +168,7 @@ contract VestingEscrowWallet is IWallet {
       _whichVestingSchedule,
       _vestingId,
       _tokensCollected,
+      _isReclaiming,
       block.timestamp
     );
 

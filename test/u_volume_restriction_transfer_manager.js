@@ -675,7 +675,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should be possible to create and edit a lockup with a specific start time in the future", async() => {
+        it("Should be possible to create a lockup with a specific start time in the future", async() => {
 
             // remove all lockups for account 2
             let lockUpsLength = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor2);
@@ -690,17 +690,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let balance = await I_SecurityToken.balanceOf(account_investor2)
             // console.log('balance is ' + balance)
 
-            let startTime = now + 4
+            await I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 16, 4, now + 4, balance, { from: token_owner });
 
-            await I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 16, 4, startTime, balance, { from: token_owner });
-
-            // try a transfer.  it should pass because the lockup hasn't started yet.
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
-
-            // wait 4 seconds for the lockup to begin
-            await new Promise(resolve => setTimeout(resolve, 4000));
-
-            // try another transfer.  it should fail because the lockup has begun
+            // try a transfer.  it should fail because the lockup hasn't started yet.
             let errorThrown = false;
             try {
                 await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
@@ -711,9 +703,28 @@ contract('VolumeRestrictionTransferManager', accounts => {
             }
             assert.ok(errorThrown, message);
 
+            // wait 4 seconds for the lockup to begin
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            // try another transfer.  it should also fail because the lockup has begun
+            errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+        });
+
+        it("Should be possible to edit a lockup with a specific start time in the future", async() => {
 
             // edit the lockup
-            now = (await web3.eth.getBlock('latest')).timestamp
+            let now = (await web3.eth.getBlock('latest')).timestamp
+
+            let balance = await I_SecurityToken.balanceOf(account_investor2)
 
             // check and get the lockup
             let lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor2);
@@ -724,14 +735,22 @@ contract('VolumeRestrictionTransferManager', accounts => {
             // elements in lockup array are uint lockUpPeriodSeconds, uint releaseFrequencySeconds, uint startTime, uint totalAmount
             assert.equal(lockUp[0].toString(), '16');
             assert.equal(lockUp[1].toString(), '4');
-            assert.equal(lockUp[2].toNumber(), startTime);
+            assert.isAtMost(lockUp[2].toNumber(), now);
             assert.equal(lockUp[3].toString(), balance.toString());
 
             // edit the lockup
             await I_VolumeRestrictionTransferManager.editLockUp(account_investor2, 0, 8, 4, now + 4, balance, { from: token_owner });
 
-            // try a transfer.  it should pass because again, the lockup hasn't started yet.
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+            // try a transfer.  it should fail because again, the lockup hasn't started yet.
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
 
             // wait 4 seconds for the lockup to begin
             await new Promise(resolve => setTimeout(resolve, 4000));

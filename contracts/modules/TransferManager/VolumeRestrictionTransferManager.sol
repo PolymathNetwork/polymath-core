@@ -202,11 +202,17 @@ contract VolumeRestrictionTransferManager is ITransferManager {
         for (uint i = 0; i < userLockUps.length; i++) {
             LockUp storage aLockUp = userLockUps[i];
 
+            // has lockup started yet?
+            if (now < aLockUp.startTime) {
+                // it has not.  don't let them transfer any tokens.
+                continue;
+            }
+
             // add total amount to totalSum
             totalSum = totalSum.add(aLockUp.totalAmount);
 
             // check if lockup has entirely passed
-            if (now >= aLockUp.startTime.add(aLockUp.lockUpPeriodSeconds) || now < aLockUp.startTime) {
+            if (now >= aLockUp.startTime.add(aLockUp.lockUpPeriodSeconds)) {
                 // lockup has passed, or not started yet.  allow all.
                 allowedSum = allowedSum.add(aLockUp.totalAmount);
             } else {

@@ -157,11 +157,14 @@ async function start_explorer(){
           let _address3 =  readlineSync.question('Enter address to explore: ');
           let _dividend3 = await selectDividend();
           if (_dividend3 !== null) {
-            let divsBalance = await currentDividendsModule.methods.calculateDividend(_dividend3.index, _address3).call();
+            let dividendAmounts = await currentDividendsModule.methods.calculateDividend(_dividend3.index, _address3).call();
+            let dividendBalance = dividendAmounts[0];
+            let dividendTax = dividendAmounts[1];
             let balance = await getBalance(_address3);
             console.log(`
   ${dividendsType} Balance: ${web3.utils.fromWei(balance)} ${dividendsType}
-  Dividends owned: ${web3.utils.fromWei(divsBalance)} ${dividendsType}
+  Dividends owned: ${web3.utils.fromWei(dividendBalance)} ${dividendsType}
+  Tax withheld: ${web3.utils.fromWei(dividendTax)} ${dividendsType}
             `);
           }
         break;

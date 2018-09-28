@@ -11,7 +11,9 @@ contract VestingEscrowWallet is IWallet {
   using SafeMath for uint;
 
   bytes32 public constant ISSUER = "ISSUER";
+  address public treasury;
   address public securityToken;
+  uint256 public numExcessTokens;
 
   struct VestingSchedule {
     // ID of the vesting schedule
@@ -67,11 +69,13 @@ contract VestingEscrowWallet is IWallet {
    * @notice Constructor
    * @param _securityToken Address of the security token
    * @param _polyAddress Address of the polytoken
+   * @param _treasury Address of the token treasury
    */
-  constructor (address _securityToken, address _polyAddress)
+  constructor (address _securityToken, address _polyAddress, addreess _treasury)
     public
     Module(_securityToken, _polyAddress)
   {
+    treasury = _treasury;
   }
 
   /**
@@ -126,8 +130,9 @@ contract VestingEscrowWallet is IWallet {
   * @notice Cancel a vesting schedule for an employee or affiliate
   * @param _target Address of the employee or the affiliate
   * @param _whichVestingSchedule Index of the vesting schedule for the target
+  * @param _isReclaiming True if the issuer is reclaiming the tokens out of the contract
   */
-  function cancelVestingSchedule(address _target, uint256 _whichVestingSchedule)
+  function cancelVestingSchedule(address _target, uint256 _whichVestingSchedule, bool _isReclaiming)
     public
     onlyOwner
   {
@@ -137,7 +142,25 @@ contract VestingEscrowWallet is IWallet {
 
     bytes32 _vestingId = _vestingSchedule.vestingId;
     uint256 _tokensCollected = _vestingSchedule.totalTokensRemaining;
+    uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
+    uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.totalTokensReleased);
+
     delete individualVestingDetails[_target][_whichVestingSchedule];  // TODO: Change this to a flag depending on Github response
+
+    require(ISecurityToken(securityToken).transferFrom(
+      address(this),
+      _target,
+      _tokensToDistribute), "Unable to transfer tokens");
+
+    // Send extra tokens to the treasury or hold them in the contract
+    if (_isReclaiming) {
+      require(ISecurityToken(securityToken).transferFrom(
+        address(this),
+        treasury,
+        _tokensToDistribute), "Unable to transfer tokens");
+    } else {
+      numExcessTokens = numExcessTokens.add(_tokensToDistribute);
+    }
 
     emit VestingCancelled(
       _target,
@@ -162,22 +185,22 @@ contract VestingEscrowWallet is IWallet {
     require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
     require(_vestingSchedule.totalTokensRemaining != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
 
-    uint256 currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
-    uint256 tokensToDistribute = _calculateTokensToDistribute(currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.totalTokensReleased);
+    uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
+    uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.totalTokensReleased);
 
-    _vestingSchedule.totalTokensReleased += tokensToDistribute;
-    _vestingSchedule.totalTokensRemaining -= tokensToDistribute;
+    _vestingSchedule.totalTokensReleased += _tokensToDistribute;
+    _vestingSchedule.totalTokensRemaining -= _tokensToDistribute;
 
     require(ISecurityToken(securityToken).transferFrom(
       address(this),
       msg.sender,
-      tokensToDistribute), "Unable to transfer tokens");
+      _tokensToDistribute), "Unable to transfer tokens");
 
     emit TokensCollected(
       msg.sender,
       _whichVestingSchedule,
       _vestingSchedule.vestingId,
-      tokensToDistribute
+      _tokensToDistribute
     );
   }
 

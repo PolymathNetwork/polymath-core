@@ -383,6 +383,18 @@ contract('SecurityTokenRegistry', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should fail to pause if already paused", async() => {
+            let errorThrown = false;
+            try {
+                await I_STRProxied.pause({ from: account_polymath});
+            } catch(error) {
+                console.log(`         tx revert -> Registration is already paused`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should successfully register ticker if registration is unpaused", async() => {
             await I_STRProxied.unpause({ from: account_polymath});
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});

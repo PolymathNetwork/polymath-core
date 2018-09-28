@@ -263,29 +263,7 @@ contract VestingEscrowWallet is IWallet {
   function collectVestedTokens(uint256 _whichVestingSchedule)
     public
   {
-    VestingSchedule memory _vestingSchedule = individualVestingDetails[msg.sender][_whichVestingSchedule];
-
-    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");
-
-    uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
-    uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.numClaimedVestedTokens);
-
-    require(_tokensToDistribute != 0, "No tokens remain");
-
-    _vestingSchedule.numClaimedVestedTokens = _vestingSchedule.numClaimedVestedTokens.add(_tokensToDistribute);
-    _vestingSchedule.numUnclaimedVestedTokens = _vestingSchedule.numUnclaimedVestedTokens.sub(_tokensToDistribute);
-
-    require(ISecurityToken(securityToken).transferFrom(
-      address(this),
-      msg.sender,
-      _tokensToDistribute), "Unable to transfer tokens");
-
-    emit TokensCollected(
-      msg.sender,
-      _whichVestingSchedule,
-      _vestingSchedule.vestingId,
-      _tokensToDistribute
-    );
+    _distributeVestedTokens(msg.sender, _whichVestingSchedule);
   }
 
   /**
@@ -295,6 +273,18 @@ contract VestingEscrowWallet is IWallet {
   */
   function pushVestedTokens(address _target, uint256 _whichVestingSchedule)
     public
+    onlyOwner
+  {
+    _distributeVestedTokens(_target, _whichVestingSchedule);
+  }
+
+  /**
+  * @notice Distribute vested tokens
+  * @param _target Address of the employee or the affiliate
+  * @param _whichVestingSchedule Index of the vesting schedule for the target
+  */
+  function _distributeVestedTokens(address _target, uint256 _whichVestingSchedule)
+    internal
   {
     VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
 

@@ -444,7 +444,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             // wait 4 seconds
             await new Promise(resolve => setTimeout(resolve, 4000));
 
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('2', 'ether'), { from: account_investor2 });
         });
 
         it("Should prevent the transfer of tokens if the amount is larger than the amount allowed by lockups", async() => {
@@ -454,13 +454,21 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             let errorThrown = false;
             try {
-                await I_SecurityToken.transfer(account_investor1, balance, { from: account_investor2 });
+                await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3', 'ether'), { from: account_investor2 });
             } catch(error) {
                 console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
             assert.ok(errorThrown, message);
+        });
+
+        it("Should allow the transfer of more tokens in a lockup if another period has passed", async() => {
+
+            // wait 4 more seconds
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('2', 'ether'), { from: account_investor2 });
         });
 
         it("Should allow the transfer of all tokens in a lockup if the entire lockup has passed", async() => {

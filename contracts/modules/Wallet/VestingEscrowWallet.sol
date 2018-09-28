@@ -266,10 +266,11 @@ contract VestingEscrowWallet is IWallet {
     VestingSchedule memory _vestingSchedule = individualVestingDetails[msg.sender][_whichVestingSchedule];
 
     require(_vestingSchedule.vestingId != 0, "Schedule not initialized");
-    require(_vestingSchedule.numUnvestedTokens != 0, "No tokens remain");
 
     uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
     uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.numClaimedVestedTokens);
+
+    require(_tokensToDistribute != 0, "No tokens remain");
 
     _vestingSchedule.numClaimedVestedTokens = _vestingSchedule.numClaimedVestedTokens.add(_tokensToDistribute);
     _vestingSchedule.numUnclaimedVestedTokens = _vestingSchedule.numUnclaimedVestedTokens.sub(_tokensToDistribute);
@@ -298,10 +299,11 @@ contract VestingEscrowWallet is IWallet {
     VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
 
     require(_vestingSchedule.vestingId != 0, "Schedule not initialized");
-    require(_vestingSchedule.numUnvestedTokens != 0, "No tokens remain");
 
     uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
     uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.numClaimedVestedTokens);
+
+    require(_tokensToDistribute != 0, "No tokens remain");
 
     _vestingSchedule.numClaimedVestedTokens = _vestingSchedule.numClaimedVestedTokens.add(_tokensToDistribute);
     _vestingSchedule.numUnclaimedVestedTokens = _vestingSchedule.numUnclaimedVestedTokens.sub(_tokensToDistribute);

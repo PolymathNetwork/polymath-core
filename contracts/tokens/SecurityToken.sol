@@ -99,6 +99,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // Records added module names - module list should be order agnostic!
     mapping (bytes32 => address[]) names;
 
+    // List of investors
     mapping (address => bool) public investorListed;
 
     // Emit at the time when module get added
@@ -141,7 +142,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event ForceTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _amount, bool _verifyTransfer, bytes _data);
     event DisableController(uint256 _timestamp);
 
-    function isModule(address _module, uint8 _type) internal view returns (bool) {
+    function _isModule(address _module, uint8 _type) internal view returns (bool) {
         require(modulesToData[_module].module == _module, "Address mismatch");
         require(modulesToData[_module].moduleType == _type, "Type mismatch");
         require(!modulesToData[_module].isArchived, "Module archived");
@@ -150,7 +151,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     // Require msg.sender to be the specified module type
     modifier onlyModule(uint8 _type) {
-        require(isModule(msg.sender, _type));
+        require(_isModule(msg.sender, _type));
         _;
     }
 
@@ -159,7 +160,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         if (msg.sender == owner) {
             _;
         } else {
-            require(isModule(msg.sender, _type));
+            require(_isModule(msg.sender, _type));
             _;
         }
     }

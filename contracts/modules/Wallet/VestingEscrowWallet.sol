@@ -26,10 +26,14 @@ contract VestingEscrowWallet is IWallet {
     uint256 startDate;
     // Vesting frequency of the tokens
     uint256 vestingFrequency;
-    // Total number of tokens released to the target
-    uint256 totalTokensReleased;
-    // Total number of tokens remaining to collect
-    uint256 totalTokensRemaining;
+    // Total number of vested tokens
+    uint256 numVestedTokens;
+    // Total number of unvested tokens
+    uint256 numUnvestedTokens;
+    // Total number of claimed vested tokens
+    uint256 numClaimedVestedTokens;
+    // Total number of unclaimed vested tokens
+    uint256 numUnclaimedVestedTokens;
     // Number of tokens to release to the target per tranche
     uint256 tokensPerTranche;
   }
@@ -45,8 +49,10 @@ contract VestingEscrowWallet is IWallet {
     uint256 vestingDuration,
     uint256 startDate,
     uint256 vestingFrequency,
-    uint256 totalTokensReleased,
-    uint256 totalTokensRemaining,
+    uint256 numVestedTokens,
+    uint256 numUnvestedTokens,
+    uint256 numClaimedVestedTokens,
+    uint256 numUnclaimedVestedTokens,
     uint256 tokensPerTranche
   );
 
@@ -150,9 +156,9 @@ contract VestingEscrowWallet is IWallet {
 
     bytes32 _vestingId = _vestingSchedule.vestingId;
     uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
-    uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.totalTokensReleased);
-    uint256 _totalTokensRemaining = _vestingSchedule.totalTokensRemaining.sub(_tokensToDistribute);
-    uint256 _totalTokensReleased = _vestingSchedule.totalTokensReleased.add(_tokensToDistribute);
+    uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.numClaimedVestedTokens);
+    uint256 _numUnvestedTokens = _vestingSchedule.numUnvestedTokens.sub(_tokensToDistribute);
+    uint256 _numVestedTokens = _vestingSchedule.numClaimedVestedTokens.add(_tokensToDistribute);
     delete individualVestingDetails[_target][_whichVestingSchedule];
 
     require(ISecurityToken(securityToken).transferFrom(
@@ -165,16 +171,16 @@ contract VestingEscrowWallet is IWallet {
       require(ISecurityToken(securityToken).transferFrom(
         address(this),
         treasury,
-        _totalTokensRemaining), "Unable to transfer tokens");
+        _numUnvestedTokens), "Unable to transfer tokens");
     } else {
-      numExcessTokens = numExcessTokens.add(_totalTokensRemaining);
+      numExcessTokens = numExcessTokens.add(_numUnvestedTokens);
     }
 
     emit VestingCancelled(
       _target,
       _whichVestingSchedule,
       _vestingId,
-      _totalTokensReleased,
+      _tokensToDistribute,
       _isReclaiming,
       block.timestamp
     );
@@ -192,13 +198,13 @@ contract VestingEscrowWallet is IWallet {
     VestingSchedule memory _vestingSchedule = individualVestingDetails[msg.sender][_whichVestingSchedule];
 
     require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
-    require(_vestingSchedule.totalTokensRemaining != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+    require(_vestingSchedule.numUnvestedTokens != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
 
     uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
-    uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.totalTokensReleased);
+    uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.numClaimedVestedTokens);
 
-    _vestingSchedule.totalTokensReleased += _tokensToDistribute;
-    _vestingSchedule.totalTokensRemaining -= _tokensToDistribute;
+    _vestingSchedule.numClaimedVestedTokens = _vestingSchedule.numClaimedVestedTokens.add(_tokensToDistribute);
+    _vestingSchedule.numUnclaimedVestedTokens = _vestingSchedule.numUnclaimedVestedTokens.sub(_tokensToDistribute);
 
     require(ISecurityToken(securityToken).transferFrom(
       address(this),
@@ -224,24 +230,25 @@ contract VestingEscrowWallet is IWallet {
     VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
 
     require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
-    require(_vestingSchedule.totalTokensRemaining != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+    require(_vestingSchedule.numUnvestedTokens != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
 
-    uint256 currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
-    uint256 tokensToDistribute = _calculateTokensToDistribute(currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.totalTokensReleased);
+    uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
+    uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.numClaimedVestedTokens);
 
-    _vestingSchedule.totalTokensReleased += tokensToDistribute;
-    _vestingSchedule.totalTokensRemaining -= tokensToDistribute;
+    _vestingSchedule.numClaimedVestedTokens = _vestingSchedule.numClaimedVestedTokens.add(_tokensToDistribute);
+    _vestingSchedule.numUnclaimedVestedTokens = _vestingSchedule.numUnclaimedVestedTokens.sub(_tokensToDistribute);
+
 
     require(ISecurityToken(securityToken).transferFrom(
       address(this),
       _target,
-      tokensToDistribute), "Unable to transfer tokens");
+      _tokensToDistribute), "Unable to transfer tokens");
 
     emit TokensCollected(
       _target,
       _whichVestingSchedule,
       _vestingSchedule.vestingId,
-      tokensToDistribute
+      _tokensToDistribute
     );
   }
 
@@ -304,8 +311,7 @@ contract VestingEscrowWallet is IWallet {
     uint256 _individualVestingCount = individualVestingCount[_target];
     individualVestingCount[_target] += 1;
 
-    uint256 _totalTokensReleased = 0;
-    uint256 _totalTokensRemaining = _totalAllocation;
+    uint256 _numUnvestedTokens = _totalAllocation;
 
     individualVestingDetails[_target][_individualVestingCount] = VestingSchedule({
       vestingId: _vestingId,
@@ -313,8 +319,10 @@ contract VestingEscrowWallet is IWallet {
       vestingDuration: _vestingDuration,
       startDate: _startDate,
       vestingFrequency: _vestingFrequency,
-      totalTokensReleased: _totalTokensReleased,
-      totalTokensRemaining: _totalTokensRemaining,
+      numVestedTokens: 0,
+      numUnvestedTokens: _numUnvestedTokens,
+      numClaimedVestedTokens: 0,
+      numUnclaimedVestedTokens: 0,
       tokensPerTranche: _tokensPerTranche
     });
 
@@ -330,8 +338,10 @@ contract VestingEscrowWallet is IWallet {
       _vestingDuration,
       _startDate,
       _vestingFrequency,
-      _totalTokensReleased,
-      _totalTokensRemaining,
+      0,
+      _numUnvestedTokens,
+      0,
+      0,
       _tokensPerTranche
     );
   }
@@ -358,19 +368,19 @@ contract VestingEscrowWallet is IWallet {
   * @notice Calculate the number of tokens to distribute per transaction
   * @param _currentTranche Current tranche of the vesting schedule
   * @param _tokensPerTranche Number of tokens to distribute in each tranche
-  * @param _totalTokensReleased Number of tokens released thus far
+  * @param _numClaimedVestedTokens Number of vested tokens claimed thus far
   */
   function _calculateTokensToDistribute(
     uint256 _currentTranche,
     uint256 _tokensPerTranche,
-    uint256 _totalTokensReleased
+    uint256 _numClaimedVestedTokens
   )
     internal
     view
     returns (uint256)
   {
     uint256 _tokensToDistribute = _currentTranche.mul(_tokensPerTranche);
-    return _tokensToDistribute.sub(_totalTokensReleased);
+    return _tokensToDistribute.sub(_numClaimedVestedTokens);
   }
 
 }

@@ -67,6 +67,13 @@ contract VestingEscrowWallet is IWallet {
     uint256 tokensPerTranche
   );
 
+  event AddTemplate(
+    uint256 templateNumber,
+    uint256 totalAllocation,
+    uint256 vestingDuration,
+    uint256 vestingFrequency
+  );
+
   event VestingCancelled(
     address indexed target,
     uint256 indexed whichVestingShedule,
@@ -137,6 +144,11 @@ contract VestingEscrowWallet is IWallet {
     vestingTemplates[templateCount].vestingDuration = _vestingDuration;
     vestingTemplates[templateCount].vestingFrequency = _vestingFrequency;
 
+    emit AddTemplate(
+      templateCount,
+      _totalAllocation,
+      _vestingDuration,
+      _vestingFrequency);
     templateCount += 1;
   }
 
@@ -210,7 +222,7 @@ contract VestingEscrowWallet is IWallet {
   {
     VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
 
-    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");
 
     bytes32 _vestingId = _vestingSchedule.vestingId;
     uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
@@ -253,8 +265,8 @@ contract VestingEscrowWallet is IWallet {
   {
     VestingSchedule memory _vestingSchedule = individualVestingDetails[msg.sender][_whichVestingSchedule];
 
-    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
-    require(_vestingSchedule.numUnvestedTokens != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");
+    require(_vestingSchedule.numUnvestedTokens != 0, "No tokens remain");
 
     uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
     uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.numClaimedVestedTokens);
@@ -285,8 +297,8 @@ contract VestingEscrowWallet is IWallet {
   {
     VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
 
-    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
-    require(_vestingSchedule.numUnvestedTokens != 0, "No tokens remain");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");
+    require(_vestingSchedule.numUnvestedTokens != 0, "No tokens remain");
 
     uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
     uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.numClaimedVestedTokens);

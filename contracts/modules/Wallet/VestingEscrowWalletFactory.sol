@@ -24,18 +24,14 @@ contract VestingEscrowWalletFactory is ModuleFactory {
 
     /**
      * @notice used to launch the Module with the help of factory
-     * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
-    function deploy(bytes _data) external returns(address) {
-        if(setupCost > 0)
+    function deploy(bytes /* _data */) external returns(address) {
+        if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        VestingEscrowWallet vestingEscrowWallet = new VestingEscrowWallet(msg.sender, address(polyToken));
-        require(Util.getSig(_data) == vestingEscrowWallet.getInitFunction(), "Provided data is not valid");
-        require(address(vestingEscrowWallet).call(_data), "Un-successfull call");
-        emit LogGenerateModuleFromFactory(address(vestingEscrowWallet), getName(), address(this), msg.sender, setupCost, now);
-        return address(vestingEscrowWallet);
-
+        address vestingEscrwoWallet = new VestingEscrowWallet(msg.sender, address(polyToken));
+        emit LogGenerateModuleFromFactory(vestingEscrwoWallet, getName(), address(this), msg.sender, setupCost, now);
+        return vestingEscrwoWallet;
     }
 
     /**

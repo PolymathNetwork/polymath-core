@@ -14,7 +14,12 @@ var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
-const STO_KEY = 3;
+const MODULES_TYPES = {
+  PERMISSION: 1,
+  TRANSFER: 2,
+  STO: 3,
+  DIVIDENDS: 4
+}
 
 // App flow
 let tokenSymbol;
@@ -188,7 +193,7 @@ async function mintTokens(address, amount){
   if (await securityToken.methods.mintingFrozen().call()) {
     console.log(chalk.red("Minting is not possible - Minting has been permanently frozen by issuer"));
   } else {
-    let result = await securityToken.methods.getModulesByType(STO_KEY).call();
+    let result = await securityToken.methods.getModulesByType(MODULES_TYPES.STO).call();
     if (result.length > 0) {
       console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
     } else {
@@ -466,16 +471,17 @@ async function isDividendsModuleAttached() {
 
 async function addDividendsModule() {
   if (!(await isDividendsModuleAttached())) {
-    let dividendsFactoryAddress;
+    let dividendsFactoryName;
     let dividendsModuleABI;
     if (dividendsType == 'POLY') {
-      dividendsFactoryAddress = await contracts.erc20DividendCheckpointFactoryAddress();
+      dividendsFactoryName = 'ERC20DividendCheckpoint';
       dividendsModuleABI = abis.erc20DividendCheckpoint();
     } else if (dividendsType == 'ETH') {
-      dividendsFactoryAddress = await contracts.etherDividendCheckpointFactoryAddress();
+      dividendsFactoryName = 'EtherDividendCheckpoint';
       dividendsModuleABI = abis.etherDividendCheckpoint();
     }
 
+    let dividendsFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.DIVIDENDS, dividendsFactoryName);
     let addModuleAction = securityToken.methods.addModule(dividendsFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
     let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');

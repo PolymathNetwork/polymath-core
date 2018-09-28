@@ -291,7 +291,7 @@ contract VestingEscrowWallet is IWallet {
       _vestingFrequency != 0 && _vestingFrequency <= _vestingDuration,
       "The vestingFrequency should not be 0 and it should be less than the duration");
     require(_vestingDuration % _vestingFrequency == 0, "The vesting frequency should be a multiple of the vesting duration");
-    // require(securityToken.balanceOf[address(this)] >= _totalAllocation, "Tokens must have been already sent to the smart contract");
+    require(ISecurityToken(securityToken).balanceOf(address(this)) >= _totalAllocation, "Tokens must have been already sent to the smart contract");
 
     uint256 _numTranches = _vestingDuration.div(_vestingFrequency);
     require(_totalAllocation % _numTranches == 0, "The total allocation should be a multiple of the number of tranches");
@@ -326,10 +326,14 @@ contract VestingEscrowWallet is IWallet {
       tokensPerTranche: _tokensPerTranche
     });
 
-    require(ISecurityToken(securityToken).transferFrom(
-      msg.sender,
-      address(this),
-      _totalAllocation), "Unable to transfer tokens");
+    uint256 _tokensToSend = _calculateTokensToSend(_totalAllocation);
+
+    if (_tokensToSend != 0) {
+      require(ISecurityToken(securityToken).transferFrom(
+        msg.sender,
+        address(this),
+        _totalAllocation), "Unable to transfer tokens");
+    }
 
     emit VestingStarted(
       _target,
@@ -381,6 +385,28 @@ contract VestingEscrowWallet is IWallet {
   {
     uint256 _tokensToDistribute = _currentTranche.mul(_tokensPerTranche);
     return _tokensToDistribute.sub(_numClaimedVestedTokens);
+  }
+
+  /**
+  * @notice Calculate the number of tokens the issuer must send to the contract
+  * @param _totalAllocation Total allocation being used for this instance
+  */
+  function _calculateTokensToSend(
+    uint256 _totalAllocation
+  )
+    internal
+    view
+    returns (uint256)
+  {
+    if (numExcessTokens  > 0){
+      if (numExcessTokens >= _totalAllocation) {
+        return 0;
+      } else {
+        return _totalAllocation.sub(numExcessTokens);
+      }
+    } else {
+      return _totalAllocation;
+    }
   }
 
 }

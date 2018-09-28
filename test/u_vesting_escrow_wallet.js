@@ -301,45 +301,170 @@ contract('VestingEscrowWallet', accounts => {
 
     describe("Check Escrow Wallet", async() => {
       context("Create Template", async() => {
-        it("Create a vesting schedule template", async() => {
-          let vestingDuration = latestTime() + duration.years(4);
-          let vestingFrequency = latestTime() + (duration.years(1)/4);
-          let amount = '10000';
-          let tx = await I_VestingEscrowWallet.createTemplate(web3.utils.toWei(amount, 'ether'), vestingDuration, vestingFrequency, {from: token_owner});
-          assert.equal(tx.logs[0].args.templateNumber.toNumber(), 0, "Template should be created at number 0");
-        });
-        it("Create two more vesting schdule templates", async() => {
-          let vestingDuration = latestTime() + duration.years(4);
-          let vestingFrequency = latestTime() + (duration.years(1)/4);
-          let amount = ['25000', '50000'];
-          let tx = await I_VestingEscrowWallet.createTemplate(web3.utils.toWei(amount[0], 'ether'), vestingDuration, vestingFrequency, {from: token_owner});
-          assert.equal(tx.logs[0].args.templateNumber.toNumber(), 1, "Template should be created at number 1");
-          tx = await I_VestingEscrowWallet.createTemplate(web3.utils.toWei(amount[1], 'ether'), vestingDuration, vestingFrequency, {from: token_owner});
-          assert.equal(tx.logs[0].args.templateNumber.toNumber(), 2, "Template should be created at number 2");
-        });
         it("Should fail to create a vesting schedule template", async() => {
+          let totalAllocation = '10000';
           let errorThrown = false;
           let vestingDuration = latestTime() + duration.years(4);
           let vestingFrequency = latestTime() + (duration.years(1)/4);
-          let amount = '10000';
           try {
-            let tx = await I_VestingEscrowWallet.createTemplate(web3.utils.toWei(amount, 'ether'), vestingDuration, vestingFrequency, {from: employee1});
+            let tx = await I_VestingEscrowWallet.createTemplate(web3.utils.toWei(totalAllocation, 'ether'), vestingDuration, vestingFrequency, {from: employee1});
           } catch(error) {
               console.log(`       tx -> failed because caller is not the issuer`.grey);
+              console.log(error);
               ensureException(error);
               errorThrown = true;
           }
           assert.ok(errorThrown, message);
         });
-        it("Increment the templateCount", async() => {
+        it("Create a vesting schedule template", async() => {
+          let totalAllocation = '10000';
           let vestingDuration = latestTime() + duration.years(4);
           let vestingFrequency = latestTime() + (duration.years(1)/4);
-          let amount = '10000';
+          let tx = await I_VestingEscrowWallet.createTemplate(web3.utils.toWei(totalAllocation, 'ether'), vestingDuration, vestingFrequency, {from: token_owner});
+          assert.equal(tx.logs[0].args.templateNumber.toNumber(), 0, "Template should be created at number 0");
+        });
+        it("Create two more vesting schdule templates", async() => {
+          let totalAllocation = ['25000', '50000'];
+          let vestingDuration = latestTime() + duration.years(4);
+          let vestingFrequency = latestTime() + (duration.years(1)/4);
+          let tx = await I_VestingEscrowWallet.createTemplate(web3.utils.toWei(totalAllocation[0], 'ether'), vestingDuration, vestingFrequency, {from: token_owner});
+          assert.equal(tx.logs[0].args.templateNumber.toNumber(), 1, "Template should be created at number 1");
+          tx = await I_VestingEscrowWallet.createTemplate(web3.utils.toWei(totalAllocation[1], 'ether'), vestingDuration, vestingFrequency, {from: token_owner});
+          assert.equal(tx.logs[0].args.templateNumber.toNumber(), 2, "Template should be created at number 2");
+        });
+        it("Increment the templateCount", async() => {
+          let totalAllocation = '10000';
+          let vestingDuration = latestTime() + duration.years(4);
+          let vestingFrequency = latestTime() + (duration.years(1)/4);
           let count = await I_VestingEscrowWallet.templateCount.call();
           assert.equal(count.toNumber(), 3, "Template count should be 3");
         });
       })
-
+      context("Initiate Vesting Schedule", async() => {
+        it("Should fail to initiate a vesting schedule because the caller is not the owner", async() => {
+          // let errorThrown = false;
+          // let target = [employee1, employee2, employee3]
+          // let totalAllocation = ['10000', '25000', '50000'];
+          // totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
+          // let vestingDuration = latestTime() + duration.years(4);
+          // let startDate = [latestTime() + duration.days(1), latestTime() + duration.days(2), latestTime() + duration.days(3)]
+          // let vestingFrequency = [latestTime() + (duration.years(1)/4), latestTime() + (duration.years(1)/2)];
+          // let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+          // let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: employee1});
+          // console.log(tx);
+          // try {
+          //   let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: employee1});
+          // } catch(error) {
+          //     console.log(`       tx -> failed because caller is not the issuer`.grey);
+          //     console.log(error);
+          //     ensureException(error);
+          //     errorThrown = true;
+          // }
+          // assert.ok(errorThrown, message);
+        });
+        it("Should fail to initiate a vesting schedule because the the input arrays are not of equal length", async() => {
+        });
+        it("Should fail to initiate a vesting schedule because a target input was 0", async() => {
+        });
+        it("Should fail to initiate a vesting schedule because a totalAllocation input was 0", async() => {
+        });
+        it("Should fail to initiate a vesting schedule because a vestingDuration input was 0", async() => {
+        });
+        it("Should fail to initiate a vesting schedule because a startDate was input was before now", async() => {
+        });
+        it("Should fail to initiate a vesting schedule because a vestingFrequency input was 0", async() => {
+        });
+        it("Should fail to initiate a vesting schedule because a vestingFrequency was greater than the associated vestingDuration", async() => {
+        });
+        it("Should fail to initiate a vesting schedule because a vestingFrequency was not a whole factor of the associated vestingDuration ", async() => {
+        });
+        it("Should fail to initiate a vesting schedule because a _numTranches was not a whole factor of the associated totalAllocation ", async() => {
+        });
+        it("Create a vesting schedule for each of the employees", async() => {
+        });
+        it("Increment the vesting schedule for a specific employee", async() => {
+        });
+        it("Save vesting schedule for a specific employee in individualVestingDetails", async() => {
+        });
+        it("Send all tokens if no tokens already exist in the contract", async() => {
+        });
+        it("Send partial tokens if some of the required tokens already exist in the contract", async() => {
+        });
+        it("Send no tokens if the all of the required tokens already exist in the contract", async() => {
+        });
+      })
+      context("Initiate Vesting Schedule From Template", async() => {
+        it("Should fail to initiate a vesting schedule from template because the caller is not the owner", async() => {
+        });
+        it("Should fail to initiate a vesting schedule from template because an input target is 0", async() => {
+        });
+        it("Create a vesting schedule for an employee based on a template", async() => {
+        });
+        it("Create a vesting schedule for multiple employees based on a template", async() => {
+        });
+        it("Increment the vesting schedule for a specific employee", async() => {
+        });
+        it("Save vesting schedule for a specific employee in individualVestingDetails", async() => {
+        });
+        it("Send all tokens if no tokens already exist in the contract", async() => {
+        });
+        it("Send partial tokens if some of the required tokens already exist in the contract", async() => {
+        });
+        it("Send no tokens if the all of the required tokens already exist in the contract", async() => {
+        });
+      })
+      context("Cancel Vesting Scheduel", async() => {
+        it("Should fail to cancel a vesting schedule because the caller is not the owner", async() => {
+        });
+        it("Should fail to cancel a vesting schedule because it does not exist", async() => {
+        });
+        it("Should fail to cancel a vesting schedule because the contract does not have the required number of tokens to send to the employee", async() => {
+        });
+        it("Should fail to cancel a vesting schedule because the contract does not have the required number of tokens to send to the treasury", async() => {
+        });
+        it("Cancel a vesting schedule", async() => {
+        });
+        it("Delete the individualVestingDetails from storage", async() => {
+        });
+        it("Send vested, unclaimed tokens to the employee", async() => {
+        });
+        it("Send unvested tokens to the treasury if the issuer wants to reclaim them", async() => {
+        });
+        it("Keep tokens in the contract and update numExcessTokens if the issuer sets _isReclaiming false", async() => {
+        });
+      })
+      context("Collect Vested Tokens", async() => {
+        it("Should fail to collect because a vesting schedule does not exist", async() => {
+        });
+        it("Should fail to collect because there are no remaining tokens to claim", async() => {
+        });
+        it("Should fail to collect because the contract does not have the required number of tokens to send to the employee", async() => {
+        });
+        it("Send vested tokens to the employee", async() => {
+        });
+        it("Update the numClaimedVestedTokens for that employee's specific vesting schedule", async() => {
+        });
+        it("Update the numUnclaimedVestedTokens for that employee's specific vesting schedule", async() => {
+        });
+        it("Send vested, unclaimed tokens to the employee", async() => {
+        });
+      })
+      context("Push Vested Tokens", async() => {
+        it("Should fail to push because a vesting schedule does not exist", async() => {
+        });
+        it("Should fail to push because there are no remaining tokens to claim", async() => {
+        });
+        it("Should fail to push because the contract does not have the required number of tokens to send to the employee", async() => {
+        });
+        it("Send vested tokens to the employee", async() => {
+        });
+        it("Update the numClaimedVestedTokens for that employee's specific vesting schedule", async() => {
+        });
+        it("Update the numUnclaimedVestedTokens for that employee's specific vesting schedule", async() => {
+        });
+        it("Send vested, unclaimed tokens to the employee", async() => {
+        });
+      })
         // it("Buy some tokens for account_investor1 (1 ETH)", async() => {
         //     // Add the Investor in to the whitelist
         //

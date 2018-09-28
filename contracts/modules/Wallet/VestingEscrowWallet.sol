@@ -345,7 +345,6 @@ contract VestingEscrowWallet is IWallet {
       _vestingFrequency != 0 && _vestingFrequency <= _vestingDuration,
       "The vestingFrequency should not be 0 and it should be less than the duration");
     require(_vestingDuration % _vestingFrequency == 0, "The vesting frequency should be a multiple of the vesting duration");
-    require(ISecurityToken(securityToken).balanceOf(address(this)) >= _totalAllocation, "Tokens must have been already sent to the smart contract");
 
     uint256 _numTranches = _vestingDuration.div(_vestingFrequency);
     require(_totalAllocation % _numTranches == 0, "The total allocation should be a multiple of the number of tranches");

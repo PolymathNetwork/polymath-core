@@ -314,7 +314,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(_newOwner != address(0), "Address should not be 0x");
         require(getAddress(Encoder.getKey("registeredTickers_owner", ticker)) == msg.sender, "Not authorised");
         _transferTickerOwnership(msg.sender, _newOwner, ticker);
-        set(Encoder.getKey("registeredTickers_owner", _ticker), _newOwner);
+        set(Encoder.getKey("registeredTickers_owner", ticker), _newOwner);
     }
 
     /**
@@ -324,6 +324,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _ticker is the ticker symbol
      */
     function _transferTickerOwnership(address _oldOwner, address _newOwner, string _ticker) internal {
+        if(getBool(Encoder.getKey("registeredTickers_status", _ticker)))
+            require(IOwnable(getAddress(Encoder.getKey("tickerToSecurityToken", _ticker))).owner() == _newOwner, "If the token exists, the ticker can only be transferred to its owner");
+
         _deleteTickerOwnership(_oldOwner, _ticker);
         _setTickerOwner(_newOwner, _ticker);
         emit ChangeTickerOwnership(_ticker, _oldOwner, _newOwner);
@@ -524,8 +527,8 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @return address
      */
     function getSecurityTokenAddress(string _ticker) external view returns (address) {
-        string memory __ticker = Util.upper(_ticker);
-        return getAddress(Encoder.getKey("tickerToSecurityToken", __ticker));
+        string memory ticker = Util.upper(_ticker);
+        return getAddress(Encoder.getKey("tickerToSecurityToken", ticker));
     }
 
      /**

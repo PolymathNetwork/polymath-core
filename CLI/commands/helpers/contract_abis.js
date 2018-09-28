@@ -11,6 +11,7 @@ let cappedSTOFactoryABI;
 let usdTieredSTOFactoryABI;
 let erc20DividendCheckpointABI;
 let etherDividendCheckpointABI;
+let ownable;
 
 try {
     polymathRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/PolymathRegistry.json').toString()).abi;
@@ -26,6 +27,7 @@ try {
     usdTieredSTOFactoryABI      = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTOFactory.json').toString()).abi;
     erc20DividendCheckpointABI  = JSON.parse(require('fs').readFileSync('./build/contracts/ERC20DividendCheckpoint.json').toString()).abi;
     etherDividendCheckpointABI  = JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpoint.json').toString()).abi;
+    ownable                     = JSON.parse(require('fs').readFileSync('./build/contracts/Ownable.json').toString()).abi;
 } catch (err) {
     console.log('\x1b[31m%s\x1b[0m',"Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
     return;
@@ -70,5 +72,8 @@ module.exports = {
     },
     etherDividendCheckpoint: function () {
         return etherDividendCheckpointABI;
+    },
+    ownable: function () {
+        return ownable;
     }
 }

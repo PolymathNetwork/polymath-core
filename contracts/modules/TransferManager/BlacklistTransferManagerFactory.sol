@@ -22,6 +22,8 @@ contract BlacklistTransferManagerFactory is ModuleFactory {
         name = "BlacklistTransferManager";
         title = "Blacklist Transfer Manager";
         description = "Automate blacklist to restrict selling";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**
@@ -32,7 +34,7 @@ contract BlacklistTransferManagerFactory is ModuleFactory {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address blacklistTransferManager = new BlacklistTransferManager(msg.sender, address(polyToken));
-        emit LogGenerateModuleFromFactory(address(blacklistTransferManager), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(blacklistTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(blacklistTransferManager);
     }
 

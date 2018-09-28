@@ -2,6 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./IWallet.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../../interfaces/ISecurityToken.sol";
 
 /**
  * @title Escrow wallet for distributing tokens on a vesting schedule
@@ -158,7 +159,17 @@ contract VestingEscrowWallet is IWallet {
     _vestingSchedule.totalTokensReleased += tokensToDistribute;
     _vestingSchedule.totalTokensRemaining -= tokensToDistribute;
 
-    // TODO: Send tokens to target.
+    require(ISecurityToken(securityToken).transferFrom(
+      address(this),
+      msg.sender,
+      tokensToDistribute), "Unable to transfer tokens");
+
+    emit TokensCollected(
+      msg.sender,
+      _whichVestingSchedule,
+      _vestingSchedule.vestingId,
+      tokensToDistribute
+    );
   }
 
   /**
@@ -180,7 +191,17 @@ contract VestingEscrowWallet is IWallet {
     _vestingSchedule.totalTokensReleased += tokensToDistribute;
     _vestingSchedule.totalTokensRemaining -= tokensToDistribute;
 
-    // TODO: Send tokens to target.
+    require(ISecurityToken(securityToken).transferFrom(
+      address(this),
+      _target,
+      tokensToDistribute), "Unable to transfer tokens");
+
+    emit TokensCollected(
+      _target,
+      _whichVestingSchedule,
+      _vestingSchedule.vestingId,
+      tokensToDistribute
+    );
   }
 
   /**
@@ -241,6 +262,11 @@ contract VestingEscrowWallet is IWallet {
       tokensPerTranche: _tokensPerTranche
     });
 
+    require(ISecurityToken(securityToken).transferFrom(
+      msg.sender,
+      address(this),
+      _totalAllocation), "Unable to transfer tokens");
+
     emit VestingStarted(
       _target,
       _vestingId,
@@ -252,8 +278,6 @@ contract VestingEscrowWallet is IWallet {
       _totalTokensRemaining,
       _tokensPerTranche
     );
-
-    // Send tokens to contract here (see lucidchart -> assumptions -> 2)
   }
 
   /**
@@ -292,4 +316,5 @@ contract VestingEscrowWallet is IWallet {
     uint256 _tokensToDistribute = _currentTranche.mul(_tokensPerTranche);
     return _tokensToDistribute.sub(_totalTokensReleased);
   }
+
 }

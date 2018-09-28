@@ -46,9 +46,9 @@ contract VolumeRestrictionTransferManager is ITransferManager {
     }
 
     
-    /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
+    /// @notice Used to verify the transfer transaction and prevent locked up tokens from being transferred
     function verifyTransfer(address  _from, address /* _to*/, uint256  _amount, bool /* _isTransfer */) public returns(Result) {
-        // only attempt to verify the tranafer if the token is unpaused, this isn't a mint txn, and there exists a lockup for this user
+        // only attempt to verify the transfer if the token is unpaused, this isn't a mint txn, and there exists a lockup for this user
         if (!paused && _from != address(0) && lockUps[_from].length != 0) {
             // get total amount allowed right now
             uint allowedAmount = _currentAllowedAmount(_from);

@@ -82,6 +82,15 @@ contract VestingEscrowWallet is IWallet {
   }
 
   /**
+   * @notice Return the permissions flag that are associated with VotingEscrowWallet
+   */
+  function getPermissions() public view returns(bytes32[]) {
+      bytes32[] memory allPermissions = new bytes32[](1);
+      allPermissions[0] = ISSUER;
+      return allPermissions;
+  }
+
+  /**
   * @notice Initiate a vesting schedule for any number of employees or affiliates
   * @param _target Address of the employee or the affiliate
   * @param _totalAllocation Total number of tokens allocated for the target
@@ -205,6 +214,20 @@ contract VestingEscrowWallet is IWallet {
   }
 
   /**
+  * @notice Edit an existing vesting schedule
+  * @param _target Address of the employee or the affiliate
+  * @param _whichVestingSchedule Index of the vesting schedule for the target
+  */
+  function editVestingSchedule(address _target, uint256 _whichVestingSchedule)
+    public
+    onlyOwner
+  {
+    VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
+
+    require(_vestingSchedule.vestingId != 0, "Schedule not initialized");  // TODO: May need to check a flag. Asked on Github. There may be an ID if we don't have to delete this.
+
+  }
+  /**
   * @notice Initiate a vesting schedule for an employee or affiliate
   * @param _target Address of the employee or the affiliate
   * @param _totalAllocation Total number of tokens allocated for the target
@@ -232,7 +255,8 @@ contract VestingEscrowWallet is IWallet {
     // require(securityToken.balanceOf[address(this)] >= _totalAllocation, "Tokens must have been already sent to the smart contract");
 
     uint256 _numTranches = _vestingDuration.div(_vestingFrequency);
-    uint256 _tokensPerTranche = _totalAllocation.div(_numTranches);   // TODO: Edge cases/truncation. If uneven, take this into account. I asked on Github
+    require(_totalAllocation % _numTranches == 0, "The total allocation should be a multiple of the number of tranches");
+    uint256 _tokensPerTranche = _totalAllocation.div(_numTranches);
 
     bytes32 _vestingId = keccak256(
       abi.encodePacked(

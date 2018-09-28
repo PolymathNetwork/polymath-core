@@ -8,7 +8,6 @@ import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/IFeatureRegistry.sol";
 import "../modules/TransferManager/ITransferManager.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
-import "../interfaces/ITokenBurner.sol";
 import "../RegistryUpdater.sol";
 import "../libraries/Util.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
@@ -42,8 +41,10 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     uint8 public constant PERMISSIONMANAGER_KEY = 1;
     uint8 public constant TRANSFERMANAGER_KEY = 2;
-    uint8 public constant STO_KEY = 3;
+    uint8 public constant MINT_KEY = 3;
     uint8 public constant CHECKPOINT_KEY = 4;
+    uint8 public constant BURN_KEY = 5;
+
     uint256 public granularity;
 
     // Value of current checkpoint
@@ -54,9 +55,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     // List of token holders
     address[] public investors;
-
-    // Reference to token burner contract
-    ITokenBurner public tokenBurner;
 
     // Use to temporarily halt all transactions
     bool public transfersFrozen;
@@ -133,11 +131,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event ChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
     // Events to log minting and burning
     event Minted(address indexed _to, uint256 _value);
-    event Burnt(address indexed _burner, uint256 _value);
+    event Burnt(address indexed _from, uint256 _value);
 
     // Events to log controller actions
     event SetController(address indexed _oldController, address indexed _newController);
     event ForceTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _value, bool _verifyTransfer, bytes _data);
+    event ForceBurn(address indexed _controller, address indexed _from, uint256 _value, bytes _data);
     event DisableController(uint256 _timestamp);
 
     function isModule(address _module, uint8 _type) internal view returns (bool) {
@@ -622,7 +621,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _value Number of tokens be minted
      * @return success
      */
-    function mint(address _investor, uint256 _value) public onlyModuleOrOwner(STO_KEY) checkGranularity(_value) isMintingAllowed() returns (bool success) {
+    function mint(address _investor, uint256 _value) public onlyModuleOrOwner(MINT_KEY) checkGranularity(_value) isMintingAllowed() returns (bool success) {
         require(_investor != address(0), "Investor address should not be 0x");
         _adjustInvestorCount(address(0), _investor, _value);
         require(_verifyTransfer(address(0), _investor, _value, true), "Transfer is not valid");
@@ -642,12 +641,54 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _values) external onlyModuleOrOwner(STO_KEY) returns (bool success) {
+    function mintMulti(address[] _investors, uint256[] _values) external onlyModuleOrOwner(MINT_KEY) returns (bool success) {
         require(_investors.length == _values.length, "Mis-match in the length of the arrays");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _values[i]);
         }
         return true;
+    }
+
+    function _burn(address _from, uint256 _value) internal returns (bool) {
+        require(_value <= balances[_from], "Value too high");
+        require(_updateTransfer(_from, address(0), _value), "Burn is not valid");
+        balances[_from] = balances[_from].sub(_value);
+        totalSupply_ = totalSupply_.sub(_value);
+        emit Burnt(_from, _value);
+        emit Transfer(_from, address(0), _value);
+        return true;
+    }
+
+    /**
+     * @notice Burn function used to burn the securityToken
+     * @param _value No. of tokens that get burned
+     */
+    function burn(uint256 _value) checkGranularity(_value) onlyModule(BURN_KEY) public returns (bool) {
+        require(_burn(msg.sender, _value));
+        return true;
+    }
+
+    /**
+     * @notice Burn function used to burn the securityToken on behalf of someone else
+     * @param _from Address for whom to burn tokens
+     * @param _value No. of tokens that get burned
+     */
+    function burnFrom(address _from, uint256 _value) checkGranularity(_value) onlyModule(BURN_KEY) public returns (bool) {
+        require(_value <= allowed[_from][msg.sender]);
+        require(_burn(_from, _value));
+        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
+        return true;
+    }
+
+    /**
+     * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
+     * @return uint256
+     */
+    function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
+        require(currentCheckpointId < 2**256 - 1);
+        currentCheckpointId = currentCheckpointId + 1;
+        emit CheckpointCreated(currentCheckpointId, now);
+        return currentCheckpointId;
     }
 
     /**
@@ -669,62 +710,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
                 return true;
             }
         }
-    }
-
-    /**
-     * @notice used to set the token Burner address. It only be called by the owner
-     * @param _tokenBurner Address of the token burner contract
-     */
-    function setTokenBurner(address _tokenBurner) external onlyOwner {
-        tokenBurner = ITokenBurner(_tokenBurner);
-    }
-
-    function _burn(address _from, uint256 _value) internal returns (bool) {
-        require(tokenBurner != address(0), "Token Burner contract address is not set yet");
-        require(_value <= balances[_from], "Value too high");
-        _updateTransfer(_from, address(0), _value);
-
-        // no need to require value <= totalSupply, since that would imply the
-        // sender's balance is greater than the totalSupply, which *should* be an assertion failure
-        balances[_from] = balances[_from].sub(_value);
-        totalSupply_ = totalSupply_.sub(_value);
-        require(tokenBurner.burn(_from, _value), "Token burner failed");
-        emit Burnt(_from, _value);
-        emit Transfer(_from, address(0), _value);
-        return true;
-    }
-
-    /**
-     * @notice Burn function used to burn the securityToken
-     * @param _value No. of token that get burned
-     */
-    function burn(uint256 _value) checkGranularity(_value) public returns (bool) {
-        require(_burn(msg.sender, _value));
-        return true;
-    }
-
-    /**
-     * @notice Burn function used to burn the securityToken on behalf of someone else
-     * @param _from Address for whom to burn tokens
-     * @param _value No. of token that get burned
-     */
-    function burnFrom(address _from, uint256 _value) checkGranularity(_value) public returns (bool) {
-        require(_value <= balances[_from]);
-        require(_value <= allowed[_from][msg.sender]);
-        require(_burn(_from, _value));
-        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-        return true;
-    }
-
-    /**
-     * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
-     * @return uint256
-     */
-    function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
-        require(currentCheckpointId < 2**256 - 1);
-        currentCheckpointId = currentCheckpointId + 1;
-        emit CheckpointCreated(currentCheckpointId, now);
-        return currentCheckpointId;
     }
 
     /**
@@ -824,6 +809,23 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
         emit ForceTransfer(msg.sender, _from, _to, _value, verified, _data);
         emit Transfer(_from, _to, _value);
+        return true;
+    }
+
+    /**
+     * @notice Use by a controller to execute a foced burn
+     * @param _from address from which to take tokens
+     * @param _value amount of tokens to transfer
+     * @param _data data attached to the transfer by controller to emit in event
+     */
+    function forceBurn(address _from, uint256 _value, bytes _data) public onlyController returns(bool) {
+        require(_value <= balances[_from], "Value too high");
+        bool verified = _updateTransfer(_from, address(0), _value);
+        balances[_from] = balances[_from].sub(_value);
+        totalSupply_ = totalSupply_.sub(_value);
+        emit ForceBurn(msg.sender, _from, _value, _data);
+        emit Burnt(_from, _value);
+        emit Transfer(_from, address(0), _value);
         return true;
     }
 

@@ -190,7 +190,7 @@ contract VestingEscrowWallet is IWallet {
   * @param _templateNumber Template number to use
   * @param _startDate Start date of the vesting schedule
   */
-  function initiateVestingSchedule(
+  function initiateVestingScheduleFromTemplate(
     address[] _target,
     uint256   _templateNumber,
     uint256   _startDate

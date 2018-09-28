@@ -175,12 +175,12 @@ contract VestingEscrowWallet is IWallet {
             _target.length == _startDate.length &&
             _target.length == _vestingFrequency.length);
 
-    for (uint i = 0; i <= _target.length; i++) {
-        _initiateVestingScheduleIterate(_target[i],
-                                        _totalAllocation[i],
-                                        _vestingDuration[i],
-                                        _startDate[i],
-                                        _vestingFrequency[i]);
+    for (uint i = 0; i < _target.length; i++) {
+      _initiateVestingScheduleIterate(_target[i],
+                                      _totalAllocation[i],
+                                      _vestingDuration[i],
+                                      _startDate[i],
+                                      _vestingFrequency[i]);
     }
   }
 
@@ -200,7 +200,7 @@ contract VestingEscrowWallet is IWallet {
   {
     VestingTemplate memory _vestingTemplate = vestingTemplates[_templateNumber];
 
-    for (uint i = 0; i <= _target.length; i++) {
+    for (uint i = 0; i < _target.length; i++) {
       require(_target[i] != address(0));
       _initiateVestingScheduleIterate(_target[i],
                                       _vestingTemplate.totalAllocation,

@@ -115,10 +115,23 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     /**
      * @notice Modifier to make a function callable only when the contract is not paused.
      */
+    modifier whenNotPausedOrOwner() {
+        if (msg.sender == getAddress(Encoder.getKey("owner"))) 
+          _;
+        else {
+            require(!getBool(Encoder.getKey("paused")), "Already paused");
+            _;
+        }
+    }
+
+    /**
+     * @notice Modifier to make a function callable only when the contract is not paused and ignore is msg.sender is owner.
+     */
     modifier whenNotPaused() {
         require(!getBool(Encoder.getKey("paused")), "Already paused");
         _;
     }
+
 
     /**
      * @notice Modifier to make a function callable only when the contract is paused.
@@ -149,7 +162,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function initialize(address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner) payable external {
         require(!getBool(Encoder.getKey("initialised")));
-        require(_STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0), "0x address is in-valid");
+        require(_STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0), "In-valid address");
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Fees should not be 0");
         // address polyToken = _polyToken;
         set(Encoder.getKey("polyToken"), _polyToken);
@@ -175,7 +188,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _ticker is unique token ticker
      * @param _tokenName is the name of the token
      */
-    function registerTicker(address _owner, string _ticker, string _tokenName) external whenNotPaused {
+    function registerTicker(address _owner, string _ticker, string _tokenName) external whenNotPausedOrOwner {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         // Attempt to charge the reg fee if it is > 0 POLY
@@ -205,7 +218,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         require(_expiryDate != 0 && _registrationDate != 0, "Dates should not be 0");
         require(_registrationDate <= _expiryDate, "Registration date should < expiry date");
-        require(_owner != address(0), "Address should not be 0x");
+        require(_owner != address(0), "In-valid address");
         string memory ticker = Util.upper(_ticker);
         _modifyTicker(_owner, ticker, _tokenName, _registrationDate, _expiryDate, _status);
     }
@@ -237,7 +250,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function removeTicker(string _ticker) external onlyOwner {
         string memory ticker = Util.upper(_ticker);
         address owner = getAddress(Encoder.getKey("registeredTickers_owner", ticker));
-        require(owner != address(0), "Ticker does not exist");
+        require(owner != address(0), "Ticker doesn't exist");
         _deleteTickerOwnership(owner, ticker);
         set(Encoder.getKey("tickerToSecurityToken", ticker), address(0));
         _storeTickerDetails(ticker, address(0), 0, 0, "", false);
@@ -304,9 +317,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _newOwner is the address of the new owner of the ticker
      * @param _ticker is the ticker symbol
      */
-    function transferTickerOwnership(address _newOwner, string _ticker) external whenNotPaused {
+    function transferTickerOwnership(address _newOwner, string _ticker) external whenNotPausedOrOwner {
         string memory ticker = Util.upper(_ticker);
-        require(_newOwner != address(0), "Address should not be 0x");
+        require(_newOwner != address(0), "In-valid address");
         require(getAddress(Encoder.getKey("registeredTickers_owner", ticker)) == msg.sender, "Not authorised");
         _transferTickerOwnership(msg.sender, _newOwner, ticker);
         set(Encoder.getKey("registeredTickers_owner", ticker), _newOwner);
@@ -320,7 +333,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function _transferTickerOwnership(address _oldOwner, address _newOwner, string _ticker) internal {
         if(getBool(Encoder.getKey("registeredTickers_status", _ticker)))
-            require(IOwnable(getAddress(Encoder.getKey("tickerToSecurityToken", _ticker))).owner() == _newOwner, "If the token exists, the ticker can only be transferred to its owner");
+            require(IOwnable(getAddress(Encoder.getKey("tickerToSecurityToken", _ticker))).owner() == _newOwner, "Ticker can only be transferred to its token owner");
 
         _deleteTickerOwnership(_oldOwner, _ticker);
         _setTickerOwner(_newOwner, _ticker);
@@ -448,18 +461,18 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _tokenDetails is the off-chain details of the token
      * @param _divisible is whether or not the token is divisible
      */
-    function generateSecurityToken(string _name, string _ticker, string _tokenDetails, bool _divisible) external whenNotPaused {
+    function generateSecurityToken(string _name, string _ticker, string _tokenDetails, bool _divisible) external whenNotPausedOrOwner {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Ticker length > 0");
         string memory ticker = Util.upper(_ticker);
 
-        require(getBool(Encoder.getKey("registeredTickers_status", ticker)) != true, "Ticker already deployed");
-        require(getAddress(Encoder.getKey("registeredTickers_owner", ticker)) == msg.sender, "Ticker and token should have same owner");
-        require(getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker should not have expired");
+        require(getBool(Encoder.getKey("registeredTickers_status", ticker)) != true, "Already deployed");
+        require(getAddress(Encoder.getKey("registeredTickers_owner", ticker)) == msg.sender, "Not authorised");
+        require(getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker gets expired");
 
         set(Encoder.getKey("registeredTickers_status", ticker), true);
 
         if (getUint(Encoder.getKey("stLaunchFee")) > 0)
-            require(IERC20(getAddress(Encoder.getKey("polyToken"))).transferFrom(msg.sender, address(this), getUint(Encoder.getKey("stLaunchFee"))), "Sufficent allowance is not provided");
+            require(IERC20(getAddress(Encoder.getKey("polyToken"))).transferFrom(msg.sender, address(this), getUint(Encoder.getKey("stLaunchFee"))), "Insufficient allowance");
 
         address newSecurityTokenAddress = ISTFactory(getSTFactoryAddress()).deployToken(
             _name,

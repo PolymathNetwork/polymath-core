@@ -131,7 +131,7 @@ contract('SecurityTokenRegistry', accounts => {
             });
 
         // STEP 3: Deploy the ModuleRegistry
-     
+
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
         // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
         I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
@@ -203,7 +203,7 @@ contract('SecurityTokenRegistry', accounts => {
             "SecurityTokenRegistry contract was not deployed",
         );
 
-        // Step 9 (a): Deploy the proxy 
+        // Step 9 (a): Deploy the proxy
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
         let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
@@ -833,8 +833,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         it("Should change the details of the existing ticker", async() => {
             let tx = await I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", latestTime(), (latestTime() + duration.minutes(10)), false, {from: account_polymath});
-            assert.equal(tx.logs[0].args._oldOwner, account_temp);
-            assert.equal(tx.logs[0].args._newOwner, token_owner);
+            assert.equal(tx.logs[0].args._owner, token_owner);
         });
 
     });

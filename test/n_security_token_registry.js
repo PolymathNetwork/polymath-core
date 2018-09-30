@@ -739,9 +739,15 @@ contract('SecurityTokenRegistry', accounts => {
             // Register the new ticker -- Fulfiling the TickerStatus.ON condition
             await I_PolyToken.getTokens(web3.utils.toWei("1000"), account_temp);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_temp});
+            let tickersListArray = await I_STRProxied.getTickersByOwner.call(account_temp);
+            console.log(tickersListArray);
             await I_STRProxied.registerTicker(account_temp, "LOG", "LOGAN", { from : account_temp });
+            tickersListArray = await I_STRProxied.getTickersByOwner.call(account_temp);
+            console.log(tickersListArray);
             // Generating the ST
             let tx = await I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
+            tickersListArray = await I_STRProxied.getTickersByOwner.call(account_temp);
+            console.log(tickersListArray);
             assert.equal(tx.logs[1].args._ticker, "LOG", "Symbol should match with the registered symbol");
             assert.equal(tx.logs[1].args._securityTokenAddress, dummy_token,`Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`);
             let symbolDetails = await I_STRProxied.getTickerDetails("LOG");
@@ -1082,7 +1088,8 @@ contract('SecurityTokenRegistry', accounts => {
             let tickersList = await I_STRProxied.getTickersByOwner.call(token_owner);
             assert.equal(tickersList.length, 4);
             let tickersListArray = await I_STRProxied.getTickersByOwner.call(account_temp);
-            assert.equal(tickersListArray.length, 2);
+            console.log(tickersListArray);
+            assert.equal(tickersListArray.length, 3);
         });
 
     });

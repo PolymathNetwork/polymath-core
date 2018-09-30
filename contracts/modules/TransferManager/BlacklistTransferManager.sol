@@ -74,17 +74,19 @@ contract BlacklistTransferManager is ITransferManager {
 
     /// @notice Used to verify the transfer transaction 
     function verifyTransfer(address _from, address /* _to */, uint256 /* _amount */, bool /* _isTransfer */) public returns(Result) {
-        require(_from != address(0), "Invalid from address");
-        if (investorToBlacklist[_from] != bytes32(0)) {
-            uint256 blacklistDate = (blacklists[investorToBlacklist[_from]].endDate
-            .sub(blacklists[investorToBlacklist[_from]].startDate))
-            .add(blacklists[investorToBlacklist[_from]].repeatPeriodInDays * 1 days);
-            uint256 repeater = now.div(blacklistDate);
-            if (blacklists[investorToBlacklist[_from]].startDate.add(blacklistDate.mul(repeater)) <= now && blacklists[investorToBlacklist[_from]].endDate.add(blacklistDate.mul(repeater)) >= now) {
-                return Result.INVALID;
-            }
-            return Result.VALID;
-        } 
+        if(!paused){
+            if (investorToBlacklist[_from] != bytes32(0)) {
+                uint256 blacklistDate = (blacklists[investorToBlacklist[_from]].endDate
+                .sub(blacklists[investorToBlacklist[_from]].startDate))
+                .add(blacklists[investorToBlacklist[_from]].repeatPeriodInDays * 1 days);
+                uint256 repeater = now.div(blacklistDate);
+                if (blacklists[investorToBlacklist[_from]].startDate.add(blacklistDate.mul(repeater)) <= now && blacklists[investorToBlacklist[_from]].endDate.add(blacklistDate.mul(repeater)) >= now) {
+                    return Result.INVALID;
+                }
+                return Result.VALID;
+            } 
+            return Result.NA;
+        }
         return Result.NA;
     }
 

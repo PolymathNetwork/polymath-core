@@ -4,6 +4,7 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
 const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.sol');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
+const BlacklistTransferManagerFactory = artifacts.require('./BlacklistTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
@@ -153,6 +154,10 @@ const functionSignatureProxyMR = {
       // to track the percentage of investment the investors could do for a particular security token)
       return deployer.deploy(PercentageTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
     }).then(() => {
+      // D) Deploy the BlacklistTransferManagerFactory Contract (Factory used to generate the BlacklistTransferManager contract use
+      // to add the blacklist type and blacklist the investors to restrict the transfer)
+      return deployer.deploy(BlacklistTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    }).then(() => {
       // D) Deploy the EtherDividendCheckpointFactory Contract (Factory used to generate the EtherDividendCheckpoint contract use
       // to provide the functionality of the dividend in terms of ETH)
       return deployer.deploy(EtherDividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
@@ -168,6 +173,10 @@ const functionSignatureProxyMR = {
       // D) Register the PercentageTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the PercentageTransferManager contract.
       return moduleRegistry.registerModule(PercentageTransferManagerFactory.address, {from: PolymathAccount});
+    }).then(() => {
+      // D) Register the BlacklistTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
+      // So any securityToken can use that factory to generate the BlacklistTransferManager contract.
+      return moduleRegistry.registerModule(BlacklistTransferManagerFactory.address, {from: PolymathAccount});
     }).then(() => {
       // D) Register the CountTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the CountTransferManager contract.
@@ -207,6 +216,11 @@ const functionSignatureProxyMR = {
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
       return moduleRegistry.verifyModule(PercentageTransferManagerFactory.address, true, {from: PolymathAccount});
+    }).then(() => {
+      // G) Once the BlacklistTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+      // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+      return moduleRegistry.verifyModule(BlacklistTransferManagerFactory.address, true, {from: PolymathAccount});
     }).then(() => {
       // G) Once the GeneralPermissionManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
@@ -305,6 +319,7 @@ const functionSignatureProxyMR = {
 
       CountTransferManagerFactory:       ${CountTransferManagerFactory.address}
       PercentageTransferManagerFactory:  ${PercentageTransferManagerFactory.address}
+      BlacklistTransferManagerFactory:   ${BlacklistTransferManagerFactory.address}
       ManualApprovalTransferManagerFactory:
                                          ${ManualApprovalTransferManagerFactory.address}
 

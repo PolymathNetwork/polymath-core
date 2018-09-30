@@ -159,4 +159,22 @@ interface ISecurityTokenRegistry {
      */
     function updatePolyTokenAddress(address _newAddress) external;
 
+    /**
+     * @notice Gets the security token launch fee
+     * @return Fee amount
+     */
+    function getSecurityTokenLaunchFee() external view returns(uint256);
+
+    /**
+     * @notice Gets the ticker registration fee
+     * @return Fee amount
+     */
+    function getTickerRegistrationFee() external view returns(uint256);
+
+    /**
+     * @notice Gets the expiry limit
+     * @return Expiry limit
+     */
+    function getExpiryLimit() external view returns(uint256);
+
 }

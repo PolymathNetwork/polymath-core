@@ -193,7 +193,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         if (previousOwner != address(0)) {
             _deleteTickerOwnership(previousOwner, ticker);
         }
-        _addTicker(_owner, ticker, _tokenName, now, now.add(getUint(Encoder.getKey("expiryLimit"))), false, false);
+        _addTicker(_owner, ticker, _tokenName, now, now.add(getExpiryLimit()), false, false);
     }
 
     /**
@@ -674,6 +674,14 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function getTickerRegistrationFee() public view returns(uint256) {
         return getUint(Encoder.getKey("tickerRegFee"));
+    }
+
+    /**
+     * @notice Gets the expiry limit
+     * @return Expiry limit
+     */
+    function getExpiryLimit() public view returns(uint256) {
+        return getUint(Encoder.getKey("expiryLimit"));
     }
 
 }

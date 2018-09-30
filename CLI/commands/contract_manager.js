@@ -173,7 +173,7 @@ async function strActions() {
         let newExpiryLimit = duration.days(readlineSync.questionInt('Enter a new value in days for expiry limit: '));
         let changeExpiryLimitAction = currentContract.methods.changeExpiryLimit(newExpiryLimit);
         let changeExpiryLimitReceipt = await common.sendTransaction(Issuer, changeExpiryLimitAction, defaultGasPrice);
-        let changeExpiryLimitEvent = common.getEventFromLogs(currentContract._jsonInterface, changeExpiryLimitReceipt.logs, 'LogChangeExpiryLimit');
+        let changeExpiryLimitEvent = common.getEventFromLogs(currentContract._jsonInterface, changeExpiryLimitReceipt.logs, 'ChangeExpiryLimit');
         console.log(chalk.green(`Expiry limit was changed successfuly. New limit is ${Math.floor(parseInt(changeExpiryLimitEvent._newExpiry)/60/60/24)} days\n`));
         break;
       case 'Change registration fee':
@@ -182,7 +182,7 @@ async function strActions() {
         let newRegFee = web3.utils.toWei(readlineSync.questionInt('Enter a new value in POLY for ticker registration fee: ').toString());
         let changeRegFeeAction = currentContract.methods.changeTickerRegistrationFee(newRegFee);
         let changeRegFeeReceipt = await common.sendTransaction(Issuer, changeRegFeeAction, defaultGasPrice);
-        let changeRegFeeEvent = common.getEventFromLogs(currentContract._jsonInterface, changeRegFeeReceipt.logs, 'LogChangeTickerRegistrationFee');
+        let changeRegFeeEvent = common.getEventFromLogs(currentContract._jsonInterface, changeRegFeeReceipt.logs, 'ChangeTickerRegistrationFee');
         console.log(chalk.green(`Fee was changed successfuly. New fee is ${web3.utils.fromWei(changeRegFeeEvent._newFee)} POLY\n`));
         break;
       case 'Change ST launch fee':
@@ -191,7 +191,7 @@ async function strActions() {
         let newLaunchFee = web3.utils.toWei(readlineSync.questionInt('Enter a new value in POLY for ST launch fee: ').toString());
         let changeLaunchFeeAction = currentContract.methods.changeSecurityLaunchFee(newLaunchFee);
         let changeLaunchFeeReceipt = await common.sendTransaction(Issuer, changeLaunchFeeAction, defaultGasPrice);
-        let changeLaunchFeeEvent = common.getEventFromLogs(currentContract._jsonInterface, changeLaunchFeeReceipt.logs, 'LogChangeSecurityLaunchFee');
+        let changeLaunchFeeEvent = common.getEventFromLogs(currentContract._jsonInterface, changeLaunchFeeReceipt.logs, 'ChangeSecurityLaunchFee');
         console.log(chalk.green(`Fee was changed successfuly. New fee is ${web3.utils.fromWei(changeLaunchFeeEvent._newFee)} POLY\n`));
         break;
       case 'CANCEL':

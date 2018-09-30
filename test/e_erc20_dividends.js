@@ -581,7 +581,7 @@ contract('ERC20DividendCheckpoint', accounts => {
         });
 
         it("Exclude account_temp using global exclusion list", async() => {
-            await I_ERC20DividendCheckpoint.setExcluded([account_temp], {from: token_owner});
+            await I_ERC20DividendCheckpoint.setDefaultExcluded([account_temp], {from: token_owner});
         });
 
         it("Create another new dividend", async() => {
@@ -655,7 +655,7 @@ contract('ERC20DividendCheckpoint', accounts => {
 
 
         it("Delete global exclusion list", async() => {
-            await I_ERC20DividendCheckpoint.setExcluded([], {from: token_owner});
+            await I_ERC20DividendCheckpoint.setDefaultExcluded([], {from: token_owner});
         });
 
 

@@ -80,7 +80,7 @@ function step_instance_toSTR(toStrAddress){
 async function step_get_deployed_tokens(securityTokenRegistry) {
     let tokens = [];
     
-    let events = await securityTokenRegistry.getPastEvents('LogNewSecurityToken', { fromBlock: 0});
+    let events = await securityTokenRegistry.getPastEvents('NewSecurityToken', { fromBlock: 0});
     if (events.length == 0) {
         console.log("No security token events were emitted.");
     } else {

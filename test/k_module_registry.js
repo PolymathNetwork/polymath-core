@@ -261,7 +261,7 @@ contract('ModuleRegistry', accounts => {
                 await I_MRProxied.pause({from: account_polymath});
                 let errorThrown = false;
                 try {
-                    let tx = await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, {from: account_polymath});
+                    let tx = await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, {from: account_delegate});
                 } catch(error) {
                     console.log(`       tx -> revert because already registered modules are not allowed`);
                     errorThrown = true;

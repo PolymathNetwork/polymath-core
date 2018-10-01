@@ -69,6 +69,18 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     /**
      * @notice Modifier to make a function callable only when the contract is not paused.
      */
+    modifier whenNotPausedOrOwner() {
+        if (msg.sender == getAddress(Encoder.getKey("owner"))) 
+          _;
+        else {
+            require(!getBool(Encoder.getKey("paused")), "Already paused");
+            _;
+        }
+    }
+
+    /**
+     * @notice Modifier to make a function callable only when the contract is not paused and ignore is msg.sender is owner.
+     */
     modifier whenNotPaused() {
         require(!getBool(Encoder.getKey("paused")), "Already paused");
         _;
@@ -131,7 +143,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Called by the ModuleFactory owner to register new modules for SecurityTokens to use
      * @param _moduleFactory is the address of the module factory to be registered
      */
-    function registerModule(address _moduleFactory) external whenNotPaused {
+    function registerModule(address _moduleFactory) external whenNotPausedOrOwner {
         require(getUint(Encoder.getKey('registry', _moduleFactory)) == 0, "Module factory should not be pre-registered");
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         uint8 moduleType = moduleFactory.getType();
@@ -146,7 +158,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Called by the ModuleFactory owner or registry curator to delete a ModuleFactory from the registry
      * @param _moduleFactory is the address of the module factory to be deleted from the registry
      */
-    function removeModule(address _moduleFactory) external whenNotPaused {
+    function removeModule(address _moduleFactory) external whenNotPausedOrOwner {
         uint256 moduleType = getUint(Encoder.getKey('registry', _moduleFactory));
 
         require(moduleType != 0, "Module factory should be registered");

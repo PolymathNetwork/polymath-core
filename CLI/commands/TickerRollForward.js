@@ -13,6 +13,8 @@ var abis = require('./helpers/contract_abis');
 let remoteNetwork = process.argv.slice(2)[0]; //batch size
 
 ///////////////////////// GLOBAL VARS /////////////////////////
+const REG_FEE_KEY = 'tickerRegFee';
+
 let ticker_data = [];
 let registered_tickers = [];
 let failed_tickers = [];
@@ -78,7 +80,7 @@ async function readFile() {
 async function registerTickers() {
   // Poly approval for registration fees
   let polyBalance = BigNumber(await polyToken.methods.balanceOf(Issuer.address).call());
-  let fee = await securityTokenRegistry.methods.getUintValues(web3.utils.toHex('tickerRegFee')).call();
+  let fee = web3.utils.fromWei(await securityTokenRegistry.methods.getUintValues(web3.utils.soliditySha3(REG_FEE_KEY)).call());  
   let totalFee = BigNumber(ticker_data.length).mul(fee);
 
   if (totalFee.gt(polyBalance)) {

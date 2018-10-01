@@ -1,5 +1,6 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js');
+var moment = require('moment');
 var chalk = require('chalk');
 const shell = require('shelljs');
 var contracts = require('./helpers/contract_addresses');
@@ -18,7 +19,8 @@ let tokenSymbol;
 let selectedSTO;
 
 const STO_KEY = 3;
-const regFee = 250;
+const REG_FEE_KEY = 'tickerRegFee';
+const LAUNCH_FEE_KEY = 'stLaunchFee';
 const cappedSTOFee = 20000;
 const usdTieredSTOFee = 100000;
 const tokenDetails = "";
@@ -106,58 +108,45 @@ async function setup(){
 }
 
 async function step_ticker_reg(){
-  console.log("\n");
-  console.log('\x1b[34m%s\x1b[0m',"Token Creation - Symbol Registration");
+  console.log('\n\x1b[34m%s\x1b[0m',"Token Creation - Symbol Registration");
 
-  let alreadyRegistered = false;
   let available = false;
+  let regFee = web3.utils.fromWei(await securityTokenRegistry.methods.getUintValues(web3.utils.soliditySha3(REG_FEE_KEY)).call());
 
   while (!available) {
-    console.log(chalk.green(`\nRegistering the new token symbol requires 250 POLY & deducted from '${Issuer.address}', Current balance is ${(await currentBalance(Issuer.address))} POLY\n`));
+    console.log(chalk.green(`\nRegistering the new token symbol requires ${regFee} POLY & deducted from '${Issuer.address}', Current balance is ${(await currentBalance(Issuer.address))} POLY\n`));
 
     if (typeof _tokenConfig !== 'undefined' && _tokenConfig.hasOwnProperty('symbol')) {
       tokenSymbol = _tokenConfig.symbol;
     } else {
-      tokenSymbol = readlineSync.question('Enter the symbol for your new token: ');
+      tokenSymbol = await selectTicker(true);
     }
 
-    await securityTokenRegistry.methods.getTickerDetails(tokenSymbol).call({}, function(error, result){
-      if (new BigNumber(result[1]).toNumber() == 0) {
-        available = true;
-      } else if (result[0] == Issuer.address) {
-        console.log('\x1b[32m%s\x1b[0m',"Token Symbol has already been registered by you, skipping registration");
-        available = true;
-        alreadyRegistered = true;
-      } else {
-        console.log('\x1b[31m%s\x1b[0m',"Token Symbol has already been registered, please choose another symbol");
-      }
-    });
-  }
-
-  if (!alreadyRegistered) {
-    await step_approval(securityTokenRegistryAddress, regFee);
-    let registerTickerAction = securityTokenRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "");
-    await common.sendTransaction(Issuer, registerTickerAction, defaultGasPrice);
-  }
-}
-
-async function step_approval(spender, fee) {
-  polyBalance = await polyToken.methods.balanceOf(Issuer.address).call();
-  let requiredAmount = web3.utils.toWei(fee.toString());
-  if (parseInt(polyBalance) >= parseInt(requiredAmount)) {
-    let allowance = await polyToken.methods.allowance(spender, Issuer.address).call();
-    if (allowance == web3.utils.toWei(fee.toString())) {
-      return true;
+    let details = await securityTokenRegistry.methods.getTickerDetails(tokenSymbol).call();
+    if (new BigNumber(details[1]).toNumber() == 0) {
+      available = true;
+      await approvePoly(securityTokenRegistryAddress, regFee);
+      let registerTickerAction = securityTokenRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "");
+      await common.sendTransaction(Issuer, registerTickerAction, defaultGasPrice, 0, 1.5);
+    } else if (details[0] == Issuer.address) {
+      available = true;
     } else {
-      let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString()));
-      await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
+      console.log('\n\x1b[31m%s\x1b[0m',"Token Symbol has already been registered, please choose another symbol");
     }
-  } else {
-      let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);
-      console.log(chalk.red(`\n*****************************************************************************************************************************************`));
-      console.log(chalk.red(`Not enough balance to Pay the Fee, Require ${(new BigNumber(requiredBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(polyBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
-      console.log(chalk.red(`******************************************************************************************************************************************\n`));
-      process.exit(0);
+  }
+
+  if (typeof _tokenConfig === 'undefined' && readlineSync.keyInYNStrict(`Do you want to transfer the ownership of ${tokenSymbol} ticker?`)) {
+    let newOwner = readlineSync.question('Enter the address that will be the new owner: ', {
+      limit: function(input) {
+        return web3.utils.isAddress(input);
+      },
+      limitMessage: "Must be a valid address"
+    });
+    let transferTickerOwnershipAction = securityTokenRegistry.methods.transferTickerOwnership(newOwner, tokenSymbol);
+    let receipt = await common.sendTransaction(Issuer, transferTickerOwnershipAction, defaultGasPrice, 0, 1.5);
+    let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'ChangeTickerOwnership');
+    console.log(chalk.green(`Ownership trasferred successfully. The new owner is ${event._newOwner}`));
+    process.exit(0);
   }
 }
 
@@ -165,14 +154,14 @@ async function step_token_deploy(){
   // Let's check if token has already been deployed, if it has, skip to STO
   let tokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
   if (tokenAddress != "0x0000000000000000000000000000000000000000") {
-    console.log('\x1b[32m%s\x1b[0m',"Token has already been deployed at address " + tokenAddress + ". Skipping registration");
+    console.log('\n\x1b[32m%s\x1b[0m',"Token has already been deployed at address " + tokenAddress + ". Skipping deployment.");
     let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, tokenAddress);
   } else {
-    console.log("\n");
-    console.log(chalk.green(`Current balance in POLY is ${(await currentBalance(Issuer.address))}`));
-    console.log("\n");
-    console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Deployment");
+    console.log('\n\x1b[34m%s\x1b[0m',"Token Creation - Token Deployment");
+
+    let launchFee = web3.utils.fromWei(await securityTokenRegistry.methods.getUintValues(web3.utils.soliditySha3(LAUNCH_FEE_KEY)).call());
+    console.log(chalk.green(`\nToken deployment requires ${launchFee} POLY & deducted from '${Issuer.address}', Current balance is ${(await currentBalance(Issuer.address))} POLY\n`));
 
     if (typeof _tokenConfig !== 'undefined' && _tokenConfig.hasOwnProperty('name')) {
       tokenName = _tokenConfig.name;
@@ -195,10 +184,10 @@ async function step_token_deploy(){
         divisibility = true;
     }
 
-    await step_approval(securityTokenRegistryAddress, regFee);
-    let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, web3.utils.fromAscii(tokenDetails), divisibility);
+    await approvePoly(securityTokenRegistryAddress, launchFee);
+    let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility);
     let receipt = await common.sendTransaction(Issuer, generateSecurityTokenAction, defaultGasPrice);
-    let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'LogNewSecurityToken');
+    let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'NewSecurityToken');
     console.log(`Deployed Token at address: ${event._securityTokenAddress}`);
     let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, event._securityTokenAddress);
@@ -455,7 +444,7 @@ async function cappedSTO_launch() {
 
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
-  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
+  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
 
   STO_Address = event._module;
@@ -839,7 +828,7 @@ async function usdTieredSTO_launch() {
 
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
-  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
+  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
 
   STO_Address = event._module;
@@ -1124,6 +1113,51 @@ async function currentBalance(from) {
   let balance = await polyToken.methods.balanceOf(from).call();
   let balanceInPoly = new BigNumber(balance).dividedBy(new BigNumber(10).pow(18));
   return balanceInPoly;
+}
+
+async function selectTicker(includeCreate) {
+  let result;
+  let userTickers = (await securityTokenRegistry.methods.getTickersByOwner(Issuer.address).call()).map(function (t) {return web3.utils.hexToAscii(t)});
+  let options = await Promise.all(userTickers.map(async function (t) {
+    let tickerDetails = await securityTokenRegistry.methods.getTickerDetails(t).call();
+    let tickerInfo = tickerDetails[4] ? 'Token launched' : `Expires at: ${moment.unix(tickerDetails[2]).format('MMMM Do YYYY, HH:mm:ss')}`;
+    return `${t}
+    ${tickerInfo}`;
+  }));
+  if (includeCreate) {
+    options.push('Register a new ticker');
+  }
+
+  let index = readlineSync.keyInSelect(options, 'Select a ticker:');
+  if (index == -1) {
+    process.exit(0);
+  } else if (includeCreate && index == options.length - 1) {
+    result = readlineSync.question('Enter a symbol for your new ticker: ');
+  } else {
+    result = userTickers[index];
+  }
+
+  return result;
+}
+
+async function approvePoly(spender, fee) {
+  polyBalance = await polyToken.methods.balanceOf(Issuer.address).call();
+  let requiredAmount = web3.utils.toWei(fee.toString(), "ether");
+  if (parseInt(polyBalance) >= parseInt(requiredAmount)) {
+    let allowance = await polyToken.methods.allowance(spender, Issuer.address).call();
+    if (allowance == web3.utils.toWei(fee.toString(), "ether")) {
+      return true;
+    } else {
+      let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
+      await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
+    }
+  } else {
+      let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);
+      console.log(chalk.red(`\n*****************************************************************************************************************************************`));
+      console.log(chalk.red(`Not enough balance to Pay the Fee, Require ${(new BigNumber(requiredBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(polyBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
+      console.log(chalk.red(`******************************************************************************************************************************************\n`));
+      process.exit(0);
+  }
 }
 
 module.exports = {

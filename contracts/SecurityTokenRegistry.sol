@@ -504,10 +504,14 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(_deployedAt != 0 && _owner != address(0), "0 value params not allowed");
         string memory ticker = Util.upper(_ticker);
         require(_securityToken != address(0), "ST address is 0x");
-        // If ticker doesn't exist, then we will fail - must call modifyTicker first
-        require(_tickerOwner(ticker) != address(0), "Ticker not registered");
+        uint256 registrationTime = getUint(Encoder.getKey("registeredTickers_registrationDate", ticker));
+        uint256 expiryTime = getUint(Encoder.getKey("registeredTickers_expiryDate", ticker));
+        if (registrationTime == 0) {
+            registrationTime = now;
+            expiryTime = registrationTime.add(getExpiryLimit());
+        }
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
-        _modifyTicker(_owner, ticker, _name, getUint(Encoder.getKey("registeredTickers_registrationDate", ticker)), getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)), true);
+        _modifyTicker(_owner, ticker, _name, registrationTime, expiryTime, true);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
         emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true);
     }

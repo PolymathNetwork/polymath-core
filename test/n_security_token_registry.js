@@ -757,17 +757,17 @@ contract('SecurityTokenRegistry', accounts => {
 
         it("Should successfully generate the custom token", async() => {
             // Fulfilling the TickerStatus.NN condition
-            let errorThrown = false;
-            try {
-                await I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
-            } catch(error) {
-                console.log(`         tx revert -> because ticker not registered`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-            await I_STRProxied.modifyTicker(account_temp, "LOG2", "LOGAN2", latestTime(), latestTime() + duration.days(10), false, {from: account_polymath});
-            await increaseTime(duration.days(1));
+            // let errorThrown = false;
+            // try {
+            //     await I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
+            // } catch(error) {
+            //     console.log(`         tx revert -> because ticker not registered`.grey);
+            //     errorThrown = true;
+            //     ensureException(error);
+            // }
+            // assert.ok(errorThrown, message);
+            // await I_STRProxied.modifyTicker(account_temp, "LOG2", "LOGAN2", latestTime(), latestTime() + duration.days(10), false, {from: account_polymath});
+            // await increaseTime(duration.days(1));
             let tx = await I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
             assert.equal(tx.logs[1].args._ticker, "LOG2", "Symbol should match with the registered symbol");
             assert.equal(tx.logs[1].args._securityTokenAddress, dummy_token, `Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`);

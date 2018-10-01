@@ -557,13 +557,12 @@ contract('ModuleRegistry', accounts => {
             it("Should get the list of available modules when the customModulesAllowed", async() => {
                 let _list = await I_MRProxied.getAvailableModulesOfType.call(3, I_SecurityToken.address);
                 assert.equal(_list[0], I_CappedSTOFactory2.address);
-                assert.equal(_list[1], I_TestSTOFactory.address);
             })
 
             it("Should get the list of available modules when the customModulesAllowed is not allowed", async() => {
                 await I_FeatureRegistry.setFeatureStatus("customModulesAllowed", false, { from: account_polymath });
                 let _list = await I_MRProxied.getAvailableModulesOfType.call(3, I_SecurityToken.address);
-                assert.equal(_list[0], I_TestSTOFactory.address);
+                assert.equal(_list.length, 0);
             })
         })
 

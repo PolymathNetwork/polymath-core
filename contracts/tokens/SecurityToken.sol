@@ -164,12 +164,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     modifier checkGranularity(uint256 _value) {
-        require(_value % granularity == 0, "Unable to modify token balances at this granularity");
+        require(_value % granularity == 0, "Incorrect granularity");
         _;
     }
 
     modifier isMintingAllowed() {
-        require(!mintingFrozen, "Minting is permanently frozen");
+        require(!mintingFrozen, "Minting is frozen");
         _;
     }
 
@@ -182,8 +182,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice Revert if called by account which is not a controller
      */
     modifier onlyController() {
-        require(msg.sender == controller);
-        require(!controllerDisabled);
+        require(msg.sender == controller, "Caller not controller");
+        require(!controllerDisabled, "Controller disabled");
         _;
     }
 
@@ -249,14 +249,14 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint8 moduleType = moduleFactory.getType();
         /* require(modules[moduleType].length < MAX_MODULES, "Limit of MAX MODULES is reached"); */
         uint256 moduleCost = moduleFactory.getSetupCost();
-        require(moduleCost <= _maxCost, "Max Cost is always be greater than module cost");
+        require(moduleCost <= _maxCost, "Module cost too high");
         //Approve fee for module
-        require(ERC20(polyToken).approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
+        require(ERC20(polyToken).approve(_moduleFactory, moduleCost), "Insufficient funds for cost");
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
         require(modulesToData[module].module == address(0), "Module already exists");
         //Approve ongoing budget
-        require(ERC20(polyToken).approve(module, _budget), "Not able to approve the budget");
+        require(ERC20(polyToken).approve(module, _budget), "Insufficient funds for budget");
         //Add to SecurityToken module map
         bytes32 moduleName = moduleFactory.getName();
         modulesToData[module] = ModuleData(moduleName, module, _moduleFactory, false, moduleType, modules[moduleType].length, names[moduleName].length);
@@ -271,7 +271,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _module address of module to archive
     */
     function archiveModule(address _module) external onlyOwner {
-        require(!modulesToData[_module].isArchived, "Module not unarchived");
+        require(!modulesToData[_module].isArchived, "Module already archived");
         require(modulesToData[_module].module != address(0), "Module missing");
         emit ModuleArchived(modulesToData[_module].moduleType, _module, now);
         modulesToData[_module].isArchived = true;
@@ -282,7 +282,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _module address of module to unarchive
     */
     function unarchiveModule(address _module) external onlyOwner {
-        require(modulesToData[_module].isArchived, "Module not archived");
+        require(modulesToData[_module].isArchived, "Module already unarchived");
         emit ModuleUnarchived(modulesToData[_module].moduleType, _module, now);
         modulesToData[_module].isArchived = false;
     }
@@ -363,7 +363,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _value amount of POLY to withdraw
     */
     function withdrawPoly(uint256 _value) external onlyOwner {
-        require(ERC20(polyToken).transfer(owner, _value), "In-sufficient balance");
+        require(ERC20(polyToken).transfer(owner, _value), "Insufficient balance");
     }
 
     /**
@@ -640,7 +640,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return success
      */
     function mintMulti(address[] _investors, uint256[] _values) external onlyModuleOrOwner(MINT_KEY) returns (bool success) {
-        require(_investors.length == _values.length, "Mis-match in the length of the arrays");
+        require(_investors.length == _values.length, "Incorrect inputs");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _values[i]);
         }
@@ -663,7 +663,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _value No. of tokens that get burned
      */
     function burn(uint256 _value) checkGranularity(_value) onlyModule(BURN_KEY) public returns (bool) {
-        require(_burn(msg.sender, _value));
+        require(_burn(msg.sender, _value), "Invalid burn");
         return true;
     }
 
@@ -673,9 +673,9 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _value No. of tokens that get burned
      */
     function burnFrom(address _from, uint256 _value) checkGranularity(_value) onlyModule(BURN_KEY) public returns (bool) {
-        require(_value <= allowed[_from][msg.sender]);
+        require(_value <= allowed[_from][msg.sender], "Value too high");
         allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-        require(_burn(_from, _value));
+        require(_burn(_from, _value), "Invalid burn");
         return true;
     }
 

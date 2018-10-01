@@ -62,7 +62,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(msg.sender == getAddress(Encoder.getKey("owner")));
+        require(msg.sender == owner());
         _;
     }
 
@@ -70,10 +70,10 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Modifier to make a function callable only when the contract is not paused.
      */
     modifier whenNotPausedOrOwner() {
-        if (msg.sender == getAddress(Encoder.getKey("owner"))) 
+        if (msg.sender == owner()) 
           _;
         else {
-            require(!getBool(Encoder.getKey("paused")), "Already paused");
+            require(!isPaused(), "Already paused");
             _;
         }
     }
@@ -82,7 +82,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Modifier to make a function callable only when the contract is not paused and ignore is msg.sender is owner.
      */
     modifier whenNotPaused() {
-        require(!getBool(Encoder.getKey("paused")), "Already paused");
+        require(!isPaused(), "Already paused");
         _;
     }
 
@@ -90,7 +90,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Modifier to make a function callable only when the contract is paused.
      */
     modifier whenPaused() {
-        require(getBool(Encoder.getKey("paused")), "Should not be paused");
+        require(isPaused(), "Should not be paused");
         _;
     }
 
@@ -128,15 +128,20 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
             } else {
                 require(getBool(Encoder.getKey('verified', _moduleFactory)), "ModuleFactory must be verified");
             }
-            uint8[] memory _latestVersion = ISecurityToken(msg.sender).getVersion();
-            uint8[] memory _lowerBound = IModuleFactory(_moduleFactory).getLowerSTVersionBounds();
-            uint8[] memory _upperBound = IModuleFactory(_moduleFactory).getUpperSTVersionBounds();
-            require(VersionUtils.compareLowerBound(_lowerBound, _latestVersion), "Version should not be below the lower bound of ST version requirement");
-            require(VersionUtils.compareUpperBound(_upperBound, _latestVersion), "Version should not be above the upper bound of ST version requirement");
+            require(_isCompatibleModule(_moduleFactory, msg.sender), "Version should within the compatible range of ST");
             require(getUint(Encoder.getKey('registry',_moduleFactory)) != 0, "ModuleFactory type should not be 0");
             pushArray(Encoder.getKey('reputation', _moduleFactory), msg.sender);
             emit ModuleUsed(_moduleFactory, msg.sender);
         }
+    }
+
+    function _isCompatibleModule(address _moduleFactory, address _securityToken) internal returns(bool) {
+        uint8[] memory _latestVersion = ISecurityToken(_securityToken).getVersion();
+        uint8[] memory _lowerBound = IModuleFactory(_moduleFactory).getLowerSTVersionBounds();
+        uint8[] memory _upperBound = IModuleFactory(_moduleFactory).getUpperSTVersionBounds();
+        bool _isLowerAllowed = VersionUtils.compareLowerBound(_lowerBound, _latestVersion);
+        bool _isUpperAllowed = VersionUtils.compareUpperBound(_upperBound, _latestVersion);
+        return (_isLowerAllowed && _isUpperAllowed);
     }
 
     /**
@@ -267,28 +272,35 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     function getAvailableModulesOfType(uint8 _moduleType, address _securityToken) external view returns (address[]) {
         uint256 _len = getArrayAddress(Encoder.getKey('moduleList', uint256(_moduleType))).length;
         address[] memory _addressList = getArrayAddress(Encoder.getKey('moduleList', uint256(_moduleType)));
+        bool _isCustomModuleAllowed = IFeatureRegistry(getAddress(Encoder.getKey('featureRegistry'))).getFeatureStatus("customModulesAllowed");
         uint256 counter = 0;
         for (uint256 i = 0; i < _len; i++) {
-            if (IFeatureRegistry(getAddress(Encoder.getKey('featureRegistry'))).getFeatureStatus("customModulesAllowed")) {
+            if (_isCustomModuleAllowed) {
                 if (IOwnable(_addressList[i]).owner() == IOwnable(_securityToken).owner() || getBool(Encoder.getKey('verified', _addressList[i])))
-                    counter++;
+                    if(_isCompatibleModule(_addressList[i], _securityToken))
+                        counter++;
             }
             else if (getBool(Encoder.getKey('verified', _addressList[i]))) {
-                counter ++;
+                if(_isCompatibleModule(_addressList[i], _securityToken))
+                    counter++;
             }
         }
         address[] memory _tempArray = new address[](counter);
         counter = 0;
         for (uint256 j = 0; j < _len; j++) {
-            if (IFeatureRegistry(getAddress(Encoder.getKey('featureRegistry'))).getFeatureStatus("customModulesAllowed")) {
+            if (_isCustomModuleAllowed) {
                 if (IOwnable(_addressList[j]).owner() == IOwnable(_securityToken).owner() || getBool(Encoder.getKey('verified', _addressList[j]))) {
-                    _tempArray[counter] = _addressList[j];
-                    counter ++;
+                    if(_isCompatibleModule(_addressList[j], _securityToken)) {
+                        _tempArray[counter] = _addressList[j];
+                        counter ++;
+                    }
                 }
             }
             else if (getBool(Encoder.getKey('verified', _addressList[j]))) {
-                _tempArray[counter] = _addressList[j];
-                counter ++;
+               if(_isCompatibleModule(_addressList[j], _securityToken)) {
+                    _tempArray[counter] = _addressList[j];
+                    counter ++;
+                }
             }
         }
         return _tempArray;
@@ -302,7 +314,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         require(_tokenContract != address(0));
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(getAddress(Encoder.getKey("owner")), balance));
+        require(token.transfer(owner(), balance));
     }
 
     /**
@@ -331,4 +343,19 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         set(Encoder.getKey('polyToken'), IPolymathRegistry(_polymathRegistry).getAddress("PolyToken"));
     }
 
+    /**
+     * @notice Get the owner of the contract
+     * @return address owner
+     */
+    function owner() public view returns(address) {
+        return getAddress(Encoder.getKey("owner"));
+    }
+
+    /**
+     * @notice Check whether the contract operations is paused or not
+     * @return bool 
+     */
+    function isPaused() public view returns(bool) {
+        return getBool(Encoder.getKey("paused"));
+    }
 }

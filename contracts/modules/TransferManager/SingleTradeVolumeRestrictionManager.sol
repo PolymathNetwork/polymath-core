@@ -11,20 +11,23 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
 
     bool public isTransferLimitInPercentage;
 
-    uint256 public globalTransferLimit;
+    uint256 public globalTransferLimitInTokens;
 
     // should be multipled by 10^16. if the transfer percentage is 20%, then globalTransferLimitInPercentage should be 20*10^16
     uint256 public globalTransferLimitInPercentage;
 
     mapping(address=>bool) public exemptWallets;
 
-    mapping(address => uint) public specialTransferLimits;
+    mapping(address => uint) public specialTransferLimitsInTokens;
+
+    mapping(address => uint) public specialTransferLimitsInPercentages;
 
     event ExemptWalletAdded(address _wallet);
     event ExemptWalletRemoved(address _wallet);
     event TransferLimitInTokensSet(address _wallet, uint256 _amount);
     event TransferLimitInPercentageSet(address _wallet, uint _percentage);
-    event TransferLimitRemoved(address _wallet);
+    event TransferLimitInPercentageRemoved(address _wallet);
+    event TransferLimitInTokensRemoved(address _wallet);
     event GlobalTransferLimitInTokensSet(uint256 _amount, uint256 _oldAmount);
     event GlobalTransferLimitInPercentageSet(uint256 _percentage, uint256 _oldPercentage);
     event TransferLimitChangedToTokens();
@@ -48,18 +51,18 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
 
         if(exemptWallets[_from] || paused) return Result.NA;
 
-        if(specialTransferLimits[_from] > 0) {
-            if (isTransferLimitInPercentage) {
-                validTransfer = (_amount.mul(10**18).div(ISecurityToken(securityToken).totalSupply())) <= specialTransferLimits[_from];
+        if(isTransferLimitInPercentage) {
+            if(specialTransferLimitsInPercentages[_from] > 0) {
+                validTransfer = (_amount.mul(10**18).div(ISecurityToken(securityToken).totalSupply())) <= specialTransferLimitsInPercentages[_from];
             } else {
-                validTransfer = _amount <= specialTransferLimits[_from];
-            }
-        } else {
-            if (isTransferLimitInPercentage) {
                 validTransfer = (_amount.mul(10**18).div(ISecurityToken(securityToken).totalSupply())) <= globalTransferLimitInPercentage;
-            } else {
-                validTransfer = _amount <= globalTransferLimit;
             }
+        } else  {
+          if(specialTransferLimitsInTokens[_from] > 0) {
+              validTransfer = _amount <= specialTransferLimitsInTokens[_from];
+          } else {
+              validTransfer = _amount <= globalTransferLimitInTokens;
+          }
         }
         if(validTransfer) return Result.NA;
         return Result.INVALID;
@@ -104,14 +107,14 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     }
     /**
     * @notice Change the global transfer limit
-    * @param _newGlobalTransferLimit new transfer limit in tokens
+    * @param _newGlobalTransferLimitInTokens new transfer limit in tokens
     * @dev This function can be used only when The manager is configured to use limits in tokens
     */
-    function changeGlobalLimitInTokens(uint256 _newGlobalTransferLimit) public withPerm(ADMIN) {
+    function changeGlobalLimitInTokens(uint256 _newGlobalTransferLimitInTokens) public withPerm(ADMIN) {
         require(!isTransferLimitInPercentage, "Transfer limit not set in tokens");
-        require(_newGlobalTransferLimit > 0, "Transfer limit has to greater than zero");
-        emit GlobalTransferLimitInTokensSet(_newGlobalTransferLimit, globalTransferLimit);
-        globalTransferLimit = _newGlobalTransferLimit;
+        require(_newGlobalTransferLimitInTokens > 0, "Transfer limit has to greater than zero");
+        emit GlobalTransferLimitInTokensSet(_newGlobalTransferLimitInTokens, globalTransferLimitInTokens);
+        globalTransferLimitInTokens = _newGlobalTransferLimitInTokens;
 
     }
 
@@ -177,10 +180,10 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     * @param _transferLimit transfer limit for the wallet in tokens
     * @dev the manager has to be configured to use limits in tokens
     */
-    function setTransferLimitForWallet(address _wallet, uint _transferLimit) public withPerm(ADMIN) {
+    function setTransferLimitInTokens(address _wallet, uint _transferLimit) public withPerm(ADMIN) {
         require(_transferLimit > 0, "Transfer limit has to be greater than 0");
         require(!isTransferLimitInPercentage, "Transfer limit not in token amount");
-        specialTransferLimits[_wallet] = _transferLimit;
+        specialTransferLimitsInTokens[_wallet] = _transferLimit;
         emit TransferLimitInTokensSet(_wallet, _transferLimit);
     }
 
@@ -194,7 +197,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     function setTransferLimitInPercentage(address _wallet, uint _transferLimitInPercentage) public withPerm(ADMIN) {
         require(isTransferLimitInPercentage, "Transfer limit not in percentage");
         require(_transferLimitInPercentage > 0 && _transferLimitInPercentage <= 100 * 10 ** 16, "Transfer limit not in required range");
-        specialTransferLimits[_wallet] = _transferLimitInPercentage;
+        specialTransferLimitsInPercentages[_wallet] = _transferLimitInPercentage;
         emit TransferLimitInPercentageSet(_wallet, _transferLimitInPercentage);
     }
 
@@ -203,10 +206,20 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     * @notice removes transfer limit for a wallet
     * @param _wallet wallet address
     */
-    function removeTransferLimitForWallet(address _wallet) public withPerm(ADMIN) {
-        require(specialTransferLimits[_wallet] > 0 , "Wallet Address does not have a transfer limit");
-        specialTransferLimits[_wallet] = 0;
-        emit TransferLimitRemoved(_wallet);
+    function removeTransferLimitInPercentage(address _wallet) public withPerm(ADMIN) {
+        require(specialTransferLimitsInPercentages[_wallet] > 0 , "Wallet Address does not have a transfer limit");
+        specialTransferLimitsInPercentages[_wallet] = 0;
+        emit TransferLimitInPercentageRemoved(_wallet);
+    }
+
+    /**
+    * @notice removes transfer limit for a wallet
+    * @param _wallet wallet address
+    */
+    function removeTransferLimitInTokens(address _wallet) public withPerm(ADMIN) {
+        require(specialTransferLimitsInTokens[_wallet] > 0 , "Wallet Address does not have a transfer limit");
+        specialTransferLimitsInTokens[_wallet] = 0;
+        emit TransferLimitInTokensRemoved(_wallet);
     }
 
     /**
@@ -215,11 +228,11 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     * @param _transferLimits array of transfer limits for each wallet in tokens
     * @dev The manager has to be configured to use tokens as limit
     */
-    function setTransferLimitForWalletMulti(address[] _wallets, uint[] _transferLimits) public withPerm(ADMIN) {
+    function setTransferLimitInTokensMulti(address[] _wallets, uint[] _transferLimits) public withPerm(ADMIN) {
         require(_wallets.length  > 0, "Wallets cannot be empty");
         require(_wallets.length == _transferLimits.length);
         for (uint256 i=0; i < _wallets.length; i++ ) {
-            setTransferLimitForWallet(_wallets[i], _transferLimits[i]);
+            setTransferLimitInTokens(_wallets[i], _transferLimits[i]);
         }
     }
 
@@ -242,10 +255,21 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     * @notice removes transfer limits for an array of wallet
     * @param _wallets array of wallet addresses
     */
-    function removeTransferLimitForWalletMulti(address[] _wallets) public withPerm(ADMIN) {
+    function removeTransferLimitInTokensMulti(address[] _wallets) public withPerm(ADMIN) {
         require(_wallets.length > 0, "Wallets cannot be empty");
         for (uint i = 0; i < _wallets.length; i++) {
-            removeTransferLimitForWallet(_wallets[i]);
+            removeTransferLimitInTokens(_wallets[i]);
+        }
+    }
+
+    /**
+    * @notice removes transfer limits for an array of wallet
+    * @param _wallets array of wallet addresses
+    */
+    function removeTransferLimitInPercentageMulti(address[] _wallets) public withPerm(ADMIN) {
+        require(_wallets.length > 0, "Wallets cannot be empty");
+        for (uint i = 0; i < _wallets.length; i++) {
+            removeTransferLimitInPercentage(_wallets[i]);
         }
     }
 

@@ -180,9 +180,6 @@ contract('SecurityTokenRegistry', accounts => {
             "TestSTOFactory contract was not deployed"
         );
 
-        // (C) : Register the STOFactory
-        await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_polymath });
-
         // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
@@ -229,6 +226,9 @@ contract('SecurityTokenRegistry', accounts => {
         // (B) :  Register the GeneralDelegateManagerFactory
         await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
         await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+
+        // (C) : Register the STOFactory
+        await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_polymath });
 
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------

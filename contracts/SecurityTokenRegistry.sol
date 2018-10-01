@@ -236,6 +236,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         if (_tickerStatus(_ticker) && !_status) {
             set(Encoder.getKey("tickerToSecurityToken", _ticker), address(0));
         }
+        // If status is true, there must be a security token linked to the ticker already
+        if (_status) {
+            require(getAddress(Encoder.getKey("tickerToSecurityToken", _ticker)) != address(0), "Token not registered");
+        }
         _addTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _status, true);
     }
 
@@ -500,9 +504,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(_deployedAt != 0 && _owner != address(0), "0 value params not allowed");
         string memory ticker = Util.upper(_ticker);
         require(_securityToken != address(0), "ST address is 0x");
-        // If ticker didn't previously exist, it will be created
-        _modifyTicker(_owner, ticker, _name, getUint(Encoder.getKey("registeredTickers_registrationDate", ticker)), getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)), true);
+        // If ticker doesn't exist, then we will fail - must call modifyTicker first
+        require(_tickerOwner(ticker) != address(0), "Ticker not registered");
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
+        _modifyTicker(_owner, ticker, _name, getUint(Encoder.getKey("registeredTickers_registrationDate", ticker)), getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)), true);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
         emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true);
     }

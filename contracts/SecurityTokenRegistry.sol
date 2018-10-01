@@ -348,7 +348,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         assert(index < tickers.length);
         assert(_tickerOwner(_ticker) == _owner);
         deleteArrayBytes32(ownerKey, index);
-        if (tickers.length > index) {
+        if (getArrayBytes32(ownerKey).length > index) {
             bytes32 switchedTicker =  tickers[index];
             set(Encoder.getKey("tickerIndex", Util.bytes32ToString(switchedTicker)), index);
         }

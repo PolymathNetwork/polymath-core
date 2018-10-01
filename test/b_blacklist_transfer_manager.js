@@ -370,6 +370,9 @@ contract('BlacklistTransferManager', accounts => {
 
         it("Should add the blacklist", async() => {
             let tx = await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "a_blacklist", 20, { from: token_owner });
+            console.log("starttime",latestTime()+2000);
+            console.log("endtime",latestTime()+3000);
+            console.log("latest",latestTime());
             assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._name), "a_blacklist", "Failed in adding the type in blacklist");
         });
 
@@ -415,7 +418,81 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should fail in modifying the blacklist", async() => {
+            let errorThrown = false;
+            try {
+                await I_BlacklistTransferManager.modifyBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> Blacklist type doesnot exist`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }   
+            assert.ok(errorThrown, message);
+        });
 
+        it("Should add investor to the blacklist", async() => {
+            let tx = await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "a_blacklist", { from: token_owner });
+            assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in adding the investor to the blacklist");
+
+        });
+
+        it("Should fail in adding the investor to the blacklist", async() => {
+            let errorThrown = false;
+            try {
+                await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "a_blacklist", { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> Only owner have the permission to add the investor to the blacklist type`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in adding the investor to the blacklist", async() => {
+            let errorThrown = false;
+            try {
+                await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "a_blacklist", { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> Only owner have the permission to add the investor to the blacklist type`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in adding the investor to the blacklist", async() => {
+            let errorThrown = false;
+            try {
+                await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "b_blacklist", { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> Trying to add the investor in non existing blacklist`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail in buying the tokens as the investor in blacklist", async() => {
+            let errorThrown = false;
+            // Jump time
+            await increaseTime(2500);
+            console.log("latestNew",latestTime());
+            try{
+                // Mint some tokens
+                await I_SecurityToken.mint(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
+            }
+            catch(error){
+                console.log(`         tx revert -> Trying to send token to the blacklisted address`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should get the permission", async() => {
+            let perm = await I_BlacklistTransferManager.getPermissions.call();
+            assert.equal(perm.length, 1);
+        });
 
 
     });

@@ -164,7 +164,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         set(Encoder.getKey("paused"), false);
         set(Encoder.getKey("owner"), _owner);
         set(Encoder.getKey("polymathRegistry"), _polymathRegistry);
-        setProtocolVersion(_STFactory, uint8(0), uint8(0), uint8(2));
+        _setProtocolVersion(_STFactory, uint8(0), uint8(0), uint8(2));
         set(Encoder.getKey("initialised"), true);
     }
 
@@ -627,16 +627,22 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @param _minor Minor version of the proxy.
     * @param _patch Patch version of the proxy
     */
-    function setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) public {
-        uint8[] memory version = new uint8[](3);
-        version[0] = _major;
-        version[1] = _minor;
-        version[2] = _patch;
-        uint24 packedVersion = VersionUtils.pack(_major, _minor, _patch);
-        require(VersionUtils.isValidVersion(getProtocolVersion(), version),"Invalid version");
-        set(Encoder.getKey("latestVersion"), uint256(packedVersion));
+    function setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external onlyOwner {
+        _setProtocolVersion(_STFactoryAddress, _major, _minor, _patch);
+    }
+
+    /**
+    * @notice Internal - Changes the protocol version and the SecurityToken contract
+    */
+    function _setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) internal {
+        uint8[] memory _version = new uint8[](3);
+        _version[0] = _major;
+        _version[1] = _minor;
+        _version[2] = _patch;
+        uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
+        require(VersionUtils.isValidVersion(getProtocolVersion(), _version),"In-valid version");
+        set(Encoder.getKey("latestVersion"), uint256(_packedVersion));
         set(Encoder.getKey("protocolVersionST", getUint(Encoder.getKey("latestVersion"))), _STFactoryAddress);
-        /* set(Encoder.getKey("protocolVersionST", uint256(_packedVersion)), _STFactoryAddress); */
     }
 
     /**

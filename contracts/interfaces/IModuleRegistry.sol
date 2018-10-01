@@ -75,4 +75,16 @@ interface IModuleRegistry {
      */
     function updateFromRegistry() external;
 
+    /**
+     * @notice Get the owner of the contract
+     * @return address owner
+     */
+    function owner() external view returns(address);
+
+    /**
+     * @notice Check whether the contract operations is paused or not
+     * @return bool 
+     */
+    function isPaused() external view returns(bool);
+
 }

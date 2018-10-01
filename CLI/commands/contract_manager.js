@@ -114,7 +114,7 @@ async function strActions() {
         console.log(chalk.green(`Ticker has been updated successfuly`));
         break;
       case 'Remove Ticker':
-        let tickerToRemove = readlineSync.question('Enter the token symbol that you want to add or modify: ');
+        let tickerToRemove = readlineSync.question('Enter the token symbol that you want to remove: ');
         let tickerToRemoveDetails = await currentContract.methods.getTickerDetails(tickerToRemove).call();
         if (tickerToRemoveDetails[1] == 0) {
           console.log(chalk.yellow(`${ticker} does not exist.`));

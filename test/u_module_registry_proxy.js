@@ -110,6 +110,10 @@ contract ("ModuleRegistryProxy", accounts => {
         await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
         await I_MRProxied.updateFromRegistry({from: account_polymath});
+        // (A) :  Register the GeneralTransferManagerFactory
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+
 
          // Printing all the contract addresses
          console.log(`
@@ -153,11 +157,6 @@ contract ("ModuleRegistryProxy", accounts => {
             );
 
             // Register the Modules with the ModuleRegistry contract
-
-            // (A) :  Register the GeneralTransferManagerFactory
-            await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-            await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
-
 
             // Step 3: Deploy the STFactory contract
             I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });

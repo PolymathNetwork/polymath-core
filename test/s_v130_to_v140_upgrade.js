@@ -164,19 +164,6 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             "CappedSTOFactory contract was not deployed"
         );
 
-        // STEP 6: Register the Modules with the ModuleRegistry contract
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: POLYMATH });
-        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: POLYMATH });
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: POLYMATH });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: POLYMATH });
-
-        // (C) :  Register the CappedSTOFactory
-        await I_MRProxied.registerModule(I_CappedSTOFactory.address, { from: POLYMATH });
-        await I_MRProxied.verifyModule(I_CappedSTOFactory.address, true, { from: POLYMATH });
-
         // Step 8: Deploy the STFactory contract
         I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : POLYMATH });
         assert.notEqual(
@@ -219,6 +206,19 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         // Step 11: update the registries addresses from the PolymathRegistry contract
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, {from: POLYMATH});
         await I_MRProxied.updateFromRegistry({from: POLYMATH});
+
+        // STEP 6: Register the Modules with the ModuleRegistry contract
+        // (A) :  Register the GeneralTransferManagerFactory
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: POLYMATH });
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: POLYMATH });
+
+        // (B) :  Register the GeneralDelegateManagerFactory
+        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: POLYMATH });
+        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: POLYMATH });
+
+        // (C) :  Register the CappedSTOFactory
+        await I_MRProxied.registerModule(I_CappedSTOFactory.address, { from: POLYMATH });
+        await I_MRProxied.verifyModule(I_CappedSTOFactory.address, true, { from: POLYMATH });
 
         // Step 12: Mint tokens to ISSUERs
         await I_PolyToken.getTokens(REGFEE * 2, ISSUER1);

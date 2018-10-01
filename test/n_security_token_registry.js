@@ -1137,6 +1137,58 @@ contract('SecurityTokenRegistry', accounts => {
         });
     })
 
+    describe(" Test cases of the registerTicker", async() => {
+
+        it("Should register the ticker 1", async () => {
+            await I_PolyToken.getTokens(web3.utils.toWei("1000"), account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("1000"), { from: account_temp});
+            let tx = await I_STRProxied.registerTicker(account_temp, "TOK1", "", { from: account_temp });
+            assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
+            assert.equal(tx.logs[0].args._ticker, "TOK1", `Symbol should be TOK1`);
+            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toAscii(x)));
+        });
+
+        it("Should register the ticker 2", async () => {
+            await I_PolyToken.getTokens(web3.utils.toWei("1000"), account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("1000"), { from: account_temp});
+            let tx = await I_STRProxied.registerTicker(account_temp, "TOK2", "", { from: account_temp });
+            assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
+            assert.equal(tx.logs[0].args._ticker, "TOK2", `Symbol should be TOK2`);
+            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toAscii(x)));
+        });
+
+        it("Should register the ticker 3", async () => {
+            await I_PolyToken.getTokens(web3.utils.toWei("1000"), account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("1000"), { from: account_temp});
+            let tx = await I_STRProxied.registerTicker(account_temp, "TOK3", "", { from: account_temp });
+            assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
+            assert.equal(tx.logs[0].args._ticker, "TOK3", `Symbol should be TOK3`);
+            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toAscii(x)));
+        });
+
+        it("Should successfully remove the ticker 2", async() => {
+            let tx = await I_STRProxied.removeTicker("TOK2", {from: account_polymath});
+            assert.equal(tx.logs[0].args._ticker, "TOK2", "Ticker doesn't get deleted successfully");
+            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toAscii(x)));
+        });
+
+        it("Should modify ticker 1", async() => {
+            let tx = await I_STRProxied.modifyTicker(account_temp, "TOK1", "TOKEN 1", latestTime(), (latestTime() + duration.minutes(10)), false, {from: account_polymath});
+            assert.equal(tx.logs[0].args._owner, account_temp, `Should be equal to the ${account_temp}`);
+            assert.equal(tx.logs[0].args._ticker, "TOK1", "Should be equal to TOK1");
+            assert.equal(tx.logs[0].args._name, "TOKEN 1", "Should be equal to TOKEN 1");
+            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toAscii(x)));
+        })
+
+        it("Should modify ticker 3", async() => {
+            let tx = await I_STRProxied.modifyTicker(account_temp, "TOK3", "TOKEN 3", latestTime(), (latestTime() + duration.minutes(10)), false, {from: account_polymath});
+            assert.equal(tx.logs[0].args._owner, account_temp, `Should be equal to the ${account_temp}`);
+            assert.equal(tx.logs[0].args._ticker, "TOK3", "Should be equal to TOK3");
+            assert.equal(tx.logs[0].args._name, "TOKEN 3", "Should be equal to TOKEN 3");
+            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toAscii(x)));
+        })
+
+    });
     describe("Test cases for IRegistry functionality", async() => {
 
         describe("Test cases for reclaiming funds", async() => {

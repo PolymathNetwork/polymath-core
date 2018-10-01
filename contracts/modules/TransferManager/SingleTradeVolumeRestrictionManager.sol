@@ -203,7 +203,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
 
 
     /**
-    * @notice removes transfer limit for a wallet
+    * @notice removes transfer limit set in percentage for a wallet
     * @param _wallet wallet address
     */
     function removeTransferLimitInPercentage(address _wallet) public withPerm(ADMIN) {
@@ -213,7 +213,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     }
 
     /**
-    * @notice removes transfer limit for a wallet
+    * @notice removes transfer limit set in tokens for a wallet
     * @param _wallet wallet address
     */
     function removeTransferLimitInTokens(address _wallet) public withPerm(ADMIN) {
@@ -252,7 +252,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     }
 
     /**
-    * @notice removes transfer limits for an array of wallet
+    * @notice removes transfer limits set in tokens for an array of wallet
     * @param _wallets array of wallet addresses
     */
     function removeTransferLimitInTokensMulti(address[] _wallets) public withPerm(ADMIN) {
@@ -263,7 +263,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     }
 
     /**
-    * @notice removes transfer limits for an array of wallet
+    * @notice removes transfer limits set in percentage for an array of wallet
     * @param _wallets array of wallet addresses
     */
     function removeTransferLimitInPercentageMulti(address[] _wallets) public withPerm(ADMIN) {

@@ -897,6 +897,32 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
                 assert.equal(logs[i].args._wallet, wallets[i], "Transfer limit not set for wallet");
                 assert.equal(logs[i].args._percentage.toNumber(), percentageLimits[i]);
             }
+
+            errorThrown = false;
+            try {
+              await I_SingleTradeVolumeRestrictionPercentageManager.removeTransferLimitInPercentageMulti([], {from:token_owner});
+            } catch(e) {
+              errorThrown = true;
+              ensureException(e);
+            }
+            assert.ok(errorThrown, "Wallets cannot be empty");
+
+            tx = await I_SingleTradeVolumeRestrictionPercentageManager.removeTransferLimitInPercentageMulti(wallets, {from: token_owner});
+            logs = tx.logs.filter(log => log.event == 'TransferLimitInPercentageRemoved');
+            assert.equal(logs.length, wallets.length, "transfer limits not set for wallets");
+
+            for (let i = 0; i < wallets.length; i++) {
+                assert.equal(logs[i].args._wallet, wallets[i], "Transfer limit not set for wallet");
+            }
+
+            errorThrown = false;
+            try {
+              await I_SingleTradeVolumeRestrictionPercentageManager.removeTransferLimitInPercentage(wallets[0], {from: token_owner});
+            } catch(e) {
+              ensureException(e)
+              errorThrown = true;
+            }
+            assert.ok(errorThrown, "Wallet should not be removed");
         })
 
         it('should be able to transfer tokens SingleTradeVolumeRestriction', async () => {

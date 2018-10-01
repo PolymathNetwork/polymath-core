@@ -14,9 +14,6 @@ var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
 const OWNER_KEY = 'owner';
-const REG_FEE_KEY = 'tickerRegFee';
-const LAUNCH_FEE_KEY = 'stLaunchFee';
-const EXPIRY_LIMIT_KEY = 'expiryLimit';
 
 // App flow
 let currentContract = null;
@@ -117,7 +114,7 @@ async function strActions() {
         console.log(chalk.green(`Ticker has been updated successfuly`));
         break;
       case 'Remove Ticker':
-        let tickerToRemove = readlineSync.question('Enter the token symbol that you want to add or modify: ');
+        let tickerToRemove = readlineSync.question('Enter the token symbol that you want to remove: ');
         let tickerToRemoveDetails = await currentContract.methods.getTickerDetails(tickerToRemove).call();
         if (tickerToRemoveDetails[1] == 0) {
           console.log(chalk.yellow(`${ticker} does not exist.`));
@@ -168,7 +165,7 @@ async function strActions() {
         console.log(chalk.green(`Security Token has been updated successfuly`));
         break;
       case 'Change Expiry Limit':
-        let currentExpiryLimit = await currentContract.methods.getUintValues(web3.utils.soliditySha3(EXPIRY_LIMIT_KEY)).call();
+        let currentExpiryLimit = await currentContract.methods.getExpiryLimit().call();
         console.log(chalk.yellow(`Current expiry limit is ${Math.floor(parseInt(currentExpiryLimit)/60/60/24)} days`));
         let newExpiryLimit = duration.days(readlineSync.questionInt('Enter a new value in days for expiry limit: '));
         let changeExpiryLimitAction = currentContract.methods.changeExpiryLimit(newExpiryLimit);
@@ -177,7 +174,7 @@ async function strActions() {
         console.log(chalk.green(`Expiry limit was changed successfuly. New limit is ${Math.floor(parseInt(changeExpiryLimitEvent._newExpiry)/60/60/24)} days\n`));
         break;
       case 'Change registration fee':
-        let currentRegFee = web3.utils.fromWei(await currentContract.methods.getUintValues(web3.utils.soliditySha3(REG_FEE_KEY)).call());
+        let currentRegFee = web3.utils.fromWei(await currentContract.methods.getTickerRegistrationFee().call());
         console.log(chalk.yellow(`\nCurrent ticker registration fee is ${currentRegFee} POLY`));
         let newRegFee = web3.utils.toWei(readlineSync.questionInt('Enter a new value in POLY for ticker registration fee: ').toString());
         let changeRegFeeAction = currentContract.methods.changeTickerRegistrationFee(newRegFee);
@@ -186,7 +183,7 @@ async function strActions() {
         console.log(chalk.green(`Fee was changed successfuly. New fee is ${web3.utils.fromWei(changeRegFeeEvent._newFee)} POLY\n`));
         break;
       case 'Change ST launch fee':
-      let currentLaunchFee = web3.utils.fromWei(await currentContract.methods.getUintValues(web3.utils.soliditySha3(LAUNCH_FEE_KEY)).call());
+      let currentLaunchFee = web3.utils.fromWei(await currentContract.methods.getSecurityTokenLaunchFee().call());
         console.log(chalk.yellow(`\nCurrent ST launch fee is ${currentLaunchFee} POLY`));
         let newLaunchFee = web3.utils.toWei(readlineSync.questionInt('Enter a new value in POLY for ST launch fee: ').toString());
         let changeLaunchFeeAction = currentContract.methods.changeSecurityLaunchFee(newLaunchFee);

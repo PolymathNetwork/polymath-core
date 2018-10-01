@@ -117,7 +117,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         if (msg.sender == getAddress(Encoder.getKey("owner")))
             _;
         else {
-            require(!getBool(Encoder.getKey("paused")), "Already paused");
+            require(!isPaused(), "Already paused");
             _;
         }
     }
@@ -126,7 +126,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @notice Modifier to make a function callable only when the contract is not paused and ignore is msg.sender is owner.
      */
     modifier whenNotPaused() {
-        require(!getBool(Encoder.getKey("paused")), "Already paused");
+        require(!isPaused(), "Already paused");
         _;
     }
 
@@ -135,9 +135,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @notice Modifier to make a function callable only when the contract is paused.
      */
     modifier whenPaused() {
-        require(getBool(Encoder.getKey("paused")), "Should not be paused");
+        require(isPaused(), "Should not be paused");
         _;
     }
+
 
     /////////////////////////////
     // Initialization
@@ -281,8 +282,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _ticker is the ticker symbol
      */
     function _setTickerOwnership(address _owner, string _ticker) internal {
-        uint256 length = uint256(getArrayBytes32(Encoder.getKey("userToTickers", _owner)).length);
-        pushArray(Encoder.getKey("userToTickers", _owner), Util.stringToBytes32(_ticker));
+        bytes32 _ownerKey = Encoder.getKey("userToTickers", _owner);
+        uint256 length = uint256(getArrayBytes32(_ownerKey).length);
+        pushArray(_ownerKey, Util.stringToBytes32(_ticker));
         set(Encoder.getKey("tickerIndex", _ticker), length);
         bytes32 seenKey = Encoder.getKey("seenUsers", _owner);
         if (!getBool(seenKey)) {
@@ -339,7 +341,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         bytes32[] memory tickers = getArrayBytes32(ownerKey);
         assert(index < tickers.length);
         assert(_tickerOwner(_ticker) == _owner);
-        deleteArrayBytes32(Encoder.getKey("userToTickers", _owner), index);
+        deleteArrayBytes32(ownerKey, index);
         if (tickers.length > index) {
             bytes32 switchedTicker =  tickers[index];
             set(Encoder.getKey("tickerIndex", Util.bytes32ToString(switchedTicker)), index);
@@ -459,7 +461,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Ticker length > 0");
         string memory ticker = Util.upper(_ticker);
         bytes32 statusKey = Encoder.getKey("registeredTickers_status", ticker);
-        require(getBool(statusKey) != true, "Already deployed");
+        require(!getBool(statusKey), "Already deployed");
         set(statusKey, true);
         require(_tickerOwner(ticker) == msg.sender, "Not authorised");
         require(getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker gets expired");
@@ -682,6 +684,14 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function getExpiryLimit() public view returns(uint256) {
         return getUint(Encoder.getKey("expiryLimit"));
+    }
+
+    /**
+     * @notice Check whether the registry is paused or not
+     * @return bool
+     */
+    function isPaused() public view returns(bool) {
+        return getBool(Encoder.getKey("paused"));
     }
 
 }

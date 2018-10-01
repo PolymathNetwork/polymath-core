@@ -177,4 +177,10 @@ interface ISecurityTokenRegistry {
      */
     function getExpiryLimit() external view returns(uint256);
 
+    /**
+     * @notice Check whether the registry is paused or not
+     * @return bool
+     */
+    function isPaused() public view returns(bool);
+
 }

@@ -86,7 +86,8 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         address indexed _owner,
         uint256 _addedAt,
         address _registrant,
-        bool _fromAdmin
+        bool _fromAdmin,
+        uint256 _registrationFee
     );
     // Emit after ticker registration
     event RegisterTicker(
@@ -95,7 +96,8 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         string _name,
         uint256 indexed _registrationDate,
         uint256 indexed _expiryDate,
-        bool _fromAdmin
+        bool _fromAdmin,
+        uint256 _registrationFee
     );
 
     /////////////////////////////
@@ -106,7 +108,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(msg.sender == getAddress(Encoder.getKey("owner")));
+        require(msg.sender == owner());
         _;
     }
 
@@ -114,7 +116,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @notice Modifier to make a function callable only when the contract is not paused.
      */
     modifier whenNotPausedOrOwner() {
-        if (msg.sender == getAddress(Encoder.getKey("owner")))
+        if (msg.sender == owner())
             _;
         else {
             require(!isPaused(), "Already paused");
@@ -194,16 +196,16 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         if (previousOwner != address(0)) {
             _deleteTickerOwnership(previousOwner, ticker);
         }
-        _addTicker(_owner, ticker, _tokenName, now, now.add(getExpiryLimit()), false, false);
+        _addTicker(_owner, ticker, _tokenName, now, now.add(getExpiryLimit()), false, false, getTickerRegistrationFee());
     }
 
     /**
      * @notice Internal - Sets the details of the ticker
      */
-    function _addTicker(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate, bool _status, bool _fromAdmin) internal {
+    function _addTicker(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate, bool _status, bool _fromAdmin, uint256 _fee) internal {
         _setTickerOwnership(_owner, _ticker);
         _storeTickerDetails(_ticker, _owner, _registrationDate, _expiryDate, _tokenName, _status);
-        emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin);
+        emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin, _fee);
     }
 
     /**
@@ -240,7 +242,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         if (_status) {
             require(getAddress(Encoder.getKey("tickerToSecurityToken", _ticker)) != address(0), "Token not registered");
         }
-        _addTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _status, true);
+        _addTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _status, true, uint256(0));
     }
 
     function _tickerOwner(string _ticker) internal view returns(address) {
@@ -486,7 +488,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
 
         _storeSecurityTokenData(newSecurityTokenAddress, ticker, _tokenDetails, now);
         set(Encoder.getKey("tickerToSecurityToken", ticker), newSecurityTokenAddress);
-        emit NewSecurityToken(ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false);
+        emit NewSecurityToken(ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, getSecurityTokenLaunchFee());
     }
 
     /**
@@ -513,7 +515,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
         _modifyTicker(_owner, ticker, _name, registrationTime, expiryTime, true);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
-        emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true);
+        emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, getSecurityTokenLaunchFee());
     }
 
     /**
@@ -624,7 +626,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(_tokenContract != address(0));
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(getAddress(Encoder.getKey("owner")), balance));
+        require(token.transfer(owner(), balance));
     }
 
     /**
@@ -707,6 +709,14 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function isPaused() public view returns(bool) {
         return getBool(Encoder.getKey("paused"));
+    }
+
+    /**
+     * @notice Gets the owner of the contract
+     * @return address owner
+     */
+    function owner() public view returns(address) {
+        return getAddress(Encoder.getKey("owner"));
     }
 
 }

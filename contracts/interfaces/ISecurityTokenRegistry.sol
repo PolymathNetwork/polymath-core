@@ -181,6 +181,12 @@ interface ISecurityTokenRegistry {
      * @notice Check whether the registry is paused or not
      * @return bool
      */
-    function isPaused() public view returns(bool);
+    function isPaused() external view returns(bool);
+
+    /**
+     * @notice Gets the owner of the contract
+     * @return address owner
+     */
+    function owner() external view returns(address);
 
 }

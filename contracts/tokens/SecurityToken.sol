@@ -525,10 +525,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bool success
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
-        _adjustInvestorCount(msg.sender, _to, _value);
-        require(_verifyTransfer(msg.sender, _to, _value, true), "Transfer is not valid");
-        _adjustBalanceCheckpoints(msg.sender);
-        _adjustBalanceCheckpoints(_to);
+        require(_updateTransfer(msg.sender, _to, _value), "Transfer is not valid");
         require(super.transfer(_to, _value));
         return true;
     }
@@ -653,6 +650,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function _burn(address _from, uint256 _value) internal returns (bool) {
         require(_value <= balances[_from], "Value too high");
         require(_updateTransfer(_from, address(0), _value), "Burn is not valid");
+        _adjustTotalSupplyCheckpoints();
         balances[_from] = balances[_from].sub(_value);
         totalSupply_ = totalSupply_.sub(_value);
         emit Burnt(_from, _value);
@@ -676,8 +674,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function burnFrom(address _from, uint256 _value) checkGranularity(_value) onlyModule(BURN_KEY) public returns (bool) {
         require(_value <= allowed[_from][msg.sender]);
-        require(_burn(_from, _value));
         allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
+        require(_burn(_from, _value));
         return true;
     }
 
@@ -713,7 +711,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
             }
         }
     }
-    
+
     /**
      * @notice Gets list of times that checkpoints were created
      * @return List of checkpoint times
@@ -831,6 +829,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function forceBurn(address _from, uint256 _value, bytes _data) public onlyController returns(bool) {
         require(_value <= balances[_from], "Value too high");
         bool verified = _updateTransfer(_from, address(0), _value);
+        _adjustTotalSupplyCheckpoints();
         balances[_from] = balances[_from].sub(_value);
         totalSupply_ = totalSupply_.sub(_value);
         emit ForceBurn(msg.sender, _from, _value, verified, _data);

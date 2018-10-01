@@ -83,7 +83,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
             });
 
         // STEP 3: Deploy the ModuleRegistry
-     
+
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
         // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
         I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});

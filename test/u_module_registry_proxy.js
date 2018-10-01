@@ -85,7 +85,7 @@ contract ("ModuleRegistryProxy", accounts => {
             });
 
         // STEP 3: Deploy the ModuleRegistry
-     
+
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
         // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
         I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
@@ -196,7 +196,7 @@ contract ("ModuleRegistryProxy", accounts => {
 
         it("Should add the tags successfuly", async() => {
             await I_MRProxied.addTagByModuleType(3,["Non-Refundable","Capped","ETH","POLY"],{from: account_polymath});
-            let tags = await I_MRProxied.getTagByModuleType.call(3);
+            let tags = await I_MRProxied.getTagsByType.call(3);
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''),"Non-Refundable");
         })
     })
@@ -288,7 +288,7 @@ contract ("ModuleRegistryProxy", accounts => {
     describe("Execute functionality of the implementation contract on the earlier storage", async() => {
 
         it("Should get the previous data", async() => {
-            let _data = await I_MRProxied.getTagByModuleType.call(3);
+            let _data = await I_MRProxied.getTagsByType.call(3);
             assert.equal(web3.utils.toUtf8(_data[0]), "Non-Refundable");
             assert.equal(web3.utils.toUtf8(_data[1]), "Capped");
             assert.equal(web3.utils.toUtf8(_data[2]), "ETH");
@@ -296,7 +296,7 @@ contract ("ModuleRegistryProxy", accounts => {
 
         it("Should alter the old storage", async() => {
             await I_MRProxied.addMoreTags(3, ["DAI", "USDTiered"], {from: account_polymath});
-            let _data = await I_MRProxied.getTagByModuleType.call(3);
+            let _data = await I_MRProxied.getTagsByType.call(3);
             assert.equal(_data.length, 6, "Should give the updated length");
         });
     })

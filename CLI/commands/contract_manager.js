@@ -13,8 +13,6 @@ var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
-const OWNER_KEY = 'owner';
-
 // App flow
 let currentContract = null;
 
@@ -76,7 +74,7 @@ async function selectContract() {
 
 async function strActions() {
   console.log('\n\x1b[34m%s\x1b[0m',"Security Token Registry - Main menu");
-  let contractOwner = await currentContract.methods.getAddressValues(web3.utils.soliditySha3(OWNER_KEY)).call();
+  let contractOwner = await currentContract.methods.owner().call();
 
   if (contractOwner != Issuer.address) {
     console.log(chalk.red(`You are not the owner of this contract. Current owner is ${contractOwner}`));

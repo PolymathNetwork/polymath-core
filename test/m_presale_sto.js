@@ -194,7 +194,7 @@ contract('PreSaleSTO', accounts => {
         await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
 
         // (C) : Register the STOFactory
-        await I_MRProxied.registerModule(I_PreSaleSTOFactory.address, { from: token_owner });
+        await I_MRProxied.registerModule(I_PreSaleSTOFactory.address, { from: account_polymath });
         await I_MRProxied.verifyModule(I_PreSaleSTOFactory.address, true, { from: account_polymath });
 
         // Printing all the contract addresses

@@ -283,7 +283,7 @@ contract('USDTieredSTO Sim', accounts => {
         await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: POLYMATH });
 
         // (C) : Register the STOFactory
-        await I_MRProxied.registerModule(I_USDTieredSTOFactory.address, { from: ISSUER });
+        await I_MRProxied.registerModule(I_USDTieredSTOFactory.address, { from: POLYMATH });
         await I_MRProxied.verifyModule(I_USDTieredSTOFactory.address, true, { from: POLYMATH });
 
         // Step 12: Deploy & Register Mock Oracles

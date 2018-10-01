@@ -191,13 +191,13 @@ contract('Concurrent STO', accounts => {
         await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
 
         // (C) : Register the STO Factories
-        await I_MRProxied.registerModule(I_CappedSTOFactory.address, { from: account_issuer });
+        await I_MRProxied.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
         await I_MRProxied.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
 
-        await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_issuer });
+        await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_polymath });
         await I_MRProxied.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
 
-        await I_MRProxied.registerModule(I_PreSaleSTOFactory.address, { from: account_issuer });
+        await I_MRProxied.registerModule(I_PreSaleSTOFactory.address, { from: account_polymath });
         await I_MRProxied.verifyModule(I_PreSaleSTOFactory.address, true, { from: account_polymath });
 
         // Printing all the contract addresses

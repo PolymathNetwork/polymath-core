@@ -393,7 +393,7 @@ contract('ModuleRegistry', accounts => {
                 assert.ok(errorThrown, message);
             });
 
-            it("Should fail to add module because custom modules not allowed", async() => {
+            it("Should fail to register module because custom modules not allowed", async() => {
                 I_CappedSTOFactory2 = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: token_owner });
 
                 assert.notEqual(
@@ -402,29 +402,17 @@ contract('ModuleRegistry', accounts => {
                     "CappedSTOFactory contract was not deployed"
                 );
 
-                let tx = await I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
-
-                assert.equal(
-                    tx.logs[0].args._moduleFactory,
-                    I_CappedSTOFactory2.address,
-                    "CappedSTOFactory is not registerd successfully"
-                );
-
-                assert.equal(tx.logs[0].args._owner, token_owner);
-
-                startTime = latestTime() + duration.seconds(5000);
-                endTime = startTime + duration.days(30);
-                let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
                 let errorThrown = false;
                 try {
-                    tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
+                    let tx = await I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
                 } catch(error) {
                     errorThrown = true;
                     console.log(`         tx revert -> Module is un-verified`.grey);
                     ensureException(error);
                 }
                 assert.ok(errorThrown, message);
+
             });
 
             it("Should switch customModulesAllowed to true", async() => {
@@ -437,8 +425,8 @@ contract('ModuleRegistry', accounts => {
                 startTime = latestTime() + duration.seconds(5000);
                 endTime = startTime + duration.days(30);
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-
-                let tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
+                let tx = await I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
+                tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
 
                 assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(

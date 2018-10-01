@@ -181,7 +181,7 @@ contract('SecurityTokenRegistry', accounts => {
         );
 
         // (C) : Register the STOFactory
-        await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: token_owner });
+        await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_polymath });
 
         // Step 9: Deploy the SecurityTokenRegistry
 

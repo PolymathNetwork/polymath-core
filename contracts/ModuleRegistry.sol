@@ -133,7 +133,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         }
     }
 
-    function _isCompatibleModule(address _moduleFactory, address _securityToken) internal returns(bool) {
+    function _isCompatibleModule(address _moduleFactory, address _securityToken) internal view returns(bool) {
         uint8[] memory _latestVersion = ISecurityToken(_securityToken).getVersion();
         uint8[] memory _lowerBound = IModuleFactory(_moduleFactory).getLowerSTVersionBounds();
         uint8[] memory _upperBound = IModuleFactory(_moduleFactory).getUpperSTVersionBounds();
@@ -148,6 +148,9 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      */
     function registerModule(address _moduleFactory) external whenNotPausedOrOwner {
         if (IFeatureRegistry(getAddress(Encoder.getKey('featureRegistry'))).getFeatureStatus("customModulesAllowed")) {
+            require(msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == getAddress(Encoder.getKey('owner')),
+              "msg.sender must be the Module Factory owner or registry curator");
+        } else {
             require(msg.sender == getAddress(Encoder.getKey("owner")), "Only owner allowed to register modules");
         }
         require(getUint(Encoder.getKey('registry', _moduleFactory)) == 0, "Module factory should not be pre-registered");

@@ -120,14 +120,14 @@ contract('Issuance', accounts => {
             });
 
         // STEP 3: Deploy the ModuleRegistry
-     
+
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
         // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
         I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
         let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, account_polymath]);
         await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, {from: account_polymath});
         I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
-        
+
         // STEP 4: Deploy the GeneralTransferManagerFactory
 
         I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
@@ -169,7 +169,7 @@ contract('Issuance', accounts => {
         await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
 
         // (C) : Register the STOFactory
-        await I_MRProxied.registerModule(I_CappedSTOFactory.address, { from: token_owner });
+        await I_MRProxied.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
         await I_MRProxied.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
 
         // Step 8: Deploy the STFactory contract

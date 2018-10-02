@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 // Copied from OpenZeppelin and modified to be friendlier
 
 /**
- * @title SafeMath
+ * @title KindMath
  * @dev Math operations with safety checks that throw on error
  */
 library KindMath {

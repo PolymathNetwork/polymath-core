@@ -541,22 +541,6 @@ contract('ERC20DividendCheckpoint', accounts => {
             let maturity = latestTime() + duration.days(1);
             let expiry = latestTime() + duration.days(10);
             await I_PolyToken.getTokens(web3.utils.toWei('1.5', 'ether'), token_owner);
-            await I_PolyToken.approve(I_ERC20DividendCheckpoint.address, web3.utils.toWei('1.5', 'ether'), {from: token_owner});
-            let errorThrown = false;
-            try {
-                await I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, web3.utils.toWei('1.5', 'ether'), '', {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because dividend name is empty`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("Create new dividend", async() => {
-            let maturity = latestTime() + duration.days(1);
-            let expiry = latestTime() + duration.days(10);
-            await I_PolyToken.getTokens(web3.utils.toWei('1.5', 'ether'), token_owner);
             // approved in above test
             let tx = await I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, web3.utils.toWei('1.5', 'ether'), dividendName, {from: token_owner});
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 2, "Dividend should be created at checkpoint 1");

@@ -371,6 +371,11 @@ contract VestingEscrowWallet is IWallet {
 
     uint256 _tokensToSend = _calculateTokensToSend(_totalAllocation);
 
+    // Remove tokens from the excess token count if existing tokens are used
+    if (_tokensToSend != _totalAllocation) {
+      numExcessTokens = numExcessTokens.sub(_totalAllocation.sub(_tokensToSend));
+    }
+
     if (_tokensToSend != 0) {
       require(ISecurityToken(securityToken).transferFrom(
         msg.sender,

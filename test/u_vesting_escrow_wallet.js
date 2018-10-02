@@ -341,6 +341,36 @@ contract('VestingEscrowWallet', accounts => {
         });
       })
       context("Initiate Vesting Schedule", async() => {
+        it("Should whitelist all relevant parties", async() => {
+            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
+                        [token_owner, employee1, employee2, employee3, employee4, I_VestingEscrowWallet.address],
+                        [latestTime(),latestTime(),latestTime(),latestTime(),latestTime(),latestTime()],
+                        [latestTime(),latestTime(),latestTime(),latestTime(),latestTime(),latestTime()],
+                        [latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10)],
+                        [true, true, true, true, true, true],
+                        {
+                            from: token_owner,
+                            gas: 6000000
+                        });
+
+            assert.equal(tx.logs[0].args._investor, token_owner);
+            assert.equal(tx.logs[1].args._investor, employee1);
+            assert.equal(tx.logs[2].args._investor, employee2);
+            assert.equal(tx.logs[3].args._investor, employee3);
+            assert.equal(tx.logs[4].args._investor, employee4);
+            assert.equal(tx.logs[5].args._investor, I_VestingEscrowWallet.address);
+        });
+
+        it("Should mint tokens for the token_owner and approve the contract address", async() => {
+          let tokenOwnerInitialBalance = await I_SecurityToken.balanceOf(token_owner);
+
+          await I_SecurityToken.mint(token_owner, web3.utils.toWei('500', 'ether'), { from: token_owner });
+          await I_SecurityToken.approve(I_VestingEscrowWallet.address, web3.utils.toWei('500', 'ether'), {from: token_owner});
+
+          let tokenOwnerNewBalance = await I_SecurityToken.balanceOf(token_owner);
+
+          assert.equal(tokenOwnerNewBalance.toNumber() - web3.utils.toWei('500', 'ether'), tokenOwnerInitialBalance.toNumber(), "Template should be created at number 2");
+        });
         it("Should fail to initiate a vesting schedule because the caller is not the owner", async() => {
           let errorThrown = false;
           let target = [employee1, employee2, employee3]
@@ -381,54 +411,6 @@ contract('VestingEscrowWallet', accounts => {
           }
           assert.ok(errorThrown, message);
         });
-        it("Should add to the whitelist", async() => {
-            // Add the Investor in to the whitelist
-
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
-                token_owner,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
-                true,
-                {
-                    from: token_owner,
-                    gas: 500000
-                });
-
-            assert.equal(tx.logs[0].args._investor.toLowerCase(), token_owner.toLowerCase(), "Failed in adding the investor in whitelist");
-        });
-        it("Should add to the whitelist", async() => {
-            // Add the Investor in to the whitelist
-
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
-                employee1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
-                true,
-                {
-                    from: token_owner,
-                    gas: 500000
-                });
-
-            assert.equal(tx.logs[0].args._investor.toLowerCase(), employee1.toLowerCase(), "Failed in adding the investor in whitelist");
-        });
-        it("Should add to the whitelist", async() => {
-            // Add the Investor in to the whitelist
-
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
-                I_VestingEscrowWallet.address,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
-                true,
-                {
-                    from: token_owner,
-                    gas: 500000
-                });
-
-            assert.equal(tx.logs[0].args._investor.toLowerCase(), I_VestingEscrowWallet.address.toLowerCase(), "Failed in adding the investor in whitelist");
-        });
 
         it("Should fail to initiate a vesting schedule because a target input was 0", async() => {
           let errorThrown = false;
@@ -438,27 +420,10 @@ contract('VestingEscrowWallet', accounts => {
           let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
           let startDate = [latestTime() + duration.days(1), latestTime() + duration.days(2), latestTime() + duration.days(3)]
           let vestingFrequency = [(duration.years(1)/4), (duration.years(1)/2), (duration.years(1)/2)];
-          // await I_SecurityToken.mint(I_VestingEscrowWallet.address, web3.utils.toWei('500', 'ether'), { from: token_owner });
+          // await I_SecurityToken.mint(token_owner, web3.utils.toWei('500', 'ether'), { from: token_owner });
           // await I_SecurityToken.approve(I_VestingEscrowWallet.address, web3.utils.toWei('500', 'ether'), {from: token_owner});
-          var test = await I_SecurityToken.balanceOf(token_owner);
-          console.log(test.valueOf())
-          console.log(I_VestingEscrowWallet.address);
-          console.log(web3.utils.toWei('5', 'ether'));
-
-          var txion = await I_SecurityToken.transfer(I_VestingEscrowWallet.address, web3.utils.toWei('5', 'ether'), {from: token_owner})
-          // await I_PolyToken.getTokens(web3.utils.toWei('5000000', 'ether'), token_owner);
-          await I_PolyToken.approve(I_VestingEscrowWallet.address, web3.utils.toWei('5000000', 'ether'), {from: token_owner});
-          await I_PolyToken.approve(token_owner, web3.utils.toWei('5000000', 'ether'), {from: token_owner});
-
-          let test2 = await I_PolyToken.balanceOf(token_owner);
-          let test3 = await I_PolyToken.balanceOf(I_VestingEscrowWallet.address);
-
-          console.log("New owner -    ", test2);
-          console.log("New contract - ", test3);
-
 
           let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
-          console.log(params);
           let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
 
           // try {

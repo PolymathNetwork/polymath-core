@@ -113,7 +113,7 @@ contract('ERC20DividendCheckpoint', accounts => {
             });
 
         // STEP 3: Deploy the ModuleRegistry
-     
+
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
         // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
         I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
@@ -157,24 +157,6 @@ contract('ERC20DividendCheckpoint', accounts => {
             "ERC20DividendCheckpointFactory contract was not deployed"
         );
 
-        // STEP 8: Register the Modules with the ModuleRegistry contract
-
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the ERC20DividendCheckpointFactory
-        await I_MRProxied.registerModule(I_ERC20DividendCheckpointFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_ERC20DividendCheckpointFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the Paid ERC20DividendCheckpointFactory
-        await I_MRProxied.registerModule(P_ERC20DividendCheckpointFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(P_ERC20DividendCheckpointFactory.address, true, { from: account_polymath });
-
         // Step 9: Deploy the STFactory contract
 
         I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address);
@@ -208,6 +190,24 @@ contract('ERC20DividendCheckpoint', accounts => {
        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
        await I_MRProxied.updateFromRegistry({from: account_polymath});
 
+       // STEP 8: Register the Modules with the ModuleRegistry contract
+
+       // (A) :  Register the GeneralTransferManagerFactory
+       await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+       await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+
+       // (B) :  Register the GeneralDelegateManagerFactory
+       await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
+       await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+
+       // (C) : Register the ERC20DividendCheckpointFactory
+       await I_MRProxied.registerModule(I_ERC20DividendCheckpointFactory.address, { from: account_polymath });
+       await I_MRProxied.verifyModule(I_ERC20DividendCheckpointFactory.address, true, { from: account_polymath });
+
+       // (C) : Register the Paid ERC20DividendCheckpointFactory
+       await I_MRProxied.registerModule(P_ERC20DividendCheckpointFactory.address, { from: account_polymath });
+       await I_MRProxied.verifyModule(P_ERC20DividendCheckpointFactory.address, true, { from: account_polymath });
+
         // Printing all the contract addresses
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
@@ -239,7 +239,7 @@ contract('ERC20DividendCheckpoint', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner});
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -581,7 +581,7 @@ contract('ERC20DividendCheckpoint', accounts => {
         });
 
         it("Exclude account_temp using global exclusion list", async() => {
-            await I_ERC20DividendCheckpoint.setExcluded([account_temp], {from: token_owner});
+            await I_ERC20DividendCheckpoint.setDefaultExcluded([account_temp], {from: token_owner});
         });
 
         it("Create another new dividend", async() => {
@@ -655,7 +655,7 @@ contract('ERC20DividendCheckpoint', accounts => {
 
 
         it("Delete global exclusion list", async() => {
-            await I_ERC20DividendCheckpoint.setExcluded([], {from: token_owner});
+            await I_ERC20DividendCheckpoint.setDefaultExcluded([], {from: token_owner});
         });
 
 

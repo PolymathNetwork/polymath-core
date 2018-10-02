@@ -42,13 +42,15 @@ contract TrackedRedemptionFactory is ModuleFactory {
      * @notice Type of the Module factory
      */
     function getTypes() external view returns(uint8[]) {
-        return [5];
+        uint8[] memory res = new uint8[](1);
+        res[0] = 5;
+        return res;
     }
 
     /**
      * @notice Get the name of the Module
      */
-    function getName() external view returns(bytes32) {
+    function getName() public view returns(bytes32) {
         return name;
     }
 

@@ -44,13 +44,15 @@ contract CappedSTOFactory is ModuleFactory {
      * @notice Type of the Module factory
      */
     function getTypes() external view returns(uint8[]) {
-        return [3];
+        uint8[] memory res = new uint8[](1);
+        res[0] = 3;
+        return res;
     }
 
     /**
      * @notice Get the name of the Module
      */
-    function getName() external view returns(bytes32) {
+    function getName() public view returns(bytes32) {
         return name;
     }
 

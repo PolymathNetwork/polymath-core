@@ -126,8 +126,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
             } else {
                 require(getBool(Encoder.getKey('verified', _moduleFactory)), "ModuleFactory must be verified");
             }
-            require(_isCompatibleModule(_moduleFactory, msg.sender), "Incompatable versions");
-            require(getArrayUint(Encoder.getKey('registry',_moduleFactory)) != [], "ModuleFactory not registered");
+            require(_isCompatibleModule(_moduleFactory, msg.sender), "Version should within the compatible range of ST");
+            require(getUint(Encoder.getKey('registry',_moduleFactory)) != 0, "ModuleFactory type should not be 0");
             pushArray(Encoder.getKey('reputation', _moduleFactory), msg.sender);
             emit ModuleUsed(_moduleFactory, msg.sender);
         }
@@ -153,16 +153,15 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         } else {
             require(msg.sender == getAddress(Encoder.getKey("owner")), "Only owner allowed to register modules");
         }
-        require(getArrayUint(Encoder.getKey('registry', _moduleFactory)) == [], "Module factory should not be pre-registered");
+        require(getUint(Encoder.getKey('registry', _moduleFactory)) == 0, "Module factory should not be pre-registered");
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        uint8[] moduleTypes = moduleFactory.getTypes();
-        for (uint256 i = 0; i < moduleTypes.length; i++) {
-            require(moduleTypes[i] != 0, "Factory moduleType should not equal to 0");
-            pushArray(Encoder.getKey('registry', _moduleFactory), moduleTypes[i]);
-        }
+        require(moduleFactory.getTypes().length != 0, "Factory must have type");
+        // NB - here we index by the first type of the module.
+        uint8 moduleType = moduleFactory.getTypes()[0];
+        set(Encoder.getKey('registry', _moduleFactory), uint256(moduleType));
         set(Encoder.getKey('moduleListIndex', _moduleFactory), uint256(getArrayAddress(Encoder.getKey('moduleList', uint256(moduleType))).length));
         pushArray(Encoder.getKey('moduleList', uint256(moduleType)), _moduleFactory);
-        emit ModuleRegistered(_moduleFactory, IOwnable(_moduleFactory).owner());
+        emit ModuleRegistered (_moduleFactory, IOwnable(_moduleFactory).owner());
     }
 
     /**
@@ -170,8 +169,9 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _moduleFactory is the address of the module factory to be deleted from the registry
      */
     function removeModule(address _moduleFactory) external whenNotPausedOrOwner {
-        uint8[] moduleTypes = getArrayUint(Encoder.getKey('registry', _moduleFactory));
-        require(moduleTypes != [], "Module factory not registered");
+        uint256 moduleType = getUint(Encoder.getKey('registry', _moduleFactory));
+
+        require(moduleType != 0, "Module factory should be registered");
         require(msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == getAddress(Encoder.getKey('owner')),
         "msg.sender must be the Module Factory owner or registry curator");
 
@@ -188,7 +188,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         deleteArrayAddress(Encoder.getKey('moduleList', moduleType), last);
 
         // delete registry[_moduleFactory];
-        setArray(Encoder.getKey('registry', _moduleFactory), []);
+        set(Encoder.getKey('registry', _moduleFactory), uint256(0));
         // delete reputation[_moduleFactory];
         setArray(Encoder.getKey('reputation', _moduleFactory), new address[](0));
         // delete verified[_moduleFactory];
@@ -207,7 +207,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     * @return bool
     */
     function verifyModule(address _moduleFactory, bool _verified) external onlyOwner {
-        require(getUint(Encoder.getKey('registry', _moduleFactory)) != [], "Module factory must be registered");
+        require(getUint(Encoder.getKey('registry', _moduleFactory)) != uint256(0), "Module factory must be registered");
         set(Encoder.getKey('verified', _moduleFactory), _verified);
         emit ModuleVerified(_moduleFactory, _verified);
     }

@@ -335,19 +335,18 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         require(modulesToData[_module].module != address(0), "Module missing");
         emit ModuleRemoved(modulesToData[_module].moduleTypes, _module, now);
         // Remove from module type list
-        uint8[] moduleTypes = modulesToData[_module].moduleTypes;
+        uint8[] memory moduleTypes = modulesToData[_module].moduleTypes;
         for (uint256 i = 0; i < moduleTypes.length; i++) {
             _removeModuleWithIndex(moduleTypes[i], modulesToData[_module].moduleIndexes[i]);
         }
-
         // Remove from module names list
         uint256 index = modulesToData[_module].nameIndex;
         bytes32 name = modulesToData[_module].name;
-        length = names[name].length;
+        uint256 length = names[name].length;
         names[name][index] = names[name][length - 1];
         names[name].length = length - 1;
         if ((length - 1) != index) {
-            modulesToData[modules[moduleType][index]].nameIndex = index;
+            modulesToData[names[name][index]].nameIndex = index;
         }
         // Remove from modulesToData
         delete modulesToData[_module];
@@ -367,7 +366,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
           modulesToData[_module].module,
           modulesToData[_module].moduleFactory,
           modulesToData[_module].isArchived,
-          modulesToData[_module].moduleTypes,
+          modulesToData[_module].moduleTypes);
     }
 
     /**

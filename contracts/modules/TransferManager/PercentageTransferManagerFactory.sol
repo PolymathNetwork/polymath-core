@@ -45,13 +45,15 @@ contract PercentageTransferManagerFactory is ModuleFactory {
      * @return uint8
      */
     function getTypes() external view returns(uint8[]) {
-        return [2];
+        uint8[] memory res = new uint8[](1);
+        res[0] = 2;
+        return res;
     }
 
     /**
      * @notice Get the name of the Module
      */
-    function getName() external view returns(bytes32) {
+    function getName() public view returns(bytes32) {
         return name;
     }
 

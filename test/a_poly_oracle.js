@@ -84,9 +84,9 @@ let requestIds = new Array();
             let tx = await I_PolyOracle.schedulePriceUpdatesFixed([],{from: owner, value:web3.utils.toWei("1")});
             assert.isAtMost(tx.logs[0].args._time.toNumber(), latestTime());
             // await increaseTime(50);
-            const logNewPriceWatcher = await promisifyLogWatch(I_PolyOracle.LogPriceUpdated({ fromBlock: blockNo }), 1);
+            const logNewPriceWatcher = await promisifyLogWatch(I_PolyOracle.PriceUpdated({ fromBlock: blockNo }), 1);
             // const log = await logNewPriceWatcher;
-            assert.equal(logNewPriceWatcher.event, 'LogPriceUpdated', 'LogPriceUpdated not emitted.')
+            assert.equal(logNewPriceWatcher.event, 'PriceUpdated', 'PriceUpdated not emitted.')
             assert.isNotNull(logNewPriceWatcher.args._price, 'Price returned was null.')
             assert.equal(logNewPriceWatcher.args._oldPrice.toNumber(), 0);
             console.log('Success! Current price is: ' + logNewPriceWatcher.args._price.dividedBy(new BigNumber(10).pow(18)).toNumber() + ' USD/POLY')
@@ -107,9 +107,9 @@ let requestIds = new Array();
             }
 
             // Wait for the callback to be invoked by oraclize and the event to be emitted
-            const logNewPriceWatcher = promisifyLogWatch(I_PolyOracle.LogPriceUpdated({ fromBlock: blockNo }), 2);
+            const logNewPriceWatcher = promisifyLogWatch(I_PolyOracle.PriceUpdated({ fromBlock: blockNo }), 2);
             const log = await logNewPriceWatcher;
-            assert.equal(log.event, 'LogPriceUpdated', 'LogPriceUpdated not emitted.')
+            assert.equal(log.event, 'PriceUpdated', 'PriceUpdated not emitted.')
             assert.isNotNull(log.args._price, 'Price returned was null.');
             console.log('Success! Current price is: ' + log.args._price.dividedBy(new BigNumber(10).pow(18)).toNumber() + ' USD/POLY')
         });
@@ -137,9 +137,9 @@ let requestIds = new Array();
                 assert.isAtMost(time.toNumber(), latestTime() + ((i + 1) * 30));
             }
             // Wait for the callback to be invoked by oraclize and the event to be emitted
-            const logNewPriceWatcher = promisifyLogWatch(I_PolyOracle.LogPriceUpdated({ fromBlock: blockNo }), 2);
+            const logNewPriceWatcher = promisifyLogWatch(I_PolyOracle.PriceUpdated({ fromBlock: blockNo }), 2);
             const log = await logNewPriceWatcher;
-            assert.equal(log.event, 'LogPriceUpdated', 'LogPriceUpdated not emitted.')
+            assert.equal(log.event, 'PriceUpdated', 'PriceUpdated not emitted.')
             assert.isNotNull(log.args._price, 'Price returned was null.')
             console.log('Success! Current price is: ' + log.args._price.dividedBy(new BigNumber(10).pow(18)).toNumber() + ' USD/POLY');
             latestPrice = log.args._price;
@@ -229,9 +229,9 @@ let requestIds = new Array();
                 assert.isAtMost(time.toNumber(), timeScheduling[i]);
             }
 
-            const logNewPriceWatcher = await promisifyLogWatch(I_PolyOracle.LogPriceUpdated({ fromBlock: blockNo }), 2);
+            const logNewPriceWatcher = await promisifyLogWatch(I_PolyOracle.PriceUpdated({ fromBlock: blockNo }), 2);
 
-            assert.equal(logNewPriceWatcher.event, 'LogPriceUpdated', 'LogPriceUpdated not emitted.')
+            assert.equal(logNewPriceWatcher.event, 'PriceUpdated', 'PriceUpdated not emitted.')
             assert.isNotNull(logNewPriceWatcher.args._price, 'Price returned was null.')
             console.log('Success! Current price is: ' + logNewPriceWatcher.args._price.dividedBy(new BigNumber(10).pow(18)).toNumber() + ' USD/POLY');
             // assert.isTrue(false);
@@ -319,8 +319,8 @@ let requestIds = new Array();
             let blockNo = latestBlock();
             let tx = await I_PolyOracle.schedulePriceUpdatesFixed([],{from: owner, value:web3.utils.toWei("1")});
             assert.isAtMost(tx.logs[0].args._time.toNumber(), latestTime());
-            const logNewPriceWatcher = await promisifyLogWatch(I_PolyOracle.LogPriceUpdated({ fromBlock: blockNo }), 1);
-            assert.equal(logNewPriceWatcher.event, 'LogPriceUpdated', 'LogPriceUpdated not emitted.')
+            const logNewPriceWatcher = await promisifyLogWatch(I_PolyOracle.PriceUpdated({ fromBlock: blockNo }), 1);
+            assert.equal(logNewPriceWatcher.event, 'PriceUpdated', 'PriceUpdated not emitted.')
             assert.isNotNull(logNewPriceWatcher.args._price, 'Price returned was null.')
             console.log('Success! Current price is: ' + logNewPriceWatcher.args._price.dividedBy(new BigNumber(10).pow(18)).toNumber() + ' USD/POLY');
             // assert.isTrue(false);

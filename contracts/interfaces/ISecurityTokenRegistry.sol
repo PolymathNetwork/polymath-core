@@ -84,7 +84,7 @@ interface ISecurityTokenRegistry {
     /**
      * @notice get Protocol version
      */
-    function getProtocolVersion() public view returns(uint8[]);
+    function getProtocolVersion() external view returns(uint8[]);
 
     /**
      * @notice Use to get the ticker list as per the owner

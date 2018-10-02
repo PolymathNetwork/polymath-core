@@ -695,7 +695,7 @@ contract('ERC20DividendCheckpoint', accounts => {
             let expiry = latestTime() - duration.days(10);
             await I_PolyToken.approve(I_ERC20DividendCheckpoint.address, web3.utils.toWei('20', 'ether'), {from: token_owner});
             try {
-                tx = await I_ERC20DividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, I_PolyToken.address, web3.utils.toWei('20', 'ether'), 4, {from: token_owner});
+                tx = await I_ERC20DividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, I_PolyToken.address, web3.utils.toWei('20', 'ether'), 4, dividendName, {from: token_owner});
             } catch(error) {
                 console.log(`       tx -> failed because maturity > expiry`.grey);
                 ensureException(error);

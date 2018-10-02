@@ -393,7 +393,7 @@ contract('EtherDividendCheckpoint', accounts => {
             let maturity = latestTime() - duration.days(2);
             let expiry = latestTime() - duration.days(1);
             try {
-                let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, {from: token_owner, value: web3.utils.toWei('1.5', 'ether')});
+                let tx = await I_EtherDividendCheckpoint.createDividend(maturity, expiry, dividendName, {from: token_owner, value: web3.utils.toWei('1.5', 'ether')});
             } catch(error) {
                 console.log(`       tx -> failed because now > expiry`.grey);
                 ensureException(error);

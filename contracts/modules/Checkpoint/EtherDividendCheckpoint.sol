@@ -8,7 +8,7 @@ import "./DividendCheckpoint.sol";
 contract EtherDividendCheckpoint is DividendCheckpoint {
     using SafeMath for uint256;
 
-    event EtherDividendDeposited(address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity, uint256 _expiry, uint256 _amount, uint256 _totalSupply, uint256 _dividendIndex);
+    event EtherDividendDeposited(address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity, uint256 _expiry, uint256 _amount, uint256 _totalSupply, uint256 _dividendIndex, string _name);
     event EtherDividendClaimed(address indexed _payee, uint256 _dividendIndex, uint256 _amount, uint256 _withheld);
     event EtherDividendReclaimed(address indexed _claimer, uint256 _dividendIndex, uint256 _claimedAmount);
     event EtherDividendClaimFailed(address indexed _payee, uint256 _dividendIndex, uint256 _amount, uint256 _withheld);
@@ -28,9 +28,10 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @notice Creates a dividend and checkpoint for the dividend, using global list of excluded addresses
      * @param _maturity Time from which dividend can be paid
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
+     * @param _name name/title for identification
      */
-    function createDividend(uint256 _maturity, uint256 _expiry) payable external onlyOwner {
-        createDividendWithExclusions(_maturity, _expiry, excluded);
+    function createDividend(uint256 _maturity, uint256 _expiry, string _name) payable external onlyOwner {
+        createDividendWithExclusions(_maturity, _expiry, excluded, _name);
     }
 
     /**
@@ -38,9 +39,10 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _maturity Time from which dividend can be paid
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
      * @param _checkpointId Id of the checkpoint from which to issue dividend
+     * @param _name name/title for identification
      */
-    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, uint256 _checkpointId) payable external onlyOwner {
-        createDividendWithCheckpointAndExclusions(_maturity, _expiry, _checkpointId, excluded);
+    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, uint256 _checkpointId, string _name) payable external onlyOwner {
+        _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _checkpointId, excluded, _name);
     }
 
     /**
@@ -48,10 +50,11 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _maturity Time from which dividend can be paid
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
      * @param _excluded List of addresses to exclude
+     * @param _name name/title for identification
      */
-    function createDividendWithExclusions(uint256 _maturity, uint256 _expiry, address[] _excluded) payable public onlyOwner {
+    function createDividendWithExclusions(uint256 _maturity, uint256 _expiry, address[] _excluded, string _name) payable public onlyOwner {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
-        createDividendWithCheckpointAndExclusions(_maturity, _expiry, checkpointId, _excluded);
+        _createDividendWithCheckpointAndExclusions(_maturity, _expiry, checkpointId, _excluded, _name);
     }
 
     /**
@@ -60,8 +63,39 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
      * @param _checkpointId Id of the checkpoint from which to issue dividend
      * @param _excluded List of addresses to exclude
+     * @param _name name/title for identification
      */
-    function createDividendWithCheckpointAndExclusions(uint256 _maturity, uint256 _expiry, uint256 _checkpointId, address[] _excluded) payable public onlyOwner {
+    function createDividendWithCheckpointAndExclusions(
+        uint256 _maturity, 
+        uint256 _expiry, 
+        uint256 _checkpointId, 
+        address[] _excluded, 
+        string _name
+    ) 
+        payable 
+        public 
+        onlyOwner 
+    {
+        _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _checkpointId, _excluded, _name);
+    }
+
+    /**
+     * @notice Creates a dividend with a provided checkpoint, specifying explicit excluded addresses
+     * @param _maturity Time from which dividend can be paid
+     * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
+     * @param _checkpointId Id of the checkpoint from which to issue dividend
+     * @param _excluded List of addresses to exclude
+     * @param _name name/title for identification
+     */
+    function _createDividendWithCheckpointAndExclusions(
+        uint256 _maturity, 
+        uint256 _expiry, 
+        uint256 _checkpointId, 
+        address[] _excluded, 
+        string _name
+    ) 
+        internal
+    {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
         require(_expiry > _maturity, "Expiry is before maturity");
         require(_expiry > now, "Expiry is in the past");
@@ -84,13 +118,14 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
             currentSupply.sub(excludedSupply),
             false,
             0,
-            0
+            0,
+            _name
           )
         );
         for (uint256 j = 0; j < _excluded.length; j++) {
             dividends[dividends.length - 1].dividendExcluded[_excluded[j]] = true;
         }
-        emit EtherDividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, msg.value, currentSupply, dividendIndex);
+        emit EtherDividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, msg.value, currentSupply, dividendIndex, _name);
     }
 
     /**

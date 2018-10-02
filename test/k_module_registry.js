@@ -129,7 +129,7 @@ contract('ModuleRegistry', accounts => {
             });
 
        // STEP 3: Deploy the ModuleRegistry
-     
+
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
 
         assert.notEqual(
@@ -178,7 +178,7 @@ contract('ModuleRegistry', accounts => {
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
 
-        
+
 
         assert.notEqual(
             I_FeatureRegistry.address.valueOf(),
@@ -276,11 +276,11 @@ contract('ModuleRegistry', accounts => {
                 assert.equal(tx.logs[0].args._moduleFactory, I_GeneralTransferManagerFactory.address, "Should be the same address");
                 assert.equal(tx.logs[0].args._owner, account_polymath, "Should be the right owner");
 
-                let _list = await I_MRProxied.getModuleListOfType(transferManagerKey);
+                let _list = await I_MRProxied.getModulesByType(transferManagerKey);
                 assert.equal(_list.length, 1, "Length should be 1");
                 assert.equal(_list[0], I_GeneralTransferManagerFactory.address);
 
-                let _reputation = await I_MRProxied.getReputationOfFactory(I_GeneralTransferManagerFactory.address);
+                let _reputation = await I_MRProxied.getReputationByFactory(I_GeneralTransferManagerFactory.address);
                 assert.equal(_reputation.length, 0);
             });
 
@@ -368,7 +368,7 @@ contract('ModuleRegistry', accounts => {
         })
 
         describe("Test cases for the useModule function of the module registry", async() => {
-            
+
             it("Deploy the securityToken", async() => {
                 await I_PolyToken.getTokens(web3.utils.toWei("500"), account_issuer);
                 await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), {from: account_issuer});
@@ -392,54 +392,42 @@ contract('ModuleRegistry', accounts => {
                 }
                 assert.ok(errorThrown, message);
             });
-                
-            it("Should fail to add module because custom modules not allowed", async() => {
+
+            it("Should fail to register module because custom modules not allowed", async() => {
                 I_CappedSTOFactory2 = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: token_owner });
-    
+
                 assert.notEqual(
                     I_CappedSTOFactory2.address.valueOf(),
                     "0x0000000000000000000000000000000000000000",
                     "CappedSTOFactory contract was not deployed"
                 );
-    
-                let tx = await I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
-    
-                assert.equal(
-                    tx.logs[0].args._moduleFactory,
-                    I_CappedSTOFactory2.address,
-                    "CappedSTOFactory is not registerd successfully"
-                );
-    
-                assert.equal(tx.logs[0].args._owner, token_owner);
-    
-                startTime = latestTime() + duration.seconds(5000);
-                endTime = startTime + duration.days(30);
-                let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-    
+
+
                 let errorThrown = false;
                 try {
-                    tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
+                    let tx = await I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
                 } catch(error) {
                     errorThrown = true;
                     console.log(`         tx revert -> Module is un-verified`.grey);
                     ensureException(error);
                 }
                 assert.ok(errorThrown, message);
+
             });
-    
+
             it("Should switch customModulesAllowed to true", async() => {
                 assert.equal(false, await I_FeatureRegistry.getFeatureStatus.call("customModulesAllowed"), "Custom modules should be dissabled by default.");
                 let tx = await I_FeatureRegistry.setFeatureStatus("customModulesAllowed", true, { from: account_polymath });
                 assert.equal(true, await I_FeatureRegistry.getFeatureStatus.call("customModulesAllowed"), "Custom modules should be switched to true.");
             });
-                
+
             it("Should successfully add module because custom modules switched on", async() => {
                 startTime = latestTime() + duration.seconds(5000);
                 endTime = startTime + duration.days(30);
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-    
-                let tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
-    
+                let tx = await I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
+                tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
+
                 assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
                     web3.utils.toAscii(tx.logs[2].args._name)
@@ -447,10 +435,10 @@ contract('ModuleRegistry', accounts => {
                     "CappedSTO",
                     "CappedSTOFactory module was not added"
                 );
-                let _reputation = await I_MRProxied.getReputationOfFactory.call(I_CappedSTOFactory2.address);
+                let _reputation = await I_MRProxied.getReputationByFactory.call(I_CappedSTOFactory2.address);
                 assert.equal(_reputation.length, 1);
             });
-                
+
             it("Should successfully add verified module", async() => {
                 I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from: account_polymath});
                 await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, {from: account_polymath});
@@ -461,7 +449,7 @@ contract('ModuleRegistry', accounts => {
 
             it("Should failed in adding the TestSTOFactory module because not compatible with the current protocol version --lower", async() => {
                 I_TestSTOFactory = await TestSTOFactory.new(I_PolyToken.address, 0, 0, 0, {from: account_polymath});
-                await I_MRProxied.registerModule(I_TestSTOFactory.address, {from: token_owner});
+                await I_MRProxied.registerModule(I_TestSTOFactory.address, {from: account_polymath});
                 await I_MRProxied.verifyModule(I_TestSTOFactory.address, true, {from: account_polymath});
                 // Taking the snapshot the revert the changes from here
                 let id = await takeSnapshot();
@@ -513,58 +501,48 @@ contract('ModuleRegistry', accounts => {
 
         });
 
-        describe("Test cases for the tag functions", async() => {
-
-            it("Should fail in adding the tag. Because msg.sender is not the owner", async() => {
-                let errorThrown = false;
-                try {
-                    await I_MRProxied.addTagByModuleType(3,["Non-Refundable","Capped","ETH","POLY"],{from: account_temp});
-                } catch(error) {
-                    console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
-            });
-
-            it("Should successfully add the tag", async() => {
-                await I_MRProxied.addTagByModuleType(3,["Non-Refundable","Capped","ETH","POLY"],{from: account_polymath});
-                let tags = await I_MRProxied.getTagByModuleType.call(3);
-                assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''),"Non-Refundable");
-            });
-
-            it("Should fail in removing the tag from the list", async() => {
-                let errorThrown = false;
-                try {
-                    await I_MRProxied.removeTagByModuleType(3,["Capped", "ETH"], {from: account_investor1});
-                } catch(error) {
-                    console.log(`         tx revert -> msg.sender should be account_polymath`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
-            });
-
-            it("Should remove the tag from the list", async() => {
-                await I_MRProxied.removeTagByModuleType(3,["Capped", "ETH"], {from:account_polymath});
-                let tags = await I_MRProxied.getTagByModuleType.call(3);
-                assert.equal(web3.utils.toAscii(tags[1]).replace(/\u0000/g, ''),"POLY");
-            });
-        });
-
-        describe("Test case for the getAvailableModulesOfType()", async() => {
+        describe("Test case for the getModulesByTypeAndToken()", async() => {
 
             it("Should get the list of available modules when the customModulesAllowed", async() => {
-                let _list = await I_MRProxied.getAvailableModulesOfType.call(3, I_SecurityToken.address);
+                let _list = await I_MRProxied.getModulesByTypeAndToken.call(3, I_SecurityToken.address);
                 assert.equal(_list[0], I_CappedSTOFactory2.address);
             })
 
             it("Should get the list of available modules when the customModulesAllowed is not allowed", async() => {
                 await I_FeatureRegistry.setFeatureStatus("customModulesAllowed", false, { from: account_polymath });
-                let _list = await I_MRProxied.getAvailableModulesOfType.call(3, I_SecurityToken.address);
+                let _list = await I_MRProxied.getModulesByTypeAndToken.call(3, I_SecurityToken.address);
                 assert.equal(_list.length, 0);
             })
         })
+
+        describe("Test cases for getters", async() => {
+
+            it("Check getter - ", async() => {
+                console.log("getModulesByType:")
+                for (let i = 0; i < 5; i++) {
+                    let _list = await I_MRProxied.getModulesByType.call(i);
+                    console.log("Type: " + i + ":" + _list);
+                }
+                console.log("getModulesByTypeAndToken:")
+                for (let i = 0; i < 5; i++) {
+                    let _list = await I_MRProxied.getModulesByTypeAndToken.call(i, I_SecurityToken.address);
+                    console.log("Type: " + i + ":" + _list);
+                }
+                console.log("getTagsByType:")
+                for (let i = 0; i < 5; i++) {
+                    let _list = await I_MRProxied.getTagsByType.call(i);
+                    console.log("Type: " + i + ":" + _list[1]);
+                    console.log("Type: " + i + ":" + _list[0].map(x => web3.utils.toAscii(x)));
+                }
+                console.log("getTagsByTypeAndToken:")
+                for (let i = 0; i < 5; i++) {
+                    let _list = await I_MRProxied.getTagsByTypeAndToken.call(i, I_SecurityToken.address);
+                    console.log("Type: " + i + ":" + _list[1]);
+                    console.log("Type: " + i + ":" + _list[0].map(x => web3.utils.toAscii(x)));
+                }
+            })
+
+        });
 
         describe("Test cases for removeModule()", async() => {
 
@@ -579,59 +557,59 @@ contract('ModuleRegistry', accounts => {
                 }
                 assert.ok(errorThrown, message);
             });
-    
+
             it("Should successfully remove module and delete data if msg.sender is curator", async() => {
                 let snap = await takeSnapshot();
-    
-                let sto1 = (await I_MRProxied.getModuleListOfType.call(3))[0];
-                let sto2 = (await I_MRProxied.getModuleListOfType.call(3))[1];
-    
+
+                let sto1 = (await I_MRProxied.getModulesByType.call(3))[0];
+                let sto2 = (await I_MRProxied.getModulesByType.call(3))[1];
+
                 assert.equal(sto1,I_CappedSTOFactory1.address);
                 assert.equal(sto2,I_CappedSTOFactory2.address);
-                assert.equal((await I_MRProxied.getModuleListOfType.call(3)).length, 3);
-    
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
+
                 let tx = await I_MRProxied.removeModule(sto1, { from: account_polymath });
-    
+
                 assert.equal(tx.logs[0].args._moduleFactory, sto1, "Event is not properly emitted for _moduleFactory");
                 assert.equal(tx.logs[0].args._decisionMaker, account_polymath, "Event is not properly emitted for _decisionMaker");
-    
-                let sto2_end = (await I_MRProxied.getModuleListOfType.call(3))[1];
-    
+
+                let sto2_end = (await I_MRProxied.getModulesByType.call(3))[1];
+
                 // re-ordering
                 assert.equal(sto2_end,sto2);
                 // delete related data
                 assert.equal(await I_MRProxied.getUintValues.call(web3.utils.soliditySha3("registry", sto1)), 0);
-                assert.equal(await I_MRProxied.getReputationOfFactory.call(sto1), 0);
-                assert.equal((await I_MRProxied.getModuleListOfType.call(3)).length, 2);
+                assert.equal(await I_MRProxied.getReputationByFactory.call(sto1), 0);
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 2);
                 assert.equal(await I_MRProxied.getBoolValues.call(web3.utils.soliditySha3("verified", sto1)), false);
-    
+
                 await revertToSnapshot(snap);
             });
-    
+
             it("Should successfully remove module and delete data if msg.sender is owner", async() => {
-                let sto1 = (await I_MRProxied.getModuleListOfType.call(3))[0];
-                let sto2 = (await I_MRProxied.getModuleListOfType.call(3))[1];
-    
+                let sto1 = (await I_MRProxied.getModulesByType.call(3))[0];
+                let sto2 = (await I_MRProxied.getModulesByType.call(3))[1];
+
                 assert.equal(sto1,I_CappedSTOFactory1.address);
                 assert.equal(sto2,I_CappedSTOFactory2.address);
-                assert.equal((await I_MRProxied.getModuleListOfType.call(3)).length, 3);
-    
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
+
                 let tx = await I_MRProxied.removeModule(sto2, { from: token_owner });
-    
+
                 assert.equal(tx.logs[0].args._moduleFactory, sto2, "Event is not properly emitted for _moduleFactory");
                 assert.equal(tx.logs[0].args._decisionMaker, token_owner, "Event is not properly emitted for _decisionMaker");
-    
-                let sto1_end = (await I_MRProxied.getModuleListOfType.call(3))[0];
-    
+
+                let sto1_end = (await I_MRProxied.getModulesByType.call(3))[0];
+
                 // re-ordering
                 assert.equal(sto1_end,sto1);
                 // delete related data
                 assert.equal(await I_MRProxied.getUintValues.call(web3.utils.soliditySha3("registry", sto2)), 0);
-                assert.equal(await I_MRProxied.getReputationOfFactory.call(sto2), 0);
-                assert.equal((await I_MRProxied.getModuleListOfType.call(3)).length, 2);
+                assert.equal(await I_MRProxied.getReputationByFactory.call(sto2), 0);
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 2);
                 assert.equal(await I_MRProxied.getBoolValues.call(web3.utils.soliditySha3("verified", sto2)), false);
             });
-    
+
             it("Should fail if module already removed", async() => {
                 let errorThrown = false;
                 try {
@@ -643,7 +621,7 @@ contract('ModuleRegistry', accounts => {
                 }
                 assert.ok(errorThrown, message);
             });
-    
+
         });
 
         describe("Test cases for IRegistry functionality", async() => {

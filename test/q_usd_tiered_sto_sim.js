@@ -195,7 +195,7 @@ contract('USDTieredSTO Sim', accounts => {
             });
 
         // STEP 3: Deploy the ModuleRegistry
-     
+
         I_ModuleRegistry = await ModuleRegistry.new({from: POLYMATH});
         // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
         I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from: POLYMATH});
@@ -228,29 +228,16 @@ contract('USDTieredSTO Sim', accounts => {
          I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new({ from: POLYMATH });
 
          // STEP 6: Deploy the USDTieredSTOFactory
- 
+
          I_USDTieredSTOFactory = await USDTieredSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, I_USDTieredSTOProxyFactory.address, { from: ISSUER });
- 
+
          assert.notEqual(
              I_USDTieredSTOFactory.address.valueOf(),
              "0x0000000000000000000000000000000000000000",
              "USDTieredSTOFactory contract was not deployed"
          );
- 
 
-        // STEP 7: Register the Modules with the ModuleRegistry contract
 
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: POLYMATH });
-        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: POLYMATH });
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: POLYMATH });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: POLYMATH });
-
-        // (C) : Register the STOFactory
-        await I_MRProxied.registerModule(I_USDTieredSTOFactory.address, { from: ISSUER });
-        await I_MRProxied.verifyModule(I_USDTieredSTOFactory.address, true, { from: POLYMATH });
 
         // Step 8: Deploy the STFactory contract
 
@@ -284,6 +271,20 @@ contract('USDTieredSTO Sim', accounts => {
         await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: POLYMATH});
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: POLYMATH});
         await I_MRProxied.updateFromRegistry({from: POLYMATH});
+
+        // STEP 7: Register the Modules with the ModuleRegistry contract
+
+        // (A) :  Register the GeneralTransferManagerFactory
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: POLYMATH });
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: POLYMATH });
+
+        // (B) :  Register the GeneralDelegateManagerFactory
+        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: POLYMATH });
+        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: POLYMATH });
+
+        // (C) : Register the STOFactory
+        await I_MRProxied.registerModule(I_USDTieredSTOFactory.address, { from: POLYMATH });
+        await I_MRProxied.verifyModule(I_USDTieredSTOFactory.address, true, { from: POLYMATH });
 
         // Step 12: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY

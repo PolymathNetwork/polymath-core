@@ -31,7 +31,6 @@ contract('VestingEscrowWallet', accounts => {
     let employee1;
     let employee2;
     let employee3;
-    let employee4;
     let account_temp;
 
     // investor Details
@@ -88,7 +87,6 @@ contract('VestingEscrowWallet', accounts => {
         employee1 = accounts[6];
         employee2 = accounts[7];
         employee3 = accounts[8];
-        employee4 = accounts[9];
         account_temp = accounts[2];
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -343,11 +341,11 @@ contract('VestingEscrowWallet', accounts => {
       context("Initiate Vesting Schedule", async() => {
         it("Should whitelist all relevant parties", async() => {
             let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
-                        [token_owner, employee1, employee2, employee3, employee4, I_VestingEscrowWallet.address],
-                        [latestTime(),latestTime(),latestTime(),latestTime(),latestTime(),latestTime()],
-                        [latestTime(),latestTime(),latestTime(),latestTime(),latestTime(),latestTime()],
-                        [latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10)],
-                        [true, true, true, true, true, true],
+                        [token_owner, employee1, employee2, employee3, I_VestingEscrowWallet.address],
+                        [latestTime(),latestTime(),latestTime(),latestTime(),latestTime()],
+                        [latestTime(),latestTime(),latestTime(),latestTime(),latestTime()],
+                        [latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10)],
+                        [true, true, true, true, true],
                         {
                             from: token_owner,
                             gas: 6000000
@@ -357,8 +355,7 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(tx.logs[1].args._investor, employee1);
             assert.equal(tx.logs[2].args._investor, employee2);
             assert.equal(tx.logs[3].args._investor, employee3);
-            assert.equal(tx.logs[4].args._investor, employee4);
-            assert.equal(tx.logs[5].args._investor, I_VestingEscrowWallet.address);
+            assert.equal(tx.logs[4].args._investor, I_VestingEscrowWallet.address);
         });
 
         it("Should mint tokens for the token_owner and approve the contract address", async() => {
@@ -414,163 +411,288 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should fail to initiate a vesting schedule because a target input was 0", async() => {
           let errorThrown = false;
+          let target = [0, employee2, employee3]
+          let totalAllocation = ['16', '20', '24'];
+          totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
+          let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
+          let startDate = [latestTime() + duration.days(1), latestTime() + duration.days(2), latestTime() + duration.days(3)]
+          let vestingFrequency = [(duration.years(1)/4), (duration.years(1)/2), (duration.years(1)/2)];
+
+          let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+
+          try {
+            let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+          } catch(error) {
+              console.log(`       tx -> failed because a target input was 0`.grey);
+              Object.keys(error).forEach(function (key){
+                ensureException(error[key]);
+              });
+              errorThrown = true;
+          }
+          assert.ok(errorThrown, message);
+        });
+        it("Should fail to initiate a vesting schedule because a totalAllocation input was 0", async() => {
+          let errorThrown = false;
+          let target = [employee1, employee2, employee3]
+          let totalAllocation = ['16', '20', '24'];
+          totalAllocation = [0, web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
+          let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
+          let startDate = [latestTime() + duration.days(1), latestTime() + duration.days(2), latestTime() + duration.days(3)]
+          let vestingFrequency = [(duration.years(1)/4), (duration.years(1)/2), (duration.years(1)/2)];
+
+          let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+
+          try {
+            let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+          } catch(error) {
+              console.log(`       tx -> failed because a target input was 0`.grey);
+              Object.keys(error).forEach(function (key){
+                ensureException(error[key]);
+              });
+              errorThrown = true;
+          }
+          assert.ok(errorThrown, message);
+        });
+        it("Should fail to initiate a vesting schedule because a vestingDuration input was 0", async() => {
+          let errorThrown = false;
+          let target = [employee1, employee2, employee3]
+          let totalAllocation = ['16', '20', '24'];
+          totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
+          let vestingDuration = [0, duration.years(4), duration.years(4)];
+          let startDate = [latestTime() + duration.days(1), latestTime() + duration.days(2), latestTime() + duration.days(3)]
+          let vestingFrequency = [(duration.years(1)/4), (duration.years(1)/2), (duration.years(1)/2)];
+
+          let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+
+          try {
+            let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+          } catch(error) {
+              console.log(`       tx -> failed because a target input was 0`.grey);
+              Object.keys(error).forEach(function (key){
+                ensureException(error[key]);
+              });
+              errorThrown = true;
+          }
+          assert.ok(errorThrown, message);
+        });
+        it("Should fail to initiate a vesting schedule because a startDate was input was before now", async() => {
+          let errorThrown = false;
+          let target = [employee1, employee2, employee3]
+          let totalAllocation = ['16', '20', '24'];
+          totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
+          let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
+          let startDate = [latestTime() - duration.days(1), latestTime() + duration.days(2), latestTime() + duration.days(3)]
+          let vestingFrequency = [(duration.years(1)/4), (duration.years(1)/2), (duration.years(1)/2)];
+
+          let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+
+          try {
+            let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+          } catch(error) {
+              console.log(`       tx -> failed because a target input was 0`.grey);
+              Object.keys(error).forEach(function (key){
+                ensureException(error[key]);
+              });
+              errorThrown = true;
+          }
+          assert.ok(errorThrown, message);
+        });
+        it("Should fail to initiate a vesting schedule because a vestingFrequency input was 0", async() => {
+          let errorThrown = false;
+          let target = [employee1, employee2, employee3]
+          let totalAllocation = ['10000', '25000', '50000'];
+          totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
+          let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
+          let startDate = [0, latestTime() + duration.days(2), latestTime() + duration.days(3)]
+          let vestingFrequency = [0, (duration.years(1)/2), (duration.years(1)/2)];
+          let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+          try {
+            let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+          } catch(error) {
+              console.log(`       tx -> failed because a vestingFrequency input was 0`.grey);
+              Object.keys(error).forEach(function (key){
+                ensureException(error[key]);
+              });
+              errorThrown = true;
+          }
+          assert.ok(errorThrown, message);
+        });
+        it("Should fail to initiate a vesting schedule because a vestingFrequency was greater than the associated vestingDuration", async() => {
+          let errorThrown = false;
+          let target = [employee1, employee2, employee3]
+          let totalAllocation = ['16', '20', '24'];
+          totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
+          let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
+          let startDate = [latestTime() + duration.days(1), latestTime() + duration.days(2), latestTime() + duration.days(3)]
+          let vestingFrequency = [(duration.years(5)), (duration.years(1)/2), (duration.years(1)/2)];
+
+          let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+
+          try {
+            let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+          } catch(error) {
+              console.log(`       tx -> failed because a target input was 0`.grey);
+              Object.keys(error).forEach(function (key){
+                ensureException(error[key]);
+              });
+              errorThrown = true;
+          }
+          assert.ok(errorThrown, message);
+        });
+        it("Should fail to initiate a vesting schedule because a vestingFrequency was not a whole factor of the associated vestingDuration ", async() => {
+          let errorThrown = false;
+          let target = [employee1, employee2, employee3]
+          let totalAllocation = ['16', '20', '24'];
+          totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
+          let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
+          let startDate = [latestTime() + duration.days(1), latestTime() + duration.days(2), latestTime() + duration.days(3)]
+          let vestingFrequency = [(duration.years(3)/4), (duration.years(1)/2), (duration.years(1)/2)];
+
+          let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+
+          try {
+            let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+          } catch(error) {
+              console.log(`       tx -> failed because a target input was 0`.grey);
+              Object.keys(error).forEach(function (key){
+                ensureException(error[key]);
+              });
+              errorThrown = true;
+          }
+          assert.ok(errorThrown, message);
+        });
+        it("Create a vesting schedule for each of the employees", async() => {
+          let errorThrown = false;
           let target = [employee1, employee2, employee3]
           let totalAllocation = ['16', '20', '24'];
           totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
           let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
           let startDate = [latestTime() + duration.days(1), latestTime() + duration.days(2), latestTime() + duration.days(3)]
           let vestingFrequency = [(duration.years(1)/4), (duration.years(1)/2), (duration.years(1)/2)];
-          // await I_SecurityToken.mint(token_owner, web3.utils.toWei('500', 'ether'), { from: token_owner });
-          // await I_SecurityToken.approve(I_VestingEscrowWallet.address, web3.utils.toWei('500', 'ether'), {from: token_owner});
 
           let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+
           let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
 
-          // try {
-          //   let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
-          // } catch(error) {
-          //     console.log(`       tx -> failed because a target input was 0`.grey);
-          //     Object.keys(error).forEach(function (key){
-          //       ensureException(error[key]);
-          //     });
-          //     errorThrown = true;
-          // }
-          // assert.ok(errorThrown, message);
+          let employee1VestingCount = await I_VestingEscrowWallet.individualVestingCount(employee1)
+          let employee2VestingCount = await I_VestingEscrowWallet.individualVestingCount(employee2)
+          let employee3VestingCount = await I_VestingEscrowWallet.individualVestingCount(employee3)
+
+          assert.equal(employee1VestingCount.toNumber(), 1, "Did not receive a vesting schedule.")
+          assert.equal(employee2VestingCount.toNumber(), 1, "Did not receive a vesting schedule.")
+          assert.equal(employee3VestingCount.toNumber(), 1, "Did not receive a vesting schedule.")
         });
-      //   it("Should fail to initiate a vesting schedule because a totalAllocation input was 0", async() => {
-      //     let errorThrown = false;
-      //     let target = [employee1, employee2, employee3]
-      //     let totalAllocation = ['10000', '25000', '50000'];
-      //     totalAllocation = [0, web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
-      //     let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
-      //     let startDate = [latestTime() + duration.days(1), latestTime() + duration.days(2), latestTime() + duration.days(3)]
-      //     let vestingFrequency = [(duration.years(1)/4), (duration.years(1)/2), (duration.years(1)/2)];
-      //     let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
-      //     try {
-      //       let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
-      //     } catch(error) {
-      //         console.log(`       tx -> failed because a totalAllocation input was 0`.grey);
-      //         Object.keys(error).forEach(function (key){
-      //           ensureException(error[key]);
-      //         });
-      //         errorThrown = true;
-      //     }
-      //     assert.ok(errorThrown, message);
-      //   });
-      //   it("Should fail to initiate a vesting schedule because a vestingDuration input was 0", async() => {
-      //     let errorThrown = false;
-      //     let target = [employee1, employee2, employee3]
-      //     let totalAllocation = ['10000', '25000', '50000'];
-      //     totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
-      //     let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
-      //     let startDate = [latestTime() + duration.days(1), latestTime() + duration.days(2), latestTime() + duration.days(3)]
-      //     let vestingFrequency = [(duration.years(1)/4), (duration.years(1)/2), (duration.years(1)/2)];
-      //     let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
-      //     try {
-      //       let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
-      //     } catch(error) {
-      //         console.log(`       tx -> failed because a vestingDuration input was 0`.grey);
-      //         Object.keys(error).forEach(function (key){
-      //           ensureException(error[key]);
-      //         });
-      //         errorThrown = true;
-      //     }
-      //     assert.ok(errorThrown, message);
-      //   });
-      //   it("Should fail to initiate a vesting schedule because a startDate was input was before now", async() => {
-      //     let errorThrown = false;
-      //     let target = [employee1, employee2, employee3]
-      //     let totalAllocation = ['10000', '25000', '50000'];
-      //     totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
-      //     let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
-      //     let startDate = [0, latestTime() + duration.days(2), latestTime() + duration.days(3)]
-      //     let vestingFrequency = [(duration.years(1)/4), (duration.years(1)/2), (duration.years(1)/2)];
-      //     let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
-      //     try {
-      //       let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
-      //     } catch(error) {
-      //         console.log(`       tx -> failed because a startDate input was 0`.grey);
-      //         Object.keys(error).forEach(function (key){
-      //           ensureException(error[key]);
-      //         });
-      //         errorThrown = true;
-      //     }
-      //     assert.ok(errorThrown, message);
-      //   });
-      //   it("Should fail to initiate a vesting schedule because a vestingFrequency input was 0", async() => {
-      //     let errorThrown = false;
-      //     let target = [employee1, employee2, employee3]
-      //     let totalAllocation = ['10000', '25000', '50000'];
-      //     totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
-      //     let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
-      //     let startDate = [0, latestTime() + duration.days(2), latestTime() + duration.days(3)]
-      //     let vestingFrequency = [(duration.years(1)/4), (duration.years(1)/2), (duration.years(1)/2)];
-      //     let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
-      //     try {
-      //       let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
-      //     } catch(error) {
-      //         console.log(`       tx -> failed because a vestingFrequency input was 0`.grey);
-      //         Object.keys(error).forEach(function (key){
-      //           ensureException(error[key]);
-      //         });
-      //         errorThrown = true;
-      //     }
-      //     assert.ok(errorThrown, message);
-      //   });
-      //   it("Should fail to initiate a vesting schedule because a vestingFrequency was greater than the associated vestingDuration", async() => {
-      //     let errorThrown = false;
-      //     let target = [employee1, employee2, employee3]
-      //     let totalAllocation = ['10000', '25000', '50000'];
-      //     totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
-      //     let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
-      //     let startDate = [latestTime() + duration.days(2), latestTime() + duration.days(2), latestTime() + duration.days(3)]
-      //     let vestingFrequency = [(duration.years(1)/4), (duration.years(1)/2), (duration.years(1)/2)];
-      //     let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
-      //     try {
-      //       let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
-      //     } catch(error) {
-      //         console.log(`       tx -> failed because a startDate input was 0`.grey);
-      //         Object.keys(error).forEach(function (key){
-      //           ensureException(error[key]);
-      //         });
-      //         errorThrown = true;
-      //     }
-      //     assert.ok(errorThrown, message);
-      //   });
-      //   it("Should fail to initiate a vesting schedule because a vestingFrequency was not a whole factor of the associated vestingDuration ", async() => {
-      //     let errorThrown = false;
-      //     let target = [employee1, employee2, employee3]
-      //     let totalAllocation = ['10000', '25000', '50000'];
-      //     totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether'), web3.utils.toWei(totalAllocation[1], 'ether'), web3.utils.toWei(totalAllocation[2], 'ether')]
-      //     let vestingDuration = [duration.years(4), duration.years(4), duration.years(4)];
-      //     let startDate = [latestTime() + duration.days(2), latestTime() + duration.days(2), latestTime() + duration.days(3)]
-      //     let vestingFrequency = [(duration.years(1)/4), (duration.years(1)/2), (duration.years(1)/2)];
-      //     let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
-      //     try {
-      //       let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
-      //     } catch(error) {
-      //         console.log(`       tx -> failed because a startDate input was 0`.grey);
-      //         Object.keys(error).forEach(function (key){
-      //           ensureException(error[key]);
-      //         });
-      //         errorThrown = true;
-      //     }
-      //     assert.ok(errorThrown, message);
-      //   });
-      //   it("Should fail to initiate a vesting schedule because a _numTranches was not a whole factor of the associated totalAllocation ", async() => {
-      //   });
-      //   it("Create a vesting schedule for each of the employees", async() => {
-      //   });
-      //   it("Increment the vesting schedule for a specific employee", async() => {
-      //   });
-      //   it("Save vesting schedule for a specific employee in individualVestingDetails", async() => {
-      //   });
-      //   it("Send all tokens if no tokens already exist in the contract", async() => {
-      //   });
-      //   it("Send partial tokens if some of the required tokens already exist in the contract", async() => {
-      //   });
-      //   it("Send no tokens if the all of the required tokens already exist in the contract", async() => {
-      //   });
+        it("Increment the vesting schedule for a specific employee", async() => {
+          let errorThrown = false;
+          let target = [employee1]
+          let totalAllocation = ['20'];
+          totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether')]
+          let vestingDuration = [duration.years(4)];
+          let startDate = [latestTime() + duration.days(1)]
+          let vestingFrequency = [(duration.years(1)/4)];
+          let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+
+          let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+
+          let employee1VestingCount = await I_VestingEscrowWallet.individualVestingCount(employee1)
+
+          assert.equal(employee1VestingCount.toNumber(), 2, "Did not receive a vesting schedule.")
+        });
+        it("Save vesting schedule for a specific employee in individualVestingDetails", async() => {
+          let txOne = await I_VestingEscrowWallet.individualVestingDetails(employee1, 0);
+          let totalAllocationOne = txOne[1].toNumber();
+          let txTwo = await I_VestingEscrowWallet.individualVestingDetails(employee1, 1);
+          let totalAllocationTwo = txTwo[1].toNumber();
+
+          assert.equal(totalAllocationOne, web3.utils.toWei('16', 'ether'), "Schedule did not get stored");
+          assert.equal(totalAllocationTwo, web3.utils.toWei('20', 'ether'), "Schedule did not get stored")
+        });
+        it("Issuer should send all tokens if no tokens available exist in the contract upon vesting schedule creation", async() => {
+          let tokenOwnerBalanceBefore = await I_SecurityToken.balanceOf(token_owner);
+
+          let errorThrown = false;
+          let target = [employee1]
+          let totalAllocation = ['20'];
+          totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether')]
+          let vestingDuration = [duration.years(4)];
+          let startDate = [latestTime() + duration.days(1)]
+          let vestingFrequency = [(duration.years(1)/4)];
+          let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+
+          let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+
+          let tokenOwnerBalanceAfter = await I_SecurityToken.balanceOf(token_owner);
+
+          assert.equal(tokenOwnerBalanceAfter.add(totalAllocation).toNumber(), tokenOwnerBalanceBefore.toNumber(), "Tokens did not get transferred.")
+        });
+        it("Issuer should send partial tokens if some of the required tokens already exist and are available in the contract upon vesting schedule creation", async() => {
+          let tokenOwnerBalanceBefore = await I_SecurityToken.balanceOf(token_owner);
+
+          // Create a vesting schedule
+          let errorThrown = false;
+          let target = [employee1]
+          let totalAllocation = ['20'];
+          totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether')]
+          let vestingDuration = [duration.years(4)];
+          let startDate = [latestTime() + duration.days(1)]
+          let vestingFrequency = [(duration.years(1)/4)];
+          let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+
+          await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+
+          // Cancel schedule and leave tokens
+          // This is the 4th schedule creation for employee1
+          await I_VestingEscrowWallet.cancelVestingSchedule(employee1, 3, false, {from: token_owner});
+
+          let tokenOwnerBalanceMiddle = await I_SecurityToken.balanceOf(token_owner);
+
+          assert.equal(tokenOwnerBalanceMiddle.add(totalAllocation).toNumber(), tokenOwnerBalanceBefore.toNumber(), "Tokens did not get left in the contract.")
+
+          // Create schedule with double the amount of tokens. Owner should only send 20, since there are 20 in the contract already
+          let newTotalAllocation = ['40'];
+          newTotalAllocation = [web3.utils.toWei(newTotalAllocation[0], 'ether')]
+
+          params = [target, newTotalAllocation, vestingDuration, startDate, vestingFrequency];
+          await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+
+          let tokenOwnerBalanceAfter = await I_SecurityToken.balanceOf(token_owner);
+
+          assert.equal(tokenOwnerBalanceAfter.add(totalAllocation).toNumber(), tokenOwnerBalanceMiddle.toNumber(), "Tokens did not get transferred.")
+        });
+        it("Issuer should send no tokens if the all of the required tokens already exist and are available in the contract upon vesting schedule creation", async() => {
+         let tokenOwnerBalanceBefore = await I_SecurityToken.balanceOf(token_owner);
+
+         // Create a vesting schedule
+         let errorThrown = false;
+         let target = [employee1]
+         let totalAllocation = ['40'];
+         totalAllocation = [web3.utils.toWei(totalAllocation[0], 'ether')]
+         let vestingDuration = [duration.years(4)];
+         let startDate = [latestTime() + duration.days(1)]
+         let vestingFrequency = [(duration.years(1)/4)];
+         let params = [target, totalAllocation, vestingDuration, startDate, vestingFrequency];
+
+         await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+
+         // Cancel schedule and leave tokens
+         // This is the 6th schedule creation for employee1
+         await I_VestingEscrowWallet.cancelVestingSchedule(employee1, 5, false, {from: token_owner});
+
+         let tokenOwnerBalanceMiddle = await I_SecurityToken.balanceOf(token_owner);
+
+         assert.equal(tokenOwnerBalanceMiddle.add(totalAllocation).toNumber(), tokenOwnerBalanceBefore.toNumber(), "Tokens did not get left in the contract.")
+
+         // Create schedule with double the amount of tokens. Owner should only send 20, since there are 20 in the contract already
+         let newTotalAllocation = ['20'];
+         newTotalAllocation = [web3.utils.toWei(newTotalAllocation[0], 'ether')]
+
+         params = [target, newTotalAllocation, vestingDuration, startDate, vestingFrequency];
+         await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
+
+         let tokenOwnerBalanceAfter = await I_SecurityToken.balanceOf(token_owner);
+
+         assert.equal(tokenOwnerBalanceAfter.toNumber(), tokenOwnerBalanceMiddle.toNumber(), "Tokens did not get transferred.")
+        });
       // })
       // context("Initiate Vesting Schedule From Template", async() => {
       //   it("Should fail to initiate a vesting schedule from template because the caller is not the owner", async() => {

@@ -485,7 +485,7 @@ contract('SecurityTokenRegistry', accounts => {
             let errorThrown = false;
             await I_PolyToken.approve(I_STRProxied.address, 0, { from: token_owner});
             try {
-                let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
+                let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
             } catch(error) {
                 console.log(`         tx revert -> POLY allowance not provided for registration fee`.grey);
                 errorThrown = true;
@@ -499,7 +499,7 @@ contract('SecurityTokenRegistry', accounts => {
             await I_STRProxied.pause({ from: account_polymath});
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             try {
-                await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
+                await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
             } catch(error) {
                 console.log(`         tx revert -> Registration is paused`.grey);
                 errorThrown = true;
@@ -512,7 +512,7 @@ contract('SecurityTokenRegistry', accounts => {
             let errorThrown = false;
             await I_STRProxied.unpause({ from: account_polymath});
             try {
-                await I_STRProxied.generateSecurityToken(name, "", tokenDetails, false, { from: token_owner, gas:60000000  });
+                await I_STRProxied.generateSecurityToken(name, "", tokenDetails, false, { from: token_owner });
             } catch(error) {
                 console.log(`         tx revert -> Zero ticker length is not allowed`.grey);
                 errorThrown = true;
@@ -524,7 +524,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should fail to generate the securityToken -- Because name length is 0", async() => {
             let errorThrown = false;
             try {
-                await I_STRProxied.generateSecurityToken("", symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
+                await I_STRProxied.generateSecurityToken("", symbol, tokenDetails, false, { from: token_owner });
             } catch(error) {
                 console.log(`         tx revert -> 0 name length is not allowed`.grey);
                 errorThrown = true;
@@ -536,7 +536,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should fail to generate the securityToken -- Because msg.sender is not the rightful owner of the ticker", async() => {
             let errorThrown = false;
             try {
-                await I_STRProxied.generateSecurityToken("", symbol, tokenDetails, false, { from: account_temp, gas:60000000  });
+                await I_STRProxied.generateSecurityToken("", symbol, tokenDetails, false, { from: account_temp });
             } catch(error) {
                 console.log(`         tx revert -> Because msg.sender is not the rightful owner of the ticker`.grey);
                 errorThrown = true;
@@ -547,7 +547,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -568,7 +568,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should fail to generate the SecurityToken when token is already deployed with the same symbol", async() => {
             let errorThrown = false;
             try {
-                let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000  });
+                let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
             } catch(error) {
                 console.log(`         tx revert -> Because ticker is already in use`.grey);
                 errorThrown = true;
@@ -608,7 +608,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should generate the new security token with version 2", async() => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, { from: token_owner, gas:60000000  });
+            let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol2, "SecurityToken doesn't get deployed");
@@ -1030,7 +1030,7 @@ contract('SecurityTokenRegistry', accounts => {
             let errorThrown = false;
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             try {
-                await I_STRProxied.generateSecurityToken("Polymath", "POLY", tokenDetails, false, { from: token_owner, gas:60000000  });
+                await I_STRProxied.generateSecurityToken("Polymath", "POLY", tokenDetails, false, { from: token_owner });
             } catch(error) {
                 console.log(`         tx revert -> failed because of old launch fee`.grey);
                 errorThrown = true;
@@ -1041,7 +1041,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         it("Should launch the the securityToken", async() => {
             await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: token_owner});
-            let tx = await I_STRProxied.generateSecurityToken("Polymath", "POLY", tokenDetails, false, { from: token_owner, gas:60000000  });
+            let tx = await I_STRProxied.generateSecurityToken("Polymath", "POLY", tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, "POLY", "SecurityToken doesn't get deployed");

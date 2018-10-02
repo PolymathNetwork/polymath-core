@@ -79,7 +79,7 @@ module.exports = {
   },
   getModuleFactoryAddressByName: async function(stAddress, moduleType, moduleName) {
     let moduleRegistry = await getModuleRegistry();
-    let availableModules = await moduleRegistry.methods.getAvailableModulesOfType(moduleType, stAddress).call();
+    let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(moduleType, stAddress).call();
     
     let result = null;
     let counter = 0;

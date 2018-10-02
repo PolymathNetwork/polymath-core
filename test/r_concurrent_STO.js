@@ -239,7 +239,7 @@ contract('Concurrent STO', accounts => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_issuer});
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_issuer, gas: 85000000  });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_issuer });
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);

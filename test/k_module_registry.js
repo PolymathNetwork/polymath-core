@@ -384,7 +384,7 @@ contract('ModuleRegistry', accounts => {
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
                 let errorThrown = false;
                 try {
-                    const tx = await I_SecurityToken.addModule(I_CappedSTOFactory1.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
+                    const tx = await I_SecurityToken.addModule(I_CappedSTOFactory1.address, bytesSTO, 0, 0, { from: token_owner});
                 } catch(error) {
                     errorThrown = true;
                     console.log(`         tx revert -> Module is un-verified`.grey);
@@ -426,7 +426,7 @@ contract('ModuleRegistry', accounts => {
                 endTime = startTime + duration.days(30);
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
                 let tx = await I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
-                tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, 0, 0, { from: token_owner, gas: 60000000 });
+                tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, 0, 0, { from: token_owner});
 
                 assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(

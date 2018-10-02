@@ -97,6 +97,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // Records added module names - module list should be order agnostic!
     mapping (bytes32 => address[]) names;
 
+    // List of investors
     mapping (address => bool) public investorListed;
 
     // Emit at the time when module get added
@@ -140,7 +141,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event ForceBurn(address indexed _controller, address indexed _from, uint256 _value, bool _verifyTransfer, bytes _data);
     event DisableController(uint256 _timestamp);
 
-    function isModule(address _module, uint8 _type) internal view returns (bool) {
+    function _isModule(address _module, uint8 _type) internal view returns (bool) {
         require(modulesToData[_module].module == _module, "Address mismatch");
         require(modulesToData[_module].moduleType == _type, "Type mismatch");
         require(!modulesToData[_module].isArchived, "Module archived");
@@ -149,7 +150,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     // Require msg.sender to be the specified module type
     modifier onlyModule(uint8 _type) {
-        require(isModule(msg.sender, _type));
+        require(_isModule(msg.sender, _type));
         _;
     }
 
@@ -158,7 +159,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         if (msg.sender == owner) {
             _;
         } else {
-            require(isModule(msg.sender, _type));
+            require(_isModule(msg.sender, _type));
             _;
         }
     }
@@ -647,6 +648,29 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         return true;
     }
 
+    /**
+     * @notice Validate permissions with PermissionManager if it exists, If no Permission return false
+     * @dev Note that IModule withPerm will allow ST owner all permissions anyway
+     * @dev this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
+     * @param _delegate address of delegate
+     * @param _module address of PermissionManager module
+     * @param _perm the permissions
+     * @return success
+     */
+    function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
+        if (modules[PERMISSIONMANAGER_KEY].length == 0) {
+            return false;
+        }
+
+        for (uint8 i = 0; i < modules[PERMISSIONMANAGER_KEY].length; i++) {
+            if (IPermissionManager(modules[PERMISSIONMANAGER_KEY][i]).checkPermission(_delegate, _module, _perm)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     function _burn(address _from, uint256 _value) internal returns (bool) {
         require(_value <= balances[_from], "Value too high");
         require(_updateTransfer(_from, address(0), _value), "Burn is not valid");
@@ -689,27 +713,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         checkpointTimes.push(now);
         emit CheckpointCreated(currentCheckpointId, now);
         return currentCheckpointId;
-    }
-
-    /**
-     * @notice Validate permissions with PermissionManager if it exists, If no Permission return false
-     * @dev Note that IModule withPerm will allow ST owner all permissions anyway
-     * @dev this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
-     * @param _delegate address of delegate
-     * @param _module address of PermissionManager module
-     * @param _perm the permissions
-     * @return success
-     */
-    function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
-        if (modules[PERMISSIONMANAGER_KEY].length == 0) {
-            return false;
-        }
-
-        for (uint8 i = 0; i < modules[PERMISSIONMANAGER_KEY].length; i++) {
-            if (IPermissionManager(modules[PERMISSIONMANAGER_KEY][i]).checkPermission(_delegate, _module, _perm)) {
-                return true;
-            }
-        }
     }
 
     /**

@@ -23,8 +23,6 @@ const MODULES_TYPES = {
   DIVIDENDS: 4
 }
 
-const REG_FEE_KEY = 'tickerRegFee';
-const LAUNCH_FEE_KEY = 'stLaunchFee';
 const cappedSTOFee = 20000;
 const usdTieredSTOFee = 100000;
 const tokenDetails = "";
@@ -103,8 +101,8 @@ async function step_ticker_reg(){
   console.log('\n\x1b[34m%s\x1b[0m',"Token Creation - Symbol Registration");
 
   let available = false;
+  let regFee = web3.utils.fromWei(await securityTokenRegistry.methods.getTickerRegistrationFee().call());
   let isDeployed;
-  let regFee = web3.utils.fromWei(await securityTokenRegistry.methods.getUintValues(web3.utils.soliditySha3(REG_FEE_KEY)).call());
 
   while (!available) {
     console.log(chalk.green(`\nRegistering the new token symbol requires ${regFee} POLY & deducted from '${Issuer.address}', Current balance is ${(await currentBalance(Issuer.address))} POLY\n`));
@@ -156,7 +154,7 @@ async function step_token_deploy(){
   } else {
     console.log('\n\x1b[34m%s\x1b[0m',"Token Creation - Token Deployment");
 
-    let launchFee = web3.utils.fromWei(await securityTokenRegistry.methods.getUintValues(web3.utils.soliditySha3(LAUNCH_FEE_KEY)).call());
+    let launchFee = web3.utils.fromWei(await securityTokenRegistry.methods.getSecurityTokenLaunchFee().call());
     console.log(chalk.green(`\nToken deployment requires ${launchFee} POLY & deducted from '${Issuer.address}', Current balance is ${(await currentBalance(Issuer.address))} POLY\n`));
 
     if (typeof _tokenConfig !== 'undefined' && _tokenConfig.hasOwnProperty('name')) {

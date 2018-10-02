@@ -144,14 +144,14 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
             dividends[dividends.length - 1].dividendExcluded[_excluded[j]] = true;
         }
         dividendTokens[dividendIndex] = _token;
-        _CallERC20DividendDepositedEvent(_checkpointId, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);
+        _emitERC20DividendDepositedEvent(_checkpointId, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);
     }
 
     /**
      * @notice emits the ERC20DividendDeposited event. 
-     * Seperated into a different function to work around the Stack too deep error
+     * Seperated into a different function as a workaround for stack too deep error
      */
-    function _CallERC20DividendDepositedEvent(uint256 _checkpointId, uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 currentSupply, uint256 dividendIndex, string _name) internal {
+    function _emitERC20DividendDepositedEvent(uint256 _checkpointId, uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 currentSupply, uint256 dividendIndex, string _name) internal {
         emit ERC20DividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);
     }
 

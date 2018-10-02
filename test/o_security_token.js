@@ -1106,36 +1106,6 @@ contract('SecurityToken', accounts => {
                 await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), {from: account_temp});
            });
 
-           it("Should fail to call the burn the tokens because token burner contract is not set", async() => {
-                let errorThrown = false;
-                try {
-                    await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });
-                } catch(error) {
-                   console.log('         tx revert -> Token burner contract is not set'.grey);
-                   errorThrown = true;
-                   ensureException(error);
-               }
-               assert.ok(errorThrown, message);
-           });
-
-           it("Should fail to call the burn the tokens because TM does not allow it", async ()=> {
-                // Deploy the token burner contract
-                I_TokenBurner = await TokenBurner.new(I_SecurityToken.address, { from: token_owner });
-
-                await I_SecurityToken.setTokenBurner(I_TokenBurner.address, { from: token_owner });
-                assert.equal(await I_SecurityToken.tokenBurner.call(), I_TokenBurner.address);
-                let errorThrown = false;
-                try {
-                    await I_SecurityToken.burn(web3.utils.toWei('1', 'ether'),{ from: account_temp });
-                } catch(error) {
-                   console.log('         tx revert -> Token burner contract is not set'.grey);
-                   errorThrown = true;
-                   ensureException(error);
-               }
-               assert.ok(errorThrown, message);
-
-           });
-
            it("Should check that the list of investors is correct", async ()=> {
                // Hardcode list of expected accounts based on transfers above
                let investorsLength = await I_SecurityToken.getInvestorsLength();
@@ -1148,27 +1118,76 @@ contract('SecurityToken', accounts => {
                  assert.equal(investor, expectedAccounts[i]);
                }
            });
+           it("Should fail to set controller status because msg.sender not owner", async() => {
+               let errorThrown = false;
+               try {
+                   await I_SecurityToken.setController(account_controller, {from: account_controller});
+               } catch (error) {
+                   console.log(`         tx revert -> msg.sender not owner`.grey);
+                   errorThrown = true;
+                   ensureException(error);
+               }
+               assert.ok(errorThrown, message);
+           });
 
-           it("Should burn the tokens", async ()=> {
-                let errorThrown = false;
-                await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, {from : token_owner});
-                let currentInvestorCount = await I_SecurityToken.investorCount();
-                let currentBalance = await I_SecurityToken.balanceOf(account_temp);
-                try {
-                    let tx = await I_SecurityToken.burn(currentBalance + web3.utils.toWei("500", "ether"), { from: account_temp });
-                } catch(error) {
-                    console.log(`         tx revert -> value is greater than its current balance`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
-            });
+           it("Should successfully set controller", async() => {
+               let tx1 = await I_SecurityToken.setController(account_controller, {from: token_owner});
+
+               // check event
+               assert.equal(address_zero, tx1.logs[0].args._oldController, "Event not emitted as expected");
+               assert.equal(account_controller, tx1.logs[0].args._newController, "Event not emitted as expected");
+
+               let tx2 = await I_SecurityToken.setController(address_zero, {from: token_owner});
+
+               // check event
+               assert.equal(account_controller, tx2.logs[0].args._oldController, "Event not emitted as expected");
+               assert.equal(address_zero, tx2.logs[0].args._newController, "Event not emitted as expected");
+
+               let tx3 = await I_SecurityToken.setController(account_controller, {from: token_owner});
+
+               // check event
+               assert.equal(address_zero, tx3.logs[0].args._oldController, "Event not emitted as expected");
+               assert.equal(account_controller, tx3.logs[0].args._newController, "Event not emitted as expected");
+
+               // check status
+               let controller = await I_SecurityToken.controller.call();
+               assert.equal(account_controller, controller, "Status not set correctly");
+           });
+
+          it("Should force burn the tokens - value too high", async ()=> {
+              let errorThrown = false;
+              await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, {from : token_owner});
+              let currentInvestorCount = await I_SecurityToken.investorCount();
+              let currentBalance = await I_SecurityToken.balanceOf(account_temp);
+              try {
+                  let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance + web3.utils.toWei("500", "ether"), "", { from: account_controller });
+              } catch(error) {
+                  console.log(`         tx revert -> value is greater than its current balance`.grey);
+                  errorThrown = true;
+                  ensureException(error);
+              }
+              assert.ok(errorThrown, message);
+          });
+          it("Should force burn the tokens - wrong caller", async ()=> {
+               let errorThrown = false;
+               await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, {from : token_owner});
+               let currentInvestorCount = await I_SecurityToken.investorCount();
+               let currentBalance = await I_SecurityToken.balanceOf(account_temp);
+               try {
+                   let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance, "", { from: token_owner });
+               } catch(error) {
+                   console.log(`         tx revert -> not owner`.grey);
+                   errorThrown = true;
+                   ensureException(error);
+               }
+               assert.ok(errorThrown, message);
+           });
 
            it("Should burn the tokens", async ()=> {
                 let currentInvestorCount = await I_SecurityToken.investorCount();
                 let currentBalance = await I_SecurityToken.balanceOf(account_temp);
                 // console.log(currentInvestorCount.toString(), currentBalance.toString());
-                let tx = await I_SecurityToken.burn(currentBalance, { from: account_temp });
+                let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance, "", { from: account_controller });
                 // console.log(tx.logs[0].args._value.toNumber(), currentBalance.toNumber());
                 assert.equal(tx.logs[0].args._value.toNumber(), currentBalance.toNumber());
                 let newInvestorCount = await I_SecurityToken.investorCount();
@@ -1243,42 +1262,6 @@ contract('SecurityToken', accounts => {
 
         describe("Force Transfer", async() => {
 
-            it("Should fail to set controller status because msg.sender not owner", async() => {
-                let errorThrown = false;
-                try {
-                    await I_SecurityToken.setController(account_controller, {from: account_controller});
-                } catch (error) {
-                    console.log(`         tx revert -> msg.sender not owner`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
-            });
-
-            it("Should successfully set controller", async() => {
-                let tx1 = await I_SecurityToken.setController(account_controller, {from: token_owner});
-
-                // check event
-                assert.equal(address_zero, tx1.logs[0].args._oldController, "Event not emitted as expected");
-                assert.equal(account_controller, tx1.logs[0].args._newController, "Event not emitted as expected");
-
-                let tx2 = await I_SecurityToken.setController(address_zero, {from: token_owner});
-
-                // check event
-                assert.equal(account_controller, tx2.logs[0].args._oldController, "Event not emitted as expected");
-                assert.equal(address_zero, tx2.logs[0].args._newController, "Event not emitted as expected");
-
-                let tx3 = await I_SecurityToken.setController(account_controller, {from: token_owner});
-
-                // check event
-                assert.equal(address_zero, tx3.logs[0].args._oldController, "Event not emitted as expected");
-                assert.equal(account_controller, tx3.logs[0].args._newController, "Event not emitted as expected");
-
-                // check status
-                let controller = await I_SecurityToken.controller.call();
-                assert.equal(account_controller, controller, "Status not set correctly");
-            });
-
             it("Should fail to forceTransfer because not approved controller", async() => {
                 let errorThrown1 = false;
                 try {
@@ -1332,11 +1315,12 @@ contract('SecurityToken', accounts => {
                 assert.equal(start_investorCount.add(1).toNumber(), end_investorCount.toNumber(), "Investor count not changed");
                 assert.equal(start_balInv1.sub(web3.utils.toWei("10", "ether")).toNumber(), end_balInv1.toNumber(), "Investor balance not changed");
                 assert.equal(start_balInv2.add(web3.utils.toWei("10", "ether")).toNumber(), end_balInv2.toNumber(), "Investor balance not changed");
-
+                console.log(tx.logs[0].args);
+                console.log(tx.logs[1].args);
                 assert.equal(account_controller, tx.logs[0].args._controller, "Event not emitted as expected");
                 assert.equal(account_investor1, tx.logs[0].args._from, "Event not emitted as expected");
                 assert.equal(account_investor2, tx.logs[0].args._to, "Event not emitted as expected");
-                assert.equal(web3.utils.toWei("10", "ether"), tx.logs[0].args._amount, "Event not emitted as expected");
+                assert.equal(web3.utils.toWei("10", "ether"), tx.logs[0].args._value, "Event not emitted as expected");
                 console.log(tx.logs[0].args._verifyTransfer);
                 assert.equal(false, tx.logs[0].args._verifyTransfer, "Event not emitted as expected");
                 assert.equal("reason", web3.utils.hexToUtf8(tx.logs[0].args._data), "Event not emitted as expected");

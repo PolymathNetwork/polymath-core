@@ -14,7 +14,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {   
+    {
         version = "1.0.0";
         name = "GeneralTransferManager";
         title = "General Transfer Manager";
@@ -40,21 +40,21 @@ contract GeneralTransferManagerFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getType() public view returns(uint8) {
-        return 2;
+    function getTypes() external view returns(uint8[]) {
+        return [2];
     }
 
     /**
      * @notice Get the name of the Module
      */
-    function getName() public view returns(bytes32) {
+    function getName() external view returns(bytes32) {
         return name;
     }
 
     /**
      * @notice Get the description of the Module
      */
-    function getDescription() public view returns(string) {
+    function getDescription() external view returns(string) {
         return description;
     }
 
@@ -68,7 +68,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
     /**
      * @notice Get the title of the Module
      */
-    function getTitle() public view returns(string) {
+    function getTitle() external view returns(string) {
         return title;
     }
 
@@ -82,7 +82,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
     /**
      * @notice Get the Instructions that helped to used the module
      */
-    function getInstructions() public view returns(string) {
+    function getInstructions() external view returns(string) {
         return "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist, and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.";
     }
 

@@ -181,12 +181,6 @@ interface ISecurityToken {
     function mintMulti(address[] _investors, uint256[] _values) external returns (bool success);
 
     /**
-     * @notice used to set the token Burner address. It can only be called by the owner
-     * @param _tokenBurner Address of the token burner contract
-     */
-    function setTokenBurner(address _tokenBurner) external;
-
-    /**
     * @notice Removes a module attached to the SecurityToken
     * @param _module address of module to archive
     */

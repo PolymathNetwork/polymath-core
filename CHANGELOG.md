@@ -7,7 +7,6 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 * Added `getTagsByType`, `getTagsByTypeAndToken`, `getModulesByType`, `getModulesByTypeAndToken` to MR
-* Removed `addTagByModuleType` & `removeTagsByModuleType` from MR
 * Added `getTokensByOwner` to STR
 * Added withholding tax to ether & erc20 dividends
 * Generalised MakerDAO oracle to allow different instances referencing different currencies
@@ -29,7 +28,8 @@ All notable changes to this project will be documented in this file.
 
 ## Removed
 * Remove `swarmHash` from the `registerTicker(), addCustomTicker(), generateSecurityToken(), addCustomSecurityToken()` functions of TickerRegistry.sol and SecurityTokenRegistry.sol. #230  
-* Remove `Log` prefix from all the event present in the ecosystem.
+* Remove `Log` prefix from all the event present in the ecosystem.    
+* Removed `addTagByModuleType` & `removeTagsByModuleType` from MR.
 
 ======
 

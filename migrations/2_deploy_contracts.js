@@ -165,6 +165,29 @@ const functionSignatureProxyMR = {
         // to manual approve the transfer that will overcome the other transfer restrictions)
         return deployer.deploy(ManualApprovalTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
     }).then(() => {
+      // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
+      return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, {from: PolymathAccount});
+    }).then(() => {
+      // K) Deploy the FeatureRegistry contract to control feature switches
+      return deployer.deploy(FeatureRegistry, PolymathRegistry.address, {from: PolymathAccount});
+    }).then(() => {
+       // Assign the address into the FeatureRegistry key
+      return polymathRegistry.changeAddress("FeatureRegistry", FeatureRegistry.address, {from: PolymathAccount});
+    }).then(() => {
+      // J) Deploy the SecurityTokenRegistry contract (Used to hold the deployed secuirtyToken details. It also act as the interface to deploy the SecurityToken)
+      return deployer.deploy(SecurityTokenRegistry, {from: PolymathAccount})
+    }).then(()=> {
+      return deployer.deploy(SecurityTokenRegistryProxy, {from: PolymathAccount});
+    }).then(() => {
+      let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolyToken, PolymathAccount]);
+      SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
+    }).then(() => {
+      // Assign the address into the SecurityTokenRegistry key
+     return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistryProxy.address, {from: PolymathAccount});
+    }).then(() => {
+      // Update all addresses into the registry contract by calling the function updateFromregistry
+      return moduleRegistry.updateFromRegistry({from: PolymathAccount});
+    }).then(() => {
       // D) Register the PercentageTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
       // So any securityToken can use that factory to generate the PercentageTransferManager contract.
       return moduleRegistry.registerModule(PercentageTransferManagerFactory.address, {from: PolymathAccount});
@@ -227,29 +250,6 @@ const functionSignatureProxyMR = {
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
       return moduleRegistry.verifyModule(ManualApprovalTransferManagerFactory.address, true, {from: PolymathAccount});
-    }).then(() => {
-      // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
-      return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, {from: PolymathAccount});
-    }).then(() => {
-      // K) Deploy the FeatureRegistry contract to control feature switches
-      return deployer.deploy(FeatureRegistry, PolymathRegistry.address, {from: PolymathAccount});
-    }).then(() => {
-       // Assign the address into the FeatureRegistry key
-      return polymathRegistry.changeAddress("FeatureRegistry", FeatureRegistry.address, {from: PolymathAccount});
-    }).then(() => {
-      // J) Deploy the SecurityTokenRegistry contract (Used to hold the deployed secuirtyToken details. It also act as the interface to deploy the SecurityToken)
-      return deployer.deploy(SecurityTokenRegistry, {from: PolymathAccount})
-    }).then(()=> {
-      return deployer.deploy(SecurityTokenRegistryProxy, {from: PolymathAccount});
-    }).then(() => {
-      let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolyToken, PolymathAccount]);
-      SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
-    }).then(() => {
-      // Assign the address into the SecurityTokenRegistry key
-     return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistryProxy.address, {from: PolymathAccount});
-    }).then(() => {
-      // Update all addresses into the registry contract by calling the function updateFromregistry
-      return moduleRegistry.updateFromRegistry({from: PolymathAccount});
     }).then(() => {
       // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
       return deployer.deploy(CappedSTOFactory, PolyToken, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})

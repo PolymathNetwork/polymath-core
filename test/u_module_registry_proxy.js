@@ -5,7 +5,7 @@ const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
-const ModuleRegistryMock = artifacts.require("./ModuleRegistryMock.sol");
+const MockModuleRegistry = artifacts.require("./MockModuleRegistry.sol");
 const OwnedUpgradeabilityProxy = artifacts.require('./OwnedUpgradeabilityProxy.sol');
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol')
@@ -26,7 +26,7 @@ contract ("ModuleRegistryProxy", accounts => {
     let I_SecurityTokenRegistryProxy;
     let I_GeneralTransferManagerFactory;
     let I_GeneralPermissionManagerfactory;
-    let I_ModuleRegistryMock;
+    let I_MockModuleRegistry;
     let I_STFactory;
     let I_PolymathRegistry;
     let I_ModuleRegistryProxy;
@@ -85,7 +85,7 @@ contract ("ModuleRegistryProxy", accounts => {
             });
 
         // STEP 3: Deploy the ModuleRegistry
-     
+
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
         // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
         I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
@@ -160,7 +160,6 @@ contract ("ModuleRegistryProxy", accounts => {
 
 
             // Step 3: Deploy the STFactory contract
-
             I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
 
             assert.notEqual(
@@ -194,20 +193,15 @@ contract ("ModuleRegistryProxy", accounts => {
 
         });
 
-        it("Should add the tags successfuly", async() => {
-            await I_MRProxied.addTagByModuleType(3,["Non-Refundable","Capped","ETH","POLY"],{from: account_polymath});
-            let tags = await I_MRProxied.getTagByModuleType.call(3);
-            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''),"Non-Refundable");
-        })
     })
 
     describe("Upgrade the imlplementation address", async() => {
 
         it("Should upgrade the version and implementation address -- fail bad owner", async() => {
             let errorThrown = false;
-            I_ModuleRegistryMock = await ModuleRegistryMock.new({from: account_polymath});
+            I_MockModuleRegistry = await MockModuleRegistry.new({from: account_polymath});
             try {
-                await I_ModuleRegistryProxy.upgradeTo("1.1.0", I_ModuleRegistryMock.address, {from: account_temp});
+                await I_ModuleRegistryProxy.upgradeTo("1.1.0", I_MockModuleRegistry.address, {from: account_temp});
             } catch(error) {
                 console.log(`       tx -> revert bad owner of the proxy contract`);
                 errorThrown = true;
@@ -255,7 +249,7 @@ contract ("ModuleRegistryProxy", accounts => {
         it("Should upgrade the version and implementation address -- same version as previous is not allowed", async() => {
             let errorThrown = false;
             try {
-                await I_ModuleRegistryProxy.upgradeTo("1.0.0", I_ModuleRegistryMock.address, {from: account_polymath});
+                await I_ModuleRegistryProxy.upgradeTo("1.0.0", I_MockModuleRegistry.address, {from: account_polymath});
             } catch(error) {
                 console.log(`       tx -> revert same version as previous is not allowed`);
                 errorThrown = true;
@@ -267,7 +261,7 @@ contract ("ModuleRegistryProxy", accounts => {
         it("Should upgrade the version and implementation address -- empty version string is not allowed", async() => {
             let errorThrown = false;
             try {
-                await I_ModuleRegistryProxy.upgradeTo("", I_ModuleRegistryMock.address, {from: account_polymath});
+                await I_ModuleRegistryProxy.upgradeTo("", I_MockModuleRegistry.address, {from: account_polymath});
             } catch(error) {
                 console.log(`       tx -> revert empty version string is not allowed`);
                 errorThrown = true;
@@ -277,27 +271,25 @@ contract ("ModuleRegistryProxy", accounts => {
         });
 
         it("Should upgrade the version and the implementation address successfully", async() => {
-            await I_ModuleRegistryProxy.upgradeTo("1.1.0", I_ModuleRegistryMock.address, {from: account_polymath});
+            await I_ModuleRegistryProxy.upgradeTo("1.1.0", I_MockModuleRegistry.address, {from: account_polymath});
             let c = OwnedUpgradeabilityProxy.at(I_ModuleRegistryProxy.address);
             assert.equal((web3.utils.toAscii(await readStorage(c.address, 11)).replace(/\u0000/g, '')).replace(/\n/, ''), "1.1.0", "Version mis-match");
-            assert.equal(await readStorage(c.address, 12), I_ModuleRegistryMock.address, "Implemnted address is not matched");
-            I_MRProxied = await ModuleRegistryMock.at(I_ModuleRegistryProxy.address);
+            assert.equal(await readStorage(c.address, 12), I_MockModuleRegistry.address, "Implemnted address is not matched");
+            I_MRProxied = await MockModuleRegistry.at(I_ModuleRegistryProxy.address);
         });
     });
 
     describe("Execute functionality of the implementation contract on the earlier storage", async() => {
 
         it("Should get the previous data", async() => {
-            let _data = await I_MRProxied.getTagByModuleType.call(3);
-            assert.equal(web3.utils.toUtf8(_data[0]), "Non-Refundable");
-            assert.equal(web3.utils.toUtf8(_data[1]), "Capped");
-            assert.equal(web3.utils.toUtf8(_data[2]), "ETH");
+            let _data = await I_MRProxied.getReputationByFactory.call(I_GeneralTransferManagerFactory.address);
+            assert.equal(_data.length, 0, "Should give the original length");
         });
 
         it("Should alter the old storage", async() => {
-            await I_MRProxied.addMoreTags(3, ["DAI", "USDTiered"], {from: account_polymath});
-            let _data = await I_MRProxied.getTagByModuleType.call(3);
-            assert.equal(_data.length, 6, "Should give the updated length");
+            await I_MRProxied.addMoreReputation(I_GeneralTransferManagerFactory.address, [account_polymath, account_temp], {from: account_polymath});
+            let _data = await I_MRProxied.getReputationByFactory.call(I_GeneralTransferManagerFactory.address);
+            assert.equal(_data.length, 2, "Should give the updated length");
         });
     })
 

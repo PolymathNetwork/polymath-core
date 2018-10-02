@@ -160,16 +160,6 @@ contract('SecurityTokenRegistry', accounts => {
         );
 
 
-        // STEP 4: Register the Modules with the ModuleRegistry contract
-
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
         // Step 6: Deploy the STversionProxy contract
 
         I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
@@ -189,9 +179,6 @@ contract('SecurityTokenRegistry', accounts => {
             "0x0000000000000000000000000000000000000000",
             "TestSTOFactory contract was not deployed"
         );
-
-        // (C) : Register the STOFactory
-        await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: token_owner });
 
         // Step 9: Deploy the SecurityTokenRegistry
 
@@ -229,6 +216,19 @@ contract('SecurityTokenRegistry', accounts => {
         await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
         await I_MRProxied.updateFromRegistry({from: account_polymath});
+
+        // STEP 4: Register the Modules with the ModuleRegistry contract
+
+        // (A) :  Register the GeneralTransferManagerFactory
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+
+        // (B) :  Register the GeneralDelegateManagerFactory
+        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+
+        // (C) : Register the STOFactory
+        await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_polymath });
 
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------

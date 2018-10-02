@@ -338,7 +338,6 @@ contract VestingEscrowWallet is IWallet {
     require(_vestingDuration % _vestingFrequency == 0, "The vesting frequency should be a multiple of the vesting duration");
 
     uint256 _numTranches = _vestingDuration.div(_vestingFrequency);
-    require(_totalAllocation % _numTranches == 0, "The total allocation should be a multiple of the number of tranches");
     uint256 _tokensPerTranche = _totalAllocation.div(_numTranches);
 
     bytes32 _vestingId = keccak256(

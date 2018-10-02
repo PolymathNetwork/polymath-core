@@ -202,7 +202,7 @@ contract BlacklistTransferManager is ITransferManager {
     * @notice get the list of the investors of a blacklist type
     * @param _blacklistName name of the blacklist type
     */
-    function getListofAddresses(bytes32 _blacklistName) public view returns(address[]) {
+    function getListOfAddresses(bytes32 _blacklistName) public view returns(address[]) {
         require(blacklists[_blacklistName].endDate != 0, "Blacklist type doesn't exist");
         return blacklistToAddress[_blacklistName];
     }

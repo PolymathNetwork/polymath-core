@@ -84,7 +84,7 @@ contract BlacklistTransferManagerFactory is ModuleFactory {
      * @notice Get the Instructions that helped to used the module
      */
     function getInstructions() public view returns(string) {
-        return "Allows an issuer to blacklist specific pairs of addresses. Init function takes no parameters.";
+        return "Allows an issuer to blacklist the addresses.";
     }
 
     /**

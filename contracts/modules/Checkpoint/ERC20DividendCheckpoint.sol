@@ -12,7 +12,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
     // Mapping to token address for each dividend
     mapping (uint256 => address) public dividendTokens;
 
-    event ERC20DividendDeposited(address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity, uint256 _expiry, address indexed _token, uint256 _amount, uint256 _totalSupply, uint256 _dividendIndex, string _name);
+    event ERC20DividendDeposited(address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity, uint256 _expiry, address indexed _token, uint256 _amount, uint256 _totalSupply, uint256 _dividendIndex, bytes32 indexed _name);
     event ERC20DividendClaimed(address indexed _payee, uint256 _dividendIndex, address indexed _token, uint256 _amount, uint256 _withheld);
     event ERC20DividendReclaimed(address indexed _claimer, uint256 _dividendIndex, address indexed _token, uint256 _claimedAmount);
     event ERC20DividendWithholdingWithdrawn(address indexed _claimer, uint256 _dividendIndex, address indexed _token, uint256 _withheldAmount);
@@ -35,7 +35,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _amount Amount of specified token for dividend
      * @param _name name/title for identification
      */
-    function createDividend(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, string _name) external onlyOwner {
+    function createDividend(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, bytes32 _name) external onlyOwner {
         createDividendWithExclusions(_maturity, _expiry, _token, _amount, excluded, _name);
     }
 
@@ -48,7 +48,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _checkpointId Checkpoint id from which to create dividends
      * @param _name name/title for identification
      */
-    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 _checkpointId, string _name) external onlyOwner {
+    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 _checkpointId, bytes32 _name) external onlyOwner {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, _checkpointId, excluded, _name);
     }
 
@@ -61,7 +61,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _excluded List of addresses to exclude
      * @param _name name/title for identification
      */
-    function createDividendWithExclusions(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, address[] _excluded, string _name) public onlyOwner {
+    function createDividendWithExclusions(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, address[] _excluded, bytes32 _name) public onlyOwner {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, checkpointId, _excluded, _name);
     }
@@ -83,7 +83,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         uint256 _amount, 
         uint256 _checkpointId, 
         address[] _excluded,
-        string _name
+        bytes32 _name
     ) 
         public
         onlyOwner      
@@ -108,7 +108,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         uint256 _amount, 
         uint256 _checkpointId, 
         address[] _excluded,
-        string _name
+        bytes32 _name
     ) 
         internal  
     {
@@ -119,6 +119,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         require(_token != address(0), "0x not valid token");
         require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "Invalid checkpoint");
         require(IERC20(_token).transferFrom(msg.sender, address(this), _amount), "Unable to transfer tokens for dividend");
+        require(_name[0] != 0);
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
         uint256 excludedSupply = 0;
@@ -151,7 +152,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @notice emits the ERC20DividendDeposited event. 
      * Seperated into a different function as a workaround for stack too deep error
      */
-    function _emitERC20DividendDepositedEvent(uint256 _checkpointId, uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 currentSupply, uint256 dividendIndex, string _name) internal {
+    function _emitERC20DividendDepositedEvent(uint256 _checkpointId, uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 currentSupply, uint256 dividendIndex, bytes32 _name) internal {
         emit ERC20DividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);
     }
 

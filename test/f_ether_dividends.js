@@ -41,7 +41,7 @@ contract('EtherDividendCheckpoint', accounts => {
     let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
-    let dividendName = "TestDividend";
+    let dividendName = "0x546573744469766964656e640000000000000000000000000000000000000000";
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -404,6 +404,20 @@ contract('EtherDividendCheckpoint', accounts => {
 
         it("Set withholding tax of 20% on investor 2", async() => {
             await I_EtherDividendCheckpoint.setWithholdingFixed([account_investor2], BigNumber(20*10**16), {from: token_owner});
+        });
+
+        it("Should fail in creating the dividend", async() => {
+            let errorThrown = false;
+            let maturity = latestTime() + duration.days(1);
+            let expiry = latestTime() + duration.days(10);
+            try {
+                await I_EtherDividendCheckpoint.createDividend(maturity, expiry, '', {from: token_owner, value: web3.utils.toWei('1.5', 'ether')});
+            } catch(error) {
+                console.log(`       tx -> failed because dividend name is empty`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
         });
 
         it("Create new dividend", async() => {

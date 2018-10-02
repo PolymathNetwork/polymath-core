@@ -667,6 +667,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
                 return true;
             }
         }
+
+        return false;
     }
 
     /**

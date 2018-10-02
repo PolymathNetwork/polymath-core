@@ -477,7 +477,7 @@ contract('CountTransferManager', accounts => {
         describe("Test cases for the factory", async() => {
             it("should get the exact details of the factory", async() => {
                 assert.equal(await I_CountTransferManagerFactory.setupCost.call(),0);
-                assert.equal(await I_CountTransferManagerFactory.getType.call(),2);
+                assert.equal(await I_CountTransferManagerFactory.getTypes.call(0),2);
                 assert.equal(web3.utils.toAscii(await I_CountTransferManagerFactory.getName.call())
                             .replace(/\u0000/g, ''),
                             "CountTransferManager",

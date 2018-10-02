@@ -691,7 +691,7 @@ contract('ManualApprovalTransferManager', accounts => {
 
         it("Should get the exact details of the factory", async() => {
             assert.equal(await I_ManualApprovalTransferManagerFactory.setupCost.call(),0);
-            assert.equal(await I_ManualApprovalTransferManagerFactory.getType.call(),2);
+            assert.equal(await I_ManualApprovalTransferManagerFactory.getTypes.call(0),2);
             let name = web3.utils.toUtf8(await I_ManualApprovalTransferManagerFactory.getName.call());
             assert.equal(name,"ManualApprovalTransferManager","Wrong Module added");
             let desc = await I_ManualApprovalTransferManagerFactory.getDescription.call();

@@ -12,6 +12,10 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;
     // Mapping hold the delagate details
     mapping (address => bytes32) public delegateDetails;
+    // Array to track all delegates
+    address[] public allDelegates;
+
+
     // Permission flag
     bytes32 public constant CHANGE_PERMISSION = "CHANGE_PERMISSION";
 
@@ -57,10 +61,11 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     function addDelegate(address _delegate, bytes32 _details) public withPerm(CHANGE_PERMISSION) {
         require(_details != bytes32(0), "Delegate details not set");
         delegateDetails[_delegate] = _details;
+        allDelegates.push(_delegate);
         emit LogAddDelegate(_delegate, _details, now);
     }
 
-  /**
+    /**
     * @notice Use to provide/change the permission to the delegate corresponds to the module contract
     * @param _delegate Ethereum address of the delegate
     * @param _module Ethereum contract address of the module
@@ -93,5 +98,72 @@ contract GeneralPermissionManager is IPermissionManager, Module {
         allPermissions[0] = CHANGE_PERMISSION;
         return allPermissions;
     }
+
+    /**
+    * @notice use to get all delegates
+    * @return address[]
+    */
+    function getAllDelegates() public view returns(address[]) {
+        return allDelegates;
+    }
+
+    /**
+    * @notice use to check if an address is a delegate or not
+    * @param _potentialDelegate the address of potential delegate
+    * @return bool
+    */
+    function isDelegate(address _potentialDelegate) public view returns(bool) {
+        if (delegateDetails[_potentialDelegate] != bytes32(0)) {
+            return true;
+        }else
+            return false;
+    }
+
+    /**
+    * @notice Use to change one or more permissions for a single delegate at once
+    * @param _delegate Ethereum address of the delegate
+    * @param _module Ethereum contract address of the module
+    * @param _multiModule Multiple module matching the multiperms, needs to be same length
+    * @param _multiPerms Multiple permission flag needs to be changed
+    * @return nothing
+    */
+    function changePermissionBulk(
+        address _delegate,
+        address[] _multiModules,
+        bytes32[] _multiPerms
+    )
+    external
+    withPerm(CHANGE_PERMISSION)
+    {
+        require(delegateDetails[_delegate] != bytes32(0), "Delegate details not set");
+        
+        for(uint8 i=0;i<_multiPerms.length;i++){
+            bool _currentPerm = !perms[_multiModules[i]][_delegate][_multiPerms[i]];
+            perms[_multiModules[i]][_delegate][_multiPerms[i]] = _currentPerm;
+            emit LogChangePermission(_delegate, [_multiModules[i]], _multiPerms[i], _currentPerm, now);
+        }
+    }
+
+    /**
+    * @notice use to return all delegates with a given permission and module
+    * @return address[]
+    */
+    function getAllDelegatesWithPerm(_module, _perm) public view returns(address[]) {
+        
+        address[] memory allDelegatesWithPerm;
+
+        for(uint8 i=0;i<allDelegates;i++){
+            if (perms[_module][allDelegates[i]][_perm]){
+                allDelegatesWithPerm.push(allDelegates[i]);
+            } else {}
+        }
+
+        return allDelegatesWithPerm;
+    }
+
+
+
+
+
 
 }

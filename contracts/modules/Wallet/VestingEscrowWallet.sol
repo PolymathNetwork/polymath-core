@@ -12,7 +12,6 @@ contract VestingEscrowWallet is IWallet {
 
   bytes32 public constant ISSUER = "ISSUER";
   address public treasury;
-  address public securityToken;
   uint256 public numExcessTokens;
   uint256 public templateCount;
 

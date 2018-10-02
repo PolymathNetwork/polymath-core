@@ -375,7 +375,7 @@ contract VestingEscrowWallet is IWallet {
       require(ISecurityToken(securityToken).transferFrom(
         msg.sender,
         address(this),
-        _totalAllocation), "Unable to transfer tokens");
+        _tokensToSend), "Unable to transfer tokens");
     }
 
     emit VestingStarted(

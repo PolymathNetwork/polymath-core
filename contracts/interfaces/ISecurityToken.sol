@@ -19,15 +19,15 @@ interface ISecurityToken {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
     //transfer, transferFrom must respect use respect the result of verifyTransfer
-    function verifyTransfer(address _from, address _to, uint256 _amount) external returns (bool success);
+    function verifyTransfer(address _from, address _to, uint256 _value) external returns (bool success);
 
     /**
      * @notice mints new tokens and assigns them to the target _investor.
      * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
      * @param _investor address the tokens will be minted to
-     * @param _amount is the amount of tokens that will be minted to the investor
+     * @param _value is the amount of tokens that will be minted to the investor
      */
-    function mint(address _investor, uint256 _amount) external returns (bool success);
+    function mint(address _investor, uint256 _value) external returns (bool success);
 
     /**
      * @notice Burn function used to burn the securityToken
@@ -35,7 +35,14 @@ interface ISecurityToken {
      */
     function burn(uint256 _value) external returns (bool success);
 
-    event Minted(address indexed to, uint256 amount);
+    /**
+     * @notice Burn function used to burn the securityToken on behalf of someone else
+     * @param _from Address for whom to burn tokens
+     * @param _value No. of token that get burned
+     */
+    function burnFrom(address _from, uint256 _value) external returns (bool success);
+
+    event Minted(address indexed _to, uint256 _value);
     event Burnt(address indexed _burner, uint256 _value);
 
     // Permissions this to a Permission module, which has a key of 1
@@ -118,9 +125,9 @@ interface ISecurityToken {
     /**
     * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
-    * @param _amount amount of POLY to withdraw
+    * @param _value amount of POLY to withdraw
     */
-    function withdrawPoly(uint256 _amount) external;
+    function withdrawPoly(uint256 _value) external;
 
     /**
     * @notice allows owner to approve more POLY to one of the modules
@@ -168,10 +175,10 @@ interface ISecurityToken {
      * @notice mints new tokens and assigns them to the target investors.
      * Can only be called by the STO attached to the token or by the Issuer (Security Token contract owner)
      * @param _investors A list of addresses to whom the minted tokens will be delivered
-     * @param _amounts A list of the amount of tokens to mint to corresponding addresses from _investor[] list
+     * @param _values A list of the amount of tokens to mint to corresponding addresses from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _amounts) external returns (bool success);
+    function mintMulti(address[] _investors, uint256[] _values) external returns (bool success);
 
     /**
      * @notice used to set the token Burner address. It can only be called by the owner

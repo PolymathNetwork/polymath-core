@@ -164,24 +164,6 @@ contract('BlacklistTransferManager', accounts => {
             "CountTransferManagerFactory contract was not deployed"
         );
 
-        // STEP 8: Register the Modules with the ModuleRegistry contract
-
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the BlacklistTransferManagerFactory
-        await I_MRProxied.registerModule(I_BlacklistTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_BlacklistTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the Paid BlacklistTransferManagerFactory
-        await I_MRProxied.registerModule(P_BlacklistTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(P_BlacklistTransferManagerFactory.address, true, { from: account_polymath });
-
         // Step 9: Deploy the STFactory contract
 
         I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address);
@@ -216,6 +198,23 @@ contract('BlacklistTransferManager', accounts => {
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
         await I_MRProxied.updateFromRegistry({from: account_polymath});
 
+         // STEP 8: Register the Modules with the ModuleRegistry contract
+
+        // (A) :  Register the GeneralTransferManagerFactory
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+
+        // (B) :  Register the GeneralDelegateManagerFactory
+        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+
+        // (C) : Register the BlacklistTransferManagerFactory
+        await I_MRProxied.registerModule(I_BlacklistTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_BlacklistTransferManagerFactory.address, true, { from: account_polymath });
+
+        // (C) : Register the Paid BlacklistTransferManagerFactory
+        await I_MRProxied.registerModule(P_BlacklistTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(P_BlacklistTransferManagerFactory.address, true, { from: account_polymath });
 
         // Printing all the contract addresses
         console.log(`

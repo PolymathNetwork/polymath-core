@@ -350,7 +350,7 @@ async function cappedSTO_launch() {
       process.exit(0);
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 1.5);
+      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 2);
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }
@@ -744,17 +744,17 @@ async function usdTieredSTO_launch() {
   let stoFee = usdTieredSTOFee;
   let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call();
   let requiredAmount = web3.utils.toWei(stoFee.toString(), "ether");
-  if (parseInt(contractBalance) < parseInt(requiredAmount)) {
-    let transferAmount = parseInt(requiredAmount) - parseInt(contractBalance);
-    let ownerBalance = await polyToken.methods.balanceOf(Issuer.address).call();
-    if(parseInt(ownerBalance) < transferAmount) {
+  if (new web3.utils.BN(contractBalance).lt(new web3.utils.BN(requiredAmount))) {
+    let transferAmount = (new web3.utils.BN(requiredAmount)).sub(new web3.utils.BN(contractBalance));
+    let ownerBalance = new web3.utils.BN(await polyToken.methods.balanceOf(Issuer.address).call());
+    if (ownerBalance.lt(transferAmount)) {
       console.log(chalk.red(`\n**************************************************************************************************************************************************`));
-      console.log(chalk.red(`Not enough balance to pay the ${selectedSTO} fee, Requires ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(ownerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
+      console.log(chalk.red(`Not enough balance to pay the ${selectedSTO} fee, Requires ${web3.utils.fromWei(transferAmount)} POLY but have ${web3.utils.fromWei(ownerBalance)} POLY. Access POLY faucet to get the POLY to complete this txn`));
       console.log(chalk.red(`**************************************************************************************************************************************************\n`));
       process.exit(0);
     } else {
-      let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 1.5);
+      let transferAction = polyToken.methods.transfer(securityToken._address, transferAmount);
+      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 2);
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }

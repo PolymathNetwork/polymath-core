@@ -37,6 +37,8 @@ contract('GeneralPermissionManager', accounts => {
     let account_investor3;
     let account_investor4;
     let account_delegate;
+    let account_delegate2;
+    let account_delegate3;
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime();
@@ -103,6 +105,8 @@ contract('GeneralPermissionManager', accounts => {
         account_investor1 = accounts[8];
         account_investor2 = accounts[9];
         account_delegate = accounts[7];
+        account_delegate2 = accounts[6];
+        account_delegate3 = accounts[5];
 
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -316,6 +320,7 @@ contract('GeneralPermissionManager', accounts => {
             );
             I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
         });
+
     });
 
     describe("General Permission Manager test cases", async() => {
@@ -405,6 +410,57 @@ contract('GeneralPermissionManager', accounts => {
                         "CHANGE_PERMISSION",
                         "Wrong permissions");
         });
+
+        it("Should return all delegates", async() => {
+            await I_GeneralPermissionManager.addDelegate(account_delegate2, delegateDetails, { from: token_owner});
+            let tx = await I_GeneralPermissionManager.getAllDelegates.call();
+            assert.equal(tx.length, 2);
+            assert.equal(tx[0], account_delegate);  
+            assert.equal(tx[1], account_delegate2);
+        });
+
+        it("Should return false when check is delegate - because user is not a delegate", async() => {
+            assert.equal(await I_GeneralPermissionManager.isDelegate.call(account_investor1), false);
+        });
+
+        it("Should return true when check is delegate - because user is a delegate", async() => {
+            assert.equal(await I_GeneralPermissionManager.isDelegate.call(account_delegate), true);
+        });
+
+        //ideally need to test with another module attached
+        it("Should provide the permission in bulk", async() => {
+            await I_GeneralPermissionManager.addDelegate(account_delegate3, delegateDetails, { from: token_owner});
+            let tx = await I_GeneralPermissionManager.changePermissionBulk(account_delegate3, [I_GeneralTransferManager.address], ["WHITELIST"], {from: token_owner});
+            assert.equal(tx.logs[0].args._delegate, account_delegate3);
+        });
+
+
+        it("Should provide all delegates with specified permission", async() => {
+
+            await I_GeneralPermissionManager.changePermission(account_delegate2, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner});
+
+            let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralTransferManager.address, "WHITELIST");
+            assert.equal(tx.length, 3);
+            assert.equal(tx[0], account_delegate);
+            assert.equal(tx[1], account_delegate2);
+        });
+
+        //ideally need to test with another module attached
+        it("Should return all modules and all permission", async() => {
+            
+            let tx = await I_GeneralPermissionManager.getAllModulesAndPerms.call(account_delegate, [2], I_SecurityToken.address);
+
+            console.log (tx);
+
+            assert.equal(tx[0][0], I_GeneralTransferManager.address);
+            assert.equal(tx[1][0], "0x57484954454c4953540000000000000000000000000000000000000000000000");
+           
+        });
+
+
+
+
+
     });
 
     describe("General Permission Manager Factory test cases", async() => {

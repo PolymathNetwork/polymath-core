@@ -278,7 +278,11 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         return true;
     }
 
+<<<<<<< HEAD
     function _tickerStatus(string _ticker) internal view returns(bool) {
+=======
+    function _tickerStatus(string _ticker) internal returns(bool) {
+>>>>>>> development-1.5.0
         return getBool(Encoder.getKey("registeredTickers_status", _ticker));
     }
 

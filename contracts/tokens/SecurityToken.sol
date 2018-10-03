@@ -697,12 +697,21 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return success
      */
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
+<<<<<<< HEAD
         if (modules[PERMISSION_KEY].length == 0) {
             return false;
         }
 
         for (uint8 i = 0; i < modules[PERMISSION_KEY].length; i++) {
             if (IPermissionManager(modules[PERMISSION_KEY][i]).checkPermission(_delegate, _module, _perm)) {
+=======
+        if (modules[PERMISSIONMANAGER_KEY].length == 0) {
+            return false;
+        }
+
+        for (uint8 i = 0; i < modules[PERMISSIONMANAGER_KEY].length; i++) {
+            if (IPermissionManager(modules[PERMISSIONMANAGER_KEY][i]).checkPermission(_delegate, _module, _perm)) {
+>>>>>>> development-1.5.0
                 return true;
             }
         }

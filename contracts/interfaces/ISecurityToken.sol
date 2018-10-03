@@ -33,14 +33,14 @@ interface ISecurityToken {
      * @notice Burn function used to burn the securityToken
      * @param _value No. of tokens that get burned
      */
-    function burn(uint256 _value) external returns (bool success);
+    function burn(uint256 _value) external;
 
     /**
      * @notice Burn function used to burn the securityToken on behalf of someone else
      * @param _from Address for whom to burn tokens
      * @param _value No. of token that get burned
      */
-    function burnFrom(address _from, uint256 _value) external returns (bool success);
+    function burnFrom(address _from, uint256 _value) external;
 
     event Minted(address indexed _to, uint256 _value);
     event Burnt(address indexed _burner, uint256 _value);
@@ -101,7 +101,7 @@ interface ISecurityToken {
      * NB - this length may differ from investorCount if the list has not been pruned of zero-balance investors
      * @return length
      */
-    function getInvestorsLength() external view returns (uint256);
+    function getInvestors() external view returns (address[]);
 
     /**
     * @notice gets current checkpoint ID
@@ -225,7 +225,15 @@ interface ISecurityToken {
      * @param _value amount of tokens to transfer
      * @param _data data attached to the transfer by controller to emit in event
      */
-    function forceTransfer(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
+    function forceTransfer(address _from, address _to, uint256 _value, bytes _data) external;
+
+    /**
+     * @notice Use by a controller to execute a foced burn
+     * @param _from address from which to take tokens
+     * @param _value amount of tokens to transfer
+     * @param _data data attached to the transfer by controller to emit in event
+     */
+    function forceBurn(address _from, uint256 _value, bytes _data) external;
 
     /**
      * @notice Use by the issuer to permanently disable controller functionality

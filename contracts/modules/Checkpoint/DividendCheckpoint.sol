@@ -131,7 +131,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
      */
     function pushDividendPayment(uint256 _dividendIndex, uint256 _start, uint256 _iterations) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
         Dividend storage dividend = dividends[_dividendIndex];
-        uint256 numberInvestors = ISecurityToken(securityToken).getInvestorsLength();
+        address[] memory investors = ISecurityToken(securityToken).getInvestors();
+        uint256 numberInvestors = investors.length;
         for (uint256 i = _start; i < Math.min256(numberInvestors, _start.add(_iterations)); i++) {
             address payee = ISecurityToken(securityToken).investors(i);
             if ((!dividend.claimed[payee]) && (!dividend.dividendExcluded[payee])) {

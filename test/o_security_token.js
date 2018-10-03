@@ -1106,15 +1106,14 @@ contract('SecurityToken', accounts => {
 
            it("Should check that the list of investors is correct", async ()=> {
                // Hardcode list of expected accounts based on transfers above
-               let investorsLength = await I_SecurityToken.getInvestorsLength();
-               console.log(JSON.stringify(investorsLength));
+
+               let investors = await I_SecurityToken.getInvestors();
                let expectedAccounts = [account_affiliate1, account_affiliate2, account_investor1, account_temp];
-               assert.equal(investorsLength.toNumber(), 4);
-               console.log("Total Seen Investors: " + investorsLength.toNumber());
-               for (let i = 0; i < investorsLength.toNumber(); i++) {
-                 let investor = await I_SecurityToken.investors(i);
-                 assert.equal(investor, expectedAccounts[i]);
+               for (let i = 0; i < expectedAccounts.length; i++) {
+                   assert.equal(investors[i], expectedAccounts[i]);
                }
+               assert.equal(investors.length, 4);
+               console.log("Total Seen Investors: " + investors.length);
            });
            it("Should fail to set controller status because msg.sender not owner", async() => {
                let errorThrown = false;
@@ -1196,14 +1195,13 @@ contract('SecurityToken', accounts => {
            it("Should prune investor length", async ()=> {
                 await I_SecurityToken.pruneInvestors(0, 10, {from: token_owner});
                 // Hardcode list of expected accounts based on transfers above
-                let investorsLength = (await I_SecurityToken.getInvestorsLength.call()).toNumber();
+
+                let investors = await I_SecurityToken.getInvestors.call();
                 let expectedAccounts = [account_affiliate1, account_affiliate2, account_investor1];
-                assert.equal(investorsLength, 3);
-                console.log("Total Seen Investors: " + investorsLength);
-                for (let i = 0; i < investorsLength; i++) {
-                  let investor = await I_SecurityToken.investors(i);
-                  assert.equal(investor, expectedAccounts[i]);
+                for (let i = 0; i < expectedAccounts.length; i++) {
+                    assert.equal(investors[i], expectedAccounts[i]);
                 }
+                assert.equal(investors.length, 3);
            });
 
            it("Should check the balance of investor at checkpoint", async() => {

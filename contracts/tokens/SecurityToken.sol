@@ -68,15 +68,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // address whitelisted by issuer as controller
     address public controller;
 
-    /* event ModuleDataEvent(
-        bytes32 name,
-        address module,
-        address moduleFactory,
-        bool isArchived,
-        uint8[] moduleTypes,
-        uint256[] moduleIndexes,
-        uint256 nameIndex
-    ); */
     // Struct for module data
     struct ModuleData {
         bytes32 name;
@@ -86,7 +77,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint8[] moduleTypes;
         uint256[] moduleIndexes;
         uint256 nameIndex;
-        mapping (uint8 => bool) moduleType;
         mapping (uint8 => uint256) moduleIndex;
     }
 
@@ -160,9 +150,13 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     function _isModule(address _module, uint8 _type) internal view returns (bool) {
         require(modulesToData[_module].module == _module, "Address mismatch");
-        require(modulesToData[_module].moduleType[_type], "Type mismatch");
         require(!modulesToData[_module].isArchived, "Module archived");
-        return true;
+        for (uint256 i = 0; i < modulesToData[_module].moduleTypes.length; i++) {
+            if (modulesToData[_module].moduleTypes[i] == _type) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Require msg.sender to be the specified module type
@@ -266,21 +260,13 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         //Add to SecurityToken module map
         bytes32 moduleName = moduleFactory.getName();
         uint256[] memory moduleIndexes = new uint256[](moduleTypes.length);
-        //Enforce type uniqueness
         uint256 i;
-        uint256 j;
-        for (i = 0; i < moduleTypes.length; i++) {
-            for (j = 0; j < i; j++) {
-                require(moduleTypes[i] != moduleTypes[j], "Type mismatch");
-            }
-        }
         for (i = 0; i < moduleTypes.length; i++) {
             moduleIndexes[i] = modules[moduleTypes[i]].length;
         }
-        /* emit ModuleDataEvent(moduleName, module, _moduleFactory, false, moduleTypes, moduleIndexes, names[moduleName].length); */
         modulesToData[module] = ModuleData(moduleName, module, _moduleFactory, false, moduleTypes, moduleIndexes, names[moduleName].length);
         for (i = 0; i < moduleTypes.length; i++) {
-            modulesToData[module].moduleType[moduleTypes[i]] = true;
+            /* modulesToData[module].moduleType[moduleTypes[i]] = true; */
             modules[moduleTypes[i]].push(module);
         }
         names[moduleName].push(module);
@@ -337,7 +323,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint8[] memory moduleTypes = modulesToData[_module].moduleTypes;
         for (uint256 i = 0; i < moduleTypes.length; i++) {
             _removeModuleWithIndex(moduleTypes[i], modulesToData[_module].moduleIndexes[i]);
-            modulesToData[_module].moduleType[moduleTypes[i]] = false;
+            /* modulesToData[_module].moduleType[moduleTypes[i]] = false; */
         }
         // Remove from module names list
         uint256 index = modulesToData[_module].nameIndex;

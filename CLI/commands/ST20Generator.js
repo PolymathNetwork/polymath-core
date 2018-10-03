@@ -45,11 +45,14 @@ let _tokenConfig;
 let _mintingConfig;
 let _stoConfig;
 
+let network;
+
 async function executeApp(tokenConfig, mintingConfig, stoConfig, remoteNetwork) {
   _tokenConfig = tokenConfig;
   _mintingConfig = mintingConfig;
   _stoConfig = stoConfig;
 
+  network = remoteNetwork;
   await global.initialize(remoteNetwork);
 
   common.logAsciiBull();
@@ -257,11 +260,11 @@ async function step_Wallet_Issuance(){
 
 async function multi_mint_tokens() {
   //await whitelist.startWhitelisting(tokenSymbol);
-  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75`);
+  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75 ${network}`);
   console.log(chalk.green(`\nCongrats! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
 
-  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75`);
+  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${network}`);
   console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transfered to token holders`));
 }
 
@@ -1017,7 +1020,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(Issuer, changeAccreditedAction, defaultGasPrice);
           break;
         case 2:
-          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75`);
+          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${network}`);
           break;
         case 3:
           let account = readlineSync.question('Enter the address to change non accredited limit: ');
@@ -1029,7 +1032,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(Issuer, changeNonAccreditedLimitAction, defaultGasPrice);
           break;
         case 4:
-          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75`);
+          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${network}`);
           break;
         case 5:
           await modfifyTimes();

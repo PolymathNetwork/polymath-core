@@ -68,6 +68,15 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // address whitelisted by issuer as controller
     address public controller;
 
+    event ModuleDataEvent(
+        bytes32 name,
+        address module,
+        address moduleFactory,
+        bool isArchived,
+        uint8[] moduleTypes,
+        uint256[] moduleIndexes,
+        uint256 nameIndex
+    );
     // Struct for module data
     struct ModuleData {
         bytes32 name;
@@ -269,18 +278,19 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         //Add to SecurityToken module map
         bytes32 moduleName = moduleFactory.getName();
         uint256[] memory moduleIndexes = new uint256[](moduleTypes.length);
-        //TODO: Enforce uniqueness
+        //Enforce type uniqueness
         uint256 i;
         uint256 j;
         for (i = 0; i < moduleTypes.length; i++) {
-            for (j = i; j < moduleTypes.length; j++) {
+            for (j = 0; j < i; j++) {
                 require(moduleTypes[i] != moduleTypes[j], "Bad types");
             }
         }
         for (i = 0; i < moduleTypes.length; i++) {
             moduleIndexes[i] = modules[moduleTypes[i]].length;
         }
-        modulesToData[module] = ModuleData(moduleName, module, _moduleFactory, false, moduleTypes, moduleIndexes, names[moduleName].length);
+        emit ModuleDataEvent(moduleName, module, _moduleFactory, false, moduleTypes, moduleIndexes, names[moduleName].length);
+        /* modulesToData[module] = ModuleData(moduleName, module, _moduleFactory, false, moduleTypes, moduleIndexes, names[moduleName].length); */
         for (i = 0; i < moduleTypes.length; i++) {
             modules[moduleTypes[i]].push(module);
         }

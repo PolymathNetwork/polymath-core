@@ -262,10 +262,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     */
     function archiveModule(address _module) external onlyOwner {
         TokenLib.archiveModule(modulesToData[_module], _module);
-        /* require(!modulesToData[_module].isArchived, "Module archived");
-        require(modulesToData[_module].module != address(0), "Module missing");
-        emit ModuleArchived(modulesToData[_module].moduleTypes, _module, now);
-        modulesToData[_module].isArchived = true; */
     }
 
     /**
@@ -274,9 +270,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     */
     function unarchiveModule(address _module) external onlyOwner {
         TokenLib.unarchiveModule(modulesToData[_module], _module);
-        /* require(modulesToData[_module].isArchived, "Module unarchived");
-        emit ModuleUnarchived(modulesToData[_module].moduleTypes, _module, now);
-        modulesToData[_module].isArchived = false; */
     }
 
     function _removeModuleWithIndex(uint8 _type, uint256 _index) internal {
@@ -488,39 +481,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice store the changes to the checkpoint objects
-     * @param _checkpoints the affected checkpoint object array
-     * @param _newValue the new value that needs to be stored
-     */
-    /* function _adjustCheckpoints(TokenLib.Checkpoint[] storage _checkpoints, uint256 _newValue) internal {
-        //No checkpoints set yet
-        if (currentCheckpointId == 0) {
-            return;
-        }
-        //No previous checkpoint data - add current balance against checkpoint
-        if (_checkpoints.length == 0) {
-            _checkpoints.push(
-                TokenLib.Checkpoint({
-                    checkpointId: currentCheckpointId,
-                    value: _newValue
-                })
-            );
-            return;
-        }
-        //No new checkpoints since last update
-        if (_checkpoints[_checkpoints.length - 1].checkpointId == currentCheckpointId) {
-            return;
-        }
-        //New checkpoint, so record balance
-        _checkpoints.push(
-            TokenLib.Checkpoint({
-                checkpointId: currentCheckpointId,
-                value: _newValue
-            })
-        );
-    } */
-
-    /**
      * @notice Overloaded version of the transfer function
      * @param _to receiver of transfer
      * @param _value value of transfer
@@ -660,17 +620,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
         return TokenLib.checkPermission(modules[PERMISSION_KEY], _delegate, _module, _perm);
-        /* if (modules[PERMISSION_KEY].length == 0) {
-            return false;
-        }
-
-        for (uint8 i = 0; i < modules[PERMISSION_KEY].length; i++) {
-            if (IPermissionManager(modules[PERMISSION_KEY][i]).checkPermission(_delegate, _module, _perm)) {
-                return true;
-            }
-        }
-
-        return false; */
     }
 
     function _burn(address _from, uint256 _value) internal {
@@ -784,6 +733,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         balances[_from] = balances[_from].sub(_value);
         return verified;
     }
+    
     /**
      * @notice Use by a controller to execute a foced burn
      * @param _from address from which to take tokens

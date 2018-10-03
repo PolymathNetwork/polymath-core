@@ -414,6 +414,7 @@ contract('GeneralPermissionManager', accounts => {
         it("Should return all delegates", async() => {
             await I_GeneralPermissionManager.addDelegate(account_delegate2, delegateDetails, { from: token_owner});
             let tx = await I_GeneralPermissionManager.getAllDelegates.call();
+            console.log(tx);
             assert.equal(tx.length, 2);
             assert.equal(tx[0], account_delegate);  
             assert.equal(tx[1], account_delegate2);
@@ -440,6 +441,7 @@ contract('GeneralPermissionManager', accounts => {
             await I_GeneralPermissionManager.changePermission(account_delegate2, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner});
 
             let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralTransferManager.address, "WHITELIST");
+            console.log(tx);
             assert.equal(tx.length, 3);
             assert.equal(tx[0], account_delegate);
             assert.equal(tx[1], account_delegate2);

@@ -16,8 +16,10 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     // should be multipled by 10^16. if the transfer percentage is 20%, then globalTransferLimitInPercentage should be 20*10^16
     uint256 public globalTransferLimitInPercentage;
 
+    //mapping to store the wallets that are exempted from the volume restriction
     mapping(address=>bool) public exemptWallets;
 
+    //addresses on this list have special transfer restrictions apart from global
     mapping(address => uint) public specialTransferLimitsInTokens;
 
     mapping(address => uint) public specialTransferLimitsInPercentages;

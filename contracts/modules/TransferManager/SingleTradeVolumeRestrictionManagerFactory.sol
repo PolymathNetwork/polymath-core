@@ -23,6 +23,8 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
         name = "SingleTradeVolumeRestriction";
         title = "Single Trade Volume Restriction Manager";
         description = "Imposes volume restriction on a single trade";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
     /**

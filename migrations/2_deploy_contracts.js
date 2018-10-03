@@ -2,6 +2,7 @@ const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
+const SingleTradeVolumeRestrictionManagerFactory = artifacts.require('./SingleTradeVolumeRestrictionManagerFactory.sol')
 const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.sol');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
@@ -165,6 +166,11 @@ const functionSignatureProxyMR = {
         // to manual approve the transfer that will overcome the other transfer restrictions)
         return deployer.deploy(ManualApprovalTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
     }).then(() => {
+      // D) Deploy the SingleTradeVolumeRestrictionManagerFactory Contract (Factory used to generate the SingleTradeVolumeRestrictionManager contract used
+      // to restrict large volume transactions
+      return deployer.deploy(SingleTradeVolumeRestrictionManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    })
+    .then(() => {
       // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
       return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, {from: PolymathAccount});
     }).then(() => {
@@ -216,6 +222,10 @@ const functionSignatureProxyMR = {
       // So any securityToken can use that factory to generate the ERC20DividendCheckpoint contract.
       return moduleRegistry.registerModule(ERC20DividendCheckpointFactory.address, {from: PolymathAccount});
     }).then(() => {
+      // E) Register the SingleTradeVolumeRestrictionManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
+      // So any securityToken can use that factory to generate the SingleTradeVolumeRestrictionManager contract.
+      return moduleRegistry.registerModule(SingleTradeVolumeRestrictionManagerFactory.address, {from: PolymathAccount});
+    }).then(() => {
       // F) Once the GeneralTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
       // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
@@ -251,6 +261,12 @@ const functionSignatureProxyMR = {
       // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
       return moduleRegistry.verifyModule(ManualApprovalTransferManagerFactory.address, true, {from: PolymathAccount});
     }).then(() => {
+      // G) Once the SingleTradeVolumeRestrictionManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+      // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+      // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+      return moduleRegistry.verifyModule(SingleTradeVolumeRestrictionManagerFactory.address, true, {from: PolymathAccount});
+    })
+    .then(() => {
       // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
       return deployer.deploy(CappedSTOFactory, PolyToken, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})
     }).then(() => {
@@ -310,6 +326,8 @@ const functionSignatureProxyMR = {
 
       EtherDividendCheckpointFactory:    ${EtherDividendCheckpointFactory.address}
       ERC20DividendCheckpointFactory:    ${ERC20DividendCheckpointFactory.address}
+      SingleTradeVolumeRestrictionManagerFactory:
+                                         ${SingleTradeVolumeRestrictionManagerFactory.address}
       -----------------------------------------------------------------------------
       `);
       console.log('\n');

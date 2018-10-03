@@ -14,7 +14,12 @@ var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
-const STO_KEY = 3;
+const MODULES_TYPES = {
+  PERMISSION: 1,
+  TRANSFER: 2,
+  STO: 3,
+  DIVIDENDS: 4
+}
 
 // App flow
 let tokenSymbol;
@@ -132,10 +137,11 @@ async function start_explorer(){
           await taxHoldingMenu();
         break;
         case 'Create dividends':
-          let dividend =  readlineSync.question(`How much ${dividendsType} would you like to distribute to token holders?: `);
+          let divName = readlineSync.question(`Enter a name or title to indetify this dividend: `);
+          let dividend = readlineSync.question(`How much ${dividendsType} would you like to distribute to token holders?: `);
           await checkBalance(dividend);
           let checkpointId = currentCheckpoint == 0 ? 0 : await selectCheckpoint(true); // If there are no checkpoints, it must create a new one
-          await createDividends(dividend, checkpointId);
+          await createDividends(divName, dividend, checkpointId);
         break;
         case 'Explore account at checkpoint':
           let _address =  readlineSync.question('Enter address to explore: ');
@@ -188,7 +194,7 @@ async function mintTokens(address, amount){
   if (await securityToken.methods.mintingFrozen().call()) {
     console.log(chalk.red("Minting is not possible - Minting has been permanently frozen by issuer"));
   } else {
-    let result = await securityToken.methods.getModulesByType(STO_KEY).call();
+    let result = await securityToken.methods.getModulesByType(MODULES_TYPES.STO).call();
     if (result.length > 0) {
       console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
     } else {
@@ -311,7 +317,7 @@ async function taxHoldingMenu() {
   }
 }
 
-async function createDividends(dividend, checkpointId) {
+async function createDividends(name, dividend, checkpointId) {
   await addDividendsModule();
 
   let time = Math.floor(Date.now()/1000);
@@ -327,17 +333,17 @@ async function createDividends(dividend, checkpointId) {
     await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
     if (checkpointId > 0) {
       if (useDefaultExcluded) {
-        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId);
+        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId, web3.utils.toHex(name));
       } else {
         let excluded = getExcludedFromDataFile();
-        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpointAndExclusions(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId, excluded);
+        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpointAndExclusions(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId, excluded, web3.utils.toHex(name));
       }
     } else {
       if (useDefaultExcluded) {
-        createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend));
+        createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), web3.utils.toHex(name));
       } else {
         let excluded = getExcludedFromDataFile();
-        createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), excluded);
+        createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), excluded, web3.utils.toHex(name));
       }
     }
     let receipt = await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice);
@@ -346,17 +352,17 @@ async function createDividends(dividend, checkpointId) {
   } else if (dividendsType == 'ETH') {
     if (checkpointId > 0) {
       if (useDefaultExcluded) {
-        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, checkpointId);
+        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, checkpointId, web3.utils.toHex(name));
       } else {
         let excluded = getExcludedFromDataFile();
-        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpointAndExclusions(maturityTime, expiryTime, checkpointId, excluded);
+        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpointAndExclusions(maturityTime, expiryTime, checkpointId, excluded, web3.utils.toHex(name));
       }
     } else {
       if (useDefaultExcluded) {
-        createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime);
+        createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime, web3.utils.toHex(name));
       } else {
         let excluded = getExcludedFromDataFile();
-        createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, excluded);
+        createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, excluded, web3.utils.toHex(name));
       }
     }
     let receipt = await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice, web3.utils.toWei(dividend));
@@ -466,16 +472,17 @@ async function isDividendsModuleAttached() {
 
 async function addDividendsModule() {
   if (!(await isDividendsModuleAttached())) {
-    let dividendsFactoryAddress;
+    let dividendsFactoryName;
     let dividendsModuleABI;
     if (dividendsType == 'POLY') {
-      dividendsFactoryAddress = await contracts.erc20DividendCheckpointFactoryAddress();
+      dividendsFactoryName = 'ERC20DividendCheckpoint';
       dividendsModuleABI = abis.erc20DividendCheckpoint();
     } else if (dividendsType == 'ETH') {
-      dividendsFactoryAddress = await contracts.etherDividendCheckpointFactoryAddress();
+      dividendsFactoryName = 'EtherDividendCheckpoint';
       dividendsModuleABI = abis.etherDividendCheckpoint();
     }
 
+    let dividendsFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.DIVIDENDS, dividendsFactoryName);
     let addModuleAction = securityToken.methods.addModule(dividendsFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
     let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
@@ -500,18 +507,12 @@ async function selectCheckpoint(includeCreate) {
 
 async function getCheckpoints() {
   let result = [];
-  /*
-  let currentCheckpoint = await securityToken.methods.currentCheckpointId().call();
-  for (let index = 1; index <= currentCheckpoint; index++) {
-    result.push(checkpoint(index).call());
-  }
-  */
-
-  let events = await securityToken.getPastEvents('CheckpointCreated', { fromBlock: 0});
-  for (let event of events) {
+  
+  let checkPointsTimestamps = await securityToken.methods.getCheckpointTimes().call();
+  for (let index = 0; index < checkPointsTimestamps.length; index++) {
     let checkpoint = {};
-    checkpoint.id = event.returnValues._checkpointId;
-    checkpoint.timestamp = moment.unix(event.returnValues._timestamp).format('MMMM Do YYYY, HH:mm:ss');
+    checkpoint.id = index + 1;
+    checkpoint.timestamp = moment.unix(checkPointsTimestamps[index]).format('MMMM Do YYYY, HH:mm:ss');
     result.push(checkpoint);
   }
 
@@ -543,7 +544,8 @@ async function selectDividend(filter) {
 
   if (dividends.length > 0) {
     let options = dividends.map(function(d) {
-      return `Created: ${moment.unix(d.created).format('MMMM Do YYYY, HH:mm:ss')}
+      return `${web3.utils.toAscii(d.name)}
+    Created: ${moment.unix(d.created).format('MMMM Do YYYY, HH:mm:ss')}
     Maturity: ${moment.unix(d.maturity).format('MMMM Do YYYY, HH:mm:ss')}
     Expiry: ${moment.unix(d.expiry).format('MMMM Do YYYY, HH:mm:ss')}
     At checkpoint: ${d.checkpointId}

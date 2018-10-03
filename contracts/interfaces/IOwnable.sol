@@ -10,7 +10,7 @@ interface IOwnable {
   /**
    * @dev Returns owner
    */
-  function owner() external returns (address);
+  function owner() external view returns (address);
 
   /**
    * @dev Allows the current owner to relinquish control of the contract.

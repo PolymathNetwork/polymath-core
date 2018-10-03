@@ -707,11 +707,28 @@ contract('ERC20DividendCheckpoint', accounts => {
             );
         });
 
-        it("Create another new dividend with explicit checkpoint and exclusion", async() => {
+        it("Should not create dividend with more exclusions than limit", async() => {
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
             await I_PolyToken.getTokens(web3.utils.toWei('11', 'ether'), token_owner);
             await I_PolyToken.approve(I_ERC20DividendCheckpoint.address, web3.utils.toWei('11', 'ether'), {from: token_owner});
+            let limit = await I_ERC20DividendCheckpoint.EXCLUDED_ADDRESS_LIMIT();
+            limit = limit.toNumber();
+            let addresses = [];
+            addresses.push(account_temp);
+            while(limit--)
+                addresses.push(limit);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.createDividendWithCheckpointAndExclusions(maturity, expiry, I_PolyToken.address, web3.utils.toWei('10', 'ether'), 4, addresses, dividendName, {from: token_owner}), 
+                "tx -> failed because too many address excluded"
+            );
+        });
+
+        it("Create another new dividend with explicit checkpoint and exclusion", async() => {
+            let maturity = latestTime();
+            let expiry = latestTime() + duration.days(10);
+            await I_PolyToken.getTokens(web3.utils.toWei('11', 'ether'), token_owner);
+            //token transfer approved in above test
             let tx = await I_ERC20DividendCheckpoint.createDividendWithCheckpointAndExclusions(maturity, expiry, I_PolyToken.address, web3.utils.toWei('10', 'ether'), 4, [account_investor1], dividendName, {from: token_owner});
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 4, "Dividend should be created at checkpoint 3");
         });
@@ -798,6 +815,13 @@ contract('ERC20DividendCheckpoint', accounts => {
             let dividendAmount2 = await I_ERC20DividendCheckpoint.calculateDividend.call(3, account_investor2);
             assert.equal(dividendAmount1[0].toNumber(), 0);
             assert.equal(dividendAmount2[0].toNumber(), 0);
+        });
+
+        it("Should not allow reclaiming withholding tax with incorrect index", async() => {
+            await catchRevert(
+                I_ERC20DividendCheckpoint.withdrawWithholding(300, {from: token_owner, gasPrice: 0}), 
+                "tx -> failed because dividend index is not valid"
+            );
         });
 
         it("Issuer reclaims withholding tax", async() => {

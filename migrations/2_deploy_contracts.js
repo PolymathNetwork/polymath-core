@@ -17,8 +17,7 @@ const FeatureRegistry = artifacts.require('./FeatureRegistry.sol')
 const STFactory = artifacts.require('./tokens/STFactory.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
 const MockOracle = artifacts.require('./MockOracle.sol')
-const VersionUtils = artifacts.require('./VersionUtils.sol');
-const Util = artifacts.require('./Util.sol');
+const TokenLib = artifacts.require('./TokenLib.sol');
 
 let BigNumber = require('bignumber.js');
 const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18));   // 20K POLY fee
@@ -128,14 +127,12 @@ module.exports = function (deployer, network, accounts) {
   }).then((_polymathRegistry) => {
     polymathRegistry = _polymathRegistry;
     return polymathRegistry.changeAddress("PolyToken", PolyToken, {from: PolymathAccount});
-  // }).then(() => {
-  //   // Deploy libraries
-  //   return deployer.deploy(VersionUtils, {from: PolymathAccount});
-  // }).then(() => {
-  //   return deployer.deploy(Util, {from: PolymathAccount});
-  // }).then(() => {
-  //   // Link libraries
-  //   return deployer.link(VersionUtils, ModuleRegistry);
+  }).then(() => {
+    // Deploy libraries
+    return deployer.deploy(TokenLib, {from: PolymathAccount});
+  }).then(() => {
+    // Link libraries
+    return deployer.link(TokenLib, STFactory);
   // }).then(() => {
   //   return deployer.link(VersionUtils, SecurityTokenRegistry);
   // }).then(() => {

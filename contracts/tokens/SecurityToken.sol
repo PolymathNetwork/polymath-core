@@ -7,12 +7,12 @@ import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/IFeatureRegistry.sol";
 import "../modules/TransferManager/ITransferManager.sol";
-import "../modules/PermissionManager/IPermissionManager.sol";
 import "../RegistryUpdater.sol";
 import "../libraries/Util.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
+import "../libraries/TokenLib.sol";
 
 /**
 * @title Security Token contract
@@ -68,38 +68,20 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // address whitelisted by issuer as controller
     address public controller;
 
-    // Struct for module data
-    struct ModuleData {
-        bytes32 name;
-        address module;
-        address moduleFactory;
-        bool isArchived;
-        uint8[] moduleTypes;
-        uint256[] moduleIndexes;
-        uint256 nameIndex;
-        mapping (uint8 => uint256) moduleIndex;
-    }
-
     // Records added modules - module list should be order agnostic!
     mapping (uint8 => address[]) modules;
 
     // Records information about the module
-    mapping (address => ModuleData) modulesToData;
+    mapping (address => TokenLib.ModuleData) modulesToData;
 
     // Records added module names - module list should be order agnostic!
     mapping (bytes32 => address[]) names;
 
-    // Structures to maintain checkpoints of balances for governance / dividends
-    struct Checkpoint {
-        uint256 checkpointId;
-        uint256 value;
-    }
-
     // Map each investor to a series of checkpoints
-    mapping (address => Checkpoint[]) checkpointBalances;
+    mapping (address => TokenLib.Checkpoint[]) checkpointBalances;
 
     // List of checkpoints that relate to total supply
-    Checkpoint[] checkpointTotalSupply;
+    TokenLib.Checkpoint[] checkpointTotalSupply;
 
     // Times at which each checkpoint was created
     uint256[] checkpointTimes;
@@ -122,12 +104,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event UpdateTokenDetails(string _oldDetails, string _newDetails);
     // Emit when the granularity get changed
     event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
-    // Emit when Module get removed from the securityToken
-    event ModuleRemoved(uint8[] _types, address _module, uint256 _timestamp);
     // Emit when Module get archived from the securityToken
     event ModuleArchived(uint8[] _types, address _module, uint256 _timestamp);
     // Emit when Module get unarchived from the securityToken
     event ModuleUnarchived(uint8[] _types, address _module, uint256 _timestamp);
+    // Emit when Module get removed from the securityToken
+    event ModuleRemoved(uint8[] _types, address _module, uint256 _timestamp);
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
     // Emit when transfers are frozen or unfrozen
@@ -264,7 +246,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         for (i = 0; i < moduleTypes.length; i++) {
             moduleIndexes[i] = modules[moduleTypes[i]].length;
         }
-        modulesToData[module] = ModuleData(moduleName, module, _moduleFactory, false, moduleTypes, moduleIndexes, names[moduleName].length);
+        modulesToData[module] = TokenLib.ModuleData(moduleName, module, _moduleFactory, false, moduleTypes, moduleIndexes, names[moduleName].length);
         for (i = 0; i < moduleTypes.length; i++) {
             /* modulesToData[module].moduleType[moduleTypes[i]] = true; */
             modules[moduleTypes[i]].push(module);
@@ -279,10 +261,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _module address of module to archive
     */
     function archiveModule(address _module) external onlyOwner {
-        require(!modulesToData[_module].isArchived, "Module archived");
+        TokenLib.archiveModule(modulesToData[_module], _module);
+        /* require(!modulesToData[_module].isArchived, "Module archived");
         require(modulesToData[_module].module != address(0), "Module missing");
         emit ModuleArchived(modulesToData[_module].moduleTypes, _module, now);
-        modulesToData[_module].isArchived = true;
+        modulesToData[_module].isArchived = true; */
     }
 
     /**
@@ -290,9 +273,10 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _module address of module to unarchive
     */
     function unarchiveModule(address _module) external onlyOwner {
-        require(modulesToData[_module].isArchived, "Module unarchived");
+        TokenLib.unarchiveModule(modulesToData[_module], _module);
+        /* require(modulesToData[_module].isArchived, "Module unarchived");
         emit ModuleUnarchived(modulesToData[_module].moduleTypes, _module, now);
-        modulesToData[_module].isArchived = false;
+        modulesToData[_module].isArchived = false; */
     }
 
     function _removeModuleWithIndex(uint8 _type, uint256 _index) internal {
@@ -490,7 +474,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice adjust totalsupply at checkpoint after minting or burning tokens
      */
     function _adjustTotalSupplyCheckpoints() internal {
-        _adjustCheckpoints(checkpointTotalSupply, totalSupply());
+        TokenLib.adjustCheckpoints(checkpointTotalSupply, totalSupply(), currentCheckpointId);
+        /* _adjustCheckpoints(checkpointTotalSupply, totalSupply()); */
     }
 
     /**
@@ -498,7 +483,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _investor address of the token holder affected
      */
     function _adjustBalanceCheckpoints(address _investor) internal {
-        _adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor));
+        TokenLib.adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor), currentCheckpointId);
+        /* _adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor)); */
     }
 
     /**
@@ -506,7 +492,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _checkpoints the affected checkpoint object array
      * @param _newValue the new value that needs to be stored
      */
-    function _adjustCheckpoints(Checkpoint[] storage _checkpoints, uint256 _newValue) internal {
+    /* function _adjustCheckpoints(TokenLib.Checkpoint[] storage _checkpoints, uint256 _newValue) internal {
         //No checkpoints set yet
         if (currentCheckpointId == 0) {
             return;
@@ -514,7 +500,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         //No previous checkpoint data - add current balance against checkpoint
         if (_checkpoints.length == 0) {
             _checkpoints.push(
-                Checkpoint({
+                TokenLib.Checkpoint({
                     checkpointId: currentCheckpointId,
                     value: _newValue
                 })
@@ -527,12 +513,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         }
         //New checkpoint, so record balance
         _checkpoints.push(
-            Checkpoint({
+            TokenLib.Checkpoint({
                 checkpointId: currentCheckpointId,
                 value: _newValue
             })
         );
-    }
+    } */
 
     /**
      * @notice Overloaded version of the transfer function
@@ -673,7 +659,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return success
      */
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
-        if (modules[PERMISSION_KEY].length == 0) {
+        return TokenLib.checkPermission(modules[PERMISSION_KEY], _delegate, _module, _perm);
+        /* if (modules[PERMISSION_KEY].length == 0) {
             return false;
         }
 
@@ -683,7 +670,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
             }
         }
 
-        return false;
+        return false; */
     }
 
     function _burn(address _from, uint256 _value) internal {
@@ -741,49 +728,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return uint256
      */
     function totalSupplyAt(uint256 _checkpointId) external view returns(uint256) {
-        return _getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
-    }
-
-    /**
-     * @notice Queries value at a defined checkpoint
-     * @param checkpoints is array of Checkpoint objects
-     * @param _checkpointId Checkpoint ID to query
-     * @param _currentValue Current value of checkpoint
-     * @return uint256
-     */
-    function _getValueAt(Checkpoint[] storage checkpoints, uint256 _checkpointId, uint256 _currentValue) internal view returns(uint256) {
         require(_checkpointId <= currentCheckpointId);
-        //Checkpoint id 0 is when the token is first created - everyone has a zero balance
-        if (_checkpointId == 0) {
-          return 0;
-        }
-        if (checkpoints.length == 0) {
-            return _currentValue;
-        }
-        if (checkpoints[0].checkpointId >= _checkpointId) {
-            return checkpoints[0].value;
-        }
-        if (checkpoints[checkpoints.length - 1].checkpointId < _checkpointId) {
-            return _currentValue;
-        }
-        if (checkpoints[checkpoints.length - 1].checkpointId == _checkpointId) {
-            return checkpoints[checkpoints.length - 1].value;
-        }
-        uint256 min = 0;
-        uint256 max = checkpoints.length - 1;
-        while (max > min) {
-            uint256 mid = (max + min) / 2;
-            if (checkpoints[mid].checkpointId == _checkpointId) {
-                max = mid;
-                break;
-            }
-            if (checkpoints[mid].checkpointId < _checkpointId) {
-                min = mid + 1;
-            } else {
-                max = mid;
-            }
-        }
-        return checkpoints[max].value;
+        return TokenLib.getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
     }
 
     /**
@@ -792,7 +738,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _checkpointId Checkpoint ID to query as of
      */
     function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256) {
-        return _getValueAt(checkpointBalances[_investor], _checkpointId, balanceOf(_investor));
+        require(_checkpointId <= currentCheckpointId);
+        return TokenLib.getValueAt(checkpointBalances[_investor], _checkpointId, balanceOf(_investor));
     }
 
     /**

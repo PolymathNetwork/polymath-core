@@ -958,7 +958,7 @@ contract('EtherDividendCheckpoint', accounts => {
         describe("Test cases for the EtherDividendCheckpointFactory", async() => {
             it("should get the exact details of the factory", async() => {
                 assert.equal((await I_EtherDividendCheckpointFactory.setupCost.call()).toNumber(), 0);
-                assert.equal(await I_EtherDividendCheckpointFactory.getTypes.call(0), 4);
+                assert.equal((await I_EtherDividendCheckpointFactory.getTypes.call())[0], 4);
                 assert.equal(web3.utils.toAscii(await I_EtherDividendCheckpointFactory.getName.call())
                             .replace(/\u0000/g, ''),
                             "EtherDividendCheckpoint",

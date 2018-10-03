@@ -468,7 +468,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function _adjustTotalSupplyCheckpoints() internal {
         TokenLib.adjustCheckpoints(checkpointTotalSupply, totalSupply(), currentCheckpointId);
-        /* _adjustCheckpoints(checkpointTotalSupply, totalSupply()); */
     }
 
     /**
@@ -477,7 +476,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function _adjustBalanceCheckpoints(address _investor) internal {
         TokenLib.adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor), currentCheckpointId);
-        /* _adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor)); */
     }
 
     /**
@@ -583,9 +581,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function mint(address _investor, uint256 _value) public onlyModuleOrOwner(MINT_KEY) checkGranularity(_value) isMintingAllowed() returns (bool success) {
         require(_investor != address(0), "Investor is 0");
-        _adjustInvestorCount(address(0), _investor, _value);
-        require(_verifyTransfer(address(0), _investor, _value, true), "Transfer not valid");
-        _adjustBalanceCheckpoints(_investor);
+        require(_updateTransfer(address(0), _investor, _value), "Transfer not valid");
         _adjustTotalSupplyCheckpoints();
         totalSupply_ = totalSupply_.add(_value);
         balances[_investor] = balances[_investor].add(_value);
@@ -733,7 +729,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         balances[_from] = balances[_from].sub(_value);
         return verified;
     }
-    
+
     /**
      * @notice Use by a controller to execute a foced burn
      * @param _from address from which to take tokens

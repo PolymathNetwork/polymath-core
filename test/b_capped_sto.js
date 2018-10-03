@@ -274,7 +274,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = await I_SecurityToken_ETH.modules(transferManagerKey, 0);
+           let moduleData = (await I_SecurityToken_ETH.getModulesByType(transferManagerKey))[0];
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
@@ -891,7 +891,7 @@ contract('CappedSTO', accounts => {
             });
 
             it("POLY: Should intialize the auto attached modules", async () => {
-                let moduleData = await I_SecurityToken_POLY.modules(transferManagerKey, 0);
+                let moduleData = (await I_SecurityToken_POLY.getModulesByType(transferManagerKey))[0];
                 I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
              });
 
@@ -1102,7 +1102,7 @@ contract('CappedSTO', accounts => {
          describe("Test cases for the CappedSTOFactory", async() => {
             it("should get the exact details of the factory", async() => {
                 assert.equal((await I_CappedSTOFactory.setupCost.call()).toNumber(), cappedSTOSetupCost);
-                assert.equal(await I_CappedSTOFactory.getTypes.call(0),3);
+                assert.equal((await I_CappedSTOFactory.getTypes.call())[0],3);
                 assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()),
                             "CappedSTO",
                             "Wrong Module added");

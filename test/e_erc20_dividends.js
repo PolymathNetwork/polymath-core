@@ -938,7 +938,7 @@ contract('ERC20DividendCheckpoint', accounts => {
         describe("Test cases for the ERC20DividendCheckpointFactory", async() => {
             it("should get the exact details of the factory", async() => {
                 assert.equal((await I_ERC20DividendCheckpointFactory.setupCost.call()).toNumber(), 0);
-                assert.equal(await I_ERC20DividendCheckpointFactory.getTypes.call(0), 4);
+                assert.equal((await I_ERC20DividendCheckpointFactory.getTypes.call())[0], 4);
                 assert.equal(web3.utils.toAscii(await I_ERC20DividendCheckpointFactory.getName.call())
                             .replace(/\u0000/g, ''),
                             "ERC20DividendCheckpoint",

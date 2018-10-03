@@ -251,7 +251,7 @@ contract('GeneralTransferManager', accounts => {
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), 2);
+            assert.equal(log.args._types[0].toNumber(), 2);
             assert.equal(
                 web3.utils.toAscii(log.args._name)
                 .replace(/\u0000/g, ''),
@@ -260,7 +260,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = await I_SecurityToken.modules(2, 0);
+           let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
         });
@@ -289,7 +289,7 @@ contract('GeneralTransferManager', accounts => {
         it("Should successfully attach the STO factory with the security token", async () => {
             let bytesSTO = encodeModuleCall(STOParameters, [latestTime() + duration.seconds(1000), latestTime() + duration.days(40), cap, someString]);
             const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, 0, 0, { from: token_owner });
-            assert.equal(tx.logs[2].args._type.toNumber(), stoKey, "DummySTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0].toNumber(), stoKey, "DummySTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
                 .replace(/\u0000/g, ''),
@@ -301,7 +301,7 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should successfully attach the permission manager factory with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, 0, 0, 0, { from: token_owner });
-            assert.equal(tx.logs[2].args._type.toNumber(), delegateManagerKey, "GeneralPermissionManager doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "GeneralPermissionManager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
                 .replace(/\u0000/g, ''),

@@ -60,7 +60,7 @@ library TokenLib {
      * @param _perm the permissions
      * @return success
      */
-    function checkPermission(address[] storage _modules, address _delegate, address _module, bytes32 _perm) public returns(bool) {
+    function checkPermission(address[] storage _modules, address _delegate, address _module, bytes32 _perm) public view returns(bool) {
         if (_modules.length == 0) {
             return false;
         }
@@ -81,7 +81,7 @@ library TokenLib {
      * @param _currentValue Current value of checkpoint
      * @return uint256
      */
-    function getValueAt(Checkpoint[] storage _checkpoints, uint256 _checkpointId, uint256 _currentValue) public returns(uint256) {
+    function getValueAt(Checkpoint[] storage _checkpoints, uint256 _checkpointId, uint256 _currentValue) public view returns(uint256) {
         //Checkpoint id 0 is when the token is first created - everyone has a zero balance
         if (_checkpointId == 0) {
           return 0;

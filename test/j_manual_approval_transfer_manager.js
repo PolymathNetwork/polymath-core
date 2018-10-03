@@ -265,12 +265,12 @@ contract('ManualApprovalTransferManager', accounts => {
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), 2);
+            assert.equal(log.args._types[0].toNumber(), 2);
             assert.equal(web3.utils.toUtf8(log.args._name), "GeneralTransferManager");
         });
 
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = await I_SecurityToken.modules(2, 0);
+           let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
         });
@@ -349,7 +349,7 @@ contract('ManualApprovalTransferManager', accounts => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
             const tx = await I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-            assert.equal(tx.logs[3].args._type.toNumber(), transferManagerKey, "Manual Approval Transfer Manager doesn't get deployed");
+            assert.equal(tx.logs[3].args._types[0].toNumber(), transferManagerKey, "Manual Approval Transfer Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
                 .replace(/\u0000/g, ''),
@@ -363,7 +363,7 @@ contract('ManualApprovalTransferManager', accounts => {
 
         it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: token_owner });
-            assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "ManualApprovalTransferManager doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "ManualApprovalTransferManager doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[2].args._name), "ManualApprovalTransferManager", "ManualApprovalTransferManager module was not added");
             I_ManualApprovalTransferManager = ManualApprovalTransferManager.at(tx.logs[2].args._module);
         });
@@ -653,7 +653,7 @@ contract('ManualApprovalTransferManager', accounts => {
             }, [1]);
 
             const tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesCountTM, 0, 0, { from: token_owner });
-            assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
             let name = web3.utils.toUtf8(tx.logs[2].args._name);
             assert.equal(name, "CountTransferManager", "CountTransferManager module was not added");
             I_CountTransferManager = CountTransferManager.at(tx.logs[2].args._module);

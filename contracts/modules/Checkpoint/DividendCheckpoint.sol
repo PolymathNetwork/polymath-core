@@ -134,7 +134,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
         address[] memory investors = ISecurityToken(securityToken).getInvestors();
         uint256 numberInvestors = investors.length;
         for (uint256 i = _start; i < Math.min256(numberInvestors, _start.add(_iterations)); i++) {
-            address payee = ISecurityToken(securityToken).investors(i);
+            address payee = investors[i];
             if ((!dividend.claimed[payee]) && (!dividend.dividendExcluded[payee])) {
                 _payDividend(payee, dividend, _dividendIndex);
             }

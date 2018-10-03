@@ -41,8 +41,7 @@ contract MockFactory is ModuleFactory {
      * @notice Type of the Module factory
      */
     function getTypes() external view returns(uint8[]) {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 0;
+        uint8[] memory res = new uint8[](0);
         return res;
     }
 

@@ -50,9 +50,9 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
+        require(!dividends[_dividendIndex].reclaimed, "Dividend has been reclaimed by issuer");
         require(now >= dividends[_dividendIndex].maturity, "Dividend maturity is in the future");
         require(now < dividends[_dividendIndex].expiry, "Dividend expiry is in the past");
-        require(!dividends[_dividendIndex].reclaimed, "Dividend has been reclaimed by issuer");
         _;
     }
 

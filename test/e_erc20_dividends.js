@@ -2,6 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 import { encodeProxyCall } from './helpers/encodeCall';
+import { catchRevert } from './helpers/exceptions';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
@@ -264,15 +265,10 @@ contract('ERC20DividendCheckpoint', accounts => {
         });
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token - fail insufficient payment", async () => {
-            let errorThrown = false;
-            try {
-                const tx = await I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-            } catch(error) {
-                console.log(`       tx -> failed because Token is not paid`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, { from: token_owner }), 
+                "tx -> failed because Token is not paid"
+            );
         });
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token with budget", async () => {
@@ -360,75 +356,50 @@ contract('ERC20DividendCheckpoint', accounts => {
         });
 
         it("Should fail in creating the dividend - incorrect allowance", async() => {
-            let errorThrown = false;
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
             await I_PolyToken.getTokens(web3.utils.toWei('1.5', 'ether'), token_owner);
-            try {
-                let tx = await I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, web3.utils.toWei('1.5', 'ether'), dividendName, {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because allowance = 0`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, web3.utils.toWei('1.5', 'ether'), dividendName, {from: token_owner}), 
+                "tx -> failed because allowance = 0"
+            );
         });
 
         it("Should fail in creating the dividend - maturity > expiry", async() => {
-            let errorThrown = false;
             let maturity = latestTime();
             let expiry = latestTime() - duration.days(10);
             await I_PolyToken.approve(I_ERC20DividendCheckpoint.address, web3.utils.toWei('1.5', 'ether'), {from: token_owner});
-            try {
-                let tx = await I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, web3.utils.toWei('1.5', 'ether'), dividendName, {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because maturity > expiry`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, web3.utils.toWei('1.5', 'ether'), dividendName, {from: token_owner}), 
+                "tx -> failed because maturity > expiry"
+            );
         });
 
         it("Should fail in creating the dividend - now > expiry", async() => {
-            let errorThrown = false;
             let maturity = latestTime() - duration.days(2);
             let expiry = latestTime() - duration.days(1);
-            try {
-                let tx = await I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, web3.utils.toWei('1.5', 'ether'), dividendName, {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because now > expiry`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, web3.utils.toWei('1.5', 'ether'), dividendName, {from: token_owner}), 
+                "tx -> failed because now > expiry"
+            );
         });
 
         it("Should fail in creating the dividend - bad token", async() => {
-            let errorThrown = false;
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
-            try {
-                let tx = await I_ERC20DividendCheckpoint.createDividend(maturity, expiry, 0, web3.utils.toWei('1.5', 'ether'), dividendName, {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because token address is 0x`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, 0, web3.utils.toWei('1.5', 'ether'), dividendName, {from: token_owner}), 
+                "tx -> failed because token address is 0x"
+            );
         });
 
         it("Should fail in creating the dividend - amount is 0", async() => {
-            let errorThrown = false;
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
-            try {
-                let tx = await I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, 0, dividendName, {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because amount < 0`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, 0, dividendName, {from: token_owner}), 
+                "tx -> failed because amount < 0"
+            );
         });
 
         it("Create new dividend of POLY tokens", async() => {
@@ -447,41 +418,26 @@ contract('ERC20DividendCheckpoint', accounts => {
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint - fails maturity in the future", async() => {
-            let errorThrown = false;
-            try {
-                await I_ERC20DividendCheckpoint.pushDividendPayment(0, 0, 10, {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because dividend index has maturity in future`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.pushDividendPayment(0, 0, 10, {from: token_owner}), 
+                "tx -> failed because dividend index has maturity in future"
+            );
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint - fails not owner", async() => {
-            let errorThrown = false;
             // Increase time by 2 day
             await increaseTime(duration.days(2));
-            try {
-                await I_ERC20DividendCheckpoint.pushDividendPayment(0, 0, 10, {from: account_temp});
-            } catch(error) {
-                console.log(`       tx -> failed because msg.sender is not the owner`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.pushDividendPayment(0, 0, 10, {from: account_temp}), 
+                "tx -> failed because msg.sender is not the owner"
+            );
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint - fails wrong index", async() => {
-            let errorThrown = false;
-            try {
-                await I_ERC20DividendCheckpoint.pushDividendPayment(2, 0, 10, {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because dividend index is greator than the dividend array length`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.pushDividendPayment(2, 0, 10, {from: token_owner}), 
+                "tx -> failed because dividend index is greator than the dividend array length"
+            );
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint", async() => {
@@ -526,51 +482,36 @@ contract('ERC20DividendCheckpoint', accounts => {
             let expiry = latestTime() + duration.days(10);
             await I_PolyToken.getTokens(web3.utils.toWei('1.5', 'ether'), token_owner);
             await I_PolyToken.approve(I_ERC20DividendCheckpoint.address, web3.utils.toWei('1.5', 'ether'), {from: token_owner});
-            let errorThrown = false;
-            try {
-                await I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, web3.utils.toWei('1.5', 'ether'), '', {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because dividend name is empty`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, web3.utils.toWei('1.5', 'ether'), '', {from: token_owner}), 
+                "tx -> failed because dividend name is empty"
+            );
         });
 
         it("Create new dividend", async() => {
             let maturity = latestTime() + duration.days(1);
             let expiry = latestTime() + duration.days(10);
             await I_PolyToken.getTokens(web3.utils.toWei('1.5', 'ether'), token_owner);
-            // approved in above test
+            // transfer approved in above test
             let tx = await I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, web3.utils.toWei('1.5', 'ether'), dividendName, {from: token_owner});
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 2, "Dividend should be created at checkpoint 1");
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint - fails past expiry", async() => {
-            let errorThrown = false;
             await increaseTime(duration.days(12));
-            try {
-                await I_ERC20DividendCheckpoint.pushDividendPayment(1, 0, 10, {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because dividend index has passed its expiry`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.pushDividendPayment(1, 0, 10, {from: token_owner}), 
+                "tx -> failed because dividend index has passed its expiry"
+            );
         });
 
          it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoin - fails already reclaimed", async() => {
-            let errorThrown = false;
             let tx = await I_ERC20DividendCheckpoint.reclaimDividend(1, {from: token_owner, gas: 500000});
             assert.equal((tx.logs[0].args._claimedAmount).toNumber(), web3.utils.toWei("1.5", "ether"));
-            try {
-                await I_ERC20DividendCheckpoint.reclaimDividend(1, {from: token_owner, gas: 500000});
-            } catch(error) {
-                console.log(`       tx -> failed because dividend index has already reclaimed`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.reclaimDividend(1, {from: token_owner, gas: 500000}), 
+                "tx -> failed because dividend index has already been reclaimed"
+            );
         });
 
         it("Buy some tokens for account_investor3 (7 ETH)", async() => {
@@ -600,6 +541,8 @@ contract('ERC20DividendCheckpoint', accounts => {
 
         it("Exclude account_temp using global exclusion list", async() => {
             await I_ERC20DividendCheckpoint.setDefaultExcluded([account_temp], {from: token_owner});
+            let excluded = await I_ERC20DividendCheckpoint.getDefaultExcluded();
+            assert.equal(excluded[0], account_temp);
         });
 
         it("Create another new dividend", async() => {
@@ -612,18 +555,10 @@ contract('ERC20DividendCheckpoint', accounts => {
         });
 
         it("should investor 3 claims dividend - fail bad index", async() => {
-            let errorThrown = false;
-            let investor1Balance = BigNumber(await I_PolyToken.balanceOf(account_investor1));
-            let investor2Balance = BigNumber(await I_PolyToken.balanceOf(account_investor2));
-            let investor3Balance = BigNumber(await I_PolyToken.balanceOf(account_investor3));
-            try {
-                await I_ERC20DividendCheckpoint.pullDividendPayment(5, {from: account_investor3, gasPrice: 0});
-            } catch(error) {
-                console.log(`       tx -> failed because dividend index is not valid`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.pullDividendPayment(5, {from: account_investor3, gasPrice: 0}), 
+                "tx -> failed because dividend index is not valid"
+            );
         });
 
         it("should investor 3 claims dividend", async() => {
@@ -641,15 +576,10 @@ contract('ERC20DividendCheckpoint', accounts => {
         });
 
         it("should investor 3 claims dividend - fails already claimed", async() => {
-            let errorThrown = false;
-            try {
-                await I_ERC20DividendCheckpoint.pullDividendPayment(2, {from: account_investor3, gasPrice: 0});
-            } catch(error) {
-                console.log(`       tx -> failed because investor already claimed the dividend`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.pullDividendPayment(2, {from: account_investor3, gasPrice: 0}), 
+                "tx -> failed because investor already claimed the dividend"
+            );
         });
 
         it("should issuer pushes remain", async() => {
@@ -686,68 +616,48 @@ contract('ERC20DividendCheckpoint', accounts => {
         });
 
         it("Create another new dividend with explicit checkpoint - fails bad allowance", async() => {
-            let errorThrown = false;
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(2);
             let tx = await I_SecurityToken.createCheckpoint({from: token_owner});
             console.log(JSON.stringify(tx.logs[0].args));
             console.log((await I_SecurityToken.currentCheckpointId()).toNumber());
             await I_PolyToken.getTokens(web3.utils.toWei('20', 'ether'), token_owner);
-            try {
-                tx = await I_ERC20DividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, I_PolyToken.address, web3.utils.toWei('20', 'ether'), 4, dividendName, {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because allowance is not provided`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, I_PolyToken.address, web3.utils.toWei('20', 'ether'), 4, dividendName, {from: token_owner}), 
+                "tx -> failed because allowance is not provided"
+            );
         });
 
         it("Create another new dividend with explicit - fails maturity > expiry", async() => {
             console.log((await I_SecurityToken.currentCheckpointId()).toNumber());
 
-            let errorThrown = false;
             let maturity = latestTime();
             let expiry = latestTime() - duration.days(10);
             await I_PolyToken.approve(I_ERC20DividendCheckpoint.address, web3.utils.toWei('20', 'ether'), {from: token_owner});
-            try {
-                tx = await I_ERC20DividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, I_PolyToken.address, web3.utils.toWei('20', 'ether'), 4, dividendName, {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because maturity > expiry`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, I_PolyToken.address, web3.utils.toWei('20', 'ether'), 4, dividendName, {from: token_owner}), 
+                "tx -> failed because maturity > expiry"
+            );
         });
 
         it("Create another new dividend with explicit - fails now > expiry", async() => {
             console.log((await I_SecurityToken.currentCheckpointId()).toNumber());
 
-            let errorThrown = false;
             let maturity = latestTime() - duration.days(5);
             let expiry = latestTime() - duration.days(2);
-            try {
-                tx = await I_ERC20DividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, I_PolyToken.address, web3.utils.toWei('20', 'ether'), 4, dividendName, {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because now > expiry`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, I_PolyToken.address, web3.utils.toWei('20', 'ether'), 4, dividendName, {from: token_owner}), 
+                "tx -> failed because now > expiry"
+            );
         });
 
         it("Create another new dividend with explicit - fails bad checkpoint", async() => {
-            let errorThrown = false;
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(2);
-            try {
-                tx = await I_ERC20DividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, I_PolyToken.address, web3.utils.toWei('20', 'ether'), 5, dividendName, {from: token_owner});
-            } catch(error) {
-                console.log(`       tx -> failed because checkpoint id > current checkpoint`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, I_PolyToken.address, web3.utils.toWei('20', 'ether'), 5, dividendName, {from: token_owner}), 
+                "tx -> failed because checkpoint id > current checkpoint"
+            );
         });
 
         it("Set withholding tax of 20% on account_temp and 10% on investor2", async() => {
@@ -764,33 +674,17 @@ contract('ERC20DividendCheckpoint', accounts => {
         });
 
         it("Investor 2 claims dividend, issuer pushes investor 1 - fails not owner", async() => {
-            let errorThrown = false;
-            let investor1Balance = BigNumber(await I_PolyToken.balanceOf(account_investor1));
-            let investor2Balance = BigNumber(await I_PolyToken.balanceOf(account_investor2));
-            let investor3Balance = BigNumber(await I_PolyToken.balanceOf(account_investor3));
-            try {
-                await I_ERC20DividendCheckpoint.pushDividendPaymentToAddresses(2, [account_investor2, account_investor1],{from: account_investor2, gasPrice: 0});
-            } catch(error) {
-                console.log(`       tx -> failed because not called by the owner`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.pushDividendPaymentToAddresses(2, [account_investor2, account_investor1],{from: account_investor2, gasPrice: 0}), 
+                "tx -> failed because not called by the owner"
+            );
         });
 
         it("Investor 2 claims dividend, issuer pushes investor 1 - fails bad index", async() => {
-            let errorThrown = false;
-            let investor1Balance = BigNumber(await I_PolyToken.balanceOf(account_investor1));
-            let investor2Balance = BigNumber(await I_PolyToken.balanceOf(account_investor2));
-            let investor3Balance = BigNumber(await I_PolyToken.balanceOf(account_investor3));
-            try {
-                await I_ERC20DividendCheckpoint.pushDividendPaymentToAddresses(5, [account_investor2, account_investor1],{from: token_owner, gasPrice: 0});
-            } catch(error) {
-                console.log(`       tx -> failed because dividend index is not valid`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.pushDividendPaymentToAddresses(5, [account_investor2, account_investor1],{from: token_owner, gasPrice: 0}), 
+                "tx -> failed because dividend index is not valid"
+            );
         });
 
         it("should calculate dividend before the push dividend payment", async() => {
@@ -857,28 +751,25 @@ contract('ERC20DividendCheckpoint', accounts => {
         });
 
          it("Issuer unable to reclaim dividend (expiry not passed)", async() => {
-            let errorThrown = false;
-            try {
-                await I_ERC20DividendCheckpoint.reclaimDividend(3, {from: token_owner});
-            } catch(error) {
-                console.log(`Tx Failed because expiry is in the future ${0}. Test Passed Successfully`);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.reclaimDividend(3, {from: token_owner}), 
+                "tx -> failed because expiry is in the future"
+            );
         });
 
-        it("Issuer is able to reclaim dividend after expiry", async() => {
-            let errorThrown = false;
+        it("Issuer is unable to reclaim invalid dividend", async() => {
             await increaseTime(11 * 24 * 60 * 60);
-            try {
-                await I_ERC20DividendCheckpoint.reclaimDividend(8, {from: token_owner, gasPrice: 0});
-            } catch(error) {
-                console.log(`       tx -> failed because dividend index is not valid`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_ERC20DividendCheckpoint.reclaimDividend(8, {from: token_owner, gasPrice: 0}), 
+                "tx -> failed because dividend index is not valid"
+            );
+        });
+
+        it("Investor 3 unable to pull dividend after expiry", async() => {
+            await catchRevert(
+                I_ERC20DividendCheckpoint.pullDividendPayment(3, {from: account_investor3, gasPrice: 0}), 
+                "tx -> failed because expiry is in the past"
+            );
         });
 
         it("Issuer is able to reclaim dividend after expiry", async() => {
@@ -889,30 +780,18 @@ contract('ERC20DividendCheckpoint', accounts => {
         });
 
 
-        it("Issuer is able to reclaim dividend after expiry", async() => {
-            let errorThrown = false;
-            let tokenOwnerBalance = BigNumber(await I_PolyToken.balanceOf(token_owner));
-            try {
-                await I_ERC20DividendCheckpoint.reclaimDividend(3, {from: token_owner, gasPrice: 0});
-            } catch(error) {
-                console.log(`       tx -> failed because dividend are already reclaimed`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+        it("Issuer is unable to reclaim already reclaimed dividend", async() => {
+            await catchRevert(
+                I_ERC20DividendCheckpoint.reclaimDividend(3, {from: token_owner, gasPrice: 0}), 
+                "tx -> failed because dividend are already reclaimed"
+            );
         });
 
-        it("Investor 3 unable to pull dividend after expiry", async() => {
-            let errorThrown = false;
-            try {
-                await I_ERC20DividendCheckpoint.pullDividendPayment(3, {from: account_investor3, gasPrice: 0});
-            } catch(error) {
-                console.log(`Tx Failed because expiry is in the past ${0}. Test Passed Successfully`);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-
+        it("Investor 3 unable to pull dividend after reclaiming", async() => {
+            await catchRevert(
+                I_ERC20DividendCheckpoint.pullDividendPayment(3, {from: account_investor3, gasPrice: 0}), 
+                "tx -> failed because expiry is in the past"
+            );
         });
 
         it("Should give the right dividend index", async() => {

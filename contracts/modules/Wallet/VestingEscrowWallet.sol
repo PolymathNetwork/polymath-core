@@ -231,8 +231,7 @@ contract VestingEscrowWallet is IWallet {
 
     // Send vested, unclaimed tokens to the target
     if (_tokensToDistribute != 0) {
-      require(ISecurityToken(securityToken).transferFrom(
-        address(this),
+      require(ISecurityToken(securityToken).transfer(
         _target,
         _tokensToDistribute), "Unable to transfer tokens");
     }
@@ -240,8 +239,7 @@ contract VestingEscrowWallet is IWallet {
     // Send extra tokens to the treasury or hold them in the contract
     if (_numUnvestedTokens != 0) {
       if (_isReclaiming) {
-        require(ISecurityToken(securityToken).transferFrom(
-          address(this),
+        require(ISecurityToken(securityToken).transfer(
           treasury,
           _numUnvestedTokens), "Unable to transfer tokens");
       } else {

@@ -547,8 +547,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
             }
             // If no unarchived modules, return true by default
             return unarchived ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
-      }
-      return false;
+        }
+        return false;
     }
 
     /**

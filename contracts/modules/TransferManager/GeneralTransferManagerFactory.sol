@@ -41,9 +41,8 @@ contract GeneralTransferManagerFactory is ModuleFactory {
      * @notice Type of the Module factory
      */
     function getTypes() external view returns(uint8[]) {
-        uint8[] memory res = new uint8[](2);
+        uint8[] memory res = new uint8[](1);
         res[0] = 2;
-        res[1] = 3;
         return res;
     }
 

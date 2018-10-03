@@ -10,7 +10,7 @@ import "../../interfaces/ISecurityToken.sol";
 contract VestingEscrowWallet is IWallet {
   using SafeMath for uint;
 
-  bytes32 public constant ISSUER = "ISSUER";
+  bytes32 public constant ISSUER = "ISSUER";    // TODO: Is this needed?
   address public treasury;
   uint256 public numExcessTokens;
   uint256 public templateCount;
@@ -230,19 +230,23 @@ contract VestingEscrowWallet is IWallet {
     delete individualVestingDetails[_target][_whichVestingSchedule];
 
     // Send vested, unclaimed tokens to the target
-    require(ISecurityToken(securityToken).transferFrom(
-      address(this),
-      _target,
-      _tokensToDistribute), "Unable to transfer tokens");
-
-    // Send extra tokens to the treasury or hold them in the contract
-    if (_isReclaiming) {
+    if (_tokensToDistribute != 0) {
       require(ISecurityToken(securityToken).transferFrom(
         address(this),
-        treasury,
-        _numUnvestedTokens), "Unable to transfer tokens");
-    } else {
-      numExcessTokens = numExcessTokens.add(_numUnvestedTokens);
+        _target,
+        _tokensToDistribute), "Unable to transfer tokens");
+    }
+
+    // Send extra tokens to the treasury or hold them in the contract
+    if (_numUnvestedTokens != 0) {
+      if (_isReclaiming) {
+        require(ISecurityToken(securityToken).transferFrom(
+          address(this),
+          treasury,
+          _numUnvestedTokens), "Unable to transfer tokens");
+      } else {
+        numExcessTokens = numExcessTokens.add(_numUnvestedTokens);
+      }
     }
 
     emit VestingCancelled(

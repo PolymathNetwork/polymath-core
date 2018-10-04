@@ -87,7 +87,7 @@ contract ManualApprovalTransferManager is ITransferManager {
     * b) Seller's sale lockup period is over
     * c) Buyer's purchase lockup is over
     */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result) {
+    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool _isTransfer) public returns(Result) {
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
         // manual blocking takes precidence over manual approval

@@ -9,8 +9,6 @@ var common = require('./common/common_functions');
 var global = require('./common/global');
 
 let securityTokenRegistryAddress;
-let cappedSTOFactoryAddress;
-let usdTieredSTOFactoryAddress;
 
 ///////////////////
 // Crowdsale params
@@ -18,9 +16,13 @@ let tokenName;
 let tokenSymbol;
 let selectedSTO;
 
-const STO_KEY = 3;
-const REG_FEE_KEY = 'tickerRegFee';
-const LAUNCH_FEE_KEY = 'stLaunchFee';
+const MODULES_TYPES = {
+  PERMISSION: 1,
+  TRANSFER: 2,
+  STO: 3,
+  DIVIDENDS: 4
+}
+
 const cappedSTOFee = 20000;
 const usdTieredSTOFee = 100000;
 const tokenDetails = "";
@@ -37,8 +39,6 @@ let usdToken;
 let securityToken;
 let generalTransferManager;
 let currentSTO;
-let cappedSTOFactory;
-let usdTieredSTOFactory;
 
 // App flow
 let _tokenConfig;
@@ -90,16 +90,6 @@ async function setup(){
     let usdTokenAddress = await contracts.usdToken();
     usdToken = new web3.eth.Contract(polytokenABI, usdTokenAddress);
     usdToken.setProvider(web3.currentProvider);
-
-    cappedSTOFactoryAddress = await contracts.cappedSTOFactoryAddress();
-    let cappedSTOFactoryABI = abis.cappedSTOFactory();
-    cappedSTOFactory = new web3.eth.Contract(cappedSTOFactoryABI, cappedSTOFactoryAddress);
-    cappedSTOFactory.setProvider(web3.currentProvider);
-
-    usdTieredSTOFactoryAddress = await contracts.usdTieredSTOFactoryAddress();
-    let usdTieredSTOFactoryABI = abis.usdTieredSTOFactory();
-    usdTieredSTOFactory = new web3.eth.Contract(usdTieredSTOFactoryABI, usdTieredSTOFactoryAddress);
-    usdTieredSTOFactory.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
@@ -111,7 +101,8 @@ async function step_ticker_reg(){
   console.log('\n\x1b[34m%s\x1b[0m',"Token Creation - Symbol Registration");
 
   let available = false;
-  let regFee = web3.utils.fromWei(await securityTokenRegistry.methods.getUintValues(web3.utils.soliditySha3(REG_FEE_KEY)).call());
+  let regFee = web3.utils.fromWei(await securityTokenRegistry.methods.getTickerRegistrationFee().call());
+  let isDeployed;
 
   while (!available) {
     console.log(chalk.green(`\nRegistering the new token symbol requires ${regFee} POLY & deducted from '${Issuer.address}', Current balance is ${(await currentBalance(Issuer.address))} POLY\n`));
@@ -123,6 +114,7 @@ async function step_ticker_reg(){
     }
 
     let details = await securityTokenRegistry.methods.getTickerDetails(tokenSymbol).call();
+    isDeployed = details[4];
     if (new BigNumber(details[1]).toNumber() == 0) {
       available = true;
       await approvePoly(securityTokenRegistryAddress, regFee);
@@ -135,18 +127,20 @@ async function step_ticker_reg(){
     }
   }
 
-  if (typeof _tokenConfig === 'undefined' && readlineSync.keyInYNStrict(`Do you want to transfer the ownership of ${tokenSymbol} ticker?`)) {
-    let newOwner = readlineSync.question('Enter the address that will be the new owner: ', {
-      limit: function(input) {
-        return web3.utils.isAddress(input);
-      },
-      limitMessage: "Must be a valid address"
-    });
-    let transferTickerOwnershipAction = securityTokenRegistry.methods.transferTickerOwnership(newOwner, tokenSymbol);
-    let receipt = await common.sendTransaction(Issuer, transferTickerOwnershipAction, defaultGasPrice, 0, 1.5);
-    let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'LogChangeTickerOwnership');
-    console.log(chalk.green(`Ownership trasferred successfully. The new owner is ${event._newOwner}`));
-    process.exit(0);
+  if (!isDeployed) {
+    if (typeof _tokenConfig === 'undefined' && readlineSync.keyInYNStrict(`Do you want to transfer the ownership of ${tokenSymbol} ticker?`)) {
+      let newOwner = readlineSync.question('Enter the address that will be the new owner: ', {
+        limit: function(input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      let transferTickerOwnershipAction = securityTokenRegistry.methods.transferTickerOwnership(newOwner, tokenSymbol);
+      let receipt = await common.sendTransaction(Issuer, transferTickerOwnershipAction, defaultGasPrice, 0, 1.5);
+      let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'ChangeTickerOwnership');
+      console.log(chalk.green(`Ownership trasferred successfully. The new owner is ${event._newOwner}`));
+      process.exit(0);
+    }
   }
 }
 
@@ -160,7 +154,7 @@ async function step_token_deploy(){
   } else {
     console.log('\n\x1b[34m%s\x1b[0m',"Token Creation - Token Deployment");
 
-    let launchFee = web3.utils.fromWei(await securityTokenRegistry.methods.getUintValues(web3.utils.soliditySha3(LAUNCH_FEE_KEY)).call());
+    let launchFee = web3.utils.fromWei(await securityTokenRegistry.methods.getSecurityTokenLaunchFee().call());
     console.log(chalk.green(`\nToken deployment requires ${launchFee} POLY & deducted from '${Issuer.address}', Current balance is ${(await currentBalance(Issuer.address))} POLY\n`));
 
     if (typeof _tokenConfig !== 'undefined' && _tokenConfig.hasOwnProperty('name')) {
@@ -187,7 +181,7 @@ async function step_token_deploy(){
     await approvePoly(securityTokenRegistryAddress, launchFee);
     let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility);
     let receipt = await common.sendTransaction(Issuer, generateSecurityTokenAction, defaultGasPrice);
-    let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'LogNewSecurityToken');
+    let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'NewSecurityToken');
     console.log(`Deployed Token at address: ${event._securityTokenAddress}`);
     let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, event._securityTokenAddress);
@@ -195,7 +189,7 @@ async function step_token_deploy(){
 }
 
 async function step_Wallet_Issuance(){
-  let result = await securityToken.methods.getModulesByType(STO_KEY).call();
+  let result = await securityToken.methods.getModulesByType(MODULES_TYPES.STO).call();
   if (result.length > 0) {
     console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address " + result[0] + ". Skipping initial minting");
   } else {
@@ -275,7 +269,7 @@ async function step_STO_launch() {
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration");
 
-  let result = await securityToken.methods.getModulesByType(STO_KEY).call();
+  let result = await securityToken.methods.getModulesByType(MODULES_TYPES.STO).call();
   if (result.length > 0) {
     STO_Address = result[0];
     let stoModuleData = await securityToken.methods.getModule(STO_Address).call();
@@ -442,9 +436,10 @@ async function cappedSTO_launch() {
     ]
   }, [startTime, endTime, web3.utils.toWei(cap), rate, raiseType, wallet]);
 
+  let cappedSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.STO, "CappedSTO");
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
-  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
+  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
 
   STO_Address = event._module;
@@ -826,9 +821,10 @@ async function usdTieredSTO_launch() {
     addresses.usdToken
   ]);
 
+  let usdTieredSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.STO, 'USDTieredSTO');
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
-  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
+  let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
 
   STO_Address = event._module;

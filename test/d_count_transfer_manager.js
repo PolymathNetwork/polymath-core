@@ -117,9 +117,9 @@ contract('CountTransferManager', accounts => {
             "0x0000000000000000000000000000000000000000",
             "FeatureRegistry contract was not deployed",
         );
-        
+
          // STEP 3: Deploy the ModuleRegistry
-     
+
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
         // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
         I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
@@ -164,24 +164,6 @@ contract('CountTransferManager', accounts => {
             "CountTransferManagerFactory contract was not deployed"
         );
 
-        // STEP 8: Register the Modules with the ModuleRegistry contract
-
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the CountTransferManagerFactory
-        await I_MRProxied.registerModule(I_CountTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_CountTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the Paid CountTransferManagerFactory
-        await I_MRProxied.registerModule(P_CountTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(P_CountTransferManagerFactory.address, true, { from: account_polymath });
-
         // Step 9: Deploy the STFactory contract
 
         I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address);
@@ -207,8 +189,8 @@ contract('CountTransferManager', accounts => {
          I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
          let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
          await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
-         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);   
-        
+         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+
         // Step 12: update the registries addresses from the PolymathRegistry contract
         await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
         await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, {from: account_polymath});
@@ -216,6 +198,23 @@ contract('CountTransferManager', accounts => {
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
         await I_MRProxied.updateFromRegistry({from: account_polymath});
 
+        // STEP 8: Register the Modules with the ModuleRegistry contract
+
+        // (A) :  Register the GeneralTransferManagerFactory
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+
+        // (B) :  Register the GeneralDelegateManagerFactory
+        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+
+        // (C) : Register the CountTransferManagerFactory
+        await I_MRProxied.registerModule(I_CountTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_CountTransferManagerFactory.address, true, { from: account_polymath });
+
+        // (C) : Register the Paid CountTransferManagerFactory
+        await I_MRProxied.registerModule(P_CountTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(P_CountTransferManagerFactory.address, true, { from: account_polymath });
 
         // Printing all the contract addresses
         console.log(`
@@ -248,7 +247,7 @@ contract('CountTransferManager', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner});
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 

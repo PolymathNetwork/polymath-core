@@ -112,7 +112,7 @@ contract('PreSaleSTO', accounts => {
             });
 
         // STEP 3: Deploy the ModuleRegistry
-     
+
         I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
         // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
         I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
@@ -150,20 +150,6 @@ contract('PreSaleSTO', accounts => {
             "PreSaleSTOFactory contract was not deployed"
         );
 
-        // STEP 5: Register the Modules with the ModuleRegistry contract
-
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the STOFactory
-        await I_MRProxied.registerModule(I_PreSaleSTOFactory.address, { from: token_owner });
-        await I_MRProxied.verifyModule(I_PreSaleSTOFactory.address, true, { from: account_polymath });
-
         // Step 8: Deploy the STFactory contract
 
         I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
@@ -197,6 +183,20 @@ contract('PreSaleSTO', accounts => {
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
         await I_MRProxied.updateFromRegistry({from: account_polymath});
 
+        // STEP 5: Register the Modules with the ModuleRegistry contract
+
+        // (A) :  Register the GeneralTransferManagerFactory
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+
+        // (B) :  Register the GeneralDelegateManagerFactory
+        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+
+        // (C) : Register the STOFactory
+        await I_MRProxied.registerModule(I_PreSaleSTOFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_PreSaleSTOFactory.address, true, { from: account_polymath });
+
         // Printing all the contract addresses
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
@@ -229,7 +229,7 @@ contract('PreSaleSTO', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas:60000000 });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -256,7 +256,7 @@ contract('PreSaleSTO', accounts => {
             let bytesSTO = encodeModuleCall(STOParameters, [0]);
             let errorThrown = false;
             try {
-                const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner, gas: 26000000 });
+                const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner });
             } catch(error) {
                 console.log(`         tx revert -> Rate is ${0}. Test Passed Successfully`.grey);
                 errorThrown = true;
@@ -269,7 +269,7 @@ contract('PreSaleSTO', accounts => {
             endTime = latestTime() + duration.days(30);           // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(STOParameters, [endTime]);
 
-            const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner, gas: 26000000 });
+            const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner });
 
             assert.equal(tx.logs[2].args._type, stoKey, "PreSaleSTO doesn't get deployed");
             assert.equal(
@@ -333,7 +333,7 @@ contract('PreSaleSTO', accounts => {
 
             // Jump time
             await increaseTime(duration.days(1));
-            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether'), 0, {from: account_issuer, gas: 60000000});
+            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether'), 0, {from: account_issuer });
 
             assert.equal(
                 (await I_PreSaleSTO.getRaised.call(0))
@@ -350,7 +350,7 @@ contract('PreSaleSTO', accounts => {
         it("Should allocate the tokens -- failed due to msg.sender is not pre sale admin", async () => {
             let errorThrown = false;
             try {
-                await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether'), 0, {from: account_fundsReceiver, gas: 60000000});
+                await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether'), 0, {from: account_fundsReceiver });
             } catch(error) {
                 console.log(`         tx revert -> msg.sender is not pre sale admin`.grey);
                 errorThrown = true;
@@ -392,7 +392,7 @@ contract('PreSaleSTO', accounts => {
 
             assert.equal(tx2.logs[0].args._investor, account_investor3, "Failed in adding the investor in whitelist");
 
-            await I_PreSaleSTO.allocateTokensMulti([account_investor2, account_investor3], [web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether')], [0,0], [web3.utils.toWei('1000', 'ether'), web3.utils.toWei('1000', 'ether')], {from: account_issuer, gas: 60000000});
+            await I_PreSaleSTO.allocateTokensMulti([account_investor2, account_investor3], [web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether')], [0,0], [web3.utils.toWei('1000', 'ether'), web3.utils.toWei('1000', 'ether')], {from: account_issuer });
 
             assert.equal(
                 (await I_PreSaleSTO.getRaised.call(1))

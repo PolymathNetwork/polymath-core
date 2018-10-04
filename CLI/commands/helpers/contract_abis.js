@@ -1,6 +1,7 @@
 let polymathRegistryABI;
 let securityTokenRegistryABI;
 let featureRegistryABI;
+let moduleRegistryABI;
 let securityTokenABI;
 let stoInterfaceABI;
 let cappedSTOABI;
@@ -11,12 +12,14 @@ let cappedSTOFactoryABI;
 let usdTieredSTOFactoryABI;
 let erc20DividendCheckpointABI;
 let etherDividendCheckpointABI;
-let ownable;
+let ownableABI;
+let moduleFactoryABI;
 
 try {
     polymathRegistryABI         = JSON.parse(require('fs').readFileSync('./build/contracts/PolymathRegistry.json').toString()).abi;
     securityTokenRegistryABI    = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
     featureRegistryABI          = JSON.parse(require('fs').readFileSync('./build/contracts/FeatureRegistry.json').toString()).abi;
+    moduleRegistryABI           = JSON.parse(require('fs').readFileSync('./build/contracts/ModuleRegistry.json').toString()).abi;
     securityTokenABI            = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
     stoInterfaceABI             = JSON.parse(require('fs').readFileSync('./build/contracts/ISTO.json').toString()).abi;
     cappedSTOABI                = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
@@ -27,7 +30,8 @@ try {
     usdTieredSTOFactoryABI      = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTOFactory.json').toString()).abi;
     erc20DividendCheckpointABI  = JSON.parse(require('fs').readFileSync('./build/contracts/ERC20DividendCheckpoint.json').toString()).abi;
     etherDividendCheckpointABI  = JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpoint.json').toString()).abi;
-    ownable                     = JSON.parse(require('fs').readFileSync('./build/contracts/Ownable.json').toString()).abi;
+    ownableABI                  = JSON.parse(require('fs').readFileSync('./build/contracts/Ownable.json').toString()).abi;
+    moduleFactoryABI            = JSON.parse(require('fs').readFileSync('./build/contracts/ModuleFactory.json').toString()).abi;
 } catch (err) {
     console.log('\x1b[31m%s\x1b[0m',"Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
     return;
@@ -42,6 +46,9 @@ module.exports = {
     },
     featureRegistry: function () {
         return featureRegistryABI;
+    },
+    moduleRegistry: function () {
+        return moduleRegistryABI;
     },
     securityToken: function () {
         return securityTokenABI;
@@ -74,6 +81,9 @@ module.exports = {
         return etherDividendCheckpointABI;
     },
     ownable: function () {
-        return ownable;
+        return ownableABI;
+    },
+    moduleFactory: function () {
+        return moduleFactoryABI;
     }
 }

@@ -159,7 +159,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint256 i;
         uint256 j;
         uint8[] memory moduleTypes = moduleFactory.getTypes();
-        for (i = 0; i < moduleTypes.length; i++) {
+        for (i = 1; i < moduleTypes.length; i++) {
             for (j = 0; j < i; j++) {
                 require(moduleTypes[i] != moduleTypes[j], "Type mismatch");
             }

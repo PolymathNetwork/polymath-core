@@ -31,7 +31,7 @@ contract VolumeRestrictionTransferManager is ITransferManager {
         uint startTime,
         uint totalAmount
     );
-    
+
     event RemoveLockUp(
         address indexed userAddress,
         uint lockUpPeriodSeconds,
@@ -328,43 +328,6 @@ contract VolumeRestrictionTransferManager is ITransferManager {
         return Result.INVALID;
     }
 
-    /**
-     * @notice Parameter checking function for creating or editing a lockup.  This function will cause an exception if any of the parameters are bad.
-     * @param lockUpPeriodSeconds Total period of lockup (seconds)
-     * @param releaseFrequencySeconds How often to release a tranche of tokens (seconds)
-     * @param totalAmount Total amount of locked up tokens
-     */
-    function _checkLockUpParams(uint lockUpPeriodSeconds, uint releaseFrequencySeconds, uint totalAmount) internal view {
-        require(lockUpPeriodSeconds != 0, "lockUpPeriodSeconds cannot be zero");
-        require(releaseFrequencySeconds != 0, "releaseFrequencySeconds cannot be zero");
-        require(totalAmount != 0, "totalAmount cannot be zero");
-
-        // check that the total amount to be released isn't too granular
-        require(
-            totalAmount % SecurityToken(securityToken).granularity() == 0,
-            "The total amount to be released is more granular than allowed by the token"
-        );
-
-        // check that releaseFrequencySeconds evenly divides lockUpPeriodSeconds
-        require(
-            lockUpPeriodSeconds % releaseFrequencySeconds == 0,
-            "lockUpPeriodSeconds must be evenly divisible by releaseFrequencySeconds"
-        );
-
-        // check that totalPeriods evenly divides totalAmount
-        uint totalPeriods = lockUpPeriodSeconds.div(releaseFrequencySeconds);
-        require(
-            totalAmount % totalPeriods == 0,
-            "The total amount being locked up must be evenly divisible by the number of total periods"
-        );
-
-        // make sure the amount to be released per period is not too granular for the token
-        uint amountPerPeriod = totalAmount.div(totalPeriods);
-        require(
-            amountPerPeriod % SecurityToken(securityToken).granularity() == 0,
-            "The amount to be released per period is more granular than allowed by the token"
-        );
-    }
 
     /**
      * @notice Parameter checking function for creating or editing a lockup.  This function will cause an exception if any of the parameters are bad.

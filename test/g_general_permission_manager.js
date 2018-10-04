@@ -399,6 +399,7 @@ contract('GeneralPermissionManager', accounts => {
         it("should get the exact details of the factory", async() => {
             assert.equal(await I_GeneralPermissionManagerFactory.setupCost.call(),0);
             assert.equal(await I_GeneralPermissionManagerFactory.getType.call(),1);
+            assert.equal(await I_GeneralPermissionManagerFactory.getVersion.call(), "1.0.0");
             assert.equal(web3.utils.toAscii(await I_GeneralPermissionManagerFactory.getName.call())
                         .replace(/\u0000/g, ''),
                         "GeneralPermissionManager",

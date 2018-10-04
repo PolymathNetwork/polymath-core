@@ -428,7 +428,7 @@ contract('ModuleRegistry', accounts => {
                 let tx = await I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
                 tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, 0, 0, { from: token_owner});
 
-                assert.equal(tx.logs[2].args._type, stoKey, "CappedSTO doesn't get deployed");
+                assert.equal(tx.logs[2].args._types[0], stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
                     web3.utils.toAscii(tx.logs[2].args._name)
                     .replace(/\u0000/g, ''),
@@ -444,7 +444,7 @@ contract('ModuleRegistry', accounts => {
                 await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, {from: account_polymath});
                 await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, {from: account_polymath});
                 let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, { from: token_owner });
-                assert.equal(tx.logs[2].args._type, permissionManagerKey, "module doesn't get deployed");
+                assert.equal(tx.logs[2].args._types[0], permissionManagerKey, "module doesn't get deployed");
             });
 
             it("Should failed in adding the TestSTOFactory module because not compatible with the current protocol version --lower", async() => {

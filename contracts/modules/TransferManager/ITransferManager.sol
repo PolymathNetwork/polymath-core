@@ -5,6 +5,7 @@ import "../Module.sol";
 
 /**
  * @title Interface to be implemented by all Transfer Manager modules
+ * @dev abstract contract
  */
 contract ITransferManager is Module, Pausable {
 

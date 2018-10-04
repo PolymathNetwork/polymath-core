@@ -2,7 +2,6 @@ const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
-const SingleTradeVolumeRestrictionManagerFactory = artifacts.require('./SingleTradeVolumeRestrictionManagerFactory.sol')
 const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.sol');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
@@ -320,8 +319,6 @@ module.exports = function (deployer, network, accounts) {
 
     EtherDividendCheckpointFactory:    ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:    ${ERC20DividendCheckpointFactory.address}
-    SingleTradeVolumeRestrictionManagerFactory:
-                                         ${SingleTradeVolumeRestrictionManagerFactory.address}
       -----------------------------------------------------------------------------
       `);
       console.log('\n');

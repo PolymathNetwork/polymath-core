@@ -13,9 +13,9 @@ contract MakerDAOOracle is IOracle, Ownable {
     bool public manualOverride;
     uint256 public manualPrice;
 
-    event LogChangeMedianizer(address _newMedianizer, address _oldMedianizer, uint256 _now);
-    event LogSetManualPrice(uint256 _oldPrice, uint256 _newPrice, uint256 _time);
-    event LogSetManualOverride(bool _override, uint256 _time);
+    event ChangeMedianizer(address _newMedianizer, address _oldMedianizer, uint256 _now);
+    event SetManualPrice(uint256 _oldPrice, uint256 _newPrice, uint256 _time);
+    event SetManualOverride(bool _override, uint256 _time);
 
     /**
       * @notice Creates a new Maker based oracle
@@ -35,7 +35,7 @@ contract MakerDAOOracle is IOracle, Ownable {
       */
     function changeMedianier(address _medianizer) public onlyOwner {
         require(_medianizer != address(0), "0x not allowed");
-        emit LogChangeMedianizer(_medianizer, medianizer, now);
+        emit ChangeMedianizer(_medianizer, medianizer, now);
         medianizer = _medianizer;
     }
 
@@ -78,7 +78,7 @@ contract MakerDAOOracle is IOracle, Ownable {
       * @param _price Price to set
       */
     function setManualPrice(uint256 _price) public onlyOwner {
-        emit LogSetManualPrice(manualPrice, _price, now);
+        emit SetManualPrice(manualPrice, _price, now);
         manualPrice = _price;
     }
 
@@ -88,7 +88,7 @@ contract MakerDAOOracle is IOracle, Ownable {
       */
     function setManualOverride(bool _override) public onlyOwner {
         manualOverride = _override;
-        emit LogSetManualOverride(_override, now);
+        emit SetManualOverride(_override, now);
     }
 
 }

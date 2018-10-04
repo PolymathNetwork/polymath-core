@@ -84,7 +84,7 @@ interface ISecurityTokenRegistry {
     /**
      * @notice get Protocol version
      */
-    function getProtocolVersion() public view returns(uint8[]);
+    function getProtocolVersion() external view returns(uint8[]);
 
     /**
      * @notice Use to get the ticker list as per the owner
@@ -158,5 +158,35 @@ interface ISecurityTokenRegistry {
      * @param _newAddress Address of the polytoken
      */
     function updatePolyTokenAddress(address _newAddress) external;
+
+    /**
+     * @notice Gets the security token launch fee
+     * @return Fee amount
+     */
+    function getSecurityTokenLaunchFee() external view returns(uint256);
+
+    /**
+     * @notice Gets the ticker registration fee
+     * @return Fee amount
+     */
+    function getTickerRegistrationFee() external view returns(uint256);
+
+    /**
+     * @notice Gets the expiry limit
+     * @return Expiry limit
+     */
+    function getExpiryLimit() external view returns(uint256);
+
+    /**
+     * @notice Check whether the registry is paused or not
+     * @return bool
+     */
+    function isPaused() external view returns(bool);
+
+    /**
+     * @notice Gets the owner of the contract
+     * @return address owner
+     */
+    function owner() external view returns(address);
 
 }

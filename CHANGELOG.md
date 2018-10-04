@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
+* Added `name` field to dividends struct in DividendCheckpoint. #295
+* Added `getTagsByType`, `getTagsByTypeAndToken`, `getModulesByType`, `getModulesByTypeAndToken` to MR
 * Added `getTokensByOwner` to STR
 * Added withholding tax to ether & erc20 dividends
 * Generalised MakerDAO oracle to allow different instances referencing different currencies
@@ -24,10 +26,11 @@ All notable changes to this project will be documented in this file.
 ## Fixed
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
 * Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230    
-  
-## Removed 
+
+## Removed
 * Remove `swarmHash` from the `registerTicker(), addCustomTicker(), generateSecurityToken(), addCustomSecurityToken()` functions of TickerRegistry.sol and SecurityTokenRegistry.sol. #230  
-* Remove `Log` prefix from all the event present in the ecosystem. 
+* Remove `Log` prefix from all the event present in the ecosystem.    
+* Removed `addTagByModuleType` & `removeTagsByModuleType` from MR.
 
 ======
 

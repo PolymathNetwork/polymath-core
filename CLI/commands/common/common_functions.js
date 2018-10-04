@@ -50,7 +50,12 @@ module.exports = {
   sendTransaction: async function (from, action, gasPrice, value, factor) {
     if (typeof factor === 'undefined') factor = 1.2;
 
+    let block = await web3.eth.getBlock("latest");
+    let networkGasLimit = block.gasLimit;
+
     let gas = Math.round(factor * (await action.estimateGas({ from: from.address, value: value})));
+    if (gas > networkGasLimit) gas = networkGasLimit;
+  
     console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gas} ----`));    
 
     let nonce = await web3.eth.getTransactionCount(from.address);

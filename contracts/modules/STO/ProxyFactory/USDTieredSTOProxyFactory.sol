@@ -5,17 +5,15 @@ import "../../../interfaces/IUSDTieredSTOProxy.sol";
 
 contract USDTieredSTOProxyFactory is IUSDTieredSTOProxy {
 
-    
-
     constructor() public {
 
     }
-    
+
     /**
      * @notice deploys the STO.
      * @param _securityToken Contract address of the securityToken
      * @param _polyAddress Contract address of the PolyToken.
-     * @param _factoryAddress Contract address of the factory 
+     * @param _factoryAddress Contract address of the factory
      * @return address Address of the deployed STO
      */
     function deploySTO(address _securityToken, address _polyAddress, address _factoryAddress) external returns (address) {
@@ -31,4 +29,5 @@ contract USDTieredSTOProxyFactory is IUSDTieredSTOProxy {
     function getInitFunction(address _contractAddress) external returns (bytes4) {
         return USDTieredSTO(_contractAddress).getInitFunction();
     }
+    
 }

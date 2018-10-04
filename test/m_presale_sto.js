@@ -239,7 +239,7 @@ contract('PreSaleSTO', accounts => {
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), transferManagerKey);
+            assert.equal(log.args._types[0].toNumber(), transferManagerKey);
             assert.equal(
                 web3.utils.toAscii(log.args._name)
                 .replace(/\u0000/g, ''),
@@ -248,7 +248,7 @@ contract('PreSaleSTO', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
+           let moduleData = (await I_SecurityToken.getModulesByType(transferManagerKey))[0];
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
@@ -271,7 +271,7 @@ contract('PreSaleSTO', accounts => {
 
             const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner });
 
-            assert.equal(tx.logs[2].args._type, stoKey, "PreSaleSTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0], stoKey, "PreSaleSTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
                 .replace(/\u0000/g, ''),
@@ -455,7 +455,7 @@ contract('PreSaleSTO', accounts => {
     describe("Test cases for the PresaleSTOFactory", async() => {
         it("should get the exact details of the factory", async() => {
             assert.equal(await I_PreSaleSTOFactory.setupCost.call(),0);
-            assert.equal(await I_PreSaleSTOFactory.getType.call(),3);
+            assert.equal((await I_PreSaleSTOFactory.getTypes.call())[0],3);
             assert.equal(web3.utils.toAscii(await I_PreSaleSTOFactory.getName.call())
                         .replace(/\u0000/g, ''),
                         "PreSaleSTO",

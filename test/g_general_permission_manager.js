@@ -264,7 +264,7 @@ contract('GeneralPermissionManager', accounts => {
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), 2);
+            assert.equal(log.args._types[0].toNumber(), 2);
             assert.equal(
                 web3.utils.toAscii(log.args._name)
                 .replace(/\u0000/g, ''),
@@ -273,7 +273,7 @@ contract('GeneralPermissionManager', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = await I_SecurityToken.modules(2, 0);
+           let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
@@ -294,7 +294,7 @@ contract('GeneralPermissionManager', accounts => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
             const tx = await I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-            assert.equal(tx.logs[3].args._type.toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
+            assert.equal(tx.logs[3].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
                 .replace(/\u0000/g, ''),
@@ -307,7 +307,7 @@ contract('GeneralPermissionManager', accounts => {
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
-            assert.equal(tx.logs[2].args._type.toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
                 .replace(/\u0000/g, ''),
@@ -398,7 +398,7 @@ contract('GeneralPermissionManager', accounts => {
     describe("General Permission Manager Factory test cases", async() => {
         it("should get the exact details of the factory", async() => {
             assert.equal(await I_GeneralPermissionManagerFactory.setupCost.call(),0);
-            assert.equal(await I_GeneralPermissionManagerFactory.getType.call(),1);
+            assert.equal((await I_GeneralPermissionManagerFactory.getTypes.call())[0],1);
             assert.equal(web3.utils.toAscii(await I_GeneralPermissionManagerFactory.getName.call())
                         .replace(/\u0000/g, ''),
                         "GeneralPermissionManager",

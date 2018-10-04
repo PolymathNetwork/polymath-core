@@ -17,7 +17,7 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {   
+    {
         version = "1.0.0";
         name = "ERC20DividendCheckpoint";
         title = "ERC20 Dividend Checkpoint";
@@ -41,8 +41,10 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getType() public view returns(uint8) {
-        return 4;
+    function getTypes() external view returns(uint8[]) {
+        uint8[] memory res = new uint8[](1);
+        res[0] = 4;
+        return res;
     }
 
     /**
@@ -55,14 +57,14 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
     /**
      * @notice Get the description of the Module
      */
-    function getDescription() public view returns(string) {
+    function getDescription() external view returns(string) {
         return description;
     }
 
     /**
      * @notice Get the title of the Module
      */
-    function getTitle() public  view returns(string) {
+    function getTitle() external  view returns(string) {
         return title;
     }
 
@@ -83,14 +85,14 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
     /**
      * @notice Get the Instructions that helped to used the module
      */
-    function getInstructions() public view returns(string) {
+    function getInstructions() external view returns(string) {
         return "Create a ERC20 dividend which will be paid out to token holders proportional to their balances at the point the dividend is created";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() public view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](3);
         availableTags[0] = "ERC20";
         availableTags[1] = "Dividend";

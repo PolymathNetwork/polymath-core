@@ -2,10 +2,9 @@ pragma solidity ^0.4.24;
 
 import "./ICheckpoint.sol";
 import "../TransferManager/ITransferManager.sol";
-import "../Module.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "../../libraries/BokkyPooBahsDateTimeLibrary.sol";
+/* import "../../libraries/BokkyPooBahsDateTimeLibrary.sol"; */
 
 /**
  * @title Burn module for burning tokens and keeping track of burnt amounts
@@ -16,14 +15,16 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
     struct Schedule {
         bytes32 name;
         uint256 startTime;
-        uint256 yearInterval;
-        uint256 monthInterval;
-        uint256 dayInterval;
+        uint256 nextTime;
+        uint256 interval;
+        uint256[] checkpointIds;
+        uint256[] timestamps;
+        uint256[] periods;
     }
 
-    Schedule[] schedules;
+    bytes32[] public names;
 
-    mapping (bytes32 => Schedule) public
+    mapping (bytes32 => Schedule) schedules;
 
     /**
      * @notice Constructor
@@ -42,17 +43,41 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
         return bytes4(0);
     }
 
-    function addSchedule(bytes32 _name, uint256 _startTime, )
+    function addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval) onlyOwner external {
+        // TODO: Ensure unique names
+        require(_startTime > now);
+        require(schedules[_name].name == bytes32(0));
+        schedules[_name].name = _name;
+        schedules[_name].startTime = _startTime;
+        schedules[_name].nextTime = _startTime;
+        schedules[_name].interval = _interval;
+        names.push(_name);
+    }
 
     /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
-    function verifyTransfer(address /* _from */, address _to, uint256 /* _amount */, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(address /* _from */, address _to, uint256 /* _amount */, bytes /* _data */, bool _isTransfer) external returns(Result) {
+        if (!_isTransfer) {
+            return Result.NA;
+        }
+        uint256 i;
+        for (i = 0; i < names.length; i++) {
+            Schedule storage schedule = schedules[names[i]];
+            if (schedule.nextTime <= now) {
+                uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
+                uint256 periods = now.sub(schedule.nextTime).div(schedule.interval).add(1);
+                schedule.nextTime = periods.mul(schedule.interval).add(schedule.nextTime);
+                schedule.checkpointIds.push(checkpointId);
+                schedule.timestamps.push(now);
+                schedule.periods.push(periods);
+            }
+        }
         return Result.NA;
     }
 
     /**
      * @notice Return the permissions flag that are associated with CountTransferManager
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() external view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }

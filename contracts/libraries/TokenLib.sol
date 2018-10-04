@@ -162,9 +162,12 @@ library TokenLib {
 
     /**
     * @notice keeps track of the number of non-zero token holders
+    * @param _investorData Date releated to investor metrics
     * @param _from sender of transfer
     * @param _to receiver of transfer
     * @param _value value of transfer
+    * @param _balanceTo balance of the _to address
+    * @param _balanceFrom balance of the _from address
     */
     function adjustInvestorCount(InvestorDataStorage storage _investorData, address _from, address _to, uint256 _value, uint256 _balanceTo, uint256 _balanceFrom) public  {
         if ((_value == 0) || (_from == _to)) {
@@ -188,7 +191,8 @@ library TokenLib {
 
      /**
     * @notice removes addresses with zero balances from the investors list
-    * @param _index Index in investor list at which to start removing zero balances
+    * @param _investorData Date releated to investor metrics
+    * @param _index Index in investor list
     * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
     */
     function pruneInvestors(InvestorDataStorage storage _investorData, uint256 _index) public {

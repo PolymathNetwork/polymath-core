@@ -420,6 +420,9 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         return investorData.investors;
     }
 
+    /**
+     * @notice gets the investor count
+     */
     function getInvestorCount() external view returns(uint256) {
         return investorData.investorCount;
     }

@@ -245,4 +245,9 @@ interface ISecurityToken {
      * @notice Use to get the version of the securityToken
      */
      function getVersion() external view returns(uint8[]);
+
+     /**
+     * @notice gets the investor count
+     */
+     function getInvestorCount() external view returns(uint256)
 }

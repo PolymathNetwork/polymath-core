@@ -193,9 +193,6 @@ contract('SecurityTokenRegistry', accounts => {
 
         // Step 9 (a): Deploy the proxy
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-        let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
-        await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
-        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
 
          // Step 10: Deploy the FeatureRegistry
 
@@ -248,6 +245,63 @@ contract('SecurityTokenRegistry', accounts => {
         -----------------------------------------------------------------------------
         `);
     });
+
+    describe("Test the initialize the function", async() => {
+
+        it("Should successfully update the implementation address -- fail because polymathRegistry address is 0x", async() => {
+            let bytesProxy = encodeProxyCall(STRProxyParameters, ["0x0000000000000000000000000000000000000000", I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+            catchRevert(
+                I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath}),
+                "tx-> revert because polymathRegistry address is 0x"
+            );
+        })
+
+        it("Should successfully update the implementation address -- fail because STFactory address is 0x", async() => {
+            let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, "0x0000000000000000000000000000000000000000", initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+            catchRevert(
+                I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath}),
+                "tx-> revert because STFactory address is 0x"
+            );
+        });
+
+        it("Should successfully update the implementation address -- fail because STLaunch fee is 0", async() => {
+            let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, 0, initRegFee, I_PolyToken.address, account_polymath]);
+            catchRevert(
+                I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath}),
+                "tx-> revert because STLaunch fee is 0"
+            );
+        });
+
+        it("Should successfully update the implementation address -- fail because tickerRegFee fee is 0", async() => {
+            let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, 0, I_PolyToken.address, account_polymath]);
+            catchRevert(
+                I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath}),
+                "tx-> revert because tickerRegFee is 0"
+            );
+        });
+
+        it("Should successfully update the implementation address -- fail because PolyToken address is 0x", async() => {
+            let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, "0x0000000000000000000000000000000000000000", account_polymath]);
+            catchRevert(
+                I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath}),
+                "tx-> revert because PolyToken address is 0x"
+            );
+        });
+
+        it("Should successfully update the implementation address -- fail because owner address is 0x", async() => {
+            let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, "0x0000000000000000000000000000000000000000"]);
+            catchRevert(
+                I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath}),
+                "tx-> revert because owner address is 0x"
+            );
+        });
+
+        it("Should successfully update the implementation address", async() => {
+            let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+            await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
+            I_STRProxied = SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+        });
+    })
 
 
     describe(" Test cases of the registerTicker", async() => {
@@ -935,7 +989,7 @@ contract('SecurityTokenRegistry', accounts => {
             let tx = await I_STRProxied.registerTicker(account_temp, "TOK1", "", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK1", `Symbol should be TOK1`);
-            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toAscii(x)));
+            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toUtf8(x)));
         });
 
         it("Should register the ticker 2", async () => {
@@ -944,7 +998,7 @@ contract('SecurityTokenRegistry', accounts => {
             let tx = await I_STRProxied.registerTicker(account_temp, "TOK2", "", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK2", `Symbol should be TOK2`);
-            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toAscii(x)));
+            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toUtf8(x)));
         });
 
         it("Should register the ticker 3", async () => {
@@ -953,13 +1007,13 @@ contract('SecurityTokenRegistry', accounts => {
             let tx = await I_STRProxied.registerTicker(account_temp, "TOK3", "", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK3", `Symbol should be TOK3`);
-            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toAscii(x)));
+            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toUtf8(x)));
         });
 
         it("Should successfully remove the ticker 2", async() => {
             let tx = await I_STRProxied.removeTicker("TOK2", {from: account_polymath});
             assert.equal(tx.logs[0].args._ticker, "TOK2", "Ticker doesn't get deleted successfully");
-            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toAscii(x)));
+            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toUtf8(x)));
         });
 
         it("Should modify ticker 1", async() => {
@@ -967,7 +1021,7 @@ contract('SecurityTokenRegistry', accounts => {
             assert.equal(tx.logs[0].args._owner, account_temp, `Should be equal to the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK1", "Should be equal to TOK1");
             assert.equal(tx.logs[0].args._name, "TOKEN 1", "Should be equal to TOKEN 1");
-            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toAscii(x)));
+            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toUtf8(x)));
         })
 
         it("Should modify ticker 3", async() => {
@@ -975,7 +1029,7 @@ contract('SecurityTokenRegistry', accounts => {
             assert.equal(tx.logs[0].args._owner, account_temp, `Should be equal to the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK3", "Should be equal to TOK3");
             assert.equal(tx.logs[0].args._name, "TOKEN 3", "Should be equal to TOKEN 3");
-            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toAscii(x)));
+            console.log((await I_STRProxied.getTickersByOwner.call(account_temp)).map(x => web3.utils.toUtf8(x)));
         })
 
     });

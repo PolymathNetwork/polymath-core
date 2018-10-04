@@ -169,13 +169,7 @@ let requestIds = new Array();
 
         it("Should change the gas price manually - fails - bad owner", async() => {
             let errorThrown = false;
-            try{
-                await I_PolyOracle.setGasPrice(new BigNumber(60).times(new BigNumber(10).pow(9)),{from : accounts[6]});
-            } catch(error){
-                errorThrown = true;
-                console.log(`       tx->revert msg.sender is not the owner`.grey);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PolyOracle.setGasPrice(new BigNumber(60).times(new BigNumber(10).pow(9)),{from : accounts[6]}));
         });
 
         it("Should change the gas price manually", async() => {
@@ -203,13 +197,7 @@ let requestIds = new Array();
 
         it("Should change the gas limit manually - fails", async() => {
             let errorThrown = false;
-            try{
-                await I_PolyOracle.setGasLimit(50000,{from : accounts[6]});
-            } catch(error){
-                errorThrown = true;
-                console.log(`       tx->revert msg.sender is not owner`.grey);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PolyOracle.setGasLimit(50000,{from : accounts[6]}));
         });
 
         it("Should change the gas limit manually", async() => {
@@ -222,12 +210,7 @@ let requestIds = new Array();
         it("Should blacklist some IDS manually - fails - wrong size", async() => {
             let errorThrown = false;
             let ignore = [true];
-            try{
-                await I_PolyOracle.setIgnoreRequestIds(requestIds,ignore,{from : accounts[6]});
-            } catch(error){
-                errorThrown = true;
-                console.log(`       tx->revert msg.sender is not owner`.grey);
-            }
+            await catchRevert(I_PolyOracle.setIgnoreRequestIds(requestIds,ignore,{from : accounts[6]}));
         });
 
         it("Should blacklist some IDS manually", async() => {
@@ -245,13 +228,7 @@ let requestIds = new Array();
 
         it("Should change the oraclize time tolerance manually - fails", async() => {
             let errorThrown = false;
-            try{
-                await I_PolyOracle.setOraclizeTimeTolerance(3600,{from : accounts[6]});
-            } catch(error){
-                errorThrown = true;
-                console.log(`       tx->revert msg.sender is not the owner`.grey);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PolyOracle.setOraclizeTimeTolerance(3600,{from : accounts[6]}));
         })
 
         it("Should change the oraclize time tolerance manually", async() => {

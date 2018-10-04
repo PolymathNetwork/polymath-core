@@ -48,7 +48,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     }
 
     /// @notice Used to verify the transfer transaction according to the rule implemented in the transfer manager
-    function verifyTransfer(address _from, address /* _to */, uint256 _amount, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(address _from, address /* _to */, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         bool validTransfer;
 
         if(exemptWallets[_from] || paused) return Result.NA;

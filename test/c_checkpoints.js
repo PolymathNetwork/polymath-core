@@ -389,7 +389,7 @@ contract('Checkpoints', accounts => {
                     }
                     n = n.toFixed(0);
                     console.log("Burning: " + n.toString() + " from: " + burner);
-                    await I_SecurityToken.forceBurn(burner, n, "", { from: token_owner });
+                    await I_SecurityToken.forceBurn(burner, n, "", "", { from: token_owner });
                 }
                 console.log("Checking Interim...");
                 for (let k = 0; k < cps.length; k++) {

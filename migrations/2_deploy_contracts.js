@@ -133,40 +133,6 @@ module.exports = function (deployer, network, accounts) {
   }).then(() => {
     // Link libraries
     return deployer.link(TokenLib, STFactory);
-  // }).then(() => {
-  //   return deployer.link(VersionUtils, SecurityTokenRegistry);
-  // }).then(() => {
-  //   return deployer.link(VersionUtils, GeneralTransferManagerFactory);
-  // }).then(() => {
-  //   return deployer.link(VersionUtils, GeneralPermissionManagerFactory);
-  // }).then(() => {
-  //   return deployer.link(VersionUtils, PercentageTransferManagerFactory);
-  // }).then(() => {
-  //   return deployer.link(VersionUtils, USDTieredSTOProxyFactory);
-  // }).then(() => {
-  //   return deployer.link(VersionUtils, CountTransferManagerFactory);
-  // }).then(() => {
-  //   return deployer.link(VersionUtils, EtherDividendCheckpointFactory);
-  // }).then(() => {
-  //   return deployer.link(VersionUtils, ERC20DividendCheckpointFactory);
-  // }).then(() => {
-  //   return deployer.link(VersionUtils, ManualApprovalTransferManagerFactory);
-  // }).then(() => {
-  //   return deployer.link(VersionUtils, CappedSTOFactory);
-  // }).then(() => {
-  //   return deployer.link(VersionUtils, USDTieredSTOFactory);
-  // }).then(() => {
-  //   return deployer.link(Util, CappedSTOFactory);
-  // }).then(() => {
-  //   return deployer.link(Util, USDTieredSTOFactory);
-  // }).then(() => {
-  //   return deployer.link(Util, CountTransferManagerFactory);
-  // }).then(() => {
-  //   return deployer.link(Util, PercentageTransferManagerFactory);
-  // }).then(() => {
-  //   return deployer.link(Util, SecurityTokenRegistry);
-  // }).then(() => {
-  //   return deployer.link(Util, STFactory);
   }).then(() => {
     // A) Deploy the ModuleRegistry Contract (It contains the list of verified ModuleFactory)
     return deployer.deploy(ModuleRegistry, {from: PolymathAccount});

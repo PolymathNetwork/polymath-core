@@ -27,6 +27,8 @@ import "../libraries/TokenLib.sol";
 contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
+    TokenLib.InvestorDataStorage investorData;
+
     // Use to hold the version
     struct SemanticVersion {
         uint8 major;
@@ -49,12 +51,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     // Value of current checkpoint
     uint256 public currentCheckpointId;
-
-    // Total number of non-zero token holders
-    uint256 public investorCount;
-
-    // List of token holders
-    address[] investors;
 
     // Use to temporarily halt all transactions
     bool public transfersFrozen;
@@ -85,9 +81,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     // Times at which each checkpoint was created
     uint256[] checkpointTimes;
-
-    // List of investors (may not be pruned to remove old investors with current zero balances)
-    mapping (address => bool) investorListed;
 
     // Emit at the time when module get added
     event ModuleAdded(
@@ -401,23 +394,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _value value of transfer
     */
     function _adjustInvestorCount(address _from, address _to, uint256 _value) internal {
-        if ((_value == 0) || (_from == _to)) {
-            return;
-        }
-        // Check whether receiver is a new token holder
-        if ((balanceOf(_to) == 0) && (_to != address(0))) {
-            investorCount = investorCount.add(1);
-        }
-        // Check whether sender is moving all of their tokens
-        if (_value == balanceOf(_from)) {
-            investorCount = investorCount.sub(1);
-        }
-        //Also adjust investor list
-        if (!investorListed[_to] && (_to != address(0))) {
-            investors.push(_to);
-            investorListed[_to] = true;
-        }
-
+        TokenLib.adjustInvestorCount(investorData, _from, _to, _value, balanceOf(_to), balanceOf(_from));
     }
 
     /**
@@ -427,11 +404,9 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
     */
     function pruneInvestors(uint256 _start, uint256 _iters) external onlyOwner {
-        for (uint256 i = _start; i < Math.min256(_start.add(_iters), investors.length); i++) {
-            if ((i < investors.length) && (balanceOf(investors[i]) == 0)) {
-                investorListed[investors[i]] = false;
-                investors[i] = investors[investors.length - 1];
-                investors.length--;
+        for (uint256 i = _start; i < Math.min256(_start.add(_iters), investorData.investors.length); i++) {
+            if ((i < investorData.investors.length) && (balanceOf(investorData.investors[i]) == 0)) {
+                TokenLib.pruneInvestors(investorData, i);
             }
         }
     }
@@ -442,7 +417,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return length
      */
     function getInvestors() external view returns(address[]) {
-        return investors;
+        return investorData.investors;
+    }
+
+    function getInvestorCount() external view returns(uint256) {
+        return investorData.investorCount;
     }
 
     /**

@@ -55,7 +55,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
     }
 
     /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
-    function verifyTransfer(address /* _from */, address _to, uint256 /* _amount */, bytes /* _data */, bool _isTransfer) public returns(Result) {
+    function verifyTransfer(address /* _from */, address /* _to */, uint256 /* _amount */, bytes /* _data */, bool _isTransfer) public returns(Result) {
         if (!_isTransfer) {
             return Result.NA;
         }

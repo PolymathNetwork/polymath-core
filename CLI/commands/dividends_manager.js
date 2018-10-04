@@ -137,10 +137,11 @@ async function start_explorer(){
           await taxHoldingMenu();
         break;
         case 'Create dividends':
-          let dividend =  readlineSync.question(`How much ${dividendsType} would you like to distribute to token holders?: `);
+          let divName = readlineSync.question(`Enter a name or title to indetify this dividend: `);
+          let dividend = readlineSync.question(`How much ${dividendsType} would you like to distribute to token holders?: `);
           await checkBalance(dividend);
           let checkpointId = currentCheckpoint == 0 ? 0 : await selectCheckpoint(true); // If there are no checkpoints, it must create a new one
-          await createDividends(dividend, checkpointId);
+          await createDividends(divName, dividend, checkpointId);
         break;
         case 'Explore account at checkpoint':
           let _address =  readlineSync.question('Enter address to explore: ');
@@ -316,7 +317,7 @@ async function taxHoldingMenu() {
   }
 }
 
-async function createDividends(dividend, checkpointId) {
+async function createDividends(name, dividend, checkpointId) {
   await addDividendsModule();
 
   let time = Math.floor(Date.now()/1000);
@@ -332,17 +333,17 @@ async function createDividends(dividend, checkpointId) {
     await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
     if (checkpointId > 0) {
       if (useDefaultExcluded) {
-        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId);
+        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId, web3.utils.toHex(name));
       } else {
         let excluded = getExcludedFromDataFile();
-        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpointAndExclusions(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId, excluded);
+        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpointAndExclusions(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId, excluded, web3.utils.toHex(name));
       }
     } else {
       if (useDefaultExcluded) {
-        createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend));
+        createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), web3.utils.toHex(name));
       } else {
         let excluded = getExcludedFromDataFile();
-        createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), excluded);
+        createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), excluded, web3.utils.toHex(name));
       }
     }
     let receipt = await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice);
@@ -351,17 +352,17 @@ async function createDividends(dividend, checkpointId) {
   } else if (dividendsType == 'ETH') {
     if (checkpointId > 0) {
       if (useDefaultExcluded) {
-        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, checkpointId);
+        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, checkpointId, web3.utils.toHex(name));
       } else {
         let excluded = getExcludedFromDataFile();
-        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpointAndExclusions(maturityTime, expiryTime, checkpointId, excluded);
+        createDividendAction = currentDividendsModule.methods.createDividendWithCheckpointAndExclusions(maturityTime, expiryTime, checkpointId, excluded, web3.utils.toHex(name));
       }
     } else {
       if (useDefaultExcluded) {
-        createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime);
+        createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime, web3.utils.toHex(name));
       } else {
         let excluded = getExcludedFromDataFile();
-        createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, excluded);
+        createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, excluded, web3.utils.toHex(name));
       }
     }
     let receipt = await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice, web3.utils.toWei(dividend));
@@ -543,7 +544,8 @@ async function selectDividend(filter) {
 
   if (dividends.length > 0) {
     let options = dividends.map(function(d) {
-      return `Created: ${moment.unix(d.created).format('MMMM Do YYYY, HH:mm:ss')}
+      return `${web3.utils.toAscii(d.name)}
+    Created: ${moment.unix(d.created).format('MMMM Do YYYY, HH:mm:ss')}
     Maturity: ${moment.unix(d.maturity).format('MMMM Do YYYY, HH:mm:ss')}
     Expiry: ${moment.unix(d.expiry).format('MMMM Do YYYY, HH:mm:ss')}
     At checkpoint: ${d.checkpointId}

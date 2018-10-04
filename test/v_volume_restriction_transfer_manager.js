@@ -541,9 +541,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await new Promise(resolve => setTimeout(resolve, 4000));
 
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3', 'ether'), { from: account_investor2 });
-
-            let alreadyWithdrawnForUser = await I_VolumeRestrictionTransferManager.getAlreadyWithdrawn(account_investor2)
-            assert.equal(alreadyWithdrawnForUser.toString(), web3.utils.toWei('3', 'ether'))
         });
 
         it("Should prevent the transfer of tokens if the amount is larger than the amount allowed by lockups", async() => {
@@ -639,7 +636,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should be possible to remove a lockup", async() => {
 
             let acct1Balance = await I_SecurityToken.balanceOf(account_investor1)
-            console.log('Should be possible to remove a lockup - acct1Balance is ',acct1Balance.toString())
 
             let errorThrown = false;
             try {
@@ -655,17 +651,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor1);
             assert.equal(lockUpCount, 1)
 
-            // check alreadyWithdrawn and make sure it's nonzero
-            let alreadyWithdrawnForUser = await I_VolumeRestrictionTransferManager.getAlreadyWithdrawn(account_investor2)
-            assert.notEqual(alreadyWithdrawnForUser.toString(), '0')
-
             // remove the lockup
             await I_VolumeRestrictionTransferManager.removeLockUp(account_investor1, 0, { from: token_owner });
-
-            // make sure that removing the user's last lockup resets their alreadyWithdrawn entry to 0
-            alreadyWithdrawnForUser = await I_VolumeRestrictionTransferManager.getAlreadyWithdrawn(account_investor2)
-            assert.equal(alreadyWithdrawnForUser.toString(), '0')
-
 
            lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor1);
             assert.equal(lockUpCount, 0)
@@ -680,13 +667,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should be possible to create multiple lockups at once", async() => {
 
             let balancesBefore = {}
+
             // should be 12000000000000000000
             balancesBefore[account_investor2] = await I_SecurityToken.balanceOf(account_investor2)
-            console.log('balance investor2 is ',balancesBefore[account_investor2].toString())
+
 
             // should be 10000000000000000000
             balancesBefore[account_investor3] = await I_SecurityToken.balanceOf(account_investor3)
-            console.log('balance investor3 is ',balancesBefore[account_investor3].toString())
+
 
             let lockUpCountsBefore = {}
 
@@ -795,9 +783,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             // balance here should be 10000000000000000000
             let balance = await I_SecurityToken.balanceOf(account_investor2)
-            console.log('Should be possible to create a lockup with a specific start time in the future - account_investor2 balance is ' + balance)
 
-            await I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 10, 1, now + 4, balance, { from: token_owner });
+            await I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 100, 10, now + 4, balance, { from: token_owner });
 
             // try a transfer.  it should fail because the lockup hasn't started yet.
             let errorThrown = false;
@@ -810,10 +797,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
             }
             assert.ok(errorThrown, message);
 
+            now = (await web3.eth.getBlock('latest')).timestamp
+
             // wait 4 seconds for the lockup to begin
             await new Promise(resolve => setTimeout(resolve, 4000));
 
-            // try another transfer.  it should also fail because the lockup has begun
+            // try another transfer.  it should also fail because the lockup has just begun
             errorThrown = false;
             try {
                 await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
@@ -822,6 +811,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 ensureException(error);
                 errorThrown = true;
             }
+            now = (await web3.eth.getBlock('latest')).timestamp
+
             assert.ok(errorThrown, message);
 
         });
@@ -833,7 +824,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             // should be 10000000000000000000
             let balance = await I_SecurityToken.balanceOf(account_investor2)
-            console.log('Should be possible to edit a lockup with a specific start time in the future - account_investor2 balance is ',balance.toString())
 
             // check and get the lockup
             let lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor2);
@@ -842,8 +832,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let lockUp = await I_VolumeRestrictionTransferManager.getLockUp(account_investor2, 0);
 
             // elements in lockup array are uint lockUpPeriodSeconds, uint releaseFrequencySeconds, uint startTime, uint totalAmount
-            assert.equal(lockUp[0].toString(), '10');
-            assert.equal(lockUp[1].toString(), '1');
+            assert.equal(lockUp[0].toString(), '100');
+            assert.equal(lockUp[1].toString(), '10');
             assert.isAtMost(lockUp[2].toNumber(), now);
             assert.equal(lockUp[3].toString(), balance.toString());
 
@@ -890,10 +880,146 @@ contract('VolumeRestrictionTransferManager', accounts => {
             // wait 4 seconds for the lockup's first period to elapse
             await new Promise(resolve => setTimeout(resolve, 4000));
 
-            balance = await I_SecurityToken.balanceOf(account_investor2)
-            console.log('attempting final transfer.  balance is ', balance.toString(), "in eth ", web3.utils.fromWei(balance.toString(), 'ether'))
             // try another transfer.  it should pass
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('5', 'ether'), { from: account_investor2 });
+
+
+            // try another transfer without waiting for another period to pass.  it should fail
+            errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('5', 'ether'), { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+            // wait 4 seconds for the lockup's first period to elapse
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            let lockUpBeforeVerify = await I_VolumeRestrictionTransferManager.getLockUp(account_investor2, 0);
+            // check if transfer will pass in read-only operation
+            let result = await I_VolumeRestrictionTransferManager.verifyTransfer.call(account_investor2, account_investor1, web3.utils.toWei('5', 'ether'), false)
+            // enum Result {INVALID, NA, VALID, FORCE_VALID} and we want VALID so it should be 2
+            assert.equal(result.toString(), '2')
+            let lockUpAfterVerify = await I_VolumeRestrictionTransferManager.getLockUp(account_investor2, 0);
+
+            assert.equal(lockUpBeforeVerify[4].toString(), lockUpAfterVerify[4].toString())
+
+            // try another transfer.  it should pass
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('5', 'ether'), { from: account_investor2 });
+
+            // wait 4 seconds for the lockup's first period to elapse.  but, we are all out of periods.
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            // try one final transfer.  this should fail because the user has already withdrawn their entire balance
+            errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should be possible to stack lockups", async() => {
+            // should be 17000000000000000000
+            let balance = await I_SecurityToken.balanceOf(account_investor1)
+
+            // check and make sure that acct1 has no lockups so far
+            let lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor1);
+            assert.equal(lockUpCount.toString(), 0)
+
+            await I_VolumeRestrictionTransferManager.addLockUp(account_investor1, 12, 4, 0, web3.utils.toWei('6', 'ether'), { from: token_owner });
+
+            // try to transfer 11 tokens that aren't locked up yet be locked up.  should succeed
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('11', 'ether'), { from: account_investor1 });
+
+            // try a transfer.  it should fail because it's locked up from the first lockups
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+            // wait 4 seconds for the lockup's first period to elapse.
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            // should succeed
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('2', 'ether'), { from: account_investor1 });
+
+            // send 8 back to investor1 so that we can lock them up
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('8', 'ether'), { from: account_investor2 });
+
+            // let's add another lockup to stack them
+            await I_VolumeRestrictionTransferManager.addLockUp(account_investor1, 16, 4, 0, web3.utils.toWei('8', 'ether'), { from: token_owner });
+
+            // try a transfer.  it should fail because it's locked up from both lockups
+            errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+            // wait 4 seconds for the 1st lockup's second period to elapse, and the 2nd lockup's first period to elapse
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            // should now be able to transfer 4, because of 2 allowed from the 1st lockup and 2 from the 2nd
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('4', 'ether'), { from: account_investor1 });
+
+            // try aother transfer.  it should fail because it's locked up from both lockups again
+            errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+            // wait 4 seconds for the 1st lockup's final period to elapse, and the 2nd lockup's second period to elapse
+            await new Promise(resolve => setTimeout(resolve, 4000));
+
+            // should now be able to transfer 4, because of 2 allowed from the 1st lockup and 2 from the 2nd
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('4', 'ether'), { from: account_investor1 });
+
+            // try aother transfer.  it should fail because it's locked up from both lockups again
+            errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
+            } catch(error) {
+                console.log(`         tx revert -> couldn't transfer because of lock up`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+            // wait 8 seconds for 2nd lockup's third and fourth periods to elapse
+            await new Promise(resolve => setTimeout(resolve, 8000));
+
+            // should now be able to transfer 4, because there are 2 allowed per period in the 2nd lockup, and 2 periods have elapsed
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('4', 'ether'), { from: account_investor1 });
+
+            // send the 3 back from acct2 that we sent over in the beginning of this test
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3', 'ether'), { from: account_investor2 });
+
+            // try another transfer.  it should pass because both lockups have been entirely used
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
+
+            balance = await I_SecurityToken.balanceOf(account_investor1)
+            assert.equal(balance.toString(), web3.utils.toWei('2', 'ether'))
 
         });
 

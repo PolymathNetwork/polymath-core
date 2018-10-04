@@ -132,7 +132,6 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @return address[]
      */
     function getAllDelegatesWithPerm(address _module, bytes32 _perm) external view returns(address[]) {
-        require(_module != address(0) && _perm != bytes32(0), "0 values not allowed");
         uint256 counter = 0;
         uint8 i = 0;
         for (i = 0; i < allDelegates.length; i++) {
@@ -199,22 +198,21 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
-     * @notice Use to get the Permission flag related the `this` contract
-     * @return Array of permission flags
-     */
-    function getPermissions() external view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](1);
-        allPermissions[0] = CHANGE_PERMISSION;
-        return allPermissions;
-    }
-
-    /**
      * @notice use to get all delegates
      * @return address[]
      */
     function getAllDelegates() external view returns(address[]) {
         return allDelegates;
     }
-
+    
+    /**
+    * @notice Returns the Permission flag related the `this` contract
+    * @return Array of permission flags
+    */
+    function getPermissions() public view returns(bytes32[]) {
+        bytes32[] memory allPermissions = new bytes32[](1);
+        allPermissions[0] = CHANGE_PERMISSION;
+        return allPermissions;
+    }
 
 }

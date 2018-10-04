@@ -4,6 +4,7 @@ import { pk }  from './helpers/testprivateKey';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 import { encodeProxyCall, encodeModuleCall } from './helpers/encodeCall';
+import { catchRevert } from './helpers/exceptions';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
@@ -280,14 +281,7 @@ contract('GeneralPermissionManager', accounts => {
         it("Should successfully attach the General permission manager factory with the security token", async () => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
-            try {
-                const tx = await I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-            } catch(error) {
-                console.log(`       tx -> failed because Token is not paid`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner }));
         });
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
@@ -327,26 +321,12 @@ contract('GeneralPermissionManager', accounts => {
 
         it("Should fail in adding the permission to the delegate --msg.sender doesn't have permission", async() => {
             let errorThrown = false;
-            try {
-                let tx = await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_investor1});
-            } catch(error) {
-                console.log(`         tx revert -> msg.sender doesn't have permission`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_investor1}));
         });
 
         it("Should fail to provide the permission-- because delegate is not yet added", async() => {
             let errorThrown = false;
-            try {
-                let tx = await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner});
-            } catch(error) {
-                console.log(`         tx revert -> Delegate is not yet added`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner}));
         });
 
         it("Should add the permission to the delegate", async() => {
@@ -356,14 +336,7 @@ contract('GeneralPermissionManager', accounts => {
 
         it("Should fail to provide the permission", async() => {
             let errorThrown = false;
-            try {
-                let tx = await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: account_investor1});
-            } catch(error) {
-                console.log(`         tx revert -> msg.sender doesn't have permission`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: account_investor1}));
         });
 
         it("Should check the permission", async() => {

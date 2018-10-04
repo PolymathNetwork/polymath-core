@@ -2,6 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 import { encodeProxyCall, encodeModuleCall } from './helpers/encodeCall';
+import { catchRevert } from './helpers/exceptions';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const PreSaleSTOFactory = artifacts.require('./PreSaleSTOFactory.sol');
@@ -255,14 +256,7 @@ contract('PreSaleSTO', accounts => {
         it("Should fail to launch the STO due to endTime is 0", async () => {
             let bytesSTO = encodeModuleCall(STOParameters, [0]);
             let errorThrown = false;
-            try {
-                const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> Rate is ${0}. Test Passed Successfully`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner }));
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
@@ -302,14 +296,7 @@ contract('PreSaleSTO', accounts => {
 
         it("Should allocate the tokens -- failed due to investor not on whitelist", async () => {
             let errorThrown = false;
-            try {
-                await I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei('1', 'ether'), 0);
-            } catch(error) {
-                console.log(`         tx revert -> Investor is not on whitelist`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei('1', 'ether'), 0));
         });
 
         it("Should Buy the tokens", async() => {
@@ -349,14 +336,7 @@ contract('PreSaleSTO', accounts => {
 
         it("Should allocate the tokens -- failed due to msg.sender is not pre sale admin", async () => {
             let errorThrown = false;
-            try {
-                await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether'), 0, {from: account_fundsReceiver });
-            } catch(error) {
-                console.log(`         tx revert -> msg.sender is not pre sale admin`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether'), 0, {from: account_fundsReceiver }));
         });
 
         it("Should allocate tokens to multiple investors", async() => {
@@ -406,15 +386,7 @@ contract('PreSaleSTO', accounts => {
         it("Should failed at the time of buying the tokens -- Because STO has started", async() => {
             await increaseTime(duration.days(100)); // increased beyond the end time of the STO
             let errorThrown = false;
-            try {
-                // Fallback transaction
-                await I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei('1', 'ether'), 0, {from: account_issuer});
-            } catch(error) {
-                console.log(`         tx revert -> STO has started`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei('1', 'ether'), 0, {from: account_issuer}));
         });
 
     });
@@ -427,14 +399,7 @@ contract('PreSaleSTO', accounts => {
             await I_PolyToken.transfer(I_PreSaleSTO.address, value, { from: account_investor1 });
 
             let errorThrown = false;
-            try {
-                 await I_PreSaleSTO.reclaimERC20('0x0000000000000000000000000000000000000000', { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> token contract address is 0 address`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PreSaleSTO.reclaimERC20('0x0000000000000000000000000000000000000000', { from: token_owner }));
         });
 
           it("Should successfully reclaim POLY", async() => {

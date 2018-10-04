@@ -2,6 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 import { encodeProxyCall } from './helpers/encodeCall';
+import { catchRevert } from './helpers/exceptions';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
@@ -620,22 +621,7 @@ contract('USDTieredSTO Sim', accounts => {
                 let investment_DAI = BigNumber(10*10**18);  // 10 USD = DAI DAI
 
                 let errorThrown = false;
-                try {
-                    if (isPoly) {
-                        await I_PolyToken.getTokens(investment_POLY, _investor);
-                        await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, {from: _investor});
-                        await I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, { from: _investor, gasPrice: GAS_PRICE });
-                    } else if (isDAI) {
-                        await I_DaiToken.getTokens(investment_DAI, _investor);
-                        await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, {from: _investor});
-                        await I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE });
-                    } else await I_USDTieredSTO_Array[stoId].buyWithETH(_investor, { from: _investor, value: investment_ETH, gasPrice: GAS_PRICE });
-                } catch(error) {
-                    errorThrown = true;
-                    console.log(`Purchase failed as expected: ${_investor}`.yellow);
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, MESSAGE);
+                await catchRevert(I_PolyToken.getTokens(investment_POLY, _investor));
             }
 
             async function processInvestment(_investor, investment_Token, investment_USD, investment_POLY, investment_DAI, investment_ETH, isPoly, isDai, log_remaining, Tokens_total, Tokens_discount, tokensSold) {

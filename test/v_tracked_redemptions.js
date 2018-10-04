@@ -2,6 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 import { encodeProxyCall } from './helpers/encodeCall';
+import { catchRevert } from './helpers/exceptions';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
@@ -323,14 +324,7 @@ contract('TrackedRedemption', accounts => {
             await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, {from : token_owner});
 
             let errorThrown = false;
-            try {
-                let tx = await I_TrackedRedemption.redeemTokens(web3.utils.toWei('1', 'ether'), {from: account_investor1});
-            } catch(error) {
-                console.log(`       tx -> failed insufficent allowance`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_TrackedRedemption.redeemTokens(web3.utils.toWei('1', 'ether'), {from: account_investor1}));
         });
 
         it("Redeem some tokens", async() => {

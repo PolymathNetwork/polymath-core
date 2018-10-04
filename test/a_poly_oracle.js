@@ -2,6 +2,7 @@ const PolyOracle = artifacts.require('./MockPolyOracle.sol');
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import {increaseTime} from './helpers/time';
+import { catchRevert } from './helpers/exceptions';
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -56,27 +57,13 @@ let requestIds = new Array();
         it("Should schedule the timing of the call - fails - non owner", async() => {
             let errorThrown = false;
             let timeScheduling = [latestTime()+duration.minutes(1), latestTime()+duration.minutes(2), latestTime()+duration.minutes(3)]
-            try {
-                await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: accounts[1], value: web3.utils.toWei("2")});
-            } catch(error) {
-                errorThrown = true;
-                ensureException(error);
-                console.log(`       tx -> revert msg.sender should be the owner of the contract`.grey);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: accounts[1], value: web3.utils.toWei("2")}));
         });
 
         it("Should schedule the timing of the call - fails - no value", async() => {
             let errorThrown = false;
             let timeScheduling = [latestTime()+duration.minutes(1), latestTime()+duration.minutes(2), latestTime()+duration.minutes(3)]
-            try {
-                await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: owner});
-            } catch(error) {
-                errorThrown = true;
-                ensureException(error);
-                console.log(`       tx -> revert Because value for txn is not provided`.grey);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: owner}));
         })
 
         it("Should schedule the timing of the call - single call", async() => {
@@ -116,13 +103,7 @@ let requestIds = new Array();
 
         it("Should schedule to call using iters - fails", async() => {
             let errorThrown = false;
-            try {
-                await I_PolyOracle.schedulePriceUpdatesRolling(latestTime() + 10, 30, 2, {from: accounts[6]});
-            } catch(error) {
-                errorThrown = true;
-                console.log(`       tx->revert msg.sender is not the owner`.grey);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PolyOracle.schedulePriceUpdatesRolling(latestTime() + 10, 30, 2, {from: accounts[6]}));
         })
 
         it("Should schedule to call using iters", async() => {
@@ -150,13 +131,7 @@ let requestIds = new Array();
 
         it("Should change the Poly USD price manually - fail - bad account", async() => {
             let errorThrown = false;
-            try {
-                await I_PolyOracle.setPOLYUSD(latestPrice.add(1), {from: accounts[5]});
-            } catch(error) {
-                errorThrown = true;
-                console.log(`       tx->revert msg.sender is not the owner`.grey);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PolyOracle.setPOLYUSD(latestPrice.add(1), {from: accounts[5]}));
         });
 
         it("Should change the Poly USD price manually", async() => {
@@ -167,13 +142,7 @@ let requestIds = new Array();
 
         it("Should freeze the Oracle manually", async() => {
             let errorThrown = false;
-            try {
-                await I_PolyOracle.setFreezeOracle(true, {from: accounts[5]});
-            } catch(error) {
-                errorThrown = true;
-                console.log(`       tx->revert msg.sender is not the owner`.grey);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PolyOracle.setFreezeOracle(true, {from: accounts[5]}));
         })
 
         it("Should change the URL manually", async() => {
@@ -187,13 +156,7 @@ let requestIds = new Array();
 
         it("Should change the sanity bounds manually - fails - bad owner", async() => {
             let errorThrown = false;
-            try {
-                await I_PolyOracle.setSanityBounds(new BigNumber(25).times(new BigNumber(10).pow(16)), {from : accounts[6]});
-            } catch(error) {
-                errorThrown = true;
-                console.log(`       tx->revert msg.sender is not the owner`.grey);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PolyOracle.setSanityBounds(new BigNumber(25).times(new BigNumber(10).pow(16)), {from : accounts[6]}));
         })
 
         it("Should change the sanity bounds manually", async() => {
@@ -299,13 +262,7 @@ let requestIds = new Array();
 
         it("should change the api URL manually", async() => {
             let errorThrown = false;
-            try {
-                await I_PolyOracle.setOracleURL(alternateURL, {from: accounts[6]});
-            } catch(error){
-                errorThrown = true;
-                console.log(`       tx->revert msg.sender is not the owner`.grey);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_PolyOracle.setOracleURL(alternateURL, {from: accounts[6]}));
         })
 
         it("should change the api URL manually", async() => {

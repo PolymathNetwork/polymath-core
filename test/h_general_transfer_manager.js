@@ -4,6 +4,7 @@ import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 import {signData} from './helpers/signData';
 import { pk }  from './helpers/testprivateKey';
 import { encodeProxyCall, encodeModuleCall } from './helpers/encodeCall';
+import { catchRevert } from './helpers/exceptions';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
@@ -317,14 +318,7 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
             let errorThrown = false;
-            try {
-                await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> Investor isn't present in the whitelist`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner }));
         });
 
         it("Should Buy the tokens", async() => {
@@ -357,28 +351,14 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should fail in buying the token from the STO", async() => {
             let errorThrown = false;
-            try {
-                await I_DummySTO.generateTokens(account_affiliates1, web3.utils.toWei('1', 'ether'), { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> Investor is restricted investor`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_DummySTO.generateTokens(account_affiliates1, web3.utils.toWei('1', 'ether'), { from: token_owner }));
         });
 
         it("Should fail in investing the money in STO -- expiry limit reached", async() => {
             let errorThrown = false;
             await increaseTime(duration.days(10));
 
-            try {
-                await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> Investor isn't present in the whitelist`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner }));
         })
 
     });
@@ -387,14 +367,7 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
             let errorThrown = false;
-            try {
-                await I_DummySTO.generateTokens(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> Investor isn't present in the whitelist`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_DummySTO.generateTokens(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner }));
         });
 
         it("Should buy the tokens -- Failed due to incorrect signature input", async() => {
@@ -409,8 +382,7 @@ contract('GeneralTransferManager', accounts => {
             const v = sig.v;
             let errorThrown = false;
 
-            try {
-              let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
+            await catchRevert(I_GeneralTransferManager.modifyWhitelistSigned(
                   account_investor2,
                   fromTime,
                   toTime,
@@ -424,13 +396,7 @@ contract('GeneralTransferManager', accounts => {
                   {
                       from: account_investor2,
                       gas: 6000000
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> Incorrect sig data`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+                  }));
 
         });
 
@@ -446,8 +412,7 @@ contract('GeneralTransferManager', accounts => {
             const v = sig.v;
 
             let errorThrown = false;
-            try {
-              let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
+            await catchRevert(I_GeneralTransferManager.modifyWhitelistSigned(
                   account_investor2,
                   fromTime,
                   toTime,
@@ -461,13 +426,7 @@ contract('GeneralTransferManager', accounts => {
                   {
                       from: account_investor2,
                       gas: 6000000
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> Incorrect sig data`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+                  }));
 
         });
 
@@ -484,8 +443,7 @@ contract('GeneralTransferManager', accounts => {
             const v = sig.v;
             let errorThrown = false;
 
-            try {
-              let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
+            await catchRevert(I_GeneralTransferManager.modifyWhitelistSigned(
                   account_investor2,
                   fromTime,
                   toTime,
@@ -499,13 +457,7 @@ contract('GeneralTransferManager', accounts => {
                   {
                       from: account_investor2,
                       gas: 6000000
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> Incorrect sig data`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+                  }));
 
         });
 
@@ -552,14 +504,7 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should fail in changing the signing address", async() => {
             let errorThrown = false;
-            try {
-                await I_GeneralTransferManager.changeSigningAddress(account_polymath, {from: account_investor4});
-            } catch(error) {
-                console.log(`         tx revert -> msg.sender is not token_owner`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_GeneralTransferManager.changeSigningAddress(account_polymath, {from: account_investor4}));
         });
 
         it("Should get the permission", async() => {
@@ -583,27 +528,13 @@ contract('GeneralTransferManager', accounts => {
         it("Should fail to pull fees as no budget set", async() => {
 
             let errorThrown = false;
-            try {
-                await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_polymath});
-            } catch(error) {
-                console.log(`         tx revert -> No budget set`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_polymath}));
         });
 
         it("Should set a budget for the GeneralTransferManager", async() => {
             await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, 10 * Math.pow(10, 18), {from: token_owner});
             let errorThrown = false;
-            try {
-                await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_polymath});
-            } catch(error) {
-                console.log(`         tx revert -> No balance on token`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_polymath}));
             await I_PolyToken.getTokens(10 * Math.pow(10, 18), token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, 10 * Math.pow(10, 18), {from: token_owner});
         });
@@ -611,40 +542,7 @@ contract('GeneralTransferManager', accounts => {
 
         it("Factory owner should pull fees - fails as not permissioned by issuer", async() => {
             let errorThrown = false;
-            try {
-                await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_delegate});
-            } catch(error) {
-                console.log(`         tx revert -> Incorrect permissions`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-        });
-
-        it("Factory owner should pull fees", async() => {
-            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FEE_ADMIN", true, {from: token_owner});
-            let balanceBefore = await I_PolyToken.balanceOf(account_polymath);
-            await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_delegate});
-            let balanceAfter = await I_PolyToken.balanceOf(account_polymath);
-            assert.equal(balanceBefore.add(web3.utils.toWei('1','ether')).toNumber(), balanceAfter.toNumber(), "Fee is transferred");
-        });
-
-        it("Should change the white list transfer variable", async() => {
-            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistIssuances(true, {from : token_owner});
-            assert.isTrue(tx.logs[0].args._allowAllWhitelistIssuances);
-        });
-
-        it("should failed in trasfering the tokens", async() => {
-            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, {from : token_owner});
-            await I_GeneralTransferManager.pause({from: token_owner});
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('2','ether'), {from: account_investor2});
-            } catch(error) {
-                console.log(`         tx revert -> Transfer is paused`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_delegate}));
         });
 
         it("Should change the Issuance address", async() => {
@@ -672,8 +570,7 @@ contract('GeneralTransferManager', accounts => {
             let toTime = latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
             let errorThrown = false;
-            try {
-                await I_GeneralTransferManager.modifyWhitelistMulti(
+            await catchRevert(I_GeneralTransferManager.modifyWhitelistMulti(
                     [account_investor3, account_investor4],
                     [fromTime, fromTime],
                     [toTime, toTime],
@@ -683,13 +580,7 @@ contract('GeneralTransferManager', accounts => {
                         from: account_delegate,
                         gas: 6000000
                     }
-                );
-            } catch(error) {
-                console.log(`         tx revert -> msg.sender is not allowed to modify the whitelist`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+                ));
         });
 
         it("Should fail in adding the investors in whitelist -- array length mismatch", async() => {
@@ -697,8 +588,7 @@ contract('GeneralTransferManager', accounts => {
             let toTime = latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
             let errorThrown = false;
-            try {
-                await I_GeneralTransferManager.modifyWhitelistMulti(
+            await catchRevert(I_GeneralTransferManager.modifyWhitelistMulti(
                     [account_investor3, account_investor4],
                     [fromTime],
                     [toTime, toTime],
@@ -708,13 +598,7 @@ contract('GeneralTransferManager', accounts => {
                         from: account_delegate,
                         gas: 6000000
                     }
-                );
-            } catch(error) {
-                console.log(`         tx revert -> Array length mismatch`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+                ));
         });
 
         it("Should fail in adding the investors in whitelist -- array length mismatch", async() => {
@@ -722,8 +606,7 @@ contract('GeneralTransferManager', accounts => {
             let toTime = latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
             let errorThrown = false;
-            try {
-                await I_GeneralTransferManager.modifyWhitelistMulti(
+            await catchRevert(I_GeneralTransferManager.modifyWhitelistMulti(
                     [account_investor3, account_investor4],
                     [fromTime, fromTime],
                     [toTime],
@@ -733,13 +616,7 @@ contract('GeneralTransferManager', accounts => {
                         from: account_delegate,
                         gas: 6000000
                     }
-                );
-            } catch(error) {
-                console.log(`         tx revert -> Array length mismatch`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+                ));
         });
 
         it("Should fail in adding the investors in whitelist -- array length mismatch", async() => {
@@ -747,8 +624,7 @@ contract('GeneralTransferManager', accounts => {
             let toTime = latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
             let errorThrown = false;
-            try {
-                await I_GeneralTransferManager.modifyWhitelistMulti(
+            await catchRevert(I_GeneralTransferManager.modifyWhitelistMulti(
                     [account_investor3, account_investor4],
                     [fromTime, fromTime],
                     [toTime, toTime],
@@ -758,13 +634,7 @@ contract('GeneralTransferManager', accounts => {
                         from: account_delegate,
                         gas: 6000000
                     }
-                );
-            } catch(error) {
-                console.log(`         tx revert -> Array length mismatch`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+                ));
         });
 
         it("Should successfully add the investors in whitelist", async() => {

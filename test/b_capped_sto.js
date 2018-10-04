@@ -3,6 +3,7 @@ import { duration, ensureException, promisifyLogWatch, latestBlock } from './hel
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 import { encodeModuleCall } from './helpers/encodeCall';
 import { setUpPolymathNetwork } from './helpers/createInstances';
+import { catchRevert } from './helpers/exceptions';
 
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const CappedSTO = artifacts.require('./CappedSTO.sol');
@@ -201,14 +202,7 @@ contract('CappedSTO', accounts => {
 
         it("Should mint the tokens before attaching the STO", async() => {
             let errorThrown = false;
-            try {
-                await I_SecurityToken_ETH.mint("0x0000000000000000000000000000000000000000", web3.utils.toWei("1"), {from: token_owner});
-            } catch (error) {
-                console.log(`       tx -> revert 0x address is not allowed as investor`);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken_ETH.mint("0x0000000000000000000000000000000000000000", web3.utils.toWei("1"), {from: token_owner}));
         });
 
         it("Should fail to launch the STO due to security token doesn't have the sufficient POLY", async () => {
@@ -218,14 +212,7 @@ contract('CappedSTO', accounts => {
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, 0, [E_fundRaiseType], account_fundsReceiver]);
             let errorThrown = false;
-            try {
-            const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> Rate is ${0}. Test Passed Successfully`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner }));
         });
 
         it("Should fail to launch the STO due to rate is 0", async () => {
@@ -235,27 +222,13 @@ contract('CappedSTO', accounts => {
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, 0, [E_fundRaiseType], account_fundsReceiver]);
             let errorThrown = false;
-            try {
-            const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
-            } catch(error) {
-                console.log(`Tx Failed because of rate is ${0}. Test Passed Successfully`);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner }));
         });
 
         it("Should fail to launch the STO due to startTime > endTime", async () => {
             let bytesSTO = encodeModuleCall(STOParameters, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, [E_fundRaiseType], account_fundsReceiver]);
             let errorThrown = false;
-            try {
-            const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
-            } catch(error) {
-                errorThrown = true;
-                console.log(`         tx revert -> StartTime is greater than endTime. Test Passed Successfully`.grey);
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner }));
         });
 
         it("Should fail to launch the STO due to cap is of 0 securityToken", async () => {
@@ -263,14 +236,7 @@ contract('CappedSTO', accounts => {
             let endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [ startTime, endTime, 0, rate, [E_fundRaiseType], account_fundsReceiver]);
             let errorThrown = false;
-            try {
-            const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
-            } catch(error) {
-                console.log(`Tx Failed because the Cap is equal to ${0}. Test Passed Successfully`);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner }));
         });
 
         it("Should successfully attach the STO module to the security token", async () => {
@@ -320,66 +286,38 @@ contract('CappedSTO', accounts => {
 
         it("Should buy the tokens -- failed due to startTime is greater than Current time", async () => {
             let errorThrown = false;
-            try {
-                await web3.eth.sendTransaction({
+            await catchRevert(web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
                     value: web3.utils.toWei('1', 'ether')
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> startTime is greater than Current time`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+                  }));
         });
 
         it("Should buy the tokens -- failed due to invested amount is zero", async () => {
             let errorThrown = false;
-            try {
-                await web3.eth.sendTransaction({
+            await catchRevert(web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
                     value: web3.utils.toWei('0', 'ether')
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> Invested amount is zero`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+                  }));
         });
 
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
             let errorThrown = false;
-            try {
-                await web3.eth.sendTransaction({
+            await catchRevert(web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
                     value: web3.utils.toWei('1', 'ether')
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> Investor doesn't present in the whitelist`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+                  }));
         });
 
         it("Should buy the tokens -- Failed due to wrong granularity", async () => {
             let errorThrown = false;
-            try {
-                await web3.eth.sendTransaction({
+            await catchRevert(web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
                     value: web3.utils.toWei('0.1111', 'ether')
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> Wrong purchase granularity`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+                  }));
         });
 
         it("Should Buy the tokens", async() => {
@@ -449,14 +387,7 @@ contract('CappedSTO', accounts => {
 
         it("Should pause the STO -- Failed due to wrong msg.sender", async()=> {
             let errorThrown = false;
-            try {
-                let tx = await I_CappedSTO_Array_ETH[0].pause({from: account_investor1});
-            } catch(error) {
-                console.log(`         tx revert -> Wrong msg.sender`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_CappedSTO_Array_ETH[0].pause({from: account_investor1}));
         });
 
         it("Should pause the STO", async()=> {
@@ -467,31 +398,17 @@ contract('CappedSTO', accounts => {
 
         it("Should fail to buy the tokens after pausing the STO", async() => {
             let errorThrown = false;
-            try {
-                await web3.eth.sendTransaction({
+            await catchRevert(web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
                     gas: 2100000,
                     value: web3.utils.toWei('1', 'ether')
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> STO is paused`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+                  }));
         });
 
         it("Should unpause the STO -- Failed due to wrong msg.sender", async()=> {
             let errorThrown = false;
-            try {
-                let tx = await I_CappedSTO_Array_ETH[0].unpause({from: account_investor1});
-            } catch(error) {
-                console.log(`         tx revert -> Wrong msg.sender`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_CappedSTO_Array_ETH[0].unpause({from: account_investor1}));
         });
 
         it("Should unpause the STO", async()=> {
@@ -501,18 +418,11 @@ contract('CappedSTO', accounts => {
 
         it("Should buy the tokens -- Failed due to wrong granularity", async () => {
             let errorThrown = false;
-            try {
-                 await web3.eth.sendTransaction({
+            await catchRevert(web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
                     value: web3.utils.toWei('0.1111', 'ether')
-                  });
-            } catch(error) {
-                console.log(`         tx revert -> Wrong purchase granularity`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+                  }));
         });
 
         it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async() => {
@@ -552,37 +462,12 @@ contract('CappedSTO', accounts => {
                 .toNumber(),
                 9000
             );
-            try {
-                // Fallback transaction
-             await web3.eth.sendTransaction({
+            await catchRevert(web3.eth.sendTransaction({
                 from: account_investor2,
                 to: I_CappedSTO_Array_ETH[0].address,
                 gas: 210000,
                 value: web3.utils.toWei('1', 'ether')
-              });
-            } catch(error) {
-                console.log(`         tx revert -> Cap reached`.grey);
-                ensureException(error);
-            }
-        });
-
-        it("Should failed at the time of buying the tokens -- Because STO get expired", async() => {
-            await increaseTime(duration.days(17)); // increased beyond the end time of the STO
-            let errorThrown = false;
-            try {
-                // Fallback transaction
-             await web3.eth.sendTransaction({
-                from: account_investor2,
-                to: I_CappedSTO_Array_ETH[0].address,
-                gas: 2100000,
-                value: web3.utils.toWei('1', 'ether')
-              });
-            } catch(error) {
-                console.log(`         tx revert -> STO get expired reached`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+              }));
         });
 
         it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {
@@ -614,14 +499,7 @@ contract('CappedSTO', accounts => {
             await I_PolyToken.transfer(I_CappedSTO_Array_ETH[0].address, value, { from: account_investor1 });
 
             let errorThrown = false;
-            try {
-                 await I_CappedSTO_Array_ETH[0].reclaimERC20('0x0000000000000000000000000000000000000000', { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> token contract address is 0 address`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_CappedSTO_Array_ETH[0].reclaimERC20('0x0000000000000000000000000000000000000000', { from: token_owner }));
         });
 
         it("Should successfully reclaim POLY", async() => {
@@ -708,14 +586,7 @@ contract('CappedSTO', accounts => {
 
             // Buying on behalf of another user should fail
             let errorThrown = false;
-            try {
-                 await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_issuer, value: web3.utils.toWei('1', 'ether') });
-            } catch(error) {
-                console.log(`         tx revert -> incorrect beneficiary`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_issuer, value: web3.utils.toWei('1', 'ether') }));
 
         });
 
@@ -975,38 +846,13 @@ contract('CappedSTO', accounts => {
                     45000
                 );
                 let errorThrown = false;
-                try {
-
-                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, (1000 * Math.pow(10, 18)), { from: account_investor1});
-                // buyTokensWithPoly transaction
-                await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(
-                    (1000 * Math.pow(10, 18)),
-                    {from : account_investor1, gas: 6000000 }
-                );
-                } catch(error) {
-                    console.log(`         tx revert -> Cap reached`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
+                await catchRevert(I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, (1000 * Math.pow(10, 18)), { from: account_investor1}));
             });
 
             it("Should failed at the time of buying the tokens -- Because STO get expired", async() => {
                 await increaseTime(duration.days(31)); // increased beyond the end time of the STO
                 let errorThrown = false;
-                try {
-                    await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, (1000 * Math.pow(10, 18)), { from: account_investor1});
-                    // buyTokensWithPoly transaction
-                    await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(
-                        (1000 * Math.pow(10, 18)),
-                        {from : account_investor1, gas: 6000000 }
-                    );
-                } catch(error) {
-                    console.log(`         tx revert -> STO expiry reached`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
+                await catchRevert(I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, (1000 * Math.pow(10, 18)), { from: account_investor1}));
             });
 
             it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {
@@ -1043,26 +889,12 @@ contract('CappedSTO', accounts => {
 
             it("Should fail to change the title -- bad owner", async() => {
                 let errorThrown = false;
-                try {
-                    await I_CappedSTOFactory.changeTitle("STO Capped", {from:account_investor1});
-                } catch(error) {
-                    console.log(`         tx revert -> bad owner`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
+                await catchRevert(I_CappedSTOFactory.changeTitle("STO Capped", {from:account_investor1}));
             });
 
             it("Should fail to change the title -- zero length", async() => {
                 let errorThrown = false;
-                try {
-                    await I_CappedSTOFactory.changeTitle("", {from: token_owner});
-                } catch(error) {
-                    console.log(`         tx revert -> bad owner`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
+                await catchRevert(I_CappedSTOFactory.changeTitle("", {from: token_owner}));
             });
 
             it("Should successfully change the title", async() => {
@@ -1074,26 +906,12 @@ contract('CappedSTO', accounts => {
 
             it("Should fail to change the description -- bad owner", async() => {
                 let errorThrown = false;
-                try {
-                    await I_CappedSTOFactory.changeDescription("It is only a STO", {from:account_investor1});
-                } catch(error) {
-                    console.log(`         tx revert -> bad owner`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
+                await catchRevert(I_CappedSTOFactory.changeDescription("It is only a STO", {from:account_investor1}));
             });
 
             it("Should fail to change the description -- zero length", async() => {
                 let errorThrown = false;
-                try {
-                    await I_CappedSTOFactory.changeDescription("", {from: token_owner});
-                } catch(error) {
-                    console.log(`         tx revert -> length of string should not be zero`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
+                await catchRevert(I_CappedSTOFactory.changeDescription("", {from: token_owner}));
             });
 
             it("Should successfully change the description", async() => {
@@ -1105,26 +923,12 @@ contract('CappedSTO', accounts => {
 
             it("Should fail to change the name -- bad owner", async() => {
                 let errorThrown = false;
-                try {
-                    await I_CappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), {from:account_investor1});
-                } catch(error) {
-                    console.log(`         tx revert -> bad owner`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
+                await catchRevert(I_CappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), {from:account_investor1}));
             });
 
             it("Should fail to change the name -- zero length", async() => {
                 let errorThrown = false;
-                try {
-                    await I_CappedSTOFactory.changeName(web3.utils.stringToHex(""), {from: token_owner});
-                } catch(error) {
-                    console.log(`         tx revert -> length of string should not be zero`.grey);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
+                await catchRevert(I_CappedSTOFactory.changeName(web3.utils.stringToHex(""), {from: token_owner}));
             });
 
             it("Should successfully change the name", async() => {

@@ -2,6 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 import { setUpPolymathNetwork } from './helpers/createInstances';
+import { catchRevert } from './helpers/exceptions';
 
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -251,14 +252,7 @@ contract('PercentageTransferManager', accounts => {
         it("Should successfully attach the PercentageTransferManagerr factory with the security token", async () => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
-            try {
-                const tx = await I_SecurityToken.addModule(P_PercentageTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-            } catch(error) {
-                console.log(`       tx -> failed because Token is not paid`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken.addModule(P_PercentageTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, { from: token_owner }));
         });
 
         it("Should successfully attach the PercentageTransferManager factory with the security token", async () => {
@@ -334,14 +328,7 @@ contract('PercentageTransferManager', accounts => {
 
         it("Should not be able to transfer between existing token holders over limit", async() => {
             let errorThrown = false;
-            try {
-                await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 });
-            } catch(error) {
-                console.log(`         tx revert -> Too many holders`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 }));
         });
 
         it("Modify holder percentage to 100", async() => {

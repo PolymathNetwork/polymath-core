@@ -2,6 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 import { encodeProxyCall } from './helpers/encodeCall';
+import { catchRevert } from './helpers/exceptions';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
@@ -335,14 +336,7 @@ contract('ManualApprovalTransferManager', accounts => {
         it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
-            try {
-                const tx = await I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-            } catch(error) {
-                console.log(`       tx -> failed because Token is not paid`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner }));
         });
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
@@ -370,14 +364,7 @@ contract('ManualApprovalTransferManager', accounts => {
 //function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result) {
         it("Cannot call verifyTransfer on the TM directly if _isTransfer == true", async() => {
             let errorThrown = false;
-            try {
-                await I_ManualApprovalTransferManager.verifyTransfer(account_investor4, account_investor4, web3.utils.toWei('2', 'ether'), true, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> invalid not from SecurityToken`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_ManualApprovalTransferManager.verifyTransfer(account_investor4, account_investor4, web3.utils.toWei('2', 'ether'), true, { from: token_owner }));
 
         });
 
@@ -423,38 +410,17 @@ contract('ManualApprovalTransferManager', accounts => {
 
         it("Should fail to add a manual approval because invalid _from address", async() => {
             let errorThrown = false;
-            try {
-                await I_ManualApprovalTransferManager.addManualApproval("", account_investor4, web3.utils.toWei('2', 'ether'), latestTime() + duration.days(1), { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> invalid _from address`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_ManualApprovalTransferManager.addManualApproval("", account_investor4, web3.utils.toWei('2', 'ether'), latestTime() + duration.days(1), { from: token_owner }));
         });
 
         it("Should fail to add a manual approval because invalid _to address", async() => {
             let errorThrown = false;
-            try {
-                await I_ManualApprovalTransferManager.addManualApproval(account_investor1, "", web3.utils.toWei('2', 'ether'), latestTime() + duration.days(1), { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> invalid _to address`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_ManualApprovalTransferManager.addManualApproval(account_investor1, "", web3.utils.toWei('2', 'ether'), latestTime() + duration.days(1), { from: token_owner }));
         });
 
         it("Should fail to add a manual approval because invalid expiry time", async() => {
             let errorThrown = false;
-            try {
-                await I_ManualApprovalTransferManager.addManualApproval(account_investor1, account_investor4, web3.utils.toWei('2', 'ether'), 99999, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> invalid expiry time`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_ManualApprovalTransferManager.addManualApproval(account_investor1, account_investor4, web3.utils.toWei('2', 'ether'), 99999, { from: token_owner }));
         });
 
         it("Add a manual approval for a 4th investor", async() => {
@@ -463,26 +429,12 @@ contract('ManualApprovalTransferManager', accounts => {
 
         it("Should fail to revoke manual approval because invalid _from address", async() => {
             let errorThrown = false;
-            try {
-                await I_ManualApprovalTransferManager.revokeManualApproval("", account_investor4, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> invalid _from address`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_ManualApprovalTransferManager.revokeManualApproval("", account_investor4, { from: token_owner }));
         });
 
         it("Should fail to revoke manual approval because invalid _to address", async() => {
             let errorThrown = false;
-            try {
-                await I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, "", { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> invalid _to address`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, "", { from: token_owner }));
         });
 
         it("Should revoke manual approval", async() => {
@@ -526,14 +478,7 @@ contract('ManualApprovalTransferManager', accounts => {
 
         it("Check further transfers fail", async() => {
             let errorThrown = false;
-            try {
-                await I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
-            } catch(error) {
-                console.log(`         tx revert -> No remaining allowance`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), { from: account_investor1 }));
 
             //Check that other transfers are still valid
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
@@ -542,38 +487,17 @@ contract('ManualApprovalTransferManager', accounts => {
 
         it("Should fail to add a manual block because invalid _from address", async() => {
             let errorThrown = false;
-            try {
-                await I_ManualApprovalTransferManager.addManualBlocking("", account_investor2, latestTime() + duration.days(1), { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> invalid _from address`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_ManualApprovalTransferManager.addManualBlocking("", account_investor2, latestTime() + duration.days(1), { from: token_owner }));
         });
 
         it("Should fail to add a manual block because invalid _to address", async() => {
             let errorThrown = false;
-            try {
-                await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, "", latestTime() + duration.days(1), { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> invalid _to address`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_ManualApprovalTransferManager.addManualBlocking(account_investor1, "", latestTime() + duration.days(1), { from: token_owner }));
         });
 
         it("Should fail to add a manual block because invalid expiry time", async() => {
             let errorThrown = false;
-            try {
-                await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, 99999, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> invalid expiry time`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, 99999, { from: token_owner }));
         });
 
         it("Add a manual block for a 2nd investor", async() => {
@@ -582,39 +506,18 @@ contract('ManualApprovalTransferManager', accounts => {
 
         it("Check manual block causes failure", async() => {
             let errorThrown = false;
-            try {
-                await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
-            } catch(error) {
-                console.log(`         tx revert -> Manual block`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 }));
 
         });
 
         it("Should fail to revoke manual block because invalid _from address", async() => {
             let errorThrown = false;
-            try {
-                await I_ManualApprovalTransferManager.revokeManualBlocking("0x0", account_investor2, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> invalid _from address`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_ManualApprovalTransferManager.revokeManualBlocking("0x0", account_investor2, { from: token_owner }));
         });
 
         it("Should fail to revoke manual block because invalid _to address", async() => {
             let errorThrown = false;
-            try {
-                await I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, "0x0", { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> invalid _to address`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, "0x0", { from: token_owner }));
         });
 
         it("Revoke manual block and check transfer works", async() => {
@@ -629,14 +532,7 @@ contract('ManualApprovalTransferManager', accounts => {
         it("Check manual block ignored after expiry", async() => {
             await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(1), { from: token_owner });
             let errorThrown = false;
-            try {
-                await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
-            } catch(error) {
-                console.log(`         tx revert -> Manual block`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 }));
             await increaseTime(1 + (24 * 60 * 60));
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
         });

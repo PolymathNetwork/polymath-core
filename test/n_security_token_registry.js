@@ -701,14 +701,7 @@ contract('SecurityTokenRegistry', accounts => {
         it("Should successfully generate the custom token", async() => {
             // Fulfilling the TickerStatus.NN condition
             // let errorThrown = false;
-            // try {
-            //     await I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});
-            // } catch(error) {
-            //     console.log(`         tx revert -> because ticker not registered`.grey);
-            //     errorThrown = true;
-            //     ensureException(error);
-            // }
-            // assert.ok(errorThrown, message);
+            // await catchRevert(I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath}));
             // await I_STRProxied.modifyTicker(account_temp, "LOG2", "LOGAN2", latestTime(), latestTime() + duration.days(10), false, {from: account_polymath});
             // await increaseTime(duration.days(1));
             let tx = await I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath});

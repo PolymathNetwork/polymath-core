@@ -523,6 +523,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
             // over 12 seconds total, with 3 periods of 4 seconds each.
             await I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 12, 4, 0, balance, { from: token_owner });
 
+            // read only - check if transfer will pass.  it should return INVALID
+            let result = await I_VolumeRestrictionTransferManager.verifyTransfer.call(account_investor2, account_investor1, web3.utils.toWei('1', 'ether'), false)
+            // enum Result {INVALID, NA, VALID, FORCE_VALID} and we want VALID so it should be 2
+            assert.equal(result.toString(), '0')
+
 
             let errorThrown = false;
             try {

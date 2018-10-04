@@ -523,7 +523,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 12, 4, 0, balance, { from: token_owner });
 
             // read only - check if transfer will pass.  it should return INVALID
-            let result = await I_VolumeRestrictionTransferManager.verifyTransfer.call(account_investor2, account_investor1, web3.utils.toWei('1', 'ether'), false)
+            let result = await I_VolumeRestrictionTransferManager.verifyTransfer.call(account_investor2, account_investor1, web3.utils.toWei('1', 'ether'), 0, false)
             // enum Result {INVALID, NA, VALID, FORCE_VALID} and we want VALID so it should be 2
             assert.equal(result.toString(), '0')
 
@@ -904,7 +904,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             let lockUpBeforeVerify = await I_VolumeRestrictionTransferManager.getLockUp(account_investor2, 0);
             // check if transfer will pass in read-only operation
-            let result = await I_VolumeRestrictionTransferManager.verifyTransfer.call(account_investor2, account_investor1, web3.utils.toWei('5', 'ether'), false)
+            let result = await I_VolumeRestrictionTransferManager.verifyTransfer.call(account_investor2, account_investor1, web3.utils.toWei('5', 'ether'), 0, false)
             // enum Result {INVALID, NA, VALID, FORCE_VALID} and we want VALID so it should be 2
             assert.equal(result.toString(), '2')
             let lockUpAfterVerify = await I_VolumeRestrictionTransferManager.getLockUp(account_investor2, 0);
@@ -1046,7 +1046,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should get the exact details of the factory", async() => {
             assert.equal(await I_VolumeRestrictionTransferManagerFactory.setupCost.call(),0);
-            assert.equal(await I_VolumeRestrictionTransferManagerFactory.getType.call(),2);
+            assert.equal((await I_VolumeRestrictionTransferManagerFactory.getTypes.call())[0],2);
             assert.equal(web3.utils.toAscii(await I_VolumeRestrictionTransferManagerFactory.getName.call())
                         .replace(/\u0000/g, ''),
                         "VolumeRestrictionTransferManager",

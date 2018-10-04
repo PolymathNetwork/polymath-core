@@ -39,9 +39,12 @@ contract VolumeRestrictionTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Type of the Module factory
+     * @return uint8
      */
-    function getType() public view returns(uint8) {
-        return 2;
+    function getTypes() external view returns(uint8[]) {
+        uint8[] memory res = new uint8[](1);
+        res[0] = 2;
+        return res;
     }
 
     /**

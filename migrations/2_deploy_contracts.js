@@ -319,11 +319,9 @@ module.exports = function (deployer, network, accounts) {
 
     EtherDividendCheckpointFactory:    ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:    ${ERC20DividendCheckpointFactory.address}
-      -----------------------------------------------------------------------------
-      `);
-      console.log('\n');
-      // -------- END OF POLYMATH NETWORK Configuration -------//
-    });
-
+    -----------------------------------------------------------------------------
+    `);
+    console.log('\n');
+    // -------- END OF POLYMATH NETWORK Configuration -------//
   });
 }

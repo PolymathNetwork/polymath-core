@@ -428,11 +428,15 @@ contract('GeneralPermissionManager', accounts => {
             assert.equal(await I_GeneralPermissionManager.isDelegate.call(account_delegate), true);
         });
 
-        //ideally need to test with another module attached
+        
         it("Should provide the permission in bulk", async() => {
             await I_GeneralPermissionManager.addDelegate(account_delegate3, delegateDetails, { from: token_owner});
-            let tx = await I_GeneralPermissionManager.changePermissionBulk(account_delegate3, [I_GeneralTransferManager.address], ["WHITELIST"], {from: token_owner});
+
+            let tx = await I_GeneralPermissionManager.changePermissionBulk(account_delegate3, [I_GeneralTransferManager.address, I_GeneralPermissionManager.address], ["WHITELIST","CHANGE_PERMISSION"], {from: token_owner});
             assert.equal(tx.logs[0].args._delegate, account_delegate3);
+
+            assert.isTrue(await I_GeneralPermissionManager.checkPermission.call(account_delegate3, I_GeneralTransferManager.address, "WHITELIST"));
+            assert.isTrue(await I_GeneralPermissionManager.checkPermission.call(account_delegate3, I_GeneralPermissionManager.address, "CHANGE_PERMISSION"));
         });
 
 
@@ -441,21 +445,20 @@ contract('GeneralPermissionManager', accounts => {
             await I_GeneralPermissionManager.changePermission(account_delegate2, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner});
 
             let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralTransferManager.address, "WHITELIST");
-            console.log(tx);
+            // console.log(tx);
             assert.equal(tx.length, 3);
             assert.equal(tx[0], account_delegate);
             assert.equal(tx[1], account_delegate2);
         });
 
-        //ideally need to test with another module attached
         it("Should return all modules and all permission", async() => {
             
-            let tx = await I_GeneralPermissionManager.getAllModulesAndPerms.call(account_delegate, [2], I_SecurityToken.address);
-
-            console.log (tx);
-
+            let tx = await I_GeneralPermissionManager.getAllModulesAndPerms.call(account_delegate3, [2,1], I_SecurityToken.address);
+            // console.log (tx);
             assert.equal(tx[0][0], I_GeneralTransferManager.address);
             assert.equal(tx[1][0], "0x57484954454c4953540000000000000000000000000000000000000000000000");
+            assert.equal(tx[0][1], I_GeneralPermissionManager.address);
+            assert.equal(tx[1][1], "0x4348414e47455f5045524d495353494f4e000000000000000000000000000000");
            
         });
 

@@ -8,7 +8,7 @@ import "../Module.sol";
  */
 contract GeneralPermissionManager is IPermissionManager, Module {
 
-    // Mapping used to hold the permissions on the modules provided to delegate, delegate add => modules add => permission uint8 => bool 
+    // Mapping used to hold the permissions on the modules provided to delegate, module add => delegate add => permission uint8 => bool 
     mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;
     // Mapping hold the delagate details
     mapping (address => bytes32) public delegateDetails;
@@ -22,7 +22,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     /// Event emitted after any permission get changed for the delegate
     event ChangePermission(address _delegate, address _module, bytes32 _perm, bool _valid, uint256 _timestamp);
     /// Use to notify when delegate is added in permission manager contract
-    event LogAddDelegate(address _delegate, bytes32 _details, uint256 _timestamp);
+    event AddDelegate(address indexed _delegate, bytes32 _details, uint256 _timestamp);
 
 
     /// @notice constructor
@@ -62,7 +62,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
         require(_details != bytes32(0), "Delegate details not set");
         delegateDetails[_delegate] = _details;
         allDelegates.push(_delegate);
-        emit LogAddDelegate(_delegate, _details, now);
+        emit AddDelegate(_delegate, _details, now);
     }
 
     /**
@@ -112,7 +112,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     * @param _potentialDelegate the address of potential delegate
     * @return bool
     */
-    function isDelegate(address _potentialDelegate) public view returns(bool) {
+    function checkDelegate(address _potentialDelegate) public view returns(bool) {
 
         require(_potentialDelegate != address(0));
 
@@ -130,7 +130,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     * @param _multiPerms Multiple permission flag needs to be changed
     * @return nothing
     */
-    function changePermissionBulk(
+    function changePermissionMulti(
         address _delegate,
         address[] _multiModules,
         bytes32[] _multiPerms
@@ -140,6 +140,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     {
         require(delegateDetails[_delegate] != bytes32(0), "Delegate details not set");
         require(_multiModules.length != 0 && _multiPerms.length !=0);
+        require(_multiModules.length == _multiPerms.length, "modules and permission length are not same");
         
         for(uint8 i=0;i<_multiPerms.length;i++){
             bool _currentPerm = !perms[_multiModules[i]][_delegate][_multiPerms[i]];
@@ -155,23 +156,33 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     * @return address[]
     */
 
-    address[] allDelegatesWithPerm;
 
-    function getAllDelegatesWithPerm(address _module, bytes32 _perm) public returns(address[]) {
+    function getAllDelegatesWithPerm(address _module, bytes32 _perm) public view returns(address[]) {
 
         require(_module != address(0) && _perm != bytes32(0));
 
+        uint256 counter = 0;
+
+        for(uint8 j=0;j<allDelegates.length;j++){
+            if (perms[_module][allDelegates[j]][_perm]){
+               counter++;
+            }
+        }
+
+        address[] memory allDelegatesWithPerm = new address[](counter);
+        counter = 0;
         for(uint8 i=0;i<allDelegates.length;i++){
             if (perms[_module][allDelegates[i]][_perm]){
-                allDelegatesWithPerm.push(allDelegates[i]);
-            } else {}
+                allDelegatesWithPerm[counter] = allDelegates[i];
+                counter++;
+            }
         }
 
         return allDelegatesWithPerm;
     }
 
     /**
-    * @notice use to return all permission of a signle or multiple module
+    * @notice use to return all permission of a single or multiple module
     * @param _delegate Ethereum address of the delegate
     * @param _tokenAddress Ethereum address of the security token
     * @param _types uint8[] of types
@@ -179,14 +190,12 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     * @return bytes32[] the permission array of the corresponding Modules
     */
 
-    address[] _allModules;
-    bytes32[] _allPerms;
-
-    function getAllModulesAndPerms(address _delegate, uint8[] _types, address _tokenAddress) public returns(address[], bytes32[]) {
+    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] _types, address _tokenAddress) public view returns(address[], bytes32[]) {
 
         require(delegateDetails[_delegate] != bytes32(0), "Delegate details not set");
         require(_tokenAddress!= address(0) && _types.length !=0);
         
+        uint256 counter=0;
         // loop through _types and get their modules from securityToken->getModulesByType
         for(uint8 i=0; i<_types.length; i++){
             address[] memory _currentTypeModules = ISecurityToken(_tokenAddress).getModulesByType(_types[i]);
@@ -198,8 +207,28 @@ contract GeneralPermissionManager is IPermissionManager, Module {
                 // loop through each perm, if it is true, push results into arrays
                 for (uint8 b=0; b<_allModulePerms.length; b++){
                     if(perms[_currentTypeModules[a]][_delegate][_allModulePerms[b]]){
-                        _allModules.push(_currentTypeModules[a]);
-                        _allPerms.push(_allModulePerms[b]);
+                        counter ++;
+                    }
+                }
+            }
+        }
+
+        address[] memory _allModules = new address[](counter);
+        bytes32[] memory _allPerms = new bytes32[](counter);
+
+        counter=0;
+
+        for( i=0; i<_types.length; i++){
+            _currentTypeModules = ISecurityToken(_tokenAddress).getModulesByType(_types[i]);
+          
+            for(a=0; a<_currentTypeModules.length; a++){
+                _allModulePerms = IModule(_currentTypeModules[a]).getPermissions();
+
+                for (b=0; b<_allModulePerms.length; b++){
+                    if(perms[_currentTypeModules[a]][_delegate][_allModulePerms[b]]){
+                        _allModules[counter]= _currentTypeModules[a];
+                        _allPerms[counter]=_allModulePerms[b];
+                        counter++;
                     }
                 }
             }
@@ -207,7 +236,5 @@ contract GeneralPermissionManager is IPermissionManager, Module {
 
         return(_allModules, _allPerms);
     }
-
-
 
 }

@@ -166,22 +166,22 @@ library TokenLib {
     * @param _to receiver of transfer
     * @param _value value of transfer
     */
-    function adjustInvestorCount(InvestorDataStorage storage _investors, address _from, address _to, uint256 _value, uint256 _balanceTo, uint256 _balanceFrom) public  {
+    function adjustInvestorCount(InvestorDataStorage storage _investorData, address _from, address _to, uint256 _value, uint256 _balanceTo, uint256 _balanceFrom) public  {
         if ((_value == 0) || (_from == _to)) {
             return;
         }
         // Check whether receiver is a new token holder
         if ((_balanceTo == 0) && (_to != address(0))) {
-            _investors.investorCount = (_investors.investorCount).add(1);
+            _investorData.investorCount = (_investorData.investorCount).add(1);
         }
         // Check whether sender is moving all of their tokens
         if (_value == _balanceFrom) {
-            _investors.investorCount = (_investors.investorCount).sub(1);
+            _investorData.investorCount = (_investorData.investorCount).sub(1);
         }
         //Also adjust investor list
-        if (!_investors.investorListed[_to] && (_to != address(0))) {
-            _investors.investors.push(_to);
-            _investors.investorListed[_to] = true;
+        if (!_investorData.investorListed[_to] && (_to != address(0))) {
+            _investorData.investors.push(_to);
+            _investorData.investorListed[_to] = true;
         }
 
     }

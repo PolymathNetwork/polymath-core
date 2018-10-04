@@ -1,8 +1,11 @@
 pragma solidity ^0.4.24;
 
 import "../modules/PermissionManager/IPermissionManager.sol";
+import "./KindMath.sol";
 
 library TokenLib {
+
+    using KindMath for uint256;
 
     // Struct for module data
     struct ModuleData {
@@ -19,6 +22,15 @@ library TokenLib {
     struct Checkpoint {
         uint256 checkpointId;
         uint256 value;
+    }
+
+    struct InvestorDataStorage {
+        // List of investors (may not be pruned to remove old investors with current zero balances)
+        mapping (address => bool) investorListed;
+        // List of token holders
+        address[] investors;
+        // Total number of non-zero token holders
+        uint256 investorCount;
     }
 
     // Emit when Module get archived from the securityToken
@@ -135,6 +147,47 @@ library TokenLib {
                 value: _newValue
             })
         );
+    }
+
+    /**
+    * @notice keeps track of the number of non-zero token holders
+    * @param _investorData Date releated to investor metrics
+    * @param _from sender of transfer
+    * @param _to receiver of transfer
+    * @param _value value of transfer
+    * @param _balanceTo balance of the _to address
+    * @param _balanceFrom balance of the _from address
+    */
+    function adjustInvestorCount(InvestorDataStorage storage _investorData, address _from, address _to, uint256 _value, uint256 _balanceTo, uint256 _balanceFrom) public  {
+        if ((_value == 0) || (_from == _to)) {
+            return;
+        }
+        // Check whether receiver is a new token holder
+        if ((_balanceTo == 0) && (_to != address(0))) {
+            _investorData.investorCount = (_investorData.investorCount).add(1);
+        }
+        // Check whether sender is moving all of their tokens
+        if (_value == _balanceFrom) {
+            _investorData.investorCount = (_investorData.investorCount).sub(1);
+        }
+        //Also adjust investor list
+        if (!_investorData.investorListed[_to] && (_to != address(0))) {
+            _investorData.investors.push(_to);
+            _investorData.investorListed[_to] = true;
+        }
+
+    }
+
+     /**
+    * @notice removes addresses with zero balances from the investors list
+    * @param _investorData Date releated to investor metrics
+    * @param _index Index in investor list
+    * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
+    */
+    function pruneInvestors(InvestorDataStorage storage _investorData, uint256 _index) public {
+        _investorData.investorListed[_investorData.investors[_index]] = false;
+        _investorData.investors[_index] = _investorData.investors[_investorData.investors.length - 1];
+        _investorData.investors.length--;
     }
 
 }

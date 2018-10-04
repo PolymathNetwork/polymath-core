@@ -117,12 +117,6 @@ interface ISecurityToken {
     function investors(uint256 _index) external view returns (address);
 
     /**
-    * @notice gets the number of investors
-    * @return count of investors
-    */
-    function investorCount() external view returns (uint256);
-
-    /**
     * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
     * @param _value amount of POLY to withdraw
@@ -245,4 +239,9 @@ interface ISecurityToken {
      * @notice Use to get the version of the securityToken
      */
      function getVersion() external view returns(uint8[]);
+
+     /**
+     * @notice gets the investor count
+     */
+     function getInvestorCount() external view returns(uint256);
 }

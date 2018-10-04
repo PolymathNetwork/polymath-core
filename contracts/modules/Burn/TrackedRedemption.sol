@@ -37,7 +37,7 @@ contract TrackedRedemption is IBurn, Module {
      * @param _value The number of tokens to redeem
      */
     function redeemTokens(uint256 _value) public {
-        ISecurityToken(securityToken).burnFrom(msg.sender, _value);
+        ISecurityToken(securityToken).burnFromWithData(msg.sender, _value, "");
         redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
         emit Redeemed(msg.sender, _value, now);
     }

@@ -694,8 +694,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             // create lockups for their entire balances
             await I_VolumeRestrictionTransferManager.addLockUpMulti(
                 [account_investor2, account_investor3],
-                [12, 4],
-                [2, 2],
+                [24, 8],
+                [4, 4],
                 [0, 0],
                 [balancesBefore[account_investor2], balancesBefore[account_investor3]],
                 { from: token_owner }
@@ -738,8 +738,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             lockUpCountsAfter[account_investor3] = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor3);
             assert.equal(lockUpCountsAfter[account_investor3], 1);
 
-            // wait 2 seconds
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // wait 4 seconds
+            await new Promise(resolve => setTimeout(resolve, 4000));
 
             // try transfers again
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('2', 'ether'), { from: account_investor2 });

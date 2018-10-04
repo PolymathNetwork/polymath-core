@@ -323,7 +323,7 @@ contract('Issuance', accounts => {
                  let moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
                  I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
                  // Add permission to the deletgate (A regesteration process)
-                 await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_polymath});
+                 await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_polymath});
                  // Providing the permission to the delegate
                  await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, { from: account_polymath });
 

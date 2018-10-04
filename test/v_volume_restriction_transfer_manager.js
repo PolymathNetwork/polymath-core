@@ -1020,7 +1020,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             balance = await I_SecurityToken.balanceOf(account_investor1)
             assert.equal(balance.toString(), web3.utils.toWei('2', 'ether'))
-
         });
 
 

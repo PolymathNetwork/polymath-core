@@ -88,41 +88,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
         emit ChangePermission(_delegate, _module, _perm, _valid, now);
         return true;
     }
-
-    /**
-    * @notice Use to get the Permission flag related the `this` contract
-    * @return Array of permission flags
-    */
-    function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](1);
-        allPermissions[0] = CHANGE_PERMISSION;
-        return allPermissions;
-    }
-
-    /**
-    * @notice use to get all delegates
-    * @return address[]
-    */
-    function getAllDelegates() public view returns(address[]) {
-        return allDelegates;
-    }
-
-    /**
-    * @notice use to check if an address is a delegate or not
-    * @param _potentialDelegate the address of potential delegate
-    * @return bool
-    */
-    function checkDelegate(address _potentialDelegate) public view returns(bool) {
-
-        require(_potentialDelegate != address(0));
-
-        if (delegateDetails[_potentialDelegate] != bytes32(0)) {
-            return true;
-        }else{
-            return false;
-        }
-    }
-
+    
     /**
     * @notice Use to change one or more permissions for a single delegate at once
     * @param _delegate Ethereum address of the delegate
@@ -150,13 +116,35 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
+    * @notice use to get all delegates
+    * @return address[]
+    */
+    function getAllDelegates() public view returns(address[]) {
+        return allDelegates;
+    }
+
+    /**
+    * @notice use to check if an address is a delegate or not
+    * @param _potentialDelegate the address of potential delegate
+    * @return bool
+    */
+    function checkDelegate(address _potentialDelegate) public view returns(bool) {
+
+        require(_potentialDelegate != address(0));
+
+        if (delegateDetails[_potentialDelegate] != bytes32(0)) {
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    /**
     * @notice use to return all delegates with a given permission and module
     * @param _module Ethereum contract address of the module
     * @param _perm Permission flag
     * @return address[]
     */
-
-
     function getAllDelegatesWithPerm(address _module, bytes32 _perm) public view returns(address[]) {
 
         require(_module != address(0) && _perm != bytes32(0));
@@ -189,7 +177,6 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     * @return address[] the address array of Modules this delegate has permission
     * @return bytes32[] the permission array of the corresponding Modules
     */
-
     function getAllModulesAndPermsFromTypes(address _delegate, uint8[] _types, address _tokenAddress) public view returns(address[], bytes32[]) {
 
         require(delegateDetails[_delegate] != bytes32(0), "Delegate details not set");
@@ -235,6 +222,16 @@ contract GeneralPermissionManager is IPermissionManager, Module {
         }
 
         return(_allModules, _allPerms);
+    }
+    
+    /**
+    * @notice Returns the Permission flag related the `this` contract
+    * @return Array of permission flags
+    */
+    function getPermissions() public view returns(bytes32[]) {
+        bytes32[] memory allPermissions = new bytes32[](1);
+        allPermissions[0] = CHANGE_PERMISSION;
+        return allPermissions;
     }
 
 }

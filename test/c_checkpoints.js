@@ -223,9 +223,13 @@ contract('Checkpoints', accounts => {
             );
         });
 
+        it("Should set controller to token owner", async () => {
+            await I_SecurityToken.setController(token_owner, {from: token_owner});
+        });
+
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
     });
@@ -353,19 +357,39 @@ contract('Checkpoints', accounts => {
                     await I_SecurityToken.transfer(receiver, amount, { from: sender });
                 }
                 if (Math.random() > 0.5) {
-                  let n = BigNumber(Math.random().toFixed(10)).mul(10**17).toFixed(0);
-                  let p = Math.random() * 3;
-                  let r = Math.random() * 3;
-                  let minter;
-                  if (r < 1) {
-                    minter = account_investor1;
-                  } else if (r < 2) {
-                    minter = account_investor2;
-                  } else {
-                    minter = account_investor3;
-                  }
-                  console.log("Minting: " + n.toString() + " to: " + minter);
-                  await I_SecurityToken.mint(minter, n, { from: token_owner });
+                    let n = BigNumber(Math.random().toFixed(10)).mul(10**17).toFixed(0);
+                    let p = Math.random() * 3;
+                    let r = Math.random() * 3;
+                    let minter;
+                    if (r < 1) {
+                        minter = account_investor1;
+                    } else if (r < 2) {
+                        minter = account_investor2;
+                    } else {
+                        minter = account_investor3;
+                    }
+                    console.log("Minting: " + n.toString() + " to: " + minter);
+                    await I_SecurityToken.mint(minter, n, { from: token_owner });
+                }
+                if (Math.random() > 0.5) {
+                    let n = BigNumber(Math.random().toFixed(10)).mul(10**17);
+                    let p = Math.random() * 3;
+                    let r = Math.random() * 3;
+                    let burner;
+                    if (r < 1) {
+                        burner = account_investor1;
+                    } else if (r < 2) {
+                        burner = account_investor2;
+                    } else {
+                        burner = account_investor3;
+                    }
+                    let burnerBalance = BigNumber(await I_SecurityToken.balanceOf(burner));
+                    if (n.gt(burnerBalance.div(2))) {
+                        n = burnerBalance.div(2);
+                    }
+                    n = n.toFixed(0);
+                    console.log("Burning: " + n.toString() + " from: " + burner);
+                    await I_SecurityToken.forceBurn(burner, n, "", { from: token_owner });
                 }
                 console.log("Checking Interim...");
                 for (let k = 0; k < cps.length; k++) {

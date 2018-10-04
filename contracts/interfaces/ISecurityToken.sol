@@ -249,5 +249,5 @@ interface ISecurityToken {
      /**
      * @notice gets the investor count
      */
-     function getInvestorCount() external view returns(uint256)
+     function getInvestorCount() external view returns(uint256);
 }

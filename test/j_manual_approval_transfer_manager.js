@@ -371,7 +371,7 @@ contract('ManualApprovalTransferManager', accounts => {
         it("Cannot call verifyTransfer on the TM directly if _isTransfer == true", async() => {
             let errorThrown = false;
             try {
-                await I_ManualApprovalTransferManager.verifyTransfer(account_investor4, account_investor4, web3.utils.toWei('2', 'ether'), true, { from: token_owner });
+                await I_ManualApprovalTransferManager.verifyTransfer(account_investor4, account_investor4, web3.utils.toWei('2', 'ether'), "", true, { from: token_owner });
             } catch(error) {
                 console.log(`         tx revert -> invalid not from SecurityToken`.grey);
                 ensureException(error);
@@ -382,7 +382,7 @@ contract('ManualApprovalTransferManager', accounts => {
         });
 
         it("Can call verifyTransfer on the TM directly if _isTransfer == false", async() => {
-            await I_ManualApprovalTransferManager.verifyTransfer(account_investor4, account_investor4, web3.utils.toWei('2', 'ether'), false, { from: token_owner });
+            await I_ManualApprovalTransferManager.verifyTransfer(account_investor4, account_investor4, web3.utils.toWei('2', 'ether'), "", false, { from: token_owner });
         });
 
         it("Add a new token holder", async() => {
@@ -503,14 +503,14 @@ contract('ManualApprovalTransferManager', accounts => {
         });
 
         it("Check verifyTransfer without actually transferring", async() => {
-            let verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, web3.utils.toWei('1', 'ether'));
+            let verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, web3.utils.toWei('1', 'ether'), "");
             console.log(JSON.stringify(verified));
             assert.equal(verified, true);
 
-            verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, web3.utils.toWei('2', 'ether'));
+            verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, web3.utils.toWei('2', 'ether'), "");
             assert.equal(verified, false);
 
-            verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, web3.utils.toWei('1', 'ether'));
+            verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, web3.utils.toWei('1', 'ether'), "");
             assert.equal(verified, true);
 
         });

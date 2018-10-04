@@ -45,8 +45,10 @@ contract PreSaleSTOFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getType() public view returns(uint8) {
-        return 3;
+    function getTypes() external view returns(uint8[]) {
+        uint8[] memory res = new uint8[](1);
+        res[0] = 3;
+        return res;
     }
 
     /**
@@ -59,14 +61,14 @@ contract PreSaleSTOFactory is ModuleFactory {
     /**
      * @notice Get the description of the Module
      */
-    function getDescription() public view returns(string) {
+    function getDescription() external view returns(string) {
         return description;
     }
 
     /**
      * @notice Get the title of the Module
      */
-    function getTitle() public view returns(string) {
+    function getTitle() external view returns(string) {
         return title;
     }
 
@@ -87,14 +89,14 @@ contract PreSaleSTOFactory is ModuleFactory {
     /**
      * @notice Get the Instructions that helped to used the module
      */
-    function getInstructions() public view returns(string) {
+    function getInstructions() external view returns(string) {
         return "Configure and track pre-sale token allocations";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() public view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](1);
         availableTags[0] = "Presale";
         return availableTags;

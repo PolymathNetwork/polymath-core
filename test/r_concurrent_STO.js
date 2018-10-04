@@ -247,12 +247,12 @@ contract('Concurrent STO', accounts => {
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), transferManagerKey);
+            assert.equal(log.args._types[0].toNumber(), transferManagerKey);
             assert.equal(web3.utils.hexToString(log.args._name),"GeneralTransferManager");
         });
 
         it("Should intialize the auto attached modules", async () => {
-            let moduleData = await I_SecurityToken.modules(transferManagerKey, 0);
+            let moduleData = (await I_SecurityToken.getModulesByType(transferManagerKey))[0];
             I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
         });
@@ -300,21 +300,21 @@ contract('Concurrent STO', accounts => {
                     case 0:
                         // Capped STO
                         let tx1 = await I_SecurityToken.addModule(I_CappedSTOFactory.address, cappedBytesSig, maxCost, budget, { from: account_issuer });
-                        assert.equal(tx1.logs[3].args._type, stoKey, `Wrong module type added at index ${STOIndex}`);
+                        assert.equal(tx1.logs[3].args._types[0], stoKey, `Wrong module type added at index ${STOIndex}`);
                         assert.equal(web3.utils.hexToString(tx1.logs[3].args._name),"CappedSTO",`Wrong STO module added at index ${STOIndex}`);
                         I_STO_Array.push(CappedSTO.at(tx1.logs[3].args._module));
                         break;
                     case 1:
                         // Dummy STO
                         let tx2 = await I_SecurityToken.addModule(I_DummySTOFactory.address, dummyBytesSig, maxCost, budget, { from: account_issuer });
-                        assert.equal(tx2.logs[3].args._type, stoKey, `Wrong module type added at index ${STOIndex}`);
+                        assert.equal(tx2.logs[3].args._types[0], stoKey, `Wrong module type added at index ${STOIndex}`);
                         assert.equal(web3.utils.hexToString(tx2.logs[3].args._name),"DummySTO",`Wrong STO module added at index ${STOIndex}`);
                         I_STO_Array.push(DummySTO.at(tx2.logs[3].args._module));
                         break;
                     case 2:
                         // Pre Sale STO
                         let tx3 = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, presaleBytesSig, maxCost, budget, { from: account_issuer });
-                        assert.equal(tx3.logs[3].args._type, stoKey, `Wrong module type added at index ${STOIndex}`);
+                        assert.equal(tx3.logs[3].args._types[0], stoKey, `Wrong module type added at index ${STOIndex}`);
                         assert.equal(web3.utils.hexToString(tx3.logs[3].args._name),"PreSaleSTO",`Wrong STO module added at index ${STOIndex}`);
                         I_STO_Array.push(PreSaleSTO.at(tx3.logs[3].args._module));
                         break;

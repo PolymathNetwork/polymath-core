@@ -265,22 +265,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         TokenLib.unarchiveModule(modulesToData[_module], _module);
     }
 
-    function _removeModuleWithIndex(uint8 _type, uint256 _index) internal {
-        uint256 length = modules[_type].length;
-        modules[_type][_index] = modules[_type][length - 1];
-        modules[_type].length = length - 1;
-
-        if ((length - 1) != _index) {
-            //Need to find index of _type in moduleTypes of module we are moving
-            uint8[] memory newTypes = modulesToData[modules[_type][_index]].moduleTypes;
-            for (uint256 i = 0; i < newTypes.length; i++) {
-                if (newTypes[i] == _type) {
-                    modulesToData[modules[_type][_index]].moduleIndexes[i] = _index;
-                }
-            }
-        }
-    }
-
     /**
     * @notice Removes a module attached to the SecurityToken
     * @param _module address of module to unarchive
@@ -306,6 +290,22 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         }
         // Remove from modulesToData
         delete modulesToData[_module];
+    }
+
+    function _removeModuleWithIndex(uint8 _type, uint256 _index) internal {
+        uint256 length = modules[_type].length;
+        modules[_type][_index] = modules[_type][length - 1];
+        modules[_type].length = length - 1;
+
+        if ((length - 1) != _index) {
+            //Need to find index of _type in moduleTypes of module we are moving
+            uint8[] memory newTypes = modulesToData[modules[_type][_index]].moduleTypes;
+            for (uint256 i = 0; i < newTypes.length; i++) {
+                if (newTypes[i] == _type) {
+                    modulesToData[modules[_type][_index]].moduleIndexes[i] = _index;
+                }
+            }
+        }
     }
 
     /**

@@ -13,7 +13,6 @@ library TokenLib {
         uint8[] moduleTypes;
         uint256[] moduleIndexes;
         uint256 nameIndex;
-        mapping (uint8 => uint256) moduleIndex;
     }
 
     // Structures to maintain checkpoints of balances for governance / dividends
@@ -125,18 +124,8 @@ library TokenLib {
         if (_currentCheckpointId == 0) {
             return;
         }
-        //No previous checkpoint data - add current balance against checkpoint
-        if (_checkpoints.length == 0) {
-            _checkpoints.push(
-                TokenLib.Checkpoint({
-                    checkpointId: _currentCheckpointId,
-                    value: _newValue
-                })
-            );
-            return;
-        }
         //No new checkpoints since last update
-        if (_checkpoints[_checkpoints.length - 1].checkpointId == _currentCheckpointId) {
+        if ((_checkpoints.length > 0) && (_checkpoints[_checkpoints.length - 1].checkpointId == _currentCheckpointId)) {
             return;
         }
         //New checkpoint, so record balance
@@ -147,6 +136,5 @@ library TokenLib {
             })
         );
     }
-
 
 }

@@ -618,14 +618,15 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         return TokenLib.checkPermission(modules[PERMISSION_KEY], _delegate, _module, _perm);
     }
 
-    function _burn(address _from, uint256 _value) internal {
+    function _burn(address _from, uint256 _value) internal returns(bool) {
         require(_value <= balances[_from], "Value too high");
-        require(_updateTransfer(_from, address(0), _value), "Transfer not valid");
+        bool verified = _updateTransfer(_from, address(0), _value);
         _adjustTotalSupplyCheckpoints();
         balances[_from] = balances[_from].sub(_value);
         totalSupply_ = totalSupply_.sub(_value);
         emit Burnt(_from, _value);
         emit Transfer(_from, address(0), _value);
+        return verified;
     }
 
     /**
@@ -633,7 +634,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _value No. of tokens that get burned
      */
     function burn(uint256 _value) checkGranularity(_value) onlyModule(BURN_KEY) public {
-        _burn(msg.sender, _value);
+        require(_burn(msg.sender, _value), "Burn not valid");
     }
 
     /**
@@ -644,7 +645,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function burnFrom(address _from, uint256 _value) checkGranularity(_value) onlyModule(BURN_KEY) public {
         require(_value <= allowed[_from][msg.sender], "Value too high");
         allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-        _burn(_from, _value);
+        require(_burn(_from, _value), "Burn not valid");
     }
 
     /**
@@ -717,17 +718,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function forceTransfer(address _from, address _to, uint256 _value, bytes _data) public onlyController {
         require(_to != address(0));
-        bool verified = _transfer(_from, _to, _value);
-        balances[_to] = balances[_to].add(_value);
-        emit ForceTransfer(msg.sender, _from, _to, _value, verified, _data);
-        emit Transfer(_from, _to, _value);
-    }
-
-    function _transfer(address _from, address _to, uint256 _value) internal returns(bool) {
         require(_value <= balances[_from]);
         bool verified = _updateTransfer(_from, _to, _value);
         balances[_from] = balances[_from].sub(_value);
-        return verified;
+        balances[_to] = balances[_to].add(_value);
+        emit ForceTransfer(msg.sender, _from, _to, _value, verified, _data);
+        emit Transfer(_from, _to, _value);
     }
 
     /**
@@ -737,12 +733,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _data data attached to the transfer by controller to emit in event
      */
     function forceBurn(address _from, uint256 _value, bytes _data) public onlyController {
-        bool verified = _transfer(_from, address(0), _value);
-        _adjustTotalSupplyCheckpoints();
-        totalSupply_ = totalSupply_.sub(_value);
+        bool verified = _burn(_from, _value);
         emit ForceBurn(msg.sender, _from, _value, verified, _data);
-        emit Burnt(_from, _value);
-        emit Transfer(_from, address(0), _value);
     }
 
     /**

@@ -2,6 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 import { encodeProxyCall } from './helpers/encodeCall';
+import { catchRevert } from './helpers/exceptions';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
@@ -484,6 +485,13 @@ contract('EtherDividendCheckpoint', accounts => {
             assert.equal((await I_EtherDividendCheckpoint.dividends(0))[5].toNumber(), web3.utils.toWei('1.5', 'ether'));
         });
 
+        it("Should not allow reclaiming withholding tax with incorrect index", async() => {
+            await catchRevert(
+                I_EtherDividendCheckpoint.withdrawWithholding(300, {from: token_owner, gasPrice: 0}), 
+                "tx -> failed because dividend index is not valid"
+            );
+        });
+
         it("Issuer reclaims withholding tax", async() => {
             let issuerBalance = BigNumber(await web3.eth.getBalance(token_owner));
             await I_EtherDividendCheckpoint.withdrawWithholding(0, {from: token_owner, gasPrice: 0});
@@ -729,11 +737,27 @@ contract('EtherDividendCheckpoint', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should not create dividend with more exclusions than limit", async() => {
+            let maturity = latestTime();
+            let expiry = latestTime() + duration.days(10);
+            await I_SecurityToken.createCheckpoint({from: token_owner});
+            let limit = await I_EtherDividendCheckpoint.EXCLUDED_ADDRESS_LIMIT();
+            limit = limit.toNumber();
+            let addresses = [];
+            addresses.push(account_temp);
+            while(limit--)
+                addresses.push(limit);
+            await catchRevert(
+                I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(maturity, expiry, 4, addresses, dividendName, {from: token_owner, value: web3.utils.toWei('10', 'ether')}), 
+                "tx -> failed because too many address excluded"
+            );
+        });
+
         it("Create another new dividend with explicit checkpoint and excluding account_investor1", async() => {
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
-            let tx = await I_SecurityToken.createCheckpoint({from: token_owner});
-            tx = await I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(maturity, expiry, 4, [account_investor1], dividendName, {from: token_owner, value: web3.utils.toWei('10', 'ether')});
+            //checkpoint created in above test
+            let tx = await I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(maturity, expiry, 4, [account_investor1], dividendName, {from: token_owner, value: web3.utils.toWei('10', 'ether')});
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 4, "Dividend should be created at checkpoint 4");
         });
 
@@ -959,6 +983,7 @@ contract('EtherDividendCheckpoint', accounts => {
             it("should get the exact details of the factory", async() => {
                 assert.equal((await I_EtherDividendCheckpointFactory.setupCost.call()).toNumber(), 0);
                 assert.equal(await I_EtherDividendCheckpointFactory.getType.call(), 4);
+                assert.equal(await I_EtherDividendCheckpointFactory.getVersion.call(), "1.0.0");
                 assert.equal(web3.utils.toAscii(await I_EtherDividendCheckpointFactory.getName.call())
                             .replace(/\u0000/g, ''),
                             "EtherDividendCheckpoint",

@@ -33,14 +33,14 @@ interface ISecurityToken {
      * @notice Burn function used to burn the securityToken
      * @param _value No. of tokens that get burned
      */
-    function burn(uint256 _value) external returns (bool success);
+    function burn(uint256 _value) external;
 
     /**
      * @notice Burn function used to burn the securityToken on behalf of someone else
      * @param _from Address for whom to burn tokens
      * @param _value No. of token that get burned
      */
-    function burnFrom(address _from, uint256 _value) external returns (bool success);
+    function burnFrom(address _from, uint256 _value) external;
 
     event Minted(address indexed _to, uint256 _value);
     event Burnt(address indexed _burner, uint256 _value);
@@ -101,7 +101,7 @@ interface ISecurityToken {
      * NB - this length may differ from investorCount if the list has not been pruned of zero-balance investors
      * @return length
      */
-    function getInvestorsLength() external view returns (uint256);
+    function getInvestors() external view returns (address[]);
 
     /**
     * @notice gets current checkpoint ID
@@ -115,12 +115,6 @@ interface ISecurityToken {
     * @return investor address
     */
     function investors(uint256 _index) external view returns (address);
-
-    /**
-    * @notice gets the number of investors
-    * @return count of investors
-    */
-    function investorCount() external view returns (uint256);
 
     /**
     * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
@@ -181,12 +175,6 @@ interface ISecurityToken {
     function mintMulti(address[] _investors, uint256[] _values) external returns (bool success);
 
     /**
-     * @notice used to set the token Burner address. It can only be called by the owner
-     * @param _tokenBurner Address of the token burner contract
-     */
-    function setTokenBurner(address _tokenBurner) external;
-
-    /**
     * @notice Removes a module attached to the SecurityToken
     * @param _module address of module to archive
     */
@@ -231,7 +219,15 @@ interface ISecurityToken {
      * @param _value amount of tokens to transfer
      * @param _data data attached to the transfer by controller to emit in event
      */
-    function forceTransfer(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
+    function forceTransfer(address _from, address _to, uint256 _value, bytes _data) external;
+
+    /**
+     * @notice Use by a controller to execute a foced burn
+     * @param _from address from which to take tokens
+     * @param _value amount of tokens to transfer
+     * @param _data data attached to the transfer by controller to emit in event
+     */
+    function forceBurn(address _from, uint256 _value, bytes _data) external;
 
     /**
      * @notice Use by the issuer to permanently disable controller functionality
@@ -243,4 +239,9 @@ interface ISecurityToken {
      * @notice Use to get the version of the securityToken
      */
      function getVersion() external view returns(uint8[]);
+
+     /**
+     * @notice gets the investor count
+     */
+     function getInvestorCount() external view returns(uint256);
 }

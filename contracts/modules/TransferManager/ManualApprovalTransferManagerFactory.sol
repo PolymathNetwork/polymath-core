@@ -17,7 +17,7 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {   
+    {
         version = "1.0.0";
         name = "ManualApprovalTransferManager";
         title = "Manual Approval Transfer Manager";
@@ -41,8 +41,10 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getType() public view returns(uint8) {
-        return 2;
+    function getTypes() external view returns(uint8[]) {
+        uint8[] memory res = new uint8[](1);
+        res[0] = 2;
+        return res;
     }
 
     /**
@@ -55,17 +57,17 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
     /**
      * @notice Get the description of the Module
      */
-    function getDescription() public view returns(string) {
+    function getDescription() external view returns(string) {
         return description;
     }
 
     /**
      * @notice Get the title of the Module
      */
-    function getTitle() public view returns(string) {
+    function getTitle() external view returns(string) {
         return title;
     }
-    
+
     /**
      * @notice Get the version of the Module
      */
@@ -83,14 +85,14 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
     /**
      * @notice Get the Instructions that helped to used the module
      */
-    function getInstructions() public view returns(string) {
+    function getInstructions() external view returns(string) {
         return "Allows an issuer to set manual approvals or blocks for specific pairs of addresses and amounts. Init function takes no parameters.";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() public view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "ManualApproval";
         availableTags[1] = "Transfer Restriction";

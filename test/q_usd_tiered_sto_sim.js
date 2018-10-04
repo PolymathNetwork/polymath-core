@@ -336,12 +336,12 @@ contract('USDTieredSTO Sim', accounts => {
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), TMKEY);
+            assert.equal(log.args._types[0].toNumber(), TMKEY);
             assert.equal(web3.utils.hexToString(log.args._name),"GeneralTransferManager");
         });
 
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = await I_SecurityToken.modules(TMKEY, 0);
+           let moduleData = (await I_SecurityToken.getModulesByType(TMKEY))[0];
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
         });
@@ -379,7 +379,7 @@ contract('USDTieredSTO Sim', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gasPrice: GAS_PRICE });
             console.log("          Gas addModule: ".grey+tx.receipt.gasUsed.toString().grey);
-            assert.equal(tx.logs[2].args._type, STOKEY, "USDTieredSTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name),"USDTieredSTO","USDTieredSTOFactory module was not added");
             I_USDTieredSTO_Array.push(USDTieredSTO.at(tx.logs[2].args._module));
 

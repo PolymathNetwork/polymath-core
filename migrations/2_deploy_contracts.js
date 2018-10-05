@@ -1,8 +1,8 @@
-const ModuleRegistry = artifacts.require('./ModuleRegistry.sol')
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
+const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.sol');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
@@ -16,11 +16,14 @@ const FeatureRegistry = artifacts.require('./FeatureRegistry.sol')
 const STFactory = artifacts.require('./tokens/STFactory.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
 const MockOracle = artifacts.require('./MockOracle.sol')
+const TokenLib = artifacts.require('./TokenLib.sol');
+
 let BigNumber = require('bignumber.js');
 const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18));   // 20K POLY fee
 const usdTieredSTOSetupCost = new BigNumber(100000).times(new BigNumber(10).pow(18));   // 100K POLY fee
 const initRegFee = new BigNumber(250).times(new BigNumber(10).pow(18));      // 250 POLY fee for registering ticker or security token in registry
 let PolyToken;
+let UsdToken;
 let ETHOracle;
 let POLYOracle;
 
@@ -28,13 +31,19 @@ const Web3 = require('web3')
 
 module.exports = function (deployer, network, accounts) {
   // Ethereum account address hold by the Polymath (Act as the main account which have ownable permissions)
-  let PolymathAccount
-  let moduleRegistry
+  let PolymathAccount;
+  let moduleRegistry;
+  let polymathRegistry;
   let web3
   if (network === 'development') {
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
     PolymathAccount = accounts[0]
     PolyToken = DevPolyToken.address // Development network polytoken address
+    deployer.deploy(DevPolyToken, {from: PolymathAccount}).then(() => {
+      DevPolyToken.deployed().then((mockedUSDToken) => {
+        UsdToken = mockedUSDToken.address;
+      });
+    });
     deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
         POLYOracle = mockedOracle.address;
@@ -45,6 +54,7 @@ module.exports = function (deployer, network, accounts) {
         ETHOracle = mockedOracle.address;
       });
     });
+
   } else if (network === 'kovan') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
@@ -94,10 +104,20 @@ module.exports = function (deployer, network, accounts) {
     },{
         type: 'address',
         name: '_owner'
-    }
-]
-};
+    }]
+  };
 
+  const functionSignatureProxyMR = {
+    name: 'initialize',
+    type: 'function',
+    inputs: [{
+        type:'address',
+        name: '_polymathRegistry'
+    },{
+        type: 'address',
+        name: '_owner'
+    }]
+  };
 
   // POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
   // A) Deploy the PolymathRegistry contract
@@ -279,20 +299,21 @@ module.exports = function (deployer, network, accounts) {
       ModuleRegistry:                    ${ModuleRegistry.address}
       FeatureRegistry:                   ${FeatureRegistry.address}
 
-      ETHOracle:                         ${ETHOracle}
-      POLYOracle:                        ${POLYOracle}
+    ETHOracle:                         ${ETHOracle}
+    POLYOracle:                        ${POLYOracle}
 
-      STFactory:                         ${STFactory.address}
-      GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
-      GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
+    STFactory:                         ${STFactory.address}
+    GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
+    GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
 
-      CappedSTOFactory:                  ${CappedSTOFactory.address}
-      USDTieredSTOFactory:               ${USDTieredSTOFactory.address}
+    CappedSTOFactory:                  ${CappedSTOFactory.address}
+    USDTieredSTOFactory:               ${USDTieredSTOFactory.address}
+    USDTieredSTOProxyFactory:          ${USDTieredSTOProxyFactory.address}
 
-      CountTransferManagerFactory:       ${CountTransferManagerFactory.address}
-      PercentageTransferManagerFactory:  ${PercentageTransferManagerFactory.address}
-      ManualApprovalTransferManagerFactory:
-                                         ${ManualApprovalTransferManagerFactory.address}
+    CountTransferManagerFactory:       ${CountTransferManagerFactory.address}
+    PercentageTransferManagerFactory:  ${PercentageTransferManagerFactory.address}
+    ManualApprovalTransferManagerFactory:
+                                       ${ManualApprovalTransferManagerFactory.address}
 
       EtherDividendCheckpointFactory:    ${EtherDividendCheckpointFactory.address}
       ERC20DividendCheckpointFactory:    ${ERC20DividendCheckpointFactory.address}
@@ -304,6 +325,4 @@ module.exports = function (deployer, network, accounts) {
       // -------- END OF POLYMATH NETWORK Configuration -------//
     });
   });
-});
-});
 }

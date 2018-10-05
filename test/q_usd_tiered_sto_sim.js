@@ -8,11 +8,13 @@ const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
 const USDTieredSTO = artifacts.require('./USDTieredSTO.sol');
 const MockOracle = artifacts.require('./MockOracle.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
+const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
 const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
 const STFactory = artifacts.require('./STFactory.sol');
+const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
@@ -45,9 +47,11 @@ contract('USDTieredSTO Sim', accounts => {
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_GeneralTransferManagerFactory;
+    let I_USDTieredSTOProxyFactory;
     let I_SecurityTokenRegistryProxy;
     let I_GeneralPermissionManager;
     let I_GeneralTransferManager;
+    let I_ModuleRegistryProxy;
     let I_ModuleRegistry;
     let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
@@ -55,6 +59,7 @@ contract('USDTieredSTO Sim', accounts => {
     let I_USDOracle;
     let I_POLYOracle;
     let I_STFactory;
+    let I_MRProxied;
     let I_STRProxied;
     let I_SecurityToken;
     let I_USDTieredSTO_Array = [];
@@ -79,6 +84,9 @@ contract('USDTieredSTO Sim', accounts => {
     // MockOracle USD prices
     const USDETH = BigNumber(500).mul(10**18); // 500 USD/ETH
     const USDPOLY = BigNumber(25).mul(10**16); // 0.25 USD/POLY
+
+    const STRProxyParameters = ['address', 'address', 'uint256', 'uint256', 'address', 'address'];
+    const MRProxyParameters = ['address', 'address'];
 
     // STO Configuration Arrays
     let _startTime = [];
@@ -168,25 +176,33 @@ contract('USDTieredSTO Sim', accounts => {
         NOTAPPROVED = accounts[8];
         INVESTOR1 = accounts[9];
 
-        // ----------- POLYMATH NETWORK Configuration ------------
+       // ----------- POLYMATH NETWORK Configuration ------------
 
         // Step 0: Deploy the PolymathRegistry
         I_PolymathRegistry = await PolymathRegistry.new({from: POLYMATH});
 
-        // Step 1: Deploy the token Faucet
+        // Step 1: Deploy the token Faucet and Mint tokens for token_owner
         I_PolyToken = await PolyTokenFaucet.new();
-        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: POLYMATH})
         I_DaiToken = await PolyTokenFaucet.new();
+        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), ISSUER);
 
-        // STEP 2: Deploy the ModuleRegistry
-        I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:POLYMATH});
-        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: POLYMATH});
+         // Step 2: Deploy the FeatureRegistry
 
-        assert.notEqual(
-            I_ModuleRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "ModuleRegistry contract was not deployed"
-        );
+         I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: POLYMATH
+            });
+
+        // STEP 3: Deploy the ModuleRegistry
+
+        I_ModuleRegistry = await ModuleRegistry.new({from: POLYMATH});
+        // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
+        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from: POLYMATH});
+        let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, POLYMATH]);
+        await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, {from: POLYMATH});
+        I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
+
 
         // STEP 3: Deploy the GeneralTransferManagerFactory
 
@@ -208,29 +224,20 @@ contract('USDTieredSTO Sim', accounts => {
             "GeneralDelegateManagerFactory contract was not deployed"
         );
 
-        // STEP 5: Deploy the USDTieredSTOFactory
+         // STEP 5: Deploy the proxy
+         I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new({ from: POLYMATH });
 
-        I_USDTieredSTOFactory = await USDTieredSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, { from: ISSUER });
+         // STEP 6: Deploy the USDTieredSTOFactory
 
-        assert.notEqual(
-            I_USDTieredSTOFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "USDTieredSTOFactory contract was not deployed"
-        );
+         I_USDTieredSTOFactory = await USDTieredSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, I_USDTieredSTOProxyFactory.address, { from: ISSUER });
 
-        // STEP 6: Register the Modules with the ModuleRegistry contract
+         assert.notEqual(
+             I_USDTieredSTOFactory.address.valueOf(),
+             "0x0000000000000000000000000000000000000000",
+             "USDTieredSTOFactory contract was not deployed"
+         );
 
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: POLYMATH });
-        await I_ModuleRegistry.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: POLYMATH });
 
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: POLYMATH });
-        await I_ModuleRegistry.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: POLYMATH });
-
-        // (C) : Register the STOFactory
-        await I_ModuleRegistry.registerModule(I_USDTieredSTOFactory.address, { from: ISSUER });
-        await I_ModuleRegistry.verifyModule(I_USDTieredSTOFactory.address, true, { from: POLYMATH });
 
         // Step 8: Deploy the STFactory contract
 
@@ -254,29 +261,30 @@ contract('USDTieredSTO Sim', accounts => {
 
         // Step 10: update the registries addresses from the PolymathRegistry contract
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: POLYMATH});
-        let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, REGFEE, REGFEE, I_PolyToken.address, POLYMATH]);
+        let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, REGFEE, REGFEE, I_PolyToken.address, POLYMATH]);
         await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: POLYMATH});
         I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
 
-
-        // Step 10: Deploy the FeatureRegistry
-
-        I_FeatureRegistry = await FeatureRegistry.new(
-            I_PolymathRegistry.address,
-            {
-                from: POLYMATH
-            });
+         // Step 11: update the registries addresses from the PolymathRegistry contract
+        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: POLYMATH})
+        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, {from: POLYMATH});
         await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: POLYMATH});
+        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: POLYMATH});
+        await I_MRProxied.updateFromRegistry({from: POLYMATH});
 
-        assert.notEqual(
-            I_FeatureRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "FeatureRegistry contract was not deployed",
-        );
+        // STEP 7: Register the Modules with the ModuleRegistry contract
 
-        // Step 11: update the registries addresses from the PolymathRegistry contract
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, {from: POLYMATH});
-        await I_ModuleRegistry.updateFromRegistry({from: POLYMATH});
+        // (A) :  Register the GeneralTransferManagerFactory
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: POLYMATH });
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: POLYMATH });
+
+        // (B) :  Register the GeneralDelegateManagerFactory
+        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: POLYMATH });
+        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: POLYMATH });
+
+        // (C) : Register the STOFactory
+        await I_MRProxied.registerModule(I_USDTieredSTOFactory.address, { from: POLYMATH });
+        await I_MRProxied.verifyModule(I_USDTieredSTOFactory.address, true, { from: POLYMATH });
 
         // Step 12: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY
@@ -290,6 +298,7 @@ contract('USDTieredSTO Sim', accounts => {
         PolymathRegistry:                  ${PolymathRegistry.address}
         SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
         SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+        ModuleRegistryProxy:               ${ModuleRegistryProxy.address}
         ModuleRegistry:                    ${ModuleRegistry.address}
         FeatureRegistry:                   ${FeatureRegistry.address}
 
@@ -300,6 +309,7 @@ contract('USDTieredSTO Sim', accounts => {
         USDOracle:                         ${I_USDOracle.address}
         POLYOracle:                        ${I_POLYOracle.address}
         USDTieredSTOFactory:               ${I_USDTieredSTOFactory.address}
+        USDTieredSTOProxyFactory:          ${I_USDTieredSTOProxyFactory.address}
         -----------------------------------------------------------------------------
         `);
     });
@@ -323,15 +333,15 @@ contract('USDTieredSTO Sim', accounts => {
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.LogModuleAdded({from: _blockNo}), 1);
+            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), TMKEY);
+            assert.equal(log.args._types[0].toNumber(), TMKEY);
             assert.equal(web3.utils.hexToString(log.args._name),"GeneralTransferManager");
         });
 
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = await I_SecurityToken.modules(TMKEY, 0);
+           let moduleData = (await I_SecurityToken.getModulesByType(TMKEY))[0];
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
 
         });
@@ -369,7 +379,7 @@ contract('USDTieredSTO Sim', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gasPrice: GAS_PRICE });
             console.log("          Gas addModule: ".grey+tx.receipt.gasUsed.toString().grey);
-            assert.equal(tx.logs[2].args._type, STOKEY, "USDTieredSTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name),"USDTieredSTO","USDTieredSTOFactory module was not added");
             I_USDTieredSTO_Array.push(USDTieredSTO.at(tx.logs[2].args._module));
 

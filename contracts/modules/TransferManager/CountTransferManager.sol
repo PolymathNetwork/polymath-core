@@ -12,7 +12,7 @@ contract CountTransferManager is ITransferManager {
 
     bytes32 public constant ADMIN = "ADMIN";
 
-    event LogModifyHolderCount(uint256 _oldHolderCount, uint256 _newHolderCount);
+    event ModifyHolderCount(uint256 _oldHolderCount, uint256 _newHolderCount);
 
     /**
      * @notice Constructor
@@ -26,9 +26,9 @@ contract CountTransferManager is ITransferManager {
     }
 
     /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
-    function verifyTransfer(address /* _from */, address _to, uint256 /* _amount */, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(address /* _from */, address _to, uint256 /* _amount */, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
-            if (maxHolderCount < ISecurityToken(securityToken).investorCount()) {
+            if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
                 // Allow transfers to existing maxHolders
                 if (ISecurityToken(securityToken).balanceOf(_to) != 0) {
                     return Result.NA;
@@ -60,7 +60,7 @@ contract CountTransferManager is ITransferManager {
     * @param _maxHolderCount is the new maximum amount a holder can hold
     */
     function changeHolderCount(uint256 _maxHolderCount) public withPerm(ADMIN) {
-        emit LogModifyHolderCount(maxHolderCount, _maxHolderCount);
+        emit ModifyHolderCount(maxHolderCount, _maxHolderCount);
         maxHolderCount = _maxHolderCount;
     }
 

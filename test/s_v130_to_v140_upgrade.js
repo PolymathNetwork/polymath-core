@@ -4,9 +4,10 @@ const BigNumber = require('bignumber.js');
 
 import latestTime from './helpers/latestTime';
 import { duration } from './helpers/utils';
-import { encodeProxyCall } from './helpers/encodeCall';
+import { encodeProxyCall, encodeModuleCall } from './helpers/encodeCall';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
+const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.sol');
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol');
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol');
 const USDTieredSTO = artifacts.require('./USDTieredSTO.sol');
@@ -14,6 +15,7 @@ const CappedSTO = artifacts.require('./CappedSTO.sol');
 const PolyOracle = artifacts.require('./PolyOracle.sol');
 const ETHOracle = artifacts.require('./MakerDAOOracle.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
+const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
@@ -64,11 +66,13 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     let I_PolyToken;
     let I_DaiToken;
     let I_ModuleRegistry;
+    let I_ModuleRegistryProxy;
     let I_GeneralTransferManagerFactory;
     let I_GeneralPermissionManagerFactory;
     let I_SecurityTokenRegistryProxy;
     let I_FeatureRegistry;
     let I_STFactory;
+    let I_MRProxied;
     let I_STRProxied;
     let I_STRProxiedNew;
 
@@ -80,6 +84,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     //let I_SecurityToken3;
 
     let I_USDTieredSTOFactory;
+    let I_USDTieredSTOProxyFactory
     let I_USDOracle;
     let I_POLYOracle;
     let I_USDTieredSTO;
@@ -89,6 +94,9 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     let I_CappedSTO;
     let I_ManualApprovalTransferManagerFactory;
 
+    const STRProxyParameters = ['address', 'address', 'uint256', 'uint256', 'address', 'address'];
+    const MRProxyParameters = ['address', 'address'];
+    const STOParameters = ['uint256', 'uint256', 'uint256', 'uint256', 'uint8[]', 'address'];
     // Prepare polymath network status
     before(async() => {
         // Accounts setup
@@ -121,15 +129,16 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         assert.equal(tx.logs[0].args._newAddress, I_PolyToken.address);
 
         // STEP 2: Deploy the ModuleRegistry
-        I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:POLYMATH});
-        assert.notEqual(
-            I_ModuleRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "ModuleRegistry contract was not deployed"
-        );
-        tx = await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: POLYMATH});
+        I_ModuleRegistry = await ModuleRegistry.new({from: POLYMATH});
+        // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
+        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from: POLYMATH});
+        let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, POLYMATH]);
+        await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, {from: POLYMATH});
+        I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
+
+        tx = await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, {from: POLYMATH});
         assert.equal(tx.logs[0].args._nameKey, "ModuleRegistry");
-        assert.equal(tx.logs[0].args._newAddress, I_ModuleRegistry.address);
+        assert.equal(tx.logs[0].args._newAddress, I_ModuleRegistryProxy.address);
 
         // STEP 3: Deploy the GeneralTransferManagerFactory
         I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: POLYMATH });
@@ -155,19 +164,6 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             "CappedSTOFactory contract was not deployed"
         );
 
-        // STEP 6: Register the Modules with the ModuleRegistry contract
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: POLYMATH });
-        await I_ModuleRegistry.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: POLYMATH });
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_ModuleRegistry.registerModule(I_GeneralPermissionManagerFactory.address, { from: POLYMATH });
-        await I_ModuleRegistry.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: POLYMATH });
-
-        // (C) :  Register the CappedSTOFactory
-        await I_ModuleRegistry.registerModule(I_CappedSTOFactory.address, { from: POLYMATH });
-        await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, true, { from: POLYMATH });
-
         // Step 8: Deploy the STFactory contract
         I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : POLYMATH });
         assert.notEqual(
@@ -188,7 +184,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
 
        // Step 10: update the registries addresses from the PolymathRegistry contract
        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: POLYMATH});
-       let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, REGFEE, REGFEE, I_PolyToken.address, POLYMATH]);
+       let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, REGFEE, REGFEE, I_PolyToken.address, POLYMATH]);
        await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: POLYMATH});
        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
 
@@ -209,7 +205,20 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
 
         // Step 11: update the registries addresses from the PolymathRegistry contract
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, {from: POLYMATH});
-        await I_ModuleRegistry.updateFromRegistry({from: POLYMATH});
+        await I_MRProxied.updateFromRegistry({from: POLYMATH});
+
+        // STEP 6: Register the Modules with the ModuleRegistry contract
+        // (A) :  Register the GeneralTransferManagerFactory
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: POLYMATH });
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: POLYMATH });
+
+        // (B) :  Register the GeneralDelegateManagerFactory
+        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: POLYMATH });
+        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: POLYMATH });
+
+        // (C) :  Register the CappedSTOFactory
+        await I_MRProxied.registerModule(I_CappedSTOFactory.address, { from: POLYMATH });
+        await I_MRProxied.verifyModule(I_CappedSTOFactory.address, true, { from: POLYMATH });
 
         // Step 12: Mint tokens to ISSUERs
         await I_PolyToken.getTokens(REGFEE * 2, ISSUER1);
@@ -254,6 +263,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         PolymathRegistry:                  ${PolymathRegistry.address}
         SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
         SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
+        ModuleRegistryProxy:               ${ModuleRegistryProxy.address}
         ModuleRegistry:                    ${ModuleRegistry.address}
         FeatureRegistry:                   ${FeatureRegistry.address}
 
@@ -299,7 +309,8 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
     describe("USDTieredSTOFactory deploy", async() => {
         // Step 1: Deploy USDTieredSTOFactory\
         it("Should successfully deploy USDTieredSTOFactory", async() => {
-            I_USDTieredSTOFactory = await USDTieredSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, { from: POLYMATH });
+            I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new();
+            I_USDTieredSTOFactory = await USDTieredSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, I_USDTieredSTOProxyFactory.address, { from: POLYMATH });
             assert.notEqual(
                 I_USDTieredSTOFactory.address.valueOf(),
                 "0x0000000000000000000000000000000000000000",
@@ -310,9 +321,9 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         });
         // Step 2: Register and verify
         it("Should successfully register and verify USDTieredSTOFactory contract", async() => {
-            let tx = await I_ModuleRegistry.registerModule(I_USDTieredSTOFactory.address, { from: POLYMATH });
+            let tx = await I_MRProxied.registerModule(I_USDTieredSTOFactory.address, { from: POLYMATH });
             assert.equal(tx.logs[0].args._moduleFactory, I_USDTieredSTOFactory.address);
-            tx = await I_ModuleRegistry.verifyModule(I_USDTieredSTOFactory.address, true, { from: POLYMATH });
+            tx = await I_MRProxied.verifyModule(I_USDTieredSTOFactory.address, true, { from: POLYMATH });
             assert.equal(tx.logs[0].args._moduleFactory, I_USDTieredSTOFactory.address);
             assert.isTrue(tx.logs[0].args._verified);
         });
@@ -333,16 +344,16 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
 
         // Step 2: Register and verify
         it("Should successfully register and verify new CappedSTOFactory contract", async() => {
-            let tx = await I_ModuleRegistry.registerModule(I_UpgradedCappedSTOFactory.address, { from: POLYMATH });
+            let tx = await I_MRProxied.registerModule(I_UpgradedCappedSTOFactory.address, { from: POLYMATH });
             assert.equal(tx.logs[0].args._moduleFactory, I_UpgradedCappedSTOFactory.address);
-            tx = await I_ModuleRegistry.verifyModule(I_UpgradedCappedSTOFactory.address, true, { from: POLYMATH });
+            tx = await I_MRProxied.verifyModule(I_UpgradedCappedSTOFactory.address, true, { from: POLYMATH });
             assert.equal(tx.logs[0].args._moduleFactory, I_UpgradedCappedSTOFactory.address);
             assert.isTrue(tx.logs[0].args._verified);
         });
 
         // Step 3: Unverify old CappedSTOFactory
         it("Should successfully unverify old CappedSTOFactory contract", async() => {
-            let tx = await I_ModuleRegistry.verifyModule(I_CappedSTOFactory.address, false, { from: POLYMATH });
+            let tx = await I_MRProxied.verifyModule(I_CappedSTOFactory.address, false, { from: POLYMATH });
             assert.equal(tx.logs[0].args._moduleFactory, I_CappedSTOFactory.address);
             assert.isFalse(tx.logs[0].args._verified);
         });
@@ -361,9 +372,9 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
 
         // Step 2: Register and verify
         it("Should successfully register and verify new ManualApprovalTransferManagerFactory contract", async() => {
-            let tx = await I_ModuleRegistry.registerModule(I_ManualApprovalTransferManagerFactory.address, { from: POLYMATH });
+            let tx = await I_MRProxied.registerModule(I_ManualApprovalTransferManagerFactory.address, { from: POLYMATH });
             assert.equal(tx.logs[0].args._moduleFactory, I_ManualApprovalTransferManagerFactory.address);
-            tx = await I_ModuleRegistry.verifyModule(I_ManualApprovalTransferManagerFactory.address, true, { from: POLYMATH });
+            tx = await I_MRProxied.verifyModule(I_ManualApprovalTransferManagerFactory.address, true, { from: POLYMATH });
             assert.equal(tx.logs[0].args._moduleFactory, I_ManualApprovalTransferManagerFactory.address);
             assert.isTrue(tx.logs[0].args._verified);
         });
@@ -479,7 +490,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
             let tx = await I_SecurityToken1.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER1 });
-            assert.equal(tx.logs[2].args._type, STOKEY, "USDTieredSTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name),"USDTieredSTO","USDTieredSTOFactory module was not added");
             I_USDTieredSTO = USDTieredSTO.at(tx.logs[2].args._module);
         });
@@ -498,46 +509,22 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
         it("Should successfully launch CappedSTO for third security token", async() => {
             let startTime = latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
-            let cap = BigNumber(500000).mul(10**18);
+            let cap = web3.utils.toWei("500000");
             let rate = 1000;
             let fundRaiseType = 0;
             let fundsReceiver = ISSUER3;
 
-            const functionSignature = {
-                name: 'configure',
-                type: 'function',
-                inputs: [{
-                    type: 'uint256',
-                    name: '_startTime'
-                },{
-                    type: 'uint256',
-                    name: '_endTime'
-                },{
-                    type: 'uint256',
-                    name: '_cap'
-                },{
-                    type: 'uint256',
-                    name: '_rate'
-                },{
-                    type: 'uint8[]',
-                    name: '_fundRaiseType',
-                },{
-                    type: 'address',
-                    name: '_fundsReceiver'
-                }
-                ]
-            };
-            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, [startTime, endTime, cap, rate, [fundRaiseType], fundsReceiver]);
+            let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, [fundRaiseType], fundsReceiver]);
 
             let tx = await I_SecurityToken2.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER2 });
-            assert.equal(tx.logs[2].args._type, STOKEY, "CappedSTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0], STOKEY, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name),"CappedSTO","CappedSTOFactory module was not added");
         });
 
         // Attach ManualApprovalTransferManager module for TOK2
         it("Should successfully attach the ManualApprovalTransferManagerFactory with the second token", async () => {
             const tx = await I_SecurityToken2.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: ISSUER2 });
-            assert.equal(tx.logs[2].args._type.toNumber(), TMKEY, "ManualApprovalTransferManagerFactory doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0].toNumber(), TMKEY, "ManualApprovalTransferManagerFactory doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[2].args._name), "ManualApprovalTransferManager", "ManualApprovalTransferManagerFactory module was not added");
             I_ManualApprovalTransferManagerFactory = ManualApprovalTransferManagerFactory.at(tx.logs[2].args._module);
         });

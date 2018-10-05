@@ -78,7 +78,7 @@ async function readFile() {
 async function registerTickers() {
   // Poly approval for registration fees
   let polyBalance = BigNumber(await polyToken.methods.balanceOf(Issuer.address).call());
-  let fee = await securityTokenRegistry.methods.getUintValues(web3.utils.toHex('tickerRegFee')).call();
+  let fee = web3.utils.fromWei(await securityTokenRegistry.methods.getTickerRegistrationFee().call());  
   let totalFee = BigNumber(ticker_data.length).mul(fee);
 
   if (totalFee.gt(polyBalance)) {

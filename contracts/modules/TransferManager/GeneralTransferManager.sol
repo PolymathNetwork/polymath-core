@@ -41,19 +41,19 @@ contract GeneralTransferManager is ITransferManager {
     bool public allowAllBurnTransfers = false;
 
     // Emit when Issuance address get changed
-    event LogChangeIssuanceAddress(address _issuanceAddress);
+    event ChangeIssuanceAddress(address _issuanceAddress);
     // Emit when there is change in the flag variable called allowAllTransfers
-    event LogAllowAllTransfers(bool _allowAllTransfers);
+    event AllowAllTransfers(bool _allowAllTransfers);
     // Emit when there is change in the flag variable called allowAllWhitelistTransfers
-    event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
+    event AllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     // Emit when there is change in the flag variable called allowAllWhitelistIssuances
-    event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
+    event AllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
     // Emit when there is change in the flag variable called allowAllBurnTransfers
-    event LogAllowAllBurnTransfers(bool _allowAllBurnTransfers);
+    event AllowAllBurnTransfers(bool _allowAllBurnTransfers);
     // Emit when there is change in the flag variable called signingAddress
-    event LogChangeSigningAddress(address _signingAddress);
+    event ChangeSigningAddress(address _signingAddress);
     // Emit when investor details get modified related to their whitelisting
-    event LogModifyWhitelist(
+    event ModifyWhitelist(
         address _investor,
         uint256 _dateAdded,
         address _addedBy,
@@ -87,7 +87,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
         issuanceAddress = _issuanceAddress;
-        emit LogChangeIssuanceAddress(_issuanceAddress);
+        emit ChangeIssuanceAddress(_issuanceAddress);
     }
 
     /**
@@ -96,7 +96,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function changeSigningAddress(address _signingAddress) public withPerm(FLAGS) {
         signingAddress = _signingAddress;
-        emit LogChangeSigningAddress(_signingAddress);
+        emit ChangeSigningAddress(_signingAddress);
     }
 
     /**
@@ -107,7 +107,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function changeAllowAllTransfers(bool _allowAllTransfers) public withPerm(FLAGS) {
         allowAllTransfers = _allowAllTransfers;
-        emit LogAllowAllTransfers(_allowAllTransfers);
+        emit AllowAllTransfers(_allowAllTransfers);
     }
 
     /**
@@ -118,7 +118,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function changeAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers) public withPerm(FLAGS) {
         allowAllWhitelistTransfers = _allowAllWhitelistTransfers;
-        emit LogAllowAllWhitelistTransfers(_allowAllWhitelistTransfers);
+        emit AllowAllWhitelistTransfers(_allowAllWhitelistTransfers);
     }
 
     /**
@@ -129,7 +129,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function changeAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances) public withPerm(FLAGS) {
         allowAllWhitelistIssuances = _allowAllWhitelistIssuances;
-        emit LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
+        emit AllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
     /**
@@ -140,7 +140,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function changeAllowAllBurnTransfers(bool _allowAllBurnTransfers) public withPerm(FLAGS) {
         allowAllBurnTransfers = _allowAllBurnTransfers;
-        emit LogAllowAllBurnTransfers(_allowAllBurnTransfers);
+        emit AllowAllBurnTransfers(_allowAllBurnTransfers);
     }
 
     /**
@@ -151,7 +151,7 @@ contract GeneralTransferManager is ITransferManager {
     * b) Seller's sale lockup period is over
     * c) Buyer's purchase lockup is over
     */
-    function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
@@ -188,7 +188,7 @@ contract GeneralTransferManager is ITransferManager {
     function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO) public withPerm(WHITELIST) {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
-        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**
@@ -246,7 +246,7 @@ contract GeneralTransferManager is ITransferManager {
         _checkSig(hash, _v, _r, _s);
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
-        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**

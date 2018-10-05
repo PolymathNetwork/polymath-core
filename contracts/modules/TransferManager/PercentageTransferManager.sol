@@ -18,8 +18,8 @@ contract PercentageTransferManager is ITransferManager {
     // Addresses on this list are always able to send / receive tokens
     mapping (address => bool) public whitelist;
 
-    event LogModifyHolderPercentage(uint256 _oldHolderPercentage, uint256 _newHolderPercentage);
-    event LogModifyWhitelist(
+    event ModifyHolderPercentage(uint256 _oldHolderPercentage, uint256 _newHolderPercentage);
+    event ModifyWhitelist(
         address _investor,
         uint256 _dateAdded,
         address _addedBy,
@@ -38,7 +38,7 @@ contract PercentageTransferManager is ITransferManager {
     }
 
     /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
-    function verifyTransfer(address /* _from */, address _to, uint256 _amount, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(address /* _from */, address _to, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
             // If an address is on the whitelist, it is allowed to hold more than maxHolderPercentage of the tokens.
             if (whitelist[_to]) {
@@ -73,7 +73,7 @@ contract PercentageTransferManager is ITransferManager {
     * @param _maxHolderPercentage is the new maximum percentage (multiplied by 10**16)
     */
     function changeHolderPercentage(uint256 _maxHolderPercentage) public onlyOwner {
-        emit LogModifyHolderPercentage(maxHolderPercentage, _maxHolderPercentage);
+        emit ModifyHolderPercentage(maxHolderPercentage, _maxHolderPercentage);
         maxHolderPercentage = _maxHolderPercentage;
     }
 
@@ -84,7 +84,7 @@ contract PercentageTransferManager is ITransferManager {
     */
     function modifyWhitelist(address _investor, bool _valid) public withPerm(WHITELIST) {
         whitelist[_investor] = _valid;
-        emit LogModifyWhitelist(_investor, now, msg.sender, _valid);
+        emit ModifyWhitelist(_investor, now, msg.sender, _valid);
     }
 
     /**

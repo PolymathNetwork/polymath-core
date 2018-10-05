@@ -1,7 +1,6 @@
 pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";
-import "../../tokens/SecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
@@ -29,7 +28,8 @@ contract VolumeRestrictionTransferManager is ITransferManager {
         uint lockUpPeriodSeconds,
         uint releaseFrequencySeconds,
         uint startTime,
-        uint totalAmount
+        uint totalAmount,
+        uint indexed addedIndex
     );
 
     event RemoveLockUp(
@@ -37,7 +37,8 @@ contract VolumeRestrictionTransferManager is ITransferManager {
         uint lockUpPeriodSeconds,
         uint releaseFrequencySeconds,
         uint startTime,
-        uint totalAmount
+        uint totalAmount,
+        uint indexed removedIndex
     );
 
     event ModifyLockUp(
@@ -45,7 +46,8 @@ contract VolumeRestrictionTransferManager is ITransferManager {
         uint lockUpPeriodSeconds,
         uint releaseFrequencySeconds,
         uint startTime,
-        uint totalAmount
+        uint totalAmount,
+        uint indexed modifiedIndex
     );
 
     /**
@@ -98,7 +100,8 @@ contract VolumeRestrictionTransferManager is ITransferManager {
             lockUpPeriodSeconds,
             releaseFrequencySeconds,
             startTime,
-            totalAmount
+            totalAmount,
+            lockUps[userAddress].length - 1
         );
     }
 
@@ -143,7 +146,8 @@ contract VolumeRestrictionTransferManager is ITransferManager {
             toRemove.lockUpPeriodSeconds,
             toRemove.releaseFrequencySeconds,
             toRemove.startTime,
-            toRemove.totalAmount
+            toRemove.totalAmount,
+            lockUpIndex
         );
 
         if (lockUpIndex < userLockUps.length - 1) {
@@ -187,7 +191,8 @@ contract VolumeRestrictionTransferManager is ITransferManager {
             lockUpPeriodSeconds,
             releaseFrequencySeconds,
             startTime,
-            totalAmount
+            totalAmount,
+            lockUpIndex
         );
     }
 
@@ -342,7 +347,7 @@ contract VolumeRestrictionTransferManager is ITransferManager {
 
         // check that the total amount to be released isn't too granular
         require(
-            totalAmount % SecurityToken(securityToken).granularity() == 0,
+            totalAmount % ISecurityToken(securityToken).granularity() == 0,
             "The total amount to be released is more granular than allowed by the token"
         );
 
@@ -362,7 +367,7 @@ contract VolumeRestrictionTransferManager is ITransferManager {
         // make sure the amount to be released per period is not too granular for the token
         uint amountPerPeriod = totalAmount.div(totalPeriods);
         require(
-            amountPerPeriod % SecurityToken(securityToken).granularity() == 0,
+            amountPerPeriod % ISecurityToken(securityToken).granularity() == 0,
             "The amount to be released per period is more granular than allowed by the token"
         );
     }

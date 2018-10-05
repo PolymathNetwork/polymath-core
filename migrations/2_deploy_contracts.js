@@ -2,7 +2,6 @@ const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
-const VolumeRestrictionTransferManagerFactory = artifacts.require('./VolumeRestrictionTransferManagerFactory.sol')
 const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.sol');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
@@ -163,10 +162,6 @@ module.exports = function (deployer, network, accounts) {
     // to track the percentage of investment the investors could do for a particular security token)
     return deployer.deploy(PercentageTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
   }).then(() => {
-    // D) Deploy the VolumeRestrictionTransferManagerFactory Contract (Factory used to generate the VolumeRestrictionTransferManager contract use
-    // to track the percentage of investment the investors could do for a particular security token)
-    return deployer.deploy(VolumeRestrictionTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
-  }).then(() => {
     // D) Deploy the EtherDividendCheckpointFactory Contract (Factory used to generate the EtherDividendCheckpoint contract use
     // to provide the functionality of the dividend in terms of ETH)
     return deployer.deploy(EtherDividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
@@ -206,10 +201,6 @@ module.exports = function (deployer, network, accounts) {
     // So any securityToken can use that factory to generate the PercentageTransferManager contract.
     return moduleRegistry.registerModule(PercentageTransferManagerFactory.address, {from: PolymathAccount});
   }).then(() => {
-    // D) Register the VolumeRestrictionTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
-    // So any securityToken can use that factory to generate the VolumeRestrictionTransferManager contract.
-    return moduleRegistry.registerModule(VolumeRestrictionTransferManagerFactory.address, {from: PolymathAccount});
-  }).then(() => {
     // D) Register the CountTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the CountTransferManager contract.
     return moduleRegistry.registerModule(CountTransferManagerFactory.address, {from: PolymathAccount});
@@ -248,11 +239,6 @@ module.exports = function (deployer, network, accounts) {
     // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
     // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
     return moduleRegistry.verifyModule(PercentageTransferManagerFactory.address, true, {from: PolymathAccount});
-  }).then(() => {
-    // G) Once the VolumeRestrictionTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
-    // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
-    // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-    return moduleRegistry.verifyModule(VolumeRestrictionTransferManagerFactory.address, true, {from: PolymathAccount});
   }).then(() => {
     // G) Once the GeneralPermissionManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
     // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
@@ -328,8 +314,6 @@ module.exports = function (deployer, network, accounts) {
 
     CountTransferManagerFactory:       ${CountTransferManagerFactory.address}
     PercentageTransferManagerFactory:  ${PercentageTransferManagerFactory.address}
-    VolumeRestrictionTransferManagerFactory:
-                                       ${VolumeRestrictionTransferManagerFactory.address}
     ManualApprovalTransferManagerFactory:
                                        ${ManualApprovalTransferManagerFactory.address}
     EtherDividendCheckpointFactory:    ${EtherDividendCheckpointFactory.address}

@@ -236,7 +236,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 60000000 });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -273,8 +273,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 latestTime() + duration.days(10),
                 true,
                 {
-                    from: account_issuer,
-                    gas: 6000000
+                    from: account_issuer
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in adding the investor in whitelist");
@@ -301,8 +300,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 latestTime() + duration.days(10),
                 true,
                 {
-                    from: account_issuer,
-                    gas: 6000000
+                    from: account_issuer
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
@@ -365,8 +363,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 latestTime() + duration.days(10),
                 true,
                 {
-                    from: account_issuer,
-                    gas: 6000000
+                    from: account_issuer
                 });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor3.toLowerCase(), "Failed in adding the investor in whitelist");

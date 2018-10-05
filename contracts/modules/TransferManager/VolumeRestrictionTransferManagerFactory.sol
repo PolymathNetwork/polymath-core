@@ -22,7 +22,8 @@ contract VolumeRestrictionTransferManagerFactory is ModuleFactory {
         name = "VolumeRestrictionTransferManager";
         title = "Volume Restriction Transfer Manager";
         description = "Manage transfers using lock ups over time";
-
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**
@@ -57,14 +58,14 @@ contract VolumeRestrictionTransferManagerFactory is ModuleFactory {
     /**
      * @notice Get the description of the Module
      */
-    function getDescription() public view returns(string) {
+    function getDescription() external view returns(string) {
         return description;
     }
 
     /**
      * @notice Get the title of the Module
      */
-    function getTitle() public view returns(string) {
+    function getTitle() external view returns(string) {
         return title;
     }
 
@@ -85,14 +86,14 @@ contract VolumeRestrictionTransferManagerFactory is ModuleFactory {
     /**
      * @notice Get the Instructions that helped to used the module
      */
-    function getInstructions() public view returns(string) {
+    function getInstructions() external view returns(string) {
         return "Allows an issuer to set lockup periods for user addresses, with funds distributed over time. Init function takes no parameters.";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() public view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "Volume";
         availableTags[1] = "Transfer Restriction";

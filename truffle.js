@@ -18,7 +18,7 @@ module.exports = {
       port: 8545,
       network_id: '1', // Match any network id
       gas: 7900000,
-      gasPrice: 50000000000
+      gasPrice: 10000000000
     },
     ropsten: {
       // provider: new HDWalletProvider(privKey, "http://localhost:8545"),

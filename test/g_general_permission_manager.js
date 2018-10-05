@@ -432,7 +432,7 @@ contract('GeneralPermissionManager', accounts => {
         it("Should provide the permission in bulk", async() => {
             await I_GeneralPermissionManager.addDelegate(account_delegate3, delegateDetails, { from: token_owner});
 
-            let tx = await I_GeneralPermissionManager.changePermissionMulti(account_delegate3, [I_GeneralTransferManager.address, I_GeneralPermissionManager.address], ["WHITELIST","CHANGE_PERMISSION"], {from: token_owner});
+            let tx = await I_GeneralPermissionManager.changePermissionMulti(account_delegate3, [I_GeneralTransferManager.address, I_GeneralPermissionManager.address], ["WHITELIST","CHANGE_PERMISSION"], [true, true], {from: token_owner});
             assert.equal(tx.logs[0].args._delegate, account_delegate3);
 
             assert.isTrue(await I_GeneralPermissionManager.checkPermission.call(account_delegate3, I_GeneralTransferManager.address, "WHITELIST"));
@@ -461,10 +461,6 @@ contract('GeneralPermissionManager', accounts => {
             assert.equal(tx[1][1], "0x4348414e47455f5045524d495353494f4e000000000000000000000000000000");
            
         });
-
-
-
-
 
     });
 

@@ -49,12 +49,14 @@ interface IPermissionManager {
     * @param _delegate Ethereum address of the delegate
     * @param _modules Multiple module matching the multiperms, needs to be same length
     * @param _perms Multiple permission flag needs to be changed
+    * @param _valids Bool array consist the flag to switch on/off the permission
     * @return nothing
     */
     function changePermissionMulti(
         address _delegate,
         address[] _modules,
-        bytes32[] _perms
+        bytes32[] _perms,
+        bool[] _valids
     )
     external;
 

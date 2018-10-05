@@ -106,22 +106,23 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @param _delegate Ethereum address of the delegate
      * @param _modules Multiple module matching the multiperms, needs to be same length
      * @param _perms Multiple permission flag needs to be changed
+     * @param _valids Bool array consist the flag to switch on/off the permission
      * @return nothing
      */
     function changePermissionMulti(
         address _delegate,
         address[] _modules,
-        bytes32[] _perms
+        bytes32[] _perms,
+        bool[] _valids
     )
     external
     withPerm(CHANGE_PERMISSION)
     {
         require(_modules.length > 0 && _perms.length > 0, "0 length is not allowed");
         require(_modules.length == _perms.length, "Array length mismatch");
-        
+        require(_valids.length == _perms.length, "Array length mismatch");
         for(uint8 i = 0; i < _perms.length; i++) {
-            bool _perm = !perms[_modules[i]][_delegate][_perms[i]];
-            changePermission(_delegate, _modules[i], _perms[i], _perm);
+            changePermission(_delegate, _modules[i], _perms[i], _valids[i]);
         }
     }
 

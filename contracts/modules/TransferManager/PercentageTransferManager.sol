@@ -11,9 +11,13 @@ contract PercentageTransferManager is ITransferManager {
 
     // Permission key for modifying the whitelist
     bytes32 public constant WHITELIST = "WHITELIST";
+    bytes32 public constant ADMIN = "ADMIN";
 
     // Maximum percentage that any holder can have, multiplied by 10**16 - e.g. 20% is 20 * 10**16
     uint256 public maxHolderPercentage;
+
+    // Ignore transactions which are part of the primary issuance
+    bool public allowPrimaryIssuance = true;
 
     // Addresses on this list are always able to send / receive tokens
     mapping (address => bool) public whitelist;
@@ -25,6 +29,7 @@ contract PercentageTransferManager is ITransferManager {
         address _addedBy,
         bool    _valid
     );
+    event SetAllowPrimaryIssuance(bool _allowPrimaryIssuance, uint256 _timestamp);
 
     /**
      * @notice Constructor
@@ -38,8 +43,11 @@ contract PercentageTransferManager is ITransferManager {
     }
 
     /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
-    function verifyTransfer(address /* _from */, address _to, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
+            if (_from == address(0) && allowPrimaryIssuance) {
+                return Result.NA;
+            }
             // If an address is on the whitelist, it is allowed to hold more than maxHolderPercentage of the tokens.
             if (whitelist[_to]) {
                 return Result.NA;
@@ -57,15 +65,16 @@ contract PercentageTransferManager is ITransferManager {
      * @notice Used to intialize the variables of the contract
      * @param _maxHolderPercentage Maximum amount of ST20 tokens(in %) can hold by the investor
      */
-    function configure(uint256 _maxHolderPercentage) public onlyFactory {
+    function configure(uint256 _maxHolderPercentage, bool _allowPrimaryIssuance) public onlyFactory {
         maxHolderPercentage = _maxHolderPercentage;
+        allowPrimaryIssuance = _allowPrimaryIssuance;
     }
 
     /**
      * @notice This function returns the signature of configure function
      */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(uint256)"));
+        return bytes4(keccak256("configure(uint256,bool)"));
     }
 
     /**
@@ -100,11 +109,22 @@ contract PercentageTransferManager is ITransferManager {
     }
 
     /**
+    * @notice sets whether or not to consider primary issuance transfers
+    * @param _allowPrimaryIssuance whether to allow all primary issuance transfers
+    */
+    function setAllowPrimaryIssuance(bool _allowPrimaryIssuance) public withPerm(ADMIN) {
+        require(_allowPrimaryIssuance != allowPrimaryIssuance, "Must change setting");
+        allowPrimaryIssuance = _allowPrimaryIssuance;
+        emit SetAllowPrimaryIssuance(_allowPrimaryIssuance, now);
+    }
+
+    /**
      * @notice Return the permissions flag that are associated with Percentage transfer Manager
      */
     function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](1);
+        bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = WHITELIST;
+        allPermissions[1] = ADMIN;
         return allPermissions;
     }
 

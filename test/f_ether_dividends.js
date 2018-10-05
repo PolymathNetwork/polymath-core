@@ -7,7 +7,6 @@ import { setUpPolymathNetwork } from "./helpers/createInstances";
 
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
-const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpointFactory.sol");
 const EtherDividendCheckpoint = artifacts.require("./EtherDividendCheckpoint");
 
 const Web3 = require("web3");

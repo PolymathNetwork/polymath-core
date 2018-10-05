@@ -7,17 +7,24 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock.sol");
+const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpointFactory.sol");
+const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpointFactory.sol");
 const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
 const STFactory = artifacts.require("./STFactory.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
+const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const PolyToken = artifacts.require("./PolyToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
+const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
 
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 // Contract Instance Declaration
+let I_EtherDividendCheckpointFactory;
+let I_ERC20DividendCheckpointFactory;
+let I_GeneralPermissionManagerFactory;
 let I_GeneralTransferManagerFactory;
 let I_GeneralTransferManager;
 let I_ModuleRegistryProxy;
@@ -25,6 +32,7 @@ let I_ModuleRegistry;
 let I_FeatureRegistry;
 let I_SecurityTokenRegistry;
 let I_SecurityToken;
+let I_DummySTOFactory;
 let I_PolyToken;
 let I_STFactory;
 let I_PolymathRegistry;
@@ -156,4 +164,53 @@ async function setInPolymathRegistry(account_polymath) {
 async function registerGTM(account_polymath) {
     await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
     await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+}
+
+
+
+export async function deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken, setupCost) {
+    I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, setupCost, 0, 0, { from: account_polymath });
+
+    assert.notEqual(
+        I_GeneralPermissionManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "GeneralPermissionManagerFactory contract was not deployed"
+    );
+
+    // (B) :  Register the GeneralDelegateManagerFactory
+    await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
+    await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+
+    return new Array(I_GeneralPermissionManagerFactory);
+}
+
+
+export async function deployDummySTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken, setupCost) {
+    I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, setupCost, 0, 0, { from: account_polymath });
+
+    assert.notEqual(
+        I_DummySTOFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "DummySTOFactory contract was not deployed"
+    );
+
+    await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_polymath });
+    await I_MRProxied.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
+
+    return new Array(I_DummySTOFactory);
+}
+
+export async function deployERC20DividendAndVerifyed(account_polymath, I_MRProxied, I_PolyToken, setupCost) {
+    I_ERC20DividendCheckpointFactory = await ERC20DividendCheckpointFactory.new(I_PolyToken.address, setupCost, 0, 0, { from: account_polymath });
+
+    assert.notEqual(
+        I_ERC20DividendCheckpointFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "DummySTOFactory contract was not deployed"
+    );
+
+    await I_MRProxied.registerModule(I_ERC20DividendCheckpointFactory.address, { from: account_polymath });
+    await I_MRProxied.verifyModule(I_ERC20DividendCheckpointFactory.address, true, { from: account_polymath });
+
+    return new Array(I_ERC20DividendCheckpointFactory);
 }

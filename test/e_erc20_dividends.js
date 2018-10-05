@@ -6,7 +6,6 @@ import { setUpPolymathNetwork } from "./helpers/createInstances";
 
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
-const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpointFactory.sol");
 const ERC20DividendCheckpoint = artifacts.require("./ERC20DividendCheckpoint");
 
 const Web3 = require("web3");

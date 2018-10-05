@@ -77,6 +77,18 @@ contract('VestingEscrowWallet', accounts => {
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
 
+    let treasury = accounts[9];
+
+    let bytesSTO = web3.eth.abi.encodeFunctionCall({
+        name: 'configure',
+        type: 'function',
+        inputs: [{
+            type: 'address',
+            name: '_treasury'
+        }
+        ]
+    }, [treasury]);
+
     before(async() => {
         // Accounts setup
         account_polymath = accounts[0];
@@ -88,6 +100,7 @@ contract('VestingEscrowWallet', accounts => {
         employee2 = accounts[7];
         employee3 = accounts[8];
         account_temp = accounts[2];
+
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
@@ -259,7 +272,7 @@ contract('VestingEscrowWallet', accounts => {
       it("Should successfully attach the VestingEscrowWallet with the security token", async () => {
           let errorThrown = false;
           try {
-              const tx = await I_SecurityToken.addModule(P_VestingEscrowWalletFactory.address, "", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
+              const tx = await I_SecurityToken.addModule(P_VestingEscrowWalletFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, { from: token_owner });
           } catch(error) {
               console.log(`       tx -> failed because Token is not paid`.grey);
               ensureException(error);
@@ -272,7 +285,7 @@ contract('VestingEscrowWallet', accounts => {
           let snapId = await takeSnapshot()
           await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
           await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
-          const tx = await I_SecurityToken.addModule(P_VestingEscrowWalletFactory.address, "", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
+          const tx = await I_SecurityToken.addModule(P_VestingEscrowWalletFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, { from: token_owner });
           assert.equal(tx.logs[3].args._type.toNumber(), walletKey, "VestingEscrowWallet doesn't get deployed");
           assert.equal(
               web3.utils.toAscii(tx.logs[3].args._name)
@@ -285,7 +298,7 @@ contract('VestingEscrowWallet', accounts => {
       });
 
       it("Should successfully attach the VestingEscrowWallet with the security token", async () => {
-        const tx = await I_SecurityToken.addModule(I_VestingEscrowWalletFactory.address, "", 0, 0, { from: token_owner });
+        const tx = await I_SecurityToken.addModule(I_VestingEscrowWalletFactory.address, bytesSTO, 0, 0, { from: token_owner });
         assert.equal(tx.logs[2].args._type.toNumber(), walletKey, "VestingEscrowWallet doesn't get deployed");
         assert.equal(
             web3.utils.toAscii(tx.logs[2].args._name)
@@ -341,11 +354,11 @@ contract('VestingEscrowWallet', accounts => {
       context("Initiate Vesting Schedule", async() => {
         it("Should whitelist all relevant parties", async() => {
             let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
-                        [token_owner, employee1, employee2, employee3, I_VestingEscrowWallet.address],
-                        [latestTime(),latestTime(),latestTime(),latestTime(),latestTime()],
-                        [latestTime(),latestTime(),latestTime(),latestTime(),latestTime()],
-                        [latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10),latestTime() + duration.days(10)],
-                        [true, true, true, true, true],
+                        [token_owner, employee1, employee2, employee3, I_VestingEscrowWallet.address, treasury],
+                        [latestTime(),latestTime(),latestTime(),latestTime(),latestTime(),latestTime()],
+                        [latestTime(),latestTime(),latestTime(),latestTime(),latestTime(),latestTime()],
+                        [latestTime() + duration.years(20),latestTime() + duration.years(20),latestTime() + duration.years(20),latestTime() + duration.years(20),latestTime() + duration.years(20),latestTime() + duration.years(20)],
+                        [true, true, true, true, true, true],
                         {
                             from: token_owner,
                             gas: 6000000
@@ -356,6 +369,8 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(tx.logs[2].args._investor, employee2);
             assert.equal(tx.logs[3].args._investor, employee3);
             assert.equal(tx.logs[4].args._investor, I_VestingEscrowWallet.address);
+            assert.equal(tx.logs[5].args._investor, treasury);
+
         });
 
         it("Should mint tokens for the token_owner and approve the contract address", async() => {
@@ -400,7 +415,7 @@ contract('VestingEscrowWallet', accounts => {
           try {
             let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
           } catch(error) {
-              console.log(`       tx -> failed because arrays ar unequal`.grey);
+              console.log(`       tx -> failed because arrays are unequal`.grey);
               Object.keys(error).forEach(function (key){
                 ensureException(error[key]);
               });
@@ -445,7 +460,7 @@ contract('VestingEscrowWallet', accounts => {
           try {
             let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
           } catch(error) {
-              console.log(`       tx -> failed because a target input was 0`.grey);
+              console.log(`       tx -> failed because a totalAllocation input was 0`.grey);
               Object.keys(error).forEach(function (key){
                 ensureException(error[key]);
               });
@@ -467,7 +482,7 @@ contract('VestingEscrowWallet', accounts => {
           try {
             let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
           } catch(error) {
-              console.log(`       tx -> failed because a target input was 0`.grey);
+              console.log(`       tx -> failed because a vestingDuration input was 0`.grey);
               Object.keys(error).forEach(function (key){
                 ensureException(error[key]);
               });
@@ -489,7 +504,7 @@ contract('VestingEscrowWallet', accounts => {
           try {
             let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
           } catch(error) {
-              console.log(`       tx -> failed because a target input was 0`.grey);
+              console.log(`       tx -> failed because a startDate input was 0`.grey);
               Object.keys(error).forEach(function (key){
                 ensureException(error[key]);
               });
@@ -531,7 +546,7 @@ contract('VestingEscrowWallet', accounts => {
           try {
             let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
           } catch(error) {
-              console.log(`       tx -> failed because a target input was 0`.grey);
+              console.log(`       tx -> failed because a vestingFrequency was greater than the associated vestingDuration`.grey);
               Object.keys(error).forEach(function (key){
                 ensureException(error[key]);
               });
@@ -539,7 +554,7 @@ contract('VestingEscrowWallet', accounts => {
           }
           assert.ok(errorThrown, message);
         });
-        it("Should fail to initiate a vesting schedule because a vestingFrequency was not a whole factor of the associated vestingDuration ", async() => {
+        it("Should fail to initiate a vesting schedule because a vestingFrequency was not a whole factor of the associated vestingDuration", async() => {
           let errorThrown = false;
           let target = [employee1, employee2, employee3]
           let totalAllocation = ['16', '20', '24'];
@@ -553,7 +568,7 @@ contract('VestingEscrowWallet', accounts => {
           try {
             let tx = await I_VestingEscrowWallet.initiateVestingSchedule(params[0], params[1], params[2], params[3], params[4], {from: token_owner});
           } catch(error) {
-              console.log(`       tx -> failed because a target input was 0`.grey);
+              console.log(`       tx -> failed because a vestingFrequency was not a whole factor of the associated vestingDuration`.grey);
               Object.keys(error).forEach(function (key){
                 ensureException(error[key]);
               });
@@ -716,7 +731,7 @@ contract('VestingEscrowWallet', accounts => {
           try {
             let tx = await I_VestingEscrowWallet.initiateVestingScheduleFromTemplate(target, templateNumber, startDate, {from: token_owner});
           } catch(error) {
-              console.log(`       tx -> failed because caller is not the issuer`.grey);
+              console.log(`       tx -> failed because a target input was 0`.grey);
               Object.keys(error).forEach(function (key){
                 ensureException(error[key]);
               });
@@ -725,15 +740,15 @@ contract('VestingEscrowWallet', accounts => {
           assert.ok(errorThrown, message);
         });
         it("Create a vesting schedule for an employee based on a template", async() => {
-            let currentScheduleCount = await I_VestingEscrowWallet.individualVestingCount(employee1);
-            let target = [employee1, employee2, employee3]
-            let templateNumber = 0;
-            let startDate = latestTime() + duration.days(1)
+          let currentScheduleCount = await I_VestingEscrowWallet.individualVestingCount(employee1);
+          let target = [employee1, employee2, employee3]
+          let templateNumber = 0;
+          let startDate = latestTime() + duration.days(1)
 
-            let tx = await I_VestingEscrowWallet.initiateVestingScheduleFromTemplate(target, templateNumber, startDate, {from: token_owner});
-            let newScheduleCount = await I_VestingEscrowWallet.individualVestingCount(employee1);
+          let tx = await I_VestingEscrowWallet.initiateVestingScheduleFromTemplate(target, templateNumber, startDate, {from: token_owner});
+          let newScheduleCount = await I_VestingEscrowWallet.individualVestingCount(employee1);
 
-            assert.equal(currentScheduleCount.add(1).toNumber(), newScheduleCount.toNumber(), "Schedule count did not get updated")
+          assert.equal(currentScheduleCount.add(1).toNumber(), newScheduleCount.toNumber(), "Schedule count did not get updated")
         });
         it("Create a vesting schedule for multiple employees based on a template", async() => {
           let currentScheduleCountOne = await I_VestingEscrowWallet.individualVestingCount(employee1);
@@ -754,64 +769,132 @@ contract('VestingEscrowWallet', accounts => {
           assert.equal(currentScheduleCountThree.add(1).toNumber(), newScheduleCountThree.toNumber(), "Schedule count did not get updated")
         });
         it("Save vesting schedule for a specific employee in individualVestingDetails", async() => {
-            let currentScheduleCount = await I_VestingEscrowWallet.individualVestingCount(employee1);
+          let currentScheduleCount = await I_VestingEscrowWallet.individualVestingCount(employee1);
 
-            let tx = await I_VestingEscrowWallet.individualVestingDetails(employee1, currentScheduleCount.sub(1));
-            let totalAllocation = tx[1].toNumber();
+          let tx = await I_VestingEscrowWallet.individualVestingDetails(employee1, currentScheduleCount.sub(1));
+          let totalAllocation = tx[1].toNumber();
 
-            assert.equal(totalAllocation, web3.utils.toWei('10', 'ether'), "Schedule did not get stored");
+          assert.equal(totalAllocation, web3.utils.toWei('10', 'ether'), "Schedule did not get stored");
         });
     });
-      // context("Cancel Vesting Scheduel", async() => {
-      //   it("Should fail to cancel a vesting schedule because the caller is not the owner", async() => {
-      //   });
-      //   it("Should fail to cancel a vesting schedule because it does not exist", async() => {
-      //   });
-      //   it("Should fail to cancel a vesting schedule because the contract does not have the required number of tokens to send to the employee", async() => {
-      //   });
-      //   it("Should fail to cancel a vesting schedule because the contract does not have the required number of tokens to send to the treasury", async() => {
-      //   });
-      //   it("Cancel a vesting schedule", async() => {
-      //   });
-      //   it("Delete the individualVestingDetails from storage", async() => {
-      //   });
-      //   it("Send vested, unclaimed tokens to the employee", async() => {
-      //   });
-      //   it("Send unvested tokens to the treasury if the issuer wants to reclaim them", async() => {
-      //   });
-      //   it("Keep tokens in the contract and update numExcessTokens if the issuer sets _isReclaiming false", async() => {
-      //   });
-      // })
-      // context("Collect Vested Tokens", async() => {
-      //   it("Should fail to collect because a vesting schedule does not exist", async() => {
-      //   });
-      //   it("Should fail to collect because there are no remaining tokens to claim", async() => {
-      //   });
-      //   it("Should fail to collect because the contract does not have the required number of tokens to send to the employee", async() => {
-      //   });
-      //   it("Send vested tokens to the employee", async() => {
-      //   });
-      //   it("Update the numClaimedVestedTokens for that employee's specific vesting schedule", async() => {
-      //   });
-      //   it("Update the numUnclaimedVestedTokens for that employee's specific vesting schedule", async() => {
-      //   });
-      //   it("Send vested, unclaimed tokens to the employee", async() => {
-      //   });
-      // })
-      // context("Push Vested Tokens", async() => {
-      //   it("Should fail to push because a vesting schedule does not exist", async() => {
-      //   });
-      //   it("Should fail to push because there are no remaining tokens to claim", async() => {
-      //   });
-      //   it("Should fail to push because the contract does not have the required number of tokens to send to the employee", async() => {
-      //   });
-      //   it("Send vested tokens to the employee", async() => {
-      //   });
-      //   it("Update the numClaimedVestedTokens for that employee's specific vesting schedule", async() => {
-      //   });
-      //   it("Update the numUnclaimedVestedTokens for that employee's specific vesting schedule", async() => {
-      //   });
-      //   it("Send vested, unclaimed tokens to the employee", async() => {
-      //   });
+      context("Cancel Vesting Scheduel", async() => {
+        it("Should fail to cancel a vesting schedule because the caller is not the owner", async() => {
+          let errorThrown = false;
+          let currentScheduleCount = await I_VestingEscrowWallet.individualVestingCount(employee1);
+          currentScheduleCount = currentScheduleCount.sub(1);
+          try {
+            await I_VestingEscrowWallet.cancelVestingSchedule(employee1, currentScheduleCount, false, {from: employee1});
+          } catch(error) {
+              console.log(`       tx -> failed because caller is not the issuer`.grey);
+              Object.keys(error).forEach(function (key){
+                ensureException(error[key]);
+              });
+              errorThrown = true;
+          }
+          assert.ok(errorThrown, message);
+        });
+        it("Should fail to cancel a vesting schedule because it does not exist", async() => {
+          let errorThrown = false;
+          let nonexistentScheduleCount = await I_VestingEscrowWallet.individualVestingCount(employee1);
+          nonexistentScheduleCount = nonexistentScheduleCount.add(1);
+          try {
+            await I_VestingEscrowWallet.cancelVestingSchedule(employee1, nonexistentScheduleCount, false, {from: token_owner});
+          } catch(error) {
+              console.log(`       tx -> failed because veasting schedule does not exist`.grey);
+              Object.keys(error).forEach(function (key){
+                ensureException(error[key]);
+              });
+              errorThrown = true;
+          }
+          assert.ok(errorThrown, message);
+        });
+        it("Delete the individualVestingDetails from storage", async() => {
+          let currentScheduleCount = await I_VestingEscrowWallet.individualVestingCount(employee1);
+          currentScheduleCount = currentScheduleCount.sub(1);
+
+          let tx = await I_VestingEscrowWallet.individualVestingDetails(employee1, currentScheduleCount);
+          let totalAllocation = tx[1].toNumber();
+
+          assert.equal(totalAllocation, web3.utils.toWei('10', 'ether'), "Schedule did not get stored");
+
+          await I_VestingEscrowWallet.cancelVestingSchedule(employee1, currentScheduleCount, false, {from: token_owner});
+
+          tx = await I_VestingEscrowWallet.individualVestingDetails(employee1, currentScheduleCount);
+          totalAllocation = tx[1].toNumber();
+
+          assert.equal(totalAllocation, 0, "Schedule did not get deleted")
+        });
+        it("Send unvested tokens to the treasury if the issuer wants to reclaim them", async() => {
+          await increaseTime(duration.years(10));
+
+          let employee1InitialBalance = await I_SecurityToken.balanceOf(employee1);
+          let treasuryInitialBalance = await I_SecurityToken.balanceOf(token_owner);
+
+          await I_VestingEscrowWallet.cancelVestingSchedule(employee1, 4, true, {from: token_owner});
+
+          let employee1NewBalance = await I_SecurityToken.balanceOf(employee1);
+          let treasuryNewBalance = await I_SecurityToken.balanceOf(token_owner);
+
+          // Send 5 vested tokens to the employee and the remaining 35 to the treasury
+          let expectedEmployeeTokens = new BigNumber(5e18);
+          let expectedTreasuryTokens = new BigNumber(35e18);
+
+          assert.equal(employee1NewBalance.sub(employee1InitialBalance).valueOf(), expectedEmployeeTokens.valueOf(), "Employee did not get their tokens.")
+          assert.equal(treasuryNewBalance.sub(treasuryInitialBalance).valueOf(), expectedTreasuryTokens.valueOf(), "Treasury did not get their tokens.");
+        });
+        it("Keep tokens in the contract if the issuer sets _isReclaiming false", async() => {
+          let employee3InitialBalance = await I_SecurityToken.balanceOf(employee3);
+          let contractInitialBalance = await I_SecurityToken.balanceOf(I_VestingEscrowWallet.address);
+
+          await I_VestingEscrowWallet.cancelVestingSchedule(employee3, 2, false, {from: token_owner});
+
+          let employee3NewBalance = await I_SecurityToken.balanceOf(employee3);
+          let contractNewBalance = await I_SecurityToken.balanceOf(I_VestingEscrowWallet.address);
+
+          let expectedEmployeeTokens = new BigNumber(5e18);
+          assert.equal(employee3NewBalance.sub(employee3InitialBalance).valueOf(), expectedEmployeeTokens.valueOf(), "Employee did not get their tokens.")
+          assert.equal(contractNewBalance.valueOf(), contractInitialBalance.valueOf(), "Contract did not keep its tokens");
+        });
       })
+      context("Collect Vested Tokens", async() => {
+        it("Should fail to collect because a vesting schedule does not exist", async() => {
+          let errorThrown = false;
+
+          try {
+            await I_VestingEscrowWallet.collectVestedTokens(1000, {from: employee2});
+          } catch(error) {
+              console.log(`       tx -> failed because a vestingFrequency was not a whole factor of the associated vestingDuration`.grey);
+              Object.keys(error).forEach(function (key){
+                ensureException(error[key]);
+              });
+              errorThrown = true;
+          }
+          assert.ok(errorThrown, message);
+        });
+        it("Send vested tokens to the employee", async() => {
+          let employee2InitialBalance = await I_SecurityToken.balanceOf(employee2);
+
+          await I_VestingEscrowWallet.collectVestedTokens(0, {from: employee2});
+
+          let employee2NewBalance = await I_SecurityToken.balanceOf(employee2);
+
+          let expectedGains = new BigNumber(5e18);
+
+          assert.equal(employee2InitialBalance.plus(expectedGains).valueOf(), employee2NewBalance.valueOf(), "Tokens did not get claimed")
+        });
+      })
+      context("Push Vested Tokens", async() => {
+        it("Should function in the exact same manner as collectVestedTokens, except they are pushed by the owner", async() => {
+          let employee3InitialBalance = await I_SecurityToken.balanceOf(employee3);
+
+          await I_VestingEscrowWallet.pushVestedTokens(employee3, 0, {from: token_owner});
+
+          let employee3NewBalance = await I_SecurityToken.balanceOf(employee3);
+
+          let expectedGains = new BigNumber(6e18);
+
+          assert.equal(employee3InitialBalance.plus(expectedGains).valueOf(), employee3NewBalance.valueOf(), "Tokens did not get claimed")
+        });
+      });
+    });
 });

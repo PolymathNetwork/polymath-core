@@ -3,7 +3,7 @@ import { duration, ensureException, promisifyLogWatch, latestBlock } from "./hel
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
-import { setUpPolymathNetwork } from "./helpers/createInstances";
+import { setUpPolymathNetwork, deployEtherDividendAndVerifyed } from "./helpers/createInstances";
 
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
@@ -98,38 +98,8 @@ contract("EtherDividendCheckpoint", accounts => {
              I_STRProxied
          ] = instances;
 
-
-        // STEP 4: Deploy the ERC20DividendCheckpoint
-        P_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(
-            I_PolyToken.address,
-            web3.utils.toWei("500", "ether"),
-            0,
-            0,
-            { from: account_polymath }
-        );
-        assert.notEqual(
-            P_EtherDividendCheckpointFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "ERC20DividendCheckpointFactory contract was not deployed"
-        );
-
-        // STEP 4: Deploy the EtherDividendCheckpoint
-        I_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(I_PolyToken.address, 0, 0, 0, {
-            from: account_polymath
-        });
-        assert.notEqual(
-            I_EtherDividendCheckpointFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "EtherDividendCheckpointFactory contract was not deployed"
-        );
-
-        // (C) : Register the EtherDividendCheckpointFactory
-        await I_MRProxied.registerModule(I_EtherDividendCheckpointFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_EtherDividendCheckpointFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the Paid EtherDividendCheckpointFactory
-        await I_MRProxied.registerModule(P_EtherDividendCheckpointFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(P_EtherDividendCheckpointFactory.address, true, { from: account_polymath });
+        [P_EtherDividendCheckpointFactory] = await deployEtherDividendAndVerifyed(account_polymath, I_MRProxied, I_PolyToken, web3.utils.toWei("500", "ether"));
+        [P_EtherDividendCheckpointFactory] = await deployEtherDividendAndVerifyed(account_polymath, I_MRProxied, I_PolyToken, 0);
 
         // Printing all the contract addresses
         console.log(`

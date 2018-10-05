@@ -206,11 +206,27 @@ export async function deployERC20DividendAndVerifyed(account_polymath, I_MRProxi
     assert.notEqual(
         I_ERC20DividendCheckpointFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
-        "DummySTOFactory contract was not deployed"
+        "ERC20DividendCheckpointFactory contract was not deployed"
     );
 
     await I_MRProxied.registerModule(I_ERC20DividendCheckpointFactory.address, { from: account_polymath });
     await I_MRProxied.verifyModule(I_ERC20DividendCheckpointFactory.address, true, { from: account_polymath });
 
     return new Array(I_ERC20DividendCheckpointFactory);
+}
+
+
+export async function deployEtherDividendAndVerifyed(account_polymath, I_MRProxied, I_PolyToken, setupCost) {
+    I_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(I_PolyToken.address, setupCost, 0, 0, { from: account_polymath });
+
+    assert.notEqual(
+        I_EtherDividendCheckpointFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "EtherDividendCheckpointFactory contract was not deployed"
+    );
+
+    await I_MRProxied.registerModule(I_EtherDividendCheckpointFactory.address, { from: account_polymath });
+    await I_MRProxied.verifyModule(I_EtherDividendCheckpointFactory.address, true, { from: account_polymath });
+
+    return new Array(I_EtherDividendCheckpointFactory);
 }

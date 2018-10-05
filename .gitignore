@@ -13,3 +13,4 @@ bridge.log
 scTopics
 coverageEnv
 /flat
+.eslintrc.js

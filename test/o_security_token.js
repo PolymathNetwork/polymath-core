@@ -743,7 +743,7 @@ contract('SecurityToken', accounts => {
                 let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
                 I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
                 try {
-                    await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_temp });
+                    await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_temp });
                 } catch (error) {
                     console.log(`${account_temp} doesn't have permissions to register the delegate`);
                     errorThrown = true;
@@ -754,7 +754,7 @@ contract('SecurityToken', accounts => {
 
             it("Should provide the permission to the delegate to change the transfer bools", async () => {
                 // Add permission to the deletgate (A regesteration process)
-                await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: token_owner});
+                await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner});
                 // Providing the permission to the delegate
                 await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, { from: token_owner });
 

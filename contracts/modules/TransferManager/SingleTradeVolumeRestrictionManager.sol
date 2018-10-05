@@ -299,7 +299,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     * @notice This function returns the signature of configure function
     */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(bool,uint256)"));
+        return bytes4(keccak256("configure(bool,uint256,bool)"));
     }
 
     /**

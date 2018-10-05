@@ -385,9 +385,13 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
           {
             type: 'uint256',
             name: '_globalTransferLimitInPercentageOrToken'
+          },
+          {
+              type: 'bool',
+              name: '_allowPrimaryIssuance'
           }
         ]
-      }, [true, 90])
+      }, [true, 90, false])
       let errorThrown = false;
       await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
       try {
@@ -415,9 +419,13 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
           {
             type: 'uint256',
             name: '_globalTransferLimitInPercentageOrToken'
+          },
+          {
+              type: 'bool',
+              name: '_allowPrimaryIssuance'
           }
         ]
-      }, [false, 90]);
+      }, [false, 90, false]);
       await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {
         from: token_owner
       });
@@ -445,9 +453,13 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
           {
             type: 'uint256',
             name: '_globalTransferLimitInPercentageOrToken'
+          },
+          {
+              type: 'bool',
+              name: '_allowPrimaryIssuance'
           }
         ]
-      }, [false, 7 * 10 ** 16])
+      }, [false, 7 * 10 ** 16, false])
       const tx = await I_SecurityToken.addModule(I_SingleTradeVolumeRestrictionManagerFactory.address, managerArgs, 0, 0, {
         from: token_owner
       });
@@ -472,9 +484,13 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
           {
             type: 'uint256',
             name: '_globalTransferLimitInPercentageOrToken'
+          },
+          {
+              type: 'bool',
+              name: '_allowPrimaryIssuance'
           }
         ]
-      }, [true, 90]);
+      }, [true, 90, false]);
       const tx = await I_SecurityToken.addModule(I_SingleTradeVolumeRestrictionManagerFactory.address, managerArgs, 0, 0, {
         from: token_owner
       });

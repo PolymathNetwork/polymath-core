@@ -241,8 +241,7 @@ contract("PercentageTransferManager", accounts => {
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("1", "ether"));
         });
 
-        it("Should successfully attach the PercentageTransferManager factory with the security token", async () => {
-            let errorThrown = false;
+        it("Should successfully attach the PercentageTransferManager factory with the security token - failed payment", async () => {
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await catchRevert(
                 I_SecurityToken.addModule(P_PercentageTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, {

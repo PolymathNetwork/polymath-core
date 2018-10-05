@@ -24,6 +24,7 @@ const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManage
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
 const VolumeRestrictionTransferManagerFactory = artifacts.require("./LockupVolumeRestrictionTMFactory");
+const VolumeDumpingRestrictionTransferManager = artifacts.require('./VolumeDumpingRestrictionTMFactory');
 const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PolyToken = artifacts.require("./PolyToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
@@ -44,6 +45,7 @@ let I_MockWrongTypeBurnFactory;
 let I_SingleTradeVolumeRestrictionManagerFactory;
 let I_ManualApprovalTransferManagerFactory;
 let I_VolumeRestrictionTransferManagerFactory;
+let I_VolumeDumpingRestrictionTransferManagerFactory;
 let I_PercentageTransferManagerFactory;
 let I_EtherDividendCheckpointFactory;
 let I_CountTransferManagerFactory;
@@ -253,6 +255,18 @@ export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyI
 
     await registerAndVerifyByMR(I_VolumeRestrictionTransferManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_VolumeRestrictionTransferManagerFactory);
+}
+
+export async function deployVolumeDumpingRTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_VolumeDumpingRestrictionTransferManagerFactory = await VolumeDumpingRestrictionTransferManager.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_VolumeDumpingRestrictionTransferManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "VolumeRestrictionTransferManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_VolumeDumpingRestrictionTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_VolumeDumpingRestrictionTransferManagerFactory);
 }
 
 export async function deploySingleTradeVolumeRMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {

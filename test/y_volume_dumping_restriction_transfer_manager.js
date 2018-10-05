@@ -1,27 +1,16 @@
 import latestTime from './helpers/latestTime';
 import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
+import { setUpPolymathNetwork, deployVolumeDumpingRTMAndVerified } from "./helpers/createInstances";
+import { catchRevert } from "./helpers/exceptions";
+
 import {signData} from './helpers/signData';
 import { pk }  from './helpers/testprivateKey';
 import { encodeProxyCall, encodeModuleCall } from './helpers/encodeCall';
 
-const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
-const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
-const DummySTO = artifacts.require('./DummySTO.sol');
-const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
-const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
-const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
-const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
-const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
-const STFactory = artifacts.require('./STFactory.sol');
-const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
-const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
-const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
-const VolumeRestrictionTransferManagerFactory = artifacts.require('./VolumeDumpingRestrictionManagerFactory.sol');
-const VolumeRestrictionTransferManager = artifacts.require('./VolumeDumpingRestrictionManager');
+const VolumeRestrictionTransferManager = artifacts.require('./VolumeDumpingRestrictionTM');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -39,7 +28,6 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
      let account_investor3;
      let account_investor4;
      let account_investor5;
-
 
     // investor Details
     let fromTime = latestTime();
@@ -105,145 +93,46 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
         account_issuer = accounts[1];
 
         token_owner = account_issuer;
-        token_owner_pk = pk.account_1;
 
-        account_investor1 = accounts[6];
-        account_investor2 = accounts[7];
-        account_investor3 = accounts[8];
-        account_investor4 = accounts[9];
-        account_investor5 = accounts[5];
+        account_investor1 = accounts[7];
+        account_investor2 = accounts[8];
+        account_investor3 = accounts[9];
+        account_investor4 = accounts[3]
 
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-          // ----------- POLYMATH NETWORK Configuration ------------
+        [
+            I_PolymathRegistry,
+            I_PolyToken,
+            I_FeatureRegistry,
+            I_ModuleRegistry,
+            I_ModuleRegistryProxy,
+            I_MRProxied,
+            I_GeneralTransferManagerFactory,
+            I_STFactory,
+            I_SecurityTokenRegistry,
+            I_SecurityTokenRegistryProxy,
+            I_STRProxied
+        ] = instances;
 
-        // Step 0: Deploy the PolymathRegistry
-        I_PolymathRegistry = await PolymathRegistry.new({from: account_polymath});
-
-        // Step 1: Deploy the token Faucet and Mint tokens for token_owner
-        I_PolyToken = await PolyTokenFaucet.new();
-        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
-
-         // Step 2: Deploy the FeatureRegistry
-
-         I_FeatureRegistry = await FeatureRegistry.new(
-            I_PolymathRegistry.address,
-            {
-                from: account_polymath
-            });
-
-        // STEP 3: Deploy the ModuleRegistry
-     
-        I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
-        // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
-        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
-        let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, account_polymath]);
-        await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, {from: account_polymath});
-        I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
-
-
-        // STEP 2: Deploy the GeneralTransferManagerFactory
-
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
-
-        assert.notEqual(
-            I_GeneralTransferManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManagerFactory contract was not deployed"
-        );
-
-        // STEP 3: Deploy the GeneralDelegateManagerFactory
-
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
-
-        assert.notEqual(
-            I_GeneralPermissionManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManagerFactory contract was not deployed"
-        );
-
-
-        // STEP 5: Deploy the VolumeRestrictionTransferManager
-        I_VolumeRestrictionTransferManagerFactory = await VolumeRestrictionTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
-        assert.notEqual(
-            I_VolumeRestrictionTransferManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "VolumeRestrictionTransferManagerFactory contract was not deployed"
-        );
-
-        // STEP 6: Deploy the VolumeRestrictionTransferManager
-        P_VolumeRestrictionTransferManagerFactory = await VolumeRestrictionTransferManagerFactory.new(I_PolyToken.address, web3.utils.toWei("500", "ether"), 0, 0, {from:account_polymath});
-        assert.notEqual(
-            P_VolumeRestrictionTransferManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "VolumeRestrictionTransferManagerFactory contract was not deployed"
-        );
-
-
-         // Step 10: Deploy the STFactory contract
-
-        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
-
-        assert.notEqual(
-            I_STFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "STFactory contract was not deployed",
-        );
-
-        // Step 11: Deploy the SecurityTokenRegistry contract
-
-        I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
-
-        assert.notEqual(
-            I_SecurityTokenRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "SecurityTokenRegistry contract was not deployed",
-        );
-
-        // Step 12: Deploy the proxy and attach the implementation contract to it.
-        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-        let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
-        await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
-        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
-
-        // Step 13: update the registries addresses from the PolymathRegistry contract
-        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
-        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, {from: account_polymath});
-        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
-        await I_MRProxied.updateFromRegistry({from: account_polymath});
-
-        // // STEP 5: Register the Modules with the ModuleRegistry contract
-
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the VolumeRestrictionTransferManagerFactory
-        await I_MRProxied.registerModule(I_VolumeRestrictionTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_VolumeRestrictionTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the Paid VolumeRestrictionTransferManagerFactory
-        await I_MRProxied.registerModule(P_VolumeRestrictionTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(P_VolumeRestrictionTransferManagerFactory.address, true, { from: account_polymath });
-
+        // STEP 4(c): Deploy the VolumeRestrictionTransferManager
+        [I_VolumeRestrictionTransferManagerFactory] = await deployVolumeDumpingRTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        // STEP 4(d): Deploy the VolumeRestrictionTransferManager
+        [P_VolumeRestrictionTransferManagerFactory] = await deployVolumeDumpingRTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
 
         // Printing all the contract addresses
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
-        PolymathRegistry:                  ${PolymathRegistry.address}
-        SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
-        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
-        ModuleRegistry:                    ${ModuleRegistry.address}
-        FeatureRegistry:                   ${FeatureRegistry.address}
-        STFactory:                         ${STFactory.address}
-        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
-        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
-        VolumeDumpingRestrictionTransferManagerFactory: 
-                                           ${I_VolumeRestrictionTransferManagerFactory.address}
+        PolymathRegistry:                  ${I_PolymathRegistry.address}
+        SecurityTokenRegistryProxy:        ${I_SecurityTokenRegistryProxy.address}
+        SecurityTokenRegistry:             ${I_SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${I_ModuleRegistry.address}
+        ModuleRegistryProxy:               ${I_ModuleRegistryProxy.address}
+        FeatureRegistry:                   ${I_FeatureRegistry.address}
+        
+        STFactory:                         ${I_STFactory.address}
+        GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
+        VolumeDumpingRestrictionTransferManagerFactory:  ${I_VolumeRestrictionTransferManagerFactory.address}
         -----------------------------------------------------------------------------
         `);
     });
@@ -260,7 +149,7 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 60000000 });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -270,7 +159,7 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), 2);
+            assert.equal(log.args._types[0].toNumber(), 2);
             assert.equal(
                 web3.utils.toAscii(log.args._name)
                 .replace(/\u0000/g, ''),
@@ -279,14 +168,13 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = await I_SecurityToken.modules(2, 0);
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
-
+          let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+          I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
     });
 
-    describe("Buy tokens using on-chain whitelist", async() => {
+    describe("Buy tokens using on-chain whitelist and test dumping them and attempting to transfer", async() => {
 
         it("Should Buy the tokens", async() => {
             // Add the Investor in to the whitelist
@@ -341,24 +229,19 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should successfully attach the VolumeDumpingRestrictionTransferManager factory with the security token", async () => {
+        it("Should unsuccessfully attach the VolumeRestrictionTransferManager factory with the security token", async () => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
-            try {
-                const tx = await I_SecurityToken.addModule(P_VolumeRestrictionTransferManagerFactory.address, 0, web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-            } catch(error) {
-                console.log(`       tx -> failed because Token is not paid`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_SecurityToken.addModule(P_VolumeRestrictionTransferManagerFactory.address, 0, web3.utils.toWei("500", "ether"), 0, { from: token_owner })
+            )
         });
 
-        it("Should successfully attach the VolumeDumpingRestrictionTransferManager factory with the security token", async () => {
+        it("Should successfully attach the VolumeRestrictionTransferManager factory with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
             const tx = await I_SecurityToken.addModule(P_VolumeRestrictionTransferManagerFactory.address, 0, web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-            assert.equal(tx.logs[3].args._type.toNumber(), transferManagerKey, "VolumeDumpingTransferManagerFactory doesn't get deployed");
+            assert.equal(tx.logs[3].args._types[0].toNumber(), transferManagerKey, "VolumeRestrictionTransferManagerFactory doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
                 .replace(/\u0000/g, ''),
@@ -369,14 +252,14 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             await revertToSnapshot(snapId);
         });
 
-        it("Should successfully attach the VolumeDumpingRestrictionTransferManager with the security token", async () => {
+        it("Should successfully attach the VolumeRestrictionTransferManager with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_VolumeRestrictionTransferManagerFactory.address, 0, 0, 0, { from: token_owner });
-            assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "VolumeDumpingTransferManager doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "VolumeRestrictionTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
                 .replace(/\u0000/g, ''),
                 "VolumeDumpingTransferManager",
-                "VolumeDumpingTransferManager module was not added"
+                "VolumeDumpingTransferManagerFactory module was not added"
             );
             I_VolumeRestrictionTransferManager = VolumeRestrictionTransferManager.at(tx.logs[2].args._module);
         });
@@ -400,97 +283,57 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             await I_VolumeRestrictionTransferManager.unpause({from: token_owner});
         })
 
-        let percent = 10
+        let percent = 10 * Math.pow(10, 16)
         let startTime = 0
         let endTime = latestTime() + duration.years(2);  
         let endTimeFn = (n=1) => latestTime() + duration.years(n);
         let rollingPeriod = 1000
 
         it("Should prevent creation of a dump restriction where rolling period is zero", async() => {
-            let errorThrown = false
-            try {
-                await I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, percent, startTime, endTime, 0, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> couldn't create dumping restriction because rolling period is zero`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, percent, startTime, endTime, 0, { from: token_owner })
+            );
         })
 
         it("Should prevent creation of a dump restriction where end time is zero", async() => {
-            let errorThrown = false
-            try {
-                await I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, percent, startTime, 0, rollingPeriod, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> couldn't create dumping restriction because end time is zero`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, percent, startTime, 0, rollingPeriod, { from: token_owner })
+            )
         })
 
         it("Should prevent creation of a dump restriction where percent is zero", async() => {
-            let errorThrown = false
-            try {
-                await I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, 0, startTime, endTime, rollingPeriod, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> couldn't create dumping restriction because percent is zero`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, 0, startTime, endTime, rollingPeriod, { from: token_owner })
+            )
         })
 
         it("Should prevent creation of a dump restriction where percent is greater than 100", async() => {
-            let errorThrown = false
-            try {
-                await I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, 101, startTime, endTime, rollingPeriod, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> couldn't create dumping restriction because percent is greater than 100`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, (120 * Math.pow(10, 16)), startTime, endTime, rollingPeriod, { from: token_owner })
+            )
         })
 
         it("Should prevent creation of a dump restriction where the endtime is less than startime", async() => {
-            let errorThrown = false
-            try {
-                let endTimeNegative = (await web3.eth.getBlock('latest')).timestamp - 10000
-                await I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, percent, startTime, endTimeNegative, rollingPeriod, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> couldn't create dumping restriction because endTime is less than startime`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            let endTimeNegative = (await web3.eth.getBlock('latest')).timestamp - 10000
+
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, percent, startTime, endTimeNegative, rollingPeriod, { from: token_owner })
+            )
         })
 
         it("Should prevent creation of a dump restriction where the starttime is in the past", async() => {
-            let errorThrown = false
-            try {
-                let startTimeNegative = (await web3.eth.getBlock('latest')).timestamp - 10000
-                await I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, percent, startTimeNegative, endTime, rollingPeriod, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> couldn't create dumping restriction because start time is in the past`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            let startTimeNegative = (await web3.eth.getBlock('latest')).timestamp - 10000
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, percent, startTimeNegative, endTime, rollingPeriod, { from: token_owner })
+
+            )
         })
 
         it("Should prevent creation of a dump restriction where the rolling period is greater than endtime", async() => {
-            let errorThrown = false
-            try {
-                let rollingPeriod = endTime + 10
-                await I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, percent, startTime, endTime, rollingPeriod, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> couldn't create dumping restriction because rolling period is greater than endtime`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            let rollingPeriod = endTime + 10
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, percent, startTime, endTime, rollingPeriod, { from: token_owner })
+            )
         })
 
         it("Should create a dumping restriction", async() => {
@@ -538,20 +381,11 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             assert.equal(rollingPeriod, result[3].toNumber(), "Failed to modify rolling period");
         })
 
-        it("Should prevent exceeding transfer of tokens in dumping restriction period", async() => {
-
-            let errorThrown = false;
-
-            try {
-                let balance = (await I_SecurityToken.balanceOf(account_investor1)).toString()
-                await I_SecurityToken.transfer(account_investor1, balance, { from: account_investor2 });
-
-            } catch(error) {
-                console.log(`       tx revert -> amount exceeded allowed amount of tokens in period`.grey);
-                ensureException(error);
-                errorThrown = true
-            }
-            assert.ok(errorThrown, message);
+        it("Should prevent exceeding transfer of tokens in dumping restriction period", async () => {
+            let balance = (await I_SecurityToken.balanceOf(account_investor1)).toString()
+            await catchRevert(
+                I_SecurityToken.transfer(account_investor1, balance, { from: account_investor2 })
+            )
         })
 
         it("Should be possible to remove a dumping restriction", async() => {
@@ -567,37 +401,22 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
 
 
         it("Should prevent modifying of a dump restriction where end time is in past", async() => {
-            let errorThrown = false
-
-            // increase evm time to 30 seconds
-            increaseTime(30)
-
             let percent = 20
             let startTime = 0
             let endTime = latestTime() + duration.years(5);
             let rollingPeriod = 30
 
-            try {
-                await I_VolumeRestrictionTransferManager.modifyVolumeDumpingRestriction(account_investor2, percent, startTime, endTime, rollingPeriod, { from: token_owner });
-            } catch (error) {
-                console.log(`       tx revert -> counldn't modify a dump restriction because end time is in the past`.grey);
-                ensureException(error);
-                errorThrown = true
-            }
-            assert.ok(errorThrown, message);
+            // increase evm time to 30 seconds
+            await increaseTime(30)
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.modifyVolumeDumpingRestriction(account_investor2, percent, startTime, endTime, rollingPeriod, { from: token_owner })
+            )
         })
 
         it("Should prevent removing of a dump restriction where end time is in past", async() => {
-            let errorThrown = false
-            
-            try {
-               await I_VolumeRestrictionTransferManager.removeRestriction(account_investor2,  { from: token_owner });
-            } catch(error) {
-                console.log(`       tx revert -> couldn't remove dump restriction because end time is in the past`.grey);
-                ensureException(error);
-                errorThrown = true
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.removeRestriction(account_investor2,  { from: token_owner })
+            )
         })
 
         it("Should allow the transfer of all tokens in a dumping restriction if the end time has exceeded", async() => {
@@ -613,14 +432,44 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
 
         it("Should be possible to create multiple volume dumping restrictions at once", async() => {
             const accounts = [account_investor3, account_investor4]
-            const percents  = [ 10, 20 ]
+            const percents = [ 10, 20 ]
             const startTimes = [0, 0]
             const endTimes = [endTimeFn(1), endTimeFn(2)]
             const rollingPeriods = [10, 10]
 
             let result = await I_VolumeRestrictionTransferManager.addDumpingRestrictionMulti(accounts, percents, startTimes, endTimes, rollingPeriods, { from: token_owner });
 
-            for(let account in accounts){
+            for (let account in accounts) {
+                result = await I_VolumeRestrictionTransferManager.getVolumeDumpingRestrictions(accounts[account], { from: token_owner });
+
+                assert.equal(percents[account], result[0].toNumber(), "Failed to create the percent");
+                assert.equal(endTimes[account], result[2].toNumber(), "Failed to create end time");
+                assert.equal(rollingPeriods[account], result[3].toNumber(), "Failed to create rolling period");
+            }
+        })
+
+        it("Should revert if the parameters are bad when modifying multiple volume dumping restrictions", async() => {
+            const accounts = [account_investor3, account_investor4]
+            const percents = [10]
+            const startTimes = [(await web3.eth.getBlock('latest')).timestamp+10, 0]
+            const endTimes = [endTimeFn(1), endTimeFn(2)]
+            const rollingPeriods = [30]
+
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.modifyVolumeDumpingRestrictionMulti(accounts, percents, startTimes, endTimes, rollingPeriods, { from: token_owner })
+            )
+        })
+
+        it("Should be possible to modify multiple volume dumping restrictions at once", async() => {
+            const accounts = [account_investor3, account_investor4]
+            const percents = [ 20, 30 ]
+            const startTimes = [0, 0]
+            const endTimes = [endTimeFn(1), endTimeFn(2)]
+            const rollingPeriods = [20, 20]
+
+            let result = await I_VolumeRestrictionTransferManager.modifyVolumeDumpingRestrictionMulti(accounts, percents, startTimes, endTimes, rollingPeriods, { from: token_owner });
+
+            for (let account in accounts) {
                 result = await I_VolumeRestrictionTransferManager.getVolumeDumpingRestrictions(accounts[account], { from: token_owner });
 
                 assert.equal(percents[account], result[0].toNumber(), "Failed to modify the percent");
@@ -629,30 +478,43 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             }
         })
 
+        it("Should revert if the parameters are bad when removing multiple volume dumping restrictions", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.removeRestrictionMulti([])
+            )
+        })
+
+        it("Should be possible to remove multiple volume dumping restrictions at once", async() => {
+            const accounts = [account_investor3, account_investor4]
+
+            let result = await I_VolumeRestrictionTransferManager.removeRestrictionMulti(accounts, { from: token_owner });
+
+            for (let account in accounts) {
+                result = await I_VolumeRestrictionTransferManager.getVolumeDumpingRestrictions(accounts[account], { from: token_owner });
+
+                assert.equal(0, result[0].toNumber(), "Failed to remove the percent");
+                assert.equal(0, result[2].toNumber(), "Failed to remove end time");
+                assert.equal(0, result[3].toNumber(), "Failed to remove rolling period");
+            }
+        })
+
         it("Should revert if the parameters are bad when creating multiple volume dumping restrictions", async() => {
-            let errorThrown = false
-            try {
-                const accounts = [account_investor3, account_investor4]
-                const percents  = [ 10 ]
-                const startTimes = [(await web3.eth.getBlock('latest')).timestamp+10, 0]
-                const endTimes = [endTimeFn(1), endTimeFn(2)]
-                const rollingPeriods = [30 ]
-                await I_VolumeRestrictionTransferManager.addDumpingRestrictionMulti(
+            const accounts = [account_investor3, account_investor4]
+            const percents  = [ 10 ]
+            const startTimes = [(await web3.eth.getBlock('latest')).timestamp+10, 0]
+            const endTimes = [endTimeFn(1), endTimeFn(2)]
+            const rollingPeriods = [30]
+
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.addDumpingRestrictionMulti(
                     accounts, 
                     percents, 
                     startTimes, 
                     endTimes, 
                     rollingPeriods, 
-                    { from: token_owner });
-
-            } catch(error) {
-                console.log(`       tx revert -> passed in wrong number of array elements`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+                    { from: token_owner })
+            )
         })
-
 
         it("Should get configuration function signature", async() => {
             let sig = await I_VolumeRestrictionTransferManager.getInitFunction.call();
@@ -669,8 +531,8 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
     describe("VolumeDumping Restriction Transfer Manager Factory test cases", async() => {
 
         it("Should get the exact details of the factory", async() => {
-            assert.equal(await I_VolumeRestrictionTransferManagerFactory.setupCost.call(),0);
-            assert.equal(await I_VolumeRestrictionTransferManagerFactory.getType.call(),2);
+            assert.equal(await I_VolumeRestrictionTransferManagerFactory.setupCost.call(), 0);
+            assert.equal((await I_VolumeRestrictionTransferManagerFactory.getTypes.call())[0], 2);
             assert.equal(web3.utils.toAscii(await I_VolumeRestrictionTransferManagerFactory.getName.call())
                         .replace(/\u0000/g, ''),
                         "VolumeDumpingTransferManager",

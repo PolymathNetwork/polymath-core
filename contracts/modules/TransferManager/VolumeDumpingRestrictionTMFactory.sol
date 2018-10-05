@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
-import "./VolumeDumpingRestrictionManager.sol";
+import "./VolumeDumpingRestrictionTM.sol";
 import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying VolumeRestrictionManager module
  */
-contract VolumeDumpingRestrictionManagerFactory is ModuleFactory {
+contract VolumeDumpingRestrictionTMFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -19,7 +19,8 @@ contract VolumeDumpingRestrictionManagerFactory is ModuleFactory {
         name = "VolumeDumpingTransferManager";
         title = "Volume Dumping Transfer Manager";
         description = "Manage the volume of tokens dumpable by an owner";
-        
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**
@@ -29,7 +30,7 @@ contract VolumeDumpingRestrictionManagerFactory is ModuleFactory {
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        address volumeDumpingRestrictionTransferManager = new VolumeDumpingRestrictionManager(msg.sender, address(polyToken));
+        address volumeDumpingRestrictionTransferManager = new VolumeDumpingRestrictionTM(msg.sender, address(polyToken));
         emit GenerateModuleFromFactory(address(volumeDumpingRestrictionTransferManager), getName(), address(this), msg.sender, now);
         return address(volumeDumpingRestrictionTransferManager);
     }
@@ -38,9 +39,12 @@ contract VolumeDumpingRestrictionManagerFactory is ModuleFactory {
      * @notice Type of the Module factory
      * @return uint8
      */
-    function getType() public view returns(uint8) {
-        return 2;
+    function getTypes() external view returns(uint8[]) {
+        uint8[] memory res = new uint8[](1);
+        res[0] = 2;
+        return res;
     }
+
 
     /**
      * @notice Get the name of the Module

@@ -7,7 +7,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @title  Transfer Manager module for restricting volume dumping within a time period for an account
  */
 
-contract VolumeDumpingRestrictionManager is ITransferManager {
+contract VolumeDumpingRestrictionTM is ITransferManager {
     
     using SafeMath for uint256;
 
@@ -34,7 +34,7 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
     mapping(address => uint256[]) internal volumePeriodIds;
     
     event ModifyVolumeDumping (
-        address indexed from, 
+        address indexed restrictedAddress, 
         uint256 percentAllowed, 
         uint256 startTime,
         uint256 endTime,
@@ -42,7 +42,7 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
     );
 
     event AddNewVolumeDumping (
-        address indexed from, 
+        address indexed restrictedAddress, 
         uint256 percentAllowed, 
         uint256 startTime,
         uint256 endTime,
@@ -50,7 +50,7 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
     );
 
     event RemoveVolumeDumping (
-        address indexed from, 
+        address indexed restrictedAddress, 
         uint256 percentAllowed, 
         uint256 startTime,
         uint256 endTime,
@@ -73,24 +73,30 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
      * @param _from Address of the sender
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(address _from, address /*_to */, uint256 _amount, bool _isTransfer) public returns(Result) {
+    function verifyTransfer(address _from, address /*_to */, uint256 _amount, bytes /* _data */, bool _isTransfer) public returns(Result) {
         
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
 
-        if (!paused && _from != address(0)) {                
+        if (!paused && _from != address(0) && _amount != 0 ) {                
             VolumeRestriction memory userDumpingRestriction = volumeRestriction[_from];
 
             if (now < userDumpingRestriction.startTime || now > userDumpingRestriction.endTime){
-                return Result.VALID;
+                return Result.NA;
             }
             
-            uint256 periodId = now.div(userDumpingRestriction.rollingPeriod);
+            uint256 periodId =  now.sub(userDumpingRestriction.startTime).div(userDumpingRestriction.rollingPeriod);
 
             // // the remainig transferable amount
             uint256 allowedRemainingAmount = _currentAllowedAmount(_from, periodId);
 
             if (_amount <= allowedRemainingAmount){
+
+                // readonly transaction shouldn't modify state
+                if(!_isTransfer) {
+                    return Result.VALID;
+                }
+
                 volumeTally[_from][periodId] = volumeTally[_from][periodId].add(_amount);
                 return Result.VALID;
             }
@@ -114,16 +120,15 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
         uint256 _endTime, 
         uint256 _rollingPeriod ) public withPerm(ADMIN) {
 
+        // if a startTime of 0 is passed in, then start now.
+        if(_startTime == 0) {
+            _startTime = now;
+        }
+
         _checkVolumeDumpingParams(_userAddress, _percentAllowed, _startTime, _endTime, _rollingPeriod);
         
         // deny if restriction already exists
         require(volumeRestriction[_userAddress].percentAllowed == 0, "volume dumping restriction already exists");
-        
-        // if a startTime of 0 is passed in, then start now.
-        if(_startTime == 0) {
-            _startTime = now;
-            require(_endTime > _startTime, "End time must be greater than start time");
-        }
         
         // add the volume dumping restriction
         volumeRestriction[_userAddress] = VolumeRestriction(_percentAllowed, _startTime, _endTime, _rollingPeriod);
@@ -159,12 +164,12 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
             "Input array length mis-match"
         );
 
-        for (uint i = 0; i < _userAddresses.length; i++) {
+        for (uint256 i = 0; i < _userAddresses.length; i++) {
             addDumpingRestriction(_userAddresses[i], _percentsAllowed[i], _startTimes[i], _endTimes[i], _rollingPeriods[i]);
         }
     }
 
-     /**
+    /**
     * @notice lets the admin remove a volume dumping restriction.
     * @param _userAddress User address to remove the volume dumping restriction
     */
@@ -175,11 +180,11 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
         // not allowed to delete past entries
         require(toRemove.endTime > now, "Cannot remove past restrictions");
 
-        uint length = volumePeriodIds[_userAddress].length;
+        uint256 length = volumePeriodIds[_userAddress].length;
        
         // delete all the volume tally period ids for the user address
-        for( uint i = 0; i < length; i++ ){
-            uint periodId = volumePeriodIds[_userAddress][i];
+        for( uint256 i = 0; i < length; i++ ){
+            uint256 periodId = volumePeriodIds[_userAddress][i];
             delete volumeTally[_userAddress][periodId];
         }
 
@@ -195,6 +200,19 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
             toRemove.endTime,
             toRemove.rollingPeriod
         );
+    }
+
+    /**
+    * @notice lets the admin remove multiple volume dumping restriction.
+    * @param _userAddresses List of User addresses to remove the volume dumping restriction
+    */
+    function removeRestrictionMulti(address[] _userAddresses) public withPerm(ADMIN) {
+        // ensure the the array length is > 0
+        require(_userAddresses.length > 0, "Invalid array length");
+
+        for (uint256 i = 0; i < _userAddresses.length; i++) {
+            removeRestriction(_userAddresses[i]);
+        }
     }
     
     /**
@@ -213,15 +231,13 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
         uint256 _rollingPeriod
         ) public withPerm(ADMIN) {
 
-        _checkVolumeDumpingParams(_userAddress, _percentAllowed, _startTime, _endTime, _rollingPeriod);
- 
-        require(volumeRestriction[_userAddress].endTime > now, "Cannot modify past restrictions");
-
         if (_startTime == 0) {
             _startTime = now;
         }
 
-        require(_endTime > _startTime, "End time must be greater than start time");
+        _checkVolumeDumpingParams(_userAddress, _percentAllowed, _startTime, _endTime, _rollingPeriod);
+ 
+        require(volumeRestriction[_userAddress].endTime > now, "Cannot modify past restrictions");
 
         volumeRestriction[_userAddress] = VolumeRestriction(_percentAllowed, _startTime, _endTime, _rollingPeriod);
 
@@ -232,6 +248,35 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
             _endTime,
             _rollingPeriod
         );
+    }
+
+    /**
+    * @notice lets the admin modify multiple volume dumping restriction for an addresses.
+    * @param _userAddresses Address of the user to apply the volume dumping restriction
+    * @param _percentsAllowed Percent of tokens balance allowed to transfer within a rolling period
+    * @param _startTimes When the dumping restriction, 0 means now in seconds
+    * @param _endTimes When the dumping restriction ends in seconds
+    * @param _rollingPeriods is the time period in seconds
+    */
+    function modifyVolumeDumpingRestrictionMulti( 
+        address[] _userAddresses, 
+        uint256[] _percentsAllowed, 
+        uint256[] _startTimes, 
+        uint256[] _endTimes, 
+        uint256[] _rollingPeriods
+        ) public withPerm(ADMIN) {
+        
+        require( 
+            _userAddresses.length == _percentsAllowed.length &&
+            _userAddresses.length == _rollingPeriods.length &&
+            _userAddresses.length == _startTimes.length &&
+            _userAddresses.length == _endTimes.length,
+            "Input array length mis-match"
+        );
+
+        for (uint256 i = 0; i < _userAddresses.length; i++) {
+            modifyVolumeDumpingRestriction(_userAddresses[i], _percentsAllowed[i], _startTimes[i], _endTimes[i], _rollingPeriods[i]);
+        }
     }
     
     /**
@@ -270,16 +315,18 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
      /**
     * @notice Takes a userAddress as input, and returns a uint that represents the number of tokens allowed to be withdrawn right now
     * @param _userAddress User Address to get the rule
-    * @param periodId Time period identifier
+    * @param _periodId Time period identifier
     */
-    function _currentAllowedAmount(address _userAddress, uint periodId) internal returns (uint) {
+    function _currentAllowedAmount(address _userAddress, uint256 _periodId) internal returns (uint256) {
         VolumeRestriction storage userDumpingRestriction = volumeRestriction[_userAddress];
         
-        uint alreadyWithdrawn = volumeTally[_userAddress][periodId];
+        // get already withdrawn amount in period
+        uint256 alreadyWithdrawn = volumeTally[_userAddress][_periodId];
+        
         // if the already with drawn is 0
         // means its essentially a new period
         if(alreadyWithdrawn == 0){
-            volumePeriodIds[_userAddress].push(periodId);
+            volumePeriodIds[_userAddress].push(_periodId);
         }
 
         uint256 currentUserBalance = ISecurityToken(securityToken).balanceOf(_userAddress);
@@ -289,11 +336,8 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
         uint256 percentAllowed = userDumpingRestriction.percentAllowed;
 
         // totalAmountAllowedForPeriod = currentbalance * 20/100
-        uint256 totalAmountAllowedForPeriod = currentUserBalance.add(alreadyWithdrawn).mul(percentAllowed).div(100);
+        uint256 totalAmountAllowedForPeriod = currentUserBalance.add(alreadyWithdrawn).mul(percentAllowed).div(100 * uint256(10)**16);
 
-        // get already withdrawn amount in period
-        // alreadyWithdrawn = volumeTally[_userAddress][periodId];
-        // c
         uint256 allowedAmount = totalAmountAllowedForPeriod.sub(alreadyWithdrawn);
         return allowedAmount;
     }
@@ -314,9 +358,9 @@ contract VolumeDumpingRestrictionManager is ITransferManager {
         uint256 _rollingPeriod
         ) internal view {
         require(address(0) != _userAddress, "Invalid user address");
-        require(_percentAllowed > 0 && _percentAllowed <= 100, "Invalid percent input");
-        require(_startTime == 0 || _startTime >= now, "Invalid start time.");
-        require(_endTime > 0 && _endTime > _startTime, "Invalid endtime");
+        require(_percentAllowed > 0 && _percentAllowed <= 100 * uint256(10)**16, "Invalid percent input");
+        require(_startTime == 0 || _startTime >= now, "Invalid start time");
+        require(_endTime > _startTime, "Invalid endtime");
         require(_rollingPeriod > 0 && _rollingPeriod < _endTime, "Invalid rolling period");        
     }
 }

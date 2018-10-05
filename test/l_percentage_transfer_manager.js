@@ -13,153 +13,132 @@ const SecurityToken = artifacts.require('./SecurityToken.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
-const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545')); // Hardcoded development port
+const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
 contract('PercentageTransferManager', accounts => {
-  // Accounts Variable declaration
-  let account_polymath;
-  let account_issuer;
-  let token_owner;
-  let account_investor1;
-  let account_investor2;
-  let account_investor3;
-  let account_investor4;
 
-  // investor Details
-  let fromTime = latestTime();
-  let toTime = latestTime();
-  let expiryTime = toTime + duration.days(15);
+    // Accounts Variable declaration
+    let account_polymath;
+    let account_issuer;
+    let token_owner;
+    let account_investor1;
+    let account_investor2;
+    let account_investor3;
+    let account_investor4;
 
-  let message = 'Transaction Should Fail!';
+    // investor Details
+    let fromTime = latestTime();
+    let toTime = latestTime();
+    let expiryTime = toTime + duration.days(15);
 
-  // Contract Instance Declaration
-  let I_GeneralPermissionManagerFactory;
-  let P_PercentageTransferManagerFactory;
-  let I_SecurityTokenRegistryProxy;
-  let P_PercentageTransferManager;
-  let I_GeneralTransferManagerFactory;
-  let I_PercentageTransferManagerFactory;
-  let I_GeneralPermissionManager;
-  let I_PercentageTransferManager;
-  let I_GeneralTransferManager;
-  let I_ModuleRegistryProxy;
-  let I_ModuleRegistry;
-  let I_FeatureRegistry;
-  let I_SecurityTokenRegistry;
-  let I_STRProxied;
-  let I_MRProxied;
-  let I_STFactory;
-  let I_SecurityToken;
-  let I_PolyToken;
-  var I_PolymathRegistry;
+    let message = "Transaction Should Fail!";
 
-  // SecurityToken Details
-  const name = 'Team';
-  const symbol = 'sap';
-  const tokenDetails = 'This is equity type of issuance';
-  const decimals = 18;
-  const contact = 'team@polymath.network';
+    // Contract Instance Declaration
+    let I_GeneralPermissionManagerFactory;
+    let P_PercentageTransferManagerFactory;
+    let I_SecurityTokenRegistryProxy;
+    let P_PercentageTransferManager;
+    let I_GeneralTransferManagerFactory;
+    let I_PercentageTransferManagerFactory;
+    let I_GeneralPermissionManager;
+    let I_PercentageTransferManager;
+    let I_GeneralTransferManager;
+    let I_ModuleRegistryProxy;
+    let I_ModuleRegistry;
+    let I_FeatureRegistry;
+    let I_SecurityTokenRegistry;
+    let I_STRProxied;
+    let I_MRProxied;
+    let I_STFactory;
+    let I_SecurityToken;
+    let I_PolyToken;
+    var I_PolymathRegistry;
 
-  // Module key
-  const delegateManagerKey = 1;
-  const transferManagerKey = 2;
-  const stoKey = 3;
+    // SecurityToken Details
+    const name = "Team";
+    const symbol = "sap";
+    const tokenDetails = "This is equity type of issuance";
+    const decimals = 18;
+    const contact = "team@polymath.network";
 
-  // Initial fee for ticker registry and security token registry
-  const initRegFee = web3.utils.toWei('250');
+    // Module key
+    const delegateManagerKey = 1;
+    const transferManagerKey = 2;
+    const stoKey = 3;
 
-  // PercentageTransferManager details
-  const holderPercentage = 70 * 10 ** 16; // Maximum number of token holders
+    // Initial fee for ticker registry and security token registry
+    const initRegFee = web3.utils.toWei("250");
 
-  let bytesSTO = web3.eth.abi.encodeFunctionCall(
-    {
-      name: 'configure',
-      type: 'function',
-      inputs: [
-        {
-          type: 'uint256',
-          name: '_maxHolderPercentage'
+    // PercentageTransferManager details
+    const holderPercentage = 70 * 10**16;           // Maximum number of token holders
+
+    let bytesSTO = web3.eth.abi.encodeFunctionCall({
+        name: 'configure',
+        type: 'function',
+        inputs: [{
+            type: 'uint256',
+            name: '_maxHolderPercentage'
         }
-      ]
-    },
-    [holderPercentage]
-  );
+        ]
+    }, [holderPercentage]);
 
-  before(async () => {
-    // Accounts setup
-    account_polymath = accounts[0];
-    account_issuer = accounts[1];
+    before(async() => {
+        // Accounts setup
+        account_polymath = accounts[0];
+        account_issuer = accounts[1];
 
-    token_owner = account_issuer;
+        token_owner = account_issuer;
 
-    account_investor1 = accounts[7];
-    account_investor2 = accounts[8];
-    account_investor3 = accounts[9];
+        account_investor1 = accounts[7];
+        account_investor2 = accounts[8];
+        account_investor3 = accounts[9];
 
-    let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-    [
-      I_PolymathRegistry,
-      I_PolyToken,
-      I_FeatureRegistry,
-      I_ModuleRegistry,
-      I_ModuleRegistryProxy,
-      I_MRProxied,
-      I_GeneralTransferManagerFactory,
-      I_STFactory,
-      I_SecurityTokenRegistry,
-      I_SecurityTokenRegistryProxy,
-      I_STRProxied
-    ] = instances;
+        [I_PolymathRegistry, I_PolyToken, I_FeatureRegistry, I_ModuleRegistry, I_ModuleRegistryProxy, I_MRProxied, I_GeneralTransferManagerFactory,
+            I_STFactory, I_SecurityTokenRegistry, I_SecurityTokenRegistryProxy, I_STRProxied] = instances;
 
-    // STEP 4(b): Deploy the GeneralDelegateManagerFactory
+        // STEP 4(b): Deploy the GeneralDelegateManagerFactory
 
-    I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
+        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
-    assert.notEqual(
-      I_GeneralPermissionManagerFactory.address.valueOf(),
-      '0x0000000000000000000000000000000000000000',
-      'GeneralDelegateManagerFactory contract was not deployed'
-    );
+        assert.notEqual(
+            I_GeneralPermissionManagerFactory.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "GeneralDelegateManagerFactory contract was not deployed"
+        );
 
-    // STEP 4(c): Deploy the PercentageTransferManager
-    I_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {
-      from: account_polymath
-    });
-    assert.notEqual(
-      I_PercentageTransferManagerFactory.address.valueOf(),
-      '0x0000000000000000000000000000000000000000',
-      'PercentageTransferManagerFactory contract was not deployed'
-    );
+        // STEP 4(c): Deploy the PercentageTransferManager
+        I_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
+        assert.notEqual(
+            I_PercentageTransferManagerFactory.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "PercentageTransferManagerFactory contract was not deployed"
+        );
 
-    // STEP 4(d): Deploy the PercentageTransferManager
-    P_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(
-      I_PolyToken.address,
-      web3.utils.toWei('500', 'ether'),
-      0,
-      0,
-      { from: account_polymath }
-    );
-    assert.notEqual(
-      P_PercentageTransferManagerFactory.address.valueOf(),
-      '0x0000000000000000000000000000000000000000',
-      'PercentageTransferManagerFactory contract was not deployed'
-    );
+        // STEP 4(d): Deploy the PercentageTransferManager
+        P_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(I_PolyToken.address, web3.utils.toWei("500", "ether"), 0, 0, {from:account_polymath});
+        assert.notEqual(
+            P_PercentageTransferManagerFactory.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "PercentageTransferManagerFactory contract was not deployed"
+        );
 
-    // (B) :  Register the GeneralDelegateManagerFactory
-    await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-    await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
 
-    // (C) : Register the PercentageTransferManagerFactory
-    await I_MRProxied.registerModule(I_PercentageTransferManagerFactory.address, { from: account_polymath });
-    await I_MRProxied.verifyModule(I_PercentageTransferManagerFactory.address, true, { from: account_polymath });
+       // (B) :  Register the GeneralDelegateManagerFactory
+       await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
+       await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
 
-    // (C) : Register the Paid PercentageTransferManagerFactory
-    await I_MRProxied.registerModule(P_PercentageTransferManagerFactory.address, { from: account_polymath });
-    await I_MRProxied.verifyModule(P_PercentageTransferManagerFactory.address, true, { from: account_polymath });
+       // (C) : Register the PercentageTransferManagerFactory
+       await I_MRProxied.registerModule(I_PercentageTransferManagerFactory.address, { from: account_polymath });
+       await I_MRProxied.verifyModule(I_PercentageTransferManagerFactory.address, true, { from: account_polymath });
 
-    // Printing all the contract addresses
-    console.log(`
+       // (C) : Register the Paid PercentageTransferManagerFactory
+       await I_MRProxied.registerModule(P_PercentageTransferManagerFactory.address, { from: account_polymath });
+       await I_MRProxied.verifyModule(P_PercentageTransferManagerFactory.address, true, { from: account_polymath });
+
+        // Printing all the contract addresses
+        console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
         PolymathRegistry:                  ${I_PolymathRegistry.address}
         SecurityTokenRegistryProxy:        ${I_SecurityTokenRegistryProxy.address}
@@ -175,221 +154,237 @@ contract('PercentageTransferManager', accounts => {
         PercentageTransferManagerFactory:  ${I_PercentageTransferManagerFactory.address}
         -----------------------------------------------------------------------------
         `);
-  });
-
-  describe('Generate the SecurityToken', async () => {
-    it('Should register the ticker before the generation of the security token', async () => {
-      await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-      let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from: token_owner });
-      assert.equal(tx.logs[0].args._owner, token_owner);
-      assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
     });
 
-    it('Should generate the new security token with the same symbol as registered above', async () => {
-      await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-      let _blockNo = latestBlock();
-      let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
+    describe("Generate the SecurityToken", async() => {
 
-      // Verify the successful generation of the security token
-      assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+        it("Should register the ticker before the generation of the security token", async () => {
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from : token_owner });
+            assert.equal(tx.logs[0].args._owner, token_owner);
+            assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
+        });
 
-      I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+        it("Should generate the new security token with the same symbol as registered above", async () => {
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let _blockNo = latestBlock();
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
-      const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
+            // Verify the successful generation of the security token
+            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-      // Verify that GeneralTransferManager module get added successfully or not
-      assert.equal(log.args._type.toNumber(), 2);
-      assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ''), 'GeneralTransferManager');
+            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+
+            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
+
+            // Verify that GeneralTransferManager module get added successfully or not
+            assert.equal(log.args._type.toNumber(), 2);
+            assert.equal(
+                web3.utils.toAscii(log.args._name)
+                .replace(/\u0000/g, ''),
+                "GeneralTransferManager"
+            );
+        });
+
+        it("Should intialize the auto attached modules", async () => {
+           let moduleData = await I_SecurityToken.modules(2, 0);
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+
+        });
+
     });
 
-    it('Should intialize the auto attached modules', async () => {
-      let moduleData = await I_SecurityToken.modules(2, 0);
-      I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
-    });
-  });
+    describe("Buy tokens using on-chain whitelist", async() => {
 
-  describe('Buy tokens using on-chain whitelist', async () => {
-    it('Should Buy the tokens', async () => {
-      // Add the Investor in to the whitelist
+        it("Should Buy the tokens", async() => {
+            // Add the Investor in to the whitelist
 
-      let tx = await I_GeneralTransferManager.modifyWhitelist(
-        account_investor1,
-        latestTime(),
-        latestTime(),
-        latestTime() + duration.days(10),
-        true,
-        {
-          from: account_issuer,
-          gas: 6000000
-        }
-      );
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor1,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(10),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                });
 
-      assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), 'Failed in adding the investor in whitelist');
+            assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in adding the investor in whitelist");
 
-      // Jump time
-      await increaseTime(5000);
+            // Jump time
+            await increaseTime(5000);
 
-      // Mint some tokens
-      await I_SecurityToken.mint(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
+            // Mint some tokens
+            await I_SecurityToken.mint(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
 
-      assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei('1', 'ether'));
-    });
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor1)).toNumber(),
+                web3.utils.toWei('1', 'ether')
+            );
+        });
 
-    it('Should Buy some more tokens', async () => {
-      // Add the Investor in to the whitelist
+        it("Should Buy some more tokens", async() => {
+            // Add the Investor in to the whitelist
 
-      let tx = await I_GeneralTransferManager.modifyWhitelist(
-        account_investor2,
-        latestTime(),
-        latestTime(),
-        latestTime() + duration.days(10),
-        true,
-        {
-          from: account_issuer,
-          gas: 6000000
-        }
-      );
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor2,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(10),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                });
 
-      assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), 'Failed in adding the investor in whitelist');
+            assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
 
-      // Mint some tokens
-      await I_SecurityToken.mint(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner });
+            // Mint some tokens
+            await I_SecurityToken.mint(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner });
 
-      assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei('1', 'ether'));
-    });
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor2)).toNumber(),
+                web3.utils.toWei('1', 'ether')
+            );
+        });
 
-    it('Should successfully attach the PercentageTransferManagerr factory with the security token', async () => {
-      await I_PolyToken.getTokens(web3.utils.toWei('500', 'ether'), token_owner);
-      await catchRevert(
-        I_SecurityToken.addModule(P_PercentageTransferManagerFactory.address, bytesSTO, web3.utils.toWei('500', 'ether'), 0, {
-          from: token_owner
+        it("Should successfully attach the PercentageTransferManagerr factory with the security token", async () => {
+            
+            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            await catchRevert(I_SecurityToken.addModule(P_PercentageTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, { from: token_owner }));
+        });
+
+        it("Should successfully attach the PercentageTransferManager factory with the security token", async () => {
+            let snapId = await takeSnapshot();
+            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
+            const tx = await I_SecurityToken.addModule(P_PercentageTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, { from: token_owner });
+            assert.equal(tx.logs[3].args._type.toNumber(), transferManagerKey, "PercentageTransferManagerFactory doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[3].args._name)
+                .replace(/\u0000/g, ''),
+                "PercentageTransferManager",
+                "PercentageTransferManagerFactory module was not added"
+            );
+            P_PercentageTransferManager = PercentageTransferManager.at(tx.logs[3].args._module);
+            await revertToSnapshot(snapId);
+        });
+
+        it("Should successfully attach the PercentageTransferManager with the security token", async () => {
+            const tx = await I_SecurityToken.addModule(I_PercentageTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
+            assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "PercentageTransferManager doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name)
+                .replace(/\u0000/g, ''),
+                "PercentageTransferManager",
+                "PercentageTransferManager module was not added"
+            );
+            I_PercentageTransferManager = PercentageTransferManager.at(tx.logs[2].args._module);
+        });
+
+        it("Add a new token holder", async() => {
+
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor3,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(10),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                });
+
+            assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor3.toLowerCase(), "Failed in adding the investor in whitelist");
+
+            // Add the Investor in to the whitelist
+            // Mint some tokens
+            await I_SecurityToken.mint(account_investor3, web3.utils.toWei('1', 'ether'), { from: token_owner });
+
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor3)).toNumber(),
+                web3.utils.toWei('1', 'ether')
+            );
+        });
+
+        it("Should pause the tranfers at transferManager level", async() => {
+            let tx = await I_PercentageTransferManager.pause({from: token_owner});
+        });
+
+        it("Should still be able to transfer between existing token holders up to limit", async() => {
+            // Add the Investor in to the whitelist
+            // Mint some tokens
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor1)).toNumber(),
+                web3.utils.toWei('2', 'ether')
+            );
+        });
+
+        it("Should unpause the tranfers at transferManager level", async() => {
+            await I_PercentageTransferManager.unpause({from: token_owner});
         })
-      );
+
+        it("Should not be able to transfer between existing token holders over limit", async() => {
+            
+            await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 }));
+        });
+
+        it("Modify holder percentage to 100", async() => {
+            // Add the Investor in to the whitelist
+            // Mint some tokens
+            await I_PercentageTransferManager.changeHolderPercentage(100 * 10**16, { from: token_owner });
+
+            assert.equal(
+                (await I_PercentageTransferManager.maxHolderPercentage()).toNumber(),
+                100 * 10**16
+            );
+        });
+
+        it("Should be able to transfer between existing token holders up to limit", async() => {
+            await I_PercentageTransferManager.modifyWhitelist(account_investor3, false, { from: token_owner });
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 });
+        });
+
+        it("Should be able to whitelist address and then transfer regardless of holders", async() => {
+          await I_PercentageTransferManager.changeHolderPercentage(30 * 10**16, { from: token_owner });
+          await I_PercentageTransferManager.modifyWhitelist(account_investor1, true, { from: token_owner });
+          await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('2', 'ether'), { from: account_investor3 });
+        });
+
+        it("Should get the permission", async() => {
+            let perm = await I_PercentageTransferManager.getPermissions.call();
+            assert.equal(perm.length, 1);
+        });
+
     });
 
-    it('Should successfully attach the PercentageTransferManager factory with the security token', async () => {
-      let snapId = await takeSnapshot();
-      await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei('500', 'ether'), { from: token_owner });
-      const tx = await I_SecurityToken.addModule(
-        P_PercentageTransferManagerFactory.address,
-        bytesSTO,
-        web3.utils.toWei('500', 'ether'),
-        0,
-        { from: token_owner }
-      );
-      assert.equal(tx.logs[3].args._type.toNumber(), transferManagerKey, "PercentageTransferManagerFactory doesn't get deployed");
-      assert.equal(
-        web3.utils.toAscii(tx.logs[3].args._name).replace(/\u0000/g, ''),
-        'PercentageTransferManager',
-        'PercentageTransferManagerFactory module was not added'
-      );
-      P_PercentageTransferManager = PercentageTransferManager.at(tx.logs[3].args._module);
-      await revertToSnapshot(snapId);
+    describe("Percentage Transfer Manager Factory test cases", async() => {
+
+        it("Should get the exact details of the factory", async() => {
+            assert.equal(await I_PercentageTransferManagerFactory.setupCost.call(),0);
+            assert.equal(await I_PercentageTransferManagerFactory.getType.call(),2);
+            assert.equal(web3.utils.toAscii(await I_PercentageTransferManagerFactory.getName.call())
+                        .replace(/\u0000/g, ''),
+                        "PercentageTransferManager",
+                        "Wrong Module added");
+            assert.equal(await I_PercentageTransferManagerFactory.getDescription.call(),
+                        "Restrict the number of investors",
+                        "Wrong Module added");
+            assert.equal(await I_PercentageTransferManagerFactory.getTitle.call(),
+                        "Percentage Transfer Manager",
+                        "Wrong Module added");
+            assert.equal(await I_PercentageTransferManagerFactory.getInstructions.call(),
+                        "Allows an issuer to restrict the total number of non-zero token holders",
+                        "Wrong Module added");
+
+        });
+
+        it("Should get the tags of the factory", async() => {
+            let tags = await I_PercentageTransferManagerFactory.getTags.call();
+            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), "Percentage");
+        });
     });
 
-    it('Should successfully attach the PercentageTransferManager with the security token', async () => {
-      const tx = await I_SecurityToken.addModule(I_PercentageTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
-      assert.equal(tx.logs[2].args._type.toNumber(), transferManagerKey, "PercentageTransferManager doesn't get deployed");
-      assert.equal(
-        web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ''),
-        'PercentageTransferManager',
-        'PercentageTransferManager module was not added'
-      );
-      I_PercentageTransferManager = PercentageTransferManager.at(tx.logs[2].args._module);
-    });
-
-    it('Add a new token holder', async () => {
-      let tx = await I_GeneralTransferManager.modifyWhitelist(
-        account_investor3,
-        latestTime(),
-        latestTime(),
-        latestTime() + duration.days(10),
-        true,
-        {
-          from: account_issuer,
-          gas: 6000000
-        }
-      );
-
-      assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor3.toLowerCase(), 'Failed in adding the investor in whitelist');
-
-      // Add the Investor in to the whitelist
-      // Mint some tokens
-      await I_SecurityToken.mint(account_investor3, web3.utils.toWei('1', 'ether'), { from: token_owner });
-
-      assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei('1', 'ether'));
-    });
-
-    it('Should pause the tranfers at transferManager level', async () => {
-      let tx = await I_PercentageTransferManager.pause({ from: token_owner });
-    });
-
-    it('Should still be able to transfer between existing token holders up to limit', async () => {
-      // Add the Investor in to the whitelist
-      // Mint some tokens
-      await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
-
-      assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei('2', 'ether'));
-    });
-
-    it('Should unpause the tranfers at transferManager level', async () => {
-      await I_PercentageTransferManager.unpause({ from: token_owner });
-    });
-
-    it('Should not be able to transfer between existing token holders over limit', async () => {
-      await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 }));
-    });
-
-    it('Modify holder percentage to 100', async () => {
-      // Add the Investor in to the whitelist
-      // Mint some tokens
-      await I_PercentageTransferManager.changeHolderPercentage(100 * 10 ** 16, { from: token_owner });
-
-      assert.equal((await I_PercentageTransferManager.maxHolderPercentage()).toNumber(), 100 * 10 ** 16);
-    });
-
-    it('Should be able to transfer between existing token holders up to limit', async () => {
-      await I_PercentageTransferManager.modifyWhitelist(account_investor3, false, { from: token_owner });
-      await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 });
-    });
-
-    it('Should be able to whitelist address and then transfer regardless of holders', async () => {
-      await I_PercentageTransferManager.changeHolderPercentage(30 * 10 ** 16, { from: token_owner });
-      await I_PercentageTransferManager.modifyWhitelist(account_investor1, true, { from: token_owner });
-      await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('2', 'ether'), { from: account_investor3 });
-    });
-
-    it('Should get the permission', async () => {
-      let perm = await I_PercentageTransferManager.getPermissions.call();
-      assert.equal(perm.length, 1);
-    });
-  });
-
-  describe('Percentage Transfer Manager Factory test cases', async () => {
-    it('Should get the exact details of the factory', async () => {
-      assert.equal(await I_PercentageTransferManagerFactory.setupCost.call(), 0);
-      assert.equal(await I_PercentageTransferManagerFactory.getType.call(), 2);
-      assert.equal(
-        web3.utils.toAscii(await I_PercentageTransferManagerFactory.getName.call()).replace(/\u0000/g, ''),
-        'PercentageTransferManager',
-        'Wrong Module added'
-      );
-      assert.equal(
-        await I_PercentageTransferManagerFactory.getDescription.call(),
-        'Restrict the number of investors',
-        'Wrong Module added'
-      );
-      assert.equal(await I_PercentageTransferManagerFactory.getTitle.call(), 'Percentage Transfer Manager', 'Wrong Module added');
-      assert.equal(
-        await I_PercentageTransferManagerFactory.getInstructions.call(),
-        'Allows an issuer to restrict the total number of non-zero token holders',
-        'Wrong Module added'
-      );
-    });
-
-    it('Should get the tags of the factory', async () => {
-      let tags = await I_PercentageTransferManagerFactory.getTags.call();
-      assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), 'Percentage');
-    });
-  });
 });

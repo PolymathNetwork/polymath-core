@@ -10,12 +10,22 @@ async function tryCatch(promise, message) {
     try {
       assert(
         error.message.startsWith(PREFIX + message),
-        "Expected an error starting with '" + PREFIX + message + "' but got '" + error.message + "' instead"
+        "Expected an error starting with '" +
+        PREFIX +
+        message +
+        "' but got '" +
+        error.message +
+        "' instead"
       );
     } catch (err) {
       assert(
         error.message.startsWith(PREFIX2 + message),
-        "Expected an error starting with '" + PREFIX + message + "' but got '" + error.message + "' instead"
+        "Expected an error starting with '" +
+        PREFIX +
+        message +
+        "' but got '" +
+        error.message +
+        "' instead"
       );
     }
   }

@@ -28,8 +28,7 @@
     "flatten-oracles": "sol-merger './contracts/oracles/*.sol' ./flat/oracles",
     "flatten": "sol-merger './contracts/*.sol' ./flat",
     "ethereum-bridge": "node_modules/.bin/ethereum-bridge -H localhost:8545 -a 9 --dev",
-    "st20generator": "node demo/ST20Generator",
-    "pretty": "prettier --write --single-quote --print-width 140 --tab-width 2 \"**/*.js\""
+    "st20generator": "node demo/ST20Generator"
   },
   "repository": {
     "type": "git",
@@ -72,7 +71,6 @@
   "devDependencies": {
     "@soldoc/soldoc": "^0.4.3",
     "eslint": "^4.19.1",
-    "prettier": "^1.14.3",
     "eslint-config-standard": "^11.0.0",
     "eslint-plugin-import": "^2.10.0",
     "eslint-plugin-node": "^6.0.1",

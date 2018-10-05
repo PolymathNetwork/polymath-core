@@ -5,12 +5,12 @@ pragma solidity ^0.4.24;
  */
 
 library VersionUtils {
-    
+
     /**
      * @notice This function is used to validate the version submitted
      * @param _current Array holds the present version of ST
      * @param _new Array holds the latest version of the ST
-     * @return bool 
+     * @return bool
      */
     function isValidVersion(uint8[] _current, uint8[] _new) internal pure returns(bool) {
         bool[] memory _temp = new bool[](_current.length);
@@ -21,16 +21,16 @@ library VersionUtils {
             else
                 _temp[i] = false;
         }
-        
+
         for (i = 0; i < _current.length; i++) {
             if (i == 0) {
                 if (_current[i] <= _new[i])
-                    if(_temp[0]) { 
+                    if(_temp[0]) {
                         counter = counter + 3;
                         break;
                     } else
                         counter++;
-                else 
+                else
                     return false;
             } else {
                 if (_temp[i-1])
@@ -49,7 +49,7 @@ library VersionUtils {
      * @notice This function use to compare the lower bound with the latest version
      * @param _version1 Array holds the lower bound of the version
      * @param _version2 Array holds the latest version of the ST
-     * @return bool 
+     * @return bool
      */
     function compareLowerBound(uint8[] _version1, uint8[] _version2) internal pure returns(bool) {
         require(_version1.length == _version2.length);
@@ -71,16 +71,16 @@ library VersionUtils {
             if (counter == _version1.length - 1)
                 return true;
             else
-                return false; 
+                return false;
         } else
-            return true; 
+            return true;
     }
 
     /**
      * @notice This function use to compare the upper bound with the latest version
      * @param _version1 Array holds the upper bound of the version
      * @param _version2 Array holds the latest version of the ST
-     * @return bool 
+     * @return bool
      */
     function compareUpperBound(uint8[] _version1, uint8[] _version2) internal pure returns(bool) {
         require(_version1.length == _version2.length);
@@ -102,12 +102,12 @@ library VersionUtils {
             if (counter == _version1.length - 1)
                 return true;
             else
-                return false;  
+                return false;
         } else
-            return true; 
+            return true;
     }
 
-    
+
     /**
      * @notice Use to pack the uint8[] array data into uint24 value
      * @param _major Major version
@@ -129,6 +129,6 @@ library VersionUtils {
         _unpackVersion[2] = uint8(_packedVersion);
         return _unpackVersion;
     }
-    
+
 
 }

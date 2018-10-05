@@ -490,7 +490,7 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
             let tx = await I_SecurityToken1.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER1 });
-            assert.equal(tx.logs[2].args._type, STOKEY, "USDTieredSTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name),"USDTieredSTO","USDTieredSTOFactory module was not added");
             I_USDTieredSTO = USDTieredSTO.at(tx.logs[2].args._module);
         });
@@ -517,14 +517,14 @@ contract('Upgrade from v1.3.0 to v1.4.0', accounts => {
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, [fundRaiseType], fundsReceiver]);
 
             let tx = await I_SecurityToken2.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER2 });
-            assert.equal(tx.logs[2].args._type, STOKEY, "CappedSTO doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0], STOKEY, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name),"CappedSTO","CappedSTOFactory module was not added");
         });
 
         // Attach ManualApprovalTransferManager module for TOK2
         it("Should successfully attach the ManualApprovalTransferManagerFactory with the second token", async () => {
             const tx = await I_SecurityToken2.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: ISSUER2 });
-            assert.equal(tx.logs[2].args._type.toNumber(), TMKEY, "ManualApprovalTransferManagerFactory doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0].toNumber(), TMKEY, "ManualApprovalTransferManagerFactory doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[2].args._name), "ManualApprovalTransferManager", "ManualApprovalTransferManagerFactory module was not added");
             I_ManualApprovalTransferManagerFactory = ManualApprovalTransferManagerFactory.at(tx.logs[2].args._module);
         });

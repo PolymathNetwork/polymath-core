@@ -280,4 +280,10 @@ interface ISecurityToken {
       * @return bool success
       */
      function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
+     
+     /**
+      * @notice Provide the granularity of the token
+      * @return uint256 
+      */
+     function granularity() external view returns(uint256);
 }

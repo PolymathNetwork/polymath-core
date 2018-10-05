@@ -691,21 +691,26 @@ contract("USDTieredSTO Sim", accounts => {
             async function investFAIL(_investor) {
                 let isPoly = Math.random() >= 0.3;
                 let isDAI = Math.random() >= 0.3;
-                let investment_POLY = BigNumber(40*10**18);   // 10 USD = 40 POLY
-                let investment_ETH = BigNumber(0.02*10**18);  // 10 USD = 0.02 ETH
-                let investment_DAI = BigNumber(10*10**18);  // 10 USD = DAI DAI
-
+                let investment_POLY = BigNumber(40 * 10 ** 18); // 10 USD = 40 POLY
+                let investment_ETH = BigNumber(0.02 * 10 ** 18); // 10 USD = 0.02 ETH
+                let investment_DAI = BigNumber(10 * 10 ** 18); // 10 USD = DAI DAI
 
                 if (isPoly) {
                     await I_PolyToken.getTokens(investment_POLY, _investor);
-                    await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, {from: _investor});
-                    await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, { from: _investor, gasPrice: GAS_PRICE }));
+                    await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: _investor });
+                    await catchRevert(
+                        I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, { from: _investor, gasPrice: GAS_PRICE })
+                    );
                 } else if (isDAI) {
                     await I_DaiToken.getTokens(investment_DAI, _investor);
-                    await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, {from: _investor});
-                    await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE }));
-                } else await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(_investor, { from: _investor, value: investment_ETH, gasPrice: GAS_PRICE }));
-
+                    await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: _investor });
+                    await catchRevert(
+                        I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE })
+                    );
+                } else
+                    await catchRevert(
+                        I_USDTieredSTO_Array[stoId].buyWithETH(_investor, { from: _investor, value: investment_ETH, gasPrice: GAS_PRICE })
+                    );
             }
 
             async function processInvestment(

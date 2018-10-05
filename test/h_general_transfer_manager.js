@@ -586,23 +586,25 @@ contract("GeneralTransferManager", accounts => {
             await catchRevert(I_GeneralTransferManager.takeFee(web3.utils.toWei("1", "ether"), { from: account_delegate }));
         });
 
-        it("Factory owner should pull fees", async() => {
-            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FEE_ADMIN", true, {from: token_owner});
+        it("Factory owner should pull fees", async () => {
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FEE_ADMIN", true, {
+                from: token_owner
+            });
             let balanceBefore = await I_PolyToken.balanceOf(account_polymath);
-            await I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_delegate});
+            await I_GeneralTransferManager.takeFee(web3.utils.toWei("1", "ether"), { from: account_delegate });
             let balanceAfter = await I_PolyToken.balanceOf(account_polymath);
-            assert.equal(balanceBefore.add(web3.utils.toWei('1','ether')).toNumber(), balanceAfter.toNumber(), "Fee is transferred");
+            assert.equal(balanceBefore.add(web3.utils.toWei("1", "ether")).toNumber(), balanceAfter.toNumber(), "Fee is transferred");
         });
 
-        it("Should change the white list transfer variable", async() => {
-            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistIssuances(true, {from : token_owner});
+        it("Should change the white list transfer variable", async () => {
+            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistIssuances(true, { from: token_owner });
             assert.isTrue(tx.logs[0].args._allowAllWhitelistIssuances);
         });
 
-        it("should failed in trasfering the tokens", async() => {
-            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, {from : token_owner});
-            await I_GeneralTransferManager.pause({from: token_owner});
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei('2','ether'), {from: account_investor2}));
+        it("should failed in trasfering the tokens", async () => {
+            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, { from: token_owner });
+            await I_GeneralTransferManager.pause({ from: token_owner });
+            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("2", "ether"), { from: account_investor2 }));
         });
 
         it("Should change the Issuance address", async () => {

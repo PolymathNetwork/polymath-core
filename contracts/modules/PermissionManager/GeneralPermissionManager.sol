@@ -137,7 +137,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
         uint8 i = 0;
         for (i = 0; i < allDelegates.length; i++) {
             if (perms[_module][allDelegates[i]][_perm]) {
-               counter++;
+                counter++;
             }
         }
         address[] memory allDelegatesWithPerm = new address[](counter);

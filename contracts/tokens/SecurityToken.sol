@@ -289,7 +289,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     /**
     * @notice Internal - Removes a module attached to the SecurityToken by index
-    * @param _module address of module to remove
     */
     function _removeModuleWithIndex(uint8 _type, uint256 _index) internal {
         uint256 length = modules[_type].length;

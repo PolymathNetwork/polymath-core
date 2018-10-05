@@ -155,8 +155,18 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         }
         require(getUint(Encoder.getKey('registry', _moduleFactory)) == 0, "Module factory should not be pre-registered");
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        uint8 moduleType = moduleFactory.getType();
-        require(moduleType != 0, "Factory moduleType should not equal to 0");
+        //Enforce type uniqueness
+        uint256 i;
+        uint256 j;
+        uint8[] memory moduleTypes = moduleFactory.getTypes();
+        for (i = 1; i < moduleTypes.length; i++) {
+            for (j = 0; j < i; j++) {
+                require(moduleTypes[i] != moduleTypes[j], "Type mismatch");
+            }
+        }
+        require(moduleTypes.length != 0, "Factory must have type");
+        // NB - here we index by the first type of the module.
+        uint8 moduleType = moduleFactory.getTypes()[0];
         set(Encoder.getKey('registry', _moduleFactory), uint256(moduleType));
         set(Encoder.getKey('moduleListIndex', _moduleFactory), uint256(getArrayAddress(Encoder.getKey('moduleList', uint256(moduleType))).length));
         pushArray(Encoder.getKey('moduleList', uint256(moduleType)), _moduleFactory);

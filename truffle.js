@@ -2,7 +2,6 @@ require('babel-register');
 require('babel-polyfill');
 const fs = require('fs');
 const NonceTrackerSubprovider = require("web3-provider-engine/subproviders/nonce-tracker")
-const key = fs.readFileSync('./privKey').toString();
 
 const HDWalletProvider = require("truffle-hdwallet-provider-privkey");
 
@@ -39,6 +38,7 @@ module.exports = {
     },
     kovan: {
       provider: () => {
+        const key = fs.readFileSync('./privKey').toString();
         let wallet = new HDWalletProvider(key, "https://kovan.infura.io/")
         var nonceTracker = new NonceTrackerSubprovider()
         wallet.engine._providers.unshift(nonceTracker)

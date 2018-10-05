@@ -10,7 +10,7 @@ import "../../interfaces/ISecurityToken.sol";
 contract VestingEscrowWallet is IWallet {
   using SafeMath for uint;
 
-  bytes32 public constant ISSUER = "ISSUER";    // TODO: Is this needed?
+  bytes32 public constant ISSUER = "ISSUER";
   address public treasury;
   uint256 public numExcessTokens;
   uint256 public templateCount;

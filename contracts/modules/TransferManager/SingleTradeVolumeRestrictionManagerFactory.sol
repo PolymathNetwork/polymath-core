@@ -43,11 +43,13 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
     }
 
     /**
-    * @notice Type of the Module factory
-    * @return uint8
+    * @notice Get the types of the Module factory
+    * @return uint8[]
     */
-    function getType() public view returns(uint8) {
-        return 2;
+    function getTypes() external view returns(uint8[]) {
+        uint8[] memory res = new uint8[](1);
+        res[0] = 2;
+        return res;
     }
 
     /**
@@ -62,7 +64,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
     * @notice Get the description of the Module
     * @return string
     */
-    function getDescription() public view returns(string) {
+    function getDescription() external view returns(string) {
         return description;
     }
 
@@ -70,7 +72,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
     * @notice Get the title of the Module
     * @return string
     */
-    function getTitle() public  view returns(string) {
+    function getTitle() external view returns(string) {
         return title;
     }
 
@@ -78,7 +80,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
     * @notice Get the Instructions that help to use the module
     * @return string
     */
-    function getInstructions() public view returns(string) {
+    function getInstructions() external view returns(string) {
         return "Allows an issuer to impose volume restriction on a single trade. Init function takes two parameters. First parameter is a bool indicating if restriction is in percentage. The second parameter is the value in percentage or amount of tokens";
     }
 
@@ -101,7 +103,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
     * @notice Get the tags related to the module factory
     * @return bytes32[]
     */
-    function getTags() public view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](3);
         availableTags[0] = "Single Trade";
         availableTags[1] = "Transfer";

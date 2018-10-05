@@ -316,7 +316,6 @@ module.exports = function (deployer, network, accounts) {
     PercentageTransferManagerFactory:  ${PercentageTransferManagerFactory.address}
     ManualApprovalTransferManagerFactory:
                                        ${ManualApprovalTransferManagerFactory.address}
-
     EtherDividendCheckpointFactory:    ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:    ${ERC20DividendCheckpointFactory.address}
     -----------------------------------------------------------------------------

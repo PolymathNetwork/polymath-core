@@ -95,7 +95,7 @@ library TokenLib {
     function getValueAt(Checkpoint[] storage _checkpoints, uint256 _checkpointId, uint256 _currentValue) public view returns(uint256) {
         //Checkpoint id 0 is when the token is first created - everyone has a zero balance
         if (_checkpointId == 0) {
-          return 0;
+            return 0;
         }
         if (_checkpoints.length == 0) {
             return _currentValue;

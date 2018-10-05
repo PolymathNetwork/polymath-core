@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 contract EternalStorage {
 
-    /// @notice Internal mappings use to store all kind on data into the contract
+    /// @notice Internal mappings used to store all kinds on data into the contract
     mapping(bytes32 => uint256) internal uintStorage;
     mapping(bytes32 => string) internal stringStorage;
     mapping(bytes32 => address) internal addressStorage;
@@ -11,7 +11,7 @@ contract EternalStorage {
     mapping(bytes32 => int256) internal intStorage;
     mapping(bytes32 => bytes32) internal bytes32Storage;
 
-    /// @notice Internal mappings use to store the array of different data types
+    /// @notice Internal mappings used to store arrays of different data types
     mapping(bytes32 => bytes32[]) internal bytes32ArrayStorage;
     mapping(bytes32 => uint256[]) internal uintArrayStorage;
     mapping(bytes32 => address[]) internal addressArrayStorage;
@@ -93,7 +93,7 @@ contract EternalStorage {
     ////////////////////////////
     // deleteArray functions
     ////////////////////////////
-    /// @notice Function use to delete the array element.
+    /// @notice Function used to delete the array element.
     /// Ex1- mapping(address => bytes32[]) tokensOwnedByOwner;
     /// For deleting the item from array developers needs to create a funtion for that similarly
     /// in this case we have the helper function deleteArrayBytes32() which will do it for us
@@ -135,7 +135,7 @@ contract EternalStorage {
     ////////////////////////////
     //// pushArray functions
     ///////////////////////////
-    /// @notice Below are the helper functions to facilitate the storing the arrays of different data types.
+    /// @notice Below are the helper functions to facilitate storing arrays of different data types.
     /// Ex1- mapping(address => bytes32[]) tokensOwnedByTicker;
     /// tokensOwnedByTicker[owner] = tokensOwnedByTicker[owner].push("xyz"); replace with
     /// pushArray(keccak256(abi.encodePacked("tokensOwnedByTicker", owner), "xyz");
@@ -162,7 +162,7 @@ contract EternalStorage {
     /////////////////////////
     //// Set Array functions
     ////////////////////////
-    /// @notice use to intialize the array
+    /// @notice used to intialize the array
     /// Ex1- mapping (address => address[]) public reputation;
     /// reputation[0x1] = new address[](0); It can be replaced as
     /// setArray(hash('reputation', 0x1), new address[](0)); 

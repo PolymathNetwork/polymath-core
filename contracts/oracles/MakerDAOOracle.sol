@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
-import '../interfaces/IOracle.sol';
-import '../external/IMedianizer.sol';
+import "../interfaces/IOracle.sol";
+import "../external/IMedianizer.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract MakerDAOOracle is IOracle, Ownable {

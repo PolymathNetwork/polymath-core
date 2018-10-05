@@ -317,7 +317,7 @@ contract('GeneralTransferManager', accounts => {
     describe("Buy tokens using on-chain whitelist", async() => {
 
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
-            let errorThrown = false;
+            
             await catchRevert(I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner }));
         });
 
@@ -350,12 +350,12 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should fail in buying the token from the STO", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_DummySTO.generateTokens(account_affiliates1, web3.utils.toWei('1', 'ether'), { from: token_owner }));
         });
 
         it("Should fail in investing the money in STO -- expiry limit reached", async() => {
-            let errorThrown = false;
+            
             await increaseTime(duration.days(10));
 
             await catchRevert(I_DummySTO.generateTokens(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner }));
@@ -366,7 +366,7 @@ contract('GeneralTransferManager', accounts => {
     describe("Buy tokens using off-chain whitelist", async() => {
 
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
-            let errorThrown = false;
+            
             await catchRevert(I_DummySTO.generateTokens(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner }));
         });
 
@@ -380,7 +380,7 @@ contract('GeneralTransferManager', accounts => {
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
             const v = sig.v;
-            let errorThrown = false;
+            
 
             await catchRevert(I_GeneralTransferManager.modifyWhitelistSigned(
                   account_investor2,
@@ -411,7 +411,7 @@ contract('GeneralTransferManager', accounts => {
             const s = `0x${sig.s.toString('hex')}`;
             const v = sig.v;
 
-            let errorThrown = false;
+            
             await catchRevert(I_GeneralTransferManager.modifyWhitelistSigned(
                   account_investor2,
                   fromTime,
@@ -441,7 +441,7 @@ contract('GeneralTransferManager', accounts => {
             const r = `0x${sig.r.toString('hex')}`;
             const s = `0x${sig.s.toString('hex')}`;
             const v = sig.v;
-            let errorThrown = false;
+            
 
             await catchRevert(I_GeneralTransferManager.modifyWhitelistSigned(
                   account_investor2,
@@ -503,7 +503,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should fail in changing the signing address", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_GeneralTransferManager.changeSigningAddress(account_polymath, {from: account_investor4}));
         });
 
@@ -527,13 +527,13 @@ contract('GeneralTransferManager', accounts => {
 
         it("Should fail to pull fees as no budget set", async() => {
 
-            let errorThrown = false;
+            
             await catchRevert(I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_polymath}));
         });
 
         it("Should set a budget for the GeneralTransferManager", async() => {
             await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, 10 * Math.pow(10, 18), {from: token_owner});
-            let errorThrown = false;
+            
             await catchRevert(I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_polymath}));
             await I_PolyToken.getTokens(10 * Math.pow(10, 18), token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, 10 * Math.pow(10, 18), {from: token_owner});
@@ -541,7 +541,7 @@ contract('GeneralTransferManager', accounts => {
 
 
         it("Factory owner should pull fees - fails as not permissioned by issuer", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_GeneralTransferManager.takeFee(web3.utils.toWei('1','ether'), {from: account_delegate}));
         });
 
@@ -569,7 +569,7 @@ contract('GeneralTransferManager', accounts => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
-            let errorThrown = false;
+            
             await catchRevert(I_GeneralTransferManager.modifyWhitelistMulti(
                     [account_investor3, account_investor4],
                     [fromTime, fromTime],
@@ -587,7 +587,7 @@ contract('GeneralTransferManager', accounts => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
-            let errorThrown = false;
+            
             await catchRevert(I_GeneralTransferManager.modifyWhitelistMulti(
                     [account_investor3, account_investor4],
                     [fromTime],
@@ -605,7 +605,7 @@ contract('GeneralTransferManager', accounts => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
-            let errorThrown = false;
+            
             await catchRevert(I_GeneralTransferManager.modifyWhitelistMulti(
                     [account_investor3, account_investor4],
                     [fromTime, fromTime],
@@ -623,7 +623,7 @@ contract('GeneralTransferManager', accounts => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
-            let errorThrown = false;
+            
             await catchRevert(I_GeneralTransferManager.modifyWhitelistMulti(
                     [account_investor3, account_investor4],
                     [fromTime, fromTime],
@@ -641,7 +641,7 @@ contract('GeneralTransferManager', accounts => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
-            let errorThrown = false;
+            
             let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
                 [account_investor3, account_investor4],
                 [fromTime, fromTime],

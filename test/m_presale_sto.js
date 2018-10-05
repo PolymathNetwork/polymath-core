@@ -255,7 +255,7 @@ contract('PreSaleSTO', accounts => {
 
         it("Should fail to launch the STO due to endTime is 0", async () => {
             let bytesSTO = encodeModuleCall(STOParameters, [0]);
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner }));
         });
 
@@ -295,7 +295,7 @@ contract('PreSaleSTO', accounts => {
     describe("Buy tokens", async() => {
 
         it("Should allocate the tokens -- failed due to investor not on whitelist", async () => {
-            let errorThrown = false;
+            
             await catchRevert(I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei('1', 'ether'), 0));
         });
 
@@ -335,7 +335,7 @@ contract('PreSaleSTO', accounts => {
         });
 
         it("Should allocate the tokens -- failed due to msg.sender is not pre sale admin", async () => {
-            let errorThrown = false;
+            
             await catchRevert(I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether'), 0, {from: account_fundsReceiver }));
         });
 
@@ -385,7 +385,7 @@ contract('PreSaleSTO', accounts => {
 
         it("Should failed at the time of buying the tokens -- Because STO has started", async() => {
             await increaseTime(duration.days(100)); // increased beyond the end time of the STO
-            let errorThrown = false;
+            
             await catchRevert(I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei('1', 'ether'), 0, {from: account_issuer}));
         });
 
@@ -398,7 +398,7 @@ contract('PreSaleSTO', accounts => {
             await I_PolyToken.getTokens(value, account_investor1);
             await I_PolyToken.transfer(I_PreSaleSTO.address, value, { from: account_investor1 });
 
-            let errorThrown = false;
+            
             await catchRevert(I_PreSaleSTO.reclaimERC20('0x0000000000000000000000000000000000000000', { from: token_owner }));
         });
 

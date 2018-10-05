@@ -166,7 +166,7 @@ contract('CountTransferManager', accounts => {
         });
 
         it("Should successfully attach the CountTransferManager factory with the security token", async () => {
-            let errorThrown = false;
+            
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await catchRevert(I_SecurityToken.addModule(P_CountTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, { from: token_owner }));
         });
@@ -269,7 +269,7 @@ contract('CountTransferManager', accounts => {
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor3.toLowerCase(), "Failed in adding the investor in whitelist");
 
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.mint(account_investor3, web3.utils.toWei('3', 'ether'), { from: token_owner }));
         });
 
@@ -297,7 +297,7 @@ contract('CountTransferManager', accounts => {
         });
 
         it("Should fail in modifying the holder count", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_CountTransferManager.changeHolderCount(1, { from: account_investor1 }));
         })
 
@@ -324,7 +324,7 @@ contract('CountTransferManager', accounts => {
         });
 
         it("Should not be able to transfer to a new token holder", async() => {
-          let errorThrown = false;
+          
           // await I_CountTransferManager.unpause({from: token_owner});
           await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor2 }));
 

@@ -250,7 +250,7 @@ contract('PercentageTransferManager', accounts => {
         });
 
         it("Should successfully attach the PercentageTransferManagerr factory with the security token", async () => {
-            let errorThrown = false;
+            
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await catchRevert(I_SecurityToken.addModule(P_PercentageTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, { from: token_owner }));
         });
@@ -327,7 +327,7 @@ contract('PercentageTransferManager', accounts => {
         })
 
         it("Should not be able to transfer between existing token holders over limit", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 }));
         });
 

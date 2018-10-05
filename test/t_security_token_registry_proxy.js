@@ -205,33 +205,33 @@ contract ("SecurityTokenRegistryProxy", accounts => {
     describe("Upgrade the imlplementation address", async() => {
 
         it("Should upgrade the version and implementation address -- fail bad owner", async() => {
-            let errorThrown = false;
+            
             I_SecurityTokenRegistryMock = await SecurityTokenRegistryMock.new({from: account_polymath});
             await catchRevert(I_SecurityTokenRegistryProxy.upgradeTo("1.1.0", I_SecurityTokenRegistryMock.address, {from: account_temp}));
         });
 
         it("Should upgrade the version and implementation address -- Implementaion address should be a contract address", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityTokenRegistryProxy.upgradeTo("1.1.0", account_temp, {from: account_polymath}));
         });
 
         it("Should upgrade the version and implementation address -- Implemenation address should not be 0x", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityTokenRegistryProxy.upgradeTo("1.1.0", "0x00000000000000000000000000000000000000", {from: account_polymath}));
         });
 
         it("Should upgrade the version and implementation address -- Implemenation address should not be the same address", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityTokenRegistryProxy.upgradeTo("1.1.0", I_SecurityTokenRegistry.address, {from: account_polymath}));
         });
 
         it("Should upgrade the version and implementation address -- same version as previous is not allowed", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityTokenRegistryProxy.upgradeTo("1.0.0", I_SecurityTokenRegistryMock.address, {from: account_polymath}));
         });
 
         it("Should upgrade the version and implementation address -- empty version string is not allowed", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityTokenRegistryProxy.upgradeTo("", I_SecurityTokenRegistryMock.address, {from: account_polymath}));
         });
 
@@ -264,12 +264,12 @@ contract ("SecurityTokenRegistryProxy", accounts => {
     describe("Transfer the ownership of the proxy contract", async() => {
 
         it("Should change the ownership of the contract -- because of bad owner", async()=> {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityTokenRegistryProxy.transferProxyOwnership(account_polymath_new, {from: account_temp}));
         });
 
         it("Should change the ownership of the contract -- new address should not be 0x", async()=> {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityTokenRegistryProxy.transferProxyOwnership("0x00000000000000000000000000000000000000", {from: account_polymath}));
         });
 

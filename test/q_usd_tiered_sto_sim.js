@@ -620,7 +620,7 @@ contract('USDTieredSTO Sim', accounts => {
                 let investment_ETH = BigNumber(0.02*10**18);  // 10 USD = 0.02 ETH
                 let investment_DAI = BigNumber(10*10**18);  // 10 USD = DAI DAI
 
-                let errorThrown = false;
+                
                 await catchRevert(I_PolyToken.getTokens(investment_POLY, _investor));
             }
 

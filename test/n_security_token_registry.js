@@ -700,7 +700,7 @@ contract('SecurityTokenRegistry', accounts => {
 
         it("Should successfully generate the custom token", async() => {
             // Fulfilling the TickerStatus.NN condition
-            // let errorThrown = false;
+            // 
             // await catchRevert(I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath}));
             // await I_STRProxied.modifyTicker(account_temp, "LOG2", "LOGAN2", latestTime(), latestTime() + duration.days(10), false, {from: account_polymath});
             // await increaseTime(duration.days(1));
@@ -776,7 +776,7 @@ contract('SecurityTokenRegistry', accounts => {
         })
 
         it("Should able to transfer the ticker ownership -- failed because new owner is 0x", async() => {
-            let errorThrown = false;
+            
             await I_SecurityToken002.transferOwnership(account_temp, {from: token_owner});
             catchRevert(
                 I_STRProxied.transferTickerOwnership("0x00000000000000000000000000000000000000000", symbol2, {from: token_owner}),

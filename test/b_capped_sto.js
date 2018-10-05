@@ -201,7 +201,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should mint the tokens before attaching the STO", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken_ETH.mint("0x0000000000000000000000000000000000000000", web3.utils.toWei("1"), {from: token_owner}));
         });
 
@@ -211,7 +211,7 @@ contract('CappedSTO', accounts => {
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, 0, [E_fundRaiseType], account_fundsReceiver]);
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner }));
         });
 
@@ -221,13 +221,13 @@ contract('CappedSTO', accounts => {
             await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCost, { from: token_owner});
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, 0, [E_fundRaiseType], account_fundsReceiver]);
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner }));
         });
 
         it("Should fail to launch the STO due to startTime > endTime", async () => {
             let bytesSTO = encodeModuleCall(STOParameters, [ Math.floor(Date.now()/1000 + 100000), Math.floor(Date.now()/1000 + 1000), cap, rate, [E_fundRaiseType], account_fundsReceiver]);
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner }));
         });
 
@@ -235,7 +235,7 @@ contract('CappedSTO', accounts => {
             let startTime = latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [ startTime, endTime, 0, rate, [E_fundRaiseType], account_fundsReceiver]);
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner }));
         });
 
@@ -285,7 +285,7 @@ contract('CappedSTO', accounts => {
     describe("Buy tokens", async() => {
 
         it("Should buy the tokens -- failed due to startTime is greater than Current time", async () => {
-            let errorThrown = false;
+            
             await catchRevert(web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
@@ -294,7 +294,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should buy the tokens -- failed due to invested amount is zero", async () => {
-            let errorThrown = false;
+            
             await catchRevert(web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
@@ -303,7 +303,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
-            let errorThrown = false;
+            
             await catchRevert(web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
@@ -312,7 +312,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should buy the tokens -- Failed due to wrong granularity", async () => {
-            let errorThrown = false;
+            
             await catchRevert(web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
@@ -386,7 +386,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should pause the STO -- Failed due to wrong msg.sender", async()=> {
-            let errorThrown = false;
+            
             await catchRevert(I_CappedSTO_Array_ETH[0].pause({from: account_investor1}));
         });
 
@@ -397,7 +397,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should fail to buy the tokens after pausing the STO", async() => {
-            let errorThrown = false;
+            
             await catchRevert(web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
@@ -407,7 +407,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should unpause the STO -- Failed due to wrong msg.sender", async()=> {
-            let errorThrown = false;
+            
             await catchRevert(I_CappedSTO_Array_ETH[0].unpause({from: account_investor1}));
         });
 
@@ -417,7 +417,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should buy the tokens -- Failed due to wrong granularity", async () => {
-            let errorThrown = false;
+            
             await catchRevert(web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
@@ -498,7 +498,7 @@ contract('CappedSTO', accounts => {
             await I_PolyToken.getTokens(value, account_investor1);
             await I_PolyToken.transfer(I_CappedSTO_Array_ETH[0].address, value, { from: account_investor1 });
 
-            let errorThrown = false;
+            
             await catchRevert(I_CappedSTO_Array_ETH[0].reclaimERC20('0x0000000000000000000000000000000000000000', { from: token_owner }));
         });
 
@@ -585,7 +585,7 @@ contract('CappedSTO', accounts => {
         it("Should invest in second STO - fails due to incorrect beneficiary", async() => {
 
             // Buying on behalf of another user should fail
-            let errorThrown = false;
+            
             await catchRevert(I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_issuer, value: web3.utils.toWei('1', 'ether') }));
 
         });
@@ -845,13 +845,13 @@ contract('CappedSTO', accounts => {
                     .toNumber(),
                     45000
                 );
-                let errorThrown = false;
+                
                 await catchRevert(I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, (1000 * Math.pow(10, 18)), { from: account_investor1}));
             });
 
             it("Should failed at the time of buying the tokens -- Because STO get expired", async() => {
                 await increaseTime(duration.days(31)); // increased beyond the end time of the STO
-                let errorThrown = false;
+                
                 await catchRevert(I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, (1000 * Math.pow(10, 18)), { from: account_investor1}));
             });
 
@@ -888,12 +888,12 @@ contract('CappedSTO', accounts => {
             });
 
             it("Should fail to change the title -- bad owner", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_CappedSTOFactory.changeTitle("STO Capped", {from:account_investor1}));
             });
 
             it("Should fail to change the title -- zero length", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_CappedSTOFactory.changeTitle("", {from: token_owner}));
             });
 
@@ -905,12 +905,12 @@ contract('CappedSTO', accounts => {
             });
 
             it("Should fail to change the description -- bad owner", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_CappedSTOFactory.changeDescription("It is only a STO", {from:account_investor1}));
             });
 
             it("Should fail to change the description -- zero length", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_CappedSTOFactory.changeDescription("", {from: token_owner}));
             });
 
@@ -922,12 +922,12 @@ contract('CappedSTO', accounts => {
             });
 
             it("Should fail to change the name -- bad owner", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_CappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), {from:account_investor1}));
             });
 
             it("Should fail to change the name -- zero length", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_CappedSTOFactory.changeName(web3.utils.stringToHex(""), {from: token_owner}));
             });
 

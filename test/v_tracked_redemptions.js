@@ -323,7 +323,7 @@ contract('TrackedRedemption', accounts => {
         it("Redeem some tokens - fail insufficient allowance", async() => {
             await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, {from : token_owner});
 
-            let errorThrown = false;
+            
             await catchRevert(I_TrackedRedemption.redeemTokens(web3.utils.toWei('1', 'ether'), {from: account_investor1}));
         });
 

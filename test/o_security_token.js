@@ -282,7 +282,7 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should mint the tokens before attaching the STO -- fail only be called by the owner", async() => {
-            let errorThrown = false;
+            
             let fromTime = latestTime();
             let toTime = fromTime + duration.days(100);
             let expiryTime = toTime + duration.days(100);
@@ -308,7 +308,7 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should mint the multi tokens before attaching the STO -- fail only be called by the owner", async() => {
-            let errorThrown = false;
+            
             let fromTime = latestTime();
             let toTime = fromTime + duration.days(100);
             let expiryTime = toTime + duration.days(100);
@@ -329,7 +329,7 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should mintMulti", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.mintMulti([account_affiliate1, account_affiliate2], [(100 * Math.pow(10, 18))], {from: token_owner, gas: 500000}));
         })
 
@@ -342,36 +342,34 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should finish the minting -- fail because feature is not activated", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.freezeMinting({from: token_owner}));
         });
 
         it("Should finish the minting -- fail to activate the feature because msg.sender is not polymath", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_FeatureRegistry.setFeatureStatus("freezeMintingAllowed", true, {from: token_owner}));
         });
 
         it("Should finish the minting -- successfully activate the feature", async() => {
-            let errorThrown1 = false;
             await catchRevert(I_FeatureRegistry.setFeatureStatus("freezeMintingAllowed", false, {from: account_polymath}));
 
             assert.equal(false, await I_FeatureRegistry.getFeatureStatus("freezeMintingAllowed", {from: account_temp}));
             await I_FeatureRegistry.setFeatureStatus("freezeMintingAllowed", true, {from: account_polymath});
             assert.equal(true, await I_FeatureRegistry.getFeatureStatus("freezeMintingAllowed", {from: account_temp}));
 
-            let errorThrown2 = false;
             await catchRevert(I_FeatureRegistry.setFeatureStatus("freezeMintingAllowed", true, {from: account_polymath}));
         });
 
         it("Should finish the minting -- fail because msg.sender is not the owner", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.freezeMinting({from: account_temp}));
         });
 
         it("Should finish minting & restrict the further minting", async() => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeMinting({from: token_owner});
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000}));
             await revertToSnapshot(id);
         });
@@ -380,7 +378,7 @@ contract('SecurityToken', accounts => {
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner }));
         });
 
@@ -390,7 +388,7 @@ contract('SecurityToken', accounts => {
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner});
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, web3.utils.toWei("1000","ether"), 0, { from: token_owner }));
         });
 
@@ -418,7 +416,7 @@ contract('SecurityToken', accounts => {
         it("Should fail to mint tokens while STO attached after freezeMinting called", async () => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeMinting({from: token_owner});
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.mint(account_affiliate1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000}));
             await revertToSnapshot(id);
         });
@@ -462,7 +460,7 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should fail in updating the token details", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.updateTokenDetails("new token details", {from: account_delegate}));
         });
 
@@ -472,17 +470,17 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should successfully remove the general transfer manager module from the securityToken -- fails msg.sender should be Owner", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from : account_temp }));
         });
 
         it("Should fail to remove the module - module not archived", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from : token_owner }));
         })
 
         it("Should fail to remove the module - incorrect address", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.removeModule(0, { from : token_owner }));
         })
 
@@ -533,13 +531,13 @@ contract('SecurityToken', accounts => {
         });
 
         it("Should fail to mint tokens while GTM unarchived", async () => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.mint(1, (100 * Math.pow(10, 18)), {from: token_owner, gas: 500000}));
 
         });
 
         it("Should change the budget of the module - fail incorrect address", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.changeModuleBudget(0, (100 * Math.pow(10, 18)),{ from : token_owner}));
          });
 
@@ -602,12 +600,12 @@ contract('SecurityToken', accounts => {
             });
 
             it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.transfer(account_investor2, (10 *  Math.pow(10, 18)), { from : account_investor1}));
             });
 
             it("Should fail to provide the permission to the delegate to change the transfer bools", async () => {
-                let errorThrown = false;
+                
                 // Add permission to the deletgate (A regesteration process)
                 await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, {from: token_owner});
                 let moduleData = await I_SecurityToken.modules(permissionManagerKey, 0);
@@ -626,7 +624,7 @@ contract('SecurityToken', accounts => {
 
 
             it("Should fail to activate the bool allowAllTransfer", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_GeneralTransferManager.changeAllowAllTransfers(true, { from : account_temp }));
             });
 
@@ -639,17 +637,17 @@ contract('SecurityToken', accounts => {
 
 
             it("Should fail to send tokens with the wrong granularity", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.transfer(accounts[7], Math.pow(10, 17), { from : account_investor1}));
             });
 
             it("Should adjust granularity", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.changeGranularity(0, {from: token_owner }));
             });
 
             it("Should adjust granularity", async() => {
-                let errorThrown = false;
+                
                 await I_SecurityToken.changeGranularity(Math.pow(10, 17), {from: token_owner });
                 await I_SecurityToken.transfer(accounts[7], Math.pow(10, 17), { from : account_investor1, gas: 2500000 });
                 await I_SecurityToken.transfer(account_investor1, Math.pow(10, 17), { from : accounts[7], gas: 2500000});
@@ -734,7 +732,7 @@ contract('SecurityToken', accounts => {
             });
 
             it("Should Fail in trasferring from whitelist investor1 to non-whitelist investor", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.transfer(account_temp, (10 *  Math.pow(10, 18)), { from : account_investor1, gas: 2500000}));
                 await revertToSnapshot(ID_snap);
             });
@@ -804,7 +802,7 @@ contract('SecurityToken', accounts => {
             it("STO should fail to mint tokens after minting is frozen", async() => {
                 let id = await takeSnapshot();
                 await I_SecurityToken.freezeMinting({from: token_owner});
-                let errorThrown = false;
+                
                 await catchRevert(web3.eth.sendTransaction({
                        from: account_temp,
                        to: I_CappedSTO.address,
@@ -830,7 +828,7 @@ contract('SecurityToken', accounts => {
             });
 
             it("should account_temp fail in buying the token", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(web3.eth.sendTransaction({
                     from: account_temp,
                     to: I_CappedSTO.address,
@@ -845,7 +843,7 @@ contract('SecurityToken', accounts => {
             });
 
            it("Should fail to freeze the transfers", async() => {
-               let errorThrown = false;
+               
                await catchRevert(I_SecurityToken.freezeTransfers({from: token_owner}));
            });
 
@@ -863,7 +861,7 @@ contract('SecurityToken', accounts => {
 
             assert.equal(tx.logs[0].args._investor, account_temp, "Failed in adding the investor in whitelist");
 
-            let errorThrown = false;
+            
             await catchRevert(web3.eth.sendTransaction({
                     from: account_temp,
                     to: I_CappedSTO.address,
@@ -875,7 +873,7 @@ contract('SecurityToken', accounts => {
            it("Should fail in trasfering the tokens from one user to another", async() => {
                await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, {from : token_owner});
                console.log(await I_SecurityToken.balanceOf(account_investor1));
-               let errorThrown = false;
+               
                await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), {from: account_temp}));
            });
 
@@ -885,7 +883,7 @@ contract('SecurityToken', accounts => {
            });
 
            it("Should freeze the transfers", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.unfreezeTransfers({from: token_owner}));
             });
 
@@ -906,7 +904,7 @@ contract('SecurityToken', accounts => {
                }
            });
            it("Should fail to set controller status because msg.sender not owner", async() => {
-               let errorThrown = false;
+               
                await catchRevert(I_SecurityToken.setController(account_controller, {from: account_controller}));
            });
 
@@ -935,14 +933,14 @@ contract('SecurityToken', accounts => {
            });
 
           it("Should force burn the tokens - value too high", async ()=> {
-              let errorThrown = false;
+              
               await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, {from : token_owner});
               let currentInvestorCount = await I_SecurityToken.investorCount();
               let currentBalance = await I_SecurityToken.balanceOf(account_temp);
               await catchRevert(I_SecurityToken.forceBurn(account_temp, currentBalance + web3.utils.toWei("500", "ether"), "", { from: account_controller }));
           });
           it("Should force burn the tokens - wrong caller", async ()=> {
-               let errorThrown = false;
+               
                await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, {from : token_owner});
                let currentInvestorCount = await I_SecurityToken.investorCount();
                let currentBalance = await I_SecurityToken.balanceOf(account_temp);
@@ -975,7 +973,7 @@ contract('SecurityToken', accounts => {
            });
 
            it("Should check the balance of investor at checkpoint", async() => {
-               let errorThrown = false;
+               
                await catchRevert(I_SecurityToken.balanceOfAt(account_investor1, 5));
            });
 
@@ -988,7 +986,7 @@ contract('SecurityToken', accounts => {
         describe("Withdraw Poly", async() => {
 
             it("Should successfully withdraw the poly", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.withdrawPoly(web3.utils.toWei("20000", "ether"), {from: account_temp}));
             })
 
@@ -1000,7 +998,7 @@ contract('SecurityToken', accounts => {
             });
 
             it("Should successfully withdraw the poly", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.withdrawPoly(web3.utils.toWei("10", "ether"), {from: token_owner}));
             });
         });
@@ -1008,17 +1006,16 @@ contract('SecurityToken', accounts => {
         describe("Force Transfer", async() => {
 
             it("Should fail to forceTransfer because not approved controller", async() => {
-                let errorThrown1 = false;
                 await catchRevert(I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_investor1}));
             });
 
             it("Should fail to forceTransfer because insufficient balance", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.forceTransfer(account_investor2, account_investor1, web3.utils.toWei("10", "ether"), "reason", {from: account_controller}));
             });
 
             it("Should fail to forceTransfer because recipient is zero address", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.forceTransfer(account_investor1, address_zero, web3.utils.toWei("10", "ether"), "reason", {from: account_controller}));
             });
 
@@ -1055,12 +1052,12 @@ contract('SecurityToken', accounts => {
             });
 
             it("Should fail to freeze controller functionality because not owner", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.disableController({from: account_investor1}));
             });
 
             it("Should fail to freeze controller functionality because disableControllerAllowed not activated", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.disableController({from: token_owner}));
             });
 
@@ -1079,17 +1076,17 @@ contract('SecurityToken', accounts => {
             });
 
             it("Should fail to freeze controller functionality because already frozen", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.disableController({from: token_owner}));
             });
 
             it("Should fail to set controller because controller functionality frozen", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.setController(account_controller, {from: token_owner}));
             });
 
             it("Should fail to forceTransfer because controller functionality frozen", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_controller}));
             });
 

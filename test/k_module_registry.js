@@ -215,7 +215,7 @@ contract('ModuleRegistry', accounts => {
         describe("Test case for the upgradeFromregistry", async() => {
 
             it("Should successfully update the registry contract address -- failed because of bad owner", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_MRProxied.updateFromRegistry({from: account_temp}));
             });
 
@@ -253,7 +253,7 @@ contract('ModuleRegistry', accounts => {
 
             it("Should fail to register the module -- when registerModule is paused", async() => {
                 await I_MRProxied.pause({from: account_polymath});
-                let errorThrown = false;
+                
                 await catchRevert(I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, {from: account_delegate}));
                 await I_MRProxied.unpause({from: account_polymath});
             })
@@ -272,13 +272,13 @@ contract('ModuleRegistry', accounts => {
             });
 
             it("Should fail the register the module -- Already registered module", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, {from: account_polymath}));
             })
 
             it("Should fail in registering the module-- type = 0", async() => {
                 I_MockFactory = await MockFactory.new(I_PolyToken.address, 0, 0, 0, {from: account_polymath});
-                let errorThrown = false;
+                
                 await catchRevert(I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath }));
             });
         });
@@ -286,7 +286,7 @@ contract('ModuleRegistry', accounts => {
         describe("Test case for verifyModule", async() => {
 
             it("Should fail in calling the verify module. Because msg.sender should be account_polymath", async () => {
-                let errorThrown = false;
+                
                 await catchRevert(I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_temp }));
             });
 
@@ -321,7 +321,7 @@ contract('ModuleRegistry', accounts => {
             });
 
             it("Should fail in verifying the module. Because the module is not registered", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_MRProxied.verifyModule(I_MockFactory.address, true, { from: account_polymath }));
             });
         })
@@ -341,7 +341,7 @@ contract('ModuleRegistry', accounts => {
                 startTime = latestTime() + duration.seconds(5000);
                 endTime = startTime + duration.days(30);
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory1.address, bytesSTO, 0, 0, { from: token_owner}));
             });
 
@@ -355,7 +355,7 @@ contract('ModuleRegistry', accounts => {
                 );
 
 
-                let errorThrown = false;
+                
                 await catchRevert(I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner }));
 
             });
@@ -403,7 +403,7 @@ contract('ModuleRegistry', accounts => {
                 assert.equal(_lstVersion[2],0);
                 assert.equal(_lstVersion[1],1);
                 let bytesData = encodeModuleCall(['uint256', 'uint256', 'uint256', 'string'],[latestTime(), (latestTime() + duration.days(1)), cap, "Test STO"]);
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.addModule(I_TestSTOFactory.address, bytesData, 0, 0, { from: token_owner }));
                 await revertToSnapshot(id);
             })
@@ -426,7 +426,7 @@ contract('ModuleRegistry', accounts => {
 
 
                 let bytesData = encodeModuleCall(['uint256', 'uint256', 'uint256', 'string'],[latestTime(), (latestTime() + duration.days(1)), cap, "Test STO"]);
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken2.addModule(I_TestSTOFactory.address, bytesData, 0, 0, { from: token_owner }));
             });
 
@@ -478,7 +478,7 @@ contract('ModuleRegistry', accounts => {
         describe("Test cases for removeModule()", async() => {
 
             it("Should fail if msg.sender not curator or owner", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_MRProxied.removeModule(I_CappedSTOFactory2.address, { from: account_temp }));
             });
 
@@ -535,7 +535,7 @@ contract('ModuleRegistry', accounts => {
             });
 
             it("Should fail if module already removed", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_MRProxied.removeModule(I_CappedSTOFactory2.address, { from: account_polymath }));
             });
 
@@ -558,7 +558,7 @@ contract('ModuleRegistry', accounts => {
         describe("Test cases for pausing the contract", async() => {
 
             it("Should fail to pause if msg.sender is not owner", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_MRProxied.pause({ from: account_temp }));
             });
 
@@ -569,7 +569,7 @@ contract('ModuleRegistry', accounts => {
             });
 
             it("Should fail to unpause if msg.sender is not owner", async() => {
-                let errorThrown = false;
+                
                 await catchRevert(I_MRProxied.unpause({ from: account_temp }));
             });
 

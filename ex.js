@@ -1,9 +1,9 @@
 var fs = require('fs')
 const regex = /(?<=try {)(.*?)(await )(.*?)(?=;)(.*?)(?=message\);)/gmis;
 const regex2 = /(try {)(.*?)(message\);)/gmis;
-let m;
-
+const regex3 = /(let errorThrown. = false;)/gmis;
 const dirname = 'test/';
+
 fs.readdir(dirname, function(err, filenames) {
     if (err) {
         return console.log(err);
@@ -15,17 +15,10 @@ fs.readdir(dirname, function(err, filenames) {
             }
             content = content.replace(regex, 'catchRevert($3);');
             content = content.replace(regex2, 'await $2');
+            content = content.replace(regex3, '');
             fs.writeFile(dirname + filename, content, 'utf8', function (err) {
                 if (err) return console.log(err);
             });
         });
     });
 });
-
-
-
-
-
-
-
-

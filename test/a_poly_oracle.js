@@ -55,13 +55,13 @@ let requestIds = new Array();
     describe("Scheduling test cases", async() => {
 
         it("Should schedule the timing of the call - fails - non owner", async() => {
-            let errorThrown = false;
+            
             let timeScheduling = [latestTime()+duration.minutes(1), latestTime()+duration.minutes(2), latestTime()+duration.minutes(3)]
             await catchRevert(I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: accounts[1], value: web3.utils.toWei("2")}));
         });
 
         it("Should schedule the timing of the call - fails - no value", async() => {
-            let errorThrown = false;
+            
             let timeScheduling = [latestTime()+duration.minutes(1), latestTime()+duration.minutes(2), latestTime()+duration.minutes(3)]
             await catchRevert(I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, {from: owner}));
         })
@@ -102,7 +102,7 @@ let requestIds = new Array();
         });
 
         it("Should schedule to call using iters - fails", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_PolyOracle.schedulePriceUpdatesRolling(latestTime() + 10, 30, 2, {from: accounts[6]}));
         })
 
@@ -130,7 +130,7 @@ let requestIds = new Array();
     describe("Ownable functions", async() => {
 
         it("Should change the Poly USD price manually - fail - bad account", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_PolyOracle.setPOLYUSD(latestPrice.add(1), {from: accounts[5]}));
         });
 
@@ -141,7 +141,7 @@ let requestIds = new Array();
         })
 
         it("Should freeze the Oracle manually", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_PolyOracle.setFreezeOracle(true, {from: accounts[5]}));
         })
 
@@ -155,7 +155,7 @@ let requestIds = new Array();
         })
 
         it("Should change the sanity bounds manually - fails - bad owner", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_PolyOracle.setSanityBounds(new BigNumber(25).times(new BigNumber(10).pow(16)), {from : accounts[6]}));
         })
 
@@ -168,7 +168,7 @@ let requestIds = new Array();
         });
 
         it("Should change the gas price manually - fails - bad owner", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_PolyOracle.setGasPrice(new BigNumber(60).times(new BigNumber(10).pow(9)),{from : accounts[6]}));
         });
 
@@ -196,7 +196,7 @@ let requestIds = new Array();
         });
 
         it("Should change the gas limit manually - fails", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_PolyOracle.setGasLimit(50000,{from : accounts[6]}));
         });
 
@@ -208,7 +208,7 @@ let requestIds = new Array();
         });
 
         it("Should blacklist some IDS manually - fails - wrong size", async() => {
-            let errorThrown = false;
+            
             let ignore = [true];
             await catchRevert(I_PolyOracle.setIgnoreRequestIds(requestIds,ignore,{from : accounts[6]}));
         });
@@ -227,7 +227,7 @@ let requestIds = new Array();
         });
 
         it("Should change the oraclize time tolerance manually - fails", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_PolyOracle.setOraclizeTimeTolerance(3600,{from : accounts[6]}));
         })
 
@@ -238,7 +238,7 @@ let requestIds = new Array();
         });
 
         it("should change the api URL manually", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_PolyOracle.setOracleURL(alternateURL, {from: accounts[6]}));
         })
 

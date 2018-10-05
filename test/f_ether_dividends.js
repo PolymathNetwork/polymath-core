@@ -266,7 +266,7 @@ contract('EtherDividendCheckpoint', accounts => {
         });
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token", async () => {
-            let errorThrown = false;
+            
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await catchRevert(I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, { from: token_owner }));
         });
@@ -355,21 +355,21 @@ contract('EtherDividendCheckpoint', accounts => {
         });
 
         it("Should fail in creating the dividend", async() => {
-            let errorThrown = false;
+            
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
             await catchRevert(I_EtherDividendCheckpoint.createDividend(maturity, expiry, dividendName, {from: token_owner}));
         });
 
         it("Should fail in creating the dividend", async() => {
-            let errorThrown = false;
+            
             let maturity = latestTime();
             let expiry = latestTime() - duration.days(10);
             await catchRevert(I_EtherDividendCheckpoint.createDividend(maturity, expiry, dividendName, {from: token_owner, value: web3.utils.toWei('1.5', 'ether')}));
         });
 
         it("Should fail in creating the dividend", async() => {
-            let errorThrown = false;
+            
             let maturity = latestTime() - duration.days(2);
             let expiry = latestTime() - duration.days(1);
             await catchRevert(I_EtherDividendCheckpoint.createDividend(maturity, expiry, dividendName, {from: token_owner, value: web3.utils.toWei('1.5', 'ether')}));
@@ -380,7 +380,7 @@ contract('EtherDividendCheckpoint', accounts => {
         });
 
         it("Should fail in creating the dividend", async() => {
-            let errorThrown = false;
+            
             let maturity = latestTime() + duration.days(1);
             let expiry = latestTime() + duration.days(10);
             await catchRevert(I_EtherDividendCheckpoint.createDividend(maturity, expiry, '', {from: token_owner, value: web3.utils.toWei('1.5', 'ether')}));
@@ -401,19 +401,19 @@ contract('EtherDividendCheckpoint', accounts => {
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_EtherDividendCheckpoint.pushDividendPayment(0, 0, 10, {from: token_owner}));
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint", async() => {
-            let errorThrown = false;
+            
             // Increase time by 2 day
             await increaseTime(duration.days(2));
             await catchRevert(I_EtherDividendCheckpoint.pushDividendPayment(0, 0, 10, {from: account_temp}));
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_EtherDividendCheckpoint.pushDividendPayment(2, 0, 10, {from: token_owner}));
         });
 
@@ -483,13 +483,13 @@ contract('EtherDividendCheckpoint', accounts => {
         });
 
         it("Issuer pushes dividends fails due to passed expiry", async() => {
-            let errorThrown = false;
+            
             await increaseTime(duration.days(12));
             await catchRevert(I_EtherDividendCheckpoint.pushDividendPayment(0, 0, 10, {from: token_owner}));
         });
 
          it("Issuer reclaims dividend", async() => {
-            let errorThrown = false;
+            
             let tx = await I_EtherDividendCheckpoint.reclaimDividend(1, {from: token_owner, gas: 500000});
             assert.equal((tx.logs[0].args._claimedAmount).toNumber(), web3.utils.toWei("1.5", "ether"));
             await catchRevert(I_EtherDividendCheckpoint.reclaimDividend(1, {from: token_owner, gas: 500000}));
@@ -535,7 +535,7 @@ contract('EtherDividendCheckpoint', accounts => {
         });
 
         it("should investor 3 claims dividend - fails bad index", async() => {
-            let errorThrown = false;
+            
             let investor1Balance = BigNumber(await I_PolyToken.balanceOf(account_investor1));
             let investor2Balance = BigNumber(await I_PolyToken.balanceOf(account_investor2));
             let investor3Balance = BigNumber(await I_PolyToken.balanceOf(account_investor3));
@@ -563,7 +563,7 @@ contract('EtherDividendCheckpoint', accounts => {
         });
 
         it("should investor 3 claims dividend", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_EtherDividendCheckpoint.pullDividendPayment(2, {from: account_investor3, gasPrice: 0}));
         });
 
@@ -597,7 +597,7 @@ contract('EtherDividendCheckpoint', accounts => {
         });
 
         it("Create another new dividend with no value - fails", async() => {
-            let errorThrown = false;
+            
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(2);
             let tx = await I_SecurityToken.createCheckpoint({from: token_owner});
@@ -605,21 +605,21 @@ contract('EtherDividendCheckpoint', accounts => {
         });
 
         it("Create another new dividend with explicit", async() => {
-            let errorThrown = false;
+            
             let maturity = latestTime();
             let expiry = latestTime() - duration.days(10);
             await catchRevert(I_EtherDividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, 4, dividendName, {from: token_owner, value: web3.utils.toWei('11', 'ether')}));
         });
 
         it("Create another new dividend with bad expirty - fails", async() => {
-            let errorThrown = false;
+            
             let maturity = latestTime() - duration.days(5);
             let expiry = latestTime() - duration.days(2);
             await catchRevert(I_EtherDividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, 4, dividendName, {from: token_owner, value: web3.utils.toWei('11', 'ether')}));
         });
 
         it("Create another new dividend with bad checkpoint in the future - fails", async() => {
-            let errorThrown = false;
+            
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(2);
             await catchRevert(I_EtherDividendCheckpoint.createDividendWithCheckpoint(maturity, expiry, 5, dividendName, {from: token_owner, value: web3.utils.toWei('11', 'ether')}));
@@ -650,7 +650,7 @@ contract('EtherDividendCheckpoint', accounts => {
         });
 
         it("Non-owner pushes investor 1 - fails", async() => {
-            let errorThrown = false;
+            
             let investor1Balance = BigNumber(await I_PolyToken.balanceOf(account_investor1));
             let investor2Balance = BigNumber(await I_PolyToken.balanceOf(account_investor2));
             let investor3Balance = BigNumber(await I_PolyToken.balanceOf(account_investor3));
@@ -658,7 +658,7 @@ contract('EtherDividendCheckpoint', accounts => {
         });
 
         it("issuer pushes investor 1 with bad dividend index - fails", async() => {
-            let errorThrown = false;
+            
             let investor1Balance = BigNumber(await I_PolyToken.balanceOf(account_investor1));
             let investor2Balance = BigNumber(await I_PolyToken.balanceOf(account_investor2));
             let investor3Balance = BigNumber(await I_PolyToken.balanceOf(account_investor3));
@@ -723,12 +723,12 @@ contract('EtherDividendCheckpoint', accounts => {
          });
 
         it("Issuer unable to reclaim dividend (expiry not passed)", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_EtherDividendCheckpoint.reclaimDividend(3, {from: token_owner}));
         });
 
         it("Issuer is able to reclaim dividend after expiry", async() => {
-            let errorThrown = false;
+            
             await increaseTime(11 * 24 * 60 * 60);
             await catchRevert(I_EtherDividendCheckpoint.reclaimDividend(8, {from: token_owner, gasPrice: 0}));
         });
@@ -741,12 +741,12 @@ contract('EtherDividendCheckpoint', accounts => {
         });
 
         it("Issuer is able to reclaim dividend after expiry", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_EtherDividendCheckpoint.reclaimDividend(3, {from: token_owner, gasPrice: 0}));
         });
 
         it("Investor 3 unable to pull dividend after expiry", async() => {
-            let errorThrown = false;
+            
             await catchRevert(I_EtherDividendCheckpoint.pullDividendPayment(3, {from: account_investor3, gasPrice: 0}));
         });
 

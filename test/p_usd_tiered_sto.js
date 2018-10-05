@@ -544,7 +544,7 @@ contract('USDTieredSTO', accounts => {
             ];
             for (var i = 0; i < config.length; i++) {
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config[i]);
-                let errorThrown = false;
+                
                 await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER }));
             }
         });
@@ -555,7 +555,7 @@ contract('USDTieredSTO', accounts => {
             let ratePerTier = [BigNumber(10*10**16), BigNumber(0)];
             let config = [_startTime[stoId], _endTime[stoId], ratePerTier, _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId], _usdToken[stoId]];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER }));
         });
 
@@ -565,7 +565,7 @@ contract('USDTieredSTO', accounts => {
             let wallet = "0x0000000000000000000000000000000000000000";
             let config = [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], wallet, _reserveWallet[stoId], _usdToken[stoId]];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER }));
         });
 
@@ -575,7 +575,7 @@ contract('USDTieredSTO', accounts => {
             let reserveWallet = "0x0000000000000000000000000000000000000000";
             let config = [_startTime[stoId], _endTime[stoId], _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], reserveWallet];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER }));
         });
 
@@ -586,7 +586,7 @@ contract('USDTieredSTO', accounts => {
             let endTime  = latestTime() + duration.days(1);
             let config = [startTime, endTime, _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId], _usdToken[stoId]];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER }));
         });
 
@@ -597,7 +597,7 @@ contract('USDTieredSTO', accounts => {
             let endTime  = startTime + duration.days(50);
             let config = [startTime, endTime, _ratePerTier[stoId], _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId], _usdToken[stoId]];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let errorThrown = false;
+            
             await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER }));
         });
     });
@@ -653,22 +653,22 @@ contract('USDTieredSTO', accounts => {
             let snapId = await takeSnapshot();
             await increaseTime(duration.days(1));
 
-            let errorThrown1 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].modifyFunding([0,1], { from: ISSUER }));
 
-            let errorThrown2 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].modifyLimits(BigNumber(15*10**18), BigNumber(1*10**18), { from: ISSUER }));
 
-            let errorThrown3 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].modifyTiers([BigNumber(15*10**18)], [BigNumber(13*10**18)], [BigNumber(15*10**20)], [BigNumber(15*10**20)], { from: ISSUER }));
 
             let tempTime1 = latestTime();
             let tempTime2 = latestTime() + duration.days(3);
 
-            let errorThrown4 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].modifyTimes(tempTime1, tempTime2, { from: ISSUER }));
 
-            let errorThrown5 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].modifyAddresses("0x0000000000000000000000000400000000000000", "0x0000000000000000000003000000000000000000", I_DaiToken.address, { from: ISSUER }));
 
             await revertToSnapshot(snapId);
@@ -712,11 +712,11 @@ contract('USDTieredSTO', accounts => {
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, {from: ACCREDITED1});
 
             // NONACCREDITED ETH
-            let errorThrown1 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }));
 
             // Buy with POLY NONACCREDITED
-            let errorThrown2 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
         });
 
@@ -744,11 +744,11 @@ contract('USDTieredSTO', accounts => {
             await I_POLYOracle.changePrice(high_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-            let errorThrown1 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH_high, gasPrice: GAS_PRICE }));
 
             // Buy with POLY NONACCREDITED
-            let errorThrown2 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_high, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Change exchange rates down
@@ -756,11 +756,11 @@ contract('USDTieredSTO', accounts => {
             await I_POLYOracle.changePrice(low_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-            let errorThrown3 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH_low, gasPrice: GAS_PRICE }));
 
             // Buy with POLY NONACCREDITED
-            let errorThrown4 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_low, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Reset exchange rates
@@ -1131,27 +1131,27 @@ contract('USDTieredSTO', accounts => {
             assert.equal(await I_USDTieredSTO_Array[stoId].isOpen(),false,"STO is not showing correct status");
 
             // Buy with ETH NONACCREDITED
-            let errorThrown1 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE }));
 
             // Buy with POLY NONACCREDITED
-            let errorThrown2 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Buy with DAI NONACCREDITED
-            let errorThrown5 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Buy with ETH ACCREDITED
-            let errorThrown3 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE }));
 
             // Buy with POLY ACCREDITED
-            let errorThrown4 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Buy with DAI ACCREDITED
-            let errorThrown6 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, { from: ACCREDITED1, gasPrice: GAS_PRICE }));
         });
 
@@ -1181,19 +1181,19 @@ contract('USDTieredSTO', accounts => {
             await I_POLYOracle.changePrice(high_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-            let errorThrown1 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH_high, gasPrice: GAS_PRICE }));
 
             // Buy with POLY NONACCREDITED
-            let errorThrown2 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_high, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Buy with ETH ACCREDITED
-            let errorThrown3 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH_high, gasPrice: GAS_PRICE }));
 
             // Buy with POLY ACCREDITED
-            let errorThrown4 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY_high, { from: ACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Change exchange rates down
@@ -1201,19 +1201,19 @@ contract('USDTieredSTO', accounts => {
             await I_POLYOracle.changePrice(low_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-            let errorThrown5 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH_low, gasPrice: GAS_PRICE }));
 
             // Buy with POLY NONACCREDITED
-            let errorThrown6 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_low, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Buy with ETH ACCREDITED
-            let errorThrown7 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH_low, gasPrice: GAS_PRICE }));
 
             // Buy with POLY ACCREDITED
-            let errorThrown8 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY_low, { from: ACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Reset exchange rates
@@ -1638,11 +1638,11 @@ contract('USDTieredSTO', accounts => {
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, {from: NONACCREDITED1, gasPrice: GAS_PRICE});
 
             // Buy with ETH NONACCREDITED
-            let errorThrown1 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE }));
 
             // Buy with POLY NONACCREDITED
-            let errorThrown2 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
         });
 
@@ -1672,11 +1672,11 @@ contract('USDTieredSTO', accounts => {
             await I_POLYOracle.changePrice(high_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-            let errorThrown1 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH_high, gasPrice: GAS_PRICE }));
 
             // Buy with POLY NONACCREDITED
-            let errorThrown2 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_high, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Change exchange rates down
@@ -1684,11 +1684,11 @@ contract('USDTieredSTO', accounts => {
             await I_POLYOracle.changePrice(low_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-            let errorThrown3 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH_low, gasPrice: GAS_PRICE }));
 
             // Buy with POLY NONACCREDITED
-            let errorThrown4 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_low, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Reset exchange rates
@@ -1872,19 +1872,19 @@ contract('USDTieredSTO', accounts => {
             assert.equal(await I_USDTieredSTO_Array[stoId].isOpen(),false,"STO is not showing correct status");
 
             // Buy with ETH NONACCREDITED
-            let errorThrown1 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE }));
 
             // Buy with POLY NONACCREDITED
-            let errorThrown2 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Buy with ETH ACCREDITED
-            let errorThrown3 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE }));
 
             // Buy with POLY ACCREDITED
-            let errorThrown4 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1, gasPrice: GAS_PRICE }));
         });
 
@@ -1916,19 +1916,19 @@ contract('USDTieredSTO', accounts => {
             await I_POLYOracle.changePrice(high_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-            let errorThrown1 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH_high, gasPrice: GAS_PRICE }));
 
             // Buy with POLY NONACCREDITED
-            let errorThrown2 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_high, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Buy with ETH ACCREDITED
-            let errorThrown3 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH_high, gasPrice: GAS_PRICE }));
 
             // Buy with POLY ACCREDITED
-            let errorThrown4 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY_high, { from: ACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Change exchange rates down
@@ -1936,19 +1936,19 @@ contract('USDTieredSTO', accounts => {
             await I_POLYOracle.changePrice(low_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-            let errorThrown5 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH_low, gasPrice: GAS_PRICE }));
 
             // Buy with POLY NONACCREDITED
-            let errorThrown6 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_low, { from: NONACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Buy with ETH ACCREDITED
-            let errorThrown7 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH_low, gasPrice: GAS_PRICE }));
 
             // Buy with POLY ACCREDITED
-            let errorThrown8 = false;
+            
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY_low, { from: ACCREDITED1, gasPrice: GAS_PRICE }));
 
             // Reset exchange rates

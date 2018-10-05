@@ -462,12 +462,7 @@ contract('CappedSTO', accounts => {
                 .toNumber(),
                 9000
             );
-            await catchRevert(web3.eth.sendTransaction({
-                from: account_investor2,
-                to: I_CappedSTO_Array_ETH[0].address,
-                gas: 210000,
-                value: web3.utils.toWei('1', 'ether')
-              }));
+            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens(account_investor2, { value: web3.utils.toWei('100')}));
         });
 
         it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {
@@ -845,14 +840,22 @@ contract('CappedSTO', accounts => {
                     .toNumber(),
                     45000
                 );
-                
-                await catchRevert(I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, (1000 * Math.pow(10, 18)), { from: account_investor1}));
+                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, (1000 * Math.pow(10, 18)), { from: account_investor1});
+                await catchRevert(I_CappedSTO_Array_POLY[0].buyTokensWithPoly(
+                        (1000 * Math.pow(10, 18)),
+                        {from : account_investor1, gas: 6000000 }
+                    )
+                );
             });
 
             it("Should failed at the time of buying the tokens -- Because STO get expired", async() => {
                 await increaseTime(duration.days(31)); // increased beyond the end time of the STO
-                
-                await catchRevert(I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, (1000 * Math.pow(10, 18)), { from: account_investor1}));
+                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, (1000 * Math.pow(10, 18)), { from: account_investor1})
+                await catchRevert(I_CappedSTO_Array_POLY[0].buyTokensWithPoly(
+                        (1000 * Math.pow(10, 18)),
+                        {from : account_investor1, gas: 6000000 }
+                    )
+                );
             });
 
             it("Should fundRaised value equal to the raised value in the funds receiver wallet", async() => {

@@ -97,51 +97,6 @@ contract('EtherDividendCheckpoint', accounts => {
         account_investor4 = accounts[9];
         account_temp = accounts[2];
 
-         // ----------- POLYMATH NETWORK Configuration ------------
-
-        // Step 0: Deploy the PolymathRegistry
-        I_PolymathRegistry = await PolymathRegistry.new({from: account_polymath});
-
-        // Step 1: Deploy the token Faucet and Mint tokens for token_owner
-        I_PolyToken = await PolyTokenFaucet.new();
-        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
-
-         // Step 2: Deploy the FeatureRegistry
-
-         I_FeatureRegistry = await FeatureRegistry.new(
-            I_PolymathRegistry.address,
-            {
-                from: account_polymath
-            });
-
-        // STEP 3: Deploy the ModuleRegistry
-
-        I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
-        // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
-        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
-        let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, account_polymath]);
-        await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, {from: account_polymath});
-        I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
-
-        // STEP 4: Deploy the GeneralTransferManagerFactory
-
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
-
-        assert.notEqual(
-            I_GeneralTransferManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManagerFactory contract was not deployed"
-        );
-
-        // STEP 5: Deploy the GeneralDelegateManagerFactory
-
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
-
-        assert.notEqual(
-            I_GeneralPermissionManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManagerFactory contract was not deployed"
-        );
 
         // STEP 4: Deploy the ERC20DividendCheckpoint
         P_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(I_PolyToken.address, web3.utils.toWei("500","ether"), 0, 0, {from:account_polymath});

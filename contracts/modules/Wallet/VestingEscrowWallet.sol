@@ -240,7 +240,8 @@ contract VestingEscrowWallet is IWallet {
     if (_numUnvestedTokens != 0) {
       if (_isReclaiming) {
         require(ISecurityToken(securityToken).transfer(
-          treasury,
+          // treasury,
+          msg.sender,
           _numUnvestedTokens), "Unable to transfer tokens");
       } else {
         numExcessTokens = numExcessTokens.add(_numUnvestedTokens);
@@ -297,11 +298,8 @@ contract VestingEscrowWallet is IWallet {
     require(_tokensToDistribute != 0, "No tokens remain");
 
     _vestingSchedule.numClaimedVestedTokens = _vestingSchedule.numClaimedVestedTokens.add(_tokensToDistribute);
-    _vestingSchedule.numUnclaimedVestedTokens = _vestingSchedule.numUnclaimedVestedTokens.sub(_tokensToDistribute);
 
-
-    require(ISecurityToken(securityToken).transferFrom(
-      address(this),
+    require(ISecurityToken(securityToken).transfer(
       _target,
       _tokensToDistribute), "Unable to transfer tokens");
 

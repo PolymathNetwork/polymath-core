@@ -1,16 +1,12 @@
 language: node_js
 node_js:
   - '9'
-cache:
-  directories:
-  - node_modules
 matrix:
   fast_finish: true
 before_install:	
   - echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum	
   - sudo apt-get -y update	
   - sudo apt-get -y install solc
-  - sudo apt-get -y upgrade
 before_script:
   - truffle version
 script:

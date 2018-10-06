@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - '8'
+  - '9'
 cache:
   directories:
   - node_modules
@@ -10,7 +10,7 @@ before_install:
   - echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum	
   - sudo apt-get -y update	
   - sudo apt-get -y install solc
-  - yarn install
+  - sudo apt-get -y upgrade
 before_script:
   - truffle version
 script:

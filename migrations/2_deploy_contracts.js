@@ -140,7 +140,7 @@ module.exports = function (deployer, network, accounts) {
     return deployer.deploy(ModuleRegistryProxy, {from: PolymathAccount});
   }).then(() => {
     let bytesProxyMR = web3.eth.abi.encodeFunctionCall(functionSignatureProxyMR, [polymathRegistry.address, PolymathAccount]);
-    ModuleRegistryProxy.at(ModuleRegistryProxy.address).upgradeToAndCall("1.0.0", ModuleRegistry.address, bytesProxyMR, {from: PolymathAccount});
+    return ModuleRegistryProxy.at(ModuleRegistryProxy.address).upgradeToAndCall("1.0.0", ModuleRegistry.address, bytesProxyMR, {from: PolymathAccount});
   }).then(() => {
     moduleRegistry = ModuleRegistry.at(ModuleRegistryProxy.address);
     // Add module registry to polymath registry
@@ -189,7 +189,7 @@ module.exports = function (deployer, network, accounts) {
     return deployer.deploy(SecurityTokenRegistryProxy, {from: PolymathAccount});
   }).then(() => {
     let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolyToken, PolymathAccount]);
-    SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
+    return SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
   }).then(() => {
     // Assign the address into the SecurityTokenRegistry key
    return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistryProxy.address, {from: PolymathAccount});

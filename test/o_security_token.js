@@ -743,7 +743,7 @@ contract('SecurityToken', accounts => {
                 let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
                 I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
                 try {
-                    await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_temp });
+                    await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_temp });
                 } catch (error) {
                     console.log(`${account_temp} doesn't have permissions to register the delegate`);
                     errorThrown = true;
@@ -754,7 +754,7 @@ contract('SecurityToken', accounts => {
 
             it("Should provide the permission to the delegate to change the transfer bools", async () => {
                 // Add permission to the deletgate (A regesteration process)
-                await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: token_owner});
+                await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner});
                 // Providing the permission to the delegate
                 await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, { from: token_owner });
 
@@ -1157,7 +1157,7 @@ contract('SecurityToken', accounts => {
               let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
               let currentBalance = await I_SecurityToken.balanceOf(account_temp);
               try {
-                  let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance + web3.utils.toWei("500", "ether"), "", { from: account_controller });
+                  let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance + web3.utils.toWei("500", "ether"), "", "", { from: account_controller });
               } catch(error) {
                   console.log(`         tx revert -> value is greater than its current balance`.grey);
                   errorThrown = true;
@@ -1171,7 +1171,7 @@ contract('SecurityToken', accounts => {
                let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
                let currentBalance = await I_SecurityToken.balanceOf(account_temp);
                try {
-                   let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance, "", { from: token_owner });
+                   let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance, "", "", { from: token_owner });
                } catch(error) {
                    console.log(`         tx revert -> not owner`.grey);
                    errorThrown = true;
@@ -1184,7 +1184,7 @@ contract('SecurityToken', accounts => {
                 let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
                 let currentBalance = await I_SecurityToken.balanceOf(account_temp);
                 // console.log(currentInvestorCount.toString(), currentBalance.toString());
-                let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance, "", { from: account_controller });
+                let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance, "", "", { from: account_controller });
                 // console.log(tx.logs[0].args._value.toNumber(), currentBalance.toNumber());
                 assert.equal(tx.logs[0].args._value.toNumber(), currentBalance.toNumber());
                 let newInvestorCount = await I_SecurityToken.getInvestorCount.call();
@@ -1261,7 +1261,7 @@ contract('SecurityToken', accounts => {
             it("Should fail to forceTransfer because not approved controller", async() => {
                 let errorThrown1 = false;
                 try {
-                    await I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_investor1});
+                    await I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "", "reason", {from: account_investor1});
                 } catch (error) {
                     console.log(`         tx revert -> not approved controller`.grey);
                     errorThrown1 = true;
@@ -1273,7 +1273,7 @@ contract('SecurityToken', accounts => {
             it("Should fail to forceTransfer because insufficient balance", async() => {
                 let errorThrown = false;
                 try {
-                    await I_SecurityToken.forceTransfer(account_investor2, account_investor1, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
+                    await I_SecurityToken.forceTransfer(account_investor2, account_investor1, web3.utils.toWei("10", "ether"), "", "reason", {from: account_controller});
                 } catch (error) {
                     console.log(`         tx revert -> insufficient balance`.grey);
                     errorThrown = true;
@@ -1285,7 +1285,7 @@ contract('SecurityToken', accounts => {
             it("Should fail to forceTransfer because recipient is zero address", async() => {
                 let errorThrown = false;
                 try {
-                    await I_SecurityToken.forceTransfer(account_investor1, address_zero, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
+                    await I_SecurityToken.forceTransfer(account_investor1, address_zero, web3.utils.toWei("10", "ether"), "", "reason", {from: account_controller});
                 } catch (error) {
                     console.log(`         tx revert -> recipient is zero address`.grey);
                     errorThrown = true;
@@ -1302,7 +1302,7 @@ contract('SecurityToken', accounts => {
                 let start_balInv1 = await I_SecurityToken.balanceOf.call(account_investor1);
                 let start_balInv2 = await I_SecurityToken.balanceOf.call(account_investor2);
 
-                let tx = await I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
+                let tx = await I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "", "reason", {from: account_controller});
 
                 let end_investorCount = await I_SecurityToken.getInvestorCount.call();
                 let end_balInv1 = await I_SecurityToken.balanceOf.call(account_investor1);
@@ -1391,7 +1391,7 @@ contract('SecurityToken', accounts => {
             it("Should fail to forceTransfer because controller functionality frozen", async() => {
                 let errorThrown = false;
                 try {
-                    await I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "reason", {from: account_controller});
+                    await I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "", "reason", {from: account_controller});
                 } catch (error) {
                     console.log(`         tx revert -> recipient is zero address`.grey);
                     errorThrown = true;

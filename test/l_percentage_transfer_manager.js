@@ -86,9 +86,12 @@ contract('PercentageTransferManager', accounts => {
         inputs: [{
             type: 'uint256',
             name: '_maxHolderPercentage'
+        },{
+            type: 'bool',
+            name: '_allowPrimaryIssuance'
         }
         ]
-    }, [holderPercentage]);
+    }, [holderPercentage, false]);
 
     const STRProxyParameters = ['address', 'address', 'uint256', 'uint256', 'address', 'address'];
     const MRProxyParameters = ['address', 'address'];
@@ -330,7 +333,7 @@ contract('PercentageTransferManager', accounts => {
             );
         });
 
-        it("Should successfully attach the PercentageTransferManagerr factory with the security token", async () => {
+        it("Should successfully attach the PercentageTransferManager factory with the security token - failed payment", async () => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             try {
@@ -414,6 +417,25 @@ contract('PercentageTransferManager', accounts => {
             await I_PercentageTransferManager.unpause({from: token_owner});
         })
 
+        it("Should not be able to mint token amount over limit", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.mint(account_investor3, web3.utils.toWei('100', 'ether'), { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> Too high minting`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Allow unlimited primary issuance and remint", async() => {
+            let snapId = await takeSnapshot();
+            await I_PercentageTransferManager.setAllowPrimaryIssuance(true, { from: token_owner });
+            await I_SecurityToken.mint(account_investor3, web3.utils.toWei('100', 'ether'), { from: token_owner });
+            await revertToSnapshot(snapId);
+        });
+
         it("Should not be able to transfer between existing token holders over limit", async() => {
             let errorThrown = false;
             try {
@@ -450,7 +472,7 @@ contract('PercentageTransferManager', accounts => {
 
         it("Should get the permission", async() => {
             let perm = await I_PercentageTransferManager.getPermissions.call();
-            assert.equal(perm.length, 1);
+            assert.equal(perm.length, 2);
         });
 
     });

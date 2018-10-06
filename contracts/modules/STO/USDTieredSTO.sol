@@ -447,22 +447,23 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 spentUSD;
         uint256 tierSpentUSD;
         uint256 tierPurchasedTokens;
+        uint256 investedUSD = _investedUSD;
         // Check whether there are any remaining discounted tokens
         if ((_fundRaiseType == FundRaiseType.POLY) && (tokensPerTierDiscountPoly[_tier] > mintedPerTierDiscountPoly[_tier])) {
             uint256 discountRemaining = tokensPerTierDiscountPoly[_tier].sub(mintedPerTierDiscountPoly[_tier]);
             uint256 totalRemaining = tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]);
             if (totalRemaining < discountRemaining)
-                (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], totalRemaining, _investedUSD, _tier);
+                (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], totalRemaining, investedUSD, _tier);
             else
-                (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], discountRemaining, _investedUSD, _tier);
-            _investedUSD = _investedUSD.sub(spentUSD);
+                (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], discountRemaining, investedUSD, _tier);
+            investedUSD = investedUSD.sub(spentUSD);
             mintedPerTierDiscountPoly[_tier] = mintedPerTierDiscountPoly[_tier].add(tierPurchasedTokens);
             mintedPerTier[uint8(FundRaiseType.POLY)][_tier] = mintedPerTier[uint8(FundRaiseType.POLY)][_tier].add(tierPurchasedTokens);
             mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
-        if ((_investedUSD > 0) && (tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]) > 0)) {
-            (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTier[_tier], tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]), _investedUSD, _tier);
+        if ((investedUSD > 0) && (tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]) > 0)) {
+            (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTier[_tier], tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]), investedUSD, _tier);
             spentUSD = spentUSD.add(tierSpentUSD);
             mintedPerTier[uint8(_fundRaiseType)][_tier] = mintedPerTier[uint8(_fundRaiseType)][_tier].add(tierPurchasedTokens);
             mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
@@ -551,7 +552,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return uint256 Value in ETH or POLY
      */
     function convertFromUSD(FundRaiseType _fundRaiseType, uint256 _amount) public view returns(uint256) {
-      uint256 rate = getRate(_fundRaiseType);
+        uint256 rate = getRate(_fundRaiseType);
         return DecimalMath.div(_amount, rate);
     }
 

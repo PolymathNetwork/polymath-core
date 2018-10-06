@@ -1,49 +1,50 @@
 pragma solidity ^0.4.24;
 
-import "./TrackedRedemption.sol";
+import "./VolumeRestrictionTransferManager.sol";
 import "../ModuleFactory.sol";
 
 /**
- * @title Factory for deploying GeneralTransferManager module
+ * @title Factory for deploying ManualApprovalTransferManager module
  */
-contract TrackedRedemptionFactory is ModuleFactory {
+contract VolumeRestrictionTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
-     * @param _setupCost Setup cost of module
-     * @param _usageCost Usage cost of module
-     * @param _subscriptionCost Monthly cost of module
+     * @param _setupCost Setup cost of the module
+     * @param _usageCost Usage cost of the module
+     * @param _subscriptionCost Subscription cost of the module
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+      ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
-        name = "TrackedRedemption";
-        title = "Tracked Redemption";
-        description = "Track token redemptions";
+        name = "VolumeRestrictionTransferManager";
+        title = "Volume Restriction Transfer Manager";
+        description = "Manage transfers using lock ups over time";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
-    /**
+     /**
      * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        address trackedRedemption = new TrackedRedemption(msg.sender, address(polyToken));
-        emit GenerateModuleFromFactory(address(trackedRedemption), getName(), address(this), msg.sender, setupCost, now);
-        return address(trackedRedemption);
+        address volumeRestrictionTransferManager = new VolumeRestrictionTransferManager(msg.sender, address(polyToken));
+        emit GenerateModuleFromFactory(address(volumeRestrictionTransferManager), getName(), address(this), msg.sender, now);
+        return address(volumeRestrictionTransferManager);
     }
 
     /**
      * @notice Type of the Module factory
+     * @return uint8
      */
     function getTypes() external view returns(uint8[]) {
         uint8[] memory res = new uint8[](1);
-        res[0] = 5;
+        res[0] = 2;
         return res;
     }
 
@@ -62,17 +63,17 @@ contract TrackedRedemptionFactory is ModuleFactory {
     }
 
     /**
-     * @notice Get the version of the Module
-     */
-    function getVersion() external view returns(string) {
-        return version;
-    }
-
-    /**
      * @notice Get the title of the Module
      */
     function getTitle() external view returns(string) {
         return title;
+    }
+
+    /**
+     * @notice Get the version of the Module
+     */
+    function getVersion() external view returns(string) {
+        return version;
     }
 
     /**
@@ -86,7 +87,7 @@ contract TrackedRedemptionFactory is ModuleFactory {
      * @notice Get the Instructions that helped to used the module
      */
     function getInstructions() external view returns(string) {
-        return "Allows an investor to redeem security tokens which are tracked by this module";
+        return "Allows an issuer to set lockup periods for user addresses, with funds distributed over time. Init function takes no parameters.";
     }
 
     /**
@@ -94,9 +95,10 @@ contract TrackedRedemptionFactory is ModuleFactory {
      */
     function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "Redemption";
-        availableTags[1] = "Tracked";
+        availableTags[0] = "Volume";
+        availableTags[1] = "Transfer Restriction";
         return availableTags;
     }
+
 
 }

@@ -118,10 +118,8 @@ contract BlacklistTransferManager is ITransferManager {
                         // based on the new current time value   
                         uint256 repeater = now.div(endTimeTemp.add(repeatPeriodTimeTemp));
                         if (startTimeTemp.add(blacklistTime.mul(repeater)) <= now && endTimeTemp.add(blacklistTime.mul(repeater)) >= now) {
-                            emit LogTransfer(endTimeTemp,startTimeTemp,repeatPeriodTimeTemp,blacklistTime,repeater,now);
                             return Result.INVALID;
                         }
-                        emit LogTransfer(endTimeTemp,startTimeTemp,repeatPeriodTimeTemp,blacklistTime,repeater,now);
                         return Result.NA;
                     }
                     return Result.NA;

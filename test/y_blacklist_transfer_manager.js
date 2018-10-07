@@ -324,7 +324,7 @@ contract('BlacklistTransferManager', accounts => {
                 account_investor1,
                 latestTime(),
                 latestTime(),
-                latestTime() + duration.days(10),
+                latestTime() + duration.days(50),
                 true,
                 {
                     from: account_issuer
@@ -351,7 +351,7 @@ contract('BlacklistTransferManager', accounts => {
                 account_investor2,
                 latestTime(),
                 latestTime(),
-                latestTime() + duration.days(10),
+                latestTime() + duration.days(50),
                 true,
                 {
                     from: account_issuer
@@ -565,10 +565,22 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should investor be able to transfer token as it is not in blacklist time period", async() => {
+            // Jump time
+            await increaseTime(4000);
+            
+            //Trasfer tokens
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor2)).toNumber(),
+                web3.utils.toWei('3', 'ether')
+            );
+        });
+
         it("Should fail in transfer the tokens as the investor in blacklist", async() => {
             let errorThrown = false;
             // Jump time
-            await increaseTime(1731500);
+            await increaseTime(1727500);
             try{
                 await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
             }
@@ -580,209 +592,199 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should investor be able to transfer token as it is not in blacklist time period", async() => {
-            // Jump time
-            await increaseTime(3000);
-            
-            //Trasfer tokens
-            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
-            assert.equal(
-                (await I_SecurityToken.balanceOf(account_investor3)).toNumber(),
-                web3.utils.toWei('1', 'ether')
-            );
+       
+
+        it("Should delete the blacklist type", async() => {
+            await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
+            let tx = await I_BlacklistTransferManager.deleteBlacklistType("b_blacklist", { from: token_owner });
+            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._name), "b_blacklist", "Failed in deleting the blacklist");
+
         });
 
-        // it("Should delete the blacklist type", async() => {
-        //     await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
-        //     let tx = await I_BlacklistTransferManager.deleteBlacklistType("b_blacklist", { from: token_owner });
-        //     assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._name), "b_blacklist", "Failed in deleting the blacklist");
+        it("Only owner have the permission to delete thr blacklist type", async() => {
+            await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
+            let errorThrown = false;
+            try {
+                let tx = await I_BlacklistTransferManager.deleteBlacklistType("b_blacklist", { from: account_investor1 });
+            } catch(error) {
+                console.log(`         tx revert -> Only owner have the permission to delete the blacklist type`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
 
-        // });
+        it("Should fail in deleting the blacklist type as the blacklist has associated addresses", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_BlacklistTransferManager.deleteBlacklistType("a_blacklist", { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> Not able to delete the blacklist as blacklist has associated addresses.`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
 
-        // it("Only owner have the permission to delete thr blacklist type", async() => {
-        //     await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
-        //     let errorThrown = false;
-        //     try {
-        //         let tx = await I_BlacklistTransferManager.deleteBlacklistType("b_blacklist", { from: account_investor1 });
-        //     } catch(error) {
-        //         console.log(`         tx revert -> Only owner have the permission to delete the blacklist type`.grey);
-        //         errorThrown = true;
-        //         ensureException(error);
-        //     }
-        //     assert.ok(errorThrown, message);
-        // });
+        it("Should fail in deleting the blacklist type as the blacklist doesnot exist", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_BlacklistTransferManager.deleteBlacklistType("c_blacklist", { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> Not able to delete the blacklist as blacklist type doesnot exist.`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
 
-        // it("Should fail in deleting the blacklist type as the blacklist has associated addresses", async() => {
-        //     let errorThrown = false;
-        //     try {
-        //         let tx = await I_BlacklistTransferManager.deleteBlacklistType("a_blacklist", { from: token_owner });
-        //     } catch(error) {
-        //         console.log(`         tx revert -> Not able to delete the blacklist as blacklist has associated addresses.`.grey);
-        //         errorThrown = true;
-        //         ensureException(error);
-        //     }
-        //     assert.ok(errorThrown, message);
-        // });
+        it("Should delete the investor from all the associated blacklist", async() => {
+            await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "g_blacklist", 20, { from: token_owner });
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "g_blacklist", { from: token_owner });
+            let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor1, { from: token_owner });
+            assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in deleting the investor from the blacklist");
 
-        // it("Should fail in deleting the blacklist type as the blacklist doesnot exist", async() => {
-        //     let errorThrown = false;
-        //     try {
-        //         let tx = await I_BlacklistTransferManager.deleteBlacklistType("c_blacklist", { from: token_owner });
-        //     } catch(error) {
-        //         console.log(`         tx revert -> Not able to delete the blacklist as blacklist type doesnot exist.`.grey);
-        //         errorThrown = true;
-        //         ensureException(error);
-        //     }
-        //     assert.ok(errorThrown, message);
-        // });
+        });
 
-        // it("Should delete the investor from all the associated blacklist", async() => {
-        //     await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "g_blacklist", 20, { from: token_owner });
-        //     await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "g_blacklist", { from: token_owner });
-        //     let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor1, { from: token_owner });
-        //     assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in deleting the investor from the blacklist");
+        it("Only owner has the permission to delete the investor from all the blacklist type", async() => {
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "a_blacklist", { from: token_owner });
+            let errorThrown = false;
+            try {
+                let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor1, { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> Only owner have the permission to delete the investor from blacklist type`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
 
-        // });
+        it("Should fail in deleting the investor from all the associated blacklist as th address is invalid", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(0x0, { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> Invalid investor address`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
 
-        // it("Only owner has the permission to delete the investor from all the blacklist type", async() => {
-        //     await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "a_blacklist", { from: token_owner });
-        //     let errorThrown = false;
-        //     try {
-        //         let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor1, { from: account_investor2 });
-        //     } catch(error) {
-        //         console.log(`         tx revert -> Only owner have the permission to delete the investor from blacklist type`.grey);
-        //         errorThrown = true;
-        //         ensureException(error);
-        //     }
-        //     assert.ok(errorThrown, message);
-        // });
+        it("Should fail in deleting the investor which is not associated to blacklist", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor2, { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> Investor is not associated to blacklist`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
 
-        // it("Should fail in deleting the investor from all the associated blacklist as th address is invalid", async() => {
-        //     let errorThrown = false;
-        //     try {
-        //         let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(0x0, { from: token_owner });
-        //     } catch(error) {
-        //         console.log(`         tx revert -> Invalid investor address`.grey);
-        //         errorThrown = true;
-        //         ensureException(error);
-        //     }
-        //     assert.ok(errorThrown, message);
-        // });
+        it("Should delete the investor from the blacklist type", async() => {
+            await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "f_blacklist", 20, { from: token_owner });
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "f_blacklist", { from: token_owner });
+            let tx = await I_BlacklistTransferManager.deleteInvestorFromBlacklist(account_investor1, "f_blacklist", { from: token_owner });
+            assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in deleting the investor from the blacklist");
 
-        // it("Should fail in deleting the investor which is not associated to blacklist", async() => {
-        //     let errorThrown = false;
-        //     try {
-        //         let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor2, { from: token_owner });
-        //     } catch(error) {
-        //         console.log(`         tx revert -> Investor is not associated to blacklist`.grey);
-        //         errorThrown = true;
-        //         ensureException(error);
-        //     }
-        //     assert.ok(errorThrown, message);
-        // });
+        });
 
-        // it("Should delete the investor from the blacklist type", async() => {
-        //     await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "f_blacklist", 20, { from: token_owner });
-        //     await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "f_blacklist", { from: token_owner });
-        //     let tx = await I_BlacklistTransferManager.deleteInvestorFromBlacklist(account_investor1, "f_blacklist", { from: token_owner });
-        //     assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in deleting the investor from the blacklist");
+        it("Only owner can delete the investor from the blacklist type", async() => {
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "f_blacklist", { from: token_owner });
+            let errorThrown = false;
+            try {
+                let tx = await I_BlacklistTransferManager.deleteInvestorFromBlacklist(account_investor1, "f_blacklist", { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> Only owner have the permission to delete the investor from blacklist type`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
 
-        // });
+        it("Should add investor and new blacklist type", async() => {
+            let tx = await I_BlacklistTransferManager.addInvestorToNewBlacklist(latestTime()+1000, latestTime()+3000, "c_blacklist", 20, account_investor3, { from: token_owner });
+            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._name), "c_blacklist", "Failed in adding the blacklist");
+            assert.equal(tx.logs[1].args._investor, account_investor3, "Failed in adding the investor to blacklist");
 
-        // it("Only owner can delete the investor from the blacklist type", async() => {
-        //     await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "f_blacklist", { from: token_owner });
-        //     let errorThrown = false;
-        //     try {
-        //         let tx = await I_BlacklistTransferManager.deleteInvestorFromBlacklist(account_investor1, "f_blacklist", { from: account_investor2 });
-        //     } catch(error) {
-        //         console.log(`         tx revert -> Only owner have the permission to delete the investor from blacklist type`.grey);
-        //         errorThrown = true;
-        //         ensureException(error);
-        //     }
-        //     assert.ok(errorThrown, message);
-        // });
+        });
 
-        // it("Should add investor and new blacklist type", async() => {
-        //     let tx = await I_BlacklistTransferManager.addInvestorToNewBlacklist(latestTime()+1000, latestTime()+3000, "c_blacklist", 20, account_investor3, { from: token_owner });
-        //     assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._name), "c_blacklist", "Failed in adding the blacklist");
-        //     assert.equal(tx.logs[1].args._investor, account_investor3, "Failed in adding the investor to blacklist");
+        it("Should fail in adding the investor and new blacklist type", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_BlacklistTransferManager.addInvestorToNewBlacklist(latestTime()+1000, latestTime()+3000, "c_blacklist", 20, account_investor3, { from: account_investor2 });
+            } catch(error) {
+                console.log(`         tx revert -> Only owner have the permission to add the investor to blacklist`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
 
-        // });
-
-        // it("Should fail in adding the investor and new blacklist type", async() => {
-        //     let errorThrown = false;
-        //     try {
-        //         let tx = await I_BlacklistTransferManager.addInvestorToNewBlacklist(latestTime()+1000, latestTime()+3000, "c_blacklist", 20, account_investor3, { from: account_investor2 });
-        //     } catch(error) {
-        //         console.log(`         tx revert -> Only owner have the permission to add the investor to blacklist`.grey);
-        //         errorThrown = true;
-        //         ensureException(error);
-        //     }
-        //     assert.ok(errorThrown, message);
-        // });
-
-        // it("Should add mutiple investor to blacklist", async() => {
-        //     await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "d_blacklist", 20, { from: token_owner });
-        //     let investor = [account_investor4,account_investor5];
-        //     let tx = await I_BlacklistTransferManager.addInvestorToBlacklistMulti([account_investor4,account_investor5], "d_blacklist", { from: token_owner });
+        it("Should add mutiple investor to blacklist", async() => {
+            await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "d_blacklist", 20, { from: token_owner });
+            let investor = [account_investor4,account_investor5];
+            let tx = await I_BlacklistTransferManager.addInvestorToBlacklistMulti([account_investor4,account_investor5], "d_blacklist", { from: token_owner });
             
-        //     let event_data = tx.logs;
-        //     for (var i = 0; i < event_data.length; i++) {
-        //         let user = event_data[i].args._investor;
-        //         assert.equal(user, investor[i], "Failed in adding the investor to blacklist");
-        //     }
+            let event_data = tx.logs;
+            for (var i = 0; i < event_data.length; i++) {
+                let user = event_data[i].args._investor;
+                assert.equal(user, investor[i], "Failed in adding the investor to blacklist");
+            }
         
-        // });
+        });
 
-        // it("Should fail in adding the mutiple investor to the blacklist", async() => {
-        //     let errorThrown = false;
-        //     try {
-        //         let tx = await I_BlacklistTransferManager.addInvestorToBlacklistMulti([account_investor4,account_investor5], "b_blacklist", { from: account_investor1 });
-        //     } catch(error) {
-        //         console.log(`         tx revert -> Only owner have the permission to add the investors to blacklist`.grey);
-        //         errorThrown = true;
-        //         ensureException(error);
-        //     }
-        //     assert.ok(errorThrown, message);
-        // });
+        it("Should fail in adding the mutiple investor to the blacklist", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_BlacklistTransferManager.addInvestorToBlacklistMulti([account_investor4,account_investor5], "b_blacklist", { from: account_investor1 });
+            } catch(error) {
+                console.log(`         tx revert -> Only owner have the permission to add the investors to blacklist`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
 
-        // it("Should get the init function", async() => {
-        //     let byte = await I_BlacklistTransferManager.getInitFunction.call();
-        //     assert.equal(web3.utils.toAscii(byte).replace(/\u0000/g, ''), 0);
-        // });
+        it("Should get the init function", async() => {
+            let byte = await I_BlacklistTransferManager.getInitFunction.call();
+            assert.equal(web3.utils.toAscii(byte).replace(/\u0000/g, ''), 0);
+        });
 
-        // it("Should get the permission", async() => {
-        //     let perm = await I_BlacklistTransferManager.getPermissions.call();
-        //     assert.equal(perm.length, 1);
-        // });
+        it("Should get the permission", async() => {
+            let perm = await I_BlacklistTransferManager.getPermissions.call();
+            assert.equal(perm.length, 1);
+        });
 
 
     });
 
-    // describe("Test cases for the factory", async() => {
-    //     it("Should get the exact details of the factory", async() => {
-    //         assert.equal(await I_BlacklistTransferManagerFactory.setupCost.call(),0);
-    //         assert.equal((await I_CountTransferManagerFactory.getTypes.call())[0],2);
-    //         assert.equal(web3.utils.toAscii(await I_BlacklistTransferManagerFactory.getName.call())
-    //                     .replace(/\u0000/g, ''),
-    //                     "BlacklistTransferManager",
-    //                     "Wrong Module added");
-    //         assert.equal(await I_BlacklistTransferManagerFactory.getDescription.call(),
-    //                     "Automate blacklist to restrict selling",
-    //                     "Wrong Module added");
-    //         assert.equal(await I_BlacklistTransferManagerFactory.getTitle.call(),
-    //                     "Blacklist Transfer Manager",
-    //                     "Wrong Module added");
-    //         assert.equal(await I_BlacklistTransferManagerFactory.getInstructions.call(),
-    //                     "Allows an issuer to blacklist the addresses.",
-    //                     "Wrong Module added");
+    describe("Test cases for the factory", async() => {
+        it("Should get the exact details of the factory", async() => {
+            assert.equal(await I_BlacklistTransferManagerFactory.setupCost.call(),0);
+            assert.equal((await I_BlacklistTransferManagerFactory.getTypes.call())[0],2);
+            assert.equal(web3.utils.toAscii(await I_BlacklistTransferManagerFactory.getName.call())
+                        .replace(/\u0000/g, ''),
+                        "BlacklistTransferManager",
+                        "Wrong Module added");
+            assert.equal(await I_BlacklistTransferManagerFactory.getDescription.call(),
+                        "Automate blacklist to restrict selling",
+                        "Wrong Module added");
+            assert.equal(await I_BlacklistTransferManagerFactory.getTitle.call(),
+                        "Blacklist Transfer Manager",
+                        "Wrong Module added");
+            assert.equal(await I_BlacklistTransferManagerFactory.getInstructions.call(),
+                        "Allows an issuer to blacklist the addresses.",
+                        "Wrong Module added");
         
-    //     });
+        });
         
-    //     it("Should get the tags of the factory", async() => {
-    //         let tags = await I_BlacklistTransferManagerFactory.getTags.call();
-    //             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''),"Blacklist");
-    //         });
-    // });
+        it("Should get the tags of the factory", async() => {
+            let tags = await I_BlacklistTransferManagerFactory.getTags.call();
+                assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''),"Blacklist");
+            });
+    });
 
 });

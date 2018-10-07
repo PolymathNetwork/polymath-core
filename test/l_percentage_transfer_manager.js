@@ -69,23 +69,25 @@ contract("PercentageTransferManager", accounts => {
     const initRegFee = web3.utils.toWei("250");
 
     // PercentageTransferManager details
-    const holderPercentage = 70 * 10 ** 16; // Maximum number of token holders
+    const holderPercentage = 70 * 10**16;           // Maximum number of token holders
 
-    let bytesSTO = web3.eth.abi.encodeFunctionCall(
-        {
-            name: "configure",
-            type: "function",
-            inputs: [
-                {
-                    type: "uint256",
-                    name: "_maxHolderPercentage"
-                }
-            ]
-        },
-        [holderPercentage]
-    );
+    let bytesSTO = web3.eth.abi.encodeFunctionCall({
+        name: 'configure',
+        type: 'function',
+        inputs: [{
+            type: 'uint256',
+            name: '_maxHolderPercentage'
+        },{
+            type: 'bool',
+            name: '_allowPrimaryIssuance'
+        }
+        ]
+    }, [holderPercentage, false]);
 
-    before(async () => {
+    const STRProxyParameters = ['address', 'address', 'uint256', 'uint256', 'address', 'address'];
+    const MRProxyParameters = ['address', 'address'];
+
+    before(async() => {
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
@@ -268,7 +270,7 @@ contract("PercentageTransferManager", accounts => {
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("1", "ether"));
         });
 
-        it("Should successfully attach the PercentageTransferManagerr factory with the security token", async () => {
+        it("Should successfully attach the PercentageTransferManager factory with the security token - failed payment", async () => {
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await catchRevert(
                 I_SecurityToken.addModule(P_PercentageTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, {
@@ -353,6 +355,41 @@ contract("PercentageTransferManager", accounts => {
         it("Should not be able to transfer between existing token holders over limit", async () => {
             await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei("2", "ether"), { from: account_investor1 }));
         });
+        
+        it("Should unpause the tranfers at transferManager level", async() => {
+            await I_PercentageTransferManager.unpause({from: token_owner});
+        })
+
+        it("Should not be able to mint token amount over limit", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.mint(account_investor3, web3.utils.toWei('100', 'ether'), { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> Too high minting`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Allow unlimited primary issuance and remint", async() => {
+            let snapId = await takeSnapshot();
+            await I_PercentageTransferManager.setAllowPrimaryIssuance(true, { from: token_owner });
+            await I_SecurityToken.mint(account_investor3, web3.utils.toWei('100', 'ether'), { from: token_owner });
+            await revertToSnapshot(snapId);
+        });
+
+        it("Should not be able to transfer between existing token holders over limit", async() => {
+            let errorThrown = false;
+            try {
+                await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 });
+            } catch(error) {
+                console.log(`         tx revert -> Too many holders`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
 
         it("Modify holder percentage to 100", async () => {
             // Add the Investor in to the whitelist
@@ -375,7 +412,7 @@ contract("PercentageTransferManager", accounts => {
 
         it("Should get the permission", async () => {
             let perm = await I_PercentageTransferManager.getPermissions.call();
-            assert.equal(perm.length, 1);
+            assert.equal(perm.length, 2);
         });
     });
 

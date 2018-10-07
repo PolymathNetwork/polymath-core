@@ -17,19 +17,19 @@ contract DividendCheckpoint is ICheckpoint, Module {
     bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
 
     struct Dividend {
-      uint256 checkpointId;
-      uint256 created; // Time at which the dividend was created
-      uint256 maturity; // Time after which dividend can be claimed - set to 0 to bypass
-      uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer - set to very high value to bypass
-      uint256 amount; // Dividend amount in WEI
-      uint256 claimedAmount; // Amount of dividend claimed so far
-      uint256 totalSupply; // Total supply at the associated checkpoint (avoids recalculating this)
-      bool reclaimed;  // True if expiry has passed and issuer has reclaimed remaining dividend
-      uint256 dividendWithheld;
-      uint256 dividendWithheldReclaimed;
-      mapping (address => bool) claimed; // List of addresses which have claimed dividend
-      mapping (address => bool) dividendExcluded; // List of addresses which cannot claim dividends
-      bytes32 name; // Name/title - used for identification
+        uint256 checkpointId;
+        uint256 created; // Time at which the dividend was created
+        uint256 maturity; // Time after which dividend can be claimed - set to 0 to bypass
+        uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer - set to very high value to bypass
+        uint256 amount; // Dividend amount in WEI
+        uint256 claimedAmount; // Amount of dividend claimed so far
+        uint256 totalSupply; // Total supply at the associated checkpoint (avoids recalculating this)
+        bool reclaimed;  // True if expiry has passed and issuer has reclaimed remaining dividend
+        uint256 dividendWithheld;
+        uint256 dividendWithheldReclaimed;
+        mapping (address => bool) claimed; // List of addresses which have claimed dividend
+        mapping (address => bool) dividendExcluded; // List of addresses which cannot claim dividends
+        bytes32 name; // Name/title - used for identification
     }
 
     // List of all dividends
@@ -198,15 +198,15 @@ contract DividendCheckpoint is ICheckpoint, Module {
             }
         }
 
-       uint256[] memory index = new uint256[](counter);
-       counter = 0;
-       for(uint256 j = 0; j < dividends.length; j++) {
-           if (dividends[j].checkpointId == _checkpointId) {
-               index[counter] = j;
-               counter++;
-           }
-       }
-       return index;
+        uint256[] memory index = new uint256[](counter);
+        counter = 0;
+        for(uint256 j = 0; j < dividends.length; j++) {
+            if (dividends[j].checkpointId == _checkpointId) {
+                index[counter] = j;
+                counter++;
+            }
+        }
+        return index;
     }
 
     /**
@@ -216,7 +216,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     function withdrawWithholding(uint256 _dividendIndex) external;
 
     /**
-     * @notice Return the permissions flag that are associated with STO
+     * @notice Return the permissions flag that are associated with this module
      * @return bytes32 array
      */
     function getPermissions() public view returns(bytes32[]) {

@@ -33,9 +33,9 @@ library TokenLib {
         uint256 investorCount;
     }
 
-    // Emit when Module get archived from the securityToken
+    // Emit when Module is archived from the SecurityToken
     event ModuleArchived(uint8[] _types, address _module, uint256 _timestamp);
-    // Emit when Module get unarchived from the securityToken
+    // Emit when Module is unarchived from the SecurityToken
     event ModuleUnarchived(uint8[] _types, address _module, uint256 _timestamp);
 
     /**
@@ -62,13 +62,13 @@ library TokenLib {
     }
 
     /**
-     * @notice Validate permissions with PermissionManager if it exists, If no Permission return false
-     * @dev Note that IModule withPerm will allow ST owner all permissions anyway
+     * @notice Validate permissions with PermissionManager if it exists. If there's no permission return false
+     * @dev Note that IModule withPerm will allow ST owner all permissions by default
      * @dev this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
-     * @param _modules storage data
-     * @param _delegate address of delegate
-     * @param _module address of PermissionManager module
-     * @param _perm the permissions
+     * @param _modules is the modules to check permissions on
+     * @param _delegate is the address of the delegate
+     * @param _module is the address of the PermissionManager module
+     * @param _perm is the permissions data
      * @return success
      */
     function checkPermission(address[] storage _modules, address _delegate, address _module, bytes32 _perm) public view returns(bool) {
@@ -86,16 +86,16 @@ library TokenLib {
     }
 
     /**
-     * @notice Queries value at a defined checkpoint
+     * @notice Queries a value at a defined checkpoint
      * @param _checkpoints is array of Checkpoint objects
-     * @param _checkpointId Checkpoint ID to query
-     * @param _currentValue Current value of checkpoint
+     * @param _checkpointId is the Checkpoint ID to query
+     * @param _currentValue is the Current value of checkpoint
      * @return uint256
      */
     function getValueAt(Checkpoint[] storage _checkpoints, uint256 _checkpointId, uint256 _currentValue) public view returns(uint256) {
         //Checkpoint id 0 is when the token is first created - everyone has a zero balance
         if (_checkpointId == 0) {
-          return 0;
+            return 0;
         }
         if (_checkpoints.length == 0) {
             return _currentValue;
@@ -127,9 +127,9 @@ library TokenLib {
     }
 
     /**
-     * @notice store the changes to the checkpoint objects
-     * @param _checkpoints the affected checkpoint object array
-     * @param _newValue the new value that needs to be stored
+     * @notice Stores the changes to the checkpoint objects
+     * @param _checkpoints is the affected checkpoint object array
+     * @param _newValue is the new value that needs to be stored
      */
     function adjustCheckpoints(TokenLib.Checkpoint[] storage _checkpoints, uint256 _newValue, uint256 _currentCheckpointId) public {
         //No checkpoints set yet
@@ -158,7 +158,14 @@ library TokenLib {
     * @param _balanceTo balance of the _to address
     * @param _balanceFrom balance of the _from address
     */
-    function adjustInvestorCount(InvestorDataStorage storage _investorData, address _from, address _to, uint256 _value, uint256 _balanceTo, uint256 _balanceFrom) public  {
+    function adjustInvestorCount(
+        InvestorDataStorage storage _investorData,
+        address _from,
+        address _to,
+        uint256 _value,
+        uint256 _balanceTo,
+        uint256 _balanceFrom
+        ) public  {
         if ((_value == 0) || (_from == _to)) {
             return;
         }
@@ -180,8 +187,8 @@ library TokenLib {
 
      /**
     * @notice removes addresses with zero balances from the investors list
-    * @param _investorData Date releated to investor metrics
-    * @param _index Index in investor list
+    * @param _investorData is the date related to investor metrics
+    * @param _index is the index in investor list
     * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
     */
     function pruneInvestors(InvestorDataStorage storage _investorData, uint256 _index) public {

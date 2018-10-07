@@ -222,21 +222,17 @@ contract("Issuance", accounts => {
                 assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
             });
 
-            it("Should add the delegate with permission", async () => {
-                //First attach a permission manager to the token
-                await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, { from: account_polymath });
-                let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
-                I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
-                // Add permission to the deletgate (A regesteration process)
-                await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_polymath });
-                // Providing the permission to the delegate
-                await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, {
-                    from: account_polymath
-                });
+            it("Should add the delegate with permission", async() => {
+                 //First attach a permission manager to the token
+                 await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, {from: account_polymath});
+                 let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
+                 I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
+                 // Add permission to the deletgate (A regesteration process)
+                 await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_polymath});
+                 // Providing the permission to the delegate
+                 await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, { from: account_polymath });
 
-                assert.isTrue(
-                    await I_GeneralPermissionManager.checkPermission(account_delegate, I_GeneralTransferManager.address, TM_Perm)
-                );
+                 assert.isTrue(await I_GeneralPermissionManager.checkPermission(account_delegate, I_GeneralTransferManager.address, TM_Perm));
             });
 
             it("POLYMATH: Should change the ownership of the SecurityToken", async () => {

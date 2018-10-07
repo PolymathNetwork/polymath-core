@@ -61,12 +61,12 @@ library VersionUtils {
         if (counter != _version1.length) {
             counter = 0;
             for (uint8 i = 0; i < _version1.length; i++) {
-                    if (_version2[i] > _version1[i])
-                        return true;
-                    else if (_version2[i] < _version1[i])
-                        return false;
-                    else
-                        counter++;
+                if (_version2[i] > _version1[i])
+                    return true;
+                else if (_version2[i] < _version1[i])
+                    return false;
+                else
+                    counter++;
             }
             if (counter == _version1.length - 1)
                 return true;
@@ -92,12 +92,12 @@ library VersionUtils {
         if (counter != _version1.length) {
             counter = 0;
             for (uint8 i = 0; i < _version1.length; i++) {
-                    if (_version1[i] > _version2[i])
-                        return true;
-                    else if (_version1[i] < _version2[i])
-                        return false;
-                    else
-                        counter++;
+                if (_version1[i] > _version2[i])
+                    return true;
+                else if (_version1[i] < _version2[i])
+                    return false;
+                else
+                    counter++;
             }
             if (counter == _version1.length - 1)
                 return true;

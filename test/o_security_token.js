@@ -576,12 +576,27 @@ contract("SecurityToken", accounts => {
                 from: token_owner
             });
 
-            assert.isTrue(await I_GeneralPermissionManager.checkPermission(account_delegate, I_GeneralTransferManager.address, TM_Perm));
-        });
+            it("Should fail to provide the permission to the delegate to change the transfer bools", async () => {
+                let errorThrown = false;
+                // Add permission to the deletgate (A regesteration process)
+                await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, {from: token_owner});
+                let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
+                I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
+                try {
+                    await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_temp });
+                } catch (error) {
+                    console.log(`${account_temp} doesn't have permissions to register the delegate`);
+                    errorThrown = true;
+                    ensureException(error);
+                }
+                assert.ok(errorThrown, message);
+            });
 
-        it("Should fail to activate the bool allowAllTransfer", async () => {
-            await catchRevert(I_GeneralTransferManager.changeAllowAllTransfers(true, { from: account_temp }));
-        });
+            it("Should provide the permission to the delegate to change the transfer bools", async () => {
+                // Add permission to the deletgate (A regesteration process)
+                await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner});
+                // Providing the permission to the delegate
+                await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, { from: token_owner });
 
         it("Should activate the bool allowAllTransfer", async () => {
             ID_snap = await takeSnapshot();

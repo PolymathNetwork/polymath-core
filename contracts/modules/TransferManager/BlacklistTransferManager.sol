@@ -222,9 +222,13 @@ contract BlacklistTransferManager is ITransferManager {
         require(_investor != address(0), "Invalid investor address");
         require(_blacklistName != bytes32(0),"Invalid blacklist name");
         require(investorToBlacklist[_investor][investorToIndex[_investor][_blacklistName]] != bytes32(0), "Investor is not associated to blacklist type");
+        // delete the investor from the blacklist type
         delete(blacklistToInvestor[_blacklistName][blacklistToIndex[_blacklistName][_investor]]);
+        // delete the investor index from the blacklist
         delete(blacklistToIndex[_blacklistName][_investor]);
+        // delete the blacklist from the investor
         delete(investorToBlacklist[_investor][investorToIndex[_investor][_blacklistName]]);
+        // delete the blacklist index from the invetsor
         delete(investorToIndex[_investor][_blacklistName]);
         emit DeleteInvestorFromBlacklist(_investor, investorToBlacklist[_investor][investorToIndex[_investor][_blacklistName]]);
     }

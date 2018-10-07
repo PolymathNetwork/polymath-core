@@ -374,7 +374,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._name), "a_blacklist", "Failed in adding the type in blacklist");
         });
 
-        it("Should fail in adding the blacklist", async() => {
+        it("Should fail in adding the blacklist as blacklist type already exist", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "a_blacklist", 20, { from: token_owner });
@@ -386,7 +386,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in adding the blacklist", async() => {
+        it("Should fail in adding the blacklist as the blacklist name is invalid", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "", 20, { from: token_owner });
@@ -398,7 +398,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in adding the blacklist", async() => {
+        it("Should fail in adding the blacklist as the dates are invalid", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.addBlacklistType(latestTime()+4000, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
@@ -410,7 +410,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in adding the blacklist", async() => {
+        it("Should fail in adding the blacklist as repeat in days is invalid", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 0, { from: token_owner });
@@ -422,7 +422,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in adding the blacklist", async() => {
+        it("Should fail in adding the blacklist because only owner can add the blacklist", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 20, { from: account_investor1 });
@@ -434,17 +434,6 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in adding the existing blacklist", async() => {
-            let errorThrown = false;
-            try {
-                await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "a_blacklist", 20, { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> Blacklist type already exist`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
-        })
 
         it("Should modify the blacklist", async() => {
             //Modify the existing blacklist
@@ -453,7 +442,7 @@ contract('BlacklistTransferManager', accounts => {
 
         });
 
-        it("Should fail in modifying the blacklist", async() => {
+        it("Should fail in modifying the blacklist as the name is invalid", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.modifyBlacklistType(latestTime()+2000, latestTime()+3000, "", 20, { from: token_owner });
@@ -465,7 +454,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in modifying the blacklist", async() => {
+        it("Should fail in modifying the blacklist as the dates are invalid", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.modifyBlacklistType(latestTime()+4000, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
@@ -477,7 +466,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in modifying the blacklist", async() => {
+        it("Should fail in modifying the blacklist as the repeat in days is invalid", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.modifyBlacklistType(latestTime()+2000, latestTime()+3000, "b_blacklist", 0, { from: token_owner });
@@ -490,7 +479,7 @@ contract('BlacklistTransferManager', accounts => {
         });
 
 
-        it("Should fail in modifying the blacklist", async() => {
+        it("Should fail in modifying the blacklist as only owner can modify the blacklist", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.modifyBlacklistType(latestTime()+1000, latestTime()+3000, "a_blacklist", 20, { from: account_investor1 });
@@ -502,7 +491,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in modifying the blacklist", async() => {
+        it("Should fail in modifying the blacklist as blacklist type doesnot exist", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.modifyBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
@@ -521,7 +510,7 @@ contract('BlacklistTransferManager', accounts => {
 
         });
 
-        it("Should fail in adding the investor to the blacklist", async() => {
+        it("Should fail in adding the investor to the blacklist because only owner can add the investor", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor2, "a_blacklist", { from: account_investor1 });
@@ -533,7 +522,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should fail in adding the investor to the blacklist", async() => {
+        it("Should fail in adding the investor to the blacklist as investor address is invalid", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.addInvestorToBlacklist(0x0, "a_blacklist", { from: token_owner });
@@ -546,7 +535,7 @@ contract('BlacklistTransferManager', accounts => {
         });
 
 
-        it("Should fail in adding the investor to the blacklist", async() => {
+        it("Should fail in adding the investor to the non existing blacklist", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor2, "b_blacklist", { from: token_owner });
@@ -563,7 +552,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.equal(perm.length, 1);
         });
 
-        it("Should fail in getting the list of investors associated to blacklist", async() => {
+        it("Should fail in getting the list of investors from the non existing blacklist", async() => {
             let errorThrown = false;
             try{
                 let perm = await I_BlacklistTransferManager.getListOfAddresses.call("b_blacklist");
@@ -610,7 +599,7 @@ contract('BlacklistTransferManager', accounts => {
 
         // });
 
-        // it("Should fail in deleting the blacklist type", async() => {
+        // it("Only owner have the permission to delete thr blacklist type", async() => {
         //     await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
         //     let errorThrown = false;
         //     try {
@@ -623,7 +612,7 @@ contract('BlacklistTransferManager', accounts => {
         //     assert.ok(errorThrown, message);
         // });
 
-        // it("Should fail in deleting the blacklist type", async() => {
+        // it("Should fail in deleting the blacklist type as the blacklist has associated addresses", async() => {
         //     let errorThrown = false;
         //     try {
         //         let tx = await I_BlacklistTransferManager.deleteBlacklistType("a_blacklist", { from: token_owner });
@@ -635,7 +624,7 @@ contract('BlacklistTransferManager', accounts => {
         //     assert.ok(errorThrown, message);
         // });
 
-        // it("Should fail in deleting the blacklist type", async() => {
+        // it("Should fail in deleting the blacklist type as the blacklist doesnot exist", async() => {
         //     let errorThrown = false;
         //     try {
         //         let tx = await I_BlacklistTransferManager.deleteBlacklistType("c_blacklist", { from: token_owner });
@@ -655,7 +644,7 @@ contract('BlacklistTransferManager', accounts => {
 
         // });
 
-        // it("Should fail in deleting the investor from the blacklist type", async() => {
+        // it("Only owner has the permission to delete the investor from all the blacklist type", async() => {
         //     await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "a_blacklist", { from: token_owner });
         //     let errorThrown = false;
         //     try {
@@ -668,7 +657,7 @@ contract('BlacklistTransferManager', accounts => {
         //     assert.ok(errorThrown, message);
         // });
 
-        // it("Should fail in deleting the investor from the blacklist type", async() => {
+        // it("Should fail in deleting the investor from all the associated blacklist as th address is invalid", async() => {
         //     let errorThrown = false;
         //     try {
         //         let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(0x0, { from: token_owner });
@@ -680,7 +669,7 @@ contract('BlacklistTransferManager', accounts => {
         //     assert.ok(errorThrown, message);
         // });
 
-        // it("Should fail in deleting the investor from the blacklist type", async() => {
+        // it("Should fail in deleting the investor which is not associated to blacklist", async() => {
         //     let errorThrown = false;
         //     try {
         //         let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor2, { from: token_owner });
@@ -700,7 +689,7 @@ contract('BlacklistTransferManager', accounts => {
 
         // });
 
-        // it("Should fail in deleting the investor from the blacklist type", async() => {
+        // it("Only owner can delete the investor from the blacklist type", async() => {
         //     await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "f_blacklist", { from: token_owner });
         //     let errorThrown = false;
         //     try {

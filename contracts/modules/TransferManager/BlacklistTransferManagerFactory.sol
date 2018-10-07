@@ -31,12 +31,10 @@ contract BlacklistTransferManagerFactory is ModuleFactory {
      * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes _data) external returns(address) {
+    function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        BlacklistTransferManager blacklistTransferManager = new BlacklistTransferManager(msg.sender, address(polyToken));
-        require(Util.getSig(_data) == blacklistTransferManager.getInitFunction(), "Provided data is not valid");
-        require(address(blacklistTransferManager).call(_data), "Un-successfull call");
+        address blacklistTransferManager = new BlacklistTransferManager(msg.sender, address(polyToken));
         emit GenerateModuleFromFactory(address(blacklistTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(blacklistTransferManager);
     }

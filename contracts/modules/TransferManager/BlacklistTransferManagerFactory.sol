@@ -2,6 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./BlacklistTransferManager.sol";
 import "../ModuleFactory.sol";
+import "../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying BlacklistManager module
@@ -30,10 +31,12 @@ contract BlacklistTransferManagerFactory is ModuleFactory {
      * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
+    function deploy(bytes _data) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        address blacklistTransferManager = new BlacklistTransferManager(msg.sender, address(polyToken));
+        BlacklistTransferManager blacklistTransferManager = new BlacklistTransferManager(msg.sender, address(polyToken));
+        require(Util.getSig(_data) == blacklistTransferManager.getInitFunction(), "Provided data is not valid");
+        require(address(blacklistTransferManager).call(_data), "Un-successfull call");
         emit GenerateModuleFromFactory(address(blacklistTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(blacklistTransferManager);
     }
@@ -41,8 +44,10 @@ contract BlacklistTransferManagerFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getType() public view returns(uint8) {
-        return 2;
+    function getTypes() external view returns(uint8[]) {
+        uint8[] memory res = new uint8[](1);
+        res[0] = 2;
+        return res;
     }
 
     /**

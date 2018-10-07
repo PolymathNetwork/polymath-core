@@ -4,6 +4,7 @@ const PolymathRegistry = artifacts.require("./PolymathRegistry.sol");
 const ModuleRegistry = artifacts.require("./ModuleRegistry.sol");
 const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
+const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock.sol");
@@ -13,6 +14,7 @@ const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
 const STFactory = artifacts.require("./STFactory.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
+const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const PolyToken = artifacts.require("./PolyToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
@@ -23,6 +25,7 @@ const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 
 // Contract Instance Declaration
 let I_EtherDividendCheckpointFactory;
+let I_CountTransferManagerFactory;
 let I_ERC20DividendCheckpointFactory;
 let I_GeneralPermissionManagerFactory;
 let I_GeneralTransferManagerFactory;
@@ -31,6 +34,7 @@ let I_ModuleRegistryProxy;
 let I_ModuleRegistry;
 let I_FeatureRegistry;
 let I_SecurityTokenRegistry;
+let I_CappedSTOFactory;
 let I_SecurityToken;
 let I_DummySTOFactory;
 let I_PolyToken;
@@ -45,6 +49,8 @@ const initRegFee = web3.utils.toWei("250");
 
 const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
 const MRProxyParameters = ["address", "address"];
+
+/// Function use to launch the polymath ecossystem.
 
 export async function setUpPolymathNetwork(account_polymath, token_owner) {
     // ----------- POLYMATH NETWORK Configuration ------------
@@ -68,15 +74,6 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
     return mergeReturn(tempArray);
 }
 
-function mergeReturn(returnData) {
-    let returnArray = new Array();
-    for (let i = 0; i < returnData.length; i++) {
-        for (let j = 0; j < returnData[i].length; j++) {
-            returnArray.push(returnData[i][j]);
-        }
-    }
-    return returnArray;
-}
 
 async function deployPolyRegistryAndPolyToken(account_polymath, token_owner) {
     // Step 0: Deploy the PolymathRegistry
@@ -166,10 +163,13 @@ async function registerGTM(account_polymath) {
     await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
 }
 
+async function registerAndVerifyByMR(factoryAdrress, owner, mr) {
+    await mr.registerModule(factoryAdrress, { from: owner });
+    await mr.verifyModule(factoryAdrress, true, { from: owner });
+}
 
-
-export async function deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken, setupCost) {
-    I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, setupCost, 0, 0, { from: account_polymath });
+export async function deployGPMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
         I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -178,46 +178,37 @@ export async function deployGPMAndVerifyed(account_polymath, I_MRProxied, I_Poly
     );
 
     // (B) :  Register the GeneralDelegateManagerFactory
-    await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-    await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
+    await registerAndVerifyByMR(I_GeneralPermissionManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_GeneralPermissionManagerFactory);
 }
 
 
-export async function deployDummySTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken, setupCost) {
-    I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, setupCost, 0, 0, { from: account_polymath });
+export async function deployDummySTOAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_DummySTOFactory = await DummySTOFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
         I_DummySTOFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
         "DummySTOFactory contract was not deployed"
     );
-
-    await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_polymath });
-    await I_MRProxied.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
-
+    await registerAndVerifyByMR(I_DummySTOFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_DummySTOFactory);
 }
 
-export async function deployERC20DividendAndVerifyed(account_polymath, I_MRProxied, I_PolyToken, setupCost) {
-    I_ERC20DividendCheckpointFactory = await ERC20DividendCheckpointFactory.new(I_PolyToken.address, setupCost, 0, 0, { from: account_polymath });
+export async function deployERC20DividendAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_ERC20DividendCheckpointFactory = await ERC20DividendCheckpointFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
         I_ERC20DividendCheckpointFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
         "ERC20DividendCheckpointFactory contract was not deployed"
     );
-
-    await I_MRProxied.registerModule(I_ERC20DividendCheckpointFactory.address, { from: account_polymath });
-    await I_MRProxied.verifyModule(I_ERC20DividendCheckpointFactory.address, true, { from: account_polymath });
-
+    await registerAndVerifyByMR(I_ERC20DividendCheckpointFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_ERC20DividendCheckpointFactory);
 }
 
-
-export async function deployEtherDividendAndVerifyed(account_polymath, I_MRProxied, I_PolyToken, setupCost) {
-    I_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(I_PolyToken.address, setupCost, 0, 0, { from: account_polymath });
+export async function deployEtherDividendAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
         I_EtherDividendCheckpointFactory.address.valueOf(),
@@ -225,8 +216,44 @@ export async function deployEtherDividendAndVerifyed(account_polymath, I_MRProxi
         "EtherDividendCheckpointFactory contract was not deployed"
     );
 
-    await I_MRProxied.registerModule(I_EtherDividendCheckpointFactory.address, { from: account_polymath });
-    await I_MRProxied.verifyModule(I_EtherDividendCheckpointFactory.address, true, { from: account_polymath });
-
+    await registerAndVerifyByMR(I_EtherDividendCheckpointFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_EtherDividendCheckpointFactory);
+}
+
+export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_CountTransferManagerFactory = await CountTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+
+    assert.notEqual(
+        I_CountTransferManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "CountTransferManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_CountTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_CountTransferManagerFactory);
+}
+
+export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_CappedSTOFactory = await CappedSTOFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+
+    assert.notEqual(
+        I_CappedSTOFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "CappedSTOFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_CappedSTOFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_CappedSTOFactory);
+
+}
+
+/// Helper function
+function mergeReturn(returnData) {
+    let returnArray = new Array();
+    for (let i = 0; i < returnData.length; i++) {
+        for (let j = 0; j < returnData[i].length; j++) {
+            returnArray.push(returnData[i][j]);
+        }
+    }
+    return returnArray;
 }

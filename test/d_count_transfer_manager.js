@@ -2,7 +2,7 @@ import latestTime from "./helpers/latestTime";
 import { duration, ensureException, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeModuleCall } from "./helpers/encodeCall";
-import { setUpPolymathNetwork } from "./helpers/createInstances";
+import { setUpPolymathNetwork, deployCountTMAndVerifyed } from "./helpers/createInstances";
 import { catchRevert } from "./helpers/exceptions";
 
 const SecurityToken = artifacts.require("./SecurityToken.sol");
@@ -100,30 +100,9 @@ contract("CountTransferManager", accounts => {
         ] = instances;
 
         // STEP 2: Deploy the CountTransferManager
-        I_CountTransferManagerFactory = await CountTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
-        assert.notEqual(
-            I_CountTransferManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "CountTransferManagerFactory contract was not deployed"
-        );
-
+        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
         // STEP 3: Deploy Paid the CountTransferManager
-        P_CountTransferManagerFactory = await CountTransferManagerFactory.new(I_PolyToken.address, web3.utils.toWei("500", "ether"), 0, 0, {
-            from: account_polymath
-        });
-        assert.notEqual(
-            P_CountTransferManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "CountTransferManagerFactory contract was not deployed"
-        );
-
-        // (C) : Register the CountTransferManagerFactory
-        await I_MRProxied.registerModule(I_CountTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_CountTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the Paid CountTransferManagerFactory
-        await I_MRProxied.registerModule(P_CountTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(P_CountTransferManagerFactory.address, true, { from: account_polymath });
+        [P_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500", "ether"));
 
         // Printing all the contract addresses
         console.log(`

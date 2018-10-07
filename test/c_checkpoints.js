@@ -60,9 +60,6 @@ contract("Checkpoints", accounts => {
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
 
-    const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
-    const MRProxyParameters = ["address", "address"];
-
     before(async () => {
         // Accounts setup
         account_polymath = accounts[0];

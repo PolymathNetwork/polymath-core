@@ -5,12 +5,10 @@ import { duration, ensureException, promisifyLogWatch, latestBlock } from "./hel
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
-import { setUpPolymathNetwork } from "./helpers/createInstances";
+import { setUpPolymathNetwork, deployGPMAndVerifyed, deployDummySTOAndVerifyed } from "./helpers/createInstances";
 
-const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
 const DummySTO = artifacts.require("./DummySTO.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
-const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 
@@ -113,55 +111,11 @@ contract("GeneralPermissionManager", accounts => {
         
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
-
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {
-            from: account_polymath
-        });
-
-        assert.notEqual(
-            I_GeneralPermissionManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManagerFactory contract was not deployed"
-        );
-
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
         // STEP 6: Deploy the GeneralDelegateManagerFactory
-
-        P_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(
-            I_PolyToken.address,
-            web3.utils.toWei("500", "ether"),
-            0,
-            0,
-            { from: account_polymath }
-        );
-
-        assert.notEqual(
-            P_GeneralPermissionManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManagerFactory contract was not deployed"
-        );
-
+        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500", "ether"));        
         // STEP 7: Deploy the DummySTOFactory
-
-        I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
-
-        assert.notEqual(
-            I_DummySTOFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "DummySTOFactory contract was not deployed"
-        );
-
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
-        // (B) :  Register the Paid GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(P_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(P_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the STOFactory
-        await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
+        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
 
         // Printing all the contract addresses
         console.log(`

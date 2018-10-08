@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
 import "./../ModuleFactory.sol";
-import "./SingleTradeVolumeRestrictionManager.sol";
+import "./stv.sol";
 import "../../libraries/Util.sol";
 /**
  * @title Factory for deploying SingleTradeVolumeRestrictionManager
  */
-contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
+contract stvf is ModuleFactory {
 
 
     /**
@@ -34,7 +34,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
     function deploy(bytes _data) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        SingleTradeVolumeRestrictionManager singleTradeVolumeRestrictionManager = new SingleTradeVolumeRestrictionManager(msg.sender, address(polyToken));
+        stv singleTradeVolumeRestrictionManager = new stv(msg.sender, address(polyToken));
 
         require(Util.getSig(_data) == singleTradeVolumeRestrictionManager.getInitFunction(), "Provided data is not valid");
         require(address(singleTradeVolumeRestrictionManager).call(_data), "Un-successfull call");

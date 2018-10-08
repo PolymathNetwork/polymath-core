@@ -39,7 +39,7 @@ bridge_running() {
 
 start_bridge() {
   # Run the ethereum-bridge to make oraclize query run
-  node_modules/.bin/ethereum-bridge -H localhost:8545 -a 9 --dev >/dev/null 2>&1 &
+  node --max-old-space-size=3072 node_modules/.bin/ethereum-bridge -H localhost:8545 -a 9 --dev >/dev/null 2>&1 &
   sleep 10
   bridge_pid=$!
   echo "Ethereum-bridge is successfully running as process id ${bridge_pid}"
@@ -61,9 +61,9 @@ start_testrpc() {
   )
 
   if ! [ -z "${TRAVIS_PULL_REQUEST+x}" ] && [ "$TRAVIS_PULL_REQUEST" != false ]; then
-    node_modules/.bin/testrpc-sc --gasLimit 0xfffffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
+    node --max-old-space-size=3072 node_modules/.bin/testrpc-sc --gasLimit 0xfffffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
   else
-    node_modules/.bin/ganache-cli --gasLimit 8000000 "${accounts[@]}" > /dev/null &
+    node --max-old-space-size=3072 node_modules/.bin/ganache-cli --gasLimit 8000000 "${accounts[@]}" > /dev/null &
   fi
 
 
@@ -94,7 +94,7 @@ else
 fi
 
 if ! [ -z "${TRAVIS_PULL_REQUEST+x}" ] && [ "$TRAVIS_PULL_REQUEST" != false ]; then
-  node_modules/.bin/solidity-coverage
+  node --max-old-space-size=3072 node_modules/.bin/solidity-coverage
 
   if [ "$CONTINUOUS_INTEGRATION" = true ]; then
     cat coverage/lcov.info | node_modules/.bin/coveralls
@@ -102,8 +102,8 @@ if ! [ -z "${TRAVIS_PULL_REQUEST+x}" ] && [ "$TRAVIS_PULL_REQUEST" != false ]; t
 else
   # Do not run a_poly_oracle,js tests unless it is a cron job from travis
   if [ "$TRAVIS_EVENT_TYPE" = "cron" ]; then
-    node_modules/.bin/truffle test `ls test/*.js`
+    node --max-old-space-size=3072 node_modules/.bin/truffle test `ls test/*.js`
   else
-    node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js -and ! -name s_v130_to_v140_upgrade.js`
+    node --max-old-space-size=3072 node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js -and ! -name s_v130_to_v140_upgrade.js`
   fi
 fi

@@ -52,7 +52,9 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
 
     }
 
-    /// @notice Used to verify the transfer transaction according to the rule implemented in the transfer manager
+    /**
+     * @notice Used to verify the transfer transaction according to the rule implemented in the transfer manager
+     */
     function verifyTransfer(address _from, address /* _to */, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         // bool validTransfer;
 
@@ -84,7 +86,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     * @param _isTransferLimitInPercentage true if the transfer limit is in percentage else false
     * @param _globalTransferLimitInPercentageOrToken transfer limit per single transaction.
     */
-    function configure(bool _isTransferLimitInPercentage, uint256 _globalTransferLimitInPercentageOrToken, bool _allowPrimaryIssuance) public onlyFactory {
+    //function configure(bool _isTransferLimitInPercentage, uint256 _globalTransferLimitInPercentageOrToken, bool _allowPrimaryIssuance) public onlyFactory {
         // isTransferLimitInPercentage = _isTransferLimitInPercentage;
         // if (isTransferLimitInPercentage) {
         //     //changeGlobalLimitInPercentage(_globalTransferLimitInPercentageOrToken);
@@ -92,7 +94,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
         //     //changeGlobalLimitInTokens(_globalTransferLimitInPercentageOrToken);
         // }
         // allowPrimaryIssuance = _allowPrimaryIssuance;
-    }
+    //}
 
     // /**
     // * @notice sets whether or not to consider primary issuance transfers

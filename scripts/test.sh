@@ -39,7 +39,7 @@ bridge_running() {
 
 start_bridge() {
   # Run the ethereum-bridge to make oraclize query run
-  node --max-old-space-size=3072 node_modules/.bin/ethereum-bridge -H localhost:8545 -a 9 --dev >/dev/null 2>&1 &
+  node node_modules/.bin/ethereum-bridge -H localhost:8545 -a 9 --dev >/dev/null 2>&1 &
   sleep 10
   bridge_pid=$!
   echo "Ethereum-bridge is successfully running as process id ${bridge_pid}"

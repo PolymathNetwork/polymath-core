@@ -93,9 +93,9 @@ async function step_get_registered_tickers(tickerRegistry) {
     if (events.length == 0) {
         console.log("No ticker registration events were emitted.");
     } else {
-        //for (let event of events) {
-        for (let index = 0; index < 2; index++) {
-            const event = events[index];
+        for (let event of events) {
+        //for (let index = 0; index < 2; index++) {
+            //const event = events[index];
             let details = await tickerRegistry.methods.getDetails(event.returnValues._symbol).call();
             let _symbol = event.returnValues._symbol;
             let _owner = details[0];
@@ -188,6 +188,8 @@ async function step_get_deployed_tokens(securityTokenRegistry) {
         console.log("No security token events were emitted.");
     } else {
         for (let event of events) {
+        //for (let index = 0; index < 2; index++) {
+            //const event = events[index];
             let tokenAddress = event.returnValues._securityTokenAddress;
             let securityTokenABI = JSON.parse(require('fs').readFileSync('./CLI/data/SecurityToken1-4-0.json').toString()).abi;
             console.log(`Creating SecurityToken contract instance of address: ${tokenAddress}...`);
@@ -263,7 +265,7 @@ async function step_launch_STs(tokens, securityTokenRegistry) {
                 let deployTokenAction = STFactory.methods.deployToken(t.name, t.ticker, 18, t.details, Issuer.address, t.divisble, polymathRegistryAddress)
                 let deployTokenReceipt = await common.sendTransaction(Issuer, deployTokenAction, defaultGasPrice);
                 // Instancing Security Token
-                let newTokenAddress = deployTokenReceipt.logs.find(l => l.data == "0x00").address;
+                let newTokenAddress = deployTokenReceipt.logs[deployTokenReceipt.logs.length -1].address; //Last log is the ST creation
                 let newTokenABI = abis.securityToken();
                 let newToken = new web3.eth.Contract(newTokenABI, newTokenAddress); 
 

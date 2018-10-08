@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
 import "./WeightedVoteCheckpoint.sol";
-import "../../interfaces/IModuleFactory.sol";
+import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying WeightedVoteCheckpoint module
  */
-contract WeightedVoteCheckpointFactory is IModuleFactory {
+contract WeightedVoteCheckpointFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -16,8 +16,14 @@ contract WeightedVoteCheckpointFactory is IModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
+        version = "1.0.0";
+        name = "WeightedVoteCheckpoint";
+        title = "Weighted Vote Checkpoint";
+        description = "Weighted votes based on token amount";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
 
     }
 
@@ -31,9 +37,9 @@ contract WeightedVoteCheckpointFactory is IModuleFactory {
         return address(new WeightedVoteCheckpoint(msg.sender, address(polyToken)));
     }
 
-    *
+    /**
      * @notice Type of the Module factory
-     
+     */
     function getType() public view returns(uint8) {
         return 4;
     }

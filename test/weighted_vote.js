@@ -72,6 +72,7 @@ contract('WeightedVoteCheckpoint', accounts => {
     const initRegFee = 250 * Math.pow(10, 18);
 
     before(async() => {
+
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
@@ -119,15 +120,24 @@ contract('WeightedVoteCheckpoint', accounts => {
             "0x0000000000000000000000000000000000000000",
             "GeneralDelegateManagerFactory contract was not deployed"
         );
-
+        console.log("1");
         // STEP 4: Deploy the WeightedVoteCheckpointFactory
-        I_WeightedVoteCheckpointFactory = await WeightedVoteCheckpointFactory.new(I_PolyToken.address, web3.utils.toWei("500","ether"), 0, 0, {from:account_polymath});
+        I_WeightedVoteCheckpointFactory = await WeightedVoteCheckpointFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
         assert.notEqual(
             I_WeightedVoteCheckpointFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
             "WeightedVoteCheckpointFactory contract was not deployed"
         );
+        console.log("2");
 
+        // // Step 11: update the registries addresses from the PolymathRegistry contract
+        //   await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
+        //   await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, {from: account_polymath});
+        //   await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
+        //   await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
+        //   await I_MRProxied.updateFromRegistry({from: account_polymath});
+
+      
         // STEP 5: Register the Modules with the ModuleRegistry contract
 
         // (A) :  Register the GeneralTransferManagerFactory
@@ -185,7 +195,7 @@ contract('WeightedVoteCheckpoint', accounts => {
         await I_ModuleRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistry.address, {from: account_polymath});
 
         // Printing all the contract addresses
-        console.log(`\nPolymath Network Smart Contracts Deployed:\n
+        console.log(`\nPolymathh  Network Smart Contracts Deployed:\n
             ModuleRegistry: ${I_ModuleRegistry.address}\n
             GeneralTransferManagerFactory: ${I_GeneralTransferManagerFactory.address}\n
             GeneralPermissionManagerFactory: ${I_GeneralPermissionManagerFactory.address}\n
@@ -196,14 +206,15 @@ contract('WeightedVoteCheckpoint', accounts => {
         `);
     });
 
-    // describe("Generate the SecurityToken", async() => {
+    describe("Generate the SecurityToken", async() => {
 
-    //     it("Should register the ticker before the generation of the security token", async () => {
-    //         await I_PolyToken.approve(I_TickerRegistry.address, initRegFee, { from: token_owner });
-    //         let tx = await I_TickerRegistry.registerTicker(token_owner, symbol, contact, swarmHash, { from : token_owner });
-    //         assert.equal(tx.logs[0].args._owner, token_owner);
-    //         assert.equal(tx.logs[0].args._symbol, symbol.toUpperCase());
-    //     });
+        it("Should register the ticker before the generation of the security token", async () => {
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from : token_owner });
+            assert.equal(tx.logs[0].args._owner, token_owner);
+            assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
+        });
+
 
     //     it("Should generate the new security token with the same symbol as registered above", async () => {
     //         await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner });
@@ -446,5 +457,5 @@ contract('WeightedVoteCheckpoint', accounts => {
     //         assert.equal(tx[1], web3.utils.toWei('1', 'ether'), "Failed to get results");
     //         assert.equal(tx[2], 0, "Failed to get results");
     //     });
-    // });
+    });
 });

@@ -3,22 +3,13 @@ import { duration, ensureException, promisifyLogWatch, latestBlock } from "./hel
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
+import { setUpPolymathNetwork, deployGPMAndVerifyed, deployCappedSTOAndVerifyed } from "./helpers/createInstances";
 
-const PolymathRegistry = artifacts.require("./PolymathRegistry.sol");
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const CappedSTO = artifacts.require("./CappedSTO.sol");
-const ModuleRegistry = artifacts.require("./ModuleRegistry.sol");
-const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
-const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
-const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
-const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
-const STFactory = artifacts.require("./STFactory.sol");
-const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
-const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
-const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 
 const Web3 = require("web3");
 const BigNumber = require("bignumber.js");
@@ -97,8 +88,6 @@ contract("SecurityToken", accounts => {
     const cappedSTOSetupCost = web3.utils.toWei("20000", "ether");
     const maxCost = cappedSTOSetupCost;
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
-    const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
-    const MRProxyParameters = ["address", "address"];
 
     before(async () => {
         // Accounts setup
@@ -116,122 +105,41 @@ contract("SecurityToken", accounts => {
         token_owner = account_issuer;
         account_controller = account_temp;
 
-        // ----------- POLYMATH NETWORK Configuration ------------
+        // Step:1 Create the polymath ecosystem contract instances
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-        // Step 0: Deploy the PolymathRegistry
-        I_PolymathRegistry = await PolymathRegistry.new({ from: account_polymath });
+        [
+            I_PolymathRegistry,
+            I_PolyToken,
+            I_FeatureRegistry,
+            I_ModuleRegistry,
+            I_ModuleRegistryProxy,
+            I_MRProxied,
+            I_GeneralTransferManagerFactory,
+            I_STFactory,
+            I_SecurityTokenRegistry,
+            I_SecurityTokenRegistryProxy,
+            I_STRProxied
+        ] = instances;
 
-        // Step 1: Deploy the token Faucet and Mint tokens for token_owner
-        I_PolyToken = await PolyTokenFaucet.new();
-        await I_PolyToken.getTokens(10000 * Math.pow(10, 18), token_owner);
-
-        // Step 2: Deploy the FeatureRegistry
-
-        I_FeatureRegistry = await FeatureRegistry.new(I_PolymathRegistry.address, {
-            from: account_polymath
-        });
-
-        // STEP 3: Deploy the ModuleRegistry
-
-        I_ModuleRegistry = await ModuleRegistry.new({ from: account_polymath });
-        // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
-        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({ from: account_polymath });
-        let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, account_polymath]);
-        await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, { from: account_polymath });
-        I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
-
-        // STEP 4 (a): Deploy the GeneralTransferManagerFactory
-
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
-
-        assert.notEqual(
-            I_GeneralTransferManagerFactory.address.valueOf(),
-            address_zero,
-            "GeneralTransferManagerFactory contract was not deployed"
-        );
-
-        // STEP 4 (b): Deploy the GeneralDelegateManagerFactory
-
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {
-            from: account_polymath
-        });
-
-        assert.notEqual(
-            I_GeneralPermissionManagerFactory.address.valueOf(),
-            address_zero,
-            "GeneralDelegateManagerFactory contract was not deployed"
-        );
-
-        // STEP 4 (c): Deploy the CappedSTOFactory
-
-        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, cappedSTOSetupCost, 0, 0, { from: token_owner });
-
-        assert.notEqual(I_CappedSTOFactory.address.valueOf(), address_zero, "CappedSTOFactory contract was not deployed");
-
-        // STEP 5: Register the Modules with the ModuleRegistry contract
-
-        // Step 6: Deploy the STFactory contract
-
-        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-
-        assert.notEqual(I_STFactory.address.valueOf(), "0x0000000000000000000000000000000000000000", "STFactory contract was not deployed");
-
-        // Step 7: Deploy the SecurityTokenRegistry contract
-
-        I_SecurityTokenRegistry = await SecurityTokenRegistry.new({ from: account_polymath });
-
-        assert.notEqual(
-            I_SecurityTokenRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "SecurityTokenRegistry contract was not deployed"
-        );
-
-        // Step 8: Deploy the proxy and attach the implementation contract to it.
-        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({ from: account_polymath });
-        let bytesProxy = encodeProxyCall(STRProxyParameters, [
-            I_PolymathRegistry.address,
-            I_STFactory.address,
-            initRegFee,
-            initRegFee,
-            I_PolyToken.address,
-            account_polymath
-        ]);
-        await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
-            from: account_polymath
-        });
-        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
-
-        // Step 9: update the registries addresses from the PolymathRegistry contract
-        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, { from: account_polymath });
-        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, { from: account_polymath });
-        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, { from: account_polymath });
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, { from: account_polymath });
-        await I_MRProxied.updateFromRegistry({ from: account_polymath });
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the STOFactory
-        await I_MRProxied.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
+        // STEP 2: Deploy the GeneralDelegateManagerFactory
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        // STEP 3: Deploy the CappedSTOFactory
+        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, cappedSTOSetupCost);
 
         // Printing all the contract addresses
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
-        PolymathRegistry:                  ${PolymathRegistry.address}
-        SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
-        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
-        ModuleRegistryProxy:               ${ModuleRegistryProxy.address}
-        ModuleRegistry:                    ${ModuleRegistry.address}
-        FeatureRegistry:                   ${FeatureRegistry.address}
+        PolymathRegistry:                  ${I_PolymathRegistry.address}
+        SecurityTokenRegistryProxy:        ${I_SecurityTokenRegistryProxy.address}
+        SecurityTokenRegistry:             ${I_SecurityTokenRegistry.address}
+        ModuleRegistryProxy:               ${I_ModuleRegistryProxy.address}
+        ModuleRegistry:                    ${I_ModuleRegistry.address}
+        FeatureRegistry:                   ${I_FeatureRegistry.address}
 
-        STFactory:                         ${STFactory.address}
-        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
-        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
+        STFactory:                         ${I_STFactory.address}
+        GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:   ${I_GeneralPermissionManagerFactory.address}
 
         CappedSTOFactory:                  ${I_CappedSTOFactory.address}
         -----------------------------------------------------------------------------
@@ -560,43 +468,23 @@ contract("SecurityToken", accounts => {
             await catchRevert(I_SecurityToken.transfer(account_investor2, 10 * Math.pow(10, 18), { from: account_investor1 }));
         });
 
-        it("Should fail to provide the permission to the delegate to change the transfer bools", async () => {
+        it("Should fail to provide the permission to the delegate to change the transfer bools -- Bad owner", async () => {
             // Add permission to the deletgate (A regesteration process)
             await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, { from: token_owner });
             let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
             I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
-            await catchRevert(I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_temp }));
+            await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_temp }));
         });
 
         it("Should provide the permission to the delegate to change the transfer bools", async () => {
             // Add permission to the deletgate (A regesteration process)
-            await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: token_owner });
+            await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner });
+            assert.isTrue(await I_GeneralPermissionManager.checkDelegate.call(account_delegate));
             // Providing the permission to the delegate
             await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, {
                 from: token_owner
             });
-
-            it("Should fail to provide the permission to the delegate to change the transfer bools", async () => {
-                let errorThrown = false;
-                // Add permission to the deletgate (A regesteration process)
-                await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, {from: token_owner});
-                let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
-                I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
-                try {
-                    await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_temp });
-                } catch (error) {
-                    console.log(`${account_temp} doesn't have permissions to register the delegate`);
-                    errorThrown = true;
-                    ensureException(error);
-                }
-                assert.ok(errorThrown, message);
-            });
-
-            it("Should provide the permission to the delegate to change the transfer bools", async () => {
-                // Add permission to the deletgate (A regesteration process)
-                await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner});
-                // Providing the permission to the delegate
-                await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, { from: token_owner });
+        });
 
         it("Should activate the bool allowAllTransfer", async () => {
             ID_snap = await takeSnapshot();
@@ -835,6 +723,7 @@ contract("SecurityToken", accounts => {
             assert.equal(investors.length, 4);
             console.log("Total Seen Investors: " + investors.length);
         });
+
         it("Should fail to set controller status because msg.sender not owner", async () => {
             await catchRevert(I_SecurityToken.setController(account_controller, { from: account_controller }));
         });
@@ -1046,4 +935,5 @@ contract("SecurityToken", accounts => {
             );
         });
     });
+
 });

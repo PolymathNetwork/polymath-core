@@ -6,7 +6,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @title Transfer Manager for limiting volume of tokens in a single trade
  */
 
-contract stv is ITransferManager {
+contract SingleTradeVolumeRestrictionManager is ITransferManager {
     using SafeMath for uint256;
 
     bytes32 constant public ADMIN = "ADMIN";

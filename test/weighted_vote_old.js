@@ -216,246 +216,246 @@ contract('WeightedVoteCheckpoint', accounts => {
         });
 
 
-    //     it("Should generate the new security token with the same symbol as registered above", async () => {
-    //         await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner });
-    //         let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
+        it("Should generate the new security token with the same symbol as registered above", async () => {
+            await I_PolyToken.approve(I_SecurityTokenRegistry.address, initRegFee, { from: token_owner });
+            let tx = await I_SecurityTokenRegistry.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000 });
 
-    //         // Verify the successful generation of the security token
-    //         assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+            // Verify the successful generation of the security token
+            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-    //         I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-    //         const LogAddModule = await I_SecurityToken.allEvents();
-    //         const log = await new Promise(function(resolve, reject) {
-    //             LogAddModule.watch(function(error, log){ resolve(log);});
-    //         });
+            const LogAddModule = await I_SecurityToken.allEvents();
+            const log = await new Promise(function(resolve, reject) {
+                LogAddModule.watch(function(error, log){ resolve(log);});
+            });
 
-    //         // Verify that GeneralTransferManager module get added successfully or not
-    //         assert.equal(log.args._type.toNumber(), 2);
-    //         assert.equal(
-    //             web3.utils.toAscii(log.args._name)
-    //             .replace(/\u0000/g, ''),
-    //             "GeneralTransferManager"
-    //         );
-    //         LogAddModule.stopWatching();
-    //     });
+            // Verify that GeneralTransferManager module get added successfully or not
+            assert.equal(log.args._type.toNumber(), 2);
+            assert.equal(
+                web3.utils.toAscii(log.args._name)
+                .replace(/\u0000/g, ''),
+                "GeneralTransferManager"
+            );
+            LogAddModule.stopWatching();
+        });
 
-    //     it("Should intialize the auto attached modules", async () => {
-    //        let moduleData = await I_SecurityToken.modules(2, 0);
-    //        I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
+        it("Should intialize the auto attached modules", async () => {
+           let moduleData = await I_SecurityToken.modules(2, 0);
+           I_GeneralTransferManager = GeneralTransferManager.at(moduleData[1]);
 
-    //        assert.notEqual(
-    //         I_GeneralTransferManager.address.valueOf(),
-    //         "0x0000000000000000000000000000000000000000",
-    //         "GeneralTransferManager contract was not deployed",
-    //        );
+           assert.notEqual(
+            I_GeneralTransferManager.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "GeneralTransferManager contract was not deployed",
+           );
 
-    //     });
+        });
 
-    //     it("Should fail to attach the WeightedVoteCheckpoint module to the security token if fee not paid", async () => {
-    //         let errorThrown = false;
-    //         await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
-    //         try {
-    //             const tx = await I_SecurityToken.addModule(I_WeightedVoteCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
-    //         } catch(error) {
-    //             console.log(`       tx -> failed because setup fee is not paid`.grey);
-    //             ensureException(error);
-    //             errorThrown = true;
-    //         }
-    //         assert.ok(errorThrown, message);
-    //     });
+        it("Should fail to attach the WeightedVoteCheckpoint module to the security token if fee not paid", async () => {
+            let errorThrown = false;
+            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            try {
+                const tx = await I_SecurityToken.addModule(I_WeightedVoteCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
+            } catch(error) {
+                console.log(`       tx -> failed because setup fee is not paid`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
 
-    //     it("Should successfully attach the WeightedVoteCheckpoint module to the security token", async () => {
-    //         await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
-    //         const tx = await I_SecurityToken.addModule(I_WeightedVoteCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
-    //         assert.equal(tx.logs[3].args._type.toNumber(), checkpointKey, "WeightedVoteCheckpoint doesn't get deployed");
-    //         assert.equal(web3.utils.hexToUtf8(tx.logs[3].args._name),"WeightedVoteCheckpoint","WeightedVoteCheckpoint module was not added");
-    //         I_WeightedVoteCheckpoint = WeightedVoteCheckpoint.at(tx.logs[3].args._module);
-    //     });
+        it("Should successfully attach the WeightedVoteCheckpoint module to the security token", async () => {
+            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
+            const tx = await I_SecurityToken.addModule(I_WeightedVoteCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, true, { from: token_owner });
+            assert.equal(tx.logs[3].args._type.toNumber(), checkpointKey, "WeightedVoteCheckpoint doesn't get deployed");
+            assert.equal(web3.utils.hexToUtf8(tx.logs[3].args._name),"WeightedVoteCheckpoint","WeightedVoteCheckpoint module was not added");
+            I_WeightedVoteCheckpoint = WeightedVoteCheckpoint.at(tx.logs[3].args._module);
+        });
 
-    // });
+    });
 
-    // describe("Preparation", async() => {
-    //     it("Should successfully mint tokens for first investor account", async() => {
-    //         await I_GeneralTransferManager.modifyWhitelist(
-    //             account_investor1,
-    //             latestTime(),
-    //             latestTime(),
-    //             latestTime() + duration.days(30),
-    //             true,
-    //             {
-    //                 from: account_issuer,
-    //                 gas: 500000
-    //             });
-    //         await I_SecurityToken.mint(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
-    //     });
+    describe("Preparation", async() => {
+        it("Should successfully mint tokens for first investor account", async() => {
+            await I_GeneralTransferManager.modifyWhitelist(
+                account_investor1,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(30),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 500000
+                });
+            await I_SecurityToken.mint(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
+        });
 
-    //     it("Should successfully mint tokens for second investor account", async() => {
-    //         await I_GeneralTransferManager.modifyWhitelist(
-    //             account_investor2,
-    //             latestTime(),
-    //             latestTime(),
-    //             latestTime() + duration.days(30),
-    //             true,
-    //             {
-    //                 from: account_issuer,
-    //                 gas: 500000
-    //             });
-    //         await I_SecurityToken.mint(account_investor2, web3.utils.toWei('2', 'ether'), { from: token_owner });
-    //     });
-    // });
+        it("Should successfully mint tokens for second investor account", async() => {
+            await I_GeneralTransferManager.modifyWhitelist(
+                account_investor2,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(30),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 500000
+                });
+            await I_SecurityToken.mint(account_investor2, web3.utils.toWei('2', 'ether'), { from: token_owner });
+        });
+    });
 
-    // describe("Create ballot", async() => {
+    describe("Create ballot", async() => {
 
-    //     it("Should fail to create a new ballot if not owner", async() => {
-    //         let errorThrown = false;
-    //         try {
-    //             let tx = await I_WeightedVoteCheckpoint.createBallot(duration.hours(2), { from: account_temp });
-    //         } catch(error) {
-    //             console.log(`       tx -> failed because msg.sender is not owner`.grey);
-    //             ensureException(error);
-    //             errorThrown = true;
-    //         }
-    //         assert.ok(errorThrown, message);
-    //     });
+        it("Should fail to create a new ballot if not owner", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_WeightedVoteCheckpoint.createBallot(duration.hours(2), { from: account_temp });
+            } catch(error) {
+                console.log(`       tx -> failed because msg.sender is not owner`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
 
-    //     it("Should successfully create a new ballot", async() => {
-    //         let tx = await I_WeightedVoteCheckpoint.createBallot(duration.hours(2), { from: token_owner });
-    //         assert.equal(tx.logs[0].args._checkpointId.toNumber(), 1, "New ballot should be created at checkpoint 1");
-    //     });
-    // });
+        it("Should successfully create a new ballot", async() => {
+            let tx = await I_WeightedVoteCheckpoint.createBallot(duration.hours(2), { from: token_owner });
+            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 1, "New ballot should be created at checkpoint 1");
+        });
+    });
 
-    // describe("Create custom ballot", async() => {
+    describe("Create custom ballot", async() => {
 
-    //     it("Should fail to create a new custom ballot with endTime before startTime", async() => {
-    //         let errorThrown = false;
-    //         try {
-    //             let startTime = latestTime() + duration.minutes(10);
-    //             let endTime = latestTime() + duration.minutes(5);
-    //             let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 1, { from: token_owner });
-    //         } catch(error) {
-    //             console.log(`       tx -> failed because endTime before startTime`.grey);
-    //             ensureException(error);
-    //             errorThrown = true;
-    //         }
-    //         assert.ok(errorThrown, message);
-    //     });
+        it("Should fail to create a new custom ballot with endTime before startTime", async() => {
+            let errorThrown = false;
+            try {
+                let startTime = latestTime() + duration.minutes(10);
+                let endTime = latestTime() + duration.minutes(5);
+                let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 1, { from: token_owner });
+            } catch(error) {
+                console.log(`       tx -> failed because endTime before startTime`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
 
-    //     it("Should fail to create a new custom ballot if checkpointId does not exist", async() => {
-    //         let errorThrown = false;
-    //         try {
-    //             let startTime = latestTime() + duration.minutes(10);
-    //             let endTime = latestTime() + duration.minutes(15);
-    //             let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 10, { from: token_owner });
-    //         } catch(error) {
-    //             console.log(`       tx -> failed because checkpointId does not exist`.grey);
-    //             ensureException(error);
-    //             errorThrown = true;
-    //         }
-    //         assert.ok(errorThrown, message);
-    //     });
+        it("Should fail to create a new custom ballot if checkpointId does not exist", async() => {
+            let errorThrown = false;
+            try {
+                let startTime = latestTime() + duration.minutes(10);
+                let endTime = latestTime() + duration.minutes(15);
+                let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 10, { from: token_owner });
+            } catch(error) {
+                console.log(`       tx -> failed because checkpointId does not exist`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
 
-    //     it("Should fail to create a new custom ballot if not owner", async() => {
-    //         let errorThrown = false;
-    //         try {
-    //             let startTime = latestTime() + duration.minutes(10);
-    //             let endTime = latestTime() + duration.minutes(15);
-    //             let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 1, { from: account_temp });
-    //         } catch(error) {
-    //             console.log(`       tx -> failed because msg.sender is not owner`.grey);
-    //             ensureException(error);
-    //             errorThrown = true;
-    //         }
-    //         assert.ok(errorThrown, message);
-    //     });
+        it("Should fail to create a new custom ballot if not owner", async() => {
+            let errorThrown = false;
+            try {
+                let startTime = latestTime() + duration.minutes(10);
+                let endTime = latestTime() + duration.minutes(15);
+                let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 1, { from: account_temp });
+            } catch(error) {
+                console.log(`       tx -> failed because msg.sender is not owner`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
 
-    //     it("Should successfully create a new custom ballot", async() => {
-    //         let startTime = latestTime() + duration.minutes(10);
-    //         let endTime = latestTime() + duration.minutes(15);
-    //         let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 1, { from: token_owner });
-    //         assert.equal(tx.logs[0].args._checkpointId.toNumber(), 1, "New ballot should be created at checkpoint 1");
-    //     });
-    // });
+        it("Should successfully create a new custom ballot", async() => {
+            let startTime = latestTime() + duration.minutes(10);
+            let endTime = latestTime() + duration.minutes(15);
+            let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 1, { from: token_owner });
+            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 1, "New ballot should be created at checkpoint 1");
+        });
+    });
 
-    // describe("Cast vote", async() => {
+    describe("Cast vote", async() => {
 
-    //     it("Should fail to cast a vote if token balance is zero", async() => {
-    //         let errorThrown = false;
-    //         try {
-    //             let tx = await I_WeightedVoteCheckpoint.castVote(true,0, { from: account_investor3 });
-    //         } catch(error) {
-    //             console.log(`       tx -> failed because token balance is zero`.grey);
-    //             ensureException(error);
-    //             errorThrown = true;
-    //         }
-    //         assert.ok(errorThrown, message);
-    //     });
+        it("Should fail to cast a vote if token balance is zero", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_WeightedVoteCheckpoint.castVote(true,0, { from: account_investor3 });
+            } catch(error) {
+                console.log(`       tx -> failed because token balance is zero`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
 
-    //     it("Should fail to cast a vote if voting period has not started", async() => {
-    //         let errorThrown = false;
-    //         try {
-    //             let tx = await I_WeightedVoteCheckpoint.castVote(true,1, { from: account_investor1 });
-    //         } catch(error) {
-    //             console.log(`       tx -> failed because voting period has not started`.grey);
-    //             ensureException(error);
-    //             errorThrown = true;
-    //         }
-    //         assert.ok(errorThrown, message);
-    //     });
+        it("Should fail to cast a vote if voting period has not started", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_WeightedVoteCheckpoint.castVote(true,1, { from: account_investor1 });
+            } catch(error) {
+                console.log(`       tx -> failed because voting period has not started`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
 
-    //     it("Should fail to cast a vote if voting period has ended", async() => {
-    //         await increaseTime(duration.minutes(20));
-    //         let errorThrown = false;
-    //         try {
-    //             let tx = await I_WeightedVoteCheckpoint.castVote(true,1, { from: account_investor1 });
-    //         } catch(error) {
-    //             console.log(`       tx -> failed because voting period has ended`.grey);
-    //             ensureException(error);
-    //             errorThrown = true;
-    //         }
-    //         assert.ok(errorThrown, message);
-    //     });
+        it("Should fail to cast a vote if voting period has ended", async() => {
+            await increaseTime(duration.minutes(20));
+            let errorThrown = false;
+            try {
+                let tx = await I_WeightedVoteCheckpoint.castVote(true,1, { from: account_investor1 });
+            } catch(error) {
+                console.log(`       tx -> failed because voting period has ended`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
 
-    //     it("Should successfully cast a vote from first investor", async() => {
-    //         let tx = await I_WeightedVoteCheckpoint.castVote(false, 0, { from: account_investor1 });
+        it("Should successfully cast a vote from first investor", async() => {
+            let tx = await I_WeightedVoteCheckpoint.castVote(false, 0, { from: account_investor1 });
 
-    //         assert.equal(tx.logs[0].args._investor, account_investor1, "Failed to record vote");
-    //         assert.equal(tx.logs[0].args._vote, false, "Failed to record vote");
-    //         assert.equal(tx.logs[0].args._weight, web3.utils.toWei('1', 'ether'), "Failed to record vote");
-    //         assert.equal(tx.logs[0].args._ballotId, 0, "Failed to record vote");
-    //         assert.equal(tx.logs[0].args._time, latestTime(), "Failed to record vote");
-    //     });
+            assert.equal(tx.logs[0].args._investor, account_investor1, "Failed to record vote");
+            assert.equal(tx.logs[0].args._vote, false, "Failed to record vote");
+            assert.equal(tx.logs[0].args._weight, web3.utils.toWei('1', 'ether'), "Failed to record vote");
+            assert.equal(tx.logs[0].args._ballotId, 0, "Failed to record vote");
+            assert.equal(tx.logs[0].args._time, latestTime(), "Failed to record vote");
+        });
 
-    //     it("Should successfully cast a vote from second investor", async() => {
-    //         let tx = await I_WeightedVoteCheckpoint.castVote(true, 0, { from: account_investor2 });
+        it("Should successfully cast a vote from second investor", async() => {
+            let tx = await I_WeightedVoteCheckpoint.castVote(true, 0, { from: account_investor2 });
 
-    //         assert.equal(tx.logs[0].args._investor, account_investor2, "Failed to record vote");
-    //         assert.equal(tx.logs[0].args._vote, true, "Failed to record vote");
-    //         assert.equal(tx.logs[0].args._weight, web3.utils.toWei('2', 'ether'), "Failed to record vote");
-    //         assert.equal(tx.logs[0].args._ballotId, 0, "Failed to record vote");
-    //         assert.equal(tx.logs[0].args._time, latestTime(), "Failed to record vote");
-    //     });
+            assert.equal(tx.logs[0].args._investor, account_investor2, "Failed to record vote");
+            assert.equal(tx.logs[0].args._vote, true, "Failed to record vote");
+            assert.equal(tx.logs[0].args._weight, web3.utils.toWei('2', 'ether'), "Failed to record vote");
+            assert.equal(tx.logs[0].args._ballotId, 0, "Failed to record vote");
+            assert.equal(tx.logs[0].args._time, latestTime(), "Failed to record vote");
+        });
 
-    //     it("Should fail to cast a vote again", async() => {
-    //         let errorThrown = false;
-    //         try {
-    //             let tx = await I_WeightedVoteCheckpoint.castVote(false,0, { from: account_investor1 });
-    //         } catch(error) {
-    //             console.log(`       tx -> failed because holder already voted`.grey);
-    //             ensureException(error);
-    //             errorThrown = true;
-    //         }
-    //         assert.ok(errorThrown, message);
-    //     });
-    // });
+        it("Should fail to cast a vote again", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_WeightedVoteCheckpoint.castVote(false,0, { from: account_investor1 });
+            } catch(error) {
+                console.log(`       tx -> failed because holder already voted`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+    });
 
-    // describe("Get results", async() => {
+    describe("Get results", async() => {
 
-    //     it("Should successfully get the results", async() => {
-    //         let tx = await I_WeightedVoteCheckpoint.getResults(0, { from: token_owner });
-    //         assert.equal(tx[0], web3.utils.toWei('2', 'ether'), "Failed to get results");
-    //         assert.equal(tx[1], web3.utils.toWei('1', 'ether'), "Failed to get results");
-    //         assert.equal(tx[2], 0, "Failed to get results");
-    //     });
+        it("Should successfully get the results", async() => {
+            let tx = await I_WeightedVoteCheckpoint.getResults(0, { from: token_owner });
+            assert.equal(tx[0], web3.utils.toWei('2', 'ether'), "Failed to get results");
+            assert.equal(tx[1], web3.utils.toWei('1', 'ether'), "Failed to get results");
+            assert.equal(tx[2], 0, "Failed to get results");
+        });
     });
 });

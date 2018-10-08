@@ -39,7 +39,7 @@ contract('WeightedVoteCheckpoint', accounts => {
     let account_investor2;
     let account_investor3;
     let account_investor4;
-    let account_delegate;
+    let account_temp;
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime();
@@ -48,10 +48,7 @@ contract('WeightedVoteCheckpoint', accounts => {
     let message = "Transaction Should Fail!";
 
     // Contract Instance Declaration
-    let I_GeneralPermissionManagerFactory;
-    let P_GeneralPermissionManagerFactory;
     let I_SecurityTokenRegistryProxy;
-    let P_GeneralPermissionManager;
     let I_GeneralTransferManagerFactory;
     let I_GeneralPermissionManager;
     let I_GeneralTransferManager;
@@ -67,6 +64,8 @@ contract('WeightedVoteCheckpoint', accounts => {
     let I_DummySTO;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_WeightedVoteCheckpointFactory;
+    let I_WeightedVoteCheckpoint;
 
     // SecurityToken Details
     const name = "Team";
@@ -80,6 +79,7 @@ contract('WeightedVoteCheckpoint', accounts => {
     const delegateManagerKey = 1;
     const transferManagerKey = 2;
     const stoKey = 3;
+    const checkpointKey = 4;
 
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
@@ -103,9 +103,11 @@ contract('WeightedVoteCheckpoint', accounts => {
         token_owner = account_issuer;
         token_owner_pk = pk.account_1;
 
-        account_investor1 = accounts[8];
-        account_investor2 = accounts[9];
-        account_delegate = accounts[7];
+        account_investor1 = accounts[6];
+        account_investor2 = accounts[7];
+        account_investor3 = accounts[8];
+        account_investor4 = accounts[9];
+        account_temp = accounts[2];
 
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -144,35 +146,17 @@ contract('WeightedVoteCheckpoint', accounts => {
             "GeneralTransferManagerFactory contract was not deployed"
         );
 
-        // STEP 5: Deploy the GeneralDelegateManagerFactory
-
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
-
-        assert.notEqual(
-            I_GeneralPermissionManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManagerFactory contract was not deployed"
-        );
+       // STEP 5: Deploy the WeightedVoteCheckpointFactory
 
         console.log("1");
-        // STEP 6: Deploy the WeightedVoteCheckpointFactory
+    
         I_WeightedVoteCheckpointFactory = await WeightedVoteCheckpointFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
         assert.notEqual(
             I_WeightedVoteCheckpointFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
             "WeightedVoteCheckpointFactory contract was not deployed"
         );
-        console.log("2");
-
-        // STEP 6: Deploy the GeneralDelegateManagerFactory
-
-        // P_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, web3.utils.toWei("500","ether"), 0, 0, {from:account_polymath});
-
-        // assert.notEqual(
-        //     P_GeneralPermissionManagerFactory.address.valueOf(),
-        //     "0x0000000000000000000000000000000000000000",
-        //     "GeneralDelegateManagerFactory contract was not deployed"
-        // );
+        console.log("deployed weight vote factory to "+I_WeightedVoteCheckpointFactory.address);
 
         // STEP 7: Deploy the DummySTOFactory
 
@@ -225,8 +209,8 @@ contract('WeightedVoteCheckpoint', accounts => {
       await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
 
       // (B) :  Register the GeneralDelegateManagerFactory
-      await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-      await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+      await I_MRProxied.registerModule(I_WeightedVoteCheckpointFactory.address, { from: account_polymath });
+      await I_MRProxied.verifyModule(I_WeightedVoteCheckpointFactory.address, true, { from: account_polymath });
 
       // (B) :  Register the Paid GeneralDelegateManagerFactory
       // await I_MRProxied.registerModule(P_GeneralPermissionManagerFactory.address, { from: account_polymath });
@@ -290,53 +274,199 @@ contract('WeightedVoteCheckpoint', accounts => {
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
-        // it("Should successfully attach the General permission manager factory with the security token", async () => {
-        //     let errorThrown = false;
-        //     await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
-        //     try {
-        //         const tx = await I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-        //     } catch(error) {
-        //         console.log(`       tx -> failed because Token is not paid`.grey);
-        //         ensureException(error);
-        //         errorThrown = true;
-        //     }
-        //     assert.ok(errorThrown, message);
-        // });
 
-        // it("Should successfully attach the General permission manager factory with the security token", async () => {
-        //     let snapId = await takeSnapshot();
-        //     await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
-        //     const tx = await I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-        //     assert.equal(tx.logs[3].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
-        //     assert.equal(
-        //         web3.utils.toAscii(tx.logs[3].args._name)
-        //         .replace(/\u0000/g, ''),
-        //         "GeneralPermissionManager",
-        //         "GeneralPermissionManagerFactory module was not added"
-        //     );
-        //     P_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[3].args._module);
-        //     await revertToSnapshot(snapId);
-        // });
-
-        it("Should successfully attach the General permission manager factory with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
-            assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
-            assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name)
-                .replace(/\u0000/g, ''),
-                "GeneralPermissionManager",
-                "GeneralPermissionManagerFactory module was not added"
-            );
-            I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
+        it("Should successfully attach the Weighted Vote Checkpoint factory with the security token", async () => {
+            const tx = await I_SecurityToken.addModule(I_WeightedVoteCheckpointFactory.address, "0x", 0, 0, { from: token_owner });
+            console.log("weightVoteFactory Address is " + I_WeightedVoteCheckpointFactory.address);
+            console.log(tx.logs[2].args);
+            assert.equal(tx.logs[2].args._types[0].toNumber(), checkpointKey, "WeightedVoteCheckpoint doesn't get deployed");
+            assert.equal(web3.utils.hexToUtf8(tx.logs[2].args._name),"WeightedVoteCheckpoint","WeightedVoteCheckpoint module was not added");
+            I_WeightedVoteCheckpoint = WeightedVoteCheckpoint.at(tx.logs[2].args._module);
         });
     });
 
-    describe("General Permission Manager test cases", async() => {
-       
+    describe("Preparation", async() => {
+        it("Should successfully mint tokens for first investor account", async() => {
+            await I_GeneralTransferManager.modifyWhitelist(
+                account_investor1,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(30),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 500000
+                });
+            await I_SecurityToken.mint(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
+        });
+
+        it("Should successfully mint tokens for second investor account", async() => {
+            await I_GeneralTransferManager.modifyWhitelist(
+                account_investor2,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(30),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 500000
+                });
+            await I_SecurityToken.mint(account_investor2, web3.utils.toWei('2', 'ether'), { from: token_owner });
+        });
     });
 
-    describe("General Permission Manager Factory test cases", async() => {
-      
+    describe("Create ballot", async() => {
+
+        it("Should fail to create a new ballot if not owner", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_WeightedVoteCheckpoint.createBallot(duration.hours(2), { from: account_temp });
+            } catch(error) {
+                console.log(`       tx -> failed because msg.sender is not owner`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully create a new ballot", async() => {
+            let tx = await I_WeightedVoteCheckpoint.createBallot(duration.hours(2), { from: token_owner });
+            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 1, "New ballot should be created at checkpoint 1");
+        });
+    });
+
+    describe("Create custom ballot", async() => {
+
+        it("Should fail to create a new custom ballot with endTime before startTime", async() => {
+            let errorThrown = false;
+            try {
+                let startTime = latestTime() + duration.minutes(10);
+                let endTime = latestTime() + duration.minutes(5);
+                let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 1, { from: token_owner });
+            } catch(error) {
+                console.log(`       tx -> failed because endTime before startTime`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail to create a new custom ballot if checkpointId does not exist", async() => {
+            let errorThrown = false;
+            try {
+                let startTime = latestTime() + duration.minutes(10);
+                let endTime = latestTime() + duration.minutes(15);
+                let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 10, { from: token_owner });
+            } catch(error) {
+                console.log(`       tx -> failed because checkpointId does not exist`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail to create a new custom ballot if not owner", async() => {
+            let errorThrown = false;
+            try {
+                let startTime = latestTime() + duration.minutes(10);
+                let endTime = latestTime() + duration.minutes(15);
+                let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 1, { from: account_temp });
+            } catch(error) {
+                console.log(`       tx -> failed because msg.sender is not owner`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully create a new custom ballot", async() => {
+            let startTime = latestTime() + duration.minutes(10);
+            let endTime = latestTime() + duration.minutes(15);
+            let tx = await I_WeightedVoteCheckpoint.createCustomBallot(startTime,endTime, 1, { from: token_owner });
+            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 1, "New ballot should be created at checkpoint 1");
+        });
+    });
+
+    describe("Cast vote", async() => {
+
+        it("Should fail to cast a vote if token balance is zero", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_WeightedVoteCheckpoint.castVote(true,0, { from: account_investor3 });
+            } catch(error) {
+                console.log(`       tx -> failed because token balance is zero`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail to cast a vote if voting period has not started", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_WeightedVoteCheckpoint.castVote(true,1, { from: account_investor1 });
+            } catch(error) {
+                console.log(`       tx -> failed because voting period has not started`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should fail to cast a vote if voting period has ended", async() => {
+            await increaseTime(duration.minutes(20));
+            let errorThrown = false;
+            try {
+                let tx = await I_WeightedVoteCheckpoint.castVote(true,1, { from: account_investor1 });
+            } catch(error) {
+                console.log(`       tx -> failed because voting period has ended`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully cast a vote from first investor", async() => {
+            let tx = await I_WeightedVoteCheckpoint.castVote(false, 0, { from: account_investor1 });
+
+            assert.equal(tx.logs[0].args._investor, account_investor1, "Failed to record vote");
+            assert.equal(tx.logs[0].args._vote, false, "Failed to record vote");
+            assert.equal(tx.logs[0].args._weight, web3.utils.toWei('1', 'ether'), "Failed to record vote");
+            assert.equal(tx.logs[0].args._ballotId, 0, "Failed to record vote");
+            assert.equal(tx.logs[0].args._time, latestTime(), "Failed to record vote");
+        });
+
+        it("Should successfully cast a vote from second investor", async() => {
+            let tx = await I_WeightedVoteCheckpoint.castVote(true, 0, { from: account_investor2 });
+
+            assert.equal(tx.logs[0].args._investor, account_investor2, "Failed to record vote");
+            assert.equal(tx.logs[0].args._vote, true, "Failed to record vote");
+            assert.equal(tx.logs[0].args._weight, web3.utils.toWei('2', 'ether'), "Failed to record vote");
+            assert.equal(tx.logs[0].args._ballotId, 0, "Failed to record vote");
+            assert.equal(tx.logs[0].args._time, latestTime(), "Failed to record vote");
+        });
+
+        it("Should fail to cast a vote again", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_WeightedVoteCheckpoint.castVote(false,0, { from: account_investor1 });
+            } catch(error) {
+                console.log(`       tx -> failed because holder already voted`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+    });
+
+    describe("Get results", async() => {
+
+        it("Should successfully get the results", async() => {
+            let tx = await I_WeightedVoteCheckpoint.getResults(0, { from: token_owner });
+            assert.equal(tx[0], web3.utils.toWei('2', 'ether'), "Failed to get results");
+            assert.equal(tx[1], web3.utils.toWei('1', 'ether'), "Failed to get results");
+            assert.equal(tx[2], 0, "Failed to get results");
+        });
     });
 
 });

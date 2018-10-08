@@ -6,7 +6,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @title Transfer Manager for limiting volume of tokens in a single trade
  */
 
-contract SingleTradeVolumeRestrictionManager is ITransferManager {
+contract SingleTradeVolumeRestrictionManager /*is ITransferManager*/ {
     // using SafeMath for uint256;
 
     // bytes32 constant public ADMIN = "ADMIN";
@@ -47,7 +47,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
      * @param _polyAddress Address of the polytoken
     */
     constructor(address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
+    //Module(_securityToken, _polyAddress)
     {
 
     }
@@ -55,7 +55,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     /**
      * @notice Used to verify the transfer transaction according to the rule implemented in the transfer manager
      */
-    function verifyTransfer(address _from, address /* _to */, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
+    //function verifyTransfer(address _from, address /* _to */, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         // bool validTransfer;
 
         // if (exemptWallets[_from] || paused) return Result.NA;
@@ -79,7 +79,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
         // }
         // if (validTransfer) return Result.NA;
         // return Result.INVALID;
-    }
+    //}
 
     /**
     * @notice Used to intialize the variables of the contract
@@ -304,12 +304,12 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
         return bytes4(keccak256("configure(bool,uint256,bool)"));
     }
 
-    /**
-    * @notice Return the permissions flag that are associated with SingleTradeVolumeRestrictionManager
-    */
-    function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](1);
-        //allPermissions[0] = ADMIN;
-        return allPermissions;
-    }
+    // *
+    // * @notice Return the permissions flag that are associated with SingleTradeVolumeRestrictionManager
+    
+    // function getPermissions() public view returns(bytes32[]) {
+    //     bytes32[] memory allPermissions = new bytes32[](1);
+    //     //allPermissions[0] = ADMIN;
+    //     return allPermissions;
+    // }
 }

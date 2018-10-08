@@ -12,6 +12,8 @@ const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpo
 const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpointFactory.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
+const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
+const USDTieredSTOProxyFactory = artifacts.require("./USDTieredSTOProxyFactory");
 const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
 const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
 const STFactory = artifacts.require("./STFactory.sol");
@@ -27,6 +29,8 @@ const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 // Contract Instance Declaration
+let I_USDTieredSTOProxyFactory;
+let I_USDTieredSTOFactory;
 let I_ManualApprovalTransferManagerFactory;
 let I_PercentageTransferManagerFactory;
 let I_EtherDividendCheckpointFactory;
@@ -301,6 +305,21 @@ export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstan
 
     await registerAndVerifyByMR(I_PreSaleSTOFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_PreSaleSTOFactory);
+}
+
+export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new({from: accountPolymath});
+
+    I_USDTieredSTOFactory = await USDTieredSTOFactory.new(polyToken, setupCost, 0, 0, I_USDTieredSTOProxyFactory.address, { from: accountPolymath });
+    
+    assert.notEqual(
+        I_USDTieredSTOFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "USDTieredSTOFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_USDTieredSTOFactory.address, accountPolymath, MRProxyInstance);   
+    return new Array(I_USDTieredSTOFactory);
 }
 
 

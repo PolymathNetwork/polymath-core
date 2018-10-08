@@ -29,17 +29,17 @@ contract STVRManager is ITransferManager {
 
     mapping(address => uint) public specialTransferLimitsInPercentages;
 
-    event ExemptWalletAdded(address _wallet);
-    event ExemptWalletRemoved(address _wallet);
-    event TransferLimitInTokensSet(address _wallet, uint256 _amount);
-    event TransferLimitInPercentageSet(address _wallet, uint _percentage);
-    event TransferLimitInPercentageRemoved(address _wallet);
-    event TransferLimitInTokensRemoved(address _wallet);
-    event GlobalTransferLimitInTokensSet(uint256 _amount, uint256 _oldAmount);
-    event GlobalTransferLimitInPercentageSet(uint256 _percentage, uint256 _oldPercentage);
-    event TransferLimitChangedToTokens();
-    event TransferLimitChangedtoPercentage();
-    event SetAllowPrimaryIssuance(bool _allowPrimaryIssuance, uint256 _timestamp);
+    // event ExemptWalletAdded(address _wallet);
+    // event ExemptWalletRemoved(address _wallet);
+    // event TransferLimitInTokensSet(address _wallet, uint256 _amount);
+    // event TransferLimitInPercentageSet(address _wallet, uint _percentage);
+    // event TransferLimitInPercentageRemoved(address _wallet);
+    // event TransferLimitInTokensRemoved(address _wallet);
+    // event GlobalTransferLimitInTokensSet(uint256 _amount, uint256 _oldAmount);
+    // event GlobalTransferLimitInPercentageSet(uint256 _percentage, uint256 _oldPercentage);
+    // event TransferLimitChangedToTokens();
+    // event TransferLimitChangedtoPercentage();
+    // event SetAllowPrimaryIssuance(bool _allowPrimaryIssuance, uint256 _timestamp);
 
     /**
      * @notice Constructor
@@ -101,7 +101,7 @@ contract STVRManager is ITransferManager {
     function setAllowPrimaryIssuance(bool _allowPrimaryIssuance) public withPerm(ADMIN) {
         require(_allowPrimaryIssuance != allowPrimaryIssuance, "Must change setting");
         allowPrimaryIssuance = _allowPrimaryIssuance;
-        emit SetAllowPrimaryIssuance(_allowPrimaryIssuance, now);
+        //emit SetAllowPrimaryIssuance(_allowPrimaryIssuance, now);
     }
 
     /**
@@ -113,7 +113,7 @@ contract STVRManager is ITransferManager {
         require(!isTransferLimitInPercentage, "Transfer limit already in percentage");
         isTransferLimitInPercentage = true;
         changeGlobalLimitInPercentage(_newGlobalTransferLimitInPercentage);
-        emit TransferLimitChangedtoPercentage();
+        //emit TransferLimitChangedtoPercentage();
     }
 
     /**
@@ -125,7 +125,7 @@ contract STVRManager is ITransferManager {
         require(isTransferLimitInPercentage, "Transfer limit already in tokens");
         isTransferLimitInPercentage = false;
         changeGlobalLimitInTokens(_newGlobalTransferLimit);
-        emit TransferLimitChangedToTokens();
+        //emit TransferLimitChangedToTokens();
     }
     /**
     * @notice Change the global transfer limit
@@ -135,7 +135,7 @@ contract STVRManager is ITransferManager {
     function changeGlobalLimitInTokens(uint256 _newGlobalTransferLimitInTokens) public withPerm(ADMIN) {
         require(!isTransferLimitInPercentage, "Transfer limit not set in tokens");
         require(_newGlobalTransferLimitInTokens > 0, "Transfer limit has to greater than zero");
-        emit GlobalTransferLimitInTokensSet(_newGlobalTransferLimitInTokens, globalTransferLimitInTokens);
+        //emit GlobalTransferLimitInTokensSet(_newGlobalTransferLimitInTokens, globalTransferLimitInTokens);
         globalTransferLimitInTokens = _newGlobalTransferLimitInTokens;
 
     }
@@ -149,7 +149,7 @@ contract STVRManager is ITransferManager {
     function changeGlobalLimitInPercentage(uint256 _newGlobalTransferLimitInPercentage) public withPerm(ADMIN) {
         require(isTransferLimitInPercentage, "Transfer limit not set in Percentage");
         require(_newGlobalTransferLimitInPercentage > 0 &&  _newGlobalTransferLimitInPercentage <= 100 * 10 ** 16);
-        emit GlobalTransferLimitInPercentageSet(_newGlobalTransferLimitInPercentage, globalTransferLimitInPercentage);
+        //emit GlobalTransferLimitInPercentageSet(_newGlobalTransferLimitInPercentage, globalTransferLimitInPercentage);
         globalTransferLimitInPercentage = _newGlobalTransferLimitInPercentage;
 
     }
@@ -161,7 +161,7 @@ contract STVRManager is ITransferManager {
     function addExemptWallet(address _wallet) public withPerm(ADMIN) {
         require(_wallet != address(0), "Wallet address cannot be a zero address");
         exemptWallets[_wallet] = true;
-        emit ExemptWalletAdded(_wallet);
+        //emit ExemptWalletAdded(_wallet);
     }
 
     /**
@@ -171,7 +171,7 @@ contract STVRManager is ITransferManager {
     function removeExemptWallet(address _wallet) public withPerm(ADMIN) {
         require(_wallet != address(0), "Wallet address cannot be a zero address");
         exemptWallets[_wallet] = false;
-        emit ExemptWalletRemoved(_wallet);
+        //emit ExemptWalletRemoved(_wallet);
     }
 
     /**
@@ -206,7 +206,7 @@ contract STVRManager is ITransferManager {
         require(_transferLimit > 0, "Transfer limit has to be greater than 0");
         require(!isTransferLimitInPercentage, "Transfer limit not in token amount");
         specialTransferLimitsInTokens[_wallet] = _transferLimit;
-        emit TransferLimitInTokensSet(_wallet, _transferLimit);
+        //emit TransferLimitInTokensSet(_wallet, _transferLimit);
     }
 
     /**
@@ -220,7 +220,7 @@ contract STVRManager is ITransferManager {
         require(isTransferLimitInPercentage, "Transfer limit not in percentage");
         require(_transferLimitInPercentage > 0 && _transferLimitInPercentage <= 100 * 10 ** 16, "Transfer limit not in required range");
         specialTransferLimitsInPercentages[_wallet] = _transferLimitInPercentage;
-        emit TransferLimitInPercentageSet(_wallet, _transferLimitInPercentage);
+        //emit TransferLimitInPercentageSet(_wallet, _transferLimitInPercentage);
     }
 
 
@@ -231,7 +231,7 @@ contract STVRManager is ITransferManager {
     function removeTransferLimitInPercentage(address _wallet) public withPerm(ADMIN) {
         require(specialTransferLimitsInPercentages[_wallet] > 0 , "Wallet Address does not have a transfer limit");
         specialTransferLimitsInPercentages[_wallet] = 0;
-        emit TransferLimitInPercentageRemoved(_wallet);
+        //emit TransferLimitInPercentageRemoved(_wallet);
     }
 
     /**
@@ -241,7 +241,7 @@ contract STVRManager is ITransferManager {
     function removeTransferLimitInTokens(address _wallet) public withPerm(ADMIN) {
         require(specialTransferLimitsInTokens[_wallet] > 0 , "Wallet Address does not have a transfer limit");
         specialTransferLimitsInTokens[_wallet] = 0;
-        emit TransferLimitInTokensRemoved(_wallet);
+        //emit TransferLimitInTokensRemoved(_wallet);
     }
 
     /**

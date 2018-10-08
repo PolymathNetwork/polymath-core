@@ -3,15 +3,6 @@ pragma solidity ^0.4.24;
 import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                                        Owner       TRANSFER_APPROVAL
-// addManualApproval                        X                 X
-// addManualBlocking                        X                 X
-// revokeManualApproval                     X                 X
-// revokeManualBlocking                     X                 X
-
 /**
  * @title Transfer Manager module for manually approving or blocking transactions between accounts
  */
@@ -43,7 +34,7 @@ contract ManualApprovalTransferManager is ITransferManager {
     //Store mappings of address => address with ManualBlockings
     mapping (address => mapping (address => ManualBlocking)) public manualBlockings;
 
-    event LogAddManualApproval(
+    event AddManualApproval(
         address _from,
         address _to,
         uint256 _allowance,
@@ -51,20 +42,20 @@ contract ManualApprovalTransferManager is ITransferManager {
         address _addedBy
     );
 
-    event LogAddManualBlocking(
+    event AddManualBlocking(
         address _from,
         address _to,
         uint256 _expiryTime,
         address _addedBy
     );
 
-    event LogRevokeManualApproval(
+    event RevokeManualApproval(
         address _from,
         address _to,
         address _addedBy
     );
 
-    event LogRevokeManualBlocking(
+    event RevokeManualBlocking(
         address _from,
         address _to,
         address _addedBy
@@ -77,7 +68,7 @@ contract ManualApprovalTransferManager is ITransferManager {
      */
     constructor (address _securityToken, address _polyAddress)
     public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
@@ -96,7 +87,7 @@ contract ManualApprovalTransferManager is ITransferManager {
     * b) Seller's sale lockup period is over
     * c) Buyer's purchase lockup is over
     */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result) {
+    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool _isTransfer) public returns(Result) {
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
         // manual blocking takes precidence over manual approval
@@ -127,7 +118,7 @@ contract ManualApprovalTransferManager is ITransferManager {
         require(_expiryTime > now, "Invalid expiry time");
         require(manualApprovals[_from][_to].allowance == 0, "Approval already exists");
         manualApprovals[_from][_to] = ManualApproval(_allowance, _expiryTime);
-        emit LogAddManualApproval(_from, _to, _allowance, _expiryTime, msg.sender);
+        emit AddManualApproval(_from, _to, _allowance, _expiryTime, msg.sender);
     }
 
     /**
@@ -142,7 +133,7 @@ contract ManualApprovalTransferManager is ITransferManager {
         require(_expiryTime > now, "Invalid expiry time");
         require(manualApprovals[_from][_to].expiryTime == 0, "Blocking already exists");
         manualBlockings[_from][_to] = ManualBlocking(_expiryTime);
-        emit LogAddManualBlocking(_from, _to, _expiryTime, msg.sender);
+        emit AddManualBlocking(_from, _to, _expiryTime, msg.sender);
     }
 
     /**
@@ -154,7 +145,7 @@ contract ManualApprovalTransferManager is ITransferManager {
         require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         delete manualApprovals[_from][_to];
-        emit LogRevokeManualApproval(_from, _to, msg.sender);
+        emit RevokeManualApproval(_from, _to, msg.sender);
     }
 
     /**
@@ -166,7 +157,7 @@ contract ManualApprovalTransferManager is ITransferManager {
         require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         delete manualBlockings[_from][_to];
-        emit LogRevokeManualBlocking(_from, _to, msg.sender);
+        emit RevokeManualBlocking(_from, _to, msg.sender);
     }
 
     /**

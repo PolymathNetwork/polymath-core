@@ -60,6 +60,7 @@
     "coveralls": "^3.0.1",
     "ethereumjs-testrpc": "^6.0.3",
     "ethers": "^3.0.15",
+    "fs": "0.0.1-security",
     "openzeppelin-solidity": "1.10.0",
     "readline-sync": "^1.4.9",
     "shelljs": "^0.8.2",
@@ -77,13 +78,14 @@
     "eslint-plugin-promise": "^3.7.0",
     "eslint-plugin-standard": "^3.0.1",
     "ethereum-bridge": "^0.6.1",
+    "ethereumjs-abi": "^0.6.5",
     "fast-csv": "^2.4.1",
-    "ganache-cli": "^6.1.0",
+    "ganache-cli": "^6.1.8",
     "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.5.10",
     "solidity-docgen": "^0.1.0",
     "solium": "^1.1.6",
-    "truffle": "^4.1.11",
+    "truffle": "^4.1.13",
     "truffle-wallet-provider": "0.0.5"
   }
 }

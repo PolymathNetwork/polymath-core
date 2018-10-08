@@ -142,7 +142,7 @@ function readFile() {
       for (let j = 0; j < distribData[i].length; j++) {
         let investorAccount = distribData[i][j][0];
         let tokenAmount = web3.utils.toWei((distribData[i][j][1]).toString(),"ether");
-        let verifiedTransaction = await securityToken.methods.verifyTransfer("0x0000000000000000000000000000000000000000", investorAccount, tokenAmount).call();
+        let verifiedTransaction = await securityToken.methods.verifyTransfer("0x0000000000000000000000000000000000000000", investorAccount, tokenAmount, web3.utils.fromAscii("")).call();
         if (verifiedTransaction) {
           affiliatesVerifiedArray.push(investorAccount);
           tokensVerifiedArray.push(tokenAmount);
@@ -181,8 +181,8 @@ function readFile() {
   for (var i = 0; i < event_data.length; i++) {
     let combineArray = [];
 
-    let investorAddress_Event = event_data[i].returnValues.to;
-    let amount_Event = event_data[i].returnValues.amount;
+    let investorAddress_Event = event_data[i].returnValues._to;
+    let amount_Event = event_data[i].returnValues._value;
     let blockNumber = event_data[i].blockNumber
 
     combineArray.push(investorAddress_Event);

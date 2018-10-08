@@ -7,27 +7,27 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  */
 
 contract SingleTradeVolumeRestrictionManager is ITransferManager {
-    using SafeMath for uint256;
+    // using SafeMath for uint256;
 
-    bytes32 constant public ADMIN = "ADMIN";
+    // bytes32 constant public ADMIN = "ADMIN";
 
-    bool public isTransferLimitInPercentage;
+    // bool public isTransferLimitInPercentage;
 
-    uint256 public globalTransferLimitInTokens;
+    // uint256 public globalTransferLimitInTokens;
 
-    // should be multipled by 10^16. if the transfer percentage is 20%, then globalTransferLimitInPercentage should be 20*10^16
-    uint256 public globalTransferLimitInPercentage;
+    // // should be multipled by 10^16. if the transfer percentage is 20%, then globalTransferLimitInPercentage should be 20*10^16
+    // uint256 public globalTransferLimitInPercentage;
 
-    // Ignore transactions which are part of the primary issuance
-    bool public allowPrimaryIssuance = true;
+    // // Ignore transactions which are part of the primary issuance
+    // bool public allowPrimaryIssuance = true;
 
-    //mapping to store the wallets that are exempted from the volume restriction
-    mapping(address => bool) public exemptWallets;
+    // //mapping to store the wallets that are exempted from the volume restriction
+    // mapping(address => bool) public exemptWallets;
 
-    //addresses on this list have special transfer restrictions apart from global
-    mapping(address => uint) public specialTransferLimitsInTokens;
+    // //addresses on this list have special transfer restrictions apart from global
+    // mapping(address => uint) public specialTransferLimitsInTokens;
 
-    mapping(address => uint) public specialTransferLimitsInPercentages;
+    // mapping(address => uint) public specialTransferLimitsInPercentages;
 
     // event ExemptWalletAdded(address _wallet);
     // event ExemptWalletRemoved(address _wallet);
@@ -54,29 +54,29 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
 
     /// @notice Used to verify the transfer transaction according to the rule implemented in the transfer manager
     function verifyTransfer(address _from, address /* _to */, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
-        bool validTransfer;
+        // bool validTransfer;
 
-        if (exemptWallets[_from] || paused) return Result.NA;
+        // if (exemptWallets[_from] || paused) return Result.NA;
 
-        if (_from == address(0) && allowPrimaryIssuance) {
-            return Result.NA;
-        }
+        // if (_from == address(0) && allowPrimaryIssuance) {
+        //     return Result.NA;
+        // }
 
-        if (isTransferLimitInPercentage) {
-            if(specialTransferLimitsInPercentages[_from] > 0) {
-                validTransfer = (_amount.mul(10**18).div(ISecurityToken(securityToken).totalSupply())) <= specialTransferLimitsInPercentages[_from];
-            } else {
-                validTransfer = (_amount.mul(10**18).div(ISecurityToken(securityToken).totalSupply())) <= globalTransferLimitInPercentage;
-            }
-        } else  {
-          if (specialTransferLimitsInTokens[_from] > 0) {
-              validTransfer = _amount <= specialTransferLimitsInTokens[_from];
-          } else {
-              validTransfer = _amount <= globalTransferLimitInTokens;
-          }
-        }
-        if (validTransfer) return Result.NA;
-        return Result.INVALID;
+        // if (isTransferLimitInPercentage) {
+        //     if(specialTransferLimitsInPercentages[_from] > 0) {
+        //         validTransfer = (_amount.mul(10**18).div(ISecurityToken(securityToken).totalSupply())) <= specialTransferLimitsInPercentages[_from];
+        //     } else {
+        //         validTransfer = (_amount.mul(10**18).div(ISecurityToken(securityToken).totalSupply())) <= globalTransferLimitInPercentage;
+        //     }
+        // } else  {
+        //   if (specialTransferLimitsInTokens[_from] > 0) {
+        //       validTransfer = _amount <= specialTransferLimitsInTokens[_from];
+        //   } else {
+        //       validTransfer = _amount <= globalTransferLimitInTokens;
+        //   }
+        // }
+        // if (validTransfer) return Result.NA;
+        // return Result.INVALID;
     }
 
     /**
@@ -85,24 +85,24 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     * @param _globalTransferLimitInPercentageOrToken transfer limit per single transaction.
     */
     function configure(bool _isTransferLimitInPercentage, uint256 _globalTransferLimitInPercentageOrToken, bool _allowPrimaryIssuance) public onlyFactory {
-        isTransferLimitInPercentage = _isTransferLimitInPercentage;
-        if (isTransferLimitInPercentage) {
-            //changeGlobalLimitInPercentage(_globalTransferLimitInPercentageOrToken);
-        } else {
-            //changeGlobalLimitInTokens(_globalTransferLimitInPercentageOrToken);
-        }
-        allowPrimaryIssuance = _allowPrimaryIssuance;
+        // isTransferLimitInPercentage = _isTransferLimitInPercentage;
+        // if (isTransferLimitInPercentage) {
+        //     //changeGlobalLimitInPercentage(_globalTransferLimitInPercentageOrToken);
+        // } else {
+        //     //changeGlobalLimitInTokens(_globalTransferLimitInPercentageOrToken);
+        // }
+        // allowPrimaryIssuance = _allowPrimaryIssuance;
     }
 
-    /**
-    * @notice sets whether or not to consider primary issuance transfers
-    * @param _allowPrimaryIssuance whether to allow all primary issuance transfers
-    */
-    function setAllowPrimaryIssuance(bool _allowPrimaryIssuance) public withPerm(ADMIN) {
-        require(_allowPrimaryIssuance != allowPrimaryIssuance, "Must change setting");
-        allowPrimaryIssuance = _allowPrimaryIssuance;
-        emit SetAllowPrimaryIssuance(_allowPrimaryIssuance, now);
-    }
+    // /**
+    // * @notice sets whether or not to consider primary issuance transfers
+    // * @param _allowPrimaryIssuance whether to allow all primary issuance transfers
+    // */
+    // function setAllowPrimaryIssuance(bool _allowPrimaryIssuance) public withPerm(ADMIN) {
+    //     require(_allowPrimaryIssuance != allowPrimaryIssuance, "Must change setting");
+    //     allowPrimaryIssuance = _allowPrimaryIssuance;
+    //     emit SetAllowPrimaryIssuance(_allowPrimaryIssuance, now);
+    // }
 
     // /**
     // * @notice Changes the manager to use transfer limit as Percentages
@@ -307,7 +307,7 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);
-        allPermissions[0] = ADMIN;
+        //allPermissions[0] = ADMIN;
         return allPermissions;
     }
 }

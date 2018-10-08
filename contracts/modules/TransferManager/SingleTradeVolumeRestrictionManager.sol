@@ -64,9 +64,9 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
 
         if (isTransferLimitInPercentage) {
             if(specialTransferLimitsInPercentages[_from] > 0) {
-                validTransfer = (_amount.mul(uint256(10)**18).div(ISecurityToken(securityToken).totalSupply())) <= specialTransferLimitsInPercentages[_from];
+                validTransfer = (_amount.mul(10**18).div(ISecurityToken(securityToken).totalSupply())) <= specialTransferLimitsInPercentages[_from];
             } else {
-                validTransfer = (_amount.mul(uint256(10)**18).div(ISecurityToken(securityToken).totalSupply())) <= globalTransferLimitInPercentage;
+                validTransfer = (_amount.mul(10**18).div(ISecurityToken(securityToken).totalSupply())) <= globalTransferLimitInPercentage;
             }
         } else  {
           if (specialTransferLimitsInTokens[_from] > 0) {
@@ -86,7 +86,6 @@ contract SingleTradeVolumeRestrictionManager is ITransferManager {
     */
     function configure(bool _isTransferLimitInPercentage, uint256 _globalTransferLimitInPercentageOrToken, bool _allowPrimaryIssuance) public onlyFactory {
         isTransferLimitInPercentage = _isTransferLimitInPercentage;
-        
         allowPrimaryIssuance = _allowPrimaryIssuance;
     }
 

@@ -1,12 +1,10 @@
 import latestTime from "./helpers/latestTime";
-import { duration, ensureException, promisifyLogWatch, latestBlock } from "./helpers/utils";
+import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
-import { setUpPolymathNetwork } from "./helpers/createInstances";
+import { setUpPolymathNetwork, deployGPMAndVerifyed, deployPercentageTMAndVerified } from "./helpers/createInstances";
 import { catchRevert } from "./helpers/exceptions";
 
-const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
-const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
 const PercentageTransferManager = artifacts.require("./PercentageTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
@@ -84,9 +82,6 @@ contract("PercentageTransferManager", accounts => {
         ]
     }, [holderPercentage, false]);
 
-    const STRProxyParameters = ['address', 'address', 'uint256', 'uint256', 'address', 'address'];
-    const MRProxyParameters = ['address', 'address'];
-
     before(async() => {
         // Accounts setup
         account_polymath = accounts[0];
@@ -114,54 +109,15 @@ contract("PercentageTransferManager", accounts => {
             I_STRProxied
         ] = instances;
 
-        // STEP 4(b): Deploy the GeneralDelegateManagerFactory
+        // STEP 2: Deploy the GeneralDelegateManagerFactory
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
 
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {
-            from: account_polymath
-        });
+        // STEP 3(a): Deploy the PercentageTransferManager
+        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
 
-        assert.notEqual(
-            I_GeneralPermissionManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManagerFactory contract was not deployed"
-        );
-
-        // STEP 4(c): Deploy the PercentageTransferManager
-        I_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {
-            from: account_polymath
-        });
-        assert.notEqual(
-            I_PercentageTransferManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "PercentageTransferManagerFactory contract was not deployed"
-        );
-
-        // STEP 4(d): Deploy the PercentageTransferManager
-        P_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(
-            I_PolyToken.address,
-            web3.utils.toWei("500", "ether"),
-            0,
-            0,
-            { from: account_polymath }
-        );
-        assert.notEqual(
-            P_PercentageTransferManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "PercentageTransferManagerFactory contract was not deployed"
-        );
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the PercentageTransferManagerFactory
-        await I_MRProxied.registerModule(I_PercentageTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_PercentageTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the Paid PercentageTransferManagerFactory
-        await I_MRProxied.registerModule(P_PercentageTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(P_PercentageTransferManagerFactory.address, true, { from: account_polymath });
-
+        // STEP 4(b): Deploy the PercentageTransferManager
+        [P_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500", "ether"));
+    
         // Printing all the contract addresses
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
@@ -355,21 +311,9 @@ contract("PercentageTransferManager", accounts => {
         it("Should not be able to transfer between existing token holders over limit", async () => {
             await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei("2", "ether"), { from: account_investor1 }));
         });
-        
-        it("Should unpause the tranfers at transferManager level", async() => {
-            await I_PercentageTransferManager.unpause({from: token_owner});
-        })
 
         it("Should not be able to mint token amount over limit", async() => {
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.mint(account_investor3, web3.utils.toWei('100', 'ether'), { from: token_owner });
-            } catch(error) {
-                console.log(`         tx revert -> Too high minting`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(I_SecurityToken.mint(account_investor3, web3.utils.toWei('100', 'ether'), { from: token_owner }))
         });
 
         it("Allow unlimited primary issuance and remint", async() => {
@@ -380,15 +324,9 @@ contract("PercentageTransferManager", accounts => {
         });
 
         it("Should not be able to transfer between existing token holders over limit", async() => {
-            let errorThrown = false;
-            try {
-                await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 });
-            } catch(error) {
-                console.log(`         tx revert -> Too many holders`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+           await catchRevert(
+                I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 })
+           )
         });
 
         it("Modify holder percentage to 100", async () => {

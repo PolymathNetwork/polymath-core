@@ -106,9 +106,9 @@ contract("Issuance", accounts => {
             I_STRProxied
         ] = instances;
 
-        // STEP 5: Deploy the GeneralDelegateManagerFactory
+        // STEP 2: Deploy the GeneralDelegateManagerFactory
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-        // STEP 6: Deploy the CappedSTOFactory
+        // STEP 3: Deploy the CappedSTOFactory
         [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
 
         // Printing all the contract addresses

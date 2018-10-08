@@ -3,22 +3,12 @@ import { duration, ensureException, promisifyLogWatch, latestBlock } from "./hel
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
+import { setUpPolymathNetwork, deployPresaleSTOAndVerified } from "./helpers/createInstances"
 
-const PolymathRegistry = artifacts.require("./PolymathRegistry.sol");
 const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PreSaleSTO = artifacts.require("./PreSaleSTO.sol");
-const ModuleRegistry = artifacts.require("./ModuleRegistry.sol");
-const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
-const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
-const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
-const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
-const STFactory = artifacts.require("./STFactory.sol");
-const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
-const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
-const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
-const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 
 const Web3 = require("web3");
 const BigNumber = require("bignumber.js");
@@ -42,7 +32,6 @@ contract("PreSaleSTO", accounts => {
     let expiryTime;
 
     // Contract Instance Declaration
-    let I_GeneralPermissionManagerFactory;
     let I_SecurityTokenRegistryProxy;
     let I_GeneralTransferManagerFactory;
     let I_GeneralPermissionManager;
@@ -81,8 +70,6 @@ contract("PreSaleSTO", accounts => {
     const initRegFee = web3.utils.toWei("250");
     let endTime;
     const STOParameters = ["uint256"];
-    const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
-    const MRProxyParameters = ["address", "address"];
 
     before(async () => {
         // Accounts setup
@@ -94,130 +81,39 @@ contract("PreSaleSTO", accounts => {
         account_fundsReceiver = accounts[2];
         token_owner = account_issuer;
 
-        // ----------- POLYMATH NETWORK Configuration ------------
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-        // Step 0: Deploy the PolymathRegistry
-        I_PolymathRegistry = await PolymathRegistry.new({ from: account_polymath });
-
-        // Step 1: Deploy the token Faucet and Mint tokens for token_owner
-        I_PolyToken = await PolyTokenFaucet.new();
-        await I_PolyToken.getTokens(10000 * Math.pow(10, 18), token_owner);
-
-        // Step 2: Deploy the FeatureRegistry
-
-        I_FeatureRegistry = await FeatureRegistry.new(I_PolymathRegistry.address, {
-            from: account_polymath
-        });
-
-        // STEP 3: Deploy the ModuleRegistry
-
-        I_ModuleRegistry = await ModuleRegistry.new({ from: account_polymath });
-        // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
-        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({ from: account_polymath });
-        let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, account_polymath]);
-        await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, { from: account_polymath });
-        I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
-
-        // STEP 2: Deploy the GeneralTransferManagerFactory
-
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
-
-        assert.notEqual(
-            I_GeneralTransferManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManagerFactory contract was not deployed"
-        );
-
-        // STEP 3: Deploy the GeneralDelegateManagerFactory
-
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {
-            from: account_polymath
-        });
-
-        assert.notEqual(
-            I_GeneralPermissionManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManagerFactory contract was not deployed"
-        );
+        [
+            I_PolymathRegistry,
+            I_PolyToken,
+            I_FeatureRegistry,
+            I_ModuleRegistry,
+            I_ModuleRegistryProxy,
+            I_MRProxied,
+            I_GeneralTransferManagerFactory,
+            I_STFactory,
+            I_SecurityTokenRegistry,
+            I_SecurityTokenRegistryProxy,
+            I_STRProxied
+        ] = instances;
 
         // STEP 4: Deploy the PreSaleSTOFactory
-
-        I_PreSaleSTOFactory = await PreSaleSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: token_owner });
-
-        assert.notEqual(
-            I_PreSaleSTOFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "PreSaleSTOFactory contract was not deployed"
-        );
-
-        // Step 8: Deploy the STFactory contract
-
-        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-
-        assert.notEqual(I_STFactory.address.valueOf(), "0x0000000000000000000000000000000000000000", "STFactory contract was not deployed");
-
-        // Step 9: Deploy the SecurityTokenRegistry contract
-
-        I_SecurityTokenRegistry = await SecurityTokenRegistry.new({ from: account_polymath });
-
-        assert.notEqual(
-            I_SecurityTokenRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "SecurityTokenRegistry contract was not deployed"
-        );
-
-        // Step 10: Deploy the proxy and attach the implementation contract to it.
-        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({ from: account_polymath });
-        let bytesProxy = encodeProxyCall(STRProxyParameters, [
-            I_PolymathRegistry.address,
-            I_STFactory.address,
-            initRegFee,
-            initRegFee,
-            I_PolyToken.address,
-            account_polymath
-        ]);
-        await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
-            from: account_polymath
-        });
-        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
-
-        // Step 11: update the registries addresses from the PolymathRegistry contract
-        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, { from: account_polymath });
-        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, { from: account_polymath });
-        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, { from: account_polymath });
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, { from: account_polymath });
-        await I_MRProxied.updateFromRegistry({ from: account_polymath });
-
-        // STEP 5: Register the Modules with the ModuleRegistry contract
-
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
-        // (C) : Register the STOFactory
-        await I_MRProxied.registerModule(I_PreSaleSTOFactory.address, { from: account_polymath });
-        await I_MRProxied.verifyModule(I_PreSaleSTOFactory.address, true, { from: account_polymath });
+        [I_PreSaleSTOFactory] = await deployPresaleSTOAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
 
         // Printing all the contract addresses
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
-        PolymathRegistry:                  ${PolymathRegistry.address}
-        SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
-        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
-        ModuleRegistry:                    ${ModuleRegistry.address}
-        ModuleRegistryProxy:               ${ModuleRegistryProxy.address}
-        FeatureRegistry:                   ${FeatureRegistry.address}
+        PolymathRegistry:                  ${I_PolymathRegistry.address}
+        SecurityTokenRegistryProxy:        ${I_SecurityTokenRegistryProxy.address}
+        SecurityTokenRegistry:             ${I_SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${I_ModuleRegistry.address}
+        ModuleRegistryProxy:               ${I_ModuleRegistryProxy.address}
+        FeatureRegistry:                   ${I_FeatureRegistry.address}
 
-        STFactory:                         ${STFactory.address}
-        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
-        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
+        STFactory:                         ${I_STFactory.address}
+        GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
 
         PreSaleSTOFactory:                 ${I_PreSaleSTOFactory.address}
-        LatestTime:                        ${latestTime()}\n
         -----------------------------------------------------------------------------
         `);
     });

@@ -10,12 +10,15 @@ const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock.sol");
 const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpointFactory.sol");
 const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpointFactory.sol");
+const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
+const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
+const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
 const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
 const STFactory = artifacts.require("./STFactory.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
-const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
+const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PolyToken = artifacts.require("./PolyToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
@@ -24,6 +27,8 @@ const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 // Contract Instance Declaration
+let I_ManualApprovalTransferManagerFactory;
+let I_PercentageTransferManagerFactory;
 let I_EtherDividendCheckpointFactory;
 let I_CountTransferManagerFactory;
 let I_ERC20DividendCheckpointFactory;
@@ -31,6 +36,7 @@ let I_GeneralPermissionManagerFactory;
 let I_GeneralTransferManagerFactory;
 let I_GeneralTransferManager;
 let I_ModuleRegistryProxy;
+let I_PreSaleSTOFactory;
 let I_ModuleRegistry;
 let I_FeatureRegistry;
 let I_SecurityTokenRegistry;
@@ -182,6 +188,20 @@ export async function deployGPMAndVerifyed(accountPolymath, MRProxyInstance, pol
     return new Array(I_GeneralPermissionManagerFactory);
 }
 
+export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+
+    assert.notEqual(
+        I_GeneralPermissionManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "GeneralPermissionManagerFactory contract was not deployed"
+    );
+
+    // (B) :  Register the GeneralDelegateManagerFactory
+    await registerAndVerifyByMR(I_GeneralTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_GeneralTransferManagerFactory);
+}
+
 
 export async function deployDummySTOAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
     I_DummySTOFactory = await DummySTOFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
@@ -235,7 +255,6 @@ export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance,
 
 export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
     I_CappedSTOFactory = await CappedSTOFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
-
     assert.notEqual(
         I_CappedSTOFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -246,6 +265,44 @@ export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstanc
     return new Array(I_CappedSTOFactory);
 
 }
+
+export async function deployManualApprovalTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_ManualApprovalTransferManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "ManualApprovalTransferManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_ManualApprovalTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_ManualApprovalTransferManagerFactory);
+}
+
+export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_PercentageTransferManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "PercentageTransferManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_PercentageTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_PercentageTransferManagerFactory);
+}
+
+export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_PreSaleSTOFactory = await PreSaleSTOFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    
+    assert.notEqual(
+        I_PreSaleSTOFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "PreSaleSTOFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_PreSaleSTOFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_PreSaleSTOFactory);
+}
+
 
 /// Helper function
 function mergeReturn(returnData) {

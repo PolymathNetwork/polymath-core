@@ -82,7 +82,6 @@ contract("SecurityTokenRegistry", accounts => {
     const newRegFee = web3.utils.toWei("300");
 
     const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
-    const MRProxyParameters = ["address", "address"];
     const STOParameters = ["uint256", "uint256", "uint256", "string"];
 
     // Capped STO details

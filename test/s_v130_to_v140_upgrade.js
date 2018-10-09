@@ -5,8 +5,8 @@ const BigNumber = require("bignumber.js");
 import latestTime from "./helpers/latestTime";
 import { duration } from "./helpers/utils";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
+import { setUpPolymathNetwork, deployCappedSTOAndVerifyed, deployGPMAndVerifyed } from "./helpers/createInstances";
 
-const PolymathRegistry = artifacts.require("./PolymathRegistry.sol");
 const USDTieredSTOProxyFactory = artifacts.require("./USDTieredSTOProxyFactory.sol");
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
@@ -14,15 +14,7 @@ const USDTieredSTO = artifacts.require("./USDTieredSTO.sol");
 const CappedSTO = artifacts.require("./CappedSTO.sol");
 const PolyOracle = artifacts.require("./PolyOracle.sol");
 const ETHOracle = artifacts.require("./MakerDAOOracle.sol");
-const ModuleRegistry = artifacts.require("./ModuleRegistry.sol");
-const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
-const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
-const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
-const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
-const STFactory = artifacts.require("./STFactory.sol");
-const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
-const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
 
@@ -94,8 +86,6 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     let I_CappedSTO;
     let I_ManualApprovalTransferManagerFactory;
 
-    const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
-    const MRProxyParameters = ["address", "address"];
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
     // Prepare polymath network status
     before(async () => {
@@ -105,117 +95,32 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         ISSUER2 = accounts[2];
         ISSUER3 = accounts[3];
         MULTISIG = accounts[4];
+        
+        I_DaiToken = await PolyTokenFaucet.new({ from: POLYMATH });
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 0: Deploy the PolymathRegistry
-        I_PolymathRegistry = await PolymathRegistry.new({ from: POLYMATH });
-        assert.notEqual(
-            I_PolymathRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "PolymathRegistry contract was not deployed"
-        );
+        let instances = await setUpPolymathNetwork(POLYMATH, ISSUER1);
 
-        // Step 1: Deploy the token Faucet
-        I_PolyToken = await PolyTokenFaucet.new({ from: POLYMATH });
-        I_DaiToken = await PolyTokenFaucet.new({ from: POLYMATH });
-        assert.notEqual(I_PolyToken.address.valueOf(), "0x0000000000000000000000000000000000000000", "PolyToken contract was not deployed");
-        tx = await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, { from: POLYMATH });
-        assert.equal(tx.logs[0].args._nameKey, "PolyToken");
-        assert.equal(tx.logs[0].args._newAddress, I_PolyToken.address);
-
-        // STEP 2: Deploy the ModuleRegistry
-        I_ModuleRegistry = await ModuleRegistry.new({ from: POLYMATH });
-        // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
-        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({ from: POLYMATH });
-        let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, POLYMATH]);
-        await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, { from: POLYMATH });
-        I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
-
-        tx = await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, { from: POLYMATH });
-        assert.equal(tx.logs[0].args._nameKey, "ModuleRegistry");
-        assert.equal(tx.logs[0].args._newAddress, I_ModuleRegistryProxy.address);
-
-        // STEP 3: Deploy the GeneralTransferManagerFactory
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: POLYMATH });
-        assert.notEqual(
-            I_GeneralTransferManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManagerFactory contract was not deployed"
-        );
+        [
+            I_PolymathRegistry,
+            I_PolyToken,
+            I_FeatureRegistry,
+            I_ModuleRegistry,
+            I_ModuleRegistryProxy,
+            I_MRProxied,
+            I_GeneralTransferManagerFactory,
+            I_STFactory,
+            I_SecurityTokenRegistry,
+            I_SecurityTokenRegistryProxy,
+            I_STRProxied
+        ] = instances;
 
         // STEP 4: Deploy the GeneralDelegateManagerFactory
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: POLYMATH });
-        assert.notEqual(
-            I_GeneralPermissionManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManagerFactory contract was not deployed"
-        );
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(POLYMATH, I_MRProxied, I_PolyToken.address, 0);
 
         // STEP 5: Deploy the CappedSTOFactory
-        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, { from: POLYMATH });
-        assert.notEqual(
-            I_CappedSTOFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "CappedSTOFactory contract was not deployed"
-        );
-
-        // Step 8: Deploy the STFactory contract
-        I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, { from: POLYMATH });
-        assert.notEqual(I_STFactory.address.valueOf(), "0x0000000000000000000000000000000000000000", "STFactory contract was not deployed");
-
-        // Step 9: Deploy the SecurityTokenRegistry
-
-        I_SecurityTokenRegistry = await SecurityTokenRegistry.new({ from: POLYMATH });
-
-        assert.notEqual(
-            I_SecurityTokenRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "SecurityTokenRegistry contract was not deployed"
-        );
-
-        // Step 10: update the registries addresses from the PolymathRegistry contract
-        I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({ from: POLYMATH });
-        let bytesProxy = encodeProxyCall(STRProxyParameters, [
-            I_PolymathRegistry.address,
-            I_STFactory.address,
-            REGFEE,
-            REGFEE,
-            I_PolyToken.address,
-            POLYMATH
-        ]);
-        await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, { from: POLYMATH });
-        I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
-
-        // Step 10: Deploy the FeatureRegistry
-
-        I_FeatureRegistry = await FeatureRegistry.new(I_PolymathRegistry.address, {
-            from: POLYMATH
-        });
-        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, { from: POLYMATH });
-
-        assert.notEqual(
-            I_FeatureRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "FeatureRegistry contract was not deployed"
-        );
-
-        // Step 11: update the registries addresses from the PolymathRegistry contract
-        await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_STRProxied.address, { from: POLYMATH });
-        await I_MRProxied.updateFromRegistry({ from: POLYMATH });
-
-        // STEP 6: Register the Modules with the ModuleRegistry contract
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: POLYMATH });
-        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: POLYMATH });
-
-        // (B) :  Register the GeneralDelegateManagerFactory
-        await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: POLYMATH });
-        await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: POLYMATH });
-
-        // (C) :  Register the CappedSTOFactory
-        await I_MRProxied.registerModule(I_CappedSTOFactory.address, { from: POLYMATH });
-        await I_MRProxied.verifyModule(I_CappedSTOFactory.address, true, { from: POLYMATH });
+        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(POLYMATH, I_MRProxied, I_PolyToken.address, STOSetupCost);
 
         // Step 12: Mint tokens to ISSUERs
         await I_PolyToken.getTokens(REGFEE * 2, ISSUER1);
@@ -257,16 +162,16 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         // Printing all the contract addresses
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
-        PolymathRegistry:                  ${PolymathRegistry.address}
-        SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
-        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
-        ModuleRegistryProxy:               ${ModuleRegistryProxy.address}
-        ModuleRegistry:                    ${ModuleRegistry.address}
-        FeatureRegistry:                   ${FeatureRegistry.address}
+        PolymathRegistry:                  ${I_PolymathRegistry.address}
+        SecurityTokenRegistryProxy:        ${I_SecurityTokenRegistryProxy.address}
+        SecurityTokenRegistry:             ${I_SecurityTokenRegistry.address}
+        ModuleRegistryProxy:               ${I_ModuleRegistryProxy.address}
+        ModuleRegistry:                    ${I_ModuleRegistry.address}
+        FeatureRegistry:                   ${I_FeatureRegistry.address}
 
-        STFactory:                         ${STFactory.address}
-        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
-        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
+        STFactory:                         ${I_STFactory.address}
+        GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:   ${I_GeneralPermissionManagerFactory.address}
 
         SecurityToken TOK1:                ${I_SecurityToken1.address}
         SecurityToken TOK2:                ${I_SecurityToken2.address}

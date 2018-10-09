@@ -730,7 +730,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _controller address of the controller
      */
     function setController(address _controller) public onlyOwner {
-        require(!controllerDisabled,"Controller functions are disabled");
+        require(!controllerDisabled);
         emit SetController(controller, _controller);
         controller = _controller;
     }
@@ -740,7 +740,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @dev enabled via feature switch "disableControllerAllowed"
      */
     function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
-        require(!controllerDisabled,"Controller functions are disabled");
+        require(!controllerDisabled);
         controllerDisabled = true;
         delete controller;
         emit DisableController(now);

@@ -65,17 +65,7 @@ contract BlacklistTransferManager is ITransferManager {
         bytes32 _blacklist
     );
 
-    // Emit when investor is deleted from the blacklist type
-    event LogTransfer(
-        uint256 _endTime,
-        uint256 _startTime,
-        uint256 _repeat,
-        uint256 _blacklist,
-        uint256 _repeatar,
-        uint256 _now
-        
-    );
-
+   
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
@@ -116,7 +106,7 @@ contract BlacklistTransferManager is ITransferManager {
                         uint256 blacklistTime = (endTimeTemp.sub(startTimeTemp)).add(repeatPeriodTimeTemp);
                         // Find the repeating parameter that will be used to calculate the new startTime and endTime
                         // based on the new current time value   
-                        uint256 repeater = now.div(endTimeTemp.add(repeatPeriodTimeTemp));
+                        uint256 repeater = (now.sub(startTimeTemp)).div(blacklistTime); 
                         if (startTimeTemp.add(blacklistTime.mul(repeater)) <= now && endTimeTemp.add(blacklistTime.mul(repeater)) >= now) {
                             return Result.INVALID;
                         }

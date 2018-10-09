@@ -6,3 +6,4 @@ module.exports = {
     deepSkip: true,
     skipFiles: ['external', 'flat', 'helpers']
 };
+

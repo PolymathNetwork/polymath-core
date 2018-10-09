@@ -17,6 +17,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
         uint256 startTime;
         uint256 nextTime;
         uint256 interval;
+        uint256 index;
         uint256[] checkpointIds;
         uint256[] timestamps;
         uint256[] periods;
@@ -44,19 +45,31 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
     }
 
     function addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval) onlyOwner external {
-        // TODO: Ensure unique names
         require(_startTime > now);
         require(schedules[_name].name == bytes32(0));
         schedules[_name].name = _name;
         schedules[_name].startTime = _startTime;
         schedules[_name].nextTime = _startTime;
         schedules[_name].interval = _interval;
+        schedules[_name].index = names.length;
         names.push(_name);
     }
 
+    function removeSchedule(bytes32 _name) onlyOwner external {
+        require(schedules[_name].name == _name);
+        uint256 index = schedules[_name].index;
+        names[index] = names[names.length - 1];
+        names.length--;
+        if (index != names.length) {
+            schedules[names[index]].index = index;
+        }
+        delete schedules[_name];
+    }
+
+
     /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
     function verifyTransfer(address /* _from */, address /* _to */, uint256 /* _amount */, bytes /* _data */, bool _isTransfer) public returns(Result) {
-        if (!_isTransfer) {
+        if (!paused || !_isTransfer) {
             return Result.NA;
         }
         uint256 i;

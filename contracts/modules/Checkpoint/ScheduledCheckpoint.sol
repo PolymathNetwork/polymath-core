@@ -69,21 +69,11 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
 
     /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
     function verifyTransfer(address /* _from */, address /* _to */, uint256 /* _amount */, bytes /* _data */, bool _isTransfer) public returns(Result) {
+        require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
         if (paused || !_isTransfer) {
             return Result.NA;
         }
-        uint256 i;
-        for (i = 0; i < names.length; i++) {
-            Schedule storage schedule = schedules[names[i]];
-            if (schedule.nextTime <= now) {
-                uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
-                uint256 periods = now.sub(schedule.nextTime).div(schedule.interval).add(1);
-                schedule.timestamps.push(schedule.nextTime);
-                schedule.nextTime = periods.mul(schedule.interval).add(schedule.nextTime);
-                schedule.checkpointIds.push(checkpointId);
-                schedule.periods.push(periods);
-            }
-        }
+        _updateAll();
         return Result.NA;
     }
 
@@ -97,6 +87,33 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
             schedules[_name].timestamps,
             schedules[_name].periods
         );
+    }
+
+    function update(bytes32 _name) public onlyOwner {
+        _update(_name);
+    }
+
+    function _update(bytes32 _name) internal {
+        Schedule storage schedule = schedules[_name];
+        if (schedule.nextTime <= now) {
+            uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
+            uint256 periods = now.sub(schedule.nextTime).div(schedule.interval).add(1);
+            schedule.timestamps.push(schedule.nextTime);
+            schedule.nextTime = periods.mul(schedule.interval).add(schedule.nextTime);
+            schedule.checkpointIds.push(checkpointId);
+            schedule.periods.push(periods);
+        }
+    }
+
+    function updateAll() public onlyOwner {
+        _updateAll();
+    }
+
+    function _updateAll() internal {
+        uint256 i;
+        for (i = 0; i < names.length; i++) {
+            _update(names[i]);
+        }
     }
 
     /**

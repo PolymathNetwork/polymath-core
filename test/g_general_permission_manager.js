@@ -219,7 +219,7 @@ contract("GeneralPermissionManager", accounts => {
         });
 
         it("Should fail in adding the permission to the delegate --msg.sender doesn't have permission", async () => {
-            await catchRevert(I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: account_investor1 }));
+            await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_investor1 }));
         });
 
         it("Should fail to provide the permission-- because delegate is not yet added", async () => {
@@ -230,14 +230,11 @@ contract("GeneralPermissionManager", accounts => {
             );
         });
 
-        it("Should add the permission to the delegate", async () => {
-            let tx = await I_GeneralPermissionManager.addPermission(account_delegate, delegateDetails, { from: token_owner });
-        });
-
         it("Should fail in adding the delegate -- msg.sender doesn't have permission", async() => {
             await catchRevert(
                 I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_investor1})
             );
+        });
 
         it("Should fail in adding the delegate -- no delegate details provided", async() => {
             await catchRevert(

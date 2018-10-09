@@ -138,7 +138,7 @@ contract('ScheduledCheckpoint', accounts => {
         // STEP 4(c): Deploy the PercentageTransferManager
         I_ScheduledCheckpointFactory = await ScheduledCheckpointFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
         assert.notEqual(
-            I_PercentageTransferManagerFactory.address.valueOf(),
+            I_ScheduledCheckpointFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
             "ScheduledCheckpointFactory contract was not deployed"
         );
@@ -249,7 +249,25 @@ contract('ScheduledCheckpoint', accounts => {
 
     describe("Buy tokens using on-chain whitelist", async() => {
 
-        it("Should Buy the tokens", async() => {
+        it("Should successfully attach the ScheduledCheckpoint with the security token", async () => {
+            const tx = await I_SecurityToken.addModule(I_ScheduledCheckpointFactory.address, "", 0, 0, { from: token_owner });
+            assert.equal(tx.logs[2].args._types[0].toNumber(), 4, "ScheduledCheckpoint doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[1].toNumber(), 2, "ScheduledCheckpoint doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name)
+                .replace(/\u0000/g, ''),
+                "ScheduledCheckpoint",
+                "ScheduledCheckpoint module was not added"
+            );
+            I_ScheduledCheckpoint = ScheduledCheckpoint.at(tx.logs[2].args._module);
+        });
+        let startTime = latestTime() + 100;
+        let interval = 24 * 60 * 60;
+        it("Should create a daily checkpoint", async () => {
+            await I_ScheduledCheckpoint.addSchedule("CP1", startTime, interval, {from: token_owner});
+        });
+
+        it("Should Buy the tokens for account_investor1", async() => {
             // Add the Investor in to the whitelist
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
@@ -267,6 +285,9 @@ contract('ScheduledCheckpoint', accounts => {
 
             // Jump time
             await increaseTime(5000);
+            // We should be after the first scheduled checkpoint, and before the second
+            assert.isTrue(latestTime() > startTime);
+            assert.isTrue(latestTime() <= startTime + interval);
 
             // Mint some tokens
             await I_SecurityToken.mint(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
@@ -277,7 +298,14 @@ contract('ScheduledCheckpoint', accounts => {
             );
         });
 
-        it("Should Buy some more tokens", async() => {
+        it("Should have checkpoint created with correct balances", async() => {
+            let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
+            checkSchedule(cp1, "CP1", startTime, startTime + interval, interval, [1], [startTime], [1]);
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 0)).toNumber(), 0);
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 1)).toNumber(), 0);
+        });
+
+        it("Should Buy some more tokens for account_investor2", async() => {
             // Add the Investor in to the whitelist
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
@@ -293,6 +321,10 @@ contract('ScheduledCheckpoint', accounts => {
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
 
+            // We should be after the first scheduled checkpoint, and before the second
+            assert.isTrue(latestTime() > startTime);
+            assert.isTrue(latestTime() <= startTime + interval);
+
             // Mint some tokens
             await I_SecurityToken.mint(account_investor2, web3.utils.toWei('1', 'ether'), { from: token_owner });
 
@@ -302,20 +334,14 @@ contract('ScheduledCheckpoint', accounts => {
             );
         });
 
-        it("Should successfully attach the ScheduledCheckpoint with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_ScheduledCheckpointFactory.address, bytesSTO, 0, 0, { from: token_owner });
-            assert.equal(tx.logs[2].args._types[0].toNumber(), 4, "ScheduledCheckpoint doesn't get deployed");
-            assert.equal(tx.logs[2].args._types[0].toNumber(), 2, "ScheduledCheckpoint doesn't get deployed");
-            assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name)
-                .replace(/\u0000/g, ''),
-                "ScheduledCheckpoint",
-                "ScheduledCheckpoint module was not added"
-            );
-            I_ScheduledCheckpoint = ScheduledCheckpoint.at(tx.logs[2].args._module);
+        it("No additional checkpoints created", async() => {
+            let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
+            checkSchedule(cp1, "CP1", startTime, startTime + interval, interval, [1], [startTime], [1]);
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 0)).toNumber(), 0);
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 1)).toNumber(), 0);
         });
 
-        it("Add a new token holder", async() => {
+        it("Add a new token holder - account_investor3", async() => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
@@ -347,17 +373,23 @@ contract('ScheduledCheckpoint', accounts => {
 
     });
 
-    describe("ScheduledCheckpoint Factory test cases", async() => {
-
-        it("Should get the exact details of the factory", async() => {
-            assert.equal(await I_ScheduledCheckpointFactory.setupCost.call(),0);
-            assert.equal((await I_ScheduledCheckpointFactory.getTypes.call())[0],2);
-            assert.equal(web3.utils.toAscii(await I_ScheduledCheckpointFactory.getName.call())
-                        .replace(/\u0000/g, ''),
-                        "ScheduledCheckpoint",
-                        "Wrong Module added");
-        });
-
-    });
-
 });
+
+function checkSchedule(schedule, name, startTime, nextTime, interval, checkpoints, timestamps, periods) {
+    assert.equal(web3.utils.toAscii(schedule[0]).replace(/\u0000/g, ''), name);
+    assert.equal(schedule[1], startTime);
+    assert.equal(schedule[2], nextTime);
+    assert.equal(schedule[3], interval);
+    assert.equal(schedule[4].length, checkpoints.length);
+    for (let i = 0; i < checkpoints.length; i++) {
+        assert.equal(schedule[4][i].toNumber(), checkpoints[i]);
+    }
+    assert.equal(schedule[5].length, timestamps.length);
+    for (let i = 0; i < timestamps.length; i++) {
+        assert.equal(schedule[5][i].toNumber(), timestamps[i]);
+    }
+    assert.equal(schedule[6].length, periods.length);
+    for (let i = 0; i < periods.length; i++) {
+        assert.equal(schedule[6][i].toNumber(), periods[i]);
+    }
+}

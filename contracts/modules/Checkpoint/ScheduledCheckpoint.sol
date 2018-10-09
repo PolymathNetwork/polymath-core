@@ -69,7 +69,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
 
     /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
     function verifyTransfer(address /* _from */, address /* _to */, uint256 /* _amount */, bytes /* _data */, bool _isTransfer) public returns(Result) {
-        if (!paused || !_isTransfer) {
+        if (paused || !_isTransfer) {
             return Result.NA;
         }
         uint256 i;
@@ -78,13 +78,25 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
             if (schedule.nextTime <= now) {
                 uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
                 uint256 periods = now.sub(schedule.nextTime).div(schedule.interval).add(1);
+                schedule.timestamps.push(schedule.nextTime);
                 schedule.nextTime = periods.mul(schedule.interval).add(schedule.nextTime);
                 schedule.checkpointIds.push(checkpointId);
-                schedule.timestamps.push(now);
                 schedule.periods.push(periods);
             }
         }
         return Result.NA;
+    }
+
+    function getSchedule(bytes32 _name) view public returns(bytes32, uint256, uint256, uint256, uint256[], uint256[], uint256[]){
+        return (
+            schedules[_name].name,
+            schedules[_name].startTime,
+            schedules[_name].nextTime,
+            schedules[_name].interval,
+            schedules[_name].checkpointIds,
+            schedules[_name].timestamps,
+            schedules[_name].periods
+        );
     }
 
     /**

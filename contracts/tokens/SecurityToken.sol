@@ -505,9 +505,9 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         return true;
     }
 
-    function _updateTransfer(address _from, address _to, uint256 _value, bytes _data) internal returns(bool) {
-        bool verified = _verifyTransfer(_from, _to, _value, _data, true);
+    function _updateTransfer(address _from, address _to, uint256 _value, bytes _data) internal nonReentrant returns(bool) {
         _adjustInvestorCount(_from, _to, _value);
+        bool verified = _verifyTransfer(_from, _to, _value, _data, true);
         _adjustBalanceCheckpoints(_from);
         _adjustBalanceCheckpoints(_to);
         return verified;

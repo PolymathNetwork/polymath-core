@@ -4,7 +4,6 @@ import "./ICheckpoint.sol";
 import "../TransferManager/ITransferManager.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-/* import "../../libraries/BokkyPooBahsDateTimeLibrary.sol"; */
 
 /**
  * @title Burn module for burning tokens and keeping track of burnt amounts
@@ -50,9 +49,9 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
      * @param _startTime start time of the schedule (first checkpoint)
      * @param _interval interval at which checkpoints should be created
      */
-    function addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval) onlyOwner external {
-        require(_startTime > now);
-        require(schedules[_name].name == bytes32(0));
+    function addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval) external onlyOwner {
+        require(_startTime > now, "Start time must be in the future");
+        require(schedules[_name].name == bytes32(0), "Name already in use");
         schedules[_name].name = _name;
         schedules[_name].startTime = _startTime;
         schedules[_name].nextTime = _startTime;
@@ -65,8 +64,8 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
      * @notice removes a schedule for checkpoints
      * @param _name name of the schedule to be removed
      */
-    function removeSchedule(bytes32 _name) onlyOwner external {
-        require(schedules[_name].name == _name);
+    function removeSchedule(bytes32 _name) external onlyOwner {
+        require(schedules[_name].name == _name, "Name does not exist");
         uint256 index = schedules[_name].index;
         names[index] = names[names.length - 1];
         names.length--;
@@ -111,7 +110,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
      * @notice manually triggers update outside of transfer request for named schedule (can be used to reduce user gas costs)
      * @param _name name of the schedule
      */
-    function update(bytes32 _name) onlyOwner external {
+    function update(bytes32 _name) external onlyOwner {
         _update(_name);
     }
 

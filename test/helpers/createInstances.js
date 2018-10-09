@@ -12,6 +12,7 @@ const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpo
 const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpointFactory.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
 const SingleTradeVolumeRestrictionManagerFactory = artifacts.require('./SingleTradeVolumeRestrictionManagerFactory.sol');
+const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const USDTieredSTOProxyFactory = artifacts.require("./USDTieredSTOProxyFactory");
@@ -33,6 +34,7 @@ const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 // Contract Instance Declaration
 let I_USDTieredSTOProxyFactory;
 let I_USDTieredSTOFactory;
+let I_TrackedRedemptionFactory;
 let I_SingleTradeVolumeRestrictionManagerFactory;
 let I_ManualApprovalTransferManagerFactory;
 let I_VolumeRestrictionTransferManagerFactory;
@@ -359,6 +361,21 @@ export async function deployEtherDividendAndVerifyed(accountPolymath, MRProxyIns
     return new Array(I_EtherDividendCheckpointFactory);
 }
 
+
+/// Deploy the Burn Module
+
+export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_TrackedRedemptionFactory = await TrackedRedemptionFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+
+    assert.notEqual(
+        I_TrackedRedemptionFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "TrackedRedemptionFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_TrackedRedemptionFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_TrackedRedemptionFactory);
+}
 
 
 

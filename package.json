@@ -83,7 +83,7 @@
     "fast-csv": "^2.4.1",
     "ganache-cli": "^6.1.8",
     "sol-merger": "^0.1.2",
-    "solidity-coverage": "^0.5.10",
+    "solidity-coverage": "^0.5.11",
     "solidity-docgen": "^0.1.0",
     "solium": "^1.1.6",
     "truffle": "^4.1.13",

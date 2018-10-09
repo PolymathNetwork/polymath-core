@@ -65,7 +65,9 @@ contract('WeightedVoteCheckpoint', accounts => {
     let I_PolyToken;
     let I_PolymathRegistry;
     let I_WeightedVoteCheckpointFactory;
+    let P_WeightedVoteCheckpointFactory;
     let I_WeightedVoteCheckpoint;
+    let P_WeightedVoteCheckpoint;
 
     // SecurityToken Details
     const name = "Team";
@@ -147,8 +149,6 @@ contract('WeightedVoteCheckpoint', accounts => {
         );
 
        // STEP 5: Deploy the WeightedVoteCheckpointFactory
-
-        console.log("1");
     
         I_WeightedVoteCheckpointFactory = await WeightedVoteCheckpointFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
         assert.notEqual(
@@ -157,6 +157,16 @@ contract('WeightedVoteCheckpoint', accounts => {
             "WeightedVoteCheckpointFactory contract was not deployed"
         );
         console.log("deployed weight vote factory to "+I_WeightedVoteCheckpointFactory.address);
+
+        // STEP 6: Deploy the WeightedVoteCheckpointFactory with fees
+
+        P_WeightedVoteCheckpointFactory = await WeightedVoteCheckpointFactory.new(I_PolyToken.address, web3.utils.toWei("500","ether"), 0, 0, {from:account_polymath});
+
+        assert.notEqual(
+            P_WeightedVoteCheckpointFactory.address.valueOf(),
+            "0x0000000000000000000000000000000000000000",
+            "WeightedVoteCheckpointFactory contract with fees was not deployed"
+        );
 
         // STEP 7: Deploy the DummySTOFactory
 
@@ -213,8 +223,8 @@ contract('WeightedVoteCheckpoint', accounts => {
       await I_MRProxied.verifyModule(I_WeightedVoteCheckpointFactory.address, true, { from: account_polymath });
 
       // (B) :  Register the Paid GeneralDelegateManagerFactory
-      // await I_MRProxied.registerModule(P_GeneralPermissionManagerFactory.address, { from: account_polymath });
-      // await I_MRProxied.verifyModule(P_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+      await I_MRProxied.registerModule(P_WeightedVoteCheckpointFactory.address, { from: account_polymath });
+      await I_MRProxied.verifyModule(P_WeightedVoteCheckpointFactory.address, true, { from: account_polymath });
 
       // (C) : Register the STOFactory
       await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_polymath });
@@ -274,11 +284,33 @@ contract('WeightedVoteCheckpoint', accounts => {
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
+        it("Should fail to attach the WeightedVoteCheckpoint module to the security token if fee not paid", async () => {
+            let errorThrown = false;
+            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            try {
+                const tx = await I_SecurityToken.addModule(P_WeightedVoteCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
+            } catch(error) {
+                console.log(`       tx -> failed because setup fee is not paid`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("Should successfully attach the WeightedVoteCheckpoint module to the security token after fees been paid", async () => {
+            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
+            const tx = await I_SecurityToken.addModule(P_WeightedVoteCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
+            console.log("weightVoteFactory PAID Address is " + P_WeightedVoteCheckpointFactory.address);
+            console.log(tx.logs);
+            assert.equal(tx.logs[3].args._types[0].toNumber(), checkpointKey, "WeightedVoteCheckpoint doesn't get deployed");
+            assert.equal(web3.utils.hexToUtf8(tx.logs[3].args._name),"WeightedVoteCheckpoint","WeightedVoteCheckpoint module was not added");
+            P_WeightedVoteCheckpoint = WeightedVoteCheckpoint.at(tx.logs[3].args._module);
+        });
 
         it("Should successfully attach the Weighted Vote Checkpoint factory with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_WeightedVoteCheckpointFactory.address, "0x", 0, 0, { from: token_owner });
             console.log("weightVoteFactory Address is " + I_WeightedVoteCheckpointFactory.address);
-            console.log(tx.logs[2].args);
+            console.log(tx.logs);
             assert.equal(tx.logs[2].args._types[0].toNumber(), checkpointKey, "WeightedVoteCheckpoint doesn't get deployed");
             assert.equal(web3.utils.hexToUtf8(tx.logs[2].args._name),"WeightedVoteCheckpoint","WeightedVoteCheckpoint module was not added");
             I_WeightedVoteCheckpoint = WeightedVoteCheckpoint.at(tx.logs[2].args._module);
@@ -298,6 +330,7 @@ contract('WeightedVoteCheckpoint', accounts => {
                     gas: 500000
                 });
             await I_SecurityToken.mint(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });
+            assert.equal(await I_SecurityToken.balanceOf(account_investor1), web3.utils.toWei('1', 'ether'));
         });
 
         it("Should successfully mint tokens for second investor account", async() => {
@@ -312,6 +345,7 @@ contract('WeightedVoteCheckpoint', accounts => {
                     gas: 500000
                 });
             await I_SecurityToken.mint(account_investor2, web3.utils.toWei('2', 'ether'), { from: token_owner });
+            assert.equal(await I_SecurityToken.balanceOf(account_investor2), web3.utils.toWei('2', 'ether'));
         });
     });
 
@@ -429,6 +463,8 @@ contract('WeightedVoteCheckpoint', accounts => {
         it("Should successfully cast a vote from first investor", async() => {
             let tx = await I_WeightedVoteCheckpoint.castVote(false, 0, { from: account_investor1 });
 
+            console.log(tx.logs);
+
             assert.equal(tx.logs[0].args._investor, account_investor1, "Failed to record vote");
             assert.equal(tx.logs[0].args._vote, false, "Failed to record vote");
             assert.equal(tx.logs[0].args._weight, web3.utils.toWei('1', 'ether'), "Failed to record vote");
@@ -466,6 +502,34 @@ contract('WeightedVoteCheckpoint', accounts => {
             assert.equal(tx[0], web3.utils.toWei('2', 'ether'), "Failed to get results");
             assert.equal(tx[1], web3.utils.toWei('1', 'ether'), "Failed to get results");
             assert.equal(tx[2], 0, "Failed to get results");
+        });
+    });
+
+    describe("Active/Deactive Ballot", async() => {
+
+        it("Should successfully deactive the ballot", async() => {
+            let tx = await I_WeightedVoteCheckpoint.setActiveStatsBallot(0, false, { from: token_owner });
+            let tx2 = await I_WeightedVoteCheckpoint.ballots(0,  { from: token_owner });
+            assert.equal(tx2[7], false);
+        });
+
+        it("Should fail to cast a vote if ballot is deactivated", async() => {
+            let errorThrown = false;
+            try {
+                let tx = await I_WeightedVoteCheckpoint.castVote(true,0, { from: account_investor1 });
+            } catch(error) {
+                console.log(`       tx -> failed because ballot is deactivated`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+
+        it("Should successfully active the same ballot again", async() => {
+            let tx = await I_WeightedVoteCheckpoint.setActiveStatsBallot(0, true, { from: token_owner });
+            let tx2 = await I_WeightedVoteCheckpoint.ballots(0,  { from: token_owner });
+            assert.equal(tx2[7], true);
         });
     });
 

@@ -20,6 +20,7 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
         uint256 cumulativeNo;
         uint256 numVotes;
         mapping(address => Vote) voteByAddress;
+        bool isActive;
     }
 
     Ballot[] public ballots;
@@ -32,6 +33,7 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
 
     event BallotCreated(uint256 _startTime, uint256 _endTime, uint256 _ballotId, uint256 _checkpointId);
     event VoteCasted(uint256 _ballotId, uint256 _time, address indexed _investor, uint256 _weight, bool _vote);
+    event BallotDeactivated(uint256 _ballotId, bool _isActive);
 
     /**
      * @notice Constructor
@@ -65,6 +67,7 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
     function castVote(bool _vote, uint256 _ballotId) public returns (bool) {
         require(now > ballots[_ballotId].startTime && now < ballots[_ballotId].endTime, "Voting period is not active.");
         require(ballots[_ballotId].voteByAddress[msg.sender].time == 0, "Token holder has already voted.");
+        require(ballots[_ballotId].isActive == true, "This ballot is deactiveated.");
         uint256 checkpointId = ballots[_ballotId].checkpointId;
         uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender,checkpointId);
         require(weight > 0, "Token Holder balance is zero.");
@@ -91,7 +94,7 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         uint256 currentSupply = ISecurityToken(securityToken).totalSupply();
         uint256 endTime = now.add(_duration);
-        ballots.push(Ballot(checkpointId,currentSupply,now,endTime,0,0,0));
+        ballots.push(Ballot(checkpointId,currentSupply,now,endTime,0,0,0,true));
         emit BallotCreated(now, endTime, ballotId, checkpointId);
         return true;
     }
@@ -107,8 +110,21 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
         require(_endTime >= _startTime);
         uint256 ballotId = ballots.length;
         uint256 supplyAtCheckpoint = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
-        ballots.push(Ballot(_checkpointId,supplyAtCheckpoint,_startTime,_endTime,0,0,0));
+        ballots.push(Ballot(_checkpointId,supplyAtCheckpoint,_startTime,_endTime,0,0,0, true));
         emit BallotCreated(_startTime, _endTime, ballotId, _checkpointId);
+        return true;
+    }
+
+    /**
+     * @notice Allows the token issuer to set the active stats of a ballot
+     * @param _ballotId The index of the target ballot
+     * @param _isActive The bool value of the active stats of the ballot
+     * @return bool success
+     */
+    function setActiveStatsBallot(uint256 _ballotId, bool _isActive) public onlyOwner returns (bool) {
+        require(now > ballots[_ballotId].startTime && now < ballots[_ballotId].endTime, "Voting period is not active.");
+        ballots[_ballotId].isActive = _isActive;
+        emit BallotDeactivated(_ballotId, _isActive);
         return true;
     }
 

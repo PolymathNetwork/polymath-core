@@ -141,24 +141,24 @@ contract('GeneralPermissionManager', accounts => {
             "GeneralTransferManagerFactory contract was not deployed"
         );
 
-        // STEP 5: Deploy the GeneralDelegateManagerFactory
+        // STEP 5: Deploy the GeneralPermissionManagerFactory
 
         I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
         assert.notEqual(
             I_GeneralPermissionManagerFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManagerFactory contract was not deployed"
+            "GeneralPermissionManagerFactory contract was not deployed"
         );
 
-        // STEP 6: Deploy the GeneralDelegateManagerFactory
+        // STEP 6: Deploy the GeneralPermissionManagerFactory
 
         P_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, web3.utils.toWei("500","ether"), 0, 0, {from:account_polymath});
 
         assert.notEqual(
             P_GeneralPermissionManagerFactory.address.valueOf(),
             "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManagerFactory contract was not deployed"
+            "GeneralPermissionManagerFactory contract was not deployed"
         );
 
         // STEP 7: Deploy the DummySTOFactory
@@ -211,11 +211,11 @@ contract('GeneralPermissionManager', accounts => {
       await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
       await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
 
-      // (B) :  Register the GeneralDelegateManagerFactory
+      // (B) :  Register the GeneralPermissionManagerFactory
       await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
       await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
 
-      // (B) :  Register the Paid GeneralDelegateManagerFactory
+      // (B) :  Register the Paid GeneralPermissionManagerFactory
       await I_MRProxied.registerModule(P_GeneralPermissionManagerFactory.address, { from: account_polymath });
       await I_MRProxied.verifyModule(P_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
 

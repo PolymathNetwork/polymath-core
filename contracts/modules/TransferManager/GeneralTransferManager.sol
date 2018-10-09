@@ -3,17 +3,6 @@ pragma solidity ^0.4.24;
 import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                                        Owner       WHITELIST      FLAGS
-// changeIssuanceAddress                    X                          X
-// changeAllowAllTransfers                  X                          X
-// changeAllowAllWhitelistTransfers         X                          X
-// changeAllowAllWhitelistIssuances         X                          X
-// modifyWhitelist                          X             X
-// modifyWhitelistMulti                     X             X
-
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
@@ -52,19 +41,19 @@ contract GeneralTransferManager is ITransferManager {
     bool public allowAllBurnTransfers = false;
 
     // Emit when Issuance address get changed
-    event LogChangeIssuanceAddress(address _issuanceAddress);
+    event ChangeIssuanceAddress(address _issuanceAddress);
     // Emit when there is change in the flag variable called allowAllTransfers
-    event LogAllowAllTransfers(bool _allowAllTransfers);
+    event AllowAllTransfers(bool _allowAllTransfers);
     // Emit when there is change in the flag variable called allowAllWhitelistTransfers
-    event LogAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
+    event AllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
     // Emit when there is change in the flag variable called allowAllWhitelistIssuances
-    event LogAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
+    event AllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
     // Emit when there is change in the flag variable called allowAllBurnTransfers
-    event LogAllowAllBurnTransfers(bool _allowAllBurnTransfers);
+    event AllowAllBurnTransfers(bool _allowAllBurnTransfers);
     // Emit when there is change in the flag variable called signingAddress
-    event LogChangeSigningAddress(address _signingAddress);
+    event ChangeSigningAddress(address _signingAddress);
     // Emit when investor details get modified related to their whitelisting
-    event LogModifyWhitelist(
+    event ModifyWhitelist(
         address _investor,
         uint256 _dateAdded,
         address _addedBy,
@@ -81,7 +70,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     constructor (address _securityToken, address _polyAddress)
     public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
@@ -98,7 +87,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
         issuanceAddress = _issuanceAddress;
-        emit LogChangeIssuanceAddress(_issuanceAddress);
+        emit ChangeIssuanceAddress(_issuanceAddress);
     }
 
     /**
@@ -107,7 +96,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function changeSigningAddress(address _signingAddress) public withPerm(FLAGS) {
         signingAddress = _signingAddress;
-        emit LogChangeSigningAddress(_signingAddress);
+        emit ChangeSigningAddress(_signingAddress);
     }
 
     /**
@@ -118,7 +107,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function changeAllowAllTransfers(bool _allowAllTransfers) public withPerm(FLAGS) {
         allowAllTransfers = _allowAllTransfers;
-        emit LogAllowAllTransfers(_allowAllTransfers);
+        emit AllowAllTransfers(_allowAllTransfers);
     }
 
     /**
@@ -129,7 +118,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function changeAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers) public withPerm(FLAGS) {
         allowAllWhitelistTransfers = _allowAllWhitelistTransfers;
-        emit LogAllowAllWhitelistTransfers(_allowAllWhitelistTransfers);
+        emit AllowAllWhitelistTransfers(_allowAllWhitelistTransfers);
     }
 
     /**
@@ -140,7 +129,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function changeAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances) public withPerm(FLAGS) {
         allowAllWhitelistIssuances = _allowAllWhitelistIssuances;
-        emit LogAllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
+        emit AllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
     /**
@@ -151,7 +140,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function changeAllowAllBurnTransfers(bool _allowAllBurnTransfers) public withPerm(FLAGS) {
         allowAllBurnTransfers = _allowAllBurnTransfers;
-        emit LogAllowAllBurnTransfers(_allowAllBurnTransfers);
+        emit AllowAllBurnTransfers(_allowAllBurnTransfers);
     }
 
     /**
@@ -162,7 +151,7 @@ contract GeneralTransferManager is ITransferManager {
     * b) Seller's sale lockup period is over
     * c) Buyer's purchase lockup is over
     */
-    function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
@@ -172,18 +161,18 @@ contract GeneralTransferManager is ITransferManager {
                 return Result.VALID;
             }
             if (allowAllWhitelistTransfers) {
-                //Anyone on the whitelist can transfer, regardless of block number
-                return (onWhitelist(_to) && onWhitelist(_from)) ? Result.VALID : Result.NA;
+                //Anyone on the whitelist can transfer, regardless of time
+                return (_onWhitelist(_to) && _onWhitelist(_from)) ? Result.VALID : Result.NA;
             }
             if (allowAllWhitelistIssuances && _from == issuanceAddress) {
-                if (!whitelist[_to].canBuyFromSTO && isSTOAttached()) {
+                if (!whitelist[_to].canBuyFromSTO && _isSTOAttached()) {
                     return Result.NA;
                 }
-                return onWhitelist(_to) ? Result.VALID : Result.NA;
+                return _onWhitelist(_to) ? Result.VALID : Result.NA;
             }
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
-            return ((onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
-                (onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA;
+            return ((_onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
+                (_onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA;
         }
         return Result.NA;
     }
@@ -199,7 +188,7 @@ contract GeneralTransferManager is ITransferManager {
     function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO) public withPerm(WHITELIST) {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
-        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**
@@ -254,20 +243,20 @@ contract GeneralTransferManager is ITransferManager {
         require(_validFrom <= now, "ValidFrom is too early");
         require(_validTo >= now, "ValidTo is too late");
         bytes32 hash = keccak256(abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo));
-        checkSig(hash, _v, _r, _s);
+        _checkSig(hash, _v, _r, _s);
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
-        emit LogModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**
      * @notice used to verify the signature
      */
-    function checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
+    function _checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
         address signer = ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash)), _v, _r, _s);
-        require(signer == ISecurityToken(securityToken).owner() || signer == signingAddress, "Incorrect signer");
+        require(signer == Ownable(securityToken).owner() || signer == signingAddress, "Incorrect signer");
     }
 
     /**
@@ -285,7 +274,7 @@ contract GeneralTransferManager is ITransferManager {
             & also checks whether the KYC of investor get expired or not
      * @param _investor Address of the investor
      */
-    function onWhitelist(address _investor) internal view returns(bool) {
+    function _onWhitelist(address _investor) internal view returns(bool) {
         return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) &&
             (whitelist[_investor].expiryTime >= now));
     }
@@ -293,12 +282,9 @@ contract GeneralTransferManager is ITransferManager {
     /**
      * @notice Internal function use to know whether the STO is attached or not
      */
-    function isSTOAttached() internal view returns(bool) {
-        address _sto;
-        (, _sto) = ISecurityToken(securityToken).getModule(3, 0);
-        if (_sto == address(0))
-            return false;
-        return true;
+    function _isSTOAttached() internal view returns(bool) {
+        bool attached = ISecurityToken(securityToken).getModulesByType(3).length > 0;
+        return attached;
     }
 
 }

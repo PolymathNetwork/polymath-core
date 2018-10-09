@@ -9,6 +9,7 @@ const USDTieredSTO = artifacts.require("./USDTieredSTO.sol");
 const MockOracle = artifacts.require("./MockOracle.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
+const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 
 const Web3 = require("web3");
 const BigNumber = require("bignumber.js");
@@ -219,6 +220,7 @@ contract("USDTieredSTO", accounts => {
              I_STRProxied
          ] = instances;
         
+        I_DaiToken = await PolyTokenFaucet.new({from: POLYMATH});
         // STEP 4: Deploy the GeneralDelegateManagerFactory
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(POLYMATH, I_MRProxied, I_PolyToken.address, 0);
 

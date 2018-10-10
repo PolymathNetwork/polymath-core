@@ -66,9 +66,9 @@ module.exports = function (deployer, network, accounts) {
     web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]
     PolyToken = '0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC' // Mainnet PolyToken Address
-    //POLYOracle = '0xfc2a00bb5b7e3b0b310ffb6de4fd1ea3835c9b27' // Poly Oracle Mainnet Address
-    //ETHOracle = '0x60055e9a93aae267da5a052e95846fa9469c0e7a' // ETH Oracle Mainnet Address
-  }if (network === 'coverage') {
+    POLYOracle = '0x52cb4616E191Ff664B0bff247469ce7b74579D1B' // Poly Oracle Mainnet Address
+    ETHOracle = '0x60055e9a93aae267da5a052e95846fa9469c0e7a' // ETH Oracle Mainnet Address
+  } if (network === 'coverage') {
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
     PolymathAccount = accounts[0]
     PolyToken = DevPolyToken.address // Development network polytoken address
@@ -140,7 +140,7 @@ module.exports = function (deployer, network, accounts) {
     return deployer.deploy(ModuleRegistryProxy, {from: PolymathAccount});
   }).then(() => {
     let bytesProxyMR = web3.eth.abi.encodeFunctionCall(functionSignatureProxyMR, [polymathRegistry.address, PolymathAccount]);
-    ModuleRegistryProxy.at(ModuleRegistryProxy.address).upgradeToAndCall("1.0.0", ModuleRegistry.address, bytesProxyMR, {from: PolymathAccount});
+    return ModuleRegistryProxy.at(ModuleRegistryProxy.address).upgradeToAndCall("1.0.0", ModuleRegistry.address, bytesProxyMR, {from: PolymathAccount});
   }).then(() => {
     moduleRegistry = ModuleRegistry.at(ModuleRegistryProxy.address);
     // Add module registry to polymath registry
@@ -189,7 +189,7 @@ module.exports = function (deployer, network, accounts) {
     return deployer.deploy(SecurityTokenRegistryProxy, {from: PolymathAccount});
   }).then(() => {
     let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolyToken, PolymathAccount]);
-    SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
+    return SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
   }).then(() => {
     // Assign the address into the SecurityTokenRegistry key
    return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistryProxy.address, {from: PolymathAccount});

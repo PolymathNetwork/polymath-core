@@ -569,7 +569,7 @@ contract('GeneralTransferManager', accounts => {
         });
 
         it("Should provide the permission and change the signing address", async() => {
-            let log = await I_GeneralPermissionManager.addPermission(account_delegate, "My details", {from: token_owner});
+            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, "My details", {from: token_owner});
             assert.equal(log.logs[0].args._delegate, account_delegate);
 
             await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FLAGS", true, {from: token_owner});

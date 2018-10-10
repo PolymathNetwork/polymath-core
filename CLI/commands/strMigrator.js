@@ -123,12 +123,19 @@ async function step_get_registered_tickers(tickerRegistry) {
         }
     }
 
-    console.log(chalk.yellow(`${tickers.length} tickers found and they are going to be migrated!`));
+    console.log(chalk.yellow(`${tickers.length} tickers found!`));
     return tickers;
 }
 
 async function step_register_tickers(tickers, securityTokenRegistry) {
-    if (readlineSync.keyInYNStrict(`Do you want to migrate these Tickers?`)) {
+    if (readlineSync.keyInYNStrict(`Do you want to migrate a single Ticker?`)) {
+        let tickerToMigrate = readlineSync.question(`Enter the ticker to migrate: `);
+        tickers = tickers.filter(t => t.ticker == tickerToMigrate);
+    } 
+    
+    if (tickers.length == 0) {
+        console.log(chalk.yellow(`There are no tickers to migrate!`));
+    } else if (readlineSync.keyInYNStrict(`Do you want to migrate ${tickers.length} Tickers?`)) {
         let i = 0;
         let succeed = [];
         let failed = [];
@@ -240,12 +247,19 @@ async function step_get_deployed_tokens(securityTokenRegistry) {
         }
     }
 
-    console.log(chalk.yellow(`${tokens.length} security tokens found and they are going to be migrated!`));
+    console.log(chalk.yellow(`${tokens.length} security tokens found!`));
     return tokens;
 }
 
 async function step_launch_STs(tokens, securityTokenRegistry) {
-    if (readlineSync.keyInYNStrict(`Do you want to migrate these ${tokens.length} Security Tokens?`)) {
+    if (readlineSync.keyInYNStrict(`Do you want to migrate a single Security Token?`)) {
+        let tokenToMigrate = readlineSync.question(`Enter the Security Token symbol to migrate: `);
+        tokens = tokens.filter(t => t.ticker == tokenToMigrate);
+    } 
+
+    if (tickers.length == 0) {
+        console.log(chalk.yellow(`There are no security tokens to migrate!`));
+    } else if (readlineSync.keyInYNStrict(`Do you want to migrate ${tokens.length} Security Tokens?`)) {
         let i = 0;
         let succeed = [];
         let failed = [];

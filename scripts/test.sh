@@ -94,20 +94,11 @@ else
 fi
 
 if ! [ -z "${TRAVIS_PULL_REQUEST+x}" ] && [ "$TRAVIS_PULL_REQUEST" != false ]; then
-  mkdir tempPoly
-  mv contracts/modules/TransferManager/SingleTradeVolumeRestrictionManager.sol tempPoly/SingleTradeVolumeRestrictionManager.sol
-  mv contracts/modules/TransferManager/SingleTradeVolumeRestrictionManagerFactory.sol tempPoly/SingleTradeVolumeRestrictionManagerFactory.sol
-  mv test/x_single_trade_volume_restriction.js tempPoly/x_single_trade_volume_restriction.js
+  curl -o node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
   node_modules/.bin/solidity-coverage
-
   if [ "$CONTINUOUS_INTEGRATION" = true ]; then
     cat coverage/lcov.info | node_modules/.bin/coveralls
   fi
-
-  mv tempPoly/SingleTradeVolumeRestrictionManager.sol contracts/modules/TransferManager/SingleTradeVolumeRestrictionManager.sol
-  mv tempPoly/SingleTradeVolumeRestrictionManagerFactory.sol contracts/modules/TransferManager/SingleTradeVolumeRestrictionManagerFactory.sol
-  mv tempPoly/x_single_trade_volume_restriction.js test/x_single_trade_volume_restriction.js
-  rm -rf tempPoly
 else
   # Do not run a_poly_oracle,js tests unless it is a cron job from travis
   if [ "$TRAVIS_EVENT_TYPE" = "cron" ]; then

@@ -28,7 +28,8 @@
     "flatten-oracles": "sol-merger './contracts/oracles/*.sol' ./flat/oracles",
     "flatten": "sol-merger './contracts/*.sol' ./flat",
     "ethereum-bridge": "node_modules/.bin/ethereum-bridge -H localhost:8545 -a 9 --dev",
-    "st20generator": "node demo/ST20Generator"
+    "st20generator": "node demo/ST20Generator",
+    "pretty": "prettier --write --print-width 140 --tab-width 4 \"**/*.js\""
   },
   "repository": {
     "type": "git",
@@ -62,6 +63,7 @@
     "ethers": "^3.0.15",
     "fs": "0.0.1-security",
     "openzeppelin-solidity": "1.10.0",
+    "prettier": "^1.14.3",
     "readline-sync": "^1.4.9",
     "request-promise": "^4.2.2",
     "shelljs": "^0.8.2",

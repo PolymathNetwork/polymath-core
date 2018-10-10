@@ -521,19 +521,20 @@ function fundingConfigUSDTieredSTO() {
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('fundingType')) {
     selectedFunding = _stoConfig.fundingType;
   } else {
-    selectedFunding = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise,' + chalk.green(` D `) + 'for DAI raise,' + chalk.green(` E `) + 'for Ether raise or' + chalk.green(` A `) + 'for all (A): ').toUpperCase();
+    selectedFunding = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise,' + chalk.green(` D `) + 'for DAI raise,' + chalk.green(` E `) + 'for Ether raise or any combination of them (i.e.'+ chalk.green(` PED `) + 'for all): ').toUpperCase();
   }
 
-  if (selectedFunding == 'E') {
-    funding.raiseType = [FUND_RAISE_TYPES.ETH];
+  funding.raiseType = [];
+  if (selectedFunding.includes('E')) {
+    funding.raiseType.push(FUND_RAISE_TYPES.ETH);
   }
-  else if (selectedFunding == 'P') {
-    funding.raiseType = [FUND_RAISE_TYPES.POLY];
+  if (selectedFunding.includes('P')) {
+    funding.raiseType.push(FUND_RAISE_TYPES.POLY);
   }
-  else if (selectedFunding == 'D') {
-    funding.raiseType = [FUND_RAISE_TYPES.DAI];
+  if (selectedFunding.includes('D')) {
+    funding.raiseType.push(FUND_RAISE_TYPES.DAI);
   }
-  else {
+  if (funding.raiseType.length == 0) {
     funding.raiseType = [FUND_RAISE_TYPES.ETH, FUND_RAISE_TYPES.POLY, FUND_RAISE_TYPES.DAI];
   }
 

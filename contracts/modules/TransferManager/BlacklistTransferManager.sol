@@ -140,7 +140,7 @@ contract BlacklistTransferManager is ITransferManager {
      */
     function _validParams(uint256 _startTime, uint256 _endTime, bytes32 _name, uint256 _repeatPeriodTime) internal view {
         require(_name != bytes32(0), "Invalid blacklist name"); 
-        require(_startTime > now && _startTime < _endTime, "Invalid start or end date");
+        require(_startTime != 0 && _startTime < _endTime, "Invalid start or end date");
         require(_repeatPeriodTime != 0, "Invalid repeat days");
     }
 

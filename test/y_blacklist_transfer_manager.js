@@ -398,12 +398,24 @@ contract('BlacklistTransferManager', accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("Should fail in adding the blacklist as the start date is invalid", async() => {
+            let errorThrown = false;
+            try {
+                await I_BlacklistTransferManager.addBlacklistType(0, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
+            } catch(error) {
+                console.log(`         tx revert -> Invalid start date`.grey);
+                errorThrown = true;
+                ensureException(error);
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("Should fail in adding the blacklist as the dates are invalid", async() => {
             let errorThrown = false;
             try {
                 await I_BlacklistTransferManager.addBlacklistType(latestTime()+4000, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
             } catch(error) {
-                console.log(`         tx revert -> Invalid start or end date`.grey);
+                console.log(`         tx revert -> Start date is less than end date`.grey);
                 errorThrown = true;
                 ensureException(error);
             }

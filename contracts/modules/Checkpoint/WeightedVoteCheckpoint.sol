@@ -104,7 +104,7 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
      * @return bool success
      */
     function createCustomBallot(uint256 _startTime, uint256 _endTime, uint256 _checkpointId) public onlyOwner {
-        require(_endTime > _startTime);
+        require(_endTime > _startTime, "Ballot end time must be later than start time.");
         uint256 ballotId = ballots.length;
         uint256 supplyAtCheckpoint = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
         ballots.push(Ballot(_checkpointId,supplyAtCheckpoint,_startTime,_endTime,0,0,0, true));

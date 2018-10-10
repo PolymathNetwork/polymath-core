@@ -1,44 +1,63 @@
 pragma solidity ^0.4.24;
 
-import '../interfaces/IOracle.sol';
-import '../external/Medianizer.sol';
+import "../interfaces/IOracle.sol";
+import "../external/IMedianizer.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract MakerDAOOracle is IOracle, Ownable {
 
-    address public makerDAO = 0x729D19f657BD0614b4985Cf1D82531c67569197B;
+    address public medianizer;
+    address public currencyAddress;
+    bytes32 public currencySymbol;
 
     bool public manualOverride;
-
     uint256 public manualPrice;
 
-    event LogChangeMakerDAO(address _newMakerDAO, address _oldMakerDAO, uint256 _now);
-    event LogSetManualPrice(uint256 _oldPrice, uint256 _newPrice, uint256 _time);
-    event LogSetManualOverride(bool _override, uint256 _time);
+    event ChangeMedianizer(address _newMedianizer, address _oldMedianizer, uint256 _now);
+    event SetManualPrice(uint256 _oldPrice, uint256 _newPrice, uint256 _time);
+    event SetManualOverride(bool _override, uint256 _time);
 
-    function changeMakerDAO(address _makerDAO) public onlyOwner {
-        emit LogChangeMakerDAO(_makerDAO, makerDAO, now);
-        makerDAO = _makerDAO;
+    /**
+      * @notice Creates a new Maker based oracle
+      * @param _medianizer Address of Maker medianizer
+      * @param _currencyAddress Address of currency (0x0 for ETH)
+      * @param _currencySymbol Symbol of currency
+      */
+    constructor (address _medianizer, address _currencyAddress, bytes32 _currencySymbol) public {
+        medianizer = _medianizer;
+        currencyAddress = _currencyAddress;
+        currencySymbol = _currencySymbol;
+    }
+
+    /**
+      * @notice Updates medianizer address
+      * @param _medianizer Address of Maker medianizer
+      */
+    function changeMedianier(address _medianizer) public onlyOwner {
+        require(_medianizer != address(0), "0x not allowed");
+        emit ChangeMedianizer(_medianizer, medianizer, now);
+        medianizer = _medianizer;
     }
 
     /**
     * @notice Returns address of oracle currency (0x0 for ETH)
     */
     function getCurrencyAddress() external view returns(address) {
-        return address(0);
+        return currencyAddress;
     }
 
     /**
     * @notice Returns symbol of oracle currency (0x0 for ETH)
     */
     function getCurrencySymbol() external view returns(bytes32) {
-        return bytes32("ETH");
+        return currencySymbol;
     }
 
     /**
     * @notice Returns denomination of price
     */
     function getCurrencyDenominated() external view returns(bytes32) {
+        // All MakerDAO oracles are denominated in USD
         return bytes32("USD");
     }
 
@@ -49,7 +68,7 @@ contract MakerDAOOracle is IOracle, Ownable {
         if (manualOverride) {
             return manualPrice;
         }
-        (bytes32 price, bool valid) = Medianizer(makerDAO).peek();
+        (bytes32 price, bool valid) = IMedianizer(medianizer).peek();
         require(valid, "MakerDAO Oracle returning invalid value");
         return uint256(price);
     }
@@ -59,7 +78,7 @@ contract MakerDAOOracle is IOracle, Ownable {
       * @param _price Price to set
       */
     function setManualPrice(uint256 _price) public onlyOwner {
-        emit LogSetManualPrice(manualPrice, _price, now);
+        emit SetManualPrice(manualPrice, _price, now);
         manualPrice = _price;
     }
 
@@ -69,7 +88,7 @@ contract MakerDAOOracle is IOracle, Ownable {
       */
     function setManualOverride(bool _override) public onlyOwner {
         manualOverride = _override;
-        emit LogSetManualOverride(_override, now);
+        emit SetManualOverride(_override, now);
     }
 
 }

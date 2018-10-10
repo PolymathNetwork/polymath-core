@@ -80,7 +80,7 @@ function step_instance_toSTR(toStrAddress){
 async function step_get_deployed_tokens(securityTokenRegistry) {
     let tokens = [];
     
-    let events = await securityTokenRegistry.getPastEvents('LogNewSecurityToken', { fromBlock: 0});
+    let events = await securityTokenRegistry.getPastEvents('NewSecurityToken', { fromBlock: 0});
     if (events.length == 0) {
         console.log("No security token events were emitted.");
     } else {
@@ -102,9 +102,8 @@ async function step_get_deployed_tokens(securityTokenRegistry) {
             let tokenSymbol = await token.methods.symbol().call();
             let tokenOwner = event.returnValues._owner;//await token.methods.owner().call();
             let tokenDetails = await token.methods.tokenDetails().call();
-            let tokenSwarmHash = '';
             
-            tokens.push({ name: tokenName, symbol: tokenSymbol, owner: tokenOwner, details: tokenDetails, address: tokenAddress, swarmHash: tokenSwarmHash });
+            tokens.push({ name: tokenName, symbol: tokenSymbol, owner: tokenOwner, details: tokenDetails, address: tokenAddress });
         }
     }
 
@@ -124,7 +123,7 @@ async function step_add_Custom_STs(tokens, toStr) {
         console.log(`Token address: ${t.address}`);
         console.log(`\n`);
         try {
-            let addCustomSTAction = toStr.methods.addCustomSecurityToken(t.name, t.symbol, t.owner, t.address, t.details, web3.utils.asciiToHex(t.swarmHash));
+            let addCustomSTAction = toStr.methods.addCustomSecurityToken(t.name, t.symbol, t.owner, t.address, t.details);
             let receipt = await common.sendTransaction(Issuer, addCustomSTAction, defaultGasPrice);
             totalGas = totalGas.add(new web3.utils.BN(receipt.gasUsed));
             succeed.push(t);

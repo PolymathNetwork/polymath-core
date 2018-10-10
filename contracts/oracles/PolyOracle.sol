@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 import "../external/oraclizeAPI.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import '../interfaces/IOracle.sol';
+import "../interfaces/IOracle.sol";
 
 contract PolyOracle is usingOraclize, IOracle, Ownable {
     using SafeMath for uint256;
@@ -26,10 +26,10 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
 
     bool public freezeOracle;
 
-    event LogPriceUpdated(uint256 _price, uint256 _oldPrice, bytes32 _queryId, uint256 _time);
-    event LogNewOraclizeQuery(uint256 _time, bytes32 _queryId, string _query);
-    event LogAdminSet(address _admin, bool _valid, uint256 _time);
-    event LogStalePriceUpdate(bytes32 _queryId, uint256 _time, string _result);
+    event PriceUpdated(uint256 _price, uint256 _oldPrice, bytes32 _queryId, uint256 _time);
+    event NewOraclizeQuery(uint256 _time, bytes32 _queryId, string _query);
+    event AdminSet(address _admin, bool _valid, uint256 _time);
+    event StalePriceUpdate(bytes32 _queryId, uint256 _time, string _result);
 
     modifier isAdminOrOwner {
         require(admin[msg.sender] || msg.sender == owner, "Address is not admin or owner");
@@ -55,7 +55,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
         require(!ignoreRequestIds[_requestId], "Ignoring requestId");
         if (requestIds[_requestId] < latestUpdate) {
             // Result is stale, probably because it was received out of order
-            emit LogStalePriceUpdate(_requestId, requestIds[_requestId], _result);
+            emit StalePriceUpdate(_requestId, requestIds[_requestId], _result);
             return;
         }
         require(requestIds[_requestId] >= latestUpdate, "Result is stale");
@@ -67,7 +67,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
           require(newPOLYUSD >= POLYUSD.sub(bound), "Result is too small");
         }
         latestUpdate = requestIds[_requestId];
-        emit LogPriceUpdated(newPOLYUSD, POLYUSD, _requestId, latestUpdate);
+        emit PriceUpdated(newPOLYUSD, POLYUSD, _requestId, latestUpdate);
         POLYUSD = newPOLYUSD;
     }
 
@@ -83,7 +83,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
             requestId = oraclize_query(oracleQueryType, oracleURL, gasLimit);
             requestIds[requestId] = now;
             maximumScheduledUpdated = now;
-            emit LogNewOraclizeQuery(now, requestId, oracleURL);
+            emit NewOraclizeQuery(now, requestId, oracleURL);
         } else {
             require(oraclize_getPrice(oracleQueryType, gasLimit) * _times.length <= address(this).balance, "Insufficient Funds");
             for (uint256 i = 0; i < _times.length; i++) {
@@ -93,7 +93,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
                 if (maximumScheduledUpdated < requestIds[requestId]) {
                     maximumScheduledUpdated = requestIds[requestId];
                 }
-                emit LogNewOraclizeQuery(_times[i], requestId, oracleURL);
+                emit NewOraclizeQuery(_times[i], requestId, oracleURL);
             }
         }
         if (latestScheduledUpdate < maximumScheduledUpdated) {
@@ -117,7 +117,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
             uint256 scheduledTime = _startTime + (i * _interval);
             requestId = oraclize_query(scheduledTime, oracleQueryType, oracleURL, gasLimit);
             requestIds[requestId] = scheduledTime;
-            emit LogNewOraclizeQuery(scheduledTime, requestId, oracleURL);
+            emit NewOraclizeQuery(scheduledTime, requestId, oracleURL);
         }
         if (latestScheduledUpdate < requestIds[requestId]) {
             latestScheduledUpdate = requestIds[requestId];
@@ -129,7 +129,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @param _price POLYUSD price
     */
     function setPOLYUSD(uint256 _price) onlyOwner public {
-        emit LogPriceUpdated(_price, POLYUSD, 0, now);
+        emit PriceUpdated(_price, POLYUSD, 0, now);
         POLYUSD = _price;
         latestUpdate = now;
     }
@@ -220,7 +220,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     */
     function setAdmin(address _admin, bool _valid) onlyOwner public {
         admin[_admin] = _valid;
-        emit LogAdminSet(_admin, _valid, now);
+        emit AdminSet(_admin, _valid, now);
     }
 
     /**

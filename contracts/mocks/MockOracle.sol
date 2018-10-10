@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import '../interfaces/IOracle.sol';
+import "../interfaces/IOracle.sol";
 
 contract MockOracle is IOracle {
 

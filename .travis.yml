@@ -12,6 +12,7 @@ before_install:
   - sudo apt-get -y install solc
 before_script:
   - truffle version
+  - wget -O node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/master/lib/app.js
 script:
   - npm run test
 notifications:

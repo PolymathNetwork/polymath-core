@@ -263,15 +263,20 @@ contract('ScheduledCheckpoint', accounts => {
             I_ScheduledCheckpoint = ScheduledCheckpoint.at(tx.logs[2].args._module);
         });
 
-        let startTime = latestTime() + 100;
-        let interval = 24 * 60 * 60;
+        let startTime;
+        let interval;
         it("Should create a daily checkpoint", async () => {
+            console.log("1: " + latestTime());
+            startTime = latestTime() + 100;
+            interval = 24 * 60 * 60;
             console.log("Creating scheduled CP: " + startTime, interval);
             await I_ScheduledCheckpoint.addSchedule("CP1", startTime, interval, {from: token_owner});
+            console.log("2: " + latestTime());
         });
 
         it("Should Buy the tokens for account_investor1", async() => {
             // Add the Investor in to the whitelist
+            console.log("3: " + latestTime());
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
@@ -287,10 +292,15 @@ contract('ScheduledCheckpoint', accounts => {
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Jump time
+            console.log("4: " + latestTime());
+
             await increaseTime(5000);
             // We should be after the first scheduled checkpoint, and before the second
+            console.log("5: " + latestTime());
+
             assert.isTrue(latestTime() > startTime);
             assert.isTrue(latestTime() <= startTime + interval);
+            console.log("6: " + latestTime());
 
             // Mint some tokens
             await I_SecurityToken.mint(account_investor1, web3.utils.toWei('1', 'ether'), { from: token_owner });

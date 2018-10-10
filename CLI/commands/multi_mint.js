@@ -35,6 +35,7 @@ let badData = new Array();
 startScript();
 
 async function startScript() {
+  if (remoteNetwork == 'undefined') remoteNetwork = undefined;
   await global.initialize(remoteNetwork);
 
   try {    
@@ -133,6 +134,7 @@ function readFile() {
     `);
 
   let affiliatesFailedArray = [];
+  let affiliatesKYCInvalidArray = [];
   //this for loop will do the batches, so it should run 75, 75, 50 with 200
   for (let i = 0; i < distribData.length; i++) {
     try {
@@ -142,12 +144,20 @@ function readFile() {
       for (let j = 0; j < distribData[i].length; j++) {
         let investorAccount = distribData[i][j][0];
         let tokenAmount = web3.utils.toWei((distribData[i][j][1]).toString(),"ether");
-        let verifiedTransaction = await securityToken.methods.verifyTransfer("0x0000000000000000000000000000000000000000", investorAccount, tokenAmount, web3.utils.fromAscii("")).call();
+        let verifiedTransaction = await securityToken.methods.verifyTransfer("0x0000000000000000000000000000000000000000", investorAccount, tokenAmount, web3.utils.fromAscii('')).call();
         if (verifiedTransaction) {
           affiliatesVerifiedArray.push(investorAccount);
           tokensVerifiedArray.push(tokenAmount);
         } else {
-          affiliatesFailedArray.push(investorAccount);
+          let gtmModule = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
+          let generalTransferManagerABI = abis.generalTransferManager();
+          let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, gtmModule[0]);
+          let validKYC = (await generalTransferManager.methods.whitelist(Issuer.address).call()).expiryTime > Math.floor(Date.now()/1000);
+          if (validKYC) {
+            affiliatesFailedArray.push(investorAccount);
+          } else {
+            affiliatesKYCInvalidArray.push(investorAccount);
+          }
         }
       }
       let mintMultiAction = securityToken.methods.mintMulti(affiliatesVerifiedArray, tokensVerifiedArray);
@@ -213,9 +223,10 @@ function readFile() {
 
   console.log(`******************** EVENT LOGS ANALYSIS COMPLETE ********************\n`);
   console.log(`A total of ${totalInvestors} affiliated investors get the token\n`);
-  console.log(`This script in total sent ${fullFileData.length - badData.length - affiliatesFailedArray.length} new investors and updated investors to the blockchain.\n`);
+  console.log(`This script in total sent ${fullFileData.length - badData.length - affiliatesFailedArray.length - affiliatesKYCInvalidArray.length} new investors and updated investors to the blockchain.\n`);
   console.log(`There were ${badData.length} bad entries that didnt get sent to the blockchain in the script.\n`);
-  console.log(`There were ${affiliatesFailedArray.length} accounts that didnt get sent to the blockchain as they would fail.\n`);
+  console.log(`There were ${affiliatesKYCInvalidArray.length} accounts with invalid KYC.\n`);
+  console.log(`There were ${affiliatesFailedArray.length} accounts that didn't get sent to the blockchain as they would fail.\n`);
 
   console.log("************************************************************************************************");
   console.log("OBJECT WITH EVERY USER AND THEIR MINTED TOKEN: \n\n", investorObjectLookup)
@@ -224,27 +235,36 @@ function readFile() {
 
   let missingDistribs = [];
   let failedVerificationDistribs = [];
+  let invalidKYCDistribs = [];
   for (let l = 0; l < fullFileData.length; l++) {
-    if (affiliatesFailedArray.includes(fullFileData[l][0])) {
+    if (affiliatesKYCInvalidArray.includes(fullFileData[l][0])) {
+      invalidKYCDistribs.push(fullFileData[l]);
+    } else if (affiliatesFailedArray.includes(fullFileData[l][0])) {
       failedVerificationDistribs.push(fullFileData[l]);
     } else if (!investorObjectLookup.hasOwnProperty(fullFileData[l][0])) {
       missingDistribs.push(fullFileData[l]);
     }
   }
 
+  if (invalidKYCDistribs.length > 0) {
+    console.log("**************************************************************************************************************************");
+    console.log("The following data arrays have an invalid KYC. Please review if these accounts are whitelisted and their KYC is not expired\n");
+    console.log(invalidKYCDistribs);
+    console.log("**************************************************************************************************************************");
+  }
   if (failedVerificationDistribs.length > 0) {
-    console.log("************************************************************************************************");
+    console.log("*********************************************************************************************************");
     console.log("-- The following data arrays failed at verifyTransfer. Please review if these accounts are whitelisted --\n");
     console.log(failedVerificationDistribs);
-    console.log("************************************************************************************************");
+    console.log("*********************************************************************************************************");
   }
   if (missingDistribs.length > 0) {
-    console.log("************************************************************************************************");
-    console.log("-- No Minted event was found for the following data arrays. Please review them manually --");
+    console.log("******************************************************************************************");
+    console.log("-- No Minted event was found for the following data arrays. Please review them manually --\n");
     console.log(missingDistribs);
-    console.log("************************************************************************************************");
+    console.log("******************************************************************************************");
   }
-  if (missingDistribs.length == 0 && failedVerificationDistribs.length == 0) {
+  if (missingDistribs.length == 0 && failedVerificationDistribs.length == 0 && invalidKYCDistribs.length == 0) {
     console.log("\n**************************************************************************************************************************");
     console.log("All accounts passed through from the CSV were successfully get the tokens, because we were able to read them all from events");
     console.log("****************************************************************************************************************************");

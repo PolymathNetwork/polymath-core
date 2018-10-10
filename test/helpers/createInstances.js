@@ -14,6 +14,7 @@ const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApproval
 const SingleTradeVolumeRestrictionManagerFactory = artifacts.require('./SingleTradeVolumeRestrictionManagerFactory.sol');
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
+const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const USDTieredSTOProxyFactory = artifacts.require("./USDTieredSTOProxyFactory");
 const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
@@ -35,6 +36,7 @@ const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 let I_USDTieredSTOProxyFactory;
 let I_USDTieredSTOFactory;
 let I_TrackedRedemptionFactory;
+let I_ScheduledCheckpointFactory;
 let I_SingleTradeVolumeRestrictionManagerFactory;
 let I_ManualApprovalTransferManagerFactory;
 let I_VolumeRestrictionTransferManagerFactory;
@@ -259,6 +261,18 @@ export async function deploySingleTradeVolumeRMAndVerified(accountPolymath, MRPr
 
     await registerAndVerifyByMR(I_SingleTradeVolumeRestrictionManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_SingleTradeVolumeRestrictionManagerFactory);
+}
+
+export async function deployScheduleCheckpointAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_ScheduledCheckpointFactory = await ScheduledCheckpointFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_ScheduledCheckpointFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "ScheduledCheckpointFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_ScheduledCheckpointFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_ScheduledCheckpointFactory);
 }
 
 /// Deploy the Permission Manager

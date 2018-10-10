@@ -1,46 +1,50 @@
 pragma solidity ^0.4.24;
 
-import "./GeneralPermissionManager.sol";
+import "./VolumeRestrictionTransferManager.sol";
 import "../ModuleFactory.sol";
 
 /**
- * @title Factory for deploying GeneralPermissionManager module
+ * @title Factory for deploying ManualApprovalTransferManager module
  */
-contract GeneralPermissionManagerFactory is ModuleFactory {
+contract VolumeRestrictionTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
+     * @param _setupCost Setup cost of the module
+     * @param _usageCost Usage cost of the module
+     * @param _subscriptionCost Subscription cost of the module
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+      ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
-        name = "GeneralPermissionManager";
-        title = "General Permission Manager";
-        description = "Manage permissions within the Security Token and attached modules";
+        name = "VolumeRestrictionTransferManager";
+        title = "Volume Restriction Transfer Manager";
+        description = "Manage transfers using lock ups over time";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
-    /**
+     /**
      * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
-        if(setupCost > 0)
+        if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        address permissionManager = new GeneralPermissionManager(msg.sender, address(polyToken));
-        emit GenerateModuleFromFactory(address(permissionManager), getName(), address(this), msg.sender, setupCost, now);
-        return permissionManager;
+        address volumeRestrictionTransferManager = new VolumeRestrictionTransferManager(msg.sender, address(polyToken));
+        emit GenerateModuleFromFactory(address(volumeRestrictionTransferManager), getName(), address(this), msg.sender, now);
+        return address(volumeRestrictionTransferManager);
     }
 
     /**
      * @notice Type of the Module factory
+     * @return uint8
      */
     function getTypes() external view returns(uint8[]) {
         uint8[] memory res = new uint8[](1);
-        res[0] = 1;
+        res[0] = 2;
         return res;
     }
 
@@ -83,14 +87,18 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
      * @notice Get the Instructions that helped to used the module
      */
     function getInstructions() external view returns(string) {
-        return "Add and remove permissions for the SecurityToken and associated modules. Permission types should be encoded as bytes32 values, and attached using the withPerm modifier to relevant functions.No initFunction required.";
+        return "Allows an issuer to set lockup periods for user addresses, with funds distributed over time. Init function takes no parameters.";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
     function getTags() external view returns(bytes32[]) {
-        bytes32[] memory availableTags = new bytes32[](0);
+        bytes32[] memory availableTags = new bytes32[](2);
+        availableTags[0] = "Volume";
+        availableTags[1] = "Transfer Restriction";
         return availableTags;
     }
+
+
 }

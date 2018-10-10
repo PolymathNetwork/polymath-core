@@ -30,17 +30,28 @@ interface ISecurityToken {
     function mint(address _investor, uint256 _value) external returns (bool success);
 
     /**
-     * @notice Burn function used to burn the securityToken
-     * @param _value No. of tokens that get burned
+     * @notice mints new tokens and assigns them to the target _investor.
+     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+     * @param _investor address the tokens will be minted to
+     * @param _value is the amount of tokens that will be minted to the investor
+     * @param _data data to indicate validation
      */
-    function burn(uint256 _value) external returns (bool success);
+    function mintWithData(address _investor, uint256 _value, bytes _data) external returns (bool success);
 
     /**
      * @notice Burn function used to burn the securityToken on behalf of someone else
      * @param _from Address for whom to burn tokens
      * @param _value No. of token that get burned
+     * @param _data data to indicate validation
      */
-    function burnFrom(address _from, uint256 _value) external returns (bool success);
+    function burnFromWithData(address _from, uint256 _value, bytes _data) external;
+
+    /**
+     * @notice Burn function used to burn the securityToken
+     * @param _value No. of tokens that get burned
+     * @param _data data to indicate validation
+     */
+    function burnWithData(uint256 _value, bytes _data) external;
 
     event Minted(address indexed _to, uint256 _value);
     event Burnt(address indexed _burner, uint256 _value);
@@ -101,7 +112,7 @@ interface ISecurityToken {
      * NB - this length may differ from investorCount if the list has not been pruned of zero-balance investors
      * @return length
      */
-    function getInvestorsLength() external view returns (uint256);
+    function getInvestors() external view returns (address[]);
 
     /**
     * @notice gets current checkpoint ID
@@ -115,12 +126,6 @@ interface ISecurityToken {
     * @return investor address
     */
     function investors(uint256 _index) external view returns (address);
-
-    /**
-    * @notice gets the number of investors
-    * @return count of investors
-    */
-    function investorCount() external view returns (uint256);
 
     /**
     * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
@@ -181,16 +186,22 @@ interface ISecurityToken {
     function mintMulti(address[] _investors, uint256[] _values) external returns (bool success);
 
     /**
-     * @notice used to set the token Burner address. It can only be called by the owner
-     * @param _tokenBurner Address of the token burner contract
+     * @notice Function used to attach a module to the security token
+     * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
+     * @dev to control restrictions on transfers.
+     * @dev You are allowed to add a new moduleType if:
+     * @dev - there is no existing module of that type yet added
+     * @dev - the last member of the module list is replacable
+     * @param _moduleFactory is the address of the module factory to be added
+     * @param _data is data packed into bytes used to further configure the module (See STO usage)
+     * @param _maxCost max amount of POLY willing to pay to module. (WIP)
      */
-    function setTokenBurner(address _tokenBurner) external;
-
-    /**
-    * @notice Removes a module attached to the SecurityToken
-    * @param _module address of module to archive
-    */
-    function removeModule(address _module) external;
+    function addModule(
+        address _moduleFactory,
+        bytes _data,
+        uint256 _maxCost,
+        uint256 _budget
+    ) external;
 
     /**
     * @notice Archives a module attached to the SecurityToken
@@ -205,18 +216,10 @@ interface ISecurityToken {
     function unarchiveModule(address _module) external;
 
     /**
-     * @notice Function used to attach the module in security token
-     * @param _moduleFactory Contract address of the module factory that needs to be attached
-     * @param _data Data used for the intialization of the module factory variables
-     * @param _maxCost Maximum cost of the Module factory
-     * @param _budget Budget of the Module factory
-     */
-    function addModule(
-        address _moduleFactory,
-        bytes _data,
-        uint256 _maxCost,
-        uint256 _budget
-    ) external;
+    * @notice Removes a module attached to the SecurityToken
+    * @param _module address of module to archive
+    */
+    function removeModule(address _module) external;
 
     /**
      * @notice Use by the issuer to set the controller addresses
@@ -229,9 +232,19 @@ interface ISecurityToken {
      * @param _from address from which to take tokens
      * @param _to address where to send tokens
      * @param _value amount of tokens to transfer
-     * @param _data data attached to the transfer by controller to emit in event
+     * @param _data data to indicate validation
+     * @param _log data attached to the transfer by controller to emit in event
      */
-    function forceTransfer(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
+    function forceTransfer(address _from, address _to, uint256 _value, bytes _data, bytes _log) external;
+
+    /**
+     * @notice Use by a controller to execute a foced burn
+     * @param _from address from which to take tokens
+     * @param _value amount of tokens to transfer
+     * @param _data data to indicate validation
+     * @param _log data attached to the transfer by controller to emit in event
+     */
+    function forceBurn(address _from, uint256 _value, bytes _data, bytes _log) external;
 
     /**
      * @notice Use by the issuer to permanently disable controller functionality
@@ -243,4 +256,34 @@ interface ISecurityToken {
      * @notice Use to get the version of the securityToken
      */
      function getVersion() external view returns(uint8[]);
+
+     /**
+     * @notice gets the investor count
+     */
+     function getInvestorCount() external view returns(uint256);
+
+     /**
+      * @notice Overloaded version of the transfer function
+      * @param _to receiver of transfer
+      * @param _value value of transfer
+      * @param _data data to indicate validation
+      * @return bool success
+      */
+     function transferWithData(address _to, uint256 _value, bytes _data) external returns (bool success);
+
+     /**
+      * @notice Overloaded version of the transferFrom function
+      * @param _from sender of transfer
+      * @param _to receiver of transfer
+      * @param _value value of transfer
+      * @param _data data to indicate validation
+      * @return bool success
+      */
+     function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
+     
+     /**
+      * @notice Provide the granularity of the token
+      * @return uint256 
+      */
+     function granularity() external view returns(uint256);
 }

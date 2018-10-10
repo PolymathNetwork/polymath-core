@@ -17,19 +17,19 @@ contract DividendCheckpoint is ICheckpoint, Module {
     bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
 
     struct Dividend {
-      uint256 checkpointId;
-      uint256 created; // Time at which the dividend was created
-      uint256 maturity; // Time after which dividend can be claimed - set to 0 to bypass
-      uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer - set to very high value to bypass
-      uint256 amount; // Dividend amount in WEI
-      uint256 claimedAmount; // Amount of dividend claimed so far
-      uint256 totalSupply; // Total supply at the associated checkpoint (avoids recalculating this)
-      bool reclaimed;  // True if expiry has passed and issuer has reclaimed remaining dividend
-      uint256 dividendWithheld;
-      uint256 dividendWithheldReclaimed;
-      mapping (address => bool) claimed; // List of addresses which have claimed dividend
-      mapping (address => bool) dividendExcluded; // List of addresses which cannot claim dividends
-      bytes32 name; // Name/title - used for identification
+        uint256 checkpointId;
+        uint256 created; // Time at which the dividend was created
+        uint256 maturity; // Time after which dividend can be claimed - set to 0 to bypass
+        uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer - set to very high value to bypass
+        uint256 amount; // Dividend amount in WEI
+        uint256 claimedAmount; // Amount of dividend claimed so far
+        uint256 totalSupply; // Total supply at the associated checkpoint (avoids recalculating this)
+        bool reclaimed;  // True if expiry has passed and issuer has reclaimed remaining dividend
+        uint256 dividendWithheld;
+        uint256 dividendWithheldReclaimed;
+        mapping (address => bool) claimed; // List of addresses which have claimed dividend
+        mapping (address => bool) dividendExcluded; // List of addresses which cannot claim dividends
+        bytes32 name; // Name/title - used for identification
     }
 
     // List of all dividends
@@ -50,9 +50,9 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
+        require(!dividends[_dividendIndex].reclaimed, "Dividend has been reclaimed by issuer");
         require(now >= dividends[_dividendIndex].maturity, "Dividend maturity is in the future");
         require(now < dividends[_dividendIndex].expiry, "Dividend expiry is in the past");
-        require(!dividends[_dividendIndex].reclaimed, "Dividend has been reclaimed by issuer");
         _;
     }
 
@@ -131,9 +131,10 @@ contract DividendCheckpoint is ICheckpoint, Module {
      */
     function pushDividendPayment(uint256 _dividendIndex, uint256 _start, uint256 _iterations) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
         Dividend storage dividend = dividends[_dividendIndex];
-        uint256 numberInvestors = ISecurityToken(securityToken).getInvestorsLength();
-        for (uint256 i = _start; i < Math.min256(numberInvestors, _start.add(_iterations)); i++) {
-            address payee = ISecurityToken(securityToken).investors(i);
+        address[] memory investors = ISecurityToken(securityToken).getInvestors();
+        uint256 numberInvestors = Math.min256(investors.length, _start.add(_iterations));
+        for (uint256 i = _start; i < numberInvestors; i++) {
+            address payee = investors[i];
             if ((!dividend.claimed[payee]) && (!dividend.dividendExcluded[payee])) {
                 _payDividend(payee, dividend, _dividendIndex);
             }
@@ -197,15 +198,15 @@ contract DividendCheckpoint is ICheckpoint, Module {
             }
         }
 
-       uint256[] memory index = new uint256[](counter);
-       counter = 0;
-       for(uint256 j = 0; j < dividends.length; j++) {
-           if (dividends[j].checkpointId == _checkpointId) {
-               index[counter] = j;
-               counter++;
-           }
-       }
-       return index;
+        uint256[] memory index = new uint256[](counter);
+        counter = 0;
+        for(uint256 j = 0; j < dividends.length; j++) {
+            if (dividends[j].checkpointId == _checkpointId) {
+                index[counter] = j;
+                counter++;
+            }
+        }
+        return index;
     }
 
     /**
@@ -215,7 +216,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     function withdrawWithholding(uint256 _dividendIndex) external;
 
     /**
-     * @notice Return the permissions flag that are associated with STO
+     * @notice Return the permissions flag that are associated with this module
      * @return bytes32 array
      */
     function getPermissions() public view returns(bytes32[]) {

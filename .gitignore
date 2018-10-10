@@ -13,3 +13,5 @@ bridge.log
 scTopics
 coverageEnv
 /flat
+/tempPoly
+.eslintrc.js

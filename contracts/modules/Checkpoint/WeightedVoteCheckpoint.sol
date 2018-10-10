@@ -33,7 +33,7 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
 
     event BallotCreated(uint256 _startTime, uint256 _endTime, uint256 _ballotId, uint256 _checkpointId);
     event VoteCasted(uint256 _ballotId, uint256 _time, address indexed _investor, uint256 _weight, bool _vote);
-    event BallotDeactivated(uint256 _ballotId, bool _isActive);
+    event BallotActiveStatsChanged(uint256 _ballotId, bool _isActive);
 
     /**
      * @notice Constructor
@@ -89,14 +89,11 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
      * @param _duration The duration of the voting period in seconds
      * @return bool success
      */
-    function createBallot(uint256 _duration) public onlyOwner returns (bool) {
-        uint256 ballotId = ballots.length;
+    function createBallot(uint256 _duration) public onlyOwner {
+        require(_duration > 0, "Incorrect ballot duration.");
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
-        uint256 currentSupply = ISecurityToken(securityToken).totalSupply();
         uint256 endTime = now.add(_duration);
-        ballots.push(Ballot(checkpointId,currentSupply,now,endTime,0,0,0,true));
-        emit BallotCreated(now, endTime, ballotId, checkpointId);
-        return true;
+        createCustomBallot(now, endTime, checkpointId);
     }
 
     /**
@@ -106,13 +103,12 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
      * @param _checkpointId Index of the checkpoint to use for token balances
      * @return bool success
      */
-    function createCustomBallot(uint256 _startTime, uint256 _endTime, uint256 _checkpointId) public onlyOwner returns (bool) {
-        require(_endTime >= _startTime);
+    function createCustomBallot(uint256 _startTime, uint256 _endTime, uint256 _checkpointId) public onlyOwner {
+        require(_endTime > _startTime);
         uint256 ballotId = ballots.length;
         uint256 supplyAtCheckpoint = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
         ballots.push(Ballot(_checkpointId,supplyAtCheckpoint,_startTime,_endTime,0,0,0, true));
         emit BallotCreated(_startTime, _endTime, ballotId, _checkpointId);
-        return true;
     }
 
     /**
@@ -121,17 +117,14 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
      * @param _isActive The bool value of the active stats of the ballot
      * @return bool success
      */
-    function setActiveStatsBallot(uint256 _ballotId, bool _isActive) public onlyOwner returns (bool) {
-        require(now > ballots[_ballotId].startTime && now < ballots[_ballotId].endTime, "Voting period is not active.");
+    function setActiveStatsBallot(uint256 _ballotId, bool _isActive) public onlyOwner {
+        require(now < ballots[_ballotId].endTime, "This ballot has already ended.");
+        require(ballots[_ballotId].isActive != _isActive, "Active state unchanged");
         ballots[_ballotId].isActive = _isActive;
-        emit BallotDeactivated(_ballotId, _isActive);
-        return true;
+        emit BallotActiveStatsChanged(_ballotId, _isActive);
     }
 
-    // /**
-    //  * @notice Init function i.e generalise function to maintain the structure of the module contract
-    //  * @return bytes4
-    //  */
+
     function getInitFunction() public returns(bytes4) {
         return bytes4(0);
     }

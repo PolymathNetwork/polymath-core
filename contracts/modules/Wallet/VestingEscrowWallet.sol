@@ -67,7 +67,7 @@ contract VestingEscrowWallet is IWallet {
   );
 
   event AddTemplate(
-    uint256 templateNumber,
+    uint256 indexed templateNumber,
     uint256 totalAllocation,
     uint256 vestingDuration,
     uint256 vestingFrequency

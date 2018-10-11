@@ -105,7 +105,7 @@ contract VestingEscrowWallet is IWallet {
    * @param _treasury Treasury wallet to send excess funds
    */
   function configure(address _treasury) public onlyFactory {
-      require(_treasury != 0, "Treasury should not be 0");
+      require(_treasury != address(0), "Treasury should not be 0");
       treasury = _treasury;
   }
 

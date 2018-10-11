@@ -8,6 +8,7 @@ const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock
 const OwnedUpgradeabilityProxy = artifacts.require('./OwnedUpgradeabilityProxy.sol');
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol')
+const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol')
 const STFactory = artifacts.require('./STFactory.sol');
 const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
@@ -26,8 +27,10 @@ contract ("SecurityTokenRegistryProxy", accounts => {
     let I_SecurityTokenRegistryMock;
     let I_STFactory;
     let I_PolymathRegistry;
+    let I_ModuleRegistryProxy;
     let I_PolyToken;
     let I_STRProxied;
+    let I_MRProxied;
     let I_SecurityToken;
     let I_ModuleRegistry;
     let I_FeatureRegistry;
@@ -49,7 +52,8 @@ contract ("SecurityTokenRegistryProxy", accounts => {
     const decimals = 18;
 
     const transferManagerKey = 2;
-
+    const STRProxyParameters = ['address', 'address', 'uint256', 'uint256', 'address', 'address'];
+    const MRProxyParameters = ['address', 'address'];
 
     async function readStorage(contractAddress, slot) {
         return await web3.eth.getStorageAt(contractAddress, slot);
@@ -69,20 +73,25 @@ contract ("SecurityTokenRegistryProxy", accounts => {
         // Step 1: Deploy the token Faucet and Mint tokens for token_owner
         I_PolyToken = await PolyTokenFaucet.new();
         await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
-        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
 
-        // STEP 2: Deploy the ModuleRegistry
+         // Step 2: Deploy the FeatureRegistry
 
-        I_ModuleRegistry = await ModuleRegistry.new(I_PolymathRegistry.address, {from:account_polymath});
-        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistry.address, {from: account_polymath});
+         I_FeatureRegistry = await FeatureRegistry.new(
+            I_PolymathRegistry.address,
+            {
+                from: account_polymath
+            });
 
-        assert.notEqual(
-            I_ModuleRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "ModuleRegistry contract was not deployed"
-        );
+        // STEP 3: Deploy the ModuleRegistry
 
-        // STEP 2: Deploy the GeneralTransferManagerFactory
+        I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
+        // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
+        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
+        let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, account_polymath]);
+        await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, {from: account_polymath});
+        I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
+
+        // STEP 4: Deploy the GeneralTransferManagerFactory
 
         I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
@@ -93,10 +102,6 @@ contract ("SecurityTokenRegistryProxy", accounts => {
         );
 
         // Register the Modules with the ModuleRegistry contract
-
-        // (A) :  Register the GeneralTransferManagerFactory
-        await I_ModuleRegistry.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-        await I_ModuleRegistry.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
 
 
         // Step 3: Deploy the STFactory contract
@@ -120,24 +125,16 @@ contract ("SecurityTokenRegistryProxy", accounts => {
 
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
 
-        // Step 10: Deploy the FeatureRegistry
-
-        I_FeatureRegistry = await FeatureRegistry.new(
-            I_PolymathRegistry.address,
-            {
-                from: account_polymath
-            });
-        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
-
-        assert.notEqual(
-            I_FeatureRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "FeatureRegistry contract was not deployed",
-        );
-
         // Step 11: update the registries addresses from the PolymathRegistry contract
+        await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath});
+        await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, {from: account_polymath});
+        await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
-        await I_ModuleRegistry.updateFromRegistry({from: account_polymath});
+        await I_MRProxied.updateFromRegistry({from: account_polymath});
+        // (A) :  Register the GeneralTransferManagerFactory
+        await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+        await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+
 
          // Printing all the contract addresses
          console.log(`
@@ -160,7 +157,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
         // __upgradeabilityOwner -- index 13
 
         it("Should attach the implementation and version", async() => {
-            let bytesProxy = encodeProxyCall([I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
+            let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
             await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
             let c = OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
             assert.equal(await readStorage(c.address, 12), I_SecurityTokenRegistry.address);
@@ -169,7 +166,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
         });
 
         it("Verify the initialize data", async() => {
-            assert.equal((await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("expiryLimit"))).toNumber(), 15*24*60*60, "Should equal to 60 days");
+            assert.equal((await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("expiryLimit"))).toNumber(), 60*24*60*60, "Should equal to 60 days");
             assert.equal((await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("tickerRegFee"))).toNumber(), web3.utils.toWei("250"));
         });
 
@@ -188,7 +185,7 @@ contract ("SecurityTokenRegistryProxy", accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner, gas: 85000000  });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -196,10 +193,10 @@ contract ("SecurityTokenRegistryProxy", accounts => {
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
 
-            const log = await promisifyLogWatch(I_SecurityToken.LogModuleAdded({from: _blockNo}), 1);
+            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._type.toNumber(), transferManagerKey);
+            assert.equal(log.args._types[0].toNumber(), transferManagerKey);
             assert.equal(web3.utils.hexToString(log.args._name),"GeneralTransferManager");
         });
     })

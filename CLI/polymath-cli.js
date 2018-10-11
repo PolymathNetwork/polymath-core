@@ -6,8 +6,10 @@ var investor_portal = require('./commands/investor_portal');
 var module_manager = require('./commands/module_manager');
 var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
+var transfer_ownership = require('./commands/transfer_ownership');
 var dividends_manager = require('./commands/dividends_manager');
 var transfer_manager = require('./commands/transfer_manager');
+var contract_manager = require('./commands/contract_manager');
 var strMigrator = require('./commands/strMigrator');
 var program = require('commander');
 const yaml = require('js-yaml');
@@ -77,6 +79,14 @@ program
   });
 
 program
+  .command('transfer_ownership <contractAddress> <transferTo>')
+  .alias('to')
+  .description('Transfer Ownership of an own contract to another account')
+  .action(async function(contractAddress, transferTo) {
+    await transfer_ownership.executeApp(contractAddress, transferTo, program.remoteNode);
+  });
+
+program
   .command('whitelist <tokenSymbol> [batchSize]')
   .alias('w')
   .description('Mass-update a whitelist of allowed/known investors')
@@ -98,6 +108,14 @@ program
   .description('Runs transfer_manager')
   .action(async function() {
     await transfer_manager.executeApp(program.remoteNode);
+  });
+
+program
+  .command('contract_manager')
+  .alias('cm')
+  .description('Runs contract_manager')
+  .action(async function() {
+    await contract_manager.executeApp(program.remoteNode);
   });
 
 program

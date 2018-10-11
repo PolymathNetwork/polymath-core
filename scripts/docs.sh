@@ -8,6 +8,7 @@ DIRECTORY=polymath-developer-portal
 WEBSITE_DIRECTORY=versioned_docs
 CORE_ROUTE=$PWD
 
+
 # functions that used to create the documentation
 create_docs() {
 
@@ -15,9 +16,9 @@ create_docs() {
     if [ "$(git branch | grep -w $latestTag)" == "" ];
     then
     # Check whether the branch is already present or not
-    if [ "$(git branch -r | grep "origin/$latestTag" | wc -l)" -eq 1 ];
+    if [ "$(git branch -r | grep "origin/$latestTag" | wc -l)" -ge 1 ];
     then 
-    echo "$latesTag Branch is already present on remote"
+    echo "$latestTag Branch is already present on remote"
     exit 0
     fi
     # Checkout and create the $latestTag branch
@@ -29,19 +30,21 @@ create_docs() {
 
     echo "Creating the new docs for the version "$latestTag""
     cd $WEBSITE_DIRECTORY
-
-    # Creating the new directory with name $latestTag
-    mkdir $latestTag
     fi
 
     echo "Generating the API documentation in branch $latestTag"
     # Command to generate the documentation using the solidity-docgen
-    #npm install > /dev/null 2>&1
+
     migrate=$(SOLC_ARGS="openzeppelin-solidity="$CORE_ROUTE"/node_modules/openzeppelin-solidity" \
-solidity-docgen $CORE_ROUTE $CORE_ROUTE/contracts $CORE_ROUTE/polymath-developer-portal/)
+solidity-docgen -x $CORE_ROUTE/contracts/external,$CORE_ROUTE/contracts/mocks $CORE_ROUTE $CORE_ROUTE/contracts $CORE_ROUTE/polymath-developer-portal/)
+    
     echo "Successfully docs are generated..."
-    echo "Transferring the API DOCS to $latestTag directory"
-    mv ../../docs/api_* $latestTag 
+    
+    echo "Installing npm dependencies..."
+    yarn install > /dev/null 2>&1
+    
+    echo "Gererate versioning docs..."
+    yarn run version $versionNo
 
     # Commit the changes
     echo "Commiting the new changes..."
@@ -98,8 +101,9 @@ else
         echo "There is no version specific folders"
         create_docs
         else
-            echo "$(basename "$dir")"
-            if [ "$(basename "$dir")" == "$latestTag" ]; then
+            reponame=$(echo $(basename "$dir") | cut -d '-' -f2)
+            echo $reponame
+            if [ "$reponame" == "$versionNo" ]; then
                 reject_docs 
             fi
         fi 

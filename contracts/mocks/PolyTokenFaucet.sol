@@ -22,10 +22,10 @@ contract PolyTokenFaucet {
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
 
     constructor() public {
-        totalSupply_ = 1000000;
         decimals = 18;
-        balances[msg.sender] = 1000000;
-        emit Transfer(address(0), msg.sender, 1000000);
+        totalSupply_ = 1000000 * uint256(10)**decimals;
+        balances[msg.sender] = totalSupply_;
+        emit Transfer(address(0), msg.sender, totalSupply_);
     }
 
     /* Token faucet - Not part of the ERC20 standard */

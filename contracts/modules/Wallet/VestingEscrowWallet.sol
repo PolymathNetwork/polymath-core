@@ -214,9 +214,9 @@ contract VestingEscrowWallet is IWallet {
   * @notice Cancel a vesting schedule for an employee or affiliate
   * @param _target Address of the employee or the affiliate
   * @param _vestingScheduleIndex Index of the vesting schedule for the target
-  * @param _isReclaiming True if the issuer is reclaiming the tokens out of the contract
+  * @param _revokeVestingSchedule True if the issuer is reclaiming the tokens out of the contract
   */
-  function cancelVestingSchedule(address _target, uint256 _vestingScheduleIndex, bool _isReclaiming)
+  function cancelVestingSchedule(address _target, uint256 _vestingScheduleIndex, bool _revokeVestingSchedule)
     public
     onlyOwner
   {
@@ -239,7 +239,7 @@ contract VestingEscrowWallet is IWallet {
 
     // Send extra tokens to the treasury or hold them in the contract
     if (_numUnvestedTokens != 0) {
-      if (_isReclaiming) {
+      if (_revokeVestingSchedule) {
         require(ISecurityToken(securityToken).transfer(
           // treasury,
           msg.sender,
@@ -254,7 +254,7 @@ contract VestingEscrowWallet is IWallet {
       _vestingScheduleIndex,
       _vestingId,
       _tokensToDistribute,
-      _isReclaiming,
+      _revokeVestingSchedule,
       block.timestamp
     );
   }

@@ -47,9 +47,12 @@ contract VestingEscrowWallet is IWallet {
     uint256 vestingFrequency;
   }
 
-  mapping(address => uint256) public individualVestingCount;
-  mapping(address => mapping(uint256 => VestingSchedule)) public individualVestingDetails;
+  mapping(bytes32 => uint256) vestingScheduleIndex;
+  mapping(address => VestingSchedule[]) userToVestingSchedules;
+  // mapping(address => mapping(uint256 => VestingSchedule)) public userToVestingSchedules;
   mapping(uint256 => VestingTemplate) public vestingTemplates;
+
+
 
   /* Events */
   event VestingStarted(
@@ -220,7 +223,7 @@ contract VestingEscrowWallet is IWallet {
     public
     onlyOwner
   {
-    VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_vestingScheduleIndex];
+    VestingSchedule memory _vestingSchedule = userToVestingSchedules[_target];
 
     require(_vestingSchedule.vestingId != 0, "Schedule not initialized");
 
@@ -228,7 +231,7 @@ contract VestingEscrowWallet is IWallet {
     uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
     uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.numClaimedVestedTokens);
     uint256 _numUnvestedTokens = _vestingSchedule.numUnvestedTokens.sub(_tokensToDistribute);
-    delete individualVestingDetails[_target][_vestingScheduleIndex];
+    delete userToVestingSchedules[_target];
 
     // Send vested, unclaimed tokens to the target
     if (_tokensToDistribute != 0) {
@@ -289,7 +292,7 @@ contract VestingEscrowWallet is IWallet {
   function _distributeVestedTokens(address _target, uint256 _vestingScheduleIndex)
     internal
   {
-    VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_vestingScheduleIndex];
+    VestingSchedule memory _vestingSchedule = userToVestingSchedules[_target];
 
     require(_vestingSchedule.vestingId != 0, "Schedule not initialized");
 
@@ -353,12 +356,12 @@ contract VestingEscrowWallet is IWallet {
       )
     );
 
-    uint256 _individualVestingCount = individualVestingCount[_target];
-    individualVestingCount[_target] += 1;
+    uint256 _vestingScheduleIndex = vestingScheduleIndex[_target];
+    vestingScheduleIndex[_target] += 1;
 
     uint256 _numUnvestedTokens = _totalAllocation;
 
-    individualVestingDetails[_target][_individualVestingCount] = VestingSchedule({
+    userToVestingSchedules[_target] = VestingSchedule({
       vestingId: _vestingId,
       totalAllocation: _totalAllocation,
       vestingDuration: _vestingDuration,

@@ -20,6 +20,8 @@ contract VestingEscrowWalletFactory is ModuleFactory {
         name = "VestingEscrowWallet";
         title = "Vesting Escrow Wallet";
         description = "Allows Issuer to program an automated token vesting schedule for employees and/or affiliates so that Tokens get delivered to their wallets as contractually defined.";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
     /**

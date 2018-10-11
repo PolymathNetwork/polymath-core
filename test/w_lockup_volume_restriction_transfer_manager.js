@@ -7,7 +7,7 @@ import { catchRevert } from "./helpers/exceptions";
 
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
-const VolumeRestrictionTransferManager = artifacts.require('./LockupVolumeRestrictionTransferManager');
+const VolumeRestrictionTransferManager = artifacts.require('./LockupVolumeRestrictionTM');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 
 const Web3 = require('web3');
@@ -223,7 +223,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
                 .replace(/\u0000/g, ''),
-                "VolumeRestrictionTransferManager",
+                "LockupVolumeRestrictionTM",
                 "VolumeRestrictionTransferManagerFactory module was not added"
             );
             P_VolumeRestrictionTransferManager = VolumeRestrictionTransferManager.at(tx.logs[3].args._module);
@@ -236,7 +236,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
                 .replace(/\u0000/g, ''),
-                "VolumeRestrictionTransferManager",
+                "LockupVolumeRestrictionTM",
                 "VolumeRestrictionTransferManager module was not added"
             );
             I_VolumeRestrictionTransferManager = VolumeRestrictionTransferManager.at(tx.logs[2].args._module);
@@ -775,7 +775,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             assert.equal((await I_VolumeRestrictionTransferManagerFactory.getTypes.call())[0],2);
             assert.equal(web3.utils.toAscii(await I_VolumeRestrictionTransferManagerFactory.getName.call())
                         .replace(/\u0000/g, ''),
-                        "VolumeRestrictionTransferManager",
+                        "LockupVolumeRestrictionTM",
                         "Wrong Module added");
             assert.equal(await I_VolumeRestrictionTransferManagerFactory.getDescription.call(),
                         "Manage transfers using lock ups over time",

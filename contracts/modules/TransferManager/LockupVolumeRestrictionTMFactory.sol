@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
-import "./WeightedVoteCheckpoint.sol";
+import "./LockupVolumeRestrictionTM.sol";
 import "../ModuleFactory.sol";
 
 /**
- * @title Factory for deploying WeightedVoteCheckpoint module
+ * @title Factory for deploying ManualApprovalTransferManager module
  */
-contract WeightedVoteCheckpointFactory is ModuleFactory {
+contract LockupVolumeRestrictionTMFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -16,33 +16,35 @@ contract WeightedVoteCheckpointFactory is ModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+      ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
-        name = "WeightedVoteCheckpoint";
-        title = "Weighted Vote Checkpoint";
-        description = "Weighted votes based on token amount";
+        name = "LockupVolumeRestrictionTM";
+        title = "Lockup Volume Restriction Transfer Manager";
+        description = "Manage transfers using lock ups over time";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-
     }
 
-    /**
+     /**
      * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        return address(new WeightedVoteCheckpoint(msg.sender, address(polyToken)));
+        LockupVolumeRestrictionTM lockupVolumeRestrictionTransferManager = new LockupVolumeRestrictionTM(msg.sender, address(polyToken));
+        emit GenerateModuleFromFactory(address(lockupVolumeRestrictionTransferManager), getName(), address(this), msg.sender, now);
+        return address(lockupVolumeRestrictionTransferManager);
     }
 
-     /**
+    /**
      * @notice Type of the Module factory
+     * @return uint8
      */
     function getTypes() external view returns(uint8[]) {
         uint8[] memory res = new uint8[](1);
-        res[0] = 4;
+        res[0] = 2;
         return res;
     }
 
@@ -85,14 +87,18 @@ contract WeightedVoteCheckpointFactory is ModuleFactory {
      * @notice Get the Instructions that helped to used the module
      */
     function getInstructions() external view returns(string) {
-        return "Create a vote which allows token holders to vote on an issue with a weight proportional to their balances at the point the vote is created.";
+        return "Allows an issuer to set lockup periods for user addresses, with funds distributed over time. Init function takes no parameters.";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
     function getTags() external view returns(bytes32[]) {
-        bytes32[] memory availableTags = new bytes32[](0);
+        bytes32[] memory availableTags = new bytes32[](2);
+        availableTags[0] = "Volume";
+        availableTags[1] = "Transfer Restriction";
         return availableTags;
     }
+
+
 }

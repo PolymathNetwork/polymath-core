@@ -14,6 +14,7 @@ const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApproval
 const SingleTradeVolumeRestrictionManagerFactory = artifacts.require('./SingleTradeVolumeRestrictionManagerFactory.sol');
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
+const BlacklistTransferManagerFactory = artifacts.require("./BlacklistTransferManagerFactory.sol");
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const USDTieredSTOProxyFactory = artifacts.require("./USDTieredSTOProxyFactory");
 const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
@@ -39,6 +40,7 @@ let I_SingleTradeVolumeRestrictionManagerFactory;
 let I_ManualApprovalTransferManagerFactory;
 let I_VolumeRestrictionTransferManagerFactory;
 let I_PercentageTransferManagerFactory;
+let I_BlacklistTransferManagerFactory;
 let I_EtherDividendCheckpointFactory;
 let I_CountTransferManagerFactory;
 let I_ERC20DividendCheckpointFactory;
@@ -235,6 +237,18 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
 
     await registerAndVerifyByMR(I_PercentageTransferManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_PercentageTransferManagerFactory);
+}
+
+export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_BlacklistTransferManagerFactory = await BlacklistTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_BlacklistTransferManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "BlacklistTransferManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_BlacklistTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_BlacklistTransferManagerFactory);
 }
 
 export async function deployVolumeRTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {

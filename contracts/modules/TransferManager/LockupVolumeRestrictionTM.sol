@@ -4,7 +4,7 @@ import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 
-contract LockupVolumeRestrictionTransferManager is ITransferManager {
+contract LockupVolumeRestrictionTM is ITransferManager {
 
     using SafeMath for uint256;
 

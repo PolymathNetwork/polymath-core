@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
-import "./LockupVolumeRestrictionTransferManager.sol";
+import "./LockupVolumeRestrictionTM.sol";
 import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying ManualApprovalTransferManager module
  */
-contract LockupVolumeRestrictionTransferManagerFactory is ModuleFactory {
+contract LockupVolumeRestrictionTMFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -19,7 +19,7 @@ contract LockupVolumeRestrictionTransferManagerFactory is ModuleFactory {
       ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
-        name = "VolumeRestrictionTransferManager";
+        name = "LockupVolumeRestrictionTM";
         title = "Lockup Volume Restriction Transfer Manager";
         description = "Manage transfers using lock ups over time";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
@@ -33,7 +33,7 @@ contract LockupVolumeRestrictionTransferManagerFactory is ModuleFactory {
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        address lockupVolumeRestrictionTransferManager = new LockupVolumeRestrictionTransferManager(msg.sender, address(polyToken));
+        LockupVolumeRestrictionTM lockupVolumeRestrictionTransferManager = new LockupVolumeRestrictionTM(msg.sender, address(polyToken));
         emit GenerateModuleFromFactory(address(lockupVolumeRestrictionTransferManager), getName(), address(this), msg.sender, now);
         return address(lockupVolumeRestrictionTransferManager);
     }

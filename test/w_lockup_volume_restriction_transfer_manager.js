@@ -7,7 +7,7 @@ import { catchRevert } from "./helpers/exceptions";
 
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
-const VolumeRestrictionTransferManager = artifacts.require('./LockupVolumeRestrictionTransferManager');
+const VolumeRestrictionTransferManager = artifacts.require('./LockupVolumeRestrictionTM');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 
 const Web3 = require('web3');

@@ -8,7 +8,7 @@ import { catchRevert } from "./helpers/exceptions";
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
-const SingleTradeVolumeRestrictionManager = artifacts.require('./SingleTradeVolumeRestrictionManager');
+const SingleTradeVolumeRestrictionManager = artifacts.require('./SingleTradeVolumeRestrictionTM');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 

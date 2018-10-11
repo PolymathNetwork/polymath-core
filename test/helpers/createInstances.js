@@ -22,7 +22,7 @@ const STFactory = artifacts.require("./STFactory.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
-const VolumeRestrictionTransferManagerFactory = artifacts.require("./VolumeRestrictionTransferManagerFactory");
+const VolumeRestrictionTransferManagerFactory = artifacts.require("./LockupVolumeRestrictionTransferManagerFactory");
 const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PolyToken = artifacts.require("./PolyToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
@@ -237,7 +237,7 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
     return new Array(I_PercentageTransferManagerFactory);
 }
 
-export async function deployVolumeRTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
     I_VolumeRestrictionTransferManagerFactory = await VolumeRestrictionTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
     assert.notEqual(
         I_VolumeRestrictionTransferManagerFactory.address.valueOf(),

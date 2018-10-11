@@ -213,14 +213,14 @@ contract VestingEscrowWallet is IWallet {
   /**
   * @notice Cancel a vesting schedule for an employee or affiliate
   * @param _target Address of the employee or the affiliate
-  * @param _whichVestingSchedule Index of the vesting schedule for the target
+  * @param _vestingScheduleIndex Index of the vesting schedule for the target
   * @param _isReclaiming True if the issuer is reclaiming the tokens out of the contract
   */
-  function cancelVestingSchedule(address _target, uint256 _whichVestingSchedule, bool _isReclaiming)
+  function cancelVestingSchedule(address _target, uint256 _vestingScheduleIndex, bool _isReclaiming)
     public
     onlyOwner
   {
-    VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
+    VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_vestingScheduleIndex];
 
     require(_vestingSchedule.vestingId != 0, "Schedule not initialized");
 
@@ -228,7 +228,7 @@ contract VestingEscrowWallet is IWallet {
     uint256 _currentTranche = _calculateCurrentTranche(_vestingSchedule.startDate, _vestingSchedule.vestingDuration);
     uint256 _tokensToDistribute = _calculateTokensToDistribute(_currentTranche, _vestingSchedule.tokensPerTranche, _vestingSchedule.numClaimedVestedTokens);
     uint256 _numUnvestedTokens = _vestingSchedule.numUnvestedTokens.sub(_tokensToDistribute);
-    delete individualVestingDetails[_target][_whichVestingSchedule];
+    delete individualVestingDetails[_target][_vestingScheduleIndex];
 
     // Send vested, unclaimed tokens to the target
     if (_tokensToDistribute != 0) {
@@ -251,7 +251,7 @@ contract VestingEscrowWallet is IWallet {
 
     emit VestingCancelled(
       _target,
-      _whichVestingSchedule,
+      _vestingScheduleIndex,
       _vestingId,
       _tokensToDistribute,
       _isReclaiming,
@@ -261,35 +261,35 @@ contract VestingEscrowWallet is IWallet {
 
   /**
   * @notice Collect vested tokens
-  * @param _whichVestingSchedule Index of the vesting schedule for the target
+  * @param _vestingScheduleIndex Index of the vesting schedule for the target
   */
-  function collectVestedTokens(uint256 _whichVestingSchedule)
+  function collectVestedTokens(uint256 _vestingScheduleIndex)
     public
   {
-    _distributeVestedTokens(msg.sender, _whichVestingSchedule);
+    _distributeVestedTokens(msg.sender, _vestingScheduleIndex);
   }
 
   /**
   * @notice Push vested tokens
   * @param _target Address of the employee or the affiliate
-  * @param _whichVestingSchedule Index of the vesting schedule for the target
+  * @param _vestingScheduleIndex Index of the vesting schedule for the target
   */
-  function pushVestedTokens(address _target, uint256 _whichVestingSchedule)
+  function pushVestedTokens(address _target, uint256 _vestingScheduleIndex)
     public
     onlyOwner
   {
-    _distributeVestedTokens(_target, _whichVestingSchedule);
+    _distributeVestedTokens(_target, _vestingScheduleIndex);
   }
 
   /**
   * @notice Distribute vested tokens
   * @param _target Address of the employee or the affiliate
-  * @param _whichVestingSchedule Index of the vesting schedule for the target
+  * @param _vestingScheduleIndex Index of the vesting schedule for the target
   */
-  function _distributeVestedTokens(address _target, uint256 _whichVestingSchedule)
+  function _distributeVestedTokens(address _target, uint256 _vestingScheduleIndex)
     internal
   {
-    VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_whichVestingSchedule];
+    VestingSchedule memory _vestingSchedule = individualVestingDetails[_target][_vestingScheduleIndex];
 
     require(_vestingSchedule.vestingId != 0, "Schedule not initialized");
 
@@ -306,7 +306,7 @@ contract VestingEscrowWallet is IWallet {
 
     emit TokensCollected(
       _target,
-      _whichVestingSchedule,
+      _vestingScheduleIndex,
       _vestingSchedule.vestingId,
       _tokensToDistribute
     );

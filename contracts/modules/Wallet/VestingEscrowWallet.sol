@@ -59,10 +59,7 @@ contract VestingEscrowWallet is IWallet {
     uint256 vestingDuration,
     uint256 startDate,
     uint256 vestingFrequency,
-    uint256 numVestedTokens,
-    uint256 numUnvestedTokens,
     uint256 numClaimedVestedTokens,
-    uint256 numUnclaimedVestedTokens,
     uint256 tokensPerTranche
   );
 
@@ -393,10 +390,7 @@ contract VestingEscrowWallet is IWallet {
       _vestingDuration,
       _startDate,
       _vestingFrequency,
-      0,
       _numUnvestedTokens,
-      0,
-      0,
       _tokensPerTranche
     );
   }

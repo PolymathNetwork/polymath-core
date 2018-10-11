@@ -12,7 +12,7 @@ contract PolyTokenFaucet {
     using SafeMath for uint256;
     uint256 totalSupply_;
     string public name = "Polymath Network";
-    uint8 public decimals = 18;
+    uint8 public decimals;
     string public symbol = "POLY";
 
     mapping(address => uint256) balances;
@@ -23,13 +23,14 @@ contract PolyTokenFaucet {
 
     constructor() public {
         totalSupply_ = 1000000;
+        decimals = 18;
         balances[msg.sender] = 1000000;
         emit Transfer(address(0), msg.sender, 1000000);
     }
 
     /* Token faucet - Not part of the ERC20 standard */
     function getTokens(uint256 _amount, address _recipient) public returns (bool) {
-        require(_amount <= 1000000 * uint256(10)**18, "Amount can not be more than 1 million");
+        require(_amount <= 1000000 * uint256(10)**decimals, "Amount can not be more than 1 million");
         require(_recipient != address(0), "Recipient address can not be empty");
         balances[_recipient] = balances[_recipient].add(_amount);
         totalSupply_ = totalSupply_.add(_amount);

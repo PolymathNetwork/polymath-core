@@ -175,11 +175,11 @@ contract VestingEscrowWallet is IWallet {
             _target.length == _vestingFrequency.length);
 
     for (uint i = 0; i < _target.length; i++) {
-      _initiateVestingScheduleIterate(_target[i],
-                                      _totalAllocation[i],
-                                      _vestingDuration[i],
-                                      _startDate[i],
-                                      _vestingFrequency[i]);
+      initiateVestingScheduleIterate(_target[i],
+                                     _totalAllocation[i],
+                                     _vestingDuration[i],
+                                     _startDate[i],
+                                     _vestingFrequency[i]);
     }
   }
 
@@ -202,11 +202,11 @@ contract VestingEscrowWallet is IWallet {
 
     for (uint i = 0; i < _target.length; i++) {
       require(_target[i] != address(0));
-      _initiateVestingScheduleIterate(_target[i],
-                                      _vestingTemplate.totalAllocation,
-                                      _vestingTemplate.vestingDuration,
-                                      _startDate,
-                                      _vestingTemplate.vestingFrequency);
+      initiateVestingScheduleIterate(_target[i],
+                                     _vestingTemplate.totalAllocation,
+                                     _vestingTemplate.vestingDuration,
+                                     _startDate,
+                                     _vestingTemplate.vestingFrequency);
     }
   }
 
@@ -320,14 +320,15 @@ contract VestingEscrowWallet is IWallet {
   * @param _startDate Start date of the vesting schedule
   * @param _vestingFrequency Frequency of release of tokens
   */
-  function _initiateVestingScheduleIterate(
+  function initiateVestingScheduleIterate(
     address _target,
     uint256 _totalAllocation,
     uint256 _vestingDuration,
     uint256 _startDate,
     uint256 _vestingFrequency
   )
-    internal
+    public
+    withPerm(ISSUER)
   {
     require(_target != address(0), "The target should be a valid addrss");
     require(_totalAllocation != 0, "The total allocation should not be 0");

@@ -291,8 +291,8 @@ contract('USDTieredSTO', accounts => {
         // Step 11: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY
         I_POLYOracle = await MockOracle.new(I_PolyToken.address, "POLY", "USD", USDPOLY, { from: POLYMATH }); // 25 cents per POLY
-        await I_SecurityTokenRegistry.changeOracle("ETH", "USD", I_USDOracle.address, { from: POLYMATH });
-        await I_SecurityTokenRegistry.changeOracle("POLY", "USD", I_POLYOracle.address, { from: POLYMATH });
+        await I_PolymathRegistry.changeAddress("EthUsdOracle", I_USDOracle.address, { from: POLYMATH });
+        await I_PolymathRegistry.changeAddress("PolyUsdOracle", I_POLYOracle.address, { from: POLYMATH });
 
         // Printing all the contract addresses
         console.log(`
@@ -990,7 +990,7 @@ contract('USDTieredSTO', accounts => {
             assert.ok(errorThrown4, 'ACCREDITED POLY investment succeeded when it should not');
 
             // Unpause the STO
-            await I_USDTieredSTO_Array[stoId].unpause(_endTime[stoId], { from: ISSUER });
+            await I_USDTieredSTO_Array[stoId].unpause({ from: ISSUER });
             assert.equal(await I_USDTieredSTO_Array[stoId].paused.call(), false, 'STO did not unpause successfully');
 
             await I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH });
@@ -1563,11 +1563,19 @@ contract('USDTieredSTO', accounts => {
             assert.equal((await I_USDTieredSTO_Array[stoId].investorInvestedPOLY.call(ACCREDITED1)).toNumber(), init_investorInvestedPOLY.add(investment_POLY).toNumber(), "investorInvestedPOLY not changed as expected");
         });
 
+        it("should successfully modify NONACCREDITED cap for NONACCREDITED1", async() => {
+            let stoId = 0;
+            let tierId = 0;
+            console.log("Current investment: " + (await I_USDTieredSTO_Array[stoId].investorInvestedUSD.call(NONACCREDITED1)).toNumber());
+            await I_USDTieredSTO_Array[stoId].changeNonAccreditedLimit([NONACCREDITED1], [_nonAccreditedLimitUSD[stoId].div(2)], {from: ISSUER});
+            console.log("Current limit: " + (await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSDOverride(NONACCREDITED1)).toNumber());
+        });
+
         it("should successfully buy a partial amount and refund balance when reaching NONACCREDITED cap", async() => {
             let stoId = 0;
             let tierId = 0;
 
-            let investment_USD = _nonAccreditedLimitUSD[stoId];
+            let investment_USD = (await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSDOverride(NONACCREDITED1));//_nonAccreditedLimitUSD[stoId];
             let investment_Token = await convert(stoId, tierId, false, "USD", "TOKEN", investment_USD);
             let investment_ETH = await convert(stoId, tierId, false, "USD", "ETH", investment_USD);
             let investment_POLY = await convert(stoId, tierId, false, "USD", "POLY", investment_USD);
@@ -1576,6 +1584,8 @@ contract('USDTieredSTO', accounts => {
             let refund_Token = await convert(stoId, tierId, false, "USD", "TOKEN", refund_USD);
             let refund_ETH = await convert(stoId, tierId, false, "USD", "ETH", refund_USD);
             let refund_POLY = await convert(stoId, tierId, false, "USD", "POLY", refund_USD);
+
+            console.log("Expected refund in tokens: " + refund_Token.toNumber());
 
             let snap = await takeSnapshot();
 

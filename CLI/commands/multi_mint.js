@@ -1,9 +1,9 @@
 var fs = require('fs');
 var csv = require('fast-csv');
 var BigNumber = require('bignumber.js');
-const Web3 = require('web3');
 const chalk = require('chalk');
 var common = require('./common/common_functions');
+var global = require('./common/global');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require('./helpers/contract_addresses');
@@ -11,18 +11,11 @@ var abis = require('./helpers/contract_abis');
 
 let securityToken;
 
-////////////////////////////WEB3//////////////////////////////////////////
-if (typeof web3 !== 'undefined') {
-  web3 = new Web3(web3.currentProvider);
-} else {
-  // set the provider you want from Web3.providers
-  web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-}
-
 ////////////////////////////USER INPUTS//////////////////////////////////////////
 let tokenSymbol = process.argv.slice(2)[0]; //token symbol
 let BATCH_SIZE = process.argv.slice(2)[1]; //batch size
 if (!BATCH_SIZE) BATCH_SIZE = 75;
+let remoteNetwork = process.argv.slice(2)[2];
 
 /////////////////////////GLOBAL VARS//////////////////////////////////////////
 
@@ -35,13 +28,13 @@ let allocData = new Array();
 let fullFileData = new Array();
 let badData = new Array();
 
-let defaultGasPrice;
-
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
 startScript();
 
 async function startScript() {
+  await global.initialize(remoteNetwork);
+
   try {
     let tickerRegistryAddress = await contracts.tickerRegistry();
     let tickerRegistryABI = abis.tickerRegistry();
@@ -77,7 +70,6 @@ function readFile() {
       .on("data", function (data) {
         let isAddress = web3.utils.isAddress(data[0]);
         let validToken = isvalidToken(data[1]);
-
 
         if (isAddress && validToken) {
           let userArray = new Array()
@@ -116,14 +108,10 @@ function readFile() {
   }
 
   async function mint_tokens_for_affliliates() {
-    accounts = await web3.eth.getAccounts();
-    Issuer = accounts[0];
-    defaultGasPrice = common.getGasPrice(await web3.eth.net.getId());
-
     let tokenDeployed = false;
     let tokenDeployedAddress;
     // Let's check if token has already been deployed, if it has, skip to STO
-    await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({ from: Issuer }, function (error, result) {
+    await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({}, function (error, result) {
         if (result != "0x0000000000000000000000000000000000000000") {
         console.log('\x1b[32m%s\x1b[0m', "Token deployed at address " + result + ".");
         tokenDeployedAddress = result;
@@ -134,7 +122,7 @@ function readFile() {
         let securityTokenABI = abis.securityToken();
         securityToken = new web3.eth.Contract(securityTokenABI, tokenDeployedAddress);
     }
-    await securityToken.methods.getModule(3, 0).call({ from: Issuer }, function (error, result) {
+    await securityToken.methods.getModule(3, 0).call({}, function (error, result) {
         if (web3.utils.toAscii(result[0]).replace(/\u0000/g, '') == "CappedSTO") {
             console.log("****************************************************************************************\n");
             console.log("*************" + chalk.red(" Minting of tokens is only allowed before the STO get attached ") + "************\n");
@@ -158,7 +146,7 @@ function readFile() {
       for (let j = 0; j < distribData[i].length; j++) {
         let investorAccount = distribData[i][j][0];
         let tokenAmount = web3.utils.toWei((distribData[i][j][1]).toString(),"ether");
-        let verifiedTransaction = await securityToken.methods.verifyTransfer("0x0000000000000000000000000000000000000000", investorAccount, tokenAmount).call({from : Issuer});
+        let verifiedTransaction = await securityToken.methods.verifyTransfer("0x0000000000000000000000000000000000000000", investorAccount, tokenAmount).call();
         if (verifiedTransaction) {
           affiliatesVerifiedArray.push(investorAccount);
           tokensVerifiedArray.push(tokenAmount);
@@ -167,8 +155,7 @@ function readFile() {
         }
       }
       let mintMultiAction = securityToken.methods.mintMulti(affiliatesVerifiedArray, tokensVerifiedArray);
-      let GAS = await common.estimateGas(mintMultiAction, Issuer, 1.2);
-      let r = await mintMultiAction.send({ from: Issuer, gas: GAS, gasPrice: defaultGasPrice })
+      let r = await common.sendTransaction(Issuer, mintMultiAction, defaultGasPrice);
       console.log(`Batch ${i} - Attempting to send the Minted tokens to affiliates accounts:\n\n`, affiliatesVerifiedArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
       console.log("Multi Mint transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");
@@ -251,46 +238,16 @@ function readFile() {
 
   if (failedVerificationDistribs.length > 0) {
     console.log("************************************************************************************************");
-    console.log("-- The following data arrays failed at verifyTransfer. Please review if these accounts are whitelisted --");
+    console.log("-- The following data arrays failed at verifyTransfer. Please review if these accounts are whitelisted --\n");
     console.log(failedVerificationDistribs);
     console.log("************************************************************************************************");
-    console.log("LIST OF ALL INVESTORS WHO GOT THE MINTED TOKENS: \n\n", investorAddress_Events)
-
-    let missingDistribs = [];
-    let failedVerificationDistribs = [];
-    for (let l = 0; l < fullFileData.length; l++) {
-      if (affiliatesFailedArray.includes(fullFileData[l][0])) {
-        failedVerificationDistribs.push(fullFileData[l]);
-      } else if (!investorObjectLookup.hasOwnProperty(fullFileData[l][0])) {
-        missingDistribs.push(fullFileData[l]);
-      }
-    }
-
-    if (failedVerificationDistribs.length > 0) {
-      console.log("************************************************************************************************");
-      console.log("-- The following data arrays failed at verifyTransfer. Please review if these accounts are whitelisted --");
-      console.log(failedVerificationDistribs);
-      console.log("************************************************************************************************");
-    }
-    if (missingDistribs.length > 0) {
-      console.log("************************************************************************************************");
-      console.log("-- No Minted event was found for the following data arrays. Please review them manually --");
-      console.log(missingDistribs);
-      console.log("************************************************************************************************");
-    }
-    if (missingDistribs.length == 0 && failedVerificationDistribs.length == 0) {
-      console.log("\n**************************************************************************************************************************");
-      console.log("All accounts passed through from the CSV were successfully get the tokens, because we were able to read them all from events");
-      console.log("****************************************************************************************************************************");
-    }
-
   }
   if (missingDistribs.length > 0) {
     console.log("************************************************************************************************");
     console.log("-- No Minted event was found for the following data arrays. Please review them manually --");
     console.log(missingDistribs);
     console.log("************************************************************************************************");
-  } 
+  }
   if (missingDistribs.length == 0 && failedVerificationDistribs.length == 0) {
     console.log("\n**************************************************************************************************************************");
     console.log("All accounts passed through from the CSV were successfully get the tokens, because we were able to read them all from events");

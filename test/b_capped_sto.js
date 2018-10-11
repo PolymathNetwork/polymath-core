@@ -576,40 +576,12 @@ contract('CappedSTO', accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("Should unpause the STO -- Failed due to too large an increase in endtime", async()=> {
-            let errorThrown = false;
-            increaseTime(500);
-            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber()) + 800;
-            try {
-                let tx = await I_CappedSTO_Array_ETH[0].unpause(newEndDate, {from: account_issuer});
-            } catch(error) {
-                console.log(`         tx revert -> Wrong msg.sender`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
-        });
-
         it("Should unpause the STO -- Failed due to wrong msg.sender", async()=> {
             let errorThrown = false;
-            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber())  + 400;
             try {
-                let tx = await I_CappedSTO_Array_ETH[0].unpause(newEndDate, {from: account_investor1});
+                let tx = await I_CappedSTO_Array_ETH[0].unpause({from: account_investor1});
             } catch(error) {
                 console.log(`         tx revert -> Wrong msg.sender`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("Should unpause the STO -- Failed due to entered date is less than the end date", async()=> {
-            let errorThrown = false;
-            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber()) - 400;
-            try {
-                let tx = await I_CappedSTO_Array_ETH[0].unpause(newEndDate, {from: account_issuer});
-            } catch(error) {
-                console.log(`         tx revert -> Entered date is less than the end date`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
@@ -617,8 +589,7 @@ contract('CappedSTO', accounts => {
         });
 
         it("Should unpause the STO", async()=> {
-            let newEndDate = ((await I_CappedSTO_Array_ETH[0].endTime.call()).toNumber())  + 400;
-            let tx = await I_CappedSTO_Array_ETH[0].unpause(newEndDate, {from: account_issuer});
+            let tx = await I_CappedSTO_Array_ETH[0].unpause({from: account_issuer});
             assert.isFalse(await I_CappedSTO_Array_ETH[0].paused.call());
         });
 
@@ -806,7 +777,7 @@ contract('CappedSTO', accounts => {
             );
         });
 
-        it("Should successfully invest in second STO", async() => {
+        it("Should successfully whitelist investor 3", async() => {
 
             balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
 
@@ -825,8 +796,32 @@ contract('CappedSTO', accounts => {
 
             // Jump time to beyond STO start
             await increaseTime(duration.days(2));
+        });
 
-            await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_investor3, value: web3.utils.toWei('1', 'ether') });
+        it("Should invest in second STO - fails due to incorrect beneficiary", async() => {
+
+            // Buying on behalf of another user should fail
+            let errorThrown = false;
+            try {
+                 await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_issuer, value: web3.utils.toWei('1', 'ether') });
+            } catch(error) {
+                console.log(`         tx revert -> incorrect beneficiary`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+
+        });
+
+        it("Should allow non-matching beneficiary", async() => {
+            await I_CappedSTO_Array_ETH[1].changeAllowBeneficialInvestments(true, {from: account_issuer});
+            let allow = await I_CappedSTO_Array_ETH[1].allowBeneficialInvestments();
+            assert.equal(allow, true, "allowBeneficialInvestments should be true");
+        });
+
+        it("Should invest in second STO", async() => {
+
+            await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from : account_issuer, value: web3.utils.toWei('1', 'ether') });
 
             assert.equal(
                 (await I_CappedSTO_Array_ETH[1].fundsRaised.call())

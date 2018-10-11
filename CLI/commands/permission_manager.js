@@ -15,7 +15,8 @@ const MODULES_TYPES = {
   PERMISSION: 1,
   TRANSFER: 2,
   STO: 3,
-  DIVIDEND: 4
+  DIVIDEND: 4,
+  BURN: 5
 }
 
 async function executeApp(remoteNetwork) {
@@ -68,21 +69,21 @@ async function selectST() {
 
 async function addPermissionModule() {
   let generalPermissionManagerAddress;
-  let result = await securityToken.methods.getModule(1, 0).call();
-  if (result[1] == "0x0000000000000000000000000000000000000000") {
+  let result = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralPermissionManager')).call();
+  if (result.length == 0) {
     console.log(chalk.red(`General Permission Manager is not attached.`));
     if (readlineSync.keyInYNStrict('Do you want to add General Permission Manager Module to your Security Token?')) {
-      let permissionManagerFactoryAddress = await contracts.generalPermissionManagerFactoryAddress();
+      let permissionManagerFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.PERMISSION, 'GeneralPermissionManager');
       let addModuleAction = securityToken.methods.addModule(permissionManagerFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
       let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
-      let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'LogModuleAdded');
+      let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
       console.log(`Module deployed at address: ${event._module}`);
       generalPermissionManagerAddress = event._module;
     } else {
       process.exit(0);
     }
   } else {
-    generalPermissionManagerAddress = result[1];
+    generalPermissionManagerAddress = result[0];
   }
 
   let generalPermissionManagerABI = abis.generalPermissionManager();
@@ -99,6 +100,7 @@ async function changePermissionStep() {
   await changePermission(selectedDelegate, selectedModule.address, selectedPermission, isValid);
 }
 
+// Helper functions
 async function selectDelegate() {
   let result;
   let delegates = await getDelegates();
@@ -146,14 +148,13 @@ function isPermissionValid() {
 async function changePermission(delegate, moduleAddress, permission, isValid) {
   let changePermissionAction = generalPermissionManager.methods.changePermission(delegate, moduleAddress, web3.utils.asciiToHex(permission), isValid);
   let receipt = await common.sendTransaction(Issuer, changePermissionAction, defaultGasPrice, 0, 1.5);
-  common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'LogChangePermission');
+  common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'ChangePermission');
   console.log(`Permission changed succesfully,`);
 }
 
-// Helper functions
 async function getDelegates() {
   let result = [];
-
+  /*
   let events = await generalPermissionManager.getPastEvents('LogAddPermission', { fromBlock: 0});
   for (let event of events) {
     let delegate = {};
@@ -161,7 +162,14 @@ async function getDelegates() {
     delegate.details = web3.utils.hexToAscii(event.returnValues._details);
     result.push(delegate);
   }
-
+  */
+  let delegates = await generalPermissionManager.methods.getAllDelegates().call();
+  for (let d of delegates) {
+    let delegate = {};
+    delegate.address = d;
+    delegate.details = web3.utils.hexToAscii(await generalPermissionManager.methods.delegateDetails(d).call());
+    result.push(delegate);
+  }
   return result;
 }
 
@@ -178,9 +186,9 @@ async function addNewDelegate() {
     },
     limitMessage: "Must be a valid string"
   });
-  let addPermissionAction = generalPermissionManager.methods.addPermission(newDelegate, web3.utils.asciiToHex(details));
+  let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
   let receipt = await common.sendTransaction(Issuer, addPermissionAction, defaultGasPrice);
-  let event = common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'LogAddPermission');
+  let event = common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'AddDelegate');
   console.log(`Delegate added succesfully: ${event._delegate} - ${event._details}`);
   return event._delegate;
 }
@@ -190,27 +198,16 @@ async function getModulesWithPermissions() {
   let moduleABI = abis.moduleInterface();
   
   for (const type in MODULES_TYPES) {
-    let counter = 0;
-    let keepIterating = true;
-    while (keepIterating) {
-      try {
-        let details = await securityToken.methods.getModule(MODULES_TYPES[type], counter).call();
-        if (details[1] != "0x0000000000000000000000000000000000000000") {
-          let contractTemp = new web3.eth.Contract(moduleABI, details[1]);
-          let permissions = await contractTemp.methods.getPermissions().call();
-          if (permissions.length > 0) {
-            modules.push({ 
-              name: web3.utils.hexToAscii(details[0]),
-              address: details[1],
-              permissions: permissions.map(function (p) { return web3.utils.hexToAscii(p) })
-            })
-          }
-          counter++;
-        } else {
-          keepIterating = false;
-        }
-      } catch (error) {
-        keepIterating = false;
+    let modulesAttached = await securityToken.methods.getModulesByType(MODULES_TYPES[type]).call();
+    for (const m of modulesAttached) {
+      let contractTemp = new web3.eth.Contract(moduleABI, m);
+      let permissions = await contractTemp.methods.getPermissions().call();
+      if (permissions.length > 0) {
+        modules.push({ 
+          name: web3.utils.hexToAscii((await securityToken.methods.getModule(m).call())[0]),
+          address: m,
+          permissions: permissions.map(function (p) { return web3.utils.hexToAscii(p) })
+        })
       }
     }
   }

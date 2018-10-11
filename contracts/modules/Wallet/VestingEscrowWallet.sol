@@ -196,6 +196,7 @@ contract VestingEscrowWallet is IWallet {
   )
     public
     onlyOwner
+    withPerm(ISSUER)
   {
     VestingTemplate memory _vestingTemplate = vestingTemplates[_templateNumber];
 

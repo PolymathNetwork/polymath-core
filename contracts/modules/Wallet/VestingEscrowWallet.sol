@@ -170,6 +170,7 @@ contract VestingEscrowWallet is IWallet {
   )
     public
     onlyOwner
+    withPerm(ISSUER)
   {
     require(_target.length == _totalAllocation.length &&
             _target.length == _vestingDuration.length &&

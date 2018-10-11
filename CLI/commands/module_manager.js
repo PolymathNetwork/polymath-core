@@ -385,11 +385,6 @@ async function mintTokens() {
         console.log(chalk.red("Minting is not possible - Minting has been permanently frozen by issuer"));
         return;
     }
-    let stoModules = await securityToken.methods.getModulesByType(STO_KEY).call();
-    if (stoModules.length > 0) {
-        console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
-        return;
-    }
 
     let _investor = readlineSync.question(chalk.yellow(`Enter the address to receive the tokens: `));
     let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));

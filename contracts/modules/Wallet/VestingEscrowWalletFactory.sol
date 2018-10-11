@@ -38,7 +38,7 @@ contract VestingEscrowWalletFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getType() public view returns(uint8) {
+    function getTypes() public view returns(uint8) {
         return 5;
     }
 

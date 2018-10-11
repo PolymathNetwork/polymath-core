@@ -60,6 +60,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      */
     function addDelegate(address _delegate, bytes32 _details) external withPerm(CHANGE_PERMISSION) {
         require(_details != bytes32(0), "0 value not allowed");
+        require(delegateDetails[_delegate] == bytes32(0), "Already present");
         delegateDetails[_delegate] = _details;
         allDelegates.push(_delegate);
         emit AddDelegate(_delegate, _details, now);

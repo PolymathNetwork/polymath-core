@@ -92,7 +92,7 @@ program
   .alias('w')
   .description('Mass-update a whitelist of allowed/known investors')
   .action(async function(tokenSymbol, batchSize) {
-    shell.exec(`${__dirname}/commands/scripts/script.sh Whitelist ${tokenSymbol} ${batchSize} ${remoteNetwork} ${program.remoteNode}`);
+    shell.exec(`${__dirname}/commands/scripts/script.sh Whitelist ${tokenSymbol} ${batchSize} ${program.remoteNode}`);
   });
 
 program
@@ -136,11 +136,11 @@ program
   });
 
 program
-  .command('strMigrator [fromStrAddress] [toStrAddress]')
+  .command('strMigrator [toStrAddress] [fromTrAddress] [fromStrAddress]')
   .alias('str')
   .description('Runs STR Migrator')
-  .action(async function(fromStrAddress, toStrAddress) {
-    await strMigrator.executeApp(fromStrAddress, toStrAddress, program.remoteNode);
+  .action(async function(toStrAddress, fromTrAddress, fromStrAddress) {
+    await strMigrator.executeApp(toStrAddress, fromTrAddress, fromStrAddress, program.remoteNode);
   });
 
 program

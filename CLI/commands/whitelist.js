@@ -32,6 +32,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 startScript();
 
 async function startScript() {
+  if (remoteNetwork == 'undefined') remoteNetwork = undefined;
   await global.initialize(remoteNetwork);
 
   try {

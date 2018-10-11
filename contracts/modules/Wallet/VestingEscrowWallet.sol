@@ -49,7 +49,6 @@ contract VestingEscrowWallet is IWallet {
 
   mapping(bytes32 => uint256) vestingScheduleIndex;
   mapping(address => VestingSchedule[]) userToVestingSchedules;
-  // mapping(address => mapping(uint256 => VestingSchedule)) public userToVestingSchedules;
   mapping(uint256 => VestingTemplate) public vestingTemplates;
 
 

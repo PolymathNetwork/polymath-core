@@ -139,9 +139,11 @@ contract VestingEscrowWallet is IWallet {
     public
     onlyOwner
   {
-    vestingTemplates[templateCount].totalAllocation = _totalAllocation;
-    vestingTemplates[templateCount].vestingDuration = _vestingDuration;
-    vestingTemplates[templateCount].vestingFrequency = _vestingFrequency;
+    require(_totalAllocation != 0, "Total allocation was initialized to 0");
+    require(_vestingDuration != 0, "Vesting duration was initialized to 0");
+    require(_vestingFrequency != 0, "Vesting frequency was initialized to 0");
+
+    vestingTemplates[templateCount] = VestingTemplate(_totalAllocation, _vestingDuration, _vestingFrequency);
 
     emit AddTemplate(
       templateCount,

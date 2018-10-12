@@ -33,6 +33,7 @@ let badData = new Array();
 startScript();
 
 async function startScript() {
+  if (remoteNetwork == 'undefined') remoteNetwork = undefined;
   await global.initialize(remoteNetwork);
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();

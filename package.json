@@ -65,6 +65,7 @@
     "openzeppelin-solidity": "1.10.0",
     "prettier": "^1.14.3",
     "readline-sync": "^1.4.9",
+    "request-promise": "^4.2.2",
     "shelljs": "^0.8.2",
     "solc": "^0.4.24",
     "truffle-contract": "^3.0.4",

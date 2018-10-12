@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
-import "./VolumeRestrictionTransferManager.sol";
+import "./LockupVolumeRestrictionTM.sol";
 import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying ManualApprovalTransferManager module
  */
-contract VolumeRestrictionTransferManagerFactory is ModuleFactory {
+contract LockupVolumeRestrictionTMFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -19,8 +19,8 @@ contract VolumeRestrictionTransferManagerFactory is ModuleFactory {
       ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
-        name = "VolumeRestrictionTransferManager";
-        title = "Volume Restriction Transfer Manager";
+        name = "LockupVolumeRestrictionTM";
+        title = "Lockup Volume Restriction Transfer Manager";
         description = "Manage transfers using lock ups over time";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
@@ -33,9 +33,9 @@ contract VolumeRestrictionTransferManagerFactory is ModuleFactory {
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        address volumeRestrictionTransferManager = new VolumeRestrictionTransferManager(msg.sender, address(polyToken));
-        emit GenerateModuleFromFactory(address(volumeRestrictionTransferManager), getName(), address(this), msg.sender, now);
-        return address(volumeRestrictionTransferManager);
+        LockupVolumeRestrictionTM lockupVolumeRestrictionTransferManager = new LockupVolumeRestrictionTM(msg.sender, address(polyToken));
+        emit GenerateModuleFromFactory(address(lockupVolumeRestrictionTransferManager), getName(), address(this), msg.sender, now);
+        return address(lockupVolumeRestrictionTransferManager);
     }
 
     /**

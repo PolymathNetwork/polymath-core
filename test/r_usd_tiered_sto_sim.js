@@ -510,7 +510,7 @@ contract('USDTieredSTO', accounts => {
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     Token_counter = BigNumber(0);
                                 }
-                                POLY_Tier = USD_Tier.mul(10**18).round(0).div(USDPOLY).round(0);
+                                POLY_Tier = USD_Tier.mul(10**18).toFixed(0).div(USDPOLY).toFixed(0);
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Tokens_discount[tier] = Tokens_discount[tier].sub(Token_Tier);
@@ -530,7 +530,7 @@ contract('USDTieredSTO', accounts => {
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     Token_counter = BigNumber(0);
                                 }
-                                POLY_Tier = USD_Tier.mul(10**18).round(0).div(USDPOLY).round(0);
+                                POLY_Tier = USD_Tier.mul(10**18).toFixed(0).div(USDPOLY).toFixed(0);
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Token_counter = Token_counter.sub(Token_Tier);
@@ -549,7 +549,7 @@ contract('USDTieredSTO', accounts => {
                                 Token_Tier = Token_Tier.sub(Token_overflow);
                                 Token_counter = BigNumber(0);
                             }
-                            ETH_Tier = USD_Tier.mul(10**18).round(0).div(USDETH).round(0);
+                            ETH_Tier = USD_Tier.mul(10**18).toFixed(0).div(USDETH).toFixed(0);
                             USD_remaining = USD_remaining.sub(USD_Tier);
                             Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                             Token_counter = Token_counter.sub(Token_Tier);
@@ -586,10 +586,10 @@ contract('USDTieredSTO', accounts => {
             }
 
             async function processInvestment(_investor, investment_Token, investment_USD, investment_POLY, investment_ETH, isPoly, log_remaining, Tokens_total, Tokens_discount, tokensSold) {
-              investment_Token = investment_Token.round(0);
-              investment_USD = investment_USD.round(0);
-              investment_POLY = investment_POLY.round(0);
-              investment_ETH = investment_ETH.round(0);
+              investment_Token = investment_Token.toFixed(0);
+              investment_USD = investment_USD.toFixed(0);
+              investment_POLY = investment_POLY.toFixed(0);
+              investment_ETH = investment_ETH.toFixed(0);
                 console.log(`
             ------------------- New Investment -------------------
             Investor:   ${_investor}

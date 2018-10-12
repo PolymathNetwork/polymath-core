@@ -5,6 +5,7 @@ import { encodeProxyCall } from './helpers/encodeCall';
 
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
+const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
 const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
@@ -13,10 +14,12 @@ const STFactory = artifacts.require('./STFactory.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
-const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFactory.sol');
-const VestingEscrowWallet = artifacts.require('./VestingEscrowWallet.sol');
+const TrackedRedemptionFactory = artifacts.require('./TrackedRedemptionFactory.sol');
+const TrackedRedemption = artifacts.require('./TrackedRedemption');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
+const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFactory.sol');
+const VestingEscrowWallet = artifacts.require('./VestingEscrowWallet.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');

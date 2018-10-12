@@ -87,7 +87,8 @@
   },
   "greenkeeper": {
     "ignore": [
-      "openzeppelin-solidity"
+      "openzeppelin-solidity",
+      "web3"
     ]
   }
 }

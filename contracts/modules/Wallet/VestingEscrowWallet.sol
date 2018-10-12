@@ -144,12 +144,13 @@ contract VestingEscrowWallet is IWallet {
 
     vestingTemplates[templateCount] = VestingTemplate(_totalAllocation, _vestingDuration, _vestingFrequency);
 
+    templateCount = templateCount == 0 ? 0 : templateCount +1;
+
     emit AddTemplate(
       templateCount,
       _totalAllocation,
       _vestingDuration,
       _vestingFrequency);
-    templateCount += 1;
   }
 
   /**

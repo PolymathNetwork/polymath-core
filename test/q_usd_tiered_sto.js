@@ -72,8 +72,8 @@ contract('USDTieredSTO', accounts => {
     const STOSetupCost = 0;
 
     // MockOracle USD prices
-    const USDETH = BigNumber(500).mul(10**18); // 500 USD/ETH
-    const USDPOLY = BigNumber(25).mul(10**16); // 0.25 USD/POLY
+    const USDETH = new BigNumber(500).mul(10**18); // 500 USD/ETH
+    const USDPOLY = new BigNumber(25).mul(10**16); // 0.25 USD/POLY
 
     // STO Configuration Arrays
     let _startTime = [];
@@ -355,12 +355,12 @@ contract('USDTieredSTO', accounts => {
 
             _startTime.push(latestTime() + duration.days(2));
             _endTime.push(_startTime[stoId] + duration.days(100));
-            _ratePerTier.push([BigNumber(10*10**16), BigNumber(15*10**16)]);                                                        // [ 0.10 USD/Token, 0.15 USD/Token ]
-            _ratePerTierDiscountPoly.push([BigNumber(10*10**16), BigNumber(15*10**16)]);                                            // [ 0.10 USD/Token, 0.15 USD/Token ]
-            _tokensPerTierTotal.push([BigNumber(100000000).mul(BigNumber(10**18)), BigNumber(200000000).mul(BigNumber(10**18))]);   // [ 100m Token, 200m Token ]
-            _tokensPerTierDiscountPoly.push([BigNumber(0),BigNumber(0)]);                                                           // [ 0, 0 ]
-            _nonAccreditedLimitUSD.push(BigNumber(10000).mul(BigNumber(10**18)));                                                   // 10k USD
-            _minimumInvestmentUSD.push(BigNumber(5*10**18));                                                                        // 5 USD
+            _ratePerTier.push([new BigNumber(10*10**16), new BigNumber(15*10**16)]);                                                        // [ 0.10 USD/Token, 0.15 USD/Token ]
+            _ratePerTierDiscountPoly.push([new BigNumber(10*10**16), new BigNumber(15*10**16)]);                                            // [ 0.10 USD/Token, 0.15 USD/Token ]
+            _tokensPerTierTotal.push([new BigNumber(100000000).mul(new BigNumber(10**18)), new BigNumber(200000000).mul(new BigNumber(10**18))]);   // [ 100m Token, 200m Token ]
+            _tokensPerTierDiscountPoly.push([new BigNumber(0),new BigNumber(0)]);                                                           // [ 0, 0 ]
+            _nonAccreditedLimitUSD.push(new BigNumber(10000).mul(new BigNumber(10**18)));                                                   // 10k USD
+            _minimumInvestmentUSD.push(new BigNumber(5*10**18));                                                                        // 5 USD
             _fundRaiseTypes.push([0, 1]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
@@ -399,12 +399,12 @@ contract('USDTieredSTO', accounts => {
 
             _startTime.push(latestTime() + duration.days(2));
             _endTime.push(_startTime[stoId] + duration.days(100));
-            _ratePerTier.push([BigNumber(10*10**16), BigNumber(15*10**16), BigNumber(15*10**16), BigNumber(15*10**16), BigNumber(15*10**16)]);
-            _ratePerTierDiscountPoly.push([BigNumber(10*10**16), BigNumber(15*10**16), BigNumber(15*10**16), BigNumber(15*10**16), BigNumber(15*10**16)]);
-            _tokensPerTierTotal.push([BigNumber(5*10**18), BigNumber(10*10**18), BigNumber(10*10**18), BigNumber(10*10**18), BigNumber(50*10**18)]);
-            _tokensPerTierDiscountPoly.push([BigNumber(0), BigNumber(0), BigNumber(0), BigNumber(0), BigNumber(0)]);
-            _nonAccreditedLimitUSD.push(BigNumber(10000).mul(BigNumber(10**18)));
-            _minimumInvestmentUSD.push(BigNumber(0));
+            _ratePerTier.push([new BigNumber(10*10**16), new BigNumber(15*10**16), new BigNumber(15*10**16), new BigNumber(15*10**16), new BigNumber(15*10**16)]);
+            _ratePerTierDiscountPoly.push([new BigNumber(10*10**16), new BigNumber(15*10**16), new BigNumber(15*10**16), new BigNumber(15*10**16), new BigNumber(15*10**16)]);
+            _tokensPerTierTotal.push([new BigNumber(5*10**18), new BigNumber(10*10**18), new BigNumber(10*10**18), new BigNumber(10*10**18), new BigNumber(50*10**18)]);
+            _tokensPerTierDiscountPoly.push([new BigNumber(0), new BigNumber(0), new BigNumber(0), new BigNumber(0), new BigNumber(0)]);
+            _nonAccreditedLimitUSD.push(new BigNumber(10000).mul(new BigNumber(10**18)));
+            _minimumInvestmentUSD.push(new BigNumber(0));
             _fundRaiseTypes.push([0, 1]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
@@ -443,12 +443,12 @@ contract('USDTieredSTO', accounts => {
 
             _startTime.push(latestTime() + duration.days(2));
             _endTime.push(_startTime[stoId] + duration.days(100));
-            _ratePerTier.push([BigNumber(1*10**18), BigNumber(1.5*10**18)]);                // [ 1 USD/Token, 1.5 USD/Token ]
-            _ratePerTierDiscountPoly.push([BigNumber(0.5*10**18), BigNumber(1*10**18)]);    // [ 0.5 USD/Token, 1.5 USD/Token ]
-            _tokensPerTierTotal.push([BigNumber(100*10**18), BigNumber(50*10**18)]);        // [ 100 Token, 50 Token ]
-            _tokensPerTierDiscountPoly.push([BigNumber(100*10**18),BigNumber(25*10**18)]);  // [ 100 Token, 25 Token ]
-            _nonAccreditedLimitUSD.push(BigNumber(25*10**18));                              // [ 25 USD ]
-            _minimumInvestmentUSD.push(BigNumber(5));
+            _ratePerTier.push([new BigNumber(1*10**18), new BigNumber(1.5*10**18)]);                // [ 1 USD/Token, 1.5 USD/Token ]
+            _ratePerTierDiscountPoly.push([new BigNumber(0.5*10**18), new BigNumber(1*10**18)]);    // [ 0.5 USD/Token, 1.5 USD/Token ]
+            _tokensPerTierTotal.push([new BigNumber(100*10**18), new BigNumber(50*10**18)]);        // [ 100 Token, 50 Token ]
+            _tokensPerTierDiscountPoly.push([new BigNumber(100*10**18), new BigNumber(25*10**18)]);  // [ 100 Token, 25 Token ]
+            _nonAccreditedLimitUSD.push(new BigNumber(25*10**18));                              // [ 25 USD ]
+            _minimumInvestmentUSD.push(new BigNumber(5));
             _fundRaiseTypes.push([0, 1]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
@@ -472,12 +472,12 @@ contract('USDTieredSTO', accounts => {
 
             _startTime.push(latestTime()+ duration.days(0.1));
             _endTime.push(_startTime[stoId] + duration.days(0.1));
-            _ratePerTier.push([BigNumber(10*10**16), BigNumber(15*10**16)]);
-            _ratePerTierDiscountPoly.push([BigNumber(10*10**16), BigNumber(12*10**16)]);
-            _tokensPerTierTotal.push([BigNumber(100*10**18), BigNumber(200*10**18)]);
-            _tokensPerTierDiscountPoly.push([BigNumber(0),BigNumber(50*10**18)]);
-            _nonAccreditedLimitUSD.push(BigNumber(10000).mul(BigNumber(10**18)));
-            _minimumInvestmentUSD.push(BigNumber(0));
+            _ratePerTier.push([new BigNumber(10*10**16), new BigNumber(15*10**16)]);
+            _ratePerTierDiscountPoly.push([new BigNumber(10*10**16), new BigNumber(12*10**16)]);
+            _tokensPerTierTotal.push([new BigNumber(100*10**18), new BigNumber(200*10**18)]);
+            _tokensPerTierDiscountPoly.push([new BigNumber(0), new BigNumber(50*10**18)]);
+            _nonAccreditedLimitUSD.push(new BigNumber(10000).mul(new BigNumber(10**18)));
+            _minimumInvestmentUSD.push(new BigNumber(0));
             _fundRaiseTypes.push([0, 1]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
@@ -525,7 +525,7 @@ contract('USDTieredSTO', accounts => {
         it("Should fail because rate of token should be greater than 0", async() => {
             let stoId = 0;
 
-            let ratePerTier = [BigNumber(10*10**16), BigNumber(0)];
+            let ratePerTier = [new BigNumber(10*10**16), new BigNumber(0)];
             let config = [_startTime[stoId], _endTime[stoId], ratePerTier, _ratePerTierDiscountPoly[stoId], _tokensPerTierTotal[stoId], _tokensPerTierDiscountPoly[stoId], _nonAccreditedLimitUSD[stoId], _minimumInvestmentUSD[stoId], _fundRaiseTypes[stoId], _wallet[stoId], _reserveWallet[stoId]];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let errorThrown = false;
@@ -622,15 +622,15 @@ contract('USDTieredSTO', accounts => {
             assert.equal(await I_USDTieredSTO_Array[stoId].fundRaiseType.call(0),true,"STO Configuration doesn't set as expected");
             assert.equal(await I_USDTieredSTO_Array[stoId].fundRaiseType.call(1),true,"STO Configuration doesn't set as expected");
 
-            await I_USDTieredSTO_Array[stoId].modifyLimits(BigNumber(1*10**18), BigNumber(15*10**18), { from: ISSUER });
-            assert.equal((await I_USDTieredSTO_Array[stoId].minimumInvestmentUSD.call()).toNumber(),BigNumber(15*10**18).toNumber(),"STO Configuration doesn't set as expected");
-            assert.equal((await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSD.call()).toNumber(),BigNumber(1*10**18).toNumber(),"STO Configuration doesn't set as expected");
+            await I_USDTieredSTO_Array[stoId].modifyLimits(new BigNumber(1*10**18), new BigNumber(15*10**18), { from: ISSUER });
+            assert.equal((await I_USDTieredSTO_Array[stoId].minimumInvestmentUSD.call()).toNumber(), new BigNumber(15*10**18).toNumber(),"STO Configuration doesn't set as expected");
+            assert.equal((await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSD.call()).toNumber(), new BigNumber(1*10**18).toNumber(),"STO Configuration doesn't set as expected");
 
-            await I_USDTieredSTO_Array[stoId].modifyTiers([BigNumber(15*10**18)], [BigNumber(13*10**18)], [BigNumber(15*10**20)], [BigNumber(15*10**20)], { from: ISSUER });
-            assert.equal((await I_USDTieredSTO_Array[stoId].ratePerTier.call(0)).toNumber(),BigNumber(15*10**18).toNumber(),"STO Configuration doesn't set as expected");
-            assert.equal((await I_USDTieredSTO_Array[stoId].ratePerTierDiscountPoly.call(0)).toNumber(),BigNumber(13*10**18).toNumber(),"STO Configuration doesn't set as expected");
-            assert.equal((await I_USDTieredSTO_Array[stoId].tokensPerTierTotal.call(0)),BigNumber(15*10**20).toNumber(),"STO Configuration doesn't set as expected");
-            assert.equal((await I_USDTieredSTO_Array[stoId].tokensPerTierDiscountPoly.call(0)),BigNumber(15*10**20).toNumber(),"STO Configuration doesn't set as expected");
+            await I_USDTieredSTO_Array[stoId].modifyTiers([new BigNumber(15*10**18)], [new BigNumber(13*10**18)], [new BigNumber(15*10**20)], [new BigNumber(15*10**20)], { from: ISSUER });
+            assert.equal((await I_USDTieredSTO_Array[stoId].ratePerTier.call(0)).toNumber(), new BigNumber(15*10**18).toNumber(),"STO Configuration doesn't set as expected");
+            assert.equal((await I_USDTieredSTO_Array[stoId].ratePerTierDiscountPoly.call(0)).toNumber(), new BigNumber(13*10**18).toNumber(),"STO Configuration doesn't set as expected");
+            assert.equal((await I_USDTieredSTO_Array[stoId].tokensPerTierTotal.call(0)), new BigNumber(15*10**20).toNumber(),"STO Configuration doesn't set as expected");
+            assert.equal((await I_USDTieredSTO_Array[stoId].tokensPerTierDiscountPoly.call(0)), new BigNumber(15*10**20).toNumber(),"STO Configuration doesn't set as expected");
 
             let tempTime1 = latestTime() + duration.days(0.1);
             let tempTime2 = latestTime() + duration.days(0.2);
@@ -661,7 +661,7 @@ contract('USDTieredSTO', accounts => {
 
             let errorThrown2 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].modifyLimits(BigNumber(15*10**18), BigNumber(1*10**18), { from: ISSUER });
+                await I_USDTieredSTO_Array[stoId].modifyLimits(new BigNumber(15*10**18), new BigNumber(1*10**18), { from: ISSUER });
             } catch(error) {
                 errorThrown2 = true;
                 ensureException(error);
@@ -670,7 +670,7 @@ contract('USDTieredSTO', accounts => {
 
             let errorThrown3 = false;
             try {
-                await I_USDTieredSTO_Array[stoId].modifyTiers([BigNumber(15*10**18)], [BigNumber(13*10**18)], [BigNumber(15*10**20)], [BigNumber(15*10**20)], { from: ISSUER });
+                await I_USDTieredSTO_Array[stoId].modifyTiers([new BigNumber(15*10**18)], [new BigNumber(13*10**18)], [new BigNumber(15*10**20)], [new BigNumber(15*10**20)], { from: ISSUER });
             } catch(error) {
                 errorThrown3 = true;
                 ensureException(error);
@@ -866,7 +866,7 @@ contract('USDTieredSTO', accounts => {
             // Set as accredited
             await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
 
-            let investment_USD = BigNumber(2).mul(10**18);
+            let investment_USD = new BigNumber(2).mul(10**18);
             let investment_ETH = await convert(stoId, tierId, false,  "USD", "ETH", investment_USD);
             let investment_POLY = await convert(stoId, tierId, false, "USD", "POLY", investment_USD);
 
@@ -1225,39 +1225,39 @@ contract('USDTieredSTO', accounts => {
             let stoId = 0;
             let tierId = 0;
 
-            let investment_Token = BigNumber(50).mul(10**18);
+            let investment_Token = new BigNumber(50).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedUSD = await I_USDTieredSTO_Array[stoId].fundsRaisedUSD.call();
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx1 = await web3.eth.sendTransaction({ from: NONACCREDITED1, to: I_USDTieredSTO_Array[stoId].address, value: investment_ETH, gasPrice: GAS_PRICE, gas:1000000 });
-            let gasCost1 = BigNumber(GAS_PRICE).mul(tx1.gasUsed);
+            let gasCost1 = new BigNumber(GAS_PRICE).mul(tx1.gasUsed);
             console.log("          Gas fallback purchase: ".grey+tx1.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedUSD = await I_USDTieredSTO_Array[stoId].fundsRaisedUSD.call();
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -1288,37 +1288,37 @@ contract('USDTieredSTO', accounts => {
             let stoId = 0;
             let tierId = 0;
 
-            let investment_Token = BigNumber(50).mul(10**18);
+            let investment_Token = new BigNumber(50).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx1 = await I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE });
-            let gasCost1 = BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
+            let gasCost1 = new BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
             console.log("          Gas buyWithETH: ".grey+tx1.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -1338,7 +1338,7 @@ contract('USDTieredSTO', accounts => {
             let stoId = 0;
             let tierId = 0;
 
-            let investment_Token = BigNumber(50).mul(10**18);
+            let investment_Token = new BigNumber(50).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
@@ -1348,31 +1348,31 @@ contract('USDTieredSTO', accounts => {
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             // Buy With POLY
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE });
-            let gasCost2 = BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
+            let gasCost2 = new BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
             console.log("          Gas buyWithPOLY: ".grey+tx2.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -1394,37 +1394,37 @@ contract('USDTieredSTO', accounts => {
 
             await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
 
-            let investment_Token = BigNumber(50).mul(10**18);
+            let investment_Token = new BigNumber(50).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx1 = await web3.eth.sendTransaction({ from: ACCREDITED1, to: I_USDTieredSTO_Array[stoId].address, value: investment_ETH, gasPrice: GAS_PRICE, gas:1000000 });
-            let gasCost1 = BigNumber(GAS_PRICE).mul(tx1.gasUsed);
+            let gasCost1 = new BigNumber(GAS_PRICE).mul(tx1.gasUsed);
             console.log("          Gas fallback purchase: ".grey+tx1.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -1444,37 +1444,37 @@ contract('USDTieredSTO', accounts => {
             let stoId = 0;
             let tierId = 0;
 
-            let investment_Token = BigNumber(50).mul(10**18);
+            let investment_Token = new BigNumber(50).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx1 = await I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE });
-            let gasCost1 = BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
+            let gasCost1 = new BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
             console.log("          Gas buyWithETH: ".grey+tx1.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -1494,7 +1494,7 @@ contract('USDTieredSTO', accounts => {
             let stoId = 0;
             let tierId = 0;
 
-            let investment_Token = BigNumber(50).mul(10**18);
+            let investment_Token = new BigNumber(50).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
@@ -1513,31 +1513,31 @@ contract('USDTieredSTO', accounts => {
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             // Buy With POLY
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1, gasPrice: GAS_PRICE });
-            let gasCost2 = BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
+            let gasCost2 = new BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
             console.log("          Gas buyWithPOLY: ".grey+tx2.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -1591,31 +1591,31 @@ contract('USDTieredSTO', accounts => {
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             // Buy with ETH
             let tx1 = await I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE });
-            let gasCost1 = BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
+            let gasCost1 = new BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
             console.log("          Gas buyWithETH: ".grey+tx1.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).sub(refund_Token).toNumber(), "Token Supply not changed as expected");
@@ -1637,31 +1637,31 @@ contract('USDTieredSTO', accounts => {
 
             init_TokenSupply = await I_SecurityToken.totalSupply();
             init_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            init_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             init_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             // Buy With POLY
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE });
-            let gasCost2 = BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
+            let gasCost2 = new BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
             console.log("          Gas buyWithPOLY: ".grey+tx2.receipt.gasUsed.toString().grey);
 
             final_TokenSupply = await I_SecurityToken.totalSupply();
             final_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            final_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             final_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).sub(refund_Token).toNumber(), "Token Supply not changed as expected");
@@ -1681,7 +1681,7 @@ contract('USDTieredSTO', accounts => {
             let stoId = 0;
             let tierId = 0;
 
-            let investment_Token = BigNumber(50).mul(10**18);
+            let investment_Token = new BigNumber(50).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
@@ -1715,12 +1715,12 @@ contract('USDTieredSTO', accounts => {
             let tierId;
 
             // set new exchange rates
-            let high_USDETH = BigNumber(1000).mul(10**18); // 1000 USD per ETH
-            let high_USDPOLY = BigNumber(50).mul(10**16);  // 0.5 USD per POLY
-            let low_USDETH = BigNumber(250).mul(10**18);   // 250 USD per ETH
-            let low_USDPOLY = BigNumber(20).mul(10**16);   // 0.2 USD per POLY
+            let high_USDETH = new BigNumber(1000).mul(10**18); // 1000 USD per ETH
+            let high_USDPOLY = new BigNumber(50).mul(10**16);  // 0.5 USD per POLY
+            let low_USDETH = new BigNumber(250).mul(10**18);   // 250 USD per ETH
+            let low_USDPOLY = new BigNumber(20).mul(10**16);   // 0.2 USD per POLY
 
-            let investment_USD = BigNumber(web3.utils.toWei('50'));                  // USD
+            let investment_USD = new BigNumber(web3.utils.toWei('50'));                  // USD
             let investment_ETH_high = investment_USD.div(high_USDETH).mul(10**18);   // USD / USD/ETH = ETH
             let investment_POLY_high = investment_USD.div(high_USDPOLY).mul(10**18); // USD / USD/POLY = POLY
             let investment_ETH_low = investment_USD.div(low_USDETH).mul(10**18);     // USD / USD/ETH = ETH
@@ -1789,7 +1789,7 @@ contract('USDTieredSTO', accounts => {
 
             assert.equal((await I_USDTieredSTO_Array[stoId].currentTier.call()).toNumber(), startTier, "currentTier not changed as expected");
 
-            let delta_Token = BigNumber(5).mul(10**18);
+            let delta_Token = new BigNumber(5).mul(10**18);
             let ethTier0 = await convert(stoId, startTier, false, "TOKEN", "ETH", delta_Token);
             let ethTier1 = await convert(stoId, endTier, false, "TOKEN", "ETH", delta_Token);
 
@@ -1799,30 +1799,30 @@ contract('USDTieredSTO', accounts => {
             // Process investment
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx1 = await I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE });
-            let gasCost1 = BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
+            let gasCost1 = new BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
             console.log("          Gas buyWithETH: ".grey+tx1.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -1848,7 +1848,7 @@ contract('USDTieredSTO', accounts => {
 
             assert.equal((await I_USDTieredSTO_Array[stoId].currentTier.call()).toNumber(), startTier, "currentTier not changed as expected");
 
-            let delta_Token = BigNumber(5).mul(10**18);    // Token
+            let delta_Token = new BigNumber(5).mul(10**18);    // Token
             let polyTier0 = await convert(stoId, startTier, false, "TOKEN", "POLY", delta_Token);
             let polyTier1 = await convert(stoId, endTier, false, "TOKEN", "POLY", delta_Token);
 
@@ -1861,30 +1861,30 @@ contract('USDTieredSTO', accounts => {
             // Process investment
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE });
-            let gasCost2 = BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
+            let gasCost2 = new BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
             console.log("          Gas buyWithPOLY: ".grey+tx2.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -1912,7 +1912,7 @@ contract('USDTieredSTO', accounts => {
 
             assert.equal((await I_USDTieredSTO_Array[stoId].currentTier.call()).toNumber(), startTier, "currentTier not changed as expected");
 
-            let delta_Token = BigNumber(5).mul(10**18);    // Token
+            let delta_Token = new BigNumber(5).mul(10**18);    // Token
             let ethTier0 = await convert(stoId, startTier, false, "TOKEN", "ETH", delta_Token);
             let ethTier1 = await convert(stoId, endTier, false, "TOKEN", "ETH", delta_Token);
 
@@ -1922,30 +1922,30 @@ contract('USDTieredSTO', accounts => {
             // Process investment
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx1 = await I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE });
-            let gasCost1 = BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
+            let gasCost1 = new BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
             console.log("          Gas buyWithETH: ".grey+tx1.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -1971,7 +1971,7 @@ contract('USDTieredSTO', accounts => {
 
             assert.equal((await I_USDTieredSTO_Array[stoId].currentTier.call()).toNumber(), startTier, "currentTier not changed as expected");
 
-            let delta_Token = BigNumber(5).mul(10**18);    // Token
+            let delta_Token = new BigNumber(5).mul(10**18);    // Token
             let polyTier0 = await convert(stoId, startTier, false, "TOKEN", "POLY", delta_Token);
             let polyTier1 = await convert(stoId, endTier, false, "TOKEN", "POLY", delta_Token);
 
@@ -1984,30 +1984,30 @@ contract('USDTieredSTO', accounts => {
             // Process investment
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1, gasPrice: GAS_PRICE });
-            let gasCost2 = BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
+            let gasCost2 = new BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
             console.log("          Gas buyWithPOLY: ".grey+tx2.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -2055,7 +2055,7 @@ contract('USDTieredSTO', accounts => {
             let stoId = 1;
             let tierId = 4;
 
-            let investment_Token = BigNumber(5).mul(10**18);
+            let investment_Token = new BigNumber(5).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
@@ -2111,12 +2111,12 @@ contract('USDTieredSTO', accounts => {
             let tierId = 4;
 
             // set new exchange rates
-            let high_USDETH = BigNumber(1000).mul(10**18); // 1000 USD per ETH
-            let high_USDPOLY = BigNumber(50).mul(10**16);  // 0.5 USD per POLY
-            let low_USDETH = BigNumber(250).mul(10**18);   // 250 USD per ETH
-            let low_USDPOLY = BigNumber(20).mul(10**16);   // 0.2 USD per POLY
+            let high_USDETH = new BigNumber(1000).mul(10**18); // 1000 USD per ETH
+            let high_USDPOLY = new BigNumber(50).mul(10**16);  // 0.5 USD per POLY
+            let low_USDETH = new BigNumber(250).mul(10**18);   // 250 USD per ETH
+            let low_USDPOLY = new BigNumber(20).mul(10**16);   // 0.2 USD per POLY
 
-            let investment_USD = BigNumber(web3.utils.toWei('50'));                  // USD
+            let investment_USD = new BigNumber(web3.utils.toWei('50'));                  // USD
             let investment_ETH_high = investment_USD.div(high_USDETH).mul(10**18);   // USD / USD/ETH = ETH
             let investment_POLY_high = investment_USD.div(high_USDPOLY).mul(10**18); // USD / USD/POLY = POLY
             let investment_ETH_low = investment_USD.div(low_USDETH).mul(10**18);     // USD / USD/ETH = ETH
@@ -2227,39 +2227,39 @@ contract('USDTieredSTO', accounts => {
             let stoId = 2;
             let tierId = 0;
 
-            let investment_Token = BigNumber(5).mul(10**18);
+            let investment_Token = new BigNumber(5).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedUSD = await I_USDTieredSTO_Array[stoId].fundsRaisedUSD.call();
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx1 = await web3.eth.sendTransaction({ from: NONACCREDITED1, to: I_USDTieredSTO_Array[stoId].address, value: investment_ETH, gasPrice: GAS_PRICE, gas:1000000 });
-            let gasCost1 = BigNumber(GAS_PRICE).mul(tx1.gasUsed);
+            let gasCost1 = new BigNumber(GAS_PRICE).mul(tx1.gasUsed);
             console.log("          Gas fallback purchase: ".grey+tx1.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedUSD = await I_USDTieredSTO_Array[stoId].fundsRaisedUSD.call();
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -2290,37 +2290,37 @@ contract('USDTieredSTO', accounts => {
             let stoId = 2;
             let tierId = 0;
 
-            let investment_Token = BigNumber(5).mul(10**18);
+            let investment_Token = new BigNumber(5).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx1 = await I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE });
-            let gasCost1 = BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
+            let gasCost1 = new BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
             console.log("          Gas buyWithETH: ".grey+tx1.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -2340,7 +2340,7 @@ contract('USDTieredSTO', accounts => {
             let stoId = 2;
             let tierId = 0;
 
-            let investment_Token = BigNumber(5).mul(10**18);
+            let investment_Token = new BigNumber(5).mul(10**18);
             let investment_USD = await convert(stoId, tierId, true, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, true, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, true, "TOKEN", "POLY", investment_Token);
@@ -2350,31 +2350,31 @@ contract('USDTieredSTO', accounts => {
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             // Buy With POLY
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE });
-            let gasCost2 = BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
+            let gasCost2 = new BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
             console.log("          Gas buyWithPOLY: ".grey+tx2.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -2396,37 +2396,37 @@ contract('USDTieredSTO', accounts => {
 
             await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
 
-            let investment_Token = BigNumber(5).mul(10**18);
+            let investment_Token = new BigNumber(5).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx1 = await web3.eth.sendTransaction({ from: ACCREDITED1, to: I_USDTieredSTO_Array[stoId].address, value: investment_ETH, gasPrice: GAS_PRICE, gas:1000000 });
-            let gasCost1 = BigNumber(GAS_PRICE).mul(tx1.gasUsed);
+            let gasCost1 = new BigNumber(GAS_PRICE).mul(tx1.gasUsed);
             console.log("          Gas fallback purchase: ".grey+tx1.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -2446,37 +2446,37 @@ contract('USDTieredSTO', accounts => {
             let stoId = 2;
             let tierId = 0;
 
-            let investment_Token = BigNumber(5).mul(10**18);
+            let investment_Token = new BigNumber(5).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx1 = await I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE });
-            let gasCost1 = BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
+            let gasCost1 = new BigNumber(GAS_PRICE).mul(tx1.receipt.gasUsed);
             console.log("          Gas buyWithETH: ".grey+tx1.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -2496,7 +2496,7 @@ contract('USDTieredSTO', accounts => {
             let stoId = 2;
             let tierId = 0;
 
-            let investment_Token = BigNumber(5).mul(10**18);
+            let investment_Token = new BigNumber(5).mul(10**18);
             let investment_USD = await convert(stoId, tierId, true, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, true, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, true, "TOKEN", "POLY", investment_Token);
@@ -2515,31 +2515,31 @@ contract('USDTieredSTO', accounts => {
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             // Buy With POLY
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1, gasPrice: GAS_PRICE });
-            let gasCost2 = BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
+            let gasCost2 = new BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
             console.log("          Gas buyWithPOLY: ".grey+tx2.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -2584,31 +2584,31 @@ contract('USDTieredSTO', accounts => {
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             // Buy With POLY
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE });
-            let gasCost2 = BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
+            let gasCost2 = new BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
             console.log("          Gas buyWithPOLY: ".grey+tx2.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(NONACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(NONACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(NONACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).sub(refund_Token).toNumber(), "Token Supply not changed as expected");
@@ -2628,7 +2628,7 @@ contract('USDTieredSTO', accounts => {
             let stoId = 2;
             let tierId = 0;
 
-            let investment_Token = BigNumber(5).mul(10**18);
+            let investment_Token = new BigNumber(5).mul(10**18);
             let investment_USD = await convert(stoId, tierId, true, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, true, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, true, "TOKEN", "POLY", investment_Token);
@@ -2662,12 +2662,12 @@ contract('USDTieredSTO', accounts => {
             let tierId = 0;
 
             // set new exchange rates
-            let high_USDETH = BigNumber(1000).mul(10**18); // 1000 USD per ETH
-            let high_USDPOLY = BigNumber(50).mul(10**16);  // 0.5 USD per POLY
-            let low_USDETH = BigNumber(250).mul(10**18);   // 250 USD per ETH
-            let low_USDPOLY = BigNumber(20).mul(10**16);   // 0.2 USD per POLY
+            let high_USDETH = new BigNumber(1000).mul(10**18); // 1000 USD per ETH
+            let high_USDPOLY = new BigNumber(50).mul(10**16);  // 0.5 USD per POLY
+            let low_USDETH = new BigNumber(250).mul(10**18);   // 250 USD per ETH
+            let low_USDPOLY = new BigNumber(20).mul(10**16);   // 0.2 USD per POLY
 
-            let investment_Token = BigNumber(5).mul(10**18);
+            let investment_Token = new BigNumber(5).mul(10**18);
             let investment_USD = await convert(stoId, tierId, true, "TOKEN", "USD", investment_Token);
 
             let investment_ETH_high = investment_USD.div(high_USDETH).mul(10**18);   // USD / USD/ETH = ETH
@@ -2738,7 +2738,7 @@ contract('USDTieredSTO', accounts => {
 
             assert.equal((await I_USDTieredSTO_Array[stoId].currentTier.call()).toNumber(), startTier, "currentTier not changed as expected");
 
-            let delta_Token = BigNumber(5).mul(10**18);    // Token
+            let delta_Token = new BigNumber(5).mul(10**18);    // Token
             let polyTier0 = await convert(stoId, startTier, true, "TOKEN", "POLY", delta_Token);
             let polyTier1 = await convert(stoId, endTier, true, "TOKEN", "POLY", delta_Token);
             let investment_Token = delta_Token.add(delta_Token);  // 10 Token
@@ -2763,30 +2763,30 @@ contract('USDTieredSTO', accounts => {
             // Process investment
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1, gasPrice: GAS_PRICE });
-            let gasCost2 = BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
+            let gasCost2 = new BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
             console.log("          Gas buyWithPOLY: ".grey+tx2.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -2809,10 +2809,10 @@ contract('USDTieredSTO', accounts => {
             let stoId = 2;
             let tierId = 1;
 
-            let discount_Token = BigNumber(20).mul(10**18);
+            let discount_Token = new BigNumber(20).mul(10**18);
             let discount_POLY = await convert(stoId, tierId, true, "TOKEN", "POLY", discount_Token);
 
-            let regular_Token = BigNumber(10).mul(10**18);
+            let regular_Token = new BigNumber(10).mul(10**18);
             let regular_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", regular_Token);
 
             let investment_Token = discount_Token.add(regular_Token);
@@ -2823,31 +2823,31 @@ contract('USDTieredSTO', accounts => {
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let init_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let init_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let init_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let init_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let init_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             // Buy With POLY
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1, gasPrice: GAS_PRICE });
-            let gasCost2 = BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
+            let gasCost2 = new BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
             console.log("          Gas buyWithPOLY: ".grey+tx2.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
             let final_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
-            let final_InvestorETHBal = BigNumber(await web3.eth.getBalance(ACCREDITED1));
+            let final_InvestorETHBal = new BigNumber(await web3.eth.getBalance(ACCREDITED1));
             let final_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
             let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-            let final_STOETHBal = BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOETHBal = new BigNumber(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
             let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
             let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaisedETH.call();
             let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaisedPOLY.call();
-            let final_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
+            let final_WalletETHBal = new BigNumber(await web3.eth.getBalance(WALLET));
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
             assert.equal(final_TokenSupply.toNumber(), init_TokenSupply.add(investment_Token).toNumber(), "Token Supply not changed as expected");
@@ -2880,7 +2880,7 @@ contract('USDTieredSTO', accounts => {
 
             // Buy With POLY
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1, gasPrice: GAS_PRICE });
-            let gasCost2 = BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
+            let gasCost2 = new BigNumber(GAS_PRICE).mul(tx2.receipt.gasUsed);
             console.log("          Gas buyWithPOLY: ".grey+tx2.receipt.gasUsed.toString().grey);
 
             let final_TokenSupply = await I_SecurityToken.totalSupply();
@@ -2896,7 +2896,7 @@ contract('USDTieredSTO', accounts => {
             let stoId = 2;
             let tierId = 1;
 
-            let investment_Token = BigNumber(5).mul(10**18);
+            let investment_Token = new BigNumber(5).mul(10**18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
             let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Token);
@@ -2952,12 +2952,12 @@ contract('USDTieredSTO', accounts => {
             let tierId = 1;
 
             // set new exchange rates
-            let high_USDETH = BigNumber(1000).mul(10**18); // 1000 USD per ETH
-            let high_USDPOLY = BigNumber(50).mul(10**16);  // 0.5 USD per POLY
-            let low_USDETH = BigNumber(250).mul(10**18);   // 250 USD per ETH
-            let low_USDPOLY = BigNumber(20).mul(10**16);   // 0.2 USD per POLY
+            let high_USDETH = new BigNumber(1000).mul(10**18); // 1000 USD per ETH
+            let high_USDPOLY = new BigNumber(50).mul(10**16);  // 0.5 USD per POLY
+            let low_USDETH = new BigNumber(250).mul(10**18);   // 250 USD per ETH
+            let low_USDPOLY = new BigNumber(20).mul(10**16);   // 0.2 USD per POLY
 
-            let investment_Token = BigNumber(5).mul(10**18);
+            let investment_Token = new BigNumber(5).mul(10**18);
             let investment_USD = await convert(stoId, tierId, true, "TOKEN", "USD", investment_Token);
 
             let investment_ETH_high = investment_USD.div(high_USDETH).mul(10**18);   // USD / USD/ETH = ETH
@@ -3091,14 +3091,14 @@ contract('USDTieredSTO', accounts => {
 
             it("should get the right conversion for ETH to USD", async() => {
                 // 20 ETH to 10000 USD
-                let ethInWei = BigNumber(web3.utils.toWei('20', 'ether'));
+                let ethInWei = new BigNumber(web3.utils.toWei('20', 'ether'));
                 let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD("ETH", ethInWei);
                 assert.equal(usdInWei.div(10**18).toNumber(), ethInWei.div(10**18).mul(USDETH.div(10**18)).toNumber());
             });
 
             it("should get the right conversion for POLY to USD", async() => {
                 // 40000 POLY to 10000 USD
-                let polyInWei = BigNumber(web3.utils.toWei('40000', 'ether'));
+                let polyInWei = new BigNumber(web3.utils.toWei('40000', 'ether'));
                 let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD("POLY", polyInWei);
                 assert.equal(usdInWei.div(10**18).toNumber(), polyInWei.div(10**18).mul(USDPOLY.div(10**18)).toNumber());
             });
@@ -3108,14 +3108,14 @@ contract('USDTieredSTO', accounts => {
 
             it("should get the right conversion for USD to ETH", async() => {
                 // 10000 USD to 20 ETH
-                let usdInWei = BigNumber(web3.utils.toWei('10000', 'ether'));
+                let usdInWei = new BigNumber(web3.utils.toWei('10000', 'ether'));
                 let ethInWei = await I_USDTieredSTO_Array[0].convertFromUSD("ETH", usdInWei);
                 assert.equal(ethInWei.div(10**18).toNumber(), usdInWei.div(10**18).div(USDETH.div(10**18)).toNumber());
             });
 
             it("should get the right conversion for USD to POLY", async() => {
                 // 10000 USD to 40000 POLY
-                let usdInWei = BigNumber(web3.utils.toWei('10000', 'ether'));
+                let usdInWei = new BigNumber(web3.utils.toWei('10000', 'ether'));
                 let polyInWei = await I_USDTieredSTO_Array[0].convertFromUSD("POLY", usdInWei);
                 assert.equal(polyInWei.div(10**18).toNumber(), usdInWei.div(10**18).div(USDPOLY.div(10**18)).toNumber());
             });

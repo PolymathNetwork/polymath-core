@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
+* Migrated from `npm` to `yarn`.
 * Added `SingleTradeVolumeRestrictionManager` module
 * Added flag in `PercentageTransferManager` to allow ignoring of issuance transfers
 * Added `transferWithData`, `transferFromWithData`, `mintWithData`, `burnWithData` to allow passing of a `bytes _data` for off-chain validation

@@ -11,6 +11,7 @@ var dividends_manager = require('./commands/dividends_manager');
 var transfer_manager = require('./commands/transfer_manager');
 var contract_manager = require('./commands/contract_manager');
 var strMigrator = require('./commands/strMigrator');
+var permission_manager = require('./commands/permission_manager');
 var program = require('commander');
 const yaml = require('js-yaml');
 const fs = require('fs');
@@ -140,6 +141,14 @@ program
   .description('Runs STR Migrator')
   .action(async function(toStrAddress, fromTrAddress, fromStrAddress) {
     await strMigrator.executeApp(toStrAddress, fromTrAddress, fromStrAddress, program.remoteNode);
+  });
+
+program
+  .command('permission_manager')
+  .alias('pm')
+  .description('Runs permission_manager')
+  .action(async function() {
+    await permission_manager.executeApp(program.remoteNode);
   });
 
 program.parse(process.argv);

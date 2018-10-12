@@ -1181,7 +1181,7 @@ contract('SecurityToken', accounts => {
                 let balanceBefore = await I_PolyToken.balanceOf(token_owner);
                 await I_SecurityToken.withdrawPoly(web3.utils.toWei("20000", "ether"), {from: token_owner});
                 let balanceAfter = await I_PolyToken.balanceOf(token_owner);
-                assert.equal((BigNumber(balanceAfter).sub(BigNumber(balanceBefore))).toNumber(), web3.utils.toWei("20000", "ether"));
+                assert.equal((new BigNumber(balanceAfter).sub(new BigNumber(balanceBefore))).toNumber(), web3.utils.toWei("20000", "ether"));
             });
 
             it("Should successfully withdraw the poly", async() => {

@@ -144,12 +144,14 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @notice default implementation of verifyTransfer used by SecurityToken
-    * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
-    * If the transfer request comes from a token holder, it checks that:
-    * a) Both are on the whitelist
-    * b) Seller's sale lockup period is over
-    * c) Buyer's purchase lockup is over
+     * @notice default implementation of verifyTransfer used by SecurityToken
+     * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
+     * If the transfer request comes from a token holder, it checks that:
+     * a) Both are on the whitelist
+     * b) Seller's sale lockup period is over
+     * c) Buyer's purchase lockup is over
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
     */
     function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
@@ -260,16 +262,6 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @notice Return the permissions flag that are associated with general trnasfer manager
-     */
-    function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](2);
-        allPermissions[0] = WHITELIST;
-        allPermissions[1] = FLAGS;
-        return allPermissions;
-    }
-
-    /**
      * @notice Internal function used to check whether the investor is in the whitelist or not
             & also checks whether the KYC of investor get expired or not
      * @param _investor Address of the investor
@@ -285,6 +277,16 @@ contract GeneralTransferManager is ITransferManager {
     function _isSTOAttached() internal view returns(bool) {
         bool attached = ISecurityToken(securityToken).getModulesByType(3).length > 0;
         return attached;
+    }
+
+    /**
+     * @notice Return the permissions flag that are associated with general trnasfer manager
+     */
+    function getPermissions() public view returns(bytes32[]) {
+        bytes32[] memory allPermissions = new bytes32[](2);
+        allPermissions[0] = WHITELIST;
+        allPermissions[1] = FLAGS;
+        return allPermissions;
     }
 
 }

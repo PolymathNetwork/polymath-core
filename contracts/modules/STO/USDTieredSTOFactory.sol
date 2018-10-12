@@ -43,7 +43,6 @@ contract USDTieredSTOFactory is ModuleFactory {
         require(address(usdTieredSTO).call(_data), "Unsuccessfull call");
         emit GenerateModuleFromFactory(usdTieredSTO, getName(), address(this), msg.sender, setupCost, now);
         return address(usdTieredSTO);
-        // return 0xca35b7d915458ef540ade6068dfe2f44e8fa733c;
     }
 
     /**
@@ -91,7 +90,7 @@ contract USDTieredSTOFactory is ModuleFactory {
     }
 
     /**
-     * @notice Get the Instructions that helped to used the module
+     * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
         return "Initialises a USD tiered STO.";

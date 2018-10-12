@@ -34,7 +34,7 @@ contract PercentageTransferManagerFactory is ModuleFactory {
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender, address(polyToken));
         require(Util.getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
-        require(address(percentageTransferManager).call(_data), "Un-successfull call");
+        require(address(percentageTransferManager).call(_data), "Unsuccessful call");
         emit GenerateModuleFromFactory(address(percentageTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(percentageTransferManager);
 
@@ -86,7 +86,7 @@ contract PercentageTransferManagerFactory is ModuleFactory {
     }
 
     /**
-     * @notice Get the Instructions that helped to used the module
+     * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
         return "Allows an issuer to restrict the total number of non-zero token holders";

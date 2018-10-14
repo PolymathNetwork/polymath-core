@@ -16,3 +16,5 @@ coverageEnv
 /tempPoly
 .eslintrc.js
 package-lock.json
+bridge.log
+.node-xml*

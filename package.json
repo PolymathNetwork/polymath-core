@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "scripts/test.sh 2> /dev/null",
+    "wintest": "scripts\\wintest.cmd",
     "docs": "scripts/docs.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

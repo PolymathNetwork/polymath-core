@@ -11,6 +11,7 @@ const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock
 const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpointFactory.sol");
 const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpointFactory.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
+const MaximumVolumeTransferManagerFactory = artifacts.require("./MaximumVolumeTransferManagerFactory.sol");
 const SingleTradeVolumeRestrictionManagerFactory = artifacts.require('./SingleTradeVolumeRestrictionTMFactory.sol');
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
@@ -37,6 +38,7 @@ let I_USDTieredSTOFactory;
 let I_TrackedRedemptionFactory;
 let I_SingleTradeVolumeRestrictionManagerFactory;
 let I_ManualApprovalTransferManagerFactory;
+let I_MaximumVolumeTransferManagerFactory;
 let I_VolumeRestrictionTransferManagerFactory;
 let I_PercentageTransferManagerFactory;
 let I_EtherDividendCheckpointFactory;
@@ -223,6 +225,18 @@ export async function deployManualApprovalTMAndVerifyed(accountPolymath, MRProxy
 
     await registerAndVerifyByMR(I_ManualApprovalTransferManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_ManualApprovalTransferManagerFactory);
+}
+
+export async function deployMaximumVolumeTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_MaximumVolumeTransferManagerFactory = await MaximumVolumeTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_MaximumVolumeTransferManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "MaximumVolumeTransferManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_MaximumVolumeTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_MaximumVolumeTransferManagerFactory);
 }
 
 export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {

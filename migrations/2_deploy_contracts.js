@@ -4,6 +4,7 @@ const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionMa
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
 const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.sol');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
+const MaximumVolumeTransferManagerFactory = artifacts.require('./MaximumVolumeTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
@@ -162,6 +163,10 @@ module.exports = function (deployer, network, accounts) {
     // to track the percentage of investment the investors could do for a particular security token)
     return deployer.deploy(PercentageTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
   }).then(() => {
+    // D) Deploy the MaximumVolumeTransferManagerFactory Contract (Factory used to generate the MaximumVolumeTransferManager contract use
+    // to restrict the maximum volume of tokens which can be transfered within a rolling time interval)
+    return deployer.deploy(MaximumVolumeTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+  }).then(() => {
     // D) Deploy the EtherDividendCheckpointFactory Contract (Factory used to generate the EtherDividendCheckpoint contract use
     // to provide the functionality of the dividend in terms of ETH)
     return deployer.deploy(EtherDividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
@@ -200,6 +205,10 @@ module.exports = function (deployer, network, accounts) {
     // D) Register the PercentageTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the PercentageTransferManager contract.
     return moduleRegistry.registerModule(PercentageTransferManagerFactory.address, {from: PolymathAccount});
+  }).then(() => {
+    // D) Register the MaximumVolumeTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
+    // So any securityToken can use that factory to generate the MaximumVolumeTransferManager contract.
+    return moduleRegistry.registerModule(MaximumVolumeTransferManagerFactory.address, {from: PolymathAccount});
   }).then(() => {
     // D) Register the CountTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the CountTransferManager contract.
@@ -260,6 +269,11 @@ module.exports = function (deployer, network, accounts) {
     // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
     return moduleRegistry.verifyModule(ManualApprovalTransferManagerFactory.address, true, {from: PolymathAccount});
   }).then(() => {
+    // G) Once the MaximumVolumeTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+    // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+    // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+    return moduleRegistry.verifyModule(MaximumVolumeTransferManagerFactory.address, true, {from: PolymathAccount});
+  }).then(() => {
     // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
     return deployer.deploy(CappedSTOFactory, PolyToken, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})
   }).then(() => {
@@ -313,6 +327,7 @@ module.exports = function (deployer, network, accounts) {
     CountTransferManagerFactory:          ${CountTransferManagerFactory.address}
     PercentageTransferManagerFactory:     ${PercentageTransferManagerFactory.address}
     ManualApprovalTransferManagerFactory: ${ManualApprovalTransferManagerFactory.address}
+    MaximumVolumeTransferManagerFactory:  ${MaximumVolumeTransferManagerFactory.address}
     EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
     ---------------------------------------------------------------------------------

@@ -552,6 +552,26 @@ contract("MaximumVolumeTransferManager", accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("should fail to modify any restriction if idx provided is wrong", async() =>{
+            let errorThrown = false;
+            const nRestrictions = await I_MaximumVolumeTransferManager.getMaximumVolumeRestrictionsCount.call();
+            try {
+                await I_MaximumVolumeTransferManager.modifyMaximumTransferRestriction(
+                    nRestrictions,
+                    web3.utils.toWei('5', 'ether'),
+                    0,
+                    latestTime() + duration.years(1),
+                    1,
+                    { from: token_owner }
+                );
+            } catch(error) {
+                console.log(`         tx revert -> Index out of bounds`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("should allow for addition of multiple maximum volume restrictions", async()=>{
             const maxVolumes = [100000000, 500000000, 6000000000];
             const startTimes = [0, 0, 0];
@@ -600,6 +620,22 @@ contract("MaximumVolumeTransferManager", accounts => {
             const tx = await I_MaximumVolumeTransferManager.removeMaximumTransferRestriction(1, { from: token_owner });
             const logs = tx.logs[0];
             assert.equal("MaximumVolumeRestrictionRemoved", logs['event'], "Invalid event");
+        });
+
+        it("should fail to delete any restriction if idx provided is wrong", async() =>{
+            let errorThrown = false;
+            const nRestrictions = await I_MaximumVolumeTransferManager.getMaximumVolumeRestrictionsCount.call();
+            try {
+                await I_MaximumVolumeTransferManager.removeMaximumTransferRestriction(
+                    nRestrictions,
+                    { from: token_owner }
+                );
+            } catch(error) {
+                console.log(`         tx revert -> Index out of bounds`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
         });
 
         it("Should successfully attach the CountTransferManager with the security token (count of 1)", async () => {

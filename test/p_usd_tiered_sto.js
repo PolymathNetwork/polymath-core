@@ -58,6 +58,7 @@ contract("USDTieredSTO", accounts => {
     let I_PolyToken;
     let I_DaiToken;
     let I_PolymathRegistry;
+    let P_USDTieredSTOFactory;
 
     // SecurityToken Details for funds raise Type ETH
     const NAME = "Team";
@@ -68,6 +69,7 @@ contract("USDTieredSTO", accounts => {
     // Module key
     const TMKEY = 2;
     const STOKEY = 3;
+    let snapId;
 
     // Initial fee for ticker registry and security token registry
     const REGFEE = web3.utils.toWei("250");
@@ -226,7 +228,7 @@ contract("USDTieredSTO", accounts => {
 
         // STEP 5: Deploy the USDTieredSTOFactory
         [I_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, I_PolyToken.address, STOSetupCost);
-        
+        [P_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
         // Step 12: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY
         I_POLYOracle = await MockOracle.new(I_PolyToken.address, "POLY", "USD", USDPOLY, { from: POLYMATH }); // 25 cents per POLY
@@ -369,6 +371,67 @@ contract("USDTieredSTO", accounts => {
                 "Incorrect number of tiers"
             );
             assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, 0, "Incorrect number of permissions");
+        });
+
+        it("Should attach the paid STO factory -- failed because of no tokens", async() => {
+            let stoId = 0; // No discount
+            let config = [
+                _startTime[stoId],
+                _endTime[stoId],
+                _ratePerTier[stoId],
+                _ratePerTierDiscountPoly[stoId],
+                _tokensPerTierTotal[stoId],
+                _tokensPerTierDiscountPoly[stoId],
+                _nonAccreditedLimitUSD[stoId],
+                _minimumInvestmentUSD[stoId],
+                _fundRaiseTypes[stoId],
+                _wallet[stoId],
+                _reserveWallet[stoId],
+                _usdToken[stoId]
+            ];
+
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
+            await catchRevert(
+                I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, { from: ISSUER, gasPrice: GAS_PRICE })
+            );
+        });
+
+        it("Should attach the paid STO factory", async() => {
+            let snapId = await takeSnapshot();
+            let stoId = 0; // No discount
+            let config = [
+                _startTime[stoId],
+                _endTime[stoId],
+                _ratePerTier[stoId],
+                _ratePerTierDiscountPoly[stoId],
+                _tokensPerTierTotal[stoId],
+                _tokensPerTierDiscountPoly[stoId],
+                _nonAccreditedLimitUSD[stoId],
+                _minimumInvestmentUSD[stoId],
+                _fundRaiseTypes[stoId],
+                _wallet[stoId],
+                _reserveWallet[stoId],
+                _usdToken[stoId]
+            ];
+
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
+            await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
+            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, { from: ISSUER, gasPrice: GAS_PRICE });
+            await revertToSnapshot(snapId);
+        });
+
+        it("Should allow non-matching beneficiary", async () => {
+            snapId = await takeSnapshot();
+            await I_USDTieredSTO_Array[0].changeAllowBeneficialInvestments(true, { from: ISSUER });
+            let allow = await I_USDTieredSTO_Array[0].allowBeneficialInvestments();
+            assert.equal(allow, true, "allowBeneficialInvestments should be true");
+        });
+
+        it("Should allow non-matching beneficiary -- failed because it is already active", async () => {
+            await catchRevert(
+                I_USDTieredSTO_Array[0].changeAllowBeneficialInvestments(true, { from: ISSUER })
+            );
+            await revertToSnapshot(snapId);
         });
 
         it("Should successfully call the modifyTimes before starting the STO -- fail because of bad owner", async() => {
@@ -4245,6 +4308,7 @@ contract("USDTieredSTO", accounts => {
             assert.equal(await I_USDTieredSTOFactory.getDescription.call(), "USD Tiered STO", "Wrong Module added");
             assert.equal(await I_USDTieredSTOFactory.getTitle.call(), "USD Tiered STO", "Wrong Module added");
             assert.equal(await I_USDTieredSTOFactory.getInstructions.call(), "Initialises a USD tiered STO.", "Wrong Module added");
+            assert.equal(await I_USDTieredSTOFactory.getVersion.call(), "1.0.0");
             let tags = await I_USDTieredSTOFactory.getTags.call();
             assert.equal(web3.utils.hexToString(tags[0]), "USD");
             assert.equal(web3.utils.hexToString(tags[1]), "Tiered");

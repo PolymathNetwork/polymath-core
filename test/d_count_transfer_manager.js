@@ -249,6 +249,31 @@ contract("CountTransferManager", accounts => {
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("2", "ether"));
         });
 
+        it("Should able to buy some more tokens (more than 2 hoders) -- because CountTransferManager is paused", async() => {
+            await I_CountTransferManager.pause({from: account_issuer });
+            let snapId = await takeSnapshot();
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor3,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(10),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 500000
+                }
+            );
+
+            assert.equal(
+                tx.logs[0].args._investor.toLowerCase(),
+                account_investor3.toLowerCase(),
+                "Failed in adding the investor in whitelist"
+            );
+
+            await I_SecurityToken.mint(account_investor3, web3.utils.toWei("3", "ether"), { from: token_owner })
+            await revertToSnapshot(snapId);
+        })
+
         it("Should fail to buy some more tokens (more than 2 holders)", async () => {
             // Add the Investor in to the whitelist
             let tx = await I_GeneralTransferManager.modifyWhitelist(

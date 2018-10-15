@@ -158,14 +158,14 @@ contract("TrackedRedemption", accounts => {
         it("Should successfully attach the paid TrackedRedemption with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
-            const tx = await I_SecurityToken.addModule(I_TrackedRedemptionFactory.address, "", web3.utils.toWei("500"), 0, { from: token_owner });
-            assert.equal(tx.logs[2].args._types[0].toNumber(), burnKey, "TrackedRedemption doesn't get deployed");
+            const tx = await I_SecurityToken.addModule(P_TrackedRedemptionFactory.address, "", web3.utils.toWei("500"), 0, { from: token_owner });
+            assert.equal(tx.logs[3].args._types[0].toNumber(), burnKey, "TrackedRedemption doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
+                web3.utils.toAscii(tx.logs[3].args._name).replace(/\u0000/g, ""),
                 "TrackedRedemption",
                 "TrackedRedemption module was not added"
             );
-            I_TrackedRedemption = TrackedRedemption.at(tx.logs[2].args._module);
+            I_TrackedRedemption = TrackedRedemption.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 

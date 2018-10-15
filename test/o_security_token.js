@@ -380,6 +380,15 @@ contract("SecurityToken", accounts => {
             await revertToSnapshot(key);
         });
 
+        it("Should successfully archive the module first and fail during achiving the module again", async() => {
+            let key = await takeSnapshot();
+            await I_SecurityToken.archiveModule(I_GeneralTransferManager.address, { from: token_owner });
+            await catchRevert(
+                I_SecurityToken.archiveModule(I_GeneralTransferManager.address, { from: token_owner })
+            );
+            await revertToSnapshot(key);
+        });
+
         it("Should verify the revertion of snapshot works properly", async () => {
             let moduleData = await I_SecurityToken.getModule.call(I_GeneralTransferManager.address);
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ""), "GeneralTransferManager");
@@ -415,6 +424,18 @@ contract("SecurityToken", accounts => {
             assert.equal(moduleData[2], I_GeneralTransferManagerFactory.address);
             assert.equal(moduleData[3], false);
         });
+
+        it("Should successfully unarchive the general transfer manager module from the securityToken -- fail because module is already unarchived", async () => {
+            await catchRevert(
+                I_SecurityToken.unarchiveModule(I_GeneralTransferManager.address, { from: token_owner })
+            );
+        });
+
+        it("Should successfully archive the module -- fail because module is not existed", async() => {
+            await catchRevert(
+                I_SecurityToken.archiveModule(I_GeneralPermissionManagerFactory.address, { from: token_owner })
+            );
+        })
 
         it("Should fail to mint tokens while GTM unarchived", async () => {
             await catchRevert(I_SecurityToken.mint(1, 100 * Math.pow(10, 18), { from: token_owner, gas: 500000 }));
@@ -805,12 +826,12 @@ contract("SecurityToken", accounts => {
 
     describe("Withdraw Poly", async () => {
         it("Should successfully withdraw the poly", async () => {
-            await catchRevert(I_SecurityToken.withdrawPoly(web3.utils.toWei("20000", "ether"), { from: account_temp }));
+            await catchRevert(I_SecurityToken.withdrawERC20(I_PolyToken.address, web3.utils.toWei("20000", "ether"), { from: account_temp }));
         });
 
         it("Should successfully withdraw the poly", async () => {
             let balanceBefore = await I_PolyToken.balanceOf(token_owner);
-            await I_SecurityToken.withdrawPoly(web3.utils.toWei("20000", "ether"), { from: token_owner });
+            await I_SecurityToken.withdrawERC20(I_PolyToken.address, web3.utils.toWei("20000", "ether"), { from: token_owner });
             let balanceAfter = await I_PolyToken.balanceOf(token_owner);
             assert.equal(
                 BigNumber(balanceAfter)
@@ -821,7 +842,7 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should successfully withdraw the poly", async () => {
-            await catchRevert(I_SecurityToken.withdrawPoly(web3.utils.toWei("10", "ether"), { from: token_owner }));
+            await catchRevert(I_SecurityToken.withdrawERC20(I_PolyToken.address, web3.utils.toWei("10", "ether"), { from: token_owner }));
         });
     });
 

@@ -8,10 +8,13 @@ import { setUpPolymathNetwork } from "./helpers/createInstances";
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
+const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
+const ModuleRegistry = artifacts.require("./ModuleRegistry.sol");
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const MockFactory = artifacts.require("./MockFactory.sol");
 const TestSTOFactory = artifacts.require("./TestSTOFactory.sol");
+const ReclaimTokens = artifacts.require("./ReclaimTokens.sol");
 
 const Web3 = require("web3");
 const BigNumber = require("bignumber.js");
@@ -47,9 +50,11 @@ contract("ModuleRegistry", accounts => {
     let I_SecurityTokenRegistry;
     let I_CappedSTOFactory1;
     let I_CappedSTOFactory2;
+    let I_CappedSTOFactory3;
     let I_STFactory;
     let I_MRProxied;
     let I_SecurityToken;
+    let I_ReclaimERC20;
     let I_STRProxied;
     let I_CappedSTO;
     let I_PolyToken;
@@ -115,7 +120,7 @@ contract("ModuleRegistry", accounts => {
            I_STRProxied
        ] = instances;
 
-       I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
+       I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`
@@ -131,6 +136,57 @@ contract("ModuleRegistry", accounts => {
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
         -----------------------------------------------------------------------------
         `);
+    });
+
+    describe("Test the initialize the function", async () => {
+        it("Should successfully update the implementation address -- fail because polymathRegistry address is 0x", async () => {
+            let bytesProxy = encodeProxyCall(MRProxyParameters, [
+                "0x0000000000000000000000000000000000000000",
+                account_polymath
+            ]);
+            catchRevert(
+                I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, {
+                    from: account_polymath
+                }),
+                "tx-> revert because polymathRegistry address is 0x"
+            );
+        });
+
+        it("Should successfully update the implementation address -- fail because owner address is 0x", async () => {
+            let bytesProxy = encodeProxyCall(MRProxyParameters, [
+                I_PolymathRegistry.address,
+                "0x0000000000000000000000000000000000000000"
+            ]);
+            catchRevert(
+                I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, {
+                    from: account_polymath
+                }),
+                "tx-> revert because owner address is 0x"
+            );
+        });
+
+        it("Should successfully update the implementation address -- fail because all params are 0x", async () => {
+            let bytesProxy = encodeProxyCall(MRProxyParameters, [
+                "0x0000000000000000000000000000000000000000",
+                "0x0000000000000000000000000000000000000000"
+            ]);
+            catchRevert(
+                I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, {
+                    from: account_polymath
+                }),
+                "tx-> revert because all params are 0x"
+            );
+        });
+
+        it("Should successfully update the implementation address", async() => {
+            let bytesProxy = encodeProxyCall(MRProxyParameters, [
+                I_PolymathRegistry.address,
+                account_polymath
+            ]);
+            await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, { from: account_polymath });
+            I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
+            await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, { from: account_polymath });
+        })
     });
 
     describe("Test cases for the ModuleRegistry", async () => {
@@ -191,8 +247,8 @@ contract("ModuleRegistry", accounts => {
                 assert.equal(tx.logs[0].args._owner, account_polymath, "Should be the right owner");
 
                 let _list = await I_MRProxied.getModulesByType(transferManagerKey);
-                assert.equal(_list.length, 2, "Length should be 2");
-                assert.equal(_list[1], I_GeneralTransferManagerFactory.address);
+                assert.equal(_list.length, 1, "Length should be 1");
+                assert.equal(_list[0], I_GeneralTransferManagerFactory.address);
 
                 let _reputation = await I_MRProxied.getReputationByFactory(I_GeneralTransferManagerFactory.address);
                 assert.equal(_reputation.length, 0);
@@ -205,8 +261,22 @@ contract("ModuleRegistry", accounts => {
             it("Should fail in registering the module-- type = 0", async () => {
                 I_MockFactory = await MockFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
 
-                await catchRevert(I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath }));
+                catchRevert(I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath }));
             });
+
+            it("Should fail to register the new module because msg.sender is not the owner of the module", async() => {
+                I_CappedSTOFactory3 = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_temp });
+                catchRevert(
+                    I_MRProxied.registerModule(I_CappedSTOFactory3.address, { from: token_owner })
+                );
+            });
+
+            it("Should successfully register the module -- fail because no module type uniqueness", async() => {
+                await I_MockFactory.changeTypes({from: account_polymath });
+                catchRevert(
+                    I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath })
+                );
+            })
         });
 
         describe("Test case for verifyModule", async () => {
@@ -293,6 +363,16 @@ contract("ModuleRegistry", accounts => {
                 let _reputation = await I_MRProxied.getReputationByFactory.call(I_CappedSTOFactory2.address);
                 assert.equal(_reputation.length, 1);
             });
+
+            it("Should successfully add module when custom modules switched on -- fail because factory owner is different", async() => {
+                await I_MRProxied.registerModule(I_CappedSTOFactory3.address, { from: account_temp })
+                startTime = latestTime() + duration.seconds(5000);
+                endTime = startTime + duration.days(30);
+                let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+                catchRevert(
+                    I_SecurityToken.addModule(I_CappedSTOFactory3.address, bytesSTO, 0, 0, { from: token_owner })
+                );
+            })
 
             it("Should successfully add verified module", async () => {
                 I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {
@@ -398,25 +478,27 @@ contract("ModuleRegistry", accounts => {
 
                 let sto1 = (await I_MRProxied.getModulesByType.call(3))[0];
                 let sto2 = (await I_MRProxied.getModulesByType.call(3))[1];
+                let sto3 = (await I_MRProxied.getModulesByType.call(3))[2];                
+                let sto4 = (await I_MRProxied.getModulesByType.call(3))[3];
 
                 assert.equal(sto1, I_CappedSTOFactory1.address);
                 assert.equal(sto2, I_CappedSTOFactory2.address);
-                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 4);
 
-                let tx = await I_MRProxied.removeModule(sto1, { from: account_polymath });
+                let tx = await I_MRProxied.removeModule(sto4, { from: account_polymath });
 
-                assert.equal(tx.logs[0].args._moduleFactory, sto1, "Event is not properly emitted for _moduleFactory");
+                assert.equal(tx.logs[0].args._moduleFactory, sto4, "Event is not properly emitted for _moduleFactory");
                 assert.equal(tx.logs[0].args._decisionMaker, account_polymath, "Event is not properly emitted for _decisionMaker");
 
-                let sto2_end = (await I_MRProxied.getModulesByType.call(3))[1];
+                let sto3_end = (await I_MRProxied.getModulesByType.call(3))[2];
 
                 // re-ordering
-                assert.equal(sto2_end, sto2);
+                assert.equal(sto3_end, sto3);
                 // delete related data
-                assert.equal(await I_MRProxied.getUintValues.call(web3.utils.soliditySha3("registry", sto1)), 0);
-                assert.equal(await I_MRProxied.getReputationByFactory.call(sto1), 0);
-                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 2);
-                assert.equal(await I_MRProxied.getBoolValues.call(web3.utils.soliditySha3("verified", sto1)), false);
+                assert.equal(await I_MRProxied.getUintValues.call(web3.utils.soliditySha3("registry", sto4)), 0);
+                assert.equal(await I_MRProxied.getReputationByFactory.call(sto4), 0);
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
+                assert.equal(await I_MRProxied.getBoolValues.call(web3.utils.soliditySha3("verified", sto4)), false);
 
                 await revertToSnapshot(snap);
             });
@@ -427,7 +509,7 @@ contract("ModuleRegistry", accounts => {
 
                 assert.equal(sto1, I_CappedSTOFactory1.address);
                 assert.equal(sto2, I_CappedSTOFactory2.address);
-                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 4);
 
                 let tx = await I_MRProxied.removeModule(sto2, { from: token_owner });
 
@@ -441,7 +523,7 @@ contract("ModuleRegistry", accounts => {
                 // delete related data
                 assert.equal(await I_MRProxied.getUintValues.call(web3.utils.soliditySha3("registry", sto2)), 0);
                 assert.equal(await I_MRProxied.getReputationByFactory.call(sto2), 0);
-                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 2);
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
                 assert.equal(await I_MRProxied.getBoolValues.call(web3.utils.soliditySha3("verified", sto2)), false);
             });
 
@@ -452,6 +534,20 @@ contract("ModuleRegistry", accounts => {
 
         describe("Test cases for IRegistry functionality", async () => {
             describe("Test cases for reclaiming funds", async () => {
+
+                it("Should successfully reclaim POLY tokens -- fail because token address will be 0x", async() => {
+                    await I_PolyToken.transfer(I_MRProxied.address, web3.utils.toWei("1"), { from: token_owner });
+                    catchRevert(
+                        I_MRProxied.reclaimERC20("0x000000000000000000000000000000000000000", { from: account_polymath })
+                    );
+                });
+    
+                it("Should successfully reclaim POLY tokens -- not authorised", async() => {
+                    catchRevert(
+                        I_MRProxied.reclaimERC20(I_PolyToken.address, { from: account_temp })
+                    );
+                });
+
                 it("Should successfully reclaim POLY tokens", async () => {
                     await I_PolyToken.getTokens(web3.utils.toWei("1"), I_MRProxied.address);
                     let bal1 = await I_PolyToken.balanceOf.call(account_polymath);
@@ -485,6 +581,48 @@ contract("ModuleRegistry", accounts => {
                     assert.isNotOk(status);
                 });
             });
+
+            describe("Test cases for the ReclaimTokens contract", async() => {
+
+                it("Should successfully reclaim POLY tokens -- fail because token address will be 0x", async() => {
+                    I_ReclaimERC20 = await ReclaimTokens.at(I_FeatureRegistry.address);
+                    await I_PolyToken.transfer(I_ReclaimERC20.address, web3.utils.toWei("1"), { from: token_owner });
+                    catchRevert(
+                        I_ReclaimERC20.reclaimERC20("0x000000000000000000000000000000000000000", { from: account_polymath })
+                    );
+                });
+    
+                it("Should successfully reclaim POLY tokens -- not authorised", async() => {
+                    catchRevert(
+                        I_ReclaimERC20.reclaimERC20(I_PolyToken.address, { from: account_temp })
+                    );
+                });
+
+                it("Should successfully reclaim POLY tokens", async () => {
+                    await I_PolyToken.getTokens(web3.utils.toWei("1"), I_ReclaimERC20.address);
+                    let bal1 = await I_PolyToken.balanceOf.call(account_polymath);
+                    await I_ReclaimERC20.reclaimERC20(I_PolyToken.address);
+                    let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
+                    assert.isAtLeast(
+                        bal2.dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                        bal2.dividedBy(new BigNumber(10).pow(18)).toNumber()
+                    );
+                });
+            })
+
+            describe("Test case for the PolymathRegistry", async() => {
+
+                it("Should successfully get the address -- fail because key is not exist", async() => {
+                    catchRevert( 
+                        I_PolymathRegistry.getAddress("PolyOracle")
+                    );
+                });
+
+                it("Should successfully get the address", async() => {
+                    let _moduleR = await I_PolymathRegistry.getAddress("ModuleRegistry");
+                    assert.equal(_moduleR, I_ModuleRegistryProxy.address);
+                })
+            })
         });
     });
 });

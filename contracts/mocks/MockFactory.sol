@@ -4,8 +4,13 @@ import "../modules/STO/DummySTO.sol";
 import "../modules/ModuleFactory.sol";
 import "../libraries/Util.sol";
 
+/**
+ * @title Mock Contract Not fit for production environment
+ */
+
 contract MockFactory is ModuleFactory {
 
+    bool public switchTypes = false;
      /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
@@ -41,8 +46,16 @@ contract MockFactory is ModuleFactory {
      * @notice Type of the Module factory
      */
     function getTypes() external view returns(uint8[]) {
-        uint8[] memory res = new uint8[](0);
-        return res;
+        if (!switchTypes) {
+            uint8[] memory types = new uint8[](0);
+            return types;
+        } else {
+            uint8[] memory res = new uint8[](2);
+            res[0] = 1;
+            res[1] = 1;
+            return res;
+        }
+        
     }
 
     /**
@@ -94,6 +107,10 @@ contract MockFactory is ModuleFactory {
         bytes32[] memory availableTags = new bytes32[](4);
         availableTags[0] = "Mock";
         return availableTags;
+    }
+
+    function changeTypes() external onlyOwner {
+        switchTypes = !switchTypes;
     }
 
 }

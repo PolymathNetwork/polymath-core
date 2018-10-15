@@ -669,6 +669,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @param _patch Patch version of the proxy
     */
     function setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external onlyOwner {
+        require(_STFactoryAddress != address(0));
         _setProtocolVersion(_STFactoryAddress, _major, _minor, _patch);
     }
 

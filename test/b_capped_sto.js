@@ -259,6 +259,12 @@ contract("CappedSTO", accounts => {
             assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
             I_CappedSTO_Array_ETH.push(CappedSTO.at(tx.logs[3].args._module));
         });
+
+        it("Should call the configure function -- fail because of the bad owner", async()=> {
+            await catchRevert(
+                I_CappedSTO_Array_ETH[0].configure(startTime_ETH1, endTime_ETH1, cap, rate, [E_fundRaiseType], account_fundsReceiver, {from: account_polymath })
+            );
+        })
     });
 
     describe("verify the data of STO", async () => {

@@ -349,5 +349,79 @@ contract("CountTransferManager", accounts => {
                 assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Count");
             });
         });
+
+        describe("Test cases for the ModuleFactory", async() => {
+            it("Should successfully change the SetupCost -- fail beacuse of bad owner", async() => {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeFactorySetupFee(web3.utils.toWei("500"), {from: account_investor3})
+                );
+            });
+
+            it("Should successfully change the setupCost", async() => {
+                await I_CountTransferManagerFactory.changeFactorySetupFee(web3.utils.toWei("800"), { from: account_polymath });
+                assert.equal(await I_CountTransferManagerFactory.getSetupCost.call(), web3.utils.toWei("800"));
+            })
+
+            it("Should successfully change the usage fee -- fail beacuse of bad owner", async() => {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeFactoryUsageFee(web3.utils.toWei("500"), {from: account_investor3})
+                );
+            });
+
+            it("Should successfully change the usage fee", async() => {
+                await I_CountTransferManagerFactory.changeFactoryUsageFee(web3.utils.toWei("800"), { from: account_polymath });
+                assert.equal(await I_CountTransferManagerFactory.usageCost.call(), web3.utils.toWei("800"));
+            });
+
+            it("Should successfully change the subscription fee -- fail beacuse of bad owner", async() => {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeFactorySubscriptionFee(web3.utils.toWei("500"), {from: account_investor3})
+                );
+            });
+
+            it("Should successfully change the subscription fee", async() => {
+                await I_CountTransferManagerFactory.changeFactorySubscriptionFee(web3.utils.toWei("800"), { from: account_polymath });
+                assert.equal(await I_CountTransferManagerFactory.monthlySubscriptionCost.call(), web3.utils.toWei("800"));
+            });
+
+            it("Should successfully change the version of the factory -- failed because of bad owner", async() => {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeVersion("5.0.0", {from: account_investor3})
+                );
+            });
+
+            it("Should successfully change the version of the fatory -- failed because of the 0 string", async() => {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeVersion("", {from: account_polymath})
+                );
+            });
+
+            it("Should successfully change the version of the fatory", async() => {
+                await I_CountTransferManagerFactory.changeVersion("5.0.0", {from: account_polymath});
+                assert.equal(await I_CountTransferManagerFactory.getVersion.call(), "5.0.0");
+            });
+        })
+
+        describe("Test case for the changeSTVersionBounds", async() => {
+            it("Should successfully change the version bounds -- failed because of the non permitted bound type", async() => {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeSTVersionBounds("middleType", [1,2,3], {from: account_polymath})
+                );
+            })
+
+            it("Should successfully change the version bound --failed because the new version length < 3", async()=> {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1,2], {from: account_polymath})
+                );
+            })
+
+            it("Should successfully change the version bound", async()=> {
+                await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1,2,1], {from: account_polymath});
+                await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1,4,9], {from: account_polymath});
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1,0,0], {from: account_polymath})
+                );
+            })
+        })
     });
 });

@@ -1,25 +1,14 @@
 import latestTime from './helpers/latestTime';
 import {signData} from './helpers/signData';
 import { pk }  from './helpers/testprivateKey';
-import { duration, ensureException, promisifyLogWatch, latestBlock } from './helpers/utils';
-import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
-import { encodeProxyCall, encodeModuleCall } from './helpers/encodeCall';
+import { duration, promisifyLogWatch, latestBlock } from './helpers/utils';
+import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
+import { catchRevert } from "./helpers/exceptions";
+import { setUpPolymathNetwork, deployGPMAndVerifyed } from "./helpers/createInstances";
 
-const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
-const DummySTOFactory = artifacts.require('./DummySTOFactory.sol');
-const DummySTO = artifacts.require('./DummySTO.sol');
-const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
-const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const SecurityToken = artifacts.require('./SecurityToken.sol');
-const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol');
-const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol');
-const FeatureRegistry = artifacts.require('./FeatureRegistry.sol');
-const STFactory = artifacts.require('./STFactory.sol');
-const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
-const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
-const PolyTokenFaucet = artifacts.require('./PolyTokenFaucet.sol');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -63,7 +52,6 @@ contract('GeneralPermissionManager', accounts => {
     let I_SecurityToken;
     let I_MRProxied;
     let I_STRProxied;
-    let I_DummySTO;
     let I_PolyToken;
     let I_PolymathRegistry;
 
@@ -83,17 +71,6 @@ contract('GeneralPermissionManager', accounts => {
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
 
-    // Dummy STO details
-    const startTime = latestTime() + duration.seconds(5000);           // Start time will be 5000 seconds more than the latest time
-    const endTime = startTime + duration.days(80);                     // Add 80 days more
-    const cap = web3.utils.toWei('10', 'ether');
-    const someString = "A string which is not used";
-    const STOParameters = ['uint256', 'uint256', 'uint256', 'string'];
-    const STRProxyParameters = ['address', 'address', 'uint256', 'uint256', 'address', 'address'];
-    const MRProxyParameters = ['address', 'address'];
-
-    let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, someString]);
-
     before(async() => {
         // Accounts setup
         account_polymath = accounts[0];
@@ -109,139 +86,41 @@ contract('GeneralPermissionManager', accounts => {
         account_delegate3 = accounts[5];
 
 
-        // ----------- POLYMATH NETWORK Configuration ------------
+        // Step 1: Deploy the genral PM ecosystem
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-        // Step 0: Deploy the PolymathRegistry
-        I_PolymathRegistry = await PolymathRegistry.new({from: account_polymath});
-
-        // Step 1: Deploy the token Faucet and Mint tokens for token_owner
-        I_PolyToken = await PolyTokenFaucet.new();
-        await I_PolyToken.getTokens((10000 * Math.pow(10, 18)), token_owner);
-
-         // Step 2: Deploy the FeatureRegistry
-
-         I_FeatureRegistry = await FeatureRegistry.new(
-            I_PolymathRegistry.address,
-            {
-                from: account_polymath
-            });
-
-        // STEP 3: Deploy the ModuleRegistry
-
-        I_ModuleRegistry = await ModuleRegistry.new({from:account_polymath});
-        // Step 3 (b):  Deploy the proxy and attach the implementation contract to it
-        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from:account_polymath});
-        let bytesMRProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, account_polymath]);
-        await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesMRProxy, {from: account_polymath});
-        I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
-
-        // STEP 4: Deploy the GeneralTransferManagerFactory
-
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
-
-        assert.notEqual(
-            I_GeneralTransferManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralTransferManagerFactory contract was not deployed"
-        );
+        [
+            I_PolymathRegistry,
+            I_PolyToken,
+            I_FeatureRegistry,
+            I_ModuleRegistry,
+            I_ModuleRegistryProxy,
+            I_MRProxied,
+            I_GeneralTransferManagerFactory,
+            I_STFactory,
+            I_SecurityTokenRegistry,
+            I_SecurityTokenRegistryProxy,
+            I_STRProxied
+        ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
-
-        I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
-
-        assert.notEqual(
-            I_GeneralPermissionManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManagerFactory contract was not deployed"
-        );
-
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
         // STEP 6: Deploy the GeneralDelegateManagerFactory
-
-        P_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, web3.utils.toWei("500","ether"), 0, 0, {from:account_polymath});
-
-        assert.notEqual(
-            P_GeneralPermissionManagerFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "GeneralDelegateManagerFactory contract was not deployed"
-        );
-
-        // STEP 7: Deploy the DummySTOFactory
-
-        I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
-
-        assert.notEqual(
-            I_DummySTOFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "DummySTOFactory contract was not deployed"
-        );
-
-
-      // Step 8: Deploy the STFactory contract
-
-      I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, {from : account_polymath });
-
-      assert.notEqual(
-          I_STFactory.address.valueOf(),
-          "0x0000000000000000000000000000000000000000",
-          "STFactory contract was not deployed",
-      );
-
-      // Step 9: Deploy the SecurityTokenRegistry contract
-
-      I_SecurityTokenRegistry = await SecurityTokenRegistry.new({from: account_polymath });
-
-      assert.notEqual(
-          I_SecurityTokenRegistry.address.valueOf(),
-          "0x0000000000000000000000000000000000000000",
-          "SecurityTokenRegistry contract was not deployed",
-      );
-
-      // Step 10: Deploy the proxy and attach the implementation contract to it.
-       I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({from: account_polymath});
-       let bytesProxy = encodeProxyCall(STRProxyParameters, [I_PolymathRegistry.address, I_STFactory.address, initRegFee, initRegFee, I_PolyToken.address, account_polymath]);
-       await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {from: account_polymath});
-       I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
-
-      // Step 11: update the registries addresses from the PolymathRegistry contract
-      await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, {from: account_polymath})
-      await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, {from: account_polymath});
-      await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, {from: account_polymath});
-      await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, {from: account_polymath});
-      await I_MRProxied.updateFromRegistry({from: account_polymath});
-
-      // STEP 8: Register the Modules with the ModuleRegistry contract
-
-      // (A) :  Register the GeneralTransferManagerFactory
-      await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-      await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
-
-      // (B) :  Register the GeneralDelegateManagerFactory
-      await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-      await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
-      // (B) :  Register the Paid GeneralDelegateManagerFactory
-      await I_MRProxied.registerModule(P_GeneralPermissionManagerFactory.address, { from: account_polymath });
-      await I_MRProxied.verifyModule(P_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-
-      // (C) : Register the STOFactory
-      await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_polymath });
-      await I_MRProxied.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
+        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
 
         // Printing all the contract addresses
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
-        PolymathRegistry:                  ${PolymathRegistry.address}
-        SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
-        SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
-        ModuleRegistryProxy                ${ModuleRegistryProxy.address}
-        ModuleRegistry:                    ${ModuleRegistry.address}
-        FeatureRegistry:                   ${FeatureRegistry.address}
+        PolymathRegistry:                  ${I_PolymathRegistry.address}
+        SecurityTokenRegistryProxy:        ${I_SecurityTokenRegistryProxy.address}
+        SecurityTokenRegistry:             ${I_SecurityTokenRegistry.address}
+        ModuleRegistryProxy                ${I_ModuleRegistryProxy.address}
+        ModuleRegistry:                    ${I_ModuleRegistry.address}
+        FeatureRegistry:                   ${I_FeatureRegistry.address}
 
-        STFactory:                         ${STFactory.address}
-        GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
-        GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
-
-        DummySTOFactory:                   ${I_DummySTOFactory.address}
+        STFactory:                         ${I_STFactory.address}
+        GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
+        GeneralPermissionManagerFactory:   ${I_GeneralPermissionManagerFactory.address}
         -----------------------------------------------------------------------------
         `);
     });
@@ -281,17 +160,12 @@ contract('GeneralPermissionManager', accounts => {
            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
-        it("Should successfully attach the General permission manager factory with the security token", async () => {
+        it("Should successfully attach the General permission manager factory with the security token -- failed because Token is not paid", async () => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
-            try {
-                const tx = await I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
-            } catch(error) {
-                console.log(`       tx -> failed because Token is not paid`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner })
+            );
         });
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
@@ -332,38 +206,21 @@ contract('GeneralPermissionManager', accounts => {
 
         it("Should fail in adding the delegate -- msg.sender doesn't have permission", async() => {
             let errorThrown = false;
-            try {
-                let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_investor1});
-            } catch(error) {
-                console.log(`         tx revert -> msg.sender doesn't have permission`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_investor1})
+            );
         });
 
         it("Should fail in adding the delegate -- no delegate details provided", async() => {
-            let errorThrown = false;
-            try {
-                let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, '', { from: account_investor1});
-            } catch(error) {
-                console.log(`         tx revert -> delegate details were not provided`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            catchRevert(
+                I_GeneralPermissionManager.addDelegate(account_delegate, '', { from: account_investor1})
+            );
         });
 
         it("Should fail to provide the permission -- because delegate is not yet added", async() => {
-            let errorThrown = false;
-            try {
-                let tx = await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner});
-            } catch(error) {
-                console.log(`         tx revert -> Delegate is not yet added`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+            await catchRevert(
+                I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner})
+            );
         });
 
         it("Should successfuly add the delegate", async() => {
@@ -371,16 +228,16 @@ contract('GeneralPermissionManager', accounts => {
             assert.equal(tx.logs[0].args._delegate, account_delegate);
         });
 
-        it("Should fail to provide the permission", async() => {
-            let errorThrown = false;
-            try {
-                let tx = await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: account_investor1});
-            } catch(error) {
-                console.log(`         tx revert -> msg.sender doesn't have permission`.grey);
-                errorThrown = true;
-                ensureException(error);
-            }
-            assert.ok(errorThrown, message);
+        it("Should successfully add the delegate -- failed because trying to add the already present delegate", async() => {
+            await catchRevert(
+                I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner})
+            );
+        })
+
+        it("Should fail to provide the permission -- because msg.sender doesn't have permission", async() => {
+           await catchRevert(
+                I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: account_investor1})
+           );
         });
 
         it("Should check the permission", async() => {
@@ -414,10 +271,15 @@ contract('GeneralPermissionManager', accounts => {
         it("Should return all delegates", async() => {
             await I_GeneralPermissionManager.addDelegate(account_delegate2, delegateDetails, { from: token_owner});
             let tx = await I_GeneralPermissionManager.getAllDelegates.call();
-            console.log(tx);
             assert.equal(tx.length, 2);
             assert.equal(tx[0], account_delegate);  
             assert.equal(tx[1], account_delegate2);
+        });
+
+        it("Should check is delegate for 0x address - failed 0x address is not allowed", async() => {
+            await catchRevert(
+                I_GeneralPermissionManager.checkDelegate.call("0x0000000000000000000000000000000000000000000000000")
+            );
         });
 
         it("Should return false when check is delegate - because user is not a delegate", async() => {
@@ -429,9 +291,32 @@ contract('GeneralPermissionManager', accounts => {
         });
 
         
-        it("Should provide the permission in bulk", async() => {
+        it("Should successfully provide the permissions in batch -- failed because of array length is 0", async() => {
             await I_GeneralPermissionManager.addDelegate(account_delegate3, delegateDetails, { from: token_owner});
+            await catchRevert(
+                I_GeneralPermissionManager.changePermissionMulti(account_delegate3, [], ["WHITELIST","CHANGE_PERMISSION"], [true, true], {from: token_owner})
+            );
+        });
 
+        it("Should successfully provide the permissions in batch -- failed because of perm array length is 0", async() => {
+            await catchRevert(
+                I_GeneralPermissionManager.changePermissionMulti(account_delegate3, [I_GeneralTransferManager.address, I_GeneralPermissionManager.address], [], [true, true], {from: token_owner})
+            );
+        });
+
+        it("Should successfully provide the permissions in batch -- failed because mismatch in arrays length", async() => {
+            await catchRevert(
+                I_GeneralPermissionManager.changePermissionMulti(account_delegate3, [I_GeneralTransferManager.address], ["WHITELIST","CHANGE_PERMISSION"], [true, true], {from: token_owner})
+            );
+        });
+
+        it("Should successfully provide the permissions in batch -- failed because mismatch in arrays length", async() => {
+            await catchRevert(
+                I_GeneralPermissionManager.changePermissionMulti(account_delegate3, [I_GeneralTransferManager.address, I_GeneralPermissionManager.address], ["WHITELIST","CHANGE_PERMISSION"], [true], {from: token_owner})
+            );
+        });
+
+        it("Should successfully provide the permissions in batch", async() => {
             let tx = await I_GeneralPermissionManager.changePermissionMulti(account_delegate3, [I_GeneralTransferManager.address, I_GeneralPermissionManager.address], ["WHITELIST","CHANGE_PERMISSION"], [true, true], {from: token_owner});
             assert.equal(tx.logs[0].args._delegate, account_delegate3);
 
@@ -439,27 +324,26 @@ contract('GeneralPermissionManager', accounts => {
             assert.isTrue(await I_GeneralPermissionManager.checkPermission.call(account_delegate3, I_GeneralPermissionManager.address, "CHANGE_PERMISSION"));
         });
 
-
         it("Should provide all delegates with specified permission", async() => {
-
             await I_GeneralPermissionManager.changePermission(account_delegate2, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner});
-
             let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralTransferManager.address, "WHITELIST");
-            // console.log(tx);
             assert.equal(tx.length, 3);
             assert.equal(tx[0], account_delegate);
             assert.equal(tx[1], account_delegate2);
         });
 
+        it("Should get all delegates for the permission manager", async() => {
+            let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralPermissionManager.address, "CHANGE_PERMISSION");
+            assert.equal(tx.length, 1);
+            assert.equal(tx[0], account_delegate3);
+        })
+
         it("Should return all modules and all permission", async() => {
-            
             let tx = await I_GeneralPermissionManager.getAllModulesAndPermsFromTypes.call(account_delegate3, [2,1], I_SecurityToken.address);
-            console.log (tx);
             assert.equal(tx[0][0], I_GeneralTransferManager.address);
             assert.equal(tx[1][0], "0x57484954454c4953540000000000000000000000000000000000000000000000");
             assert.equal(tx[0][1], I_GeneralPermissionManager.address);
             assert.equal(tx[1][1], "0x4348414e47455f5045524d495353494f4e000000000000000000000000000000");
-           
         });
 
     });
@@ -488,6 +372,11 @@ contract('GeneralPermissionManager', accounts => {
             let tags = await I_GeneralPermissionManagerFactory.getTags.call();
             assert.equal(tags.length,0);
         });
+
+        it("Should ge the version of the factory", async() => {
+            let version = await I_GeneralPermissionManagerFactory.getVersion.call();
+            assert.equal(version, "1.0.0");
+        })
     });
 
 });

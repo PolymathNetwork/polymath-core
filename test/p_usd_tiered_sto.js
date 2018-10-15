@@ -371,6 +371,22 @@ contract("USDTieredSTO", accounts => {
             assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, 0, "Incorrect number of permissions");
         });
 
+        it("Should successfully call the modifyTimes before starting the STO -- fail because of bad owner", async() => {
+            await catchRevert(
+                I_USDTieredSTO_Array[0].modifyTimes(latestTime() + duration.days(15), latestTime() + duration.days(55), { from: POLYMATH })
+            );
+        })
+
+        it("Should successfully call the modifyTimes before starting the STO", async() => {
+            let snapId = await takeSnapshot();
+            let _startTime = latestTime() + duration.days(15);
+            let _endTime = latestTime() + duration.days(55)
+            await I_USDTieredSTO_Array[0].modifyTimes(_startTime, _endTime, { from: ISSUER });
+            assert.equal(await I_USDTieredSTO_Array[0].startTime.call(), _startTime, "Incorrect _startTime in config");
+            assert.equal(await I_USDTieredSTO_Array[0].endTime.call(), _endTime, "Incorrect _endTime in config");
+            await revertToSnapshot(snapId);
+        });
+
         it("Should successfully attach the second STO module to the security token", async () => {
             let stoId = 1; // No discount
 

@@ -47,7 +47,7 @@ interface IModuleFactory {
     function getVersion() external view returns(string);
 
     /**
-     * @notice Get the Instructions that helped to used the module
+     * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns (string);
 

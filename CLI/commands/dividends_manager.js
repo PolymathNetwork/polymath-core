@@ -18,7 +18,8 @@ const MODULES_TYPES = {
   PERMISSION: 1,
   TRANSFER: 2,
   STO: 3,
-  DIVIDENDS: 4
+  DIVIDENDS: 4,
+  BURN: 5
 }
 
 // App flow

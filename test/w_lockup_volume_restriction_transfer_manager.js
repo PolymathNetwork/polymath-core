@@ -2,19 +2,19 @@ import latestTime from './helpers/latestTime';
 import { duration, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 import { encodeProxyCall } from './helpers/encodeCall';
-import { setUpPolymathNetwork, deployVolumeRTMAndVerified } from "./helpers/createInstances";
+import { setUpPolymathNetwork, deployLockupVolumeRTMAndVerified } from "./helpers/createInstances";
 import { catchRevert } from "./helpers/exceptions";
 
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
-const VolumeRestrictionTransferManager = artifacts.require('./VolumeRestrictionTransferManager');
+const VolumeRestrictionTransferManager = artifacts.require('./LockupVolumeRestrictionTM');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
-contract('VolumeRestrictionTransferManager', accounts => {
+contract('LockupVolumeRestrictionTransferManager', accounts => {
 
     // Accounts Variable declaration
     let account_polymath;
@@ -95,9 +95,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
         ] = instances;
 
         // STEP 4(c): Deploy the VolumeRestrictionTransferManager
-        [I_VolumeRestrictionTransferManagerFactory] = await deployVolumeRTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_VolumeRestrictionTransferManagerFactory] = await deployLockupVolumeRTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
         // STEP 4(d): Deploy the VolumeRestrictionTransferManager
-        [P_VolumeRestrictionTransferManagerFactory] = await deployVolumeRTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
+        [P_VolumeRestrictionTransferManagerFactory] = await deployLockupVolumeRTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
 
         // Printing all the contract addresses
         console.log(`
@@ -111,7 +111,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
-        VolumeRestrictionTransferManagerFactory:  ${I_VolumeRestrictionTransferManagerFactory.address}
+
+        LockupVolumeRestrictionTransferManagerFactory:  
+                                           ${I_VolumeRestrictionTransferManagerFactory.address}
         -----------------------------------------------------------------------------
         `);
     });
@@ -221,7 +223,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
                 .replace(/\u0000/g, ''),
-                "VolumeRestrictionTransferManager",
+                "LockupVolumeRestrictionTM",
                 "VolumeRestrictionTransferManagerFactory module was not added"
             );
             P_VolumeRestrictionTransferManager = VolumeRestrictionTransferManager.at(tx.logs[3].args._module);
@@ -234,7 +236,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
                 .replace(/\u0000/g, ''),
-                "VolumeRestrictionTransferManager",
+                "LockupVolumeRestrictionTM",
                 "VolumeRestrictionTransferManager module was not added"
             );
             I_VolumeRestrictionTransferManager = VolumeRestrictionTransferManager.at(tx.logs[2].args._module);
@@ -773,13 +775,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal((await I_VolumeRestrictionTransferManagerFactory.getTypes.call())[0],2);
             assert.equal(web3.utils.toAscii(await I_VolumeRestrictionTransferManagerFactory.getName.call())
                         .replace(/\u0000/g, ''),
-                        "VolumeRestrictionTransferManager",
+                        "LockupVolumeRestrictionTM",
                         "Wrong Module added");
             assert.equal(await I_VolumeRestrictionTransferManagerFactory.getDescription.call(),
                         "Manage transfers using lock ups over time",
                         "Wrong Module added");
             assert.equal(await I_VolumeRestrictionTransferManagerFactory.getTitle.call(),
-                        "Volume Restriction Transfer Manager",
+                        "Lockup Volume Restriction Transfer Manager",
                         "Wrong Module added");
             assert.equal(await I_VolumeRestrictionTransferManagerFactory.getInstructions.call(),
                         "Allows an issuer to set lockup periods for user addresses, with funds distributed over time. Init function takes no parameters.",

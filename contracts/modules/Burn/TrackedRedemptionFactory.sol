@@ -83,7 +83,7 @@ contract TrackedRedemptionFactory is ModuleFactory {
     }
 
     /**
-     * @notice Get the Instructions that helped to used the module
+     * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
         return "Allows an investor to redeem security tokens which are tracked by this module";

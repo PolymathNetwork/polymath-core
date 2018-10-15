@@ -15,3 +15,4 @@ coverageEnv
 /flat
 /tempPoly
 .eslintrc.js
+package-lock.json

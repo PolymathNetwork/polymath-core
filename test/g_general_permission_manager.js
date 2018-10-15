@@ -85,7 +85,6 @@ contract('GeneralPermissionManager', accounts => {
         account_delegate2 = accounts[6];
         account_delegate3 = accounts[5];
 
-
         // Step 1: Deploy the genral PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
@@ -125,11 +124,10 @@ contract('GeneralPermissionManager', accounts => {
         `);
     });
 
-    describe("Generate the SecurityToken", async() => {
-
+    describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from : token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });
@@ -137,27 +135,23 @@ contract('GeneralPermissionManager', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner});
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
+            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), 2);
-            assert.equal(
-                web3.utils.toAscii(log.args._name)
-                .replace(/\u0000/g, ''),
-                "GeneralTransferManager"
-            );
+            assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");
         });
 
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-           I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
         it("Should successfully attach the General permission manager factory with the security token -- failed because Token is not paid", async () => {
@@ -170,12 +164,17 @@ contract('GeneralPermissionManager', accounts => {
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
-            const tx = await I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner });
+            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(
+                P_GeneralPermissionManagerFactory.address,
+                "0x",
+                web3.utils.toWei("500", "ether"),
+                0,
+                { from: token_owner }
+            );
             assert.equal(tx.logs[3].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[3].args._name)
-                .replace(/\u0000/g, ''),
+                web3.utils.toAscii(tx.logs[3].args._name).replace(/\u0000/g, ""),
                 "GeneralPermissionManager",
                 "GeneralPermissionManagerFactory module was not added"
             );
@@ -187,8 +186,7 @@ contract('GeneralPermissionManager', accounts => {
             const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name)
-                .replace(/\u0000/g, ''),
+                web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
                 "GeneralPermissionManager",
                 "GeneralPermissionManagerFactory module was not added"
             );
@@ -197,11 +195,10 @@ contract('GeneralPermissionManager', accounts => {
 
     });
 
-    describe("General Permission Manager test cases", async() => {
-
-        it("Get the init data", async() => {
+    describe("General Permission Manager test cases", async () => {
+        it("Get the init data", async () => {
             let tx = await I_GeneralPermissionManager.getInitFunction.call();
-            assert.equal(web3.utils.toAscii(tx).replace(/\u0000/g, ''),0);
+            assert.equal(web3.utils.toAscii(tx).replace(/\u0000/g, ""), 0);
         });
 
         it("Should fail in adding the delegate -- msg.sender doesn't have permission", async() => {
@@ -240,17 +237,27 @@ contract('GeneralPermissionManager', accounts => {
            );
         });
 
-        it("Should check the permission", async() => {
-            assert.isFalse(await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST"));
+        it("Should check the permission", async () => {
+            assert.isFalse(
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
+            );
         });
 
-        it("Should provide the permission", async() => {
-            let tx = await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner});
+        it("Should provide the permission", async () => {
+            let tx = await I_GeneralPermissionManager.changePermission(
+                account_delegate,
+                I_GeneralTransferManager.address,
+                "WHITELIST",
+                true,
+                { from: token_owner }
+            );
             assert.equal(tx.logs[0].args._delegate, account_delegate);
         });
 
-        it("Should check the permission", async() => {
-            assert.isTrue(await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST"));
+        it("Should check the permission", async () => {
+            assert.isTrue(
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
+            );
         });
 
         it("Should check the delegate details", async() => {
@@ -260,12 +267,9 @@ contract('GeneralPermissionManager', accounts => {
                         "Wrong delegate address get checked");
         });
 
-        it("Should get the permission of the general permission manager contract", async() => {
+        it("Should get the permission of the general permission manager contract", async () => {
             let tx = await I_GeneralPermissionManager.getPermissions.call();
-            assert.equal(web3.utils.toAscii(tx[0])
-                        .replace(/\u0000/g, ''),
-                        "CHANGE_PERMISSION",
-                        "Wrong permissions");
+            assert.equal(web3.utils.toAscii(tx[0]).replace(/\u0000/g, ""), "CHANGE_PERMISSION", "Wrong permissions");
         });
 
         it("Should return all delegates", async() => {
@@ -348,29 +352,32 @@ contract('GeneralPermissionManager', accounts => {
 
     });
 
-    describe("General Permission Manager Factory test cases", async() => {
-        it("should get the exact details of the factory", async() => {
-            assert.equal(await I_GeneralPermissionManagerFactory.setupCost.call(),0);
-            assert.equal((await I_GeneralPermissionManagerFactory.getTypes.call())[0],1);
-            assert.equal(web3.utils.toAscii(await I_GeneralPermissionManagerFactory.getName.call())
-                        .replace(/\u0000/g, ''),
-                        "GeneralPermissionManager",
-                        "Wrong Module added");
-            assert.equal(await I_GeneralPermissionManagerFactory.getDescription.call(),
-                        "Manage permissions within the Security Token and attached modules",
-                        "Wrong Module added");
-            assert.equal(await I_GeneralPermissionManagerFactory.getTitle.call(),
-                        "General Permission Manager",
-                        "Wrong Module added");
-            assert.equal(await I_GeneralPermissionManagerFactory.getInstructions.call(),
-                        "Add and remove permissions for the SecurityToken and associated modules. Permission types should be encoded as bytes32 values, and attached using the withPerm modifier to relevant functions.No initFunction required.",
-                        "Wrong Module added");
-
+    describe("General Permission Manager Factory test cases", async () => {
+        it("should get the exact details of the factory", async () => {
+            assert.equal(await I_GeneralPermissionManagerFactory.setupCost.call(), 0);
+            assert.equal((await I_GeneralPermissionManagerFactory.getTypes.call())[0], 1);
+            assert.equal(await I_GeneralPermissionManagerFactory.getVersion.call(), "1.0.0");
+            assert.equal(
+                web3.utils.toAscii(await I_GeneralPermissionManagerFactory.getName.call()).replace(/\u0000/g, ""),
+                "GeneralPermissionManager",
+                "Wrong Module added"
+            );
+            assert.equal(
+                await I_GeneralPermissionManagerFactory.getDescription.call(),
+                "Manage permissions within the Security Token and attached modules",
+                "Wrong Module added"
+            );
+            assert.equal(await I_GeneralPermissionManagerFactory.getTitle.call(), "General Permission Manager", "Wrong Module added");
+            assert.equal(
+                await I_GeneralPermissionManagerFactory.getInstructions.call(),
+                "Add and remove permissions for the SecurityToken and associated modules. Permission types should be encoded as bytes32 values, and attached using the withPerm modifier to relevant functions.No initFunction required.",
+                "Wrong Module added"
+            );
         });
 
-        it("Should get the tags of the factory", async() => {
+        it("Should get the tags of the factory", async () => {
             let tags = await I_GeneralPermissionManagerFactory.getTags.call();
-            assert.equal(tags.length,0);
+            assert.equal(tags.length, 0);
         });
 
         it("Should ge the version of the factory", async() => {
@@ -378,5 +385,4 @@ contract('GeneralPermissionManager', accounts => {
             assert.equal(version, "1.0.0");
         })
     });
-
 });

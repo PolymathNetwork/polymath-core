@@ -79,14 +79,12 @@ contract ManualApprovalTransferManager is ITransferManager {
         return bytes4(0);
     }
 
-    /**
-    * @notice default implementation of verifyTransfer used by SecurityToken
-    * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
-    * If the transfer request comes from a token holder, it checks that:
-    * a) Both are on the whitelist
-    * b) Seller's sale lockup period is over
-    * c) Buyer's purchase lockup is over
-    */
+    /** @notice Used to verify the transfer transaction and allow a manually approved transqaction to bypass other restrictions
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
+     * @param _amount The amount of tokens to transfer
+     * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
+     */
     function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool _isTransfer) public returns(Result) {
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");

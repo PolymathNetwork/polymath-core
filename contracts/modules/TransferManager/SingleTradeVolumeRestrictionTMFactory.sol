@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
 import "./../ModuleFactory.sol";
-import "./SingleTradeVolumeRestrictionManager.sol";
+import "./SingleTradeVolumeRestrictionTM.sol";
 import "../../libraries/Util.sol";
 /**
  * @title Factory for deploying SingleTradeVolumeRestrictionManager
  */
-contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
+contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
 
 
     /**
@@ -20,7 +20,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
-        name = "SingleTradeVolumeRestriction";
+        name = "SingleTradeVolumeRestrictionTM";
         title = "Single Trade Volume Restriction Manager";
         description = "Imposes volume restriction on a single trade";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
@@ -34,10 +34,10 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
     function deploy(bytes _data) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        SingleTradeVolumeRestrictionManager singleTradeVolumeRestrictionManager = new SingleTradeVolumeRestrictionManager(msg.sender, address(polyToken));
+        SingleTradeVolumeRestrictionTM singleTradeVolumeRestrictionManager = new SingleTradeVolumeRestrictionTM(msg.sender, address(polyToken));
 
         require(Util.getSig(_data) == singleTradeVolumeRestrictionManager.getInitFunction(), "Provided data is not valid");
-        require(address(singleTradeVolumeRestrictionManager).call(_data), "Un-successfull call");
+        require(address(singleTradeVolumeRestrictionManager).call(_data), "Unsuccessful call");
         emit GenerateModuleFromFactory(address(singleTradeVolumeRestrictionManager), getName(), address(this), msg.sender, setupCost, now);
         return address(singleTradeVolumeRestrictionManager);
     }

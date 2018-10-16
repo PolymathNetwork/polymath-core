@@ -18,3 +18,4 @@ coverageEnv
 package-lock.json
 bridge.log
 .node-xml*
+.solcover.js

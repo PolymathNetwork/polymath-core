@@ -29,25 +29,8 @@ function signDataVerifyTransfer (tmAddress, fromAddress, toAddress, amount, acco
     packedData = web3.sha3(`0x${packedData.toString("hex")}`, { encoding: "hex" });
 
     return web3.eth.sign(account, packedData);
-
-}
-
-// test only for hashing
-function hashedData (tmAddress, fromAddress, toAddress, amount) {
-    let packedData = utils
-        .solidityKeccak256(
-            ["address", "address", "address", "uint256"],
-            [tmAddress, fromAddress, toAddress, amount]
-        )
-        .slice(2);
-    packedData = new Buffer(packedData, "hex");
-    packedData = Buffer.concat([new Buffer(`\x19Ethereum Signed Message:\n${packedData.length.toString()}`), packedData]);
-    packedData = web3.sha3(`0x${packedData.toString("hex")}`, { encoding: "hex" });
-
-    return packedData;
-
 }
 
 module.exports = {
-    signData, signDataVerifyTransfer, hashedData
+    signData, signDataVerifyTransfer
 };

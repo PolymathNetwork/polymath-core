@@ -20,7 +20,8 @@ contract SignedTransferManager is ITransferManager {
 
     // Emit when signer stats was changed
     event UpdateSigners(address[] _signers, bool[] _signersStats);
-    // Emit when there is change in the flag variable called allowAllTransfers
+
+    // Emit when a signature has been deemed invalid
     event InvalidSignature(bytes _data);
 
 
@@ -42,10 +43,19 @@ contract SignedTransferManager is ITransferManager {
         return bytes4(0);
     }
 
+    /**
+    * @notice function to check if a signature is still valid
+    * @param _data signature
+    */
     function checkSignatureIsInvalid(bytes _data) public view returns(bool){
         return invalidSignatures[_data];
     }
 
+    /**
+    * @notice function to remove or add signer(s) onto the signer mapping
+    * @param _signers address array of signers
+    * @param _signersStats bool array of signers stats
+    */
     function updateSigners(address[] _signers, bool[] _signersStats) public withPerm(ADMIN) {
         require(_signers.length == _signersStats.length, "input array length does not match");
         for(uint8 i=0; i<_signers.length; i++){
@@ -55,20 +65,22 @@ contract SignedTransferManager is ITransferManager {
     }
 
     /**
-    * @notice default implementation of verifyTransfer used by SecurityToken
-    * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
-    * If the transfer request comes from a token holder, it checks that:
-    * a) Both are on the whitelist
-    * b) Seller's sale lockup period is over
-    * c) Buyer's purchase lockup is over
+    * @notice allow verify transfer with signature
+    * @param _from address transfer from
+    * @param _to address transfer to
+    * @param _amount transfer amount
+    * @param _data signature
+    * @param _isTransfer bool value of isTransfer
+    * Sig needs to be valid (not used or deemed as invalid)
+    * Signer needs to be in the signers mapping
     */
     function verifyTransfer(address _from, address _to, uint256 _amount, bytes _data , bool _isTransfer) public returns(Result) {
         if (!paused) {
             
             require(invalidSignatures[_data] != true, "Invalid signature - signature is either used or deemed as invalid");
-
             bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
-            address signer = _recoverSignerAdd(hash, _data);
+            bytes32 _hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
+            address signer = _recoverSignerAdd(_hash, _data);
             require(signers[signer] == true, "Invalid signature - signer is not on the list");
             
             if(_isTransfer == true){
@@ -80,22 +92,31 @@ contract SignedTransferManager is ITransferManager {
         return Result.NA;
     }
 
-    function invalidSignature(address _from, address _to, uint256 _amount, bytes _data, bytes32 _hash) public view returns(address) {
+    /**
+    * @notice allow signers to deem a signature invalid
+    * @param _from address transfer from
+    * @param _to address transfer to
+    * @param _amount transfer amount
+    * @param _data signature
+    * Sig needs to be valid (not used or deemed as invalid)
+    * Signer needs to be in the signers mapping
+    */
+    function invalidSignature(address _from, address _to, uint256 _amount, bytes _data) public {
         require(signers[msg.sender] == true, "Only signer is allowed to invalid signature.");
         require(invalidSignatures[_data] != true, "This signature is invalid.");
 
-        // bytes32 _hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
+        bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
+        bytes32 _hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
 
-        address signer = _recoverSignerAdd(_hash,_data);
-        return signer;
-        // require(signer == msg.sender, "Incorrect Signer for this signature");
+        // return signer;
+        require(_recoverSignerAdd(_hash,_data) == msg.sender, "Incorrect Signer for this signature");
 
-        // invalidSignatures[_data] = true;
-        // emit InvalidSignature(_data);
+        invalidSignatures[_data] = true;
+        emit InvalidSignature(_data);
     }
 
     /**
-     * @notice used to verify the signature
+     * @notice used to recover signers' add from signature
      */
     function _recoverSignerAdd(bytes32 _hash, bytes _data) internal view returns(address) {
         

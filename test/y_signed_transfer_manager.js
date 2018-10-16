@@ -1,7 +1,7 @@
 import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
-import { signDataVerifyTransfer, hashedData } from "./helpers/signData";
+import { signDataVerifyTransfer } from "./helpers/signData";
 import { pk } from "./helpers/testprivateKey";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
@@ -223,39 +223,20 @@ contract("SignedTransferManager", accounts => {
             await catchRevert(I_SignedTransferManager.updateSigners([account_investor3], [false], {from: account_investor2}));
         });
 
-        // it("should not be able to invalid siganture if not in the signer list", async () => {
-        //     //create a sig
-        //     const sig = signDataVerifyTransfer(
-        //         I_SignedTransferManager.address,
-        //         account_investor1,
-        //         account_investor2,
-        //         web3.utils.toWei("1", "ether"),
-        //         account_investor1
-        //     );
+        it("should not be able to invalid siganture if not in the signer list", async () => {
 
-        //     console.log("signature is "+sig);
+            const sig = signDataVerifyTransfer(
+                I_SignedTransferManager.address,
+                account_investor1,
+                account_investor2,
+                web3.utils.toWei("1", "ether"),
+                account_investor1
+            );
 
-        //     await catchRevert(I_SignedTransferManager.invalidSignature(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, {from: account_investor1}));
-        // });
+            await catchRevert(I_SignedTransferManager.invalidSignature(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, {from: account_investor1}));
+        });
 
-        // it("should not be able to invalid siganture if not the original signer while in the signer list", async () => {
-        //     //create a sig
-        //     const sig = signDataVerifyTransfer(
-        //         I_SignedTransferManager.address,
-        //         account_investor1,
-        //         account_investor2,
-        //         web3.utils.toWei("1", "ether"),
-        //         account_investor4
-        //     );
-
-        //     console.log("signature is "+sig);
-
-        //     await catchRevert(I_SignedTransferManager.invalidSignature(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, {from: account_investor3}));
-        // });
-
-        it("should be able to invalid siganture if sender is the signer and is in the signer list", async () => {
-            //create a sig
-            console.log("1");
+        it("should not be able to invalid siganture if not the original signer even if it's in the signer list", async () => {
 
             const sig = signDataVerifyTransfer(
                 I_SignedTransferManager.address,
@@ -264,34 +245,60 @@ contract("SignedTransferManager", accounts => {
                 web3.utils.toWei("1", "ether"),
                 account_investor4
             );
-            console.log("2");
-            console.log("sig is"+sig);
 
-            const hash = hashedData(I_SignedTransferManager.address, account_investor1, account_investor2, web3.utils.toWei("1", "ether"));
-
-            console.log("hashed data is " + hash);
-
-            // await I_SignedTransferManager.invalidSignature(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, {from: account_investor4});
-            console.log("signer is "+ account_investor4);
-            // assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig, {from: account_investor4}));
-            console.log("recovered address is "+await I_SignedTransferManager.invalidSignature(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, hash, {from: account_investor4}));
+            await catchRevert(I_SignedTransferManager.invalidSignature(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, {from: account_investor3}));
         });
 
-        // it("should allow transfer with valid sig", async () => {
-        //   const sig = signDataVerifyTransfer(
-        //         I_SignedTransferManager.address,
-        //         account_investor1,
-        //         account_investor2,
-        //         web3.utils.toWei("1", "ether"),
-        //         account_investor4
-        //    );
+        it("should be able to invalid siganture if sender is the signer and is in the signer list", async () => {
+            const sig = signDataVerifyTransfer(
+                I_SignedTransferManager.address,
+                account_investor1,
+                account_investor2,
+                web3.utils.toWei("1", "ether"),
+                account_investor4
+            );
 
-
-        // });
-
-        it("should not allow transfer if the sig is not valid", async () => {
-          
+            await I_SignedTransferManager.invalidSignature(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, {from: account_investor4});
+            assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
         });
+
+        it("should not allow transfer if the sig is already used", async () => {
+           const sig = signDataVerifyTransfer(
+                I_SignedTransferManager.address,
+                account_investor1,
+                account_investor2,
+                web3.utils.toWei("1", "ether"),
+                account_investor4
+            );
+
+            await catchRevert(I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, true, {from: account_investor4}));
+        });
+
+        it("should allow transfer with valid sig", async () => {
+            const sig = signDataVerifyTransfer(
+                I_SignedTransferManager.address,
+                account_investor1,
+                account_investor2,
+                web3.utils.toWei("1", "ether"),
+                account_investor3
+            );
+           
+            await I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, true, {from: account_investor3});
+            assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
+        });
+
+        it("should not allow transfer if the signer is not on the signer list", async () => {
+           const sig = signDataVerifyTransfer(
+                I_SignedTransferManager.address,
+                account_investor1,
+                account_investor2,
+                web3.utils.toWei("1", "ether"),
+                account_investor2
+            );
+            await catchRevert(I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, true, {from: account_investor2}));
+           
+        });
+
     });
 });
 

@@ -15,6 +15,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     uint256 public EXCLUDED_ADDRESS_LIMIT = 50;
     bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
+    bytes32 public constant MANAGE = "MANAGE";
 
     struct Dividend {
         uint256 checkpointId;
@@ -76,7 +77,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @notice Function to clear and set list of excluded addresses used for future dividends
      * @param _excluded addresses of investor
      */
-    function setDefaultExcluded(address[] _excluded) public onlyOwner {
+    function setDefaultExcluded(address[] _excluded) public withPerm(MANAGE) {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many excluded addresses");
         excluded = _excluded;
         emit SetDefaultExcludedAddresses(excluded, now);
@@ -87,7 +88,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _investors addresses of investor
      * @param _withholding withholding tax for individual investors (multiplied by 10**16)
      */
-    function setWithholding(address[] _investors, uint256[] _withholding) public onlyOwner {
+    function setWithholding(address[] _investors, uint256[] _withholding) public withPerm(MANAGE) {
         require(_investors.length == _withholding.length, "Mismatched input lengths");
         emit SetWithholding(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
@@ -101,7 +102,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _investors addresses of investor
      * @param _withholding withholding tax for all investors (multiplied by 10**16)
      */
-    function setWithholdingFixed(address[] _investors, uint256 _withholding) public onlyOwner {
+    function setWithholdingFixed(address[] _investors, uint256 _withholding) public withPerm(MANAGE) {
         require(_withholding <= 10**18, "Incorrect withholding tax");
         emit SetWithholdingFixed(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
@@ -220,8 +221,9 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @return bytes32 array
      */
     function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](1);
+        bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = DISTRIBUTE;
+        allPermissions[1] = MANAGE;
         return allPermissions;
     }
 

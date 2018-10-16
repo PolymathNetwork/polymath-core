@@ -1,20 +1,14 @@
 pragma solidity ^0.4.24;
 
-import "../modules/Burn/IBurn.sol";
-import "../modules/Module.sol";
-import "../interfaces/ISecurityToken.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../modules/Burn/TrackedRedemption.sol";
 
 /**
  * @title Burn module for burning tokens and keeping track of burnt amounts
  */
-contract MockRedemptionManager is IBurn, Module {
-    using SafeMath for uint256;
-
-    mapping (address => uint256) redeemedTokens;
+contract MockRedemptionManager is TrackedRedemption {
+   
     mapping (address => uint256) tokenToRedeem;
 
-    event Redeemed(address _investor, uint256 _value, uint256 _timestamp);
     event RedeemedTokenByOwner(address _investor, address _byWhoom, uint256 _value, uint256 _timestamp);
 
     /**
@@ -23,25 +17,8 @@ contract MockRedemptionManager is IBurn, Module {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
+    TrackedRedemption(_securityToken, _polyAddress)
     {
-    }
-
-    /**
-     * @notice This function returns the signature of configure function
-     */
-    function getInitFunction() public pure returns (bytes4) {
-        return bytes4(0);
-    }
-
-    /**
-     * @notice Redeem tokens and track redemptions
-     * @param _value The number of tokens to redeem
-     */
-    function redeemTokens(uint256 _value) public {
-        ISecurityToken(securityToken).burnFromWithData(msg.sender, _value, "");
-        redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
-        emit Redeemed(msg.sender, _value, now);
     }
 
     /**
@@ -64,12 +41,5 @@ contract MockRedemptionManager is IBurn, Module {
         ISecurityToken(securityToken).burnWithData(_value, "");
         emit RedeemedTokenByOwner(msg.sender, address(this), _value, now);
     }
-    
-    /**
-     * @notice Return the permissions flag that are associated with CountTransferManager
-     */
-    function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](0);
-        return allPermissions;
-    }
+
 }

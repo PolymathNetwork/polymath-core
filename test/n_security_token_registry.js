@@ -70,6 +70,7 @@ contract("SecurityTokenRegistry", accounts => {
     const name2 = "Demo2 Token";
     const symbol2 = "DET2";
     const tokenDetails2 = "This is equity type of issuance";
+    const address_zero = "0x0000000000000000000000000000000000000000";
 
     // Module key
     const permissionManagerKey = 1;
@@ -125,7 +126,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
+            address_zero,
             "SecurityTokenRegistry contract was not deployed"
         );
 
@@ -155,7 +156,7 @@ contract("SecurityTokenRegistry", accounts => {
     describe("Test the initialize the function", async () => {
         it("Should successfully update the implementation address -- fail because polymathRegistry address is 0x", async () => {
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 I_STFactory.address,
                 initRegFee,
                 initRegFee,
@@ -173,7 +174,7 @@ contract("SecurityTokenRegistry", accounts => {
         it("Should successfully update the implementation address -- fail because STFactory address is 0x", async () => {
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
                 I_PolymathRegistry.address,
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 initRegFee,
                 initRegFee,
                 I_PolyToken.address,
@@ -227,7 +228,7 @@ contract("SecurityTokenRegistry", accounts => {
                 I_STFactory.address,
                 initRegFee,
                 initRegFee,
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 account_polymath
             ]);
             catchRevert(
@@ -245,7 +246,7 @@ contract("SecurityTokenRegistry", accounts => {
                 initRegFee,
                 initRegFee,
                 I_PolyToken.address,
-                "0x0000000000000000000000000000000000000000"
+                address_zero
             ]);
             catchRevert(
                 I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
@@ -257,12 +258,12 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should successfully update the implementation address -- fail because all params get 0", async () => {
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
-                "0x0000000000000000000000000000000000000000",
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
+                address_zero,
                 0,
                 0,
-                "0x0000000000000000000000000000000000000000",
-                "0x0000000000000000000000000000000000000000"
+                address_zero,
+                address_zero
             ]);
             catchRevert(
                 I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
@@ -338,7 +339,7 @@ contract("SecurityTokenRegistry", accounts => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_temp });
 
             catchRevert(
-                I_STRProxied.registerTicker("0x0000000000000000000000000000000000000000", symbol, name, { from: account_temp }),
+                I_STRProxied.registerTicker(address_zero, symbol, name, { from: account_temp }),
                 "tx revert -> owner should not be 0x"
             );
         });
@@ -447,7 +448,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should get the details of unregistered token", async () => {
             let tx = await I_STRProxied.getTickerDetails.call("TORO");
-            assert.equal(tx[0], "0x0000000000000000000000000000000000000000", "Should be 0x as ticker is not exists in the registry");
+            assert.equal(tx[0], address_zero, "Should be 0x as ticker is not exists in the registry");
             assert.equal(tx[3], "", "Should be an empty string");
             assert.equal(tx[4], false, "Status if the symbol should be undeployed -- false");
         });
@@ -461,7 +462,7 @@ contract("SecurityTokenRegistry", accounts => {
             assert.equal(data[4], false, "Token is not launched yet so it should return False");
             data = await I_SecurityTokenRegistry.getTickerDetails(symbol, { from: token_owner });
             console.log("This is the data from the original securityTokenRegistry contract");
-            assert.equal(data[0], "0x0000000000000000000000000000000000000000", "Token owner should be 0x");
+            assert.equal(data[0], address_zero, "Token owner should be 0x");
         });
 
         it("Should fail to generate new security token if fee not provided", async () => {
@@ -559,7 +560,7 @@ contract("SecurityTokenRegistry", accounts => {
 
             assert.notEqual(
                 I_STFactory002.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "STFactory002 contract was not deployed"
             );
             await I_STRProxied.setProtocolVersion(I_STFactory002.address, 0, 2, 0, { from: account_polymath });
@@ -601,7 +602,7 @@ contract("SecurityTokenRegistry", accounts => {
             I_SecurityTokenRegistryV2 = await SecurityTokenRegistryMock.new({ from: account_polymath });
             assert.notEqual(
                 I_SecurityTokenRegistryV2.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "SecurityTokenRegistry contract was not deployed"
             );
         });

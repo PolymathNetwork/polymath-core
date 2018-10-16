@@ -88,6 +88,7 @@ contract("CappedSTO", accounts => {
     const cap = web3.utils.toWei("10000");
     const rate = 1000;
     const E_fundRaiseType = 0;
+    const address_zero = "0x0000000000000000000000000000000000000000";
 
     let startTime_POLY1;
     let endTime_POLY1;
@@ -136,7 +137,7 @@ contract("CappedSTO", accounts => {
 
         assert.notEqual(
             I_CappedSTOFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
+            address_zero,
             "CappedSTOFactory contract was not deployed"
         );
 
@@ -197,7 +198,7 @@ contract("CappedSTO", accounts => {
 
         it("Should mint the tokens before attaching the STO", async () => {
             await catchRevert(
-                I_SecurityToken_ETH.mint("0x0000000000000000000000000000000000000000", web3.utils.toWei("1"), { from: token_owner })
+                I_SecurityToken_ETH.mint(address_zero, web3.utils.toWei("1"), { from: token_owner })
             );
         });
 
@@ -225,7 +226,7 @@ contract("CappedSTO", accounts => {
             let startTime = latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
 
-            let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, [E_fundRaiseType], "0x0000000000000000000000000000000000000000"]);
+            let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, [E_fundRaiseType], address_zero]);
 
             await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner }));
         });
@@ -494,7 +495,7 @@ contract("CappedSTO", accounts => {
             await I_PolyToken.getTokens(value, account_investor1);
             await I_PolyToken.transfer(I_CappedSTO_Array_ETH[0].address, value, { from: account_investor1 });
 
-            await catchRevert(I_CappedSTO_Array_ETH[0].reclaimERC20("0x0000000000000000000000000000000000000000", { from: token_owner }));
+            await catchRevert(I_CappedSTO_Array_ETH[0].reclaimERC20(address_zero, { from: token_owner }));
         });
 
         it("Should successfully reclaim POLY", async () => {

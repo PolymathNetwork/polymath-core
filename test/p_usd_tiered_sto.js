@@ -70,6 +70,7 @@ contract("USDTieredSTO", accounts => {
     const TMKEY = 2;
     const STOKEY = 3;
     let snapId;
+    const address_zero = "0x0000000000000000000000000000000000000000";
 
     // Initial fee for ticker registry and security token registry
     const REGFEE = web3.utils.toWei("250");
@@ -734,7 +735,7 @@ contract("USDTieredSTO", accounts => {
         it("Should fail because Zero address is not permitted for wallet", async () => {
             let stoId = 0;
 
-            let wallet = "0x0000000000000000000000000000000000000000";
+            let wallet = address_zero;
             let config = [
                 _startTime[stoId],
                 _endTime[stoId],
@@ -757,7 +758,7 @@ contract("USDTieredSTO", accounts => {
         it("Should fail because Zero address is not permitted for reserveWallet", async () => {
             let stoId = 0;
 
-            let reserveWallet = "0x0000000000000000000000000000000000000000";
+            let reserveWallet = address_zero;
             let config = [
                 _startTime[stoId],
                 _endTime[stoId],
@@ -894,7 +895,7 @@ contract("USDTieredSTO", accounts => {
             await I_USDTieredSTO_Array[stoId].modifyAddresses(
                 "0x0000000000000000000000000400000000000000",
                 "0x0000000000000000000003000000000000000000",
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 { from: ISSUER }
             );
             assert.equal(
@@ -909,7 +910,7 @@ contract("USDTieredSTO", accounts => {
             );
             assert.equal(
                 await I_USDTieredSTO_Array[stoId].usdToken.call(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "STO Configuration doesn't set as expected"
             );
         });

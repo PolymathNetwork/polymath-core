@@ -75,6 +75,7 @@ contract("ModuleRegistry", accounts => {
     const transferManagerKey = 2;
     const stoKey = 3;
     const budget = 0;
+    const address_zero = "0x0000000000000000000000000000000000000000";
 
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
@@ -141,7 +142,7 @@ contract("ModuleRegistry", accounts => {
     describe("Test the initialize the function", async () => {
         it("Should successfully update the implementation address -- fail because polymathRegistry address is 0x", async () => {
             let bytesProxy = encodeProxyCall(MRProxyParameters, [
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 account_polymath
             ]);
             catchRevert(
@@ -155,7 +156,7 @@ contract("ModuleRegistry", accounts => {
         it("Should successfully update the implementation address -- fail because owner address is 0x", async () => {
             let bytesProxy = encodeProxyCall(MRProxyParameters, [
                 I_PolymathRegistry.address,
-                "0x0000000000000000000000000000000000000000"
+                address_zero
             ]);
             catchRevert(
                 I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, {
@@ -167,8 +168,8 @@ contract("ModuleRegistry", accounts => {
 
         it("Should successfully update the implementation address -- fail because all params are 0x", async () => {
             let bytesProxy = encodeProxyCall(MRProxyParameters, [
-                "0x0000000000000000000000000000000000000000",
-                "0x0000000000000000000000000000000000000000"
+                address_zero,
+                address_zero
             ]);
             catchRevert(
                 I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, {
@@ -326,7 +327,7 @@ contract("ModuleRegistry", accounts => {
 
                 assert.notEqual(
                     I_CappedSTOFactory2.address.valueOf(),
-                    "0x0000000000000000000000000000000000000000",
+                    address_zero,
                     "CappedSTOFactory contract was not deployed"
                 );
 

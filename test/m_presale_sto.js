@@ -70,6 +70,7 @@ contract("PreSaleSTO", accounts => {
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
     let endTime;
+    const address_zero = "0x0000000000000000000000000000000000000000";
     const STOParameters = ["uint256"];
 
     before(async () => {
@@ -366,7 +367,7 @@ contract("PreSaleSTO", accounts => {
             await I_PolyToken.getTokens(value, account_investor1);
             await I_PolyToken.transfer(I_PreSaleSTO.address, value, { from: account_investor1 });
 
-            await catchRevert(I_PreSaleSTO.reclaimERC20("0x0000000000000000000000000000000000000000", { from: token_owner }));
+            await catchRevert(I_PreSaleSTO.reclaimERC20(address_zero, { from: token_owner }));
         });
 
         it("Should successfully reclaim POLY", async () => {

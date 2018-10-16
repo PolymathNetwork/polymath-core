@@ -14,7 +14,7 @@ contract LockupVolumeTransferManager is ITransferManager {
         uint startTime;
         uint lockUpPeriod;
         uint releaseFrequency;        
-        uint totalLockUp;
+        uint lockUpAmount;
     }
 
     event PrintOut (
@@ -26,10 +26,10 @@ contract LockupVolumeTransferManager is ITransferManager {
         uint startTime,
         uint lockUpPeriod,
         uint releaseFrequency,
-        uint totalLockUp
+        uint lockUpAmount
     );
 
-    mapping (address => LockUp[]) internal investerToLockUps;
+    mapping (address => LockUp[]) internal investorToLockUps;
 
     /**
      * @notice Constructor
@@ -52,11 +52,11 @@ contract LockupVolumeTransferManager is ITransferManager {
 
         if (!paused) {
 
-            uint currentLockUp = _calculateCurrentLockUp(_from);            
+            uint currentLockUp = _getInvestorCurrentLockUpAmount(_from);
             uint currentBalance = ISecurityToken(securityToken).balanceOf(_from);
-            uint allowTransfer = currentBalance.sub(currentLockUp);
+            uint currentAllowTransfer = currentBalance.sub(currentLockUp);
             
-            if ( allowTransfer >= _amount) {
+            if ( currentAllowTransfer >= _amount) {
 
                 if(!_isTransfer){
                     return Result.VALID;
@@ -74,30 +74,37 @@ contract LockupVolumeTransferManager is ITransferManager {
     }
 
 
-    function _calculateCurrentLockUp(address _from) internal returns(uint) {
+    function _getInvestorCurrentLockUpAmount(address _from) internal returns(uint) {
         
-        uint totalCurrentLockUp = 0;
+        uint investorCurrentLockUpAmount = 0;
 
-        for (uint i = 0; i < investerToLockUps[_from].length; i++) {
+        for (uint i = 0; i < investorToLockUps[_from].length; i++) {
             
-            LockUp storage aLockUp = investerToLockUps[_from][i];
+            LockUp storage aLockUp = investorToLockUps[_from][i];
+            
+            // if already end of lockup
+            uint currentLockUpAmount = 0;
 
-            // only active lockup
-            if (now >= aLockUp.startTime && now <= aLockUp.startTime.add(aLockUp.lockUpPeriod)) {
+            // lockup not yet start
+            if (now <= aLockUp.startTime) {
+                currentLockUpAmount = aLockUp.lockUpAmount;
+            }
+
+            // inside valid lockup time
+            if (now > aLockUp.startTime && now < aLockUp.startTime.add(aLockUp.lockUpPeriod)) {
 
                 // calculate current lockup
                 uint elepsedPeriods = now.sub(aLockUp.startTime).div(aLockUp.releaseFrequency);
                 uint totalPeriods = aLockUp.lockUpPeriod.div(aLockUp.releaseFrequency);
-                uint amountPerPeriod = aLockUp.totalLockUp.div(totalPeriods);
-                uint currentLockUp = totalPeriods.sub(elepsedPeriods).mul(amountPerPeriod);
-
-                // accumulate current lockup
-                totalCurrentLockUp.add(currentLockUp);
+                uint amountPerPeriod = aLockUp.lockUpAmount.div(totalPeriods);
+                uint currentLockUpAmount = totalPeriods.sub(elepsedPeriods).mul(amountPerPeriod);    
             }
+            
+            investorCurrentLockUpAmount.add(currentLockUpAmount);
         }
 
-        // emit PrintOut(currentTotalLockUp);
-        return totalCurrentLockUp;
+        // emit PrintOut(currentlockUpAmount);
+        return investorCurrentLockUpAmount;
     }
 
 
@@ -106,24 +113,29 @@ contract LockupVolumeTransferManager is ITransferManager {
         uint _startTime,
         uint _lockUpPeriod,
         uint _releaseFrequency,
-        uint _totalLockUp
+        uint _lockUpAmount
         )
         public
         withPerm(ADMIN)
     {
+
+        require(_lockUpPeriod != 0, "lock up period can not be 0");
+        require(_releaseFrequency != 0, "release frequency can not be 0");
+        require(_lockUpAmount != 0, "lockup amount can not be 0");
+
         if (_startTime == 0) {
             _startTime = now;
         }
 
-        LockUp memory newLockUp = LockUp(_startTime, _lockUpPeriod, _releaseFrequency, _totalLockUp);
-        investerToLockUps[_investor].push(newLockUp);
+        LockUp memory newLockUp = LockUp(_startTime, _lockUpPeriod, _releaseFrequency, _lockUpAmount);
+        investorToLockUps[_investor].push(newLockUp);
 
         emit AddLockUp(
             _investor,
             _startTime,
             _lockUpPeriod,
             _releaseFrequency,
-            _totalLockUp
+            _lockUpAmount
         );
     }
 

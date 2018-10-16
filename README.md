@@ -208,10 +208,10 @@ node CLI/polymath-cli dividends_manager
 
 ## Package version requirements for your machine:
 
-- Homebrew v1.6.7
 - node v8.x.x or v9.x.x
 - npm v6.x.x or newer
 - Yarn v1.3 or newer
+- Homebrew v1.6.7 (for macOS)
 - Truffle v4.1.11 (core: 4.1.11)
 - Solidity v0.4.24 (solc-js)
 - Ganache CLI v6.1.3 (ganache-core: 2.1.2) or newer

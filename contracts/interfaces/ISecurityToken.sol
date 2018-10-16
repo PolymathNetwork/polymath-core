@@ -127,12 +127,13 @@ interface ISecurityToken {
     */
     function investors(uint256 _index) external view returns (address);
 
-    /**
-    * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
+   /**
+    * @notice allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
+    * @param _tokenContract Address of the ERC20Basic compliance token
     * @param _value amount of POLY to withdraw
     */
-    function withdrawPoly(uint256 _value) external;
+    function withdrawERC20(address _tokenContract, uint256 _value) external;
 
     /**
     * @notice allows owner to approve more POLY to one of the modules

@@ -129,7 +129,7 @@ contract ManualApprovalTransferManager is ITransferManager {
         require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         require(_expiryTime > now, "Invalid expiry time");
-        require(manualApprovals[_from][_to].expiryTime == 0, "Blocking already exists");
+        require(manualBlockings[_from][_to].expiryTime == 0, "Blocking already exists");
         manualBlockings[_from][_to] = ManualBlocking(_expiryTime);
         emit AddManualBlocking(_from, _to, _expiryTime, msg.sender);
     }

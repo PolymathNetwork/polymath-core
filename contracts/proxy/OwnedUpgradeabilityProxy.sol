@@ -80,7 +80,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @return address of the current implementation
     */
     function implementation() external ifOwner returns (address) {
-        _implementation();
+        return _implementation();
     }
 
     /**

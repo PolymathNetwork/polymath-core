@@ -302,12 +302,15 @@ contract("ManualApprovalTransferManager", accounts => {
                 account_investor3.toLowerCase(),
                 "Failed in adding the investor in whitelist"
             );
-
+            // Pause at the transferManager level
+            await I_ManualApprovalTransferManager.pause({from: token_owner});
             // Add the Investor in to the whitelist
             // Mint some tokens
             await I_SecurityToken.mint(account_investor3, web3.utils.toWei("1", "ether"), { from: token_owner });
 
             assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei("1", "ether"));
+            // Unpause at the transferManager level
+            await I_ManualApprovalTransferManager.unpause({from: token_owner});
         });
 
         it("Should still be able to transfer between existing token holders", async () => {
@@ -361,6 +364,18 @@ contract("ManualApprovalTransferManager", accounts => {
                 web3.utils.toWei("2", "ether"),
                 latestTime() + duration.days(1),
                 { from: token_owner }
+            );
+        });
+
+        it("Should fail to add a manual approval because allowance is laready exists", async () => {
+            await catchRevert(
+                I_ManualApprovalTransferManager.addManualApproval(
+                    account_investor1,
+                    account_investor4,
+                    web3.utils.toWei("2", "ether"),
+                    latestTime() + duration.days(5),
+                    { from: token_owner }
+                )
             );
         });
 
@@ -452,6 +467,12 @@ contract("ManualApprovalTransferManager", accounts => {
             });
         });
 
+        it("Should fail to add a manual block because blocking already exist", async () => {
+            await catchRevert(
+                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(5), { from: token_owner })
+            );
+        });
+
         it("Check manual block causes failure", async () => {
             await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
         });
@@ -507,21 +528,6 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal(perm.length, 1);
         });
 
-        // it("Check manual approval has a higher priority than an INVALID result from another TM", async() => {
-        //     //Should fail initial transfer
-        //
-        //     try {
-        //         await I_SecurityToken.transfer(account_investor5, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
-        //     } catch(error) {
-        //         console.log(`Failed due to to count block`);
-        //         ensureException(error);
-        //         errorThrown = true;
-        //     }
-        //     //Add a manual approval - transfer should now work
-        //     await I_ManualApprovalTransferManager.addManualApproval(account_investor2, account_investor5, web3.utils.toWei('1', 'ether'), latestTime() + duration.days(1), { from: token_owner });
-        //     await I_SecurityToken.transfer(account_investor5, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
-        // });
-
         it("Should get the init function", async () => {
             let byte = await I_ManualApprovalTransferManager.getInitFunction.call();
             assert.equal(web3.utils.toAscii(byte).replace(/\u0000/g, ""), 0);
@@ -544,6 +550,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 "Allows an issuer to set manual approvals or blocks for specific pairs of addresses and amounts. Init function takes no parameters.",
                 "Wrong Module added"
             );
+            assert.equal(await I_ManualApprovalTransferManagerFactory.getVersion.call(), "1.0.0");
         });
 
         it("Should get the tags of the factory", async () => {

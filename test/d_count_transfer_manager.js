@@ -249,7 +249,33 @@ contract("CountTransferManager", accounts => {
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("2", "ether"));
         });
 
+        it("Should able to buy some more tokens (more than 2 hoders) -- because CountTransferManager is paused", async() => {
+            await I_CountTransferManager.pause({from: account_issuer });
+            let snapId = await takeSnapshot();
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor3,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(10),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 500000
+                }
+            );
+
+            assert.equal(
+                tx.logs[0].args._investor.toLowerCase(),
+                account_investor3.toLowerCase(),
+                "Failed in adding the investor in whitelist"
+            );
+
+            await I_SecurityToken.mint(account_investor3, web3.utils.toWei("3", "ether"), { from: token_owner })
+            await revertToSnapshot(snapId);
+        })
+
         it("Should fail to buy some more tokens (more than 2 holders)", async () => {
+            await I_CountTransferManager.unpause({from: account_issuer });
             // Add the Investor in to the whitelist
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
@@ -349,5 +375,79 @@ contract("CountTransferManager", accounts => {
                 assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Count");
             });
         });
+
+        describe("Test cases for the ModuleFactory", async() => {
+            it("Should successfully change the SetupCost -- fail beacuse of bad owner", async() => {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeFactorySetupFee(web3.utils.toWei("500"), {from: account_investor3})
+                );
+            });
+
+            it("Should successfully change the setupCost", async() => {
+                await I_CountTransferManagerFactory.changeFactorySetupFee(web3.utils.toWei("800"), { from: account_polymath });
+                assert.equal(await I_CountTransferManagerFactory.getSetupCost.call(), web3.utils.toWei("800"));
+            })
+
+            it("Should successfully change the usage fee -- fail beacuse of bad owner", async() => {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeFactoryUsageFee(web3.utils.toWei("500"), {from: account_investor3})
+                );
+            });
+
+            it("Should successfully change the usage fee", async() => {
+                await I_CountTransferManagerFactory.changeFactoryUsageFee(web3.utils.toWei("800"), { from: account_polymath });
+                assert.equal(await I_CountTransferManagerFactory.usageCost.call(), web3.utils.toWei("800"));
+            });
+
+            it("Should successfully change the subscription fee -- fail beacuse of bad owner", async() => {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeFactorySubscriptionFee(web3.utils.toWei("500"), {from: account_investor3})
+                );
+            });
+
+            it("Should successfully change the subscription fee", async() => {
+                await I_CountTransferManagerFactory.changeFactorySubscriptionFee(web3.utils.toWei("800"), { from: account_polymath });
+                assert.equal(await I_CountTransferManagerFactory.monthlySubscriptionCost.call(), web3.utils.toWei("800"));
+            });
+
+            it("Should successfully change the version of the factory -- failed because of bad owner", async() => {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeVersion("5.0.0", {from: account_investor3})
+                );
+            });
+
+            it("Should successfully change the version of the fatory -- failed because of the 0 string", async() => {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeVersion("", {from: account_polymath})
+                );
+            });
+
+            it("Should successfully change the version of the fatory", async() => {
+                await I_CountTransferManagerFactory.changeVersion("5.0.0", {from: account_polymath});
+                assert.equal(await I_CountTransferManagerFactory.getVersion.call(), "5.0.0");
+            });
+        })
+
+        describe("Test case for the changeSTVersionBounds", async() => {
+            it("Should successfully change the version bounds -- failed because of the non permitted bound type", async() => {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeSTVersionBounds("middleType", [1,2,3], {from: account_polymath})
+                );
+            })
+
+            it("Should successfully change the version bound --failed because the new version length < 3", async()=> {
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1,2], {from: account_polymath})
+                );
+            })
+
+            it("Should successfully change the version bound", async()=> {
+                await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1,2,1], {from: account_polymath});
+                await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1,4,9], {from: account_polymath});
+                await catchRevert(
+                    I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1,0,0], {from: account_polymath})
+                );
+            })
+        })
     });
 });

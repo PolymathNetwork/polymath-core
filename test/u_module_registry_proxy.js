@@ -41,7 +41,7 @@ contract("ModuleRegistryProxy", accounts => {
     const initRegFee = web3.utils.toWei("250");
     const version = "1.0.0";
     const message = "Transaction Should Fail!";
-
+    const address_zero = "0x0000000000000000000000000000000000000000";
     // SecurityToken Details for funds raise Type ETH
     const name = "Team";
     const symbol = "SAP";
@@ -128,7 +128,7 @@ contract("ModuleRegistryProxy", accounts => {
 
             assert.notEqual(
                 I_GeneralTransferManagerFactory.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "GeneralTransferManagerFactory contract was not deployed"
             );
 
@@ -143,7 +143,7 @@ contract("ModuleRegistryProxy", accounts => {
 
             assert.notEqual(
                 I_STFactory.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "STFactory contract was not deployed"
             );
         });
@@ -166,7 +166,7 @@ contract("ModuleRegistryProxy", accounts => {
 
             assert.notEqual(
                 I_GeneralPermissionManagerfactory.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "GeneralPermissionManagerFactory contract was not deployed"
             );
 

@@ -23,6 +23,7 @@ const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManage
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
 const VolumeRestrictionTransferManagerFactory = artifacts.require("./LockupVolumeRestrictionTMFactory");
+const LockupVolumeTransferManagerFactory = artifacts.require("./LockupVolumeTransferManagerFactory");
 const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PolyToken = artifacts.require("./PolyToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
@@ -38,6 +39,7 @@ let I_TrackedRedemptionFactory;
 let I_SingleTradeVolumeRestrictionManagerFactory;
 let I_ManualApprovalTransferManagerFactory;
 let I_VolumeRestrictionTransferManagerFactory;
+let I_LockupVolumeTransferManagerFactory;
 let I_PercentageTransferManagerFactory;
 let I_EtherDividendCheckpointFactory;
 let I_CountTransferManagerFactory;
@@ -248,6 +250,19 @@ export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyI
     await registerAndVerifyByMR(I_VolumeRestrictionTransferManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_VolumeRestrictionTransferManagerFactory);
 }
+
+export async function deployLockupVolumeTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_LockupVolumeTransferManagerFactory = await LockupVolumeTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_LockupVolumeTransferManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "LockupVolumeTransferManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_LockupVolumeTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_LockupVolumeTransferManagerFactory);
+}
+
 
 export async function deploySingleTradeVolumeRMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
     I_SingleTradeVolumeRestrictionManagerFactory = await SingleTradeVolumeRestrictionManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });

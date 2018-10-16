@@ -27,6 +27,8 @@ const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PolyToken = artifacts.require("./PolyToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
+const SignedTransferManagerFactory = artifacts.require("./SignedTransferManagerFactory");
+
 
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
@@ -59,6 +61,8 @@ let I_PolymathRegistry;
 let I_SecurityTokenRegistryProxy;
 let I_STRProxied;
 let I_MRProxied;
+let I_SignedTransferManagerFactory;
+
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = web3.utils.toWei("250");
@@ -259,6 +263,18 @@ export async function deploySingleTradeVolumeRMAndVerified(accountPolymath, MRPr
 
     await registerAndVerifyByMR(I_SingleTradeVolumeRestrictionManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_SingleTradeVolumeRestrictionManagerFactory);
+}
+
+export async function deploySignedTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_SignedTransferManagerFactory = await SignedTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_SignedTransferManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "SignedTransferManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_SignedTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_SignedTransferManagerFactory);
 }
 
 /// Deploy the Permission Manager

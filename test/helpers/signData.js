@@ -3,7 +3,7 @@ const utils = ethers.utils;
 const ethUtil = require("ethereumjs-util");
 
 //this, _investor, _fromTime, _toTime, _validTo
-function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, restricted, validFrom, validTo, pk) {
+function signData (tmAddress, investorAddress, fromTime, toTime, expiryTime, restricted, validFrom, validTo, pk) {
     let packedData = utils
         .solidityKeccak256(
             ["address", "address", "uint256", "uint256", "uint256", "bool", "uint256", "uint256"],
@@ -16,6 +16,38 @@ function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, rest
     return ethUtil.ecsign(new Buffer(packedData.slice(2), "hex"), new Buffer(pk, "hex"));
 }
 
+// sign data for verify tranfer function
+function signDataVerifyTransfer (tmAddress, fromAddress, toAddress, amount, account) {
+    let packedData = utils
+        .solidityKeccak256(
+            ["address", "address", "address", "uint256"],
+            [tmAddress, fromAddress, toAddress, amount]
+        )
+        .slice(2);
+    packedData = new Buffer(packedData, "hex");
+    packedData = Buffer.concat([new Buffer(`\x19Ethereum Signed Message:\n${packedData.length.toString()}`), packedData]);
+    packedData = web3.sha3(`0x${packedData.toString("hex")}`, { encoding: "hex" });
+
+    return web3.eth.sign(account, packedData);
+
+}
+
+// test only for hashing
+function hashedData (tmAddress, fromAddress, toAddress, amount) {
+    let packedData = utils
+        .solidityKeccak256(
+            ["address", "address", "address", "uint256"],
+            [tmAddress, fromAddress, toAddress, amount]
+        )
+        .slice(2);
+    packedData = new Buffer(packedData, "hex");
+    packedData = Buffer.concat([new Buffer(`\x19Ethereum Signed Message:\n${packedData.length.toString()}`), packedData]);
+    packedData = web3.sha3(`0x${packedData.toString("hex")}`, { encoding: "hex" });
+
+    return packedData;
+
+}
+
 module.exports = {
-    signData
+    signData, signDataVerifyTransfer, hashedData
 };

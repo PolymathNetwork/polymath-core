@@ -14,6 +14,9 @@ module.exports = {
      "quotes": 0,
      "semi": 0,
      "no-undef": 0,
-     "key-spacing": 0
+     "key-spacing": 0,
+     "node":0,
+     "spaced-comment":0,
+     "node/no-deprecated-api":0
 	}
 };

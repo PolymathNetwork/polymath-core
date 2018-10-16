@@ -1,6 +1,7 @@
 const fs = require('fs');
 const request = require('request');
 const regex = /node ..\/n(.)*,/gmi;
+const regex2 = /truffle test(.)*,/gmi;
 
 request('https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js').pipe(fs.createWriteStream('node_modules\\solidity-coverage\\lib\\app.js'));
 
@@ -15,8 +16,8 @@ fs.readFile('.solcover.js', 'utf8', function (err,data) {
       testCommand = testCommand + ' test\\\\' + file;
   });
   testCommand = testCommand + '\',';
-
-  var result = data.replace(regex, testCommand);
+  let result = data.replace(regex2, testCommand);
+  result = result.replace(regex, testCommand);
 
   fs.writeFile('.solcover.js', result, 'utf8', function (err) {
     if (err) return console.log(err);

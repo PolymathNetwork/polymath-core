@@ -10,7 +10,9 @@
 --account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501207,1000000000000000000000000" ^
 --account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501208,1000000000000000000000000" ^
 --account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501209,1000000000000000000000000"
-@START /b node_modules\.bin\ganache-cli.cmd --gasLimit 0xfffffffffff --defaultBalanceEther 1000000000 --gasPrice 1 %accounts%> %temp%\nul
+@START /b node_modules\.bin\testrpc-sc.cmd --gasLimit 0xfffffffffff --defaultBalanceEther 1000000000 --gasPrice 1 --port 8545 %accounts%> %temp%\nul
+
+@COPY .solcover.js .solcover.js.bk
 node scripts\patch.js
 node_modules\.bin\solidity-coverage.cmd
-
+@MOVE /y .solcover.js.bk .solcover.js

@@ -275,6 +275,7 @@ contract("CountTransferManager", accounts => {
         })
 
         it("Should fail to buy some more tokens (more than 2 holders)", async () => {
+            await I_CountTransferManager.unpause({from: account_issuer });
             // Add the Investor in to the whitelist
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,

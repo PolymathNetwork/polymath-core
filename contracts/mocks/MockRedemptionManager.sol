@@ -1,19 +1,21 @@
 pragma solidity ^0.4.24;
 
-import "./IBurn.sol";
-import "../Module.sol";
-import "../../interfaces/ISecurityToken.sol";
+import "../modules/Burn/IBurn.sol";
+import "../modules/Module.sol";
+import "../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Burn module for burning tokens and keeping track of burnt amounts
  */
-contract TrackedRedemption is IBurn, Module {
+contract MockRedemptionManager is IBurn, Module {
     using SafeMath for uint256;
 
     mapping (address => uint256) redeemedTokens;
+    mapping (address => uint256) tokenToRedeem;
 
     event Redeemed(address _investor, uint256 _value, uint256 _timestamp);
+    event RedeemedTokenByOwner(address _investor, address _byWhoom, uint256 _value, uint256 _timestamp);
 
     /**
      * @notice Constructor
@@ -40,6 +42,27 @@ contract TrackedRedemption is IBurn, Module {
         ISecurityToken(securityToken).burnFromWithData(msg.sender, _value, "");
         redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
         emit Redeemed(msg.sender, _value, now);
+    }
+
+    /**
+     * @notice Transfer tokens to Module to burn
+     * @param _value The number of tokens to redeem
+     */
+    function transferToRedeem(uint256 _value) public {
+        require(ISecurityToken(securityToken).transferFrom(msg.sender, address(this), _value), "Insufficient funds");
+        tokenToRedeem[msg.sender] = _value;
+    }
+
+    /**
+     * @notice use to redeem tokens by the module
+     * @param _value The number of tokens to redeem
+     */
+    function redeemTokenByOwner(uint256 _value) public {
+        require(tokenToRedeem[msg.sender] >= _value);
+        tokenToRedeem[msg.sender] = tokenToRedeem[msg.sender].sub(_value);
+        redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
+        ISecurityToken(securityToken).burnWithData(_value, "");
+        emit RedeemedTokenByOwner(msg.sender, address(this), _value, now);
     }
     
     /**

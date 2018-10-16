@@ -219,15 +219,6 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
       );
     });
 
-    it("Should allow the primary issuance", async() => {
-      let snapId = await takeSnapshot();
-      await I_SingleTradeVolumeRestrictionManager.setAllowPrimaryIssuance(true, {from: token_owner});
-      await catchRevert(
-        I_SingleTradeVolumeRestrictionManager.setAllowPrimaryIssuance(true, {from: token_owner})
-      )
-      await revertToSnapshot(snapId);
-    })
-
     it("Should successfully attach the Paid SingleTradeVolumeRestrictionManager with the security token", async () => {
       let managerArgs = encodeModuleCall(STVRParameters, [false, 90, false]);
       await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
@@ -285,6 +276,15 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
         'Wrong permissions'
       );
     });
+
+    it("Should allow the primary issuance", async() => {
+      let snapId = await takeSnapshot();
+      await I_SingleTradeVolumeRestrictionManager.setAllowPrimaryIssuance(true, {from: token_owner});
+      await catchRevert(
+        I_SingleTradeVolumeRestrictionManager.setAllowPrimaryIssuance(true, {from: token_owner})
+      )
+      await revertToSnapshot(snapId);
+    })
 
     it("add exempt wallet -- Not authorised ", async () => {
       await catchRevert (

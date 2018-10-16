@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../modules/STO/DummySTO.sol";
+import "./MockRedemptionManager.sol";
 import "../modules/ModuleFactory.sol";
 import "../libraries/Util.sol";
 
@@ -8,9 +8,8 @@ import "../libraries/Util.sol";
  * @title Mock Contract Not fit for production environment
  */
 
-contract MockFactory is ModuleFactory {
+contract MockWrongTypeFactory is ModuleFactory {
 
-    bool public switchTypes = false;
      /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
@@ -28,35 +27,24 @@ contract MockFactory is ModuleFactory {
 
     /**
      * @notice used to launch the Module with the help of factory
-     * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
-    function deploy(bytes _data) external returns(address) {
+    function deploy(bytes /*_data*/) external returns(address) {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Unable to pay setup cost");
         //Check valid bytes - can only call module init function
-        DummySTO dummySTO = new DummySTO(msg.sender, address(polyToken));
-        //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == dummySTO.getInitFunction(), "Invalid initialisation");
-        require(address(dummySTO).call(_data), "Unsuccessfull initialisation");
-        emit GenerateModuleFromFactory(address(dummySTO), getName(), address(this), msg.sender, setupCost, now);
-        return address(dummySTO);
+        MockRedemptionManager mockRedemptionManager = new MockRedemptionManager(msg.sender, address(polyToken));
+        emit GenerateModuleFromFactory(address(mockRedemptionManager), getName(), address(this), msg.sender, setupCost, now);
+        return address(mockRedemptionManager);
     }
 
     /**
      * @notice Type of the Module factory
      */
     function getTypes() external view returns(uint8[]) {
-        if (!switchTypes) {
-            uint8[] memory types = new uint8[](0);
-            return types;
-        } else {
-            uint8[] memory res = new uint8[](2);
-            res[0] = 1;
-            res[1] = 1;
-            return res;
-        }
-        
+        uint8[] memory types = new uint8[](1);
+        types[0] = 4;
+        return types;
     }
 
     /**
@@ -108,10 +96,6 @@ contract MockFactory is ModuleFactory {
         bytes32[] memory availableTags = new bytes32[](4);
         availableTags[0] = "Mock";
         return availableTags;
-    }
-
-    function changeTypes() external onlyOwner {
-        switchTypes = !switchTypes;
     }
 
 }

@@ -251,7 +251,7 @@ export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInsta
     return new Array(I_BlacklistTransferManagerFactory);
 }
 
-export async function deployVolumeRTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
     I_VolumeRestrictionTransferManagerFactory = await VolumeRestrictionTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
     assert.notEqual(
         I_VolumeRestrictionTransferManagerFactory.address.valueOf(),

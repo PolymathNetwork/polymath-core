@@ -29,6 +29,12 @@ async function executeApp(remoteNetwork) {
   console.log("Issuer Account: " + Issuer.address + "\n");
 
   await setup();
+
+  /*if (!checkResult) {
+    console.log(checkResult)
+    return;
+  }*/
+
   try {
     await selectST();
     await addPermissionModule();
@@ -50,6 +56,16 @@ async function setup(){
     console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
     process.exit(0);
   }
+}
+
+async function checkPermission() {
+  let contractOwner = await generalPermissionManager.methods.owner().call();
+  if (contractOwner == Issuer.address) {
+    return true
+  }
+  let generalPermissionAddress = generalPermissionManager.options.address
+  let result = await generalPermissionManager.methods.checkPermission(Issuer.address, generalPermissionAddress, web3.utils.asciiToHex('CHANGE_PERMISSION')).call();
+  return result
 }
 
 async function selectST() {
@@ -186,6 +202,11 @@ async function addNewDelegate() {
     },
     limitMessage: "Must be a valid string"
   });
+
+  //// TODO aca deberia validar
+  let checkResult = await checkPermission();
+  process.exit(0);
+
   let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
   let receipt = await common.sendTransaction(Issuer, addPermissionAction, defaultGasPrice);
   let event = common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'AddDelegate');

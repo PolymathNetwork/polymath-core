@@ -12,6 +12,7 @@ const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpo
 const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpointFactory.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
 const SingleTradeVolumeRestrictionManagerFactory = artifacts.require('./SingleTradeVolumeRestrictionTMFactory.sol');
+const WeightedVoteCheckpointFactory = artifacts.require('./WeightedVoteCheckpointFactory.sol');
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
@@ -40,6 +41,7 @@ let I_TrackedRedemptionFactory;
 let I_MockBurnFactory;
 let I_MockWrongTypeBurnFactory;
 let I_SingleTradeVolumeRestrictionManagerFactory;
+let I_WeightedVoteCheckpointFactory;
 let I_ManualApprovalTransferManagerFactory;
 let I_VolumeRestrictionTransferManagerFactory;
 let I_PercentageTransferManagerFactory;
@@ -406,6 +408,19 @@ export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, 
 
     await registerAndVerifyByMR(I_MockWrongTypeBurnFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_MockWrongTypeBurnFactory);
+}
+
+
+export async function deployWeightedVoteAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_WeightedVoteCheckpointFactory = await WeightedVoteCheckpointFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_WeightedVoteCheckpointFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "SingleTradeVolumeRestrictionManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_WeightedVoteCheckpointFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_WeightedVoteCheckpointFactory);
 }
 
 

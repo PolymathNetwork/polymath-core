@@ -170,13 +170,13 @@ contract('WeightedVoteCheckpoint', accounts => {
 
         // STEP 7: Deploy the DummySTOFactory
 
-        I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
+        // I_DummySTOFactory = await DummySTOFactory.new(I_PolyToken.address, 0, 0, 0, {from:account_polymath});
 
-        assert.notEqual(
-            I_DummySTOFactory.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
-            "DummySTOFactory contract was not deployed"
-        );
+        // assert.notEqual(
+        //     I_DummySTOFactory.address.valueOf(),
+        //     "0x0000000000000000000000000000000000000000",
+        //     "DummySTOFactory contract was not deployed"
+        // );
 
 
       // Step 8: Deploy the STFactory contract
@@ -227,8 +227,8 @@ contract('WeightedVoteCheckpoint', accounts => {
       await I_MRProxied.verifyModule(P_WeightedVoteCheckpointFactory.address, true, { from: account_polymath });
 
       // (C) : Register the STOFactory
-      await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_polymath });
-      await I_MRProxied.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
+      // await I_MRProxied.registerModule(I_DummySTOFactory.address, { from: account_polymath });
+      // await I_MRProxied.verifyModule(I_DummySTOFactory.address, true, { from: account_polymath });
 
         // Printing all the contract addresses
         console.log(`
@@ -244,7 +244,7 @@ contract('WeightedVoteCheckpoint', accounts => {
         GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
         GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
 
-        DummySTOFactory:                   ${I_DummySTOFactory.address}
+        
         -----------------------------------------------------------------------------
         `);
     });

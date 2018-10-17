@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
+* Added support for multiple controllers of a security token. `setController` event and function changed, `disableForceTransfer` event and function added.
 * Migrated from `npm` to `yarn`.
 * Added `SingleTradeVolumeRestrictionManager` module
 * Added flag in `PercentageTransferManager` to allow ignoring of issuance transfers

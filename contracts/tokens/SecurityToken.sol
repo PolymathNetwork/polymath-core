@@ -184,7 +184,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
             require(_isModule(msg.sender, _type), "Unauthorized");
             _;
         }
-        _;
     }
 
     /**

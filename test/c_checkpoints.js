@@ -131,7 +131,7 @@ contract("Checkpoints", accounts => {
         });
 
         it("Should set controller to token owner", async () => {
-            await I_SecurityToken.setController(token_owner, { from: token_owner });
+            await I_SecurityToken.setController(token_owner, true, { from: token_owner });
         });
 
         it("Should intialize the auto attached modules", async () => {

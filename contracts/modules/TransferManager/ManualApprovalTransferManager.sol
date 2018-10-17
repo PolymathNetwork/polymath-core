@@ -83,7 +83,7 @@ contract ManualApprovalTransferManager is ITransferManager {
      * @param _from Address of the sender
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
-     * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
+     * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferable
      */
     function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool _isTransfer) public returns(Result) {
         // function must only be called by the associated security token if _isTransfer == true

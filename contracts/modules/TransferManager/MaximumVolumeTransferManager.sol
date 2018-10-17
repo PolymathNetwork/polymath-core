@@ -27,8 +27,8 @@ contract MaximumVolumeTransferManager is ITransferManager {
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) volumeTally;
 
     // Emit whenever a new maximum volume restriction gets added
-    event MaximumVolumeRestrictionAdded(
-        address indexed from,
+    event AddNewMaximumVolumeRestriction(
+        uint256 _index,
         uint256 timestamp,
         uint256 _maximumVolume, 
         uint256 _startTime, 
@@ -37,10 +37,9 @@ contract MaximumVolumeTransferManager is ITransferManager {
     );
 
     // Emit whenever a new maximum volume restriction gets modified
-    event MaximumVolumeRestrictionModified(
-        address indexed from,
-        uint256 timestamp,
-        uint256 idx, 
+    event ModifyMaximumVolumeRestriction(
+        uint256 _index,
+        uint256 timestamp, 
         uint256 _maximumVolume, 
         uint256 _startTime, 
         uint256 _endTime, 
@@ -48,8 +47,8 @@ contract MaximumVolumeTransferManager is ITransferManager {
     );
 
     // Emit whenever a new maximum volume restriction gets removed
-    event MaximumVolumeRestrictionRemoved(
-        address indexed from,
+    event RemoveMaximumVolumeRestricion(
+        address indexed _from,
         uint256 timestamp
     );
 
@@ -71,17 +70,25 @@ contract MaximumVolumeTransferManager is ITransferManager {
         return bytes4(0);
     }
 
-    /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
+    /**
+     * @notice used to verify a transfer transaction and restrict the amount of tokens that can be transfered within a rolling time interval
+     * @param _from Address of the sender
+     * @param _amount The amount of tokens to transfer
+     * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferable
+    */
     function verifyTransfer(address _from, address /*_to*/, uint256 _amount, bytes /* _data */, bool _isTransfer) public returns(Result) {
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
 
+        // loop over every existing max transfer restriction to check if current transaction falls under their activity interval
         if (!paused) {
             for(uint256 i = 0; i < maximumVolumeRestrictions.length; i++){
                 MaximumVolumeRestriction memory restriction = maximumVolumeRestrictions[i];
                 if(now >= restriction.startTime && now <= restriction.endTime){
                     uint256 period = _getPeriod(restriction.rollingPeriodInterval);
-                    uint256 periodId = now.div(period);
+                    uint256 periodId = (now.sub(restriction.startTime)).div(period);
+
+                    // if the transfer amount causes the total period volume to exceed the maximum value, transfer is invalid
                     if(_amount.add(volumeTally[_from][uint256(restriction.rollingPeriodInterval)][periodId]) > restriction.maximumVolumeAllowed){
                         return Result.INVALID;
                     }else{
@@ -101,7 +108,7 @@ contract MaximumVolumeTransferManager is ITransferManager {
     * @param _endTime timestamp representing when this maximum volume restriction ends
     * @param _rollingPeriodInterval interval period representing one of five RollingIntervals
     */
-    function addMaximumVolumeRestriction(
+    function addMaxVolumeRestricion(
         uint256 _maximumVolume, 
         uint256 _startTime, 
         uint256 _endTime, 
@@ -114,8 +121,8 @@ contract MaximumVolumeTransferManager is ITransferManager {
             require(_endTime > _startTime, "end time must be greater than start time");
         }
 
-        emit MaximumVolumeRestrictionAdded(
-            msg.sender, 
+        emit AddNewMaximumVolumeRestriction(
+            maximumVolumeRestrictions.length,
             now, 
             _maximumVolume,
             _startTime,
@@ -140,7 +147,7 @@ contract MaximumVolumeTransferManager is ITransferManager {
     * @param _endTimes timestamps representing when these maximum volume restrictions end
     * @param _rollingPeriodIntervals interval periods representing one of five RollingIntervals
     */
-    function addMultipleMaximumVolumeRestrictions(
+    function addMaxVolumeRestricionsMulti(
         uint256[] _maximumVolumes, 
         uint256[] _startTimes, 
         uint256[] _endTimes, 
@@ -155,7 +162,7 @@ contract MaximumVolumeTransferManager is ITransferManager {
         );
 
         for(uint256 i = 0; i < _maximumVolumes.length; i++){
-            addMaximumVolumeRestriction(
+            addMaxVolumeRestricion(
                 _maximumVolumes[i],
                 _startTimes[i],
                 _endTimes[i],
@@ -166,21 +173,21 @@ contract MaximumVolumeTransferManager is ITransferManager {
 
     /**
     * @notice allows admin to modify a maximum volume transfer restriction
-    * @param idx representing the array index of the maximum volume transfer restriction
+    * @param _index representing the array index of the maximum volume transfer restriction
     * @param _maximumVolume maximum token volume that can be transfered
     * @param _startTime timestamp representing when this maximum volume restriction starts
     * @param _endTime timestamp representing when this maximum volume restriction ends
     * @param _rollingPeriodInterval interval period representing one of five RollingIntervals
     */
     function modifyMaximumTransferRestriction(
-        uint256 idx, 
+        uint256 _index, 
         uint256 _maximumVolume, 
         uint256 _startTime, 
         uint256 _endTime, 
         uint256 _rollingPeriodInterval) 
     public withPerm(ADMIN) {
-        require(idx < maximumVolumeRestrictions.length, "invalid index");
-        require(now < maximumVolumeRestrictions[idx].endTime, "restriction is no longer active");
+        require(_index < maximumVolumeRestrictions.length, "invalid index");
+        require(now < maximumVolumeRestrictions[_index].endTime, "restriction is no longer active");
         _checkRestrictionParams(_startTime, _endTime, _rollingPeriodInterval);
 
         if(_startTime == 0) {
@@ -194,12 +201,11 @@ contract MaximumVolumeTransferManager is ITransferManager {
             _endTime, 
             RollingIntervals(_rollingPeriodInterval)
         );
-        maximumVolumeRestrictions[idx] = restriction;
+        maximumVolumeRestrictions[_index] = restriction;
 
-        emit MaximumVolumeRestrictionModified(
-            msg.sender, 
+        emit ModifyMaximumVolumeRestriction(
+            _index,
             now, 
-            idx,
             _maximumVolume,
             _startTime,
             _endTime,
@@ -209,20 +215,20 @@ contract MaximumVolumeTransferManager is ITransferManager {
 
     /**
     * @notice allows admin to delete a maximum volume transfer restriction
-    * @param idx representing the array index of the maximum volume transfer restriction
+    * @param _index representing the array index of the maximum volume transfer restriction
     */
-    function removeMaximumTransferRestriction(uint256 idx) public withPerm(ADMIN){
+    function removeMaximumTransferRestriction(uint256 _index) public withPerm(ADMIN){
         require (maximumVolumeRestrictions.length != 0, "no existing restrictions");
-        require (maximumVolumeRestrictions.length > idx, "invalid index");
+        require (maximumVolumeRestrictions.length > _index, "invalid index");
 
-        if(idx < (maximumVolumeRestrictions.length - 1)){
+        if(_index < (maximumVolumeRestrictions.length - 1)){
             MaximumVolumeRestriction memory lastRestriction = maximumVolumeRestrictions[maximumVolumeRestrictions.length - 1];
-            maximumVolumeRestrictions[idx] = lastRestriction;
+            maximumVolumeRestrictions[_index] = lastRestriction;
         }
 
         maximumVolumeRestrictions.length = (maximumVolumeRestrictions.length).sub(1);
 
-        emit MaximumVolumeRestrictionRemoved(
+        emit RemoveMaximumVolumeRestricion(
             msg.sender,
             now
         );
@@ -253,13 +259,13 @@ contract MaximumVolumeTransferManager is ITransferManager {
         if(_rollingPeriodInterval == RollingIntervals.Daily){
             period = 24 hours;
         }else if(_rollingPeriodInterval == RollingIntervals.Weekly){
-            period = 168 hours;
+            period = 7 * 24 hours;
         }else if(_rollingPeriodInterval == RollingIntervals.Quarterly){
-            period = 2920 hours;
+            period = 3 * 30 * 24 hours;
         }else if(_rollingPeriodInterval == RollingIntervals.Biannually){
-            period = 4380 hours;
+            period = 6 * 30 * 24 hours;
         }else{
-            period = 8760 hours;
+            period = 365 * 24 hours;
         }
         return period;
     }

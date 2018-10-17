@@ -277,6 +277,15 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
       );
     });
 
+    it("Should allow the primary issuance", async() => {
+      let snapId = await takeSnapshot();
+      await I_SingleTradeVolumeRestrictionManager.setAllowPrimaryIssuance(true, {from: token_owner});
+      await catchRevert(
+        I_SingleTradeVolumeRestrictionManager.setAllowPrimaryIssuance(true, {from: token_owner})
+      )
+      await revertToSnapshot(snapId);
+    })
+
     it("add exempt wallet -- Not authorised ", async () => {
       await catchRevert (
         I_SingleTradeVolumeRestrictionManager.addExemptWallet(accounts[5])

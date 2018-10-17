@@ -786,7 +786,50 @@ contract("EtherDividendCheckpoint", accounts => {
                 maturity,
                 expiry,
                 dividendName,
-                { from: account_manager }
+                { from: account_manager, value: web3.utils.toWei("12", "ether")  }
+            ));
+        });
+
+        it("should not allow manager without permission to create dividend with checkpoint", async () => {
+            let maturity = latestTime() + duration.days(1);
+            let expiry = latestTime() + duration.days(10);
+            let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
+            await I_SecurityToken.createCheckpoint({ from: token_owner });
+            await catchRevert(I_EtherDividendCheckpoint.createDividendWithCheckpoint(
+                maturity,
+                expiry,
+                checkpointID.toNumber(),
+                dividendName,
+                { from: account_manager, value: web3.utils.toWei("12", "ether")  }
+            ));
+        });
+
+        it("should not allow manager without permission to create dividend with exclusion", async () => {
+            let maturity = latestTime() + duration.days(1);
+            let expiry = latestTime() + duration.days(10);
+            let exclusions = [0];
+            await catchRevert(I_EtherDividendCheckpoint.createDividendWithExclusions(
+                maturity,
+                expiry,
+                exclusions,
+                dividendName,
+                { from: account_manager, value: web3.utils.toWei("12", "ether")  }
+            ));
+        });
+
+        it("should not allow manager without permission to create dividend with checkpoint and exclusion", async () => {
+            let maturity = latestTime() + duration.days(1);
+            let expiry = latestTime() + duration.days(10);
+            let exclusions = [0];
+            let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
+            await I_SecurityToken.createCheckpoint({ from: token_owner }); 
+            await catchRevert(I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(
+                maturity,
+                expiry,
+                checkpointID.toNumber(),
+                exclusions,
+                dividendName,
+                { from: account_manager, value: web3.utils.toWei("12", "ether")  }
             ));
         });
 
@@ -811,7 +854,53 @@ contract("EtherDividendCheckpoint", accounts => {
                 dividendName,
                 { from: account_manager, value: web3.utils.toWei("12", "ether") }
             );
-            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 7, "Dividend should be created at checkpoint 6");
+            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 9);
+        });
+
+        it("should allow manager with permission to create dividend with checkpoint", async () => {
+            let maturity = latestTime() + duration.days(1);
+            let expiry = latestTime() + duration.days(10);
+            let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
+            await I_SecurityToken.createCheckpoint({ from: token_owner });
+            let tx = await I_EtherDividendCheckpoint.createDividendWithCheckpoint(
+                maturity,
+                expiry,
+                checkpointID.toNumber(),
+                dividendName,
+                { from: account_manager, value: web3.utils.toWei("12", "ether") }
+            );
+            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 10);
+        });
+
+        it("should allow manager with permission to create dividend with exclusion", async () => {
+            let maturity = latestTime() + duration.days(1);
+            let expiry = latestTime() + duration.days(10);
+            let exclusions = [0];
+            let tx = await I_EtherDividendCheckpoint.createDividendWithExclusions(
+                maturity,
+                expiry,
+                exclusions,
+                dividendName,
+                { from: account_manager, value: web3.utils.toWei("12", "ether") }
+            );
+            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 11);
+        });
+
+        it("should allow manager with permission to create dividend with checkpoint and exclusion", async () => {
+            let maturity = latestTime() + duration.days(1);
+            let expiry = latestTime() + duration.days(10);
+            let exclusions = [0];
+            let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
+            await I_SecurityToken.createCheckpoint({ from: token_owner });
+            let tx = await I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(
+                maturity,
+                expiry,
+                checkpointID.toNumber(),
+                exclusions,
+                dividendName,
+                { from: account_manager, value: web3.utils.toWei("12", "ether") }
+            );
+            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 12);
         });
 
         describe("Test cases for the EtherDividendCheckpointFactory", async () => {

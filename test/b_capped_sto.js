@@ -473,7 +473,7 @@ contract("CappedSTO", accounts => {
             assert.equal(
                 (await I_PolyToken.balanceOf(account_investor3)).toNumber(),
                 initInvestorBalance.toNumber(),
-                "tokens are not transfered out from investor account"
+                "tokens are not transferred out from investor account"
             );
             assert.equal(
                 (await I_PolyToken.balanceOf(token_owner)).toNumber(),
@@ -687,7 +687,7 @@ contract("CappedSTO", accounts => {
                 assert.equal(
                     (await I_PolyToken.balanceOf(account_investor1)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
                     10000,
-                    "Tokens are not transfered properly"
+                    "Tokens are not transferred properly"
                 );
 
                 let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, P_fromTime, P_toTime, P_expiryTime, true, {

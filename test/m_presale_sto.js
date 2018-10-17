@@ -282,7 +282,7 @@ contract("PreSaleSTO", accounts => {
             assert.equal(
                 (await I_PolyToken.balanceOf(account_investor1)).toNumber(),
                 initInvestorBalance.sub(value).toNumber(),
-                "tokens are not transfered out from investor account"
+                "tokens are not transferred out from investor account"
             );
             assert.equal(
                 (await I_PolyToken.balanceOf(token_owner)).toNumber(),

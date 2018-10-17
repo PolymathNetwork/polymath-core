@@ -242,7 +242,7 @@ contract("GeneralPermissionManager", accounts => {
             );
         });
 
-        it("Should successfuly add the delegate", async() => {
+        it("Should successfully add the delegate", async() => {
             let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner});
             assert.equal(tx.logs[0].args._delegate, account_delegate);
         });

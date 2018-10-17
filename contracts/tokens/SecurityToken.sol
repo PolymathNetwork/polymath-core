@@ -58,11 +58,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // Used to permanently halt all minting
     bool public mintingFrozen;
 
-    // Use to permanently halt controller actions
-    bool public controllerDisabled;
+    // Use to permanently halt force transfers
+    bool public forceTransferDisabled;
 
     // address whitelisted by issuer as controller
-    address public controller;
+    mapping (address => bool) public controller;
 
     // Records added modules - module list should be order agnostic!
     mapping (uint8 => address[]) modules;
@@ -118,10 +118,10 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event Burnt(address indexed _from, uint256 _value);
 
     // Events to log controller actions
-    event SetController(address indexed _oldController, address indexed _newController);
+    event SetController(address indexed _controller, bool _active);
     event ForceTransfer(address indexed _controller, address indexed _from, address indexed _to, uint256 _value, bool _verifyTransfer, bytes _data);
     event ForceBurn(address indexed _controller, address indexed _from, uint256 _value, bool _verifyTransfer, bytes _data);
-    event DisableController(uint256 _timestamp);
+    event DisableForceTransfer(uint256 _timestamp);
 
     function _isModule(address _module, uint8 _type) internal view returns (bool) {
         require(modulesToData[_module].module == _module, "Address mismatch");
@@ -169,8 +169,21 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice Revert if called by an account which is not a controller
      */
     modifier onlyController() {
-        require(msg.sender == controller, "Not controller");
-        require(!controllerDisabled, "Controller disabled");
+        require(controller[msg.sender], "Not controller");
+        _;
+    }
+
+    /**
+     * @notice Revert if called by an account which is not a controller/owner/module
+     * @param _type Module type allowed
+     */
+    modifier onlyOwnerControllerModule(uint8 _type) {
+        if (msg.sender == owner || controller[msg.sender]) {
+            _;
+        } else {
+            require(_isModule(msg.sender, _type), "Unauthorized");
+            _;
+        }
         _;
     }
 
@@ -692,9 +705,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
      * @return uint256
      */
-    function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
-        require(currentCheckpointId < 2**256 - 1);
-        currentCheckpointId = currentCheckpointId + 1;
+    function createCheckpoint() external onlyOwnerControllerModule(CHECKPOINT_KEY) returns(uint256) {
+        currentCheckpointId = currentCheckpointId.add(1);
         checkpointTimes.push(now);
         emit CheckpointCreated(currentCheckpointId, now);
         return currentCheckpointId;
@@ -729,24 +741,24 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice Used by the issuer to set the controller addresses
+     * @notice Used by the issuer to enable or disable controller
      * @param _controller address of the controller
+     * @param _active true means enable, false means disable controller
      */
-    function setController(address _controller) public onlyOwner {
-        require(!controllerDisabled,"Controller disabled");
-        emit SetController(controller, _controller);
-        controller = _controller;
+    function setController(address _controller, bool _active) public onlyOwner {
+        require(controller[_controller] != _active, "status not changed");
+        controller[_controller] = _active;
+        emit SetController(_controller, _active);
     }
 
     /**
-     * @notice Use by the issuer to permanently disable controller functionality
-     * @dev enabled via feature switch "disableControllerAllowed"
+     * @notice Used by the issuer to disable force transfers
+     * @dev enabled via feature switch "disableForceTransferAllowed"
      */
-    function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
-        require(!controllerDisabled,"Controller disabled");
-        controllerDisabled = true;
-        delete controller;
-        emit DisableController(now);
+    function disableForceTransfer() public isEnabled("disableForceTransferAllowed") onlyOwner {
+        require(!forceTransferDisabled, "status not changed");
+        forceTransferDisabled = true;
+        emit DisableForceTransfer(now);
     }
 
     /**
@@ -760,6 +772,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function forceTransfer(address _from, address _to, uint256 _value, bytes _data, bytes _log) public onlyController {
         require(_to != address(0));
         require(_value <= balances[_from]);
+        require(!forceTransferDisabled);
         bool verified = _updateTransfer(_from, _to, _value, _data);
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
@@ -775,6 +788,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _log data attached to the transfer by controller to emit in event
      */
     function forceBurn(address _from, uint256 _value, bytes _data, bytes _log) public onlyController {
+        require(!forceTransferDisabled);
         bool verified = _burn(_from, _value, _data);
         emit ForceBurn(msg.sender, _from, _value, verified, _log);
     }

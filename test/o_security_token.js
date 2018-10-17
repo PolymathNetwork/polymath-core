@@ -798,31 +798,43 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should fail to set controller status because msg.sender not owner", async () => {
-            await catchRevert(I_SecurityToken.setController(account_controller, { from: account_controller }));
+            await catchRevert(I_SecurityToken.setController(account_controller, true, { from: account_controller }));
         });
 
         it("Should successfully set controller", async () => {
-            let tx1 = await I_SecurityToken.setController(account_controller, { from: token_owner });
+            let tx1 = await I_SecurityToken.setController(account_controller, true, { from: token_owner });
 
             // check event
-            assert.equal(address_zero, tx1.logs[0].args._oldController, "Event not emitted as expected");
-            assert.equal(account_controller, tx1.logs[0].args._newController, "Event not emitted as expected");
+            assert.equal(account_controller, tx1.logs[0].args._controller, "Event not emitted as expected");
+            assert.equal(true, tx1.logs[0].args._active, "Event not emitted as expected");
 
-            let tx2 = await I_SecurityToken.setController(address_zero, { from: token_owner });
-
-            // check event
-            assert.equal(account_controller, tx2.logs[0].args._oldController, "Event not emitted as expected");
-            assert.equal(address_zero, tx2.logs[0].args._newController, "Event not emitted as expected");
-
-            let tx3 = await I_SecurityToken.setController(account_controller, { from: token_owner });
+            let tx2 = await I_SecurityToken.setController(address_zero, true, { from: token_owner });
 
             // check event
-            assert.equal(address_zero, tx3.logs[0].args._oldController, "Event not emitted as expected");
-            assert.equal(account_controller, tx3.logs[0].args._newController, "Event not emitted as expected");
+            assert.equal(address_zero, tx2.logs[0].args._controller, "Event not emitted as expected");
+            assert.equal(true, tx2.logs[0].args._active, "Event not emitted as expected");
 
             // check status
-            let controller = await I_SecurityToken.controller.call();
-            assert.equal(account_controller, controller, "Status not set correctly");
+            let controller = await I_SecurityToken.controller.call(account_controller);
+            assert.equal(controller, true, "Status not set correctly");
+            controller = await I_SecurityToken.controller.call(address_zero);
+            assert.equal(controller, true, "Status not set correctly");
+        });
+
+        it("Should fail to set controller status if already set", async () => {
+            await catchRevert(I_SecurityToken.setController(account_controller, true, { from: token_owner }));
+        });
+
+        it("Should successfully remove extra controller", async () => {
+            let tx = await I_SecurityToken.setController(address_zero, false, { from: token_owner });
+
+            // check event
+            assert.equal(address_zero, tx.logs[0].args._controller, "Event not emitted as expected");
+            assert.equal(false, tx.logs[0].args._active, "Event not emitted as expected");
+
+            // check status
+            let controller = await I_SecurityToken.controller.call(address_zero);
+            assert.equal(controller, false, "Status not set correctly");
         });
 
         it("Should force burn the tokens - value too high", async () => {
@@ -1050,37 +1062,31 @@ contract("SecurityToken", accounts => {
             assert.equal(web3.utils.toWei("10", "ether"), tx.logs[1].args.value, "Event not emitted as expected");
         });
 
-        it("Should fail to freeze controller functionality because not owner", async () => {
-            await catchRevert(I_SecurityToken.disableController({ from: account_investor1 }));
+        it("Should fail to freeze force transfer because not owner", async () => {
+            await catchRevert(I_SecurityToken.disableForceTransfer({ from: account_investor1 }));
         });
 
-        it("Should fail to freeze controller functionality because disableControllerAllowed not activated", async () => {
-            await catchRevert(I_SecurityToken.disableController({ from: token_owner }));
+        it("Should fail to freeze controller functionality because disableForceTransfer not activated", async () => {
+            await catchRevert(I_SecurityToken.disableForceTransfer({ from: token_owner }));
         });
 
         it("Should successfully freeze controller functionality", async () => {
-            let tx1 = await I_FeatureRegistry.setFeatureStatus("disableControllerAllowed", true, { from: account_polymath });
+            let tx1 = await I_FeatureRegistry.setFeatureStatus("disableForceTransferAllowed", true, { from: account_polymath });
 
             // check event
-            assert.equal("disableControllerAllowed", tx1.logs[0].args._nameKey, "Event not emitted as expected");
+            assert.equal("disableForceTransferAllowed", tx1.logs[0].args._nameKey, "Event not emitted as expected");
             assert.equal(true, tx1.logs[0].args._newStatus, "Event not emitted as expected");
 
-            let tx2 = await I_SecurityToken.disableController({ from: token_owner });
+            let tx2 = await I_SecurityToken.disableForceTransfer({ from: token_owner });
 
-            // check state
-            assert.equal(address_zero, await I_SecurityToken.controller.call(), "State not changed");
-            assert.equal(true, await I_SecurityToken.controllerDisabled.call(), "State not changed");
+            assert.equal(true, await I_SecurityToken.forceTransferDisabled.call(), "State not changed");
         });
 
         it("Should fail to freeze controller functionality because already frozen", async () => {
-            await catchRevert(I_SecurityToken.disableController({ from: token_owner }));
+            await catchRevert(I_SecurityToken.disableForceTransfer({ from: token_owner }));
         });
 
-        it("Should fail to set controller because controller functionality frozen", async () => {
-            await catchRevert(I_SecurityToken.setController(account_controller, { from: token_owner }));
-        });
-
-        it("Should fail to forceTransfer because controller functionality frozen", async () => {
+        it("Should fail to forceTransfer because Force Transfer functionality frozen", async () => {
             await catchRevert(
                 I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "", "reason", {
                     from: account_controller

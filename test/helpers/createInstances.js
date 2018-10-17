@@ -28,6 +28,8 @@ const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PolyToken = artifacts.require("./PolyToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
+const MockBurnFactory = artifacts.require("./MockBurnFactory.sol");
+const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
 
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
@@ -36,6 +38,8 @@ const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 let I_USDTieredSTOProxyFactory;
 let I_USDTieredSTOFactory;
 let I_TrackedRedemptionFactory;
+let I_MockBurnFactory;
+let I_MockWrongTypeBurnFactory;
 let I_SingleTradeVolumeRestrictionManagerFactory;
 let I_ManualApprovalTransferManagerFactory;
 let I_MaximumVolumeTransferManagerFactory;
@@ -392,7 +396,31 @@ export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstan
 }
 
 
+export async function deployMockRedemptionAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_MockBurnFactory = await MockBurnFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
 
+    assert.notEqual(
+        I_MockBurnFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "MockBurnfactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_MockBurnFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_MockBurnFactory);
+}
+
+export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_MockWrongTypeBurnFactory = await MockWrongTypeFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+
+    assert.notEqual(
+        I_MockWrongTypeBurnFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "MockWrongTypeBurnFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_MockWrongTypeBurnFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_MockWrongTypeBurnFactory);
+}
 
 
 

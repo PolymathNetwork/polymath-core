@@ -126,7 +126,6 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
                 require(getBool(Encoder.getKey("verified", _moduleFactory)), "ModuleFactory must be verified");
             }
             require(_isCompatibleModule(_moduleFactory, msg.sender), "Version should within the compatible range of ST");
-            require(getUint(Encoder.getKey("registry",_moduleFactory)) != 0, "ModuleFactory type should not be 0");
             pushArray(Encoder.getKey("reputation", _moduleFactory), msg.sender);
             emit ModuleUsed(_moduleFactory, msg.sender);
         }

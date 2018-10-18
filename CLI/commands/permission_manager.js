@@ -33,11 +33,6 @@ async function executeApp(remoteNetwork) {
 
   await setup();
 
-  /*if (!checkResult) {
-    console.log(checkResult)
-    return;
-  }*/
-
   try {
     await selectST();
     await addPermissionModule();
@@ -109,7 +104,7 @@ async function changePermissionStep() {
 
   let checkResult = await checkPermission();
   if (!checkResult) {
-    console.log(FAILD_PERMISSION_MSG)
+    console.log(FAILD_PERMISSION_MSG);
     process.exit(0);
   }
 
@@ -205,7 +200,7 @@ async function addNewDelegate() {
 
   let checkResult = await checkPermission();
   if (!checkResult) {
-    console.log(FAILD_PERMISSION_MSG)
+    console.log(FAILD_PERMISSION_MSG);
     process.exit(0);
   }
 
@@ -243,7 +238,7 @@ async function checkPermission() {
   if (stoOwner == Issuer.address) {
     return true
   }
-  let generalPermissionAddress = generalPermissionManager.options.address
+  let generalPermissionAddress = generalPermissionManager.options.address;
   let result = await generalPermissionManager.methods.checkPermission(Issuer.address, generalPermissionAddress, web3.utils.asciiToHex(CHANGE_PERMISSION)).call();
   return result
 }

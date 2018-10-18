@@ -19,6 +19,9 @@ const MODULES_TYPES = {
   BURN: 5
 }
 
+const CHANGE_PERMISSION = "CHANGE_PERMISSION";
+const FAILD_PERMISSION_MSG = "You haven't the right permissions to execute this function.";
+
 async function executeApp(remoteNetwork) {
   await global.initialize(remoteNetwork);
 
@@ -56,16 +59,6 @@ async function setup(){
     console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
     process.exit(0);
   }
-}
-
-async function checkPermission() {
-  let contractOwner = await generalPermissionManager.methods.owner().call();
-  if (contractOwner == Issuer.address) {
-    return true
-  }
-  let generalPermissionAddress = generalPermissionManager.options.address
-  let result = await generalPermissionManager.methods.checkPermission(Issuer.address, generalPermissionAddress, web3.utils.asciiToHex('CHANGE_PERMISSION')).call();
-  return result
 }
 
 async function selectST() {
@@ -113,6 +106,13 @@ async function changePermissionStep() {
   let selectedModule = await selectModule();
   let selectedPermission = await selectPermission(selectedModule.permissions);
   let isValid = isPermissionValid();
+
+  let checkResult = await checkPermission();
+  if (!checkResult) {
+    console.log(FAILD_PERMISSION_MSG)
+    process.exit(0);
+  }
+
   await changePermission(selectedDelegate, selectedModule.address, selectedPermission, isValid);
 }
 
@@ -203,9 +203,11 @@ async function addNewDelegate() {
     limitMessage: "Must be a valid string"
   });
 
-  //// TODO aca deberia validar
   let checkResult = await checkPermission();
-  process.exit(0);
+  if (!checkResult) {
+    console.log(FAILD_PERMISSION_MSG)
+    process.exit(0);
+  }
 
   let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
   let receipt = await common.sendTransaction(Issuer, addPermissionAction, defaultGasPrice);
@@ -234,6 +236,16 @@ async function getModulesWithPermissions() {
   }
 
   return modules;
+}
+
+async function checkPermission() {
+  let stoOwner = await securityToken.methods.owner().call();
+  if (stoOwner == Issuer.address) {
+    return true
+  }
+  let generalPermissionAddress = generalPermissionManager.options.address
+  let result = await generalPermissionManager.methods.checkPermission(Issuer.address, generalPermissionAddress, web3.utils.asciiToHex(CHANGE_PERMISSION)).call();
+  return result
 }
 
 module.exports = {

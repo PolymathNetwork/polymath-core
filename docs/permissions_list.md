@@ -11,20 +11,77 @@
     </thead>
     <tbody>
         <tr>
-            <td rowspan=4> Checkpoint </td>
-            <td rowspan=2>ERC20DividendCheckpoint</td>
+            <td rowspan=20> Checkpoint </td>
+            <td rowspan=10>ERC20DividendCheckpoint</td>
             <td>pushDividendPayment()</td>
-            <td rowspan=4> withPerm(DISTRIBUTE)</td>
+            <td rowspan=2> withPerm(DISTRIBUTE)</td>
         </tr>
         <tr>
             <td>pushDividendPaymentToAddresses()</td>
         </tr>
         <tr>
-            <td rowspan=2>EtherDividendCheckpoint</td>
+            <td> setDefaultExcluded() </td>
+            <td rowspan=8> withPerm(MANAGE) </td>
+        </tr>
+        <tr>
+            <td> setWithholding() </td>
+        </tr>
+        <tr>
+            <td> setWithholdingFixed() </td>
+        </tr>
+        <tr>
+            <td> createDividend() </td>
+        </tr>
+        <tr>
+            <td> createDividendWithCheckpoint() </td>
+        </tr>
+        <tr>
+            <td> createDividendWithExclusions() </td>
+        </tr>
+        <tr>
+            <td> createDividendWithCheckpointAndExclusions() </td>
+        </tr>
+        <tr>
+            <td> reclaimDividend() </td>
+        </tr>
+        <tr>
+            <td> withdrawWithholding() </td>
+        </tr>
+        <tr>
+            <td rowspan=10>EtherDividendCheckpoint</td>
             <td>pushDividendPayment()</td>
+            <td rowspan=2> withPerm(DISTRIBUTE) </td>
         </tr>
         <tr>
             <td>pushDividendPaymentToAddresses()</td>
+        </tr>
+        <tr>
+            <td> setDefaultExcluded() </td>
+            <td rowspan=8> withPerm(MANAGE) </td>
+        </tr>
+        <tr>
+            <td> setWithholding() </td>
+        </tr>
+        <tr>
+            <td> setWithholdingFixed() </td>
+        </tr>
+        <tr>
+            <td> createDividend() </td>
+        </tr>
+        <tr>
+            <td> createDividendWithCheckpoint() </td>
+        </tr>
+        <tr>
+            <td> createDividendWithExclusions() </td>
+        </tr>
+        <tr>
+            <td> createDividendWithCheckpointAndExclusions() </td>
+        </tr>
+        <tr>
+            <td> reclaimDividend() </td>
+        </tr>
+        <tr>
+            <td> withdrawWithholding() </td>
         </tr>
          <tr>
             <td rowspan=3> PermissionManager </td>

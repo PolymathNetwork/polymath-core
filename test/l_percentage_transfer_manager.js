@@ -320,6 +320,10 @@ contract("PercentageTransferManager", accounts => {
             let snapId = await takeSnapshot();
             await I_PercentageTransferManager.setAllowPrimaryIssuance(true, { from: token_owner });
             await I_SecurityToken.mint(account_investor3, web3.utils.toWei('100', 'ether'), { from: token_owner });
+            // trying to call it again with the same value. should fail
+            await catchRevert(
+                I_PercentageTransferManager.setAllowPrimaryIssuance(true, { from: token_owner })
+            )
             await revertToSnapshot(snapId);
         });
 
@@ -341,6 +345,18 @@ contract("PercentageTransferManager", accounts => {
             await I_PercentageTransferManager.modifyWhitelist(account_investor3, false, { from: token_owner });
             await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("2", "ether"), { from: account_investor1 });
         });
+
+        it("Should whitelist in batch --failed because of mismatch in array lengths", async() => {
+            await catchRevert(
+                I_PercentageTransferManager.modifyWhitelistMulti([account_investor3, account_investor4], [false], { from: token_owner })
+            );
+        })
+
+        it("Should whitelist in batch", async() => {
+            let snapId = await takeSnapshot();
+            await I_PercentageTransferManager.modifyWhitelistMulti([account_investor3, account_investor4], [false, true], { from: token_owner });
+            await revertToSnapshot(snapId);
+        })
 
         it("Should be able to whitelist address and then transfer regardless of holders", async () => {
             await I_PercentageTransferManager.changeHolderPercentage(30 * 10 ** 16, { from: token_owner });
@@ -374,6 +390,7 @@ contract("PercentageTransferManager", accounts => {
                 "Allows an issuer to restrict the total number of non-zero token holders",
                 "Wrong Module added"
             );
+            assert.equal(await I_PercentageTransferManagerFactory.getVersion.call(), "1.0.0");
         });
 
         it("Should get the tags of the factory", async () => {

@@ -83,7 +83,7 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
     }
 
     /**
-     * @notice Get the Instructions that helped to used the module
+     * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
         return "Create a ERC20 dividend which will be paid out to token holders proportional to their balances at the point the dividend is created";

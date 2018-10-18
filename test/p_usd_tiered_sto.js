@@ -58,6 +58,7 @@ contract("USDTieredSTO", accounts => {
     let I_PolyToken;
     let I_DaiToken;
     let I_PolymathRegistry;
+    let P_USDTieredSTOFactory;
 
     // SecurityToken Details for funds raise Type ETH
     const NAME = "Team";
@@ -68,6 +69,8 @@ contract("USDTieredSTO", accounts => {
     // Module key
     const TMKEY = 2;
     const STOKEY = 3;
+    let snapId;
+    const address_zero = "0x0000000000000000000000000000000000000000";
 
     // Initial fee for ticker registry and security token registry
     const REGFEE = web3.utils.toWei("250");
@@ -226,7 +229,7 @@ contract("USDTieredSTO", accounts => {
 
         // STEP 5: Deploy the USDTieredSTOFactory
         [I_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, I_PolyToken.address, STOSetupCost);
-        
+        [P_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
         // Step 12: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY
         I_POLYOracle = await MockOracle.new(I_PolyToken.address, "POLY", "USD", USDPOLY, { from: POLYMATH }); // 25 cents per POLY
@@ -369,6 +372,83 @@ contract("USDTieredSTO", accounts => {
                 "Incorrect number of tiers"
             );
             assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, 0, "Incorrect number of permissions");
+        });
+
+        it("Should attach the paid STO factory -- failed because of no tokens", async() => {
+            let stoId = 0; // No discount
+            let config = [
+                _startTime[stoId],
+                _endTime[stoId],
+                _ratePerTier[stoId],
+                _ratePerTierDiscountPoly[stoId],
+                _tokensPerTierTotal[stoId],
+                _tokensPerTierDiscountPoly[stoId],
+                _nonAccreditedLimitUSD[stoId],
+                _minimumInvestmentUSD[stoId],
+                _fundRaiseTypes[stoId],
+                _wallet[stoId],
+                _reserveWallet[stoId],
+                _usdToken[stoId]
+            ];
+
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
+            await catchRevert(
+                I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, { from: ISSUER, gasPrice: GAS_PRICE })
+            );
+        });
+
+        it("Should attach the paid STO factory", async() => {
+            let snapId = await takeSnapshot();
+            let stoId = 0; // No discount
+            let config = [
+                _startTime[stoId],
+                _endTime[stoId],
+                _ratePerTier[stoId],
+                _ratePerTierDiscountPoly[stoId],
+                _tokensPerTierTotal[stoId],
+                _tokensPerTierDiscountPoly[stoId],
+                _nonAccreditedLimitUSD[stoId],
+                _minimumInvestmentUSD[stoId],
+                _fundRaiseTypes[stoId],
+                _wallet[stoId],
+                _reserveWallet[stoId],
+                _usdToken[stoId]
+            ];
+
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
+            await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
+            let tx = await I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, { from: ISSUER, gasPrice: GAS_PRICE });
+            await revertToSnapshot(snapId);
+        });
+
+        it("Should allow non-matching beneficiary", async () => {
+            snapId = await takeSnapshot();
+            await I_USDTieredSTO_Array[0].changeAllowBeneficialInvestments(true, { from: ISSUER });
+            let allow = await I_USDTieredSTO_Array[0].allowBeneficialInvestments();
+            assert.equal(allow, true, "allowBeneficialInvestments should be true");
+        });
+
+        it("Should allow non-matching beneficiary -- failed because it is already active", async () => {
+            await catchRevert(
+                I_USDTieredSTO_Array[0].changeAllowBeneficialInvestments(true, { from: ISSUER })
+            );
+            await revertToSnapshot(snapId);
+        });
+
+        it("Should successfully call the modifyTimes before starting the STO -- fail because of bad owner", async() => {
+            await catchRevert(
+                I_USDTieredSTO_Array[0].modifyTimes(latestTime() + duration.days(15), latestTime() + duration.days(55), { from: POLYMATH })
+            );
+        })
+
+        it("Should successfully call the modifyTimes before starting the STO", async() => {
+            let snapId = await takeSnapshot();
+            let _startTime = latestTime() + duration.days(15);
+            let _endTime = latestTime() + duration.days(55)
+            await I_USDTieredSTO_Array[0].modifyTimes(_startTime, _endTime, { from: ISSUER });
+            assert.equal(await I_USDTieredSTO_Array[0].startTime.call(), _startTime, "Incorrect _startTime in config");
+            assert.equal(await I_USDTieredSTO_Array[0].endTime.call(), _endTime, "Incorrect _endTime in config");
+            await revertToSnapshot(snapId);
         });
 
         it("Should successfully attach the second STO module to the security token", async () => {
@@ -655,7 +735,7 @@ contract("USDTieredSTO", accounts => {
         it("Should fail because Zero address is not permitted for wallet", async () => {
             let stoId = 0;
 
-            let wallet = "0x0000000000000000000000000000000000000000";
+            let wallet = address_zero;
             let config = [
                 _startTime[stoId],
                 _endTime[stoId],
@@ -678,7 +758,7 @@ contract("USDTieredSTO", accounts => {
         it("Should fail because Zero address is not permitted for reserveWallet", async () => {
             let stoId = 0;
 
-            let reserveWallet = "0x0000000000000000000000000000000000000000";
+            let reserveWallet = address_zero;
             let config = [
                 _startTime[stoId],
                 _endTime[stoId],
@@ -815,7 +895,7 @@ contract("USDTieredSTO", accounts => {
             await I_USDTieredSTO_Array[stoId].modifyAddresses(
                 "0x0000000000000000000000000400000000000000",
                 "0x0000000000000000000003000000000000000000",
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 { from: ISSUER }
             );
             assert.equal(
@@ -830,7 +910,7 @@ contract("USDTieredSTO", accounts => {
             );
             assert.equal(
                 await I_USDTieredSTO_Array[stoId].usdToken.call(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "STO Configuration doesn't set as expected"
             );
         });
@@ -4229,6 +4309,7 @@ contract("USDTieredSTO", accounts => {
             assert.equal(await I_USDTieredSTOFactory.getDescription.call(), "USD Tiered STO", "Wrong Module added");
             assert.equal(await I_USDTieredSTOFactory.getTitle.call(), "USD Tiered STO", "Wrong Module added");
             assert.equal(await I_USDTieredSTOFactory.getInstructions.call(), "Initialises a USD tiered STO.", "Wrong Module added");
+            assert.equal(await I_USDTieredSTOFactory.getVersion.call(), "1.0.0");
             let tags = await I_USDTieredSTOFactory.getTags.call();
             assert.equal(web3.utils.hexToString(tags[0]), "USD");
             assert.equal(web3.utils.hexToString(tags[1]), "Tiered");

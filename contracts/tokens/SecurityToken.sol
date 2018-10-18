@@ -341,13 +341,16 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         return modules[_type];
     }
 
-    /**
-    * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
+   /**
+    * @notice allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
+    * @param _tokenContract Address of the ERC20Basic compliance token
     * @param _value amount of POLY to withdraw
     */
-    function withdrawPoly(uint256 _value) external onlyOwner {
-        require(ERC20(polyToken).transfer(owner, _value), "Insufficient balance");
+    function withdrawERC20(address _tokenContract, uint256 _value) external onlyOwner {
+        require(_tokenContract != address(0));
+        IERC20 token = IERC20(_tokenContract);
+        require(token.transfer(owner, _value));
     }
 
     /**
@@ -429,7 +432,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice freezes transfers
      */
     function freezeTransfers() external onlyOwner {
-        require(!transfersFrozen, "transfers already frozen");
+        require(!transfersFrozen, "Already frozen");
         transfersFrozen = true;
         emit FreezeTransfers(true, now);
     }
@@ -438,7 +441,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice unfreeze transfers
      */
     function unfreezeTransfers() external onlyOwner {
-        require(transfersFrozen, "transfer are not fronzen");
+        require(transfersFrozen, "Not frozen");
         transfersFrozen = false;
         emit FreezeTransfers(false, now);
     }
@@ -730,7 +733,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _controller address of the controller
      */
     function setController(address _controller) public onlyOwner {
-        require(!controllerDisabled,"Controller functions are disabled");
+        require(!controllerDisabled,"Controller disabled");
         emit SetController(controller, _controller);
         controller = _controller;
     }
@@ -740,7 +743,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @dev enabled via feature switch "disableControllerAllowed"
      */
     function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
-        require(!controllerDisabled,"Controller functions are disabled");
+        require(!controllerDisabled,"Controller disabled");
         controllerDisabled = true;
         delete controller;
         emit DisableController(now);

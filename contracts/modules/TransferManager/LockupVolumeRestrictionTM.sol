@@ -261,7 +261,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
                 _totalAmounts[i]
             );
         }
-        
+
     }
 
     /**
@@ -362,15 +362,15 @@ contract LockupVolumeRestrictionTM is ITransferManager {
                 aLockUp = userLockUps[i];
 
                 // tokenSums[0] is allowed sum
-                if (allowedAmountPerLockup[i] >= tokenSums[0]) {
-                    aLockUp.alreadyWithdrawn = aLockUp.alreadyWithdrawn.add(tokenSums[0]);
-                    // we withdrew the entire tokenSums[0] from the lockup.  We are done.
+                if (allowedAmountPerLockup[i] >= amount) {
+                    aLockUp.alreadyWithdrawn = aLockUp.alreadyWithdrawn.add(amount);
+                    // we withdrew the entire amount from the lockup.  We are done.
                     break;
                 } else {
-                    // we have to split the tokenSums[0] across mutiple lockUps
+                    // we have to split the amount across mutiple lockUps
                     aLockUp.alreadyWithdrawn = aLockUp.alreadyWithdrawn.add(allowedAmountPerLockup[i]);
                     // subtract the amount withdrawn from this lockup
-                    tokenSums[0] = tokenSums[0].sub(allowedAmountPerLockup[i]);
+                    amount = amount.sub(allowedAmountPerLockup[i]);
                 }
 
             }

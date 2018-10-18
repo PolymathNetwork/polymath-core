@@ -25,7 +25,9 @@ contract CountTransferManager is ITransferManager {
     {
     }
 
-    /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
+    /** @notice Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
+     * @param _to Address of the receiver
+     */
     function verifyTransfer(address /* _from */, address _to, uint256 /* _amount */, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
@@ -41,10 +43,19 @@ contract CountTransferManager is ITransferManager {
     }
 
     /**
-     * @notice Used to intialize the variables of the contract
-     * @param _maxHolderCount Maximum no. of holders for the securityToken
+     * @notice Used to initialize the variables of the contract
+     * @param _maxHolderCount Maximum no. of holders this module allows the SecurityToken to have
      */
     function configure(uint256 _maxHolderCount) public onlyFactory {
+        maxHolderCount = _maxHolderCount;
+    }
+
+    /**
+    * @notice sets the cap for the amount of token holders there can be
+    * @param _maxHolderCount is the new maximum amount of token holders
+    */
+    function changeHolderCount(uint256 _maxHolderCount) public withPerm(ADMIN) {
+        emit ModifyHolderCount(maxHolderCount, _maxHolderCount);
         maxHolderCount = _maxHolderCount;
     }
 
@@ -53,15 +64,6 @@ contract CountTransferManager is ITransferManager {
      */
     function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256)"));
-    }
-
-    /**
-    * @notice sets the maximum percentage that an individual token holder can hold
-    * @param _maxHolderCount is the new maximum amount a holder can hold
-    */
-    function changeHolderCount(uint256 _maxHolderCount) public withPerm(ADMIN) {
-        emit ModifyHolderCount(maxHolderCount, _maxHolderCount);
-        maxHolderCount = _maxHolderCount;
     }
 
     /**

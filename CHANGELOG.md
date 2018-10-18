@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
+* Migrated from `npm` to `yarn`.
 * Added `SingleTradeVolumeRestrictionManager` module
 * Added flag in `PercentageTransferManager` to allow ignoring of issuance transfers
 * Added `transferWithData`, `transferFromWithData`, `mintWithData`, `burnWithData` to allow passing of a `bytes _data` for off-chain validation
@@ -25,11 +26,12 @@ All notable changes to this project will be documented in this file.
 * Add `getReputationOfFactory()` & `getModuleListOfType()` functions to get the array type data from the ModuleRegistry contract.   
 * Add `_setupCost` in `LogGenerateModuleFromFactory` event.   
 * Add new function `getAllModulesByName()`, To get the list of modules having the same name. #198.  
-* Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230         
+* Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230     
 
 ## Fixed
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
-* Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230    
+* Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230  
+* Change the function name of `withdraPoly` to `withdrawERC20` and make the function generalize to extract tokens from the ST contract. parmeters are contract address and the value need to extract from the securityToken.          
 
 ## Removed
 * Remove `swarmHash` from the `registerTicker(), addCustomTicker(), generateSecurityToken(), addCustomSecurityToken()` functions of TickerRegistry.sol and SecurityTokenRegistry.sol. #230  

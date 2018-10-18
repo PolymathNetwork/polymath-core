@@ -125,7 +125,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint[] _releaseFrequenciesSeconds,
         uint[] _startTimes,
         uint[] _totalAmounts
-        ) external withPerm(ADMIN) {
+    ) external withPerm(ADMIN) {
         require(
             _userAddresses.length == _lockUpPeriodsSeconds.length &&
             _userAddresses.length == _releaseFrequenciesSeconds.length &&
@@ -169,6 +169,18 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     }
 
     /**
+     * @notice Use to remove the lockup for multiple users
+     * @param _userAddresses Array of addresses of the user whose tokens are locked up
+     * @param _lockUpIndexes Array of indexes of the LockUp to remove for the given userAddress
+     */
+    function removeLockUpMulti(address[] _userAddresses, uint[] _lockUpIndexes) external withPerm(ADMIN) {
+        require(_userAddresses.length == _lockUpIndexes.length, "Array length mismatch");
+        for (uint i = 0; i < _userAddresses.length; i++) {
+            removeLockUp(_userAddresses[i], _lockUpIndexes[i]);
+        }
+    }
+
+    /**
      * @notice Lets the admin modify a volume restriction lockup for a given address.
      * @param _userAddress Address of the user whose tokens should be locked up
      * @param _lockUpIndex The index of the LockUp to edit for the given userAddress
@@ -184,9 +196,9 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint _releaseFrequencySeconds,
         uint _startTime,
         uint _totalAmount
-        ) public withPerm(ADMIN) {
+    ) public withPerm(ADMIN) {
         require(_lockUpIndex < lockUps[_userAddress].length, "Array out of bounds exception");
-
+        require(_totalAmount >= lockUps[_userAddress][_lockUpIndex].alreadyWithdrawn, "Total amount should be >= already withdrawn amount");
         uint256 startTime = _startTime;
         // if a startTime of 0 is passed in, then start now.
         if (startTime == 0) {
@@ -215,6 +227,44 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     }
 
     /**
+     * @notice Lets the admin modify a volume restriction lockup for a multiple address.
+     * @param _userAddresses Array of address of the user whose tokens should be locked up
+     * @param _lockUpIndexes Array of indexes of the LockUp to edit for the given userAddress
+     * @param _lockUpPeriodsSeconds Array of unix timestamp for the list of lockups (seconds).
+     * @param _releaseFrequenciesSeconds How often to release a tranche of tokens (seconds)
+     * @param _startTimes Array of the start time of the lockups (seconds)
+     * @param _totalAmounts Array of total amount of locked up tokens for list of lockups.
+     */
+    function modifyLockUpMulti(
+        address[] _userAddresses,
+        uint[] _lockUpIndexes,
+        uint[] _lockUpPeriodsSeconds,
+        uint[] _releaseFrequenciesSeconds,
+        uint[] _startTimes,
+        uint[] _totalAmounts
+    ) public withPerm(ADMIN) {
+        require(
+            _userAddresses.length == _lockUpPeriodsSeconds.length &&
+            _userAddresses.length == _releaseFrequenciesSeconds.length &&
+            _userAddresses.length == _startTimes.length &&
+            _userAddresses.length == _totalAmounts.length &&
+            _userAddresses.length == _lockUpIndexes.length,
+            "Input array length mismatch"
+        );
+        for (uint i = 0; i < _userAddresses.length; i++) {
+            modifyLockUp(
+                _userAddresses[i],
+                _lockUpIndexes[i],
+                _lockUpPeriodsSeconds[i],
+                _releaseFrequenciesSeconds[i],
+                _startTimes[i],
+                _totalAmounts[i]
+            );
+        }
+        
+    }
+
+    /**
      * @notice Get the length of the lockups array for a specific user address
      * @param _userAddress Address of the user whose tokens should be locked up
      */
@@ -227,16 +277,13 @@ contract LockupVolumeRestrictionTM is ITransferManager {
      * @param _userAddress Address of the user whose tokens should be locked up
      * @param _lockUpIndex The index of the LockUp to edit for the given userAddress
      */
-    function getLockUp(
-        address _userAddress,
-        uint _lockUpIndex)
-        public view returns (
+    function getLockUp( address _userAddress, uint _lockUpIndex) public view returns (
         uint lockUpPeriodSeconds,
         uint releaseFrequencySeconds,
         uint startTime,
         uint totalAmount,
         uint alreadyWithdrawn
-        ) {
+    ) {
         require(_lockUpIndex < lockUps[_userAddress].length, "Array out of bounds exception");
         LockUp storage userLockUp = lockUps[_userAddress][_lockUpIndex];
         return (

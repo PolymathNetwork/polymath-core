@@ -1,5 +1,7 @@
 const chalk = require('chalk');
 const Tx = require('ethereumjs-tx');
+const permissionsList = require('./permissions_list');
+const abis = require('../helpers/contract_abis');
 
 module.exports = {
   convertToDaysRemaining: function (timeRemaining) {
@@ -48,6 +50,20 @@ module.exports = {
 `);
   },
   sendTransaction: async function (from, action, gasPrice, value, factor) {
+
+    let contractRegistry = await this.connect(action._parent.options.jsonInterface, action._parent._address)
+    //TODO whats going on if the contract hasn't the method?
+    let moduleAddress = await contractRegistry.methods.factory().call();
+    //TODO if moduleAddress works, then...
+    let moduleRegistry = await this.connect(abis.moduleFactory(), moduleAddress)
+    let result = await moduleRegistry.methods.getName().call();
+    console.log(web3.utils.hexToAscii(result))
+
+    //nombre del metodo
+    //console.log("action", action._method.name)
+
+    process.exit(0);
+
     if (typeof factor === 'undefined') factor = 1.2;
 
     let block = await web3.eth.getBlock("latest");
@@ -97,5 +113,27 @@ module.exports = {
     let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
     let filteredLogs = logs.filter(l => l.topics.includes(eventJsonInterface.signature));
     return filteredLogs.map(l => web3.eth.abi.decodeLog(eventJsonInterface.inputs, l.data, l.topics.slice(1)));
+  },
+  checkPermission: async function (contractName, functionName) {
+    //permissionsList.verifyPermission(contractName, functionName)
+
+    let stoOwner = await securityToken.methods.owner().call();
+    if (stoOwner == Issuer.address) {
+      return true
+    }
+    let generalPermissionAddress = generalPermissionManager.options.address;
+    let result = await generalPermissionManager.methods.checkPermission(Issuer.address, generalPermissionAddress, web3.utils.asciiToHex(CHANGE_PERMISSION)).call();
+    return result
+  },
+  connect: async function (abi, address) {
+    try {
+      contractRegistry = new web3.eth.Contract(abi, address);
+      contractRegistry.setProvider(web3.currentProvider);
+      return contractRegistry
+    } catch (err) {
+      console.log(err)
+      console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
+      process.exit(0);
+    }
   }
 };

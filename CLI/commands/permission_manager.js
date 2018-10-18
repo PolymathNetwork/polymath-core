@@ -102,11 +102,11 @@ async function changePermissionStep() {
   let selectedPermission = await selectPermission(selectedModule.permissions);
   let isValid = isPermissionValid();
 
-  let checkResult = await checkPermission();
+  /*let checkResult = await common.checkPermission();
   if (!checkResult) {
     console.log(FAILD_PERMISSION_MSG);
     process.exit(0);
-  }
+  }*/
 
   await changePermission(selectedDelegate, selectedModule.address, selectedPermission, isValid);
 }
@@ -198,11 +198,11 @@ async function addNewDelegate() {
     limitMessage: "Must be a valid string"
   });
 
-  let checkResult = await checkPermission();
+  /*let checkResult = await common.checkPermission();
   if (!checkResult) {
     console.log(FAILD_PERMISSION_MSG);
     process.exit(0);
-  }
+  }*/
 
   let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
   let receipt = await common.sendTransaction(Issuer, addPermissionAction, defaultGasPrice);
@@ -231,16 +231,6 @@ async function getModulesWithPermissions() {
   }
 
   return modules;
-}
-
-async function checkPermission() {
-  let stoOwner = await securityToken.methods.owner().call();
-  if (stoOwner == Issuer.address) {
-    return true
-  }
-  let generalPermissionAddress = generalPermissionManager.options.address;
-  let result = await generalPermissionManager.methods.checkPermission(Issuer.address, generalPermissionAddress, web3.utils.asciiToHex(CHANGE_PERMISSION)).call();
-  return result
 }
 
 module.exports = {

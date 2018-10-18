@@ -101,18 +101,33 @@ contract SignedTransferManager is ITransferManager {
     * Sig needs to be valid (not used or deemed as invalid)
     * Signer needs to be in the signers mapping
     */
-    function invalidSignature(address _from, address _to, uint256 _amount, bytes _data) public {
+    // function invalidSignature(address _from, address _to, uint256 _amount, bytes _data) public {
+    //     require(signers[msg.sender] == true, "Only signer is allowed to invalid signature.");
+    //     require(invalidSignatures[_data] != true, "This signature is invalid.");
+
+    //     bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
+    //     bytes32 _hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
+
+    //     // return signer;
+    //     require(_recoverSignerAdd(_hash,_data) == msg.sender, "Incorrect Signer for this signature");
+
+    //     invalidSignatures[_data] = true;
+    //     emit InvalidSignature(_data);
+    // }
+
+    function invalidSignature(address _from, address _to, uint256 _amount, bytes _data) public view returns(address) {
         require(signers[msg.sender] == true, "Only signer is allowed to invalid signature.");
         require(invalidSignatures[_data] != true, "This signature is invalid.");
 
         bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
         bytes32 _hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
 
-        // return signer;
-        require(_recoverSignerAdd(_hash,_data) == msg.sender, "Incorrect Signer for this signature");
+        return _recoverSignerAdd(hash,_data);
+        // require(_recoverSignerAdd(_hash,_data) == msg.sender, "Incorrect Signer for this signature");
 
-        invalidSignatures[_data] = true;
-        emit InvalidSignature(_data);
+        // invalidSignatures[_data] = true;
+        // emit InvalidSignature(_data);
+
     }
 
     /**

@@ -11,6 +11,7 @@
   "dependencies": {
     "chalk": "^2.4.1",
     "commander": "^2.16.0",
+    "ethers": "^4.0.7",
     "moment": "^2.22.2",
     "readline-sync": "^1.4.9",
     "request": "^2.88.0",

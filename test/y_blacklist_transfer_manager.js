@@ -259,6 +259,55 @@ contract('BlacklistTransferManager', accounts => {
             );
         });
 
+        it("Should Buy some more tokens", async() => {
+            // Add the Investor in to the whitelist
+
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor3,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(50),
+                true,
+                {
+                    from: account_issuer
+                });
+
+            assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor3.toLowerCase(), "Failed in adding the investor in whitelist");
+
+            // Mint some tokens
+            await I_SecurityToken.mint(account_investor3, web3.utils.toWei('2', 'ether'), { from: token_owner });
+
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor3)).toNumber(),
+                web3.utils.toWei('2', 'ether')
+            );
+        });
+
+        it("Should Buy some more tokens", async() => {
+            // Add the Investor in to the whitelist
+
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor4,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(50),
+                true,
+                {
+                    from: account_issuer
+                });
+
+            assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor4.toLowerCase(), "Failed in adding the investor in whitelist");
+
+            // Mint some tokens
+            await I_SecurityToken.mint(account_investor4, web3.utils.toWei('2', 'ether'), { from: token_owner });
+
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor4)).toNumber(),
+                web3.utils.toWei('2', 'ether')
+            );
+        });
+
+
         it("Should add the blacklist", async() => {
             //Add the new blacklist
             let tx = await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "a_blacklist", 20, { from: token_owner });
@@ -446,10 +495,89 @@ contract('BlacklistTransferManager', accounts => {
             );
         });
 
-       
+        it("Should investor fail in transfer token as it is in blacklist time period", async() => {
+            await I_BlacklistTransferManager.unpause({from:token_owner});
+            await I_BlacklistTransferManager.addBlacklistType(latestTime()+500, latestTime()+4000, "k_blacklist", 8, { from: token_owner });
+            
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor2, "k_blacklist", { from: token_owner });
+            // Jump time
+            await increaseTime(3500);
+            
+            //Trasfer tokens
+            await catchRevert(
+                I_SecurityToken.transfer(account_investor3, web3.utils.toWei('1', 'ether'), { 
+                    from: account_investor2 
+                })
+            )
+        });
+
+        it("Should investor be able to transfer token as it is not in blacklist time period", async() => {
+            // Jump time
+            await increaseTime(1000);
+            
+            //Trasfer tokens
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor3)).toNumber(),
+                web3.utils.toWei('3', 'ether')
+            );
+        });
+
+        it("Should investor fail in transfer token as it is in blacklist time period", async() => {
+           
+            // Jump time
+            await increaseTime(690800);
+            
+            //Trasfer tokens
+            await catchRevert(
+                I_SecurityToken.transfer(account_investor3, web3.utils.toWei('1', 'ether'), { 
+                    from: account_investor2 
+                })
+            );
+        });
+
+        it("Should investor fail in transfer token as it is in blacklist time period", async() => {
+            await I_BlacklistTransferManager.addBlacklistType(latestTime()+5000, latestTime()+8000, "l_blacklist", 5, { from: token_owner });
+            
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor3, "l_blacklist", { from: token_owner });
+            // Jump time
+            await increaseTime(5500);
+            
+            //Trasfer tokens
+            await catchRevert(
+                I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), { 
+                    from: account_investor3 
+                })
+            );
+        });
+
+        it("Should investor be able to transfer token as it is not in blacklist time period", async() => {
+            // Jump time
+            await increaseTime(3000);
+            
+            //Trasfer tokens
+            await I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), { from: account_investor3 });
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor4)).toNumber(),
+                web3.utils.toWei('3', 'ether')
+            );
+        });
+
+        it("Should investor fail in transfer token as it is in blacklist time period", async() => {
+           
+            // Jump time
+            await increaseTime(431600);
+            
+            //Trasfer tokens
+            await catchRevert(
+                 I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), { 
+                    from: account_investor3 
+                })  
+            );
+        });
+
 
         it("Should delete the blacklist type", async() => {
-            await I_BlacklistTransferManager.unpause({from:token_owner});
             await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
             let tx = await I_BlacklistTransferManager.deleteBlacklistType("b_blacklist", { from: token_owner });
             assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._name), "b_blacklist", "Failed in deleting the blacklist");
@@ -504,14 +632,6 @@ contract('BlacklistTransferManager', accounts => {
                     from: token_owner 
                 })
             );
-        });
-
-        it("Should fail in deleting the investor which is not associated to blacklist", async() => {
-           await catchRevert(
-               I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor2, { 
-                   from: token_owner 
-                })
-            );  
         });
 
         it("Should delete the investor from the blacklist type", async() => {

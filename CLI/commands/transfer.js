@@ -50,7 +50,7 @@ async function transfer() {
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
     console.log(`
   Account ${event.from}
-  transfered ${web3.utils.fromWei(event.value,"ether")} tokens
+  transferred ${web3.utils.fromWei(event.value,"ether")} tokens
   to account ${event.to}`
     );
   } catch (err){

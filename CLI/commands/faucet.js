@@ -43,7 +43,7 @@ async function setup(){
 
 async function send_poly(beneficiary, amount) {
   let issuerBalance = await polyToken.methods.balanceOf(Issuer.address).call({from : Issuer.address});
-  console.log(chalk.blue(`Hello user you have '${(new BigNumber(issuerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY'\n`))
+  console.log(chalk.blue(`Hello User, your current balance is '${(new BigNumber(issuerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY'\n`))
 
   if (typeof beneficiary === 'undefined' && typeof amount === 'undefined') {
     let options = ['250 POLY for ticker registration','500 POLY for token launch + ticker reg', '20K POLY for CappedSTO Module', 

@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 * Added `createCheckpoint() withPerm(CHECKPOINT)` to dividend checkpoint modules.
+* Added `deleteDelegate()` to general permission manager. It will disable the delegate but not delete the perms.
 * Migrated from `npm` to `yarn`.
 * Added `SingleTradeVolumeRestrictionManager` module
 * Added flag in `PercentageTransferManager` to allow ignoring of issuance transfers

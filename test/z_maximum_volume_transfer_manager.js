@@ -504,14 +504,14 @@ contract("MaximumVolumeTransferManager", accounts => {
             assert.equal(finalBalance.toNumber(), web3.utils.toWei('3', 'ether'));
         });
 
-        it("should allow for modification of an existing maximum volume transfer restriction", async()=>{
+        it("should allow for modification of an existing maximum volume transfer restriction with new startTime is set to zero", async()=>{
             const nRestrictions = await I_MaximumVolumeTransferManager.getMaximumVolumeRestrictionsCount.call();
             const index = nRestrictions - 1;
 
             const newMaxVolume = web3.utils.toWei('0.5', 'ether');
             const newStartTime = 0;
             const newEndTime = latestTime() + duration.years(1);
-            const newRollingInterval = 0;
+            const newRollingInterval = 4;
 
             const tx = await I_MaximumVolumeTransferManager.modifyMaximumTransferRestriction(
                 index,
@@ -526,6 +526,32 @@ contract("MaximumVolumeTransferManager", accounts => {
 
             assert.equal("ModifyMaximumVolumeRestriction", logs['event'], "Invalid event");
             assert.equal(currentStartTime, logs['args']['_startTime'], "Invalid start time");
+            assert.equal(newEndTime, logs['args']['_endTime'], "Invalid end time");
+            assert.equal(newRollingInterval , logs['args']['_rollingPeriodInterval'], "Invalid rolling interval");
+        });
+
+        it("should allow for modification of an existing maximum volume transfer restriction", async()=>{
+            const nRestrictions = await I_MaximumVolumeTransferManager.getMaximumVolumeRestrictionsCount.call();
+            const index = nRestrictions - 1;
+
+            const newMaxVolume = web3.utils.toWei('0.5', 'ether');
+            const newStartTime = latestTime() - duration.years(1);
+            const newEndTime = latestTime() + duration.years(1);
+            const newRollingInterval = 3;
+
+            const tx = await I_MaximumVolumeTransferManager.modifyMaximumTransferRestriction(
+                index,
+                newMaxVolume,
+                newStartTime,
+                newEndTime,
+                newRollingInterval,
+                { from: token_owner }
+            );
+            const logs = tx.logs[0];
+            const currentStartTime = (await web3.eth.getBlock('latest')).timestamp;
+
+            assert.equal("ModifyMaximumVolumeRestriction", logs['event'], "Invalid event");
+            assert.equal(newStartTime, logs['args']['_startTime'], "Invalid start time");
             assert.equal(newEndTime, logs['args']['_endTime'], "Invalid end time");
             assert.equal(newRollingInterval , logs['args']['_rollingPeriodInterval'], "Invalid rolling interval");
         });
@@ -595,11 +621,34 @@ contract("MaximumVolumeTransferManager", accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("should allow for addition of multiple maximum volume restrictions", async()=>{
-            const maxVolumes = [100000000, 500000000, 6000000000];
+        it("should fail to add to add multiple new max volume restrictions when max volumes array is empty", async() => {
+            const maxVolumes = [];
             const startTimes = [0, 0, 0];
             const endTimes = [latestTime() + duration.years(1), latestTime() + duration.years(2), latestTime() + duration.years(3)];
             const rollingIntervals = [0, 2, 4];
+
+            let errorThrown = false;
+            try{
+                await I_MaximumVolumeTransferManager.addMaxVolumeRestricionsMulti(
+                    maxVolumes,
+                    startTimes,
+                    endTimes,
+                    rollingIntervals,
+                    { from: account_investor1 }
+                );
+            } catch(error) {
+                console.log(`         tx revert -> max volumes array is empty`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("should allow for addition of multiple maximum volume restrictions", async()=>{
+            const maxVolumes = [100000000, 200000000, 300000000, 400000000, 500000000];
+            const startTimes = [0, 0, 0, latestTime() - 10000, latestTime() + 10000];
+            const endTimes = [latestTime() + duration.weeks(1), latestTime() + duration.weeks(2), latestTime() + duration.years(1), latestTime() + duration.years(2), latestTime() + duration.years(3)];
+            const rollingIntervals = [0, 1, 2, 3 ,4];
 
             await I_MaximumVolumeTransferManager.addMaxVolumeRestricionsMulti(
                 maxVolumes,
@@ -610,7 +659,7 @@ contract("MaximumVolumeTransferManager", accounts => {
             );
 
             assert.equal(
-                4,
+                6,
                 await I_MaximumVolumeTransferManager.getMaximumVolumeRestrictionsCount.call(),
                 "Failed to add multiple restrictions"
             );
@@ -639,9 +688,14 @@ contract("MaximumVolumeTransferManager", accounts => {
             assert.ok(errorThrown, message);
         });
 
-        it("should allow for deletion of a maximum volume transfer restriction", async () => {
-            const tx = await I_MaximumVolumeTransferManager.removeMaximumTransferRestriction(1, { from: token_owner });
-            const logs = tx.logs[0];
+        it("should allow for successful deletion of maximum volume transfer restrictions", async () => {
+            let tx = await I_MaximumVolumeTransferManager.removeMaximumTransferRestriction(1, { from: token_owner });
+            let logs = tx.logs[0];
+            assert.equal("RemoveMaximumVolumeRestricion", logs['event'], "Invalid event");
+
+            const nRestrictions = await I_MaximumVolumeTransferManager.getMaximumVolumeRestrictionsCount.call();
+            tx = await I_MaximumVolumeTransferManager.removeMaximumTransferRestriction(nRestrictions - 1, { from: token_owner });
+            logs = tx.logs[0];
             assert.equal("RemoveMaximumVolumeRestricion", logs['event'], "Invalid event");
         });
 
@@ -655,6 +709,22 @@ contract("MaximumVolumeTransferManager", accounts => {
                 );
             } catch(error) {
                 console.log(`         tx revert -> Index out of bounds`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
+        it("should fail to delete any restriction if called by a non-admin account", async() =>{
+            let errorThrown = false;
+            const nRestrictions = await I_MaximumVolumeTransferManager.getMaximumVolumeRestrictionsCount.call();
+            try {
+                await I_MaximumVolumeTransferManager.removeMaximumTransferRestriction(
+                    nRestrictions,
+                    { from: account_investor1 }
+                );
+            } catch(error) {
+                console.log(`         tx revert -> account not an admin`.grey);
                 ensureException(error);
                 errorThrown = true;
             }

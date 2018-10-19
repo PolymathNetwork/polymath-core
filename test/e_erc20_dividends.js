@@ -912,6 +912,10 @@ contract("ERC20DividendCheckpoint", accounts => {
             ));
         });
 
+        it("should not allow manager without permission to create checkpoint", async () => {
+            await catchRevert(I_ERC20DividendCheckpoint.createCheckpoint({ from: account_manager }));
+        });
+
         it("should not allow manager without permission to create dividend with checkpoint and exclusion", async () => {
             let maturity = latestTime() + duration.days(1);
             let expiry = latestTime() + duration.days(10);
@@ -931,6 +935,13 @@ contract("ERC20DividendCheckpoint", accounts => {
         });
 
         it("should give permission to manager", async () => {
+            await I_GeneralPermissionManager.changePermission(
+                account_manager,
+                I_ERC20DividendCheckpoint.address,
+                "CHECKPOINT",
+                true,
+                { from: token_owner }
+            );
             let tx = await I_GeneralPermissionManager.changePermission(
                 account_manager,
                 I_ERC20DividendCheckpoint.address,
@@ -1032,6 +1043,13 @@ contract("ERC20DividendCheckpoint", accounts => {
                 { from: account_manager }
             );
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 10);
+        });
+
+        it("should allow manager with permission to create checkpoint", async () => {
+            let initCheckpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
+            await I_ERC20DividendCheckpoint.createCheckpoint({ from: account_manager });
+            let finalCheckpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
+            assert.equal(finalCheckpointID.toNumber(), initCheckpointID.toNumber() + 1);
         });
 
         describe("Test cases for the ERC20DividendCheckpointFactory", async () => {

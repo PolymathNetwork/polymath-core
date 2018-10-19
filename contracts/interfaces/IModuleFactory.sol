@@ -24,7 +24,7 @@ interface IModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getType() external view returns(uint8);
+    function getTypes() external view returns(uint8[]);
 
     /**
      * @notice Get the name of the Module
@@ -47,7 +47,7 @@ interface IModuleFactory {
     function getVersion() external view returns(string);
 
     /**
-     * @notice Get the Instructions that helped to used the module
+     * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns (string);
 

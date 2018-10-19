@@ -20,7 +20,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     bytes32 public name;
     string public title;
 
-    // @notice Allow only two variables to store
+    // @notice Allow only two variables to be stored
     // 1. lowerBound 
     // 2. upperBound
     // @dev (0.0.0 will act as the wildcard) 
@@ -38,10 +38,10 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public {
-      polyToken = IERC20(_polyAddress);
-      setupCost = _setupCost;
-      usageCost = _usageCost;
-      monthlySubscriptionCost = _subscriptionCost;
+        polyToken = IERC20(_polyAddress);
+        setupCost = _setupCost;
+        usageCost = _usageCost;
+        monthlySubscriptionCost = _subscriptionCost;
     }
 
     /**
@@ -77,7 +77,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _newTitle New Title that will replace the old one.
      */
     function changeTitle(string _newTitle) public onlyOwner {
-        require(bytes(_newTitle).length > 0);
+        require(bytes(_newTitle).length > 0, "Invalid title");
         title = _newTitle;
     }
 
@@ -86,7 +86,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _newDesc New description that will replace the old one.
      */
     function changeDescription(string _newDesc) public onlyOwner {
-        require(bytes(_newDesc).length > 0);
+        require(bytes(_newDesc).length > 0, "Invalid description");
         description = _newDesc;
     }
 
@@ -95,7 +95,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _newName New name that will replace the old one.
      */
     function changeName(bytes32 _newName) public onlyOwner {
-        require(_newName != bytes32(0));
+        require(_newName != bytes32(0),"Invalid name");
         name = _newName;
     }
 
@@ -104,7 +104,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _newVersion New name that will replace the old one.
      */
     function changeVersion(string _newVersion) public onlyOwner {
-        require(bytes(_newVersion).length > 0 );
+        require(bytes(_newVersion).length > 0, "Invalid version");
         version = _newVersion;
     }
 

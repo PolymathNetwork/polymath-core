@@ -108,7 +108,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(msg.sender == owner());
+        require(msg.sender == owner(),"sender must be owner");
         _;
     }
 
@@ -156,7 +156,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _owner is the owner of the STR
      */
     function initialize(address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner) payable external {
-        require(!getBool(Encoder.getKey("initialised")));
+        require(!getBool(Encoder.getKey("initialised")),"already initialized");
         require(_STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0), "Invalid address");
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Fees should not be 0");
         set(Encoder.getKey("polyToken"), _polyToken);
@@ -202,7 +202,16 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     /**
      * @notice Internal - Sets the details of the ticker
      */
-    function _addTicker(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate, bool _status, bool _fromAdmin, uint256 _fee) internal {
+    function _addTicker(
+        address _owner, 
+        string _ticker, 
+        string _tokenName, 
+        uint256 _registrationDate, 
+        uint256 _expiryDate, 
+        bool _status, 
+        bool _fromAdmin, 
+        uint256 _fee
+        ) internal {
         _setTickerOwnership(_owner, _ticker);
         _storeTickerDetails(_ticker, _owner, _registrationDate, _expiryDate, _tokenName, _status);
         emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin, _fee);
@@ -218,7 +227,14 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _expiryDate is the expiry date for the ticker
      * @param _status is the token deployment status
      */
-    function modifyTicker(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate, bool _status) external onlyOwner {
+    function modifyTicker(
+        address _owner,
+        string _ticker,
+        string _tokenName,
+        uint256 _registrationDate,
+        uint256 _expiryDate,
+        bool _status
+        ) external onlyOwner {
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         require(_expiryDate != 0 && _registrationDate != 0, "Dates should not be 0");
         require(_registrationDate <= _expiryDate, "Registration date should < expiry date");
@@ -230,7 +246,14 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     /**
      * @notice Internal -- Modifies the ticker details.
      */
-    function _modifyTicker(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate, bool _status) internal {
+    function _modifyTicker(
+        address _owner,
+        string _ticker,
+        string _tokenName,
+        uint256 _registrationDate,
+        uint256 _expiryDate,
+        bool _status
+        ) internal {
         address currentOwner = _tickerOwner(_ticker);
         if (currentOwner != address(0)) {
             _deleteTickerOwnership(currentOwner, _ticker);
@@ -278,7 +301,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         return true;
     }
 
-    function _tickerStatus(string _ticker) internal returns(bool) {
+    function _tickerStatus(string _ticker) internal view returns(bool) {
         return getBool(Encoder.getKey("registeredTickers_status", _ticker));
     }
 
@@ -302,7 +325,14 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     /**
      * @notice Internal - Stores the ticker details
      */
-    function _storeTickerDetails(string _ticker, address _owner, uint256 _registrationDate, uint256 _expiryDate, string _tokenName, bool _status) internal {
+    function _storeTickerDetails(
+        string _ticker,
+        address _owner,
+        uint256 _registrationDate,
+        uint256 _expiryDate,
+        string _tokenName,
+        bool _status
+        ) internal {
         bytes32 key = Encoder.getKey("registeredTickers_owner", _ticker);
         if (getAddress(key) != _owner)
             set(key, _owner);
@@ -360,7 +390,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function changeExpiryLimit(uint256 _newExpiry) external onlyOwner {
         require(_newExpiry >= 1 days, "Expiry should >= 1 day");
-        bytes32 key = Encoder.getKey('expiryLimit');
+        bytes32 key = Encoder.getKey("expiryLimit");
         emit ChangeExpiryLimit(getUint(key), _newExpiry);
         set(key, _newExpiry);
     }
@@ -370,17 +400,17 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _owner is the address which owns the list of tickers
      */
     function getTickersByOwner(address _owner) external view returns(bytes32[]) {
-         uint counter = 0;
-         // accessing the data structure userTotickers[_owner].length
-         bytes32[] memory tickers = getArrayBytes32(Encoder.getKey("userToTickers", _owner));
-         bytes32[] memory tempList = new bytes32[](tickers.length);
-         for (uint i = 0; i < tickers.length; i++) {
-             string memory ticker = Util.bytes32ToString(tickers[i]);
-             if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
-                 tempList[counter] = tickers[i];
-                 counter ++;
-             }
-         }
+        uint counter = 0;
+        // accessing the data structure userTotickers[_owner].length
+        bytes32[] memory tickers = getArrayBytes32(Encoder.getKey("userToTickers", _owner));
+        bytes32[] memory tempList = new bytes32[](tickers.length);
+        for (uint i = 0; i < tickers.length; i++) {
+            string memory ticker = Util.bytes32ToString(tickers[i]);
+            if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
+                tempList[counter] = tickers[i];
+                counter ++;
+            }
+        }
         return tempList;
     }
 
@@ -598,25 +628,25 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @notice Sets the ticker registration fee in POLY tokens. Only Polymath.
     * @param _tickerRegFee is the registration fee in POLY tokens (base 18 decimals)
     */
-   function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
-        bytes32 key = Encoder.getKey('tickerRegFee');
+    function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
+        bytes32 key = Encoder.getKey("tickerRegFee");
         uint256 fee = getUint(key);
         require(fee != _tickerRegFee);
         emit ChangeTickerRegistrationFee(fee, _tickerRegFee);
         set(key, _tickerRegFee);
-   }
+    }
 
    /**
     * @notice Sets the ticker registration fee in POLY tokens. Only Polymath.
     * @param _stLaunchFee is the registration fee in POLY tokens (base 18 decimals)
     */
-   function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
-        bytes32 key = Encoder.getKey('stLaunchFee');
+    function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
+        bytes32 key = Encoder.getKey("stLaunchFee");
         uint256 fee = getUint(key);
         require(fee != _stLaunchFee);
         emit ChangeSecurityLaunchFee(fee, _stLaunchFee);
         set(key, _stLaunchFee);
-   }
+    }
 
     /**
     * @notice Reclaims all ERC20Basic compatible tokens
@@ -639,6 +669,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @param _patch Patch version of the proxy
     */
     function setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external onlyOwner {
+        require(_STFactoryAddress != address(0), "0x address is not allowed");
         _setProtocolVersion(_STFactoryAddress, _major, _minor, _patch);
     }
 

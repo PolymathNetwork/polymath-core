@@ -279,7 +279,7 @@ async function archiveModule() {
     pushModules(stoModules);
     pushModules(cpModules);
 
-    let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to archive?'));
+    let index = readlineSync.keyInSelect(options, chalk.yellow('Which module would you like to archive?'));
     if (index != -1) {
         console.log("\nSelected: ",options[index]);
         let archiveModuleAction = securityToken.methods.archiveModule(modules[index].module.address);
@@ -383,11 +383,6 @@ async function whitelist() {
 async function mintTokens() {
     if (await securityToken.methods.mintingFrozen().call()) {
         console.log(chalk.red("Minting is not possible - Minting has been permanently frozen by issuer"));
-        return;
-    }
-    let stoModules = await securityToken.methods.getModulesByType(STO_KEY).call();
-    if (stoModules.length > 0) {
-        console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
         return;
     }
 

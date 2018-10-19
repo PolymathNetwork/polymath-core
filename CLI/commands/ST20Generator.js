@@ -20,7 +20,8 @@ const MODULES_TYPES = {
   PERMISSION: 1,
   TRANSFER: 2,
   STO: 3,
-  DIVIDENDS: 4
+  DIVIDENDS: 4,
+  BURN: 5
 }
 
 const cappedSTOFee = 20000;
@@ -45,11 +46,14 @@ let _tokenConfig;
 let _mintingConfig;
 let _stoConfig;
 
+let network;
+
 async function executeApp(tokenConfig, mintingConfig, stoConfig, remoteNetwork) {
   _tokenConfig = tokenConfig;
   _mintingConfig = mintingConfig;
   _stoConfig = stoConfig;
 
+  network = remoteNetwork;
   await global.initialize(remoteNetwork);
 
   common.logAsciiBull();
@@ -98,7 +102,7 @@ async function setup(){
 }
 
 async function step_ticker_reg(){
-  console.log('\n\x1b[34m%s\x1b[0m',"Token Creation - Symbol Registration");
+  console.log('\n\x1b[34m%s\x1b[0m',"Token Symbol Registration");
 
   let available = false;
   let regFee = web3.utils.fromWei(await securityTokenRegistry.methods.getTickerRegistrationFee().call());
@@ -204,7 +208,7 @@ async function step_Wallet_Issuance(){
       console.log("\n");
       console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Minting for Issuer");
 
-      console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control or you can trasfer to affiliates");
+      console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control or you can transfer to affiliates");
 
       let multimint;
       if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('multimint')) {
@@ -257,12 +261,12 @@ async function step_Wallet_Issuance(){
 
 async function multi_mint_tokens() {
   //await whitelist.startWhitelisting(tokenSymbol);
-  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75`);
+  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75 ${network}`);
   console.log(chalk.green(`\nCongrats! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
 
-  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75`);
-  console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transfered to token holders`));
+  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${network}`);
+  console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transferred to token holders`));
 }
 
 async function step_STO_launch() {
@@ -350,7 +354,7 @@ async function cappedSTO_launch() {
       process.exit(0);
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 1.5);
+      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 2);
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }
@@ -518,19 +522,20 @@ function fundingConfigUSDTieredSTO() {
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('fundingType')) {
     selectedFunding = _stoConfig.fundingType;
   } else {
-    selectedFunding = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise,' + chalk.green(` D `) + 'for DAI raise,' + chalk.green(` E `) + 'for Ether raise or' + chalk.green(` A `) + 'for all (A): ').toUpperCase();
+    selectedFunding = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise,' + chalk.green(` D `) + 'for DAI raise,' + chalk.green(` E `) + 'for Ether raise or any combination of them (i.e.'+ chalk.green(` PED `) + 'for all): ').toUpperCase();
   }
 
-  if (selectedFunding == 'E') {
-    funding.raiseType = [FUND_RAISE_TYPES.ETH];
+  funding.raiseType = [];
+  if (selectedFunding.includes('E')) {
+    funding.raiseType.push(FUND_RAISE_TYPES.ETH);
   }
-  else if (selectedFunding == 'P') {
-    funding.raiseType = [FUND_RAISE_TYPES.POLY];
+  if (selectedFunding.includes('P')) {
+    funding.raiseType.push(FUND_RAISE_TYPES.POLY);
   }
-  else if (selectedFunding == 'D') {
-    funding.raiseType = [FUND_RAISE_TYPES.DAI];
+  if (selectedFunding.includes('D')) {
+    funding.raiseType.push(FUND_RAISE_TYPES.DAI);
   }
-  else {
+  if (funding.raiseType.length == 0) {
     funding.raiseType = [FUND_RAISE_TYPES.ETH, FUND_RAISE_TYPES.POLY, FUND_RAISE_TYPES.DAI];
   }
 
@@ -725,7 +730,7 @@ function limitsConfigUSDTieredSTO() {
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('nonAccreditedLimitUSD')) {
     limits.nonAccreditedLimitUSD = web3.utils.toWei(_stoConfig.nonAccreditedLimitUSD.toString());
   } else {
-    limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the default limit for non accredited insvestors in USD? (${nonAccreditedLimit}): `, {
+    limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the default limit for non accredited investors in USD? (${nonAccreditedLimit}): `, {
       limit: function(input) {
         return new BigNumber(web3.utils.toWei(input)).gte(limits.minimumInvestmentUSD);
       },
@@ -744,17 +749,17 @@ async function usdTieredSTO_launch() {
   let stoFee = usdTieredSTOFee;
   let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call();
   let requiredAmount = web3.utils.toWei(stoFee.toString(), "ether");
-  if (parseInt(contractBalance) < parseInt(requiredAmount)) {
-    let transferAmount = parseInt(requiredAmount) - parseInt(contractBalance);
-    let ownerBalance = await polyToken.methods.balanceOf(Issuer.address).call();
-    if(parseInt(ownerBalance) < transferAmount) {
+  if (new web3.utils.BN(contractBalance).lt(new web3.utils.BN(requiredAmount))) {
+    let transferAmount = (new web3.utils.BN(requiredAmount)).sub(new web3.utils.BN(contractBalance));
+    let ownerBalance = new web3.utils.BN(await polyToken.methods.balanceOf(Issuer.address).call());
+    if (ownerBalance.lt(transferAmount)) {
       console.log(chalk.red(`\n**************************************************************************************************************************************************`));
-      console.log(chalk.red(`Not enough balance to pay the ${selectedSTO} fee, Requires ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(ownerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
+      console.log(chalk.red(`Not enough balance to pay the ${selectedSTO} fee, Requires ${web3.utils.fromWei(transferAmount)} POLY but have ${web3.utils.fromWei(ownerBalance)} POLY. Access POLY faucet to get the POLY to complete this txn`));
       console.log(chalk.red(`**************************************************************************************************************************************************\n`));
       process.exit(0);
     } else {
-      let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 1.5);
+      let transferAction = polyToken.methods.transfer(securityToken._address, transferAmount);
+      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 2);
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }
@@ -997,7 +1002,7 @@ async function usdTieredSTO_configure() {
       switch (index) {
         case 0:
           let reserveWallet = await currentSTO.methods.reserveWallet().call();
-          let isVerified = await generalTransferManager.methods.verifyTransfer(STO_Address, reserveWallet, 0, false).call();
+          let isVerified = await generalTransferManager.methods.verifyTransfer(STO_Address, reserveWallet, 0, web3.utils.fromAscii("")).call();
           if (isVerified == "2") {
             if (readlineSync.keyInYNStrict()) {
               let finalizeAction = currentSTO.methods.finalize();
@@ -1017,7 +1022,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(Issuer, changeAccreditedAction, defaultGasPrice);
           break;
         case 2:
-          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75`);
+          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${network}`);
           break;
         case 3:
           let account = readlineSync.question('Enter the address to change non accredited limit: ');
@@ -1029,7 +1034,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(Issuer, changeNonAccreditedLimitAction, defaultGasPrice);
           break;
         case 4:
-          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75`);
+          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${network}`);
           break;
         case 5:
           await modfifyTimes();

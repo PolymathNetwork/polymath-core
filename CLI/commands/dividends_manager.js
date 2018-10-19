@@ -18,7 +18,8 @@ const MODULES_TYPES = {
   PERMISSION: 1,
   TRANSFER: 2,
   STO: 3,
-  DIVIDENDS: 4
+  DIVIDENDS: 4,
+  BURN: 5
 }
 
 // App flow
@@ -194,24 +195,19 @@ async function mintTokens(address, amount){
   if (await securityToken.methods.mintingFrozen().call()) {
     console.log(chalk.red("Minting is not possible - Minting has been permanently frozen by issuer"));
   } else {
-    let result = await securityToken.methods.getModulesByType(MODULES_TYPES.STO).call();
-    if (result.length > 0) {
-      console.log(chalk.red("Minting is not possible - STO is attached to Security Token"));
-    } else {
-      await whitelistAddress(address);
+    await whitelistAddress(address);
 
-      try {
-        let mintAction = securityToken.methods.mint(address,web3.utils.toWei(amount));
-        let receipt = await common.sendTransaction(Issuer, mintAction, defaultGasPrice);
-        let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
-        console.log(`
+    try {
+      let mintAction = securityToken.methods.mint(address,web3.utils.toWei(amount));
+      let receipt = await common.sendTransaction(Issuer, mintAction, defaultGasPrice);
+      let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
+      console.log(`
   Minted ${web3.utils.fromWei(event.value)} tokens
   to account ${event.to}`
-        );
-      } catch (err) {
-        console.log(err);
-        console.log(chalk.red("There was an error processing the transfer transaction. \n The most probable cause for this error is one of the involved accounts not being in the whitelist or under a lockup period."));
-      }
+      );
+    } catch (err) {
+      console.log(err);
+      console.log(chalk.red("There was an error processing the transfer transaction. \n The most probable cause for this error is one of the involved accounts not being in the whitelist or under a lockup period."));
     }
   }
 }
@@ -225,7 +221,7 @@ async function transferTokens(address, amount){
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
     console.log(`
   Account ${event.from}
-  transfered ${web3.utils.fromWei(event.value)} tokens
+  transferred ${web3.utils.fromWei(event.value)} tokens
   to account ${event.to}`
     );
   } catch (err) {
@@ -266,7 +262,7 @@ async function setDefaultExclusions() {
     let setDefaultExclusionsActions = currentDividendsModule.methods.setDefaultExcluded(excluded);
     let receipt = await common.sendTransaction(Issuer, setDefaultExclusionsActions, defaultGasPrice);
     let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'SetDefaultExcludedAddresses');
-    console.log(chalk.green(`Exclusions were successfuly set.`));
+    console.log(chalk.green(`Exclusions were successfully set.`));
     showExcluded(event._excluded);    
   }
 }

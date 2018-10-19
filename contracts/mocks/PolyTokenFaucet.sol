@@ -10,9 +10,9 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract PolyTokenFaucet {
 
     using SafeMath for uint256;
-    uint256 totalSupply_ = 1000000;
+    uint256 totalSupply_;
     string public name = "Polymath Network";
-    uint8 public decimals = 18;
+    uint8 public decimals;
     string public symbol = "POLY";
 
     mapping(address => uint256) balances;
@@ -21,10 +21,19 @@ contract PolyTokenFaucet {
     event Transfer(address indexed _from, address indexed _to, uint256 _value);
     event Approval(address indexed _owner, address indexed _spender, uint256 _value);
 
+    constructor() public {
+        decimals = 18;
+        totalSupply_ = 1000000 * uint256(10)**decimals;
+        balances[msg.sender] = totalSupply_;
+        emit Transfer(address(0), msg.sender, totalSupply_);
+    }
+
     /* Token faucet - Not part of the ERC20 standard */
     function getTokens(uint256 _amount, address _recipient) public returns (bool) {
-        balances[_recipient] += _amount;
-        totalSupply_ += _amount;
+        require(_amount <= 1000000 * uint256(10)**decimals, "Amount can not be more than 1 million");
+        require(_recipient != address(0), "Recipient address can not be empty");
+        balances[_recipient] = balances[_recipient].add(_amount);
+        totalSupply_ = totalSupply_.add(_amount);
         emit Transfer(address(0), _recipient, _amount);
         return true;
     }
@@ -117,31 +126,31 @@ contract PolyTokenFaucet {
         return true;
     }
 
-  /**
-   * @dev Decrease the amount of tokens that an owner allowed to a spender.
-   *
-   * approve should be called when allowed[_spender] == 0. To decrement
-   * allowed value is better to use this function to avoid 2 calls (and wait until
-   * the first transaction is mined)
-   * From MonolithDAO Token.sol
-   * @param _spender The address which will spend the funds.
-   * @param _subtractedValue The amount of tokens to decrease the allowance by.
-   */
-  function decreaseApproval(
-    address _spender,
-    uint _subtractedValue
-  )
-    public
-    returns (bool)
-  {
-    uint oldValue = allowed[msg.sender][_spender];
-    if (_subtractedValue > oldValue) {
-      allowed[msg.sender][_spender] = 0;
-    } else {
-      allowed[msg.sender][_spender] = oldValue.sub(_subtractedValue);
+    /**
+    * @dev Decrease the amount of tokens that an owner allowed to a spender.
+    *
+    * approve should be called when allowed[_spender] == 0. To decrement
+    * allowed value is better to use this function to avoid 2 calls (and wait until
+    * the first transaction is mined)
+    * From MonolithDAO Token.sol
+    * @param _spender The address which will spend the funds.
+    * @param _subtractedValue The amount of tokens to decrease the allowance by.
+    */
+    function decreaseApproval(
+        address _spender,
+        uint _subtractedValue
+    )
+        public
+        returns (bool)
+    {
+        uint oldValue = allowed[msg.sender][_spender];
+        if (_subtractedValue > oldValue) {
+            allowed[msg.sender][_spender] = 0;
+        } else {
+            allowed[msg.sender][_spender] = oldValue.sub(_subtractedValue);
+        }
+        emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
+        return true;
     }
-    emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
-    return true;
-  }
 
 }

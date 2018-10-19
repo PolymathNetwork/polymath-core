@@ -4,7 +4,7 @@ import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
- * @title Transfer Manager module for manually approving or blocking transactions between accounts
+ * @title Transfer Manager module to automate blacklist to restrict transfer
  */
 contract BlacklistTransferManager is ITransferManager {
     using SafeMath for uint256;

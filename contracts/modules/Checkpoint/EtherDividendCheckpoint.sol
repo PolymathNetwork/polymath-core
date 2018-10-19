@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./DividendCheckpoint.sol";
+import "../../interfaces/IOwnable.sol";
 
 /**
  * @title Checkpoint module for issuing ether dividends
@@ -163,8 +164,9 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         Dividend storage dividend = dividends[_dividendIndex];
         dividend.reclaimed = true;
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
-        msg.sender.transfer(remainingAmount);
-        emit EtherDividendReclaimed(msg.sender, _dividendIndex, remainingAmount);
+        address owner = IOwnable(securityToken).owner();
+        owner.transfer(remainingAmount);
+        emit EtherDividendReclaimed(owner, _dividendIndex, remainingAmount);
     }
 
     /**
@@ -176,8 +178,9 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingWithheld = dividend.dividendWithheld.sub(dividend.dividendWithheldReclaimed);
         dividend.dividendWithheldReclaimed = dividend.dividendWithheld;
-        msg.sender.transfer(remainingWithheld);
-        emit EtherDividendWithholdingWithdrawn(msg.sender, _dividendIndex, remainingWithheld);
+        address owner = IOwnable(securityToken).owner();
+        owner.transfer(remainingWithheld);
+        emit EtherDividendWithholdingWithdrawn(owner, _dividendIndex, remainingWithheld);
     }
 
 }

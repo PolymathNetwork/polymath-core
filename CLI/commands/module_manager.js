@@ -279,7 +279,7 @@ async function archiveModule() {
     pushModules(stoModules);
     pushModules(cpModules);
 
-    let index = readlineSync.keyInSelect(options, chalk.yellow('Which module whould you like to archive?'));
+    let index = readlineSync.keyInSelect(options, chalk.yellow('Which module would you like to archive?'));
     if (index != -1) {
         console.log("\nSelected: ",options[index]);
         let archiveModuleAction = securityToken.methods.archiveModule(modules[index].module.address);

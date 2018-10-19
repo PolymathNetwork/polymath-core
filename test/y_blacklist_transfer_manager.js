@@ -307,6 +307,30 @@ contract('BlacklistTransferManager', accounts => {
             );
         });
 
+        it("Should Buy some more tokens", async() => {
+            // Add the Investor in to the whitelist
+
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor5,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(50),
+                true,
+                {
+                    from: account_issuer
+                });
+
+            assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor5.toLowerCase(), "Failed in adding the investor in whitelist");
+
+            // Mint some tokens
+            await I_SecurityToken.mint(account_investor5, web3.utils.toWei('2', 'ether'), { from: token_owner });
+
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor5)).toNumber(),
+                web3.utils.toWei('2', 'ether')
+            );
+        });
+
 
         it("Should add the blacklist", async() => {
             //Add the new blacklist
@@ -634,9 +658,19 @@ contract('BlacklistTransferManager', accounts => {
             );
         });
 
+        it("Should fail in deleting the investor because investor is not associated to any blacklist", async() => {
+            await catchRevert(
+                I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor5, { 
+                    from: token_owner 
+                })
+            );
+        });
+
         it("Should delete the investor from the blacklist type", async() => {
             await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "f_blacklist", 20, { from: token_owner });
             await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "f_blacklist", { from: token_owner });
+            await I_BlacklistTransferManager.addBlacklistType(latestTime()+500, latestTime()+8000, "q_blacklist", 10, { from: token_owner });
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "q_blacklist", { from: token_owner });
             let tx = await I_BlacklistTransferManager.deleteInvestorFromBlacklist(account_investor1, "f_blacklist", { from: token_owner });
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in deleting the investor from the blacklist");
 

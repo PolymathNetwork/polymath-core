@@ -52,17 +52,18 @@ module.exports = {
   sendTransaction: async function (from, action, gasPrice, value, factor) {
 
     let contractRegistry = await this.connect(action._parent.options.jsonInterface, action._parent._address)
-    //TODO whats going on if the contract hasn't the method?
-    let moduleAddress = await contractRegistry.methods.factory().call();
-    //TODO if moduleAddress works, then...
-    let moduleRegistry = await this.connect(abis.moduleFactory(), moduleAddress)
-    let result = await moduleRegistry.methods.getName().call();
-    console.log(web3.utils.hexToAscii(result))
 
-    //nombre del metodo
-    //console.log("action", action._method.name)
-
-    process.exit(0);
+    try {
+      let moduleAddress = await contractRegistry.methods.factory().call();
+      let moduleRegistry = await this.connect(abis.moduleFactory(), moduleAddress)
+      let result = await moduleRegistry.methods.getName().call();
+      let contractName = web3.utils.hexToUtf8(result);
+      let functionName = action._method.name;
+      this.checkPermission(contractName, functionName)
+      process.exit(0);
+    } catch (e) {
+      process.exit(0);
+    }
 
     if (typeof factor === 'undefined') factor = 1.2;
 
@@ -115,15 +116,17 @@ module.exports = {
     return filteredLogs.map(l => web3.eth.abi.decodeLog(eventJsonInterface.inputs, l.data, l.topics.slice(1)));
   },
   checkPermission: async function (contractName, functionName) {
-    //permissionsList.verifyPermission(contractName, functionName)
-
-    let stoOwner = await securityToken.methods.owner().call();
+    let result = permissionsList.verifyPermission(contractName, functionName);
+    
+    //TODO do I need to figure out how identify tokens owner
+    /*let stoOwner = await securityToken.methods.owner().call();
     if (stoOwner == Issuer.address) {
       return true
-    }
-    let generalPermissionAddress = generalPermissionManager.options.address;
+    }*/
+
+    /*let generalPermissionAddress = generalPermissionManager.options.address;
     let result = await generalPermissionManager.methods.checkPermission(Issuer.address, generalPermissionAddress, web3.utils.asciiToHex(CHANGE_PERMISSION)).call();
-    return result
+    return result*/
   },
   connect: async function (abi, address) {
     try {

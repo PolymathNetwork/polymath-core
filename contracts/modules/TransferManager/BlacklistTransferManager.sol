@@ -32,6 +32,7 @@ contract BlacklistTransferManager is ITransferManager {
     //store the index of the blacklist to investor
     mapping(bytes32 => mapping(address => uint256)) blacklistToIndex;
 
+   
     // Emit when new blacklist type is added
     event AddBlacklistType(
         uint256 _startTime, 
@@ -96,31 +97,23 @@ contract BlacklistTransferManager is ITransferManager {
         if (!paused) {
             if (investorToBlacklist[_from].length != 0) {
                 for (uint256 i = 0; i < investorToBlacklist[_from].length; i++) {
-                    if (investorToBlacklist[_from][i] != bytes32(0)) {
-                        uint256 endTimeTemp = blacklists[investorToBlacklist[_from][i]].endTime;
-                        uint256 startTimeTemp = blacklists[investorToBlacklist[_from][i]].startTime;
-                        uint256 repeatPeriodTimeTemp = blacklists[investorToBlacklist[_from][i]].repeatPeriodTime * 1 days;
-                        // blacklistTime time is used to find the new startTime and endTime 
-                        // suppose startTime=500,endTime=1500,repeatPeriodTime=500 then blacklistTime =1500
-                        // if you add blacklistTime to startTime and endTime i.e startTime = 2000 and endTime = 3000
-                        uint256 blacklistTime = (endTimeTemp.sub(startTimeTemp)).add(repeatPeriodTimeTemp);
-                        if (now > startTimeTemp) {
-                            // Find the repeating parameter that will be used to calculate the new startTime and endTime
-                            // based on the new current time value   
-                            uint256 repeater = (now.sub(startTimeTemp)).div(blacklistTime); 
-                            if (startTimeTemp.add(blacklistTime.mul(repeater)) <= now && endTimeTemp.add(blacklistTime.mul(repeater)) >= now) {
-                                return Result.INVALID;
-                            }
-                            return Result.NA;
-                        } else
-                            // BlackList time period is not yet started
-                            return Result.NA;
-                    }
-                    return Result.NA;
-                } 
-                
-            }   
-            return Result.NA;
+                    uint256 endTimeTemp = blacklists[investorToBlacklist[_from][i]].endTime;
+                    uint256 startTimeTemp = blacklists[investorToBlacklist[_from][i]].startTime;
+                    uint256 repeatPeriodTimeTemp = blacklists[investorToBlacklist[_from][i]].repeatPeriodTime * 1 days;
+                    // blacklistTime time is used to find the new startTime and endTime 
+                    // suppose startTime=500,endTime=1500,repeatPeriodTime=500 then blacklistTime =1500
+                    // if you add blacklistTime to startTime and endTime i.e startTime = 2000 and endTime = 3000
+                    uint256 blacklistTime = (endTimeTemp.sub(startTimeTemp)).add(repeatPeriodTimeTemp);
+                    if (now > startTimeTemp) {
+                    // Find the repeating parameter that will be used to calculate the new startTime and endTime
+                    // based on the new current time value   
+                        uint256 repeater = (now.sub(startTimeTemp)).div(blacklistTime); 
+                        if (startTimeTemp.add(blacklistTime.mul(repeater)) <= now && endTimeTemp.add(blacklistTime.mul(repeater)) >= now) {
+                            return Result.INVALID;
+                        }    
+                    }   
+                }    
+            }     
         }
         return Result.NA;
     }
@@ -142,7 +135,7 @@ contract BlacklistTransferManager is ITransferManager {
     /**
      * @notice Internal function 
      */
-    function _validParams(uint256 _startTime, uint256 _endTime, bytes32 _name, uint256 _repeatPeriodTime) internal view {
+    function _validParams(uint256 _startTime, uint256 _endTime, bytes32 _name, uint256 _repeatPeriodTime) internal pure {
         require(_name != bytes32(0), "Invalid blacklist name"); 
         require(_startTime != 0 && _startTime < _endTime, "Invalid start or end date");
         require(_repeatPeriodTime != 0, "Invalid repeat days");
@@ -213,7 +206,6 @@ contract BlacklistTransferManager is ITransferManager {
     function deleteInvestorFromBlacklist(address _investor, bytes32 _blacklistName) public withPerm(ADMIN) {
         require(_investor != address(0), "Invalid investor address");
         require(_blacklistName != bytes32(0),"Invalid blacklist name");
-        require(investorToBlacklist[_investor][investorToIndex[_investor][_blacklistName]] != bytes32(0), "Investor is not associated to blacklist type");
         // delete the investor from the blacklist type
         uint256 _blacklistIndex = blacklistToIndex[_blacklistName][_investor];
         uint256 _len = blacklistToInvestor[_blacklistName].length;
@@ -267,7 +259,6 @@ contract BlacklistTransferManager is ITransferManager {
     */
     function getListOfAddresses(bytes32 _blacklistName) public view returns(address[]) {
         require(blacklists[_blacklistName].endTime != 0, "Blacklist type doesn't exist");
-        require(blacklistToInvestor[_blacklistName].length != 0, "Blacklist doesnot have any associated address");
         return blacklistToInvestor[_blacklistName];
     }
 

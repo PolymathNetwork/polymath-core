@@ -259,7 +259,7 @@ contract("MaximumVolumeTransferManager", accounts => {
             );
             I_MaximumVolumeTransferManager = MaximumVolumeTransferManager.at(tx.logs[2].args._module);
         });
-        //function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result) {
+
         it("Cannot call verifyTransfer on the TM directly if _isTransfer == true", async () => {
             await catchRevert(
                 I_MaximumVolumeTransferManager.verifyTransfer(
@@ -331,6 +331,24 @@ contract("MaximumVolumeTransferManager", accounts => {
         let endTime = latestTime() + duration.years(2);
         let rollingInterval = 1; //weekly
 
+        it("should fail to add a new max volume restriction when called by a non-admin account", async() => {
+            let errorThrown = false;
+            try{
+                await I_MaximumVolumeTransferManager.addMaxVolumeRestricion(
+                    max_vol,
+                    startTime,
+                    endTime,
+                    rollingInterval,
+                    { from: account_investor1 }
+                );
+            } catch(error) {
+                console.log(`         tx revert -> not an admin`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("should not allow creation of a maximum volume restriction if endTime is set to 0", async() => {
             let errorThrown = false;
             try{
@@ -397,24 +415,6 @@ contract("MaximumVolumeTransferManager", accounts => {
                 );
             } catch(error) {
                 console.log(`         tx revert -> invalid startTime and endTime`.grey);
-                ensureException(error);
-                errorThrown = true;
-            }
-            assert.ok(errorThrown, message);
-        });
-
-        it("should not allow creation of a maximum volume restriction if startTime is in the past", async() => {
-            let errorThrown = false;
-            try{
-                await I_MaximumVolumeTransferManager.addMaxVolumeRestricion(
-                    max_vol,
-                    latestTime() - 1000,
-                    endTime,
-                    rollingInterval,
-                    { from: token_owner }
-                );
-            } catch(error) {
-                console.log(`         tx revert -> startTime is in the past`.grey);
                 ensureException(error);
                 errorThrown = true;
             }
@@ -572,6 +572,29 @@ contract("MaximumVolumeTransferManager", accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("should fail to add to add multiple new max volume restrictions when called by a non-admin account", async() => {
+            const maxVolumes = [100000000, 500000000, 6000000000];
+            const startTimes = [0, 0, 0];
+            const endTimes = [latestTime() + duration.years(1), latestTime() + duration.years(2), latestTime() + duration.years(3)];
+            const rollingIntervals = [0, 2, 4];
+
+            let errorThrown = false;
+            try{
+                await I_MaximumVolumeTransferManager.addMaxVolumeRestricionsMulti(
+                    maxVolumes,
+                    startTimes,
+                    endTimes,
+                    rollingIntervals,
+                    { from: account_investor1 }
+                );
+            } catch(error) {
+                console.log(`         tx revert -> not an admin`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("should allow for addition of multiple maximum volume restrictions", async()=>{
             const maxVolumes = [100000000, 500000000, 6000000000];
             const startTimes = [0, 0, 0];
@@ -637,7 +660,7 @@ contract("MaximumVolumeTransferManager", accounts => {
             }
             assert.ok(errorThrown, message);
         });
-
+        
         it("Should successfully attach the CountTransferManager with the security token (count of 1)", async () => {
             let bytesCountTM = web3.eth.abi.encodeFunctionCall(
                 {

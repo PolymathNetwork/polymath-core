@@ -7,7 +7,6 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @title Transfer Manager module for capping the amount of token transfers within a period
  */
 contract MaximumVolumeTransferManager is ITransferManager {
-	
 	using SafeMath for uint256;
 
     bytes32 public constant ADMIN = "ADMIN";
@@ -114,30 +113,12 @@ contract MaximumVolumeTransferManager is ITransferManager {
         uint256 _endTime, 
         uint256 _rollingPeriodInterval) 
     public withPerm(ADMIN) {
-        _checkRestrictionParams(_startTime, _endTime, _rollingPeriodInterval);
-
         if(_startTime == 0) {
             _startTime = now;
-            require(_endTime > _startTime, "end time must be greater than start time");
         }
+        _checkRestrictionParams(_startTime, _endTime, _rollingPeriodInterval);
 
-        emit AddNewMaximumVolumeRestriction(
-            maximumVolumeRestrictions.length,
-            now, 
-            _maximumVolume,
-            _startTime,
-            _endTime,
-            _rollingPeriodInterval
-        );
-
-        maximumVolumeRestrictions.push(
-            MaximumVolumeRestriction(
-                _maximumVolume, 
-                _startTime, 
-                _endTime, 
-                RollingIntervals(_rollingPeriodInterval)
-            )
-        );
+        _addMaxVolumeRestricion(_maximumVolume, _startTime, _endTime, _rollingPeriodInterval);
     }
 
     /**
@@ -162,7 +143,7 @@ contract MaximumVolumeTransferManager is ITransferManager {
         );
 
         for(uint256 i = 0; i < _maximumVolumes.length; i++){
-            addMaxVolumeRestricion(
+            _addMaxVolumeRestricion(
                 _maximumVolumes[i],
                 _startTimes[i],
                 _endTimes[i],
@@ -188,12 +169,12 @@ contract MaximumVolumeTransferManager is ITransferManager {
     public withPerm(ADMIN) {
         require(_index < maximumVolumeRestrictions.length, "invalid index");
         require(now < maximumVolumeRestrictions[_index].endTime, "restriction is no longer active");
-        _checkRestrictionParams(_startTime, _endTime, _rollingPeriodInterval);
 
         if(_startTime == 0) {
             _startTime = now;
-            require(_endTime > _startTime, "end time must be greater than start time");
         }
+
+        _checkRestrictionParams(_startTime, _endTime, _rollingPeriodInterval);
 
         MaximumVolumeRestriction memory restriction = MaximumVolumeRestriction(
             _maximumVolume, 
@@ -218,15 +199,13 @@ contract MaximumVolumeTransferManager is ITransferManager {
     * @param _index representing the array index of the maximum volume transfer restriction
     */
     function removeMaximumTransferRestriction(uint256 _index) public withPerm(ADMIN){
-        require (maximumVolumeRestrictions.length != 0, "no existing restrictions");
         require (maximumVolumeRestrictions.length > _index, "invalid index");
 
         if(_index < (maximumVolumeRestrictions.length - 1)){
-            MaximumVolumeRestriction memory lastRestriction = maximumVolumeRestrictions[maximumVolumeRestrictions.length - 1];
-            maximumVolumeRestrictions[_index] = lastRestriction;
+            maximumVolumeRestrictions[_index] = maximumVolumeRestrictions[maximumVolumeRestrictions.length - 1];
         }
 
-        maximumVolumeRestrictions.length = (maximumVolumeRestrictions.length).sub(1);
+        maximumVolumeRestrictions.length = maximumVolumeRestrictions.length - 1;
 
         emit RemoveMaximumVolumeRestricion(
             msg.sender,
@@ -249,6 +228,39 @@ contract MaximumVolumeTransferManager is ITransferManager {
     function getMaximumVolumeRestrictionsCount() public view returns(uint)  {
         return maximumVolumeRestrictions.length;
     }
+
+    /**
+    * @notice internal function to create new maximum volume transfer restrictions
+    * @param _maximumVolume maximum token volume that can be transfered
+    * @param _startTime timestamp representing when this maximum volume restriction starts
+    * @param _endTime timestamp representing when this maximum volume restriction ends
+    * @param _rollingPeriodInterval interval period representing one of five RollingIntervals
+    */
+    function _addMaxVolumeRestricion(
+        uint256 _maximumVolume, 
+        uint256 _startTime, 
+        uint256 _endTime, 
+        uint256 _rollingPeriodInterval) 
+    internal {
+        emit AddNewMaximumVolumeRestriction(
+            maximumVolumeRestrictions.length,
+            now, 
+            _maximumVolume,
+            _startTime,
+            _endTime,
+            _rollingPeriodInterval
+        );
+
+        maximumVolumeRestrictions.push(
+            MaximumVolumeRestriction(
+                _maximumVolume, 
+                _startTime, 
+                _endTime, 
+                RollingIntervals(_rollingPeriodInterval)
+            )
+        );
+    }
+    
 
     /**
     * @notice gets rolling interval period value in seconds
@@ -285,8 +297,8 @@ contract MaximumVolumeTransferManager is ITransferManager {
             uint256(RollingIntervals.Annually) >= _rollingPeriodInterval,
             "invalid rolling period interval - should be < 5"
         );
-        require(_startTime == 0 || _startTime >= now, 'invalid startTime');
-        require(_endTime > 0 && _endTime > _startTime, 'invalid endTime');
+        require(_startTime != 0, 'invalid startTime');
+        require(_endTime > _startTime && _endTime > now, 'invalid endTime');
         require(
             _getPeriod(RollingIntervals(_rollingPeriodInterval)) <= _endTime.sub(_startTime), 
             "rolling interval must be less than or equal to the difference between endTime and startTime"

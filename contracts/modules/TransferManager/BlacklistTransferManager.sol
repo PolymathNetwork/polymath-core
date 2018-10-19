@@ -32,6 +32,8 @@ contract BlacklistTransferManager is ITransferManager {
     //store the index of the blacklist to investor
     mapping(bytes32 => mapping(address => uint256)) blacklistToIndex;
 
+    //store the investor to blacklist status
+    mapping(address => mapping(bytes32 => bool)) investorBlacklistStatus;
    
     // Emit when new blacklist type is added
     event AddBlacklistType(
@@ -175,6 +177,7 @@ contract BlacklistTransferManager is ITransferManager {
     function addInvestorToBlacklist(address _investor, bytes32 _blacklistName) public withPerm(ADMIN) {
         require(blacklists[_blacklistName].endTime != 0, "Blacklist type doesn't exist");
         require(_investor != address(0), "Invalid investor address");
+        require(!investorBlacklistStatus[_investor][_blacklistName],"Investor already associated to the same blacklist");
         uint256 investorIndex = investorToBlacklist[_investor].length;
         // Add blacklist index to the investor 
         investorToIndex[_investor][_blacklistName] = investorIndex;
@@ -183,6 +186,7 @@ contract BlacklistTransferManager is ITransferManager {
         blacklistToIndex[_blacklistName][_investor] = blacklistIndex;
         investorToBlacklist[_investor].push(_blacklistName);
         blacklistToInvestor[_blacklistName].push(_investor);
+        investorBlacklistStatus[_investor][_blacklistName] = true;
         emit AddInvestorToBlacklist(_investor, _blacklistName);
     }
 
@@ -206,6 +210,7 @@ contract BlacklistTransferManager is ITransferManager {
     function deleteInvestorFromBlacklist(address _investor, bytes32 _blacklistName) public withPerm(ADMIN) {
         require(_investor != address(0), "Invalid investor address");
         require(_blacklistName != bytes32(0),"Invalid blacklist name");
+        require(investorBlacklistStatus[_investor][_blacklistName],"Investor not associated to the blacklist");
         // delete the investor from the blacklist type
         uint256 _blacklistIndex = blacklistToIndex[_blacklistName][_investor];
         uint256 _len = blacklistToInvestor[_blacklistName].length;
@@ -225,6 +230,7 @@ contract BlacklistTransferManager is ITransferManager {
         }
         investorToBlacklist[_investor].length--;
         // delete the blacklist index from the invetsor
+        investorBlacklistStatus[_investor][_blacklistName] = false;
         delete(investorToIndex[_investor][_blacklistName]);
         emit DeleteInvestorFromBlacklist(_investor, _blacklistName);
     }

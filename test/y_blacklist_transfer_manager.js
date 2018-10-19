@@ -450,6 +450,14 @@ contract('BlacklistTransferManager', accounts => {
             );
         });
 
+        it("Should fail in adding the investor to the same blacklist", async() => {
+            await catchRevert(
+                I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "a_blacklist", { 
+                    from: account_investor1 
+                })
+            );
+        });
+
         it("Should fail in adding the investor to the blacklist as investor address is invalid", async() => {
            await catchRevert(
                I_BlacklistTransferManager.addInvestorToBlacklist(0x0, "a_blacklist", { 
@@ -669,6 +677,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should delete the investor from the blacklist type", async() => {
             await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "f_blacklist", 20, { from: token_owner });
             await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "f_blacklist", { from: token_owner });
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor5, "f_blacklist", { from: token_owner });
             await I_BlacklistTransferManager.addBlacklistType(latestTime()+500, latestTime()+8000, "q_blacklist", 10, { from: token_owner });
             await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "q_blacklist", { from: token_owner });
             let tx = await I_BlacklistTransferManager.deleteInvestorFromBlacklist(account_investor1, "f_blacklist", { from: token_owner });
@@ -688,6 +697,15 @@ contract('BlacklistTransferManager', accounts => {
         it("Should fail in deleting the investor because the investor address is invalid", async() => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteInvestorFromBlacklist(0x0, "f_blacklist", { 
+                    from: token_owner 
+                })
+            );
+        });
+
+        it("Should fail in deleting the investor because the investor is not associated to blacklist", async() => {
+            await I_BlacklistTransferManager.deleteInvestorFromBlacklist(account_investor1, "f_blacklist", { from: token_owner });
+            await catchRevert(
+                I_BlacklistTransferManager.deleteInvestorFromBlacklist(account_investor1, "f_blacklist", { 
                     from: token_owner 
                 })
             );

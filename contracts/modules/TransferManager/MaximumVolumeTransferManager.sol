@@ -7,7 +7,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @title Transfer Manager module for capping the amount of token transfers within a period
  */
 contract MaximumVolumeTransferManager is ITransferManager {
-	using SafeMath for uint256;
+    using SafeMath for uint256;
 
     bytes32 public constant ADMIN = "ADMIN";
 

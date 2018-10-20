@@ -124,9 +124,15 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
             _name
           )
         );
+
         for (uint256 j = 0; j < _excluded.length; j++) {
+            require (_excluded[j] != address(0), "Invalid address");
+            for (i = j + 1; i < _excluded.length; i++) {
+                require (_excluded[j] != _excluded[i], "Duplicate exclude address");
+            }
             dividends[dividends.length - 1].dividendExcluded[_excluded[j]] = true;
         }
+
         emit EtherDividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, msg.value, currentSupply, dividendIndex, _name);
     }
 

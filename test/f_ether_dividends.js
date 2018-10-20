@@ -554,7 +554,8 @@ contract("EtherDividendCheckpoint", accounts => {
             limit = limit.toNumber();
             let addresses = [];
             addresses.push(account_temp);
-            while (limit--) addresses.push(limit);
+            addresses.push(token_owner);
+            while (--limit) addresses.push(limit);
             await catchRevert(
                 I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(maturity, expiry, 4, addresses, dividendName, {
                     from: token_owner,
@@ -577,6 +578,34 @@ contract("EtherDividendCheckpoint", accounts => {
                 { from: token_owner, value: web3.utils.toWei("10", "ether") }
             );
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 4, "Dividend should be created at checkpoint 4");
+        });
+
+        it("Should not create new dividend with duplicate exclusion", async () => {
+            let maturity = latestTime();
+            let expiry = latestTime() + duration.days(10);
+            //checkpoint created in above test
+            await catchRevert(I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(
+                maturity,
+                expiry,
+                4,
+                [account_investor1, account_investor1],
+                dividendName,
+                { from: token_owner, value: web3.utils.toWei("10", "ether") }
+            ));
+        });
+
+        it("Should not create new dividend with 0x0 address in exclusion", async () => {
+            let maturity = latestTime();
+            let expiry = latestTime() + duration.days(10);
+            //checkpoint created in above test
+            await catchRevert(I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(
+                maturity,
+                expiry,
+                4,
+                [0],
+                dividendName,
+                { from: token_owner, value: web3.utils.toWei("10", "ether") }
+            ));
         });
 
         it("Non-owner pushes investor 1 - fails", async () => {
@@ -807,7 +836,7 @@ contract("EtherDividendCheckpoint", accounts => {
         it("should not allow manager without permission to create dividend with exclusion", async () => {
             let maturity = latestTime() + duration.days(1);
             let expiry = latestTime() + duration.days(10);
-            let exclusions = [0];
+            let exclusions = [1];
             await catchRevert(I_EtherDividendCheckpoint.createDividendWithExclusions(
                 maturity,
                 expiry,
@@ -820,7 +849,7 @@ contract("EtherDividendCheckpoint", accounts => {
         it("should not allow manager without permission to create dividend with checkpoint and exclusion", async () => {
             let maturity = latestTime() + duration.days(1);
             let expiry = latestTime() + duration.days(10);
-            let exclusions = [0];
+            let exclusions = [1];
             let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
             await I_SecurityToken.createCheckpoint({ from: token_owner }); 
             await catchRevert(I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(
@@ -875,7 +904,7 @@ contract("EtherDividendCheckpoint", accounts => {
         it("should allow manager with permission to create dividend with exclusion", async () => {
             let maturity = latestTime() + duration.days(1);
             let expiry = latestTime() + duration.days(10);
-            let exclusions = [0];
+            let exclusions = [1];
             let tx = await I_EtherDividendCheckpoint.createDividendWithExclusions(
                 maturity,
                 expiry,
@@ -889,7 +918,7 @@ contract("EtherDividendCheckpoint", accounts => {
         it("should allow manager with permission to create dividend with checkpoint and exclusion", async () => {
             let maturity = latestTime() + duration.days(1);
             let expiry = latestTime() + duration.days(10);
-            let exclusions = [0];
+            let exclusions = [1];
             let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
             await I_SecurityToken.createCheckpoint({ from: token_owner });
             let tx = await I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(

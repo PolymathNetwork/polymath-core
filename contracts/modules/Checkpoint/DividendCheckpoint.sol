@@ -79,6 +79,12 @@ contract DividendCheckpoint is ICheckpoint, Module {
      */
     function setDefaultExcluded(address[] _excluded) public withPerm(MANAGE) {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many excluded addresses");
+        for (uint256 j = 0; j < _excluded.length; j++) {
+            require (_excluded[j] != address(0), "Invalid address");
+            for (uint256 i = j + 1; i < _excluded.length; i++) {
+                require (_excluded[j] != _excluded[i], "Duplicate exclude address");
+            }
+        }
         excluded = _excluded;
         emit SetDefaultExcludedAddresses(excluded, now);
     }

@@ -299,6 +299,169 @@ async function generalTransferManager() {
   }
 }
 
+async function singleTradeVolumeRestrictionTM() {
+  let primaryIssuanceAllowed = await currentTransferManager.methods.allowPrimaryIssuance().call();
+  let allowPrimeryIssuanceOption = primaryIssuanceAllowed ? 'Allow Primary Issuance' : 'Disallow Primary Issuance';
+  
+  let options = [allowPrimeryIssuanceOption, 'Add exempted wallet', 'Remove exempted wallet'];
+
+  let isTransferLimitInPercentage = await currentTransferManager.methods.isTransferLimitInPercentage().call();
+  if (isTransferLimitInPercentage) {
+    options.push('Change transfer limit to tokens', 'Change default percentage limit', 
+                'Set percentage transfer limit per account', 'Remove percentage transfer limit per account');
+  } else {
+    options.push('Change transfer limit to percentage', 'Change default tokens limit', 
+                'Set tokens transfer limit per account', 'Remove tokens transfer limit per account');
+  }
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?');
+  let optionSelected = options[index];
+  console.log('Selected:', index != -1 ? optionSelected : 'Cancel', '\n');
+  switch (optionSelected) {
+    case 'Allow Primary Issuance':
+      let allowPrimaryIssuanceAction = currentTransferManager.methods.setAllowPrimaryIssuance(true);
+      await common.sendTransaction(Issuer.address, allowPrimaryIssuanceAction, defaultGasPrice);
+      break;
+    case 'Disallow Primary Issuance':
+      let disallowPrimaryIssuanceAction = currentTransferManager.methods.setAllowPrimaryIssuance(false);
+      await common.sendTransaction(Issuer.address, disallowPrimaryIssuanceAction, defaultGasPrice);
+      break;
+    case 'Add exempted wallet':
+      let walletToExempt = readlineSync.question('Enter the wallet to exempt', {
+        limit: function(input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      }); 
+      let addExemptWalletAction = currentTransferManager.methods.addExemptWallet(walletToExempt);
+      let addExemptWalletReceipt = await common.sendTransaction(Issuer.address, addExemptWalletAction, defaultGasPrice);
+      let addExemptWalletEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addExemptWalletReceipt.logs, 'ExemptWalletAdded');
+      console.log(chalk.green(`${addExemptWalletEvent._wallet} has been exempted sucessfully!`));
+      break;
+    case 'Remove exempted wallet':
+      let exemptedWallet = readlineSync.question('Enter the wallet to remove from exempt', {
+        limit: function(input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      }); 
+      let removeExemptWalletAction = currentTransferManager.methods.removeExemptWallet(exemptedWallet);
+      let removeExemptWalletReceipt = await common.sendTransaction(Issuer.address, removeExemptWalletAction, defaultGasPrice);
+      let removeExemptWalletEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeExemptWalletReceipt.logs, 'ExemptWalletRemoved');
+      console.log(chalk.green(`${removeExemptWalletEvent._wallet} has been removed from exempt wallets sucessfully!`));
+      break;
+    case 'Change transfer limit to tokens':
+      let newDefaultLimitInTokens = readlineSync.questionInt('Enter the amount of tokens for default limit: ', {
+        limit: function(input) {
+          return input > 0;
+        },
+        limitMessage: "Must be greater than zero"
+      }); 
+      let changeTransferLimitToTokensAction = currentTransferManager.methods.changeTransferLimitToTokens(web3.utils.toWei(newDefaultLimitInTokens));
+      let changeTransferLimitToTokensReceipt = await common.sendTransaction(Issuer.address, changeTransferLimitToTokensAction, defaultGasPrice);
+      let changeTransferLimitToTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeTransferLimitToTokensReceipt.logs, 'GlobalTransferLimitInTokensSet');
+      console.log(chalk.green(`Transfer limit has been set to tokens sucessfully!`));
+      console.log(chalk.green(`The default transfer limit is ${changeTransferLimitToTokensEvent._amount} ${tokenSymbol}`));
+      break;
+    case 'Change transfer limit to percentage':
+      let newDefaultLimitInPercentage = readlineSync.questionInt('Enter the percentage for default limit: ', {
+        limit: function(input) {
+          return 0 < input <= 100;
+        },
+        limitMessage: "Must be greater than 0 and less than 100"
+      }); 
+      let changeTransferLimitToPercentageAction = currentTransferManager.methods.changeTransferLimitToPercentage(newDefaultLimitInPercentage);
+      let changeTransferLimitToPercentageReceipt = await common.sendTransaction(Issuer.address, changeTransferLimitToPercentageAction, defaultGasPrice);
+      let changeTransferLimitToPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeTransferLimitToPercentageReceipt.logs, 'GlobalTransferLimitInPercentageSet');
+      console.log(chalk.green(`Transfer limit has been set to tokens sucessfully!`));
+      console.log(chalk.green(`The default transfer limit is ${changeTransferLimitToPercentageEvent._percentage}%`));
+      break;
+    case 'Change default percentage limit':
+      let defaultLimitInPercentage = readlineSync.questionInt('Enter the percentage for default limit: ', {
+        limit: function(input) {
+          return 0 < input <= 100;
+        },
+        limitMessage: "Must be greater than 0 and less than 100"
+      }); 
+      let changeGlobalLimitInPercentageAction = currentTransferManager.methods.changeGlobalLimitInPercentage(defaultLimitInPercentage);
+      let changeGlobalLimitInPercentageReceipt = await common.sendTransaction(Issuer.address, changeGlobalLimitInPercentageAction, defaultGasPrice);
+      let changeGlobalLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeGlobalLimitInPercentageReceipt.logs, 'GlobalTransferLimitInPercentageSet');
+      console.log(chalk.green(`The default transfer limit is ${changeGlobalLimitInPercentageEvent._percentage}%`));
+      break;
+    case 'Change default tokens limit':
+      let defaultLimitInTokens = readlineSync.questionInt('Enter the amount of tokens for default limit: ', {
+        limit: function(input) {
+          return input > 0;
+        },
+        limitMessage: "Must be greater than zero"
+      }); 
+      let changeGlobalLimitInTokensAction = currentTransferManager.methods.changeGlobalLimitInTokens(web3.utils.toWei(defaultLimitInTokens));
+      let changeGlobalLimitInTokensReceipt = await common.sendTransaction(Issuer.address, changeGlobalLimitInTokensAction, defaultGasPrice);
+      let changeGlobalLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeGlobalLimitInTokensReceipt.logs, 'GlobalTransferLimitInTokensSet');
+      console.log(chalk.green(`The default transfer limit is ${changeGlobalLimitInTokensEvent._amount} ${tokenSymbol}`));
+      break;
+    case 'Set percentage transfer limit per account':
+      let percentageAccount = readlineSync.question('Enter the wallet: ', {
+        limit: function(input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      let accountLimitInPercentage = readlineSync.questionInt(`Enter the transfer limit for ${percentageAccount} in percentage: `, {
+        limit: function(input) {
+          return 0 < input <= 100;
+        },
+        limitMessage: "Must be greater than 0 and less than 100"
+      }); 
+      let setTransferLimitInPercentageAction = currentTransferManager.methods.setTransferLimitInPercentage(percentageAccount, web3.utils.toWei(accountLimitInPercentage));
+      let setTransferLimitInPercentageReceipt = await common.sendTransaction(Issuer.address, setTransferLimitInPercentageAction, defaultGasPrice);
+      let setTransferLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, setTransferLimitInPercentageReceipt.logs, 'TransferLimitInPercentageSet');
+      console.log(chalk.green(`The transfer limit for ${setTransferLimitInPercentageEvent._wallet} is ${setTransferLimitInPercentageEvent._percentage}%`));
+      break;
+    case 'Set tokens transfer limit per account':
+      let tokensAccount = readlineSync.question('Enter the wallet: ', {
+        limit: function(input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      let accountLimitInTokens = readlineSync.questionInt(`Enter the transfer limit for ${tokensAccount} in amount of tokens: `, {
+        limit: function(input) {
+          return input > 0;
+        },
+        limitMessage: "Must be greater than zero"
+      }); 
+      let setTransferLimitInTokensAction = currentTransferManager.methods.setTransferLimitInTokens(tokensAccount, web3.utils.toWei(accountLimitInTokens));
+      let setTransferLimitInTokensReceipt = await common.sendTransaction(Issuer.address, setTransferLimitInTokensAction, defaultGasPrice);
+      let setTransferLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, setTransferLimitInTokensReceipt.logs, 'TransferLimitInTokensSet');
+      console.log(chalk.green(`The transfer limit for ${setTransferLimitInTokensEvent._wallet} is ${setTransferLimitInTokensEvent._percentage} ${tokenSymbol}`));
+      break;
+    case 'Remove percentage transfer limit per account':
+      let percentageAccountToRemove = readlineSync.question('Enter the wallet to remove: ', {
+        limit: function(input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      let removeTransferLimitInPercentageAction = currentTransferManager.methods.removeTransferLimitInPercentage(percentageAccountToRemove);
+      let removeTransferLimitInPercentageReceipt = await common.sendTransaction(Issuer.address, removeTransferLimitInPercentageAction, defaultGasPrice);
+      let removeTransferLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeTransferLimitInPercentageReceipt.logs, 'TransferLimitInPercentageRemoved');
+      console.log(chalk.green(`The transfer limit for ${removeTransferLimitInPercentageEvent._wallet} is the default limit`));
+      break;
+    case 'Remove tokens transfer limit per account':
+      let tokensAccountToRemove = readlineSync.question('Enter the wallet to remove: ', {
+        limit: function(input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      let removeTransferLimitInTokensAction = currentTransferManager.methods.removeTransferLimitInTokens(tokensAccountToRemove);
+      let removeTransferLimitInTokensReceipt = await common.sendTransaction(Issuer.address, removeTransferLimitInTokensAction, defaultGasPrice);
+      let removeTransferLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeTransferLimitInTokensReceipt.logs, 'TransferLimitInTokensRemoved');
+      console.log(chalk.green(`The transfer limit for ${removeTransferLimitInTokensEvent._wallet} is the default limit`));
+      break;
+  }
+}
 /*
 // Copied from tests
 function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, restricted, validFrom, validTo, pk) {

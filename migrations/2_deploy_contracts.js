@@ -220,8 +220,7 @@ module.exports = function (deployer, network, accounts) {
     // D) Register the ManualApprovalTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the ManualApprovalTransferManager contract.
     return moduleRegistry.registerModule(ManualApprovalTransferManagerFactory.address, {from: PolymathAccount});
-  })
-  .then(() => {
+  }).then(() => {
     // E) Register the ERC20DividendCheckpointFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the ERC20DividendCheckpoint contract.
     return moduleRegistry.registerModule(ERC20DividendCheckpointFactory.address, {from: PolymathAccount});
@@ -294,28 +293,29 @@ module.exports = function (deployer, network, accounts) {
   }).then(() => {
     console.log('\n');
     console.log(`
-    --------------------- Polymath Network Smart Contracts: ---------------------
-    PolymathRegistry:                  ${PolymathRegistry.address}
-    SecurityTokenRegistryProxy:        ${SecurityTokenRegistryProxy.address}
-    SecurityTokenRegistry:             ${SecurityTokenRegistry.address}
-    ModuleRegistry:                    ${ModuleRegistry.address}
-    ModuleRegistryProxy:               ${ModuleRegistryProxy.address}
-    FeatureRegistry:                   ${FeatureRegistry.address}
-    ETHOracle:                         ${ETHOracle}
-    POLYOracle:                        ${POLYOracle}
-    STFactory:                         ${STFactory.address}
-    GeneralTransferManagerFactory:     ${GeneralTransferManagerFactory.address}
-    GeneralPermissionManagerFactory:   ${GeneralPermissionManagerFactory.address}
-    CappedSTOFactory:                  ${CappedSTOFactory.address}
-    USDTieredSTOFactory:               ${USDTieredSTOFactory.address}
-    USDTieredSTOProxyFactory:          ${USDTieredSTOProxyFactory.address}
-    CountTransferManagerFactory:       ${CountTransferManagerFactory.address}
-    PercentageTransferManagerFactory:  ${PercentageTransferManagerFactory.address}
-    ManualApprovalTransferManagerFactory:
-                                       ${ManualApprovalTransferManagerFactory.address}
-    EtherDividendCheckpointFactory:    ${EtherDividendCheckpointFactory.address}
-    ERC20DividendCheckpointFactory:    ${ERC20DividendCheckpointFactory.address}
-    -----------------------------------------------------------------------------
+    ----------------------- Polymath Network Smart Contracts: -----------------------
+    PolymathRegistry:                     ${PolymathRegistry.address}
+    SecurityTokenRegistry (Proxy):        ${SecurityTokenRegistryProxy.address}
+    ModuleRegistry (Proxy):               ${ModuleRegistryProxy.address}
+    FeatureRegistry:                      ${FeatureRegistry.address}
+
+    ETHOracle:                            ${ETHOracle}
+    POLYOracle:                           ${POLYOracle}
+
+    STFactory:                            ${STFactory.address}
+    GeneralTransferManagerFactory:        ${GeneralTransferManagerFactory.address}
+    GeneralPermissionManagerFactory:      ${GeneralPermissionManagerFactory.address}
+
+    CappedSTOFactory:                     ${CappedSTOFactory.address}
+    USDTieredSTOFactory:                  ${USDTieredSTOFactory.address}
+    USDTieredSTOProxyFactory:             ${USDTieredSTOProxyFactory.address}
+
+    CountTransferManagerFactory:          ${CountTransferManagerFactory.address}
+    PercentageTransferManagerFactory:     ${PercentageTransferManagerFactory.address}
+    ManualApprovalTransferManagerFactory: ${ManualApprovalTransferManagerFactory.address}
+    EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
+    ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
+    ---------------------------------------------------------------------------------
     `);
     console.log('\n');
     // -------- END OF POLYMATH NETWORK Configuration -------//

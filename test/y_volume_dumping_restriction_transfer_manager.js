@@ -301,6 +301,12 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             )
         })
 
+        it("Should prevent creation of a dump restriction where user address is empty", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.addDumpingRestriction(null, percent, startTime, endTime, rollingPeriod, { from: token_owner })
+            )
+        })
+
         it("Should prevent creation of a dump restriction where percent is zero", async() => {
             await catchRevert(
                 I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, 0, startTime, endTime, rollingPeriod, { from: token_owner })
@@ -463,7 +469,7 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
         it("Should be possible to modify multiple volume dumping restrictions at once", async() => {
             const accounts = [account_investor3, account_investor4]
             const percents = [ 20, 30 ]
-            const startTimes = [0, 0]
+            const startTimes = [0, (await web3.eth.getBlock('latest')).timestamp+100]
             const endTimes = [endTimeFn(1), endTimeFn(2)]
             const rollingPeriods = [20, 20]
 

@@ -653,7 +653,7 @@ contract("MaximumVolumeTransferManager", accounts => {
                     startTimes,
                     endTimes,
                     rollingIntervals,
-                    { from: account_investor1 }
+                    { from: token_owner }
                 );
             } catch(error) {
                 console.log(`         tx revert -> max volumes array is empty`.grey);

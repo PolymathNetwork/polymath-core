@@ -353,6 +353,20 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             assert.equal(rollingPeriod, logs['args']['rollingPeriod'], "Invalid rolling period");
         })
 
+        it("Should verify transfer of multiple break up of tokens up to limit in a dumping restriction period", async() => {
+            // a readonly transaction
+            const result = await I_VolumeRestrictionTransferManager.verifyTransfer.call(account_investor2, 0, web3.utils.toWei('0.9', 'ether'), "", false);
+            // enum Result {INVALID, NA, VALID, FORCE_VALID} and we want VALID so it should be 2
+            assert.equal(result.toString(), '2')
+        })
+
+        it("Should not verify transfer of multiple break up of tokens more than the limit in a dumping restriction period", async() => {
+            // a readonly transaction
+            const result = await I_VolumeRestrictionTransferManager.verifyTransfer.call(account_investor2, 0, web3.utils.toWei('1', 'ether'), "", false);
+            // enum Result {INVALID, NA, VALID, FORCE_VALID} and we want VALID so it should be 2
+            assert.equal(result.toString(), '0')
+        })
+
         it("Should allow transfer of multiple break up of tokens up to limit in a dumping restriction period", async() => {
             /**
              * Allows transfers up to 0.9 ether 
@@ -364,6 +378,8 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('0.3', 'ether'), { from: account_investor2 });
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('0.4', 'ether'), { from: account_investor2 });
         })
+
+
 
         it("Should get volume restriction details", async() => {
             const result = await I_VolumeRestrictionTransferManager.getVolumeDumpingRestrictions(account_investor2, { from: token_owner })

@@ -453,7 +453,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should fail in adding the investor to the same blacklist", async() => {
             await catchRevert(
                 I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "a_blacklist", { 
-                    from: account_investor1 
+                    from: token_owner 
                 })
             );
         });

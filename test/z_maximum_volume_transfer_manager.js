@@ -421,14 +421,32 @@ contract("MaximumVolumeTransferManager", accounts => {
             assert.ok(errorThrown, message);
         });
 
+        it("should not allow creation of a maximum volume restriction if endTime is less than current time", async() => {
+            let errorThrown = false;
+            try{
+                await I_MaximumVolumeTransferManager.addMaxVolumeRestricion(
+                    max_vol,
+                    latestTime() - 100000,
+                    latestTime() - 100,
+                    rollingInterval,
+                    { from: token_owner }
+                );
+            } catch(error) {
+                console.log(`         tx revert -> endTime is in the past`.grey);
+                ensureException(error);
+                errorThrown = true;
+            }
+            assert.ok(errorThrown, message);
+        });
+
         it("should not allow creation of a maximum volume restriction if rolling interval is greater than the restriction period", async() => {
             let errorThrown = false;
             try{
                 await I_MaximumVolumeTransferManager.addMaxVolumeRestricion(
                     max_vol,
                     startTime,
-                    startTime + 10,
-                    rollingInterval,
+                    latestTime() + 10,
+                    0,
                     { from: token_owner }
                 );
             } catch(error) {

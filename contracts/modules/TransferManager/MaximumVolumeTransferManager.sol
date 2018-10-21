@@ -134,7 +134,6 @@ contract MaximumVolumeTransferManager is ITransferManager {
         uint256[] _endTimes, 
         uint256[] _rollingPeriodIntervals) 
     public withPerm(ADMIN) {
-        require(_maximumVolumes.length >= 1, "No restrictions provided");
         require(
             _maximumVolumes.length == _startTimes.length &&
             _maximumVolumes.length == _endTimes.length &&
@@ -297,7 +296,6 @@ contract MaximumVolumeTransferManager is ITransferManager {
             uint256(RollingIntervals.Annually) >= _rollingPeriodInterval,
             "invalid rolling period interval - should be < 5"
         );
-        require(_startTime != 0, 'invalid startTime');
         require(_endTime > _startTime && _endTime > now, 'invalid endTime');
         require(
             _getPeriod(RollingIntervals(_rollingPeriodInterval)) <= _endTime.sub(_startTime), 

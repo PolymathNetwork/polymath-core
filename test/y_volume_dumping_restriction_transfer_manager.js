@@ -486,7 +486,7 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
 
         it("Should revert if the parameters are bad when removing multiple volume dumping restrictions", async() => {
             await catchRevert(
-                I_VolumeRestrictionTransferManager.removeRestrictionMulti([])
+                I_VolumeRestrictionTransferManager.removeRestrictionMulti([], { from: token_owner })
             )
         })
 

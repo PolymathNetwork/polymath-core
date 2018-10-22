@@ -50,19 +50,17 @@ module.exports = {
 `);
   },
   sendTransaction: async function (from, action, gasPrice, value, factor) {
-
-    let contractRegistry = await this.connect(action._parent.options.jsonInterface, action._parent._address)
-
+    let contractRegistry = await this.connect(action._parent.options.jsonInterface, action._parent._address);
     try {
       let moduleAddress = await contractRegistry.methods.factory().call();
       let moduleRegistry = await this.connect(abis.moduleFactory(), moduleAddress)
-      let result = await moduleRegistry.methods.getName().call();
-      let contractName = web3.utils.hexToUtf8(result);
-      let functionName = action._method.name;
-      this.checkPermission(contractName, functionName)
-      process.exit(0);
+      let parentModule = await moduleRegistry.methods.getName().call();
+      let result = await this.checkPermission(web3.utils.hexToUtf8(parentModule), action._method.name, contractRegistry);
+      if (!result) {
+        console.log("You haven't the right permissions to execute this method.");
+        process.exit(0);
+      }
     } catch (e) {
-      process.exit(0);
     }
 
     if (typeof factor === 'undefined') factor = 1.2;
@@ -115,18 +113,20 @@ module.exports = {
     let filteredLogs = logs.filter(l => l.topics.includes(eventJsonInterface.signature));
     return filteredLogs.map(l => web3.eth.abi.decodeLog(eventJsonInterface.inputs, l.data, l.topics.slice(1)));
   },
-  checkPermission: async function (contractName, functionName) {
-    let result = permissionsList.verifyPermission(contractName, functionName);
-    
-    //TODO do I need to figure out how identify tokens owner
-    /*let stoOwner = await securityToken.methods.owner().call();
-    if (stoOwner == Issuer.address) {
+  checkPermission: async function (contractName, functionName, contractRegistry) {
+    let permission = permissionsList.verifyPermission(contractName, functionName);
+    if (permission === undefined) {
       return true
-    }*/
-
-    /*let generalPermissionAddress = generalPermissionManager.options.address;
-    let result = await generalPermissionManager.methods.checkPermission(Issuer.address, generalPermissionAddress, web3.utils.asciiToHex(CHANGE_PERMISSION)).call();
-    return result*/
+    } else {
+      let stAddress = await contractRegistry.methods.securityToken().call();
+      let securityToken = await this.connect(abis.securityToken(), stAddress);
+      let stOwner = await securityToken.methods.owner().call();
+      if (stOwner == Issuer.address) {
+        return true
+      }
+      let result = await securityToken.methods.checkPermission(Issuer.address, contractRegistry.options.address, web3.utils.asciiToHex(permission)).call();
+      return result
+    }
   },
   connect: async function (abi, address) {
     try {

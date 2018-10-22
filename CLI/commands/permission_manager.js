@@ -19,9 +19,6 @@ const MODULES_TYPES = {
   BURN: 5
 }
 
-const CHANGE_PERMISSION = "CHANGE_PERMISSION";
-const FAILD_PERMISSION_MSG = "You haven't the right permissions to execute this function.";
-
 async function executeApp(remoteNetwork) {
   await global.initialize(remoteNetwork);
 
@@ -101,13 +98,6 @@ async function changePermissionStep() {
   let selectedModule = await selectModule();
   let selectedPermission = await selectPermission(selectedModule.permissions);
   let isValid = isPermissionValid();
-
-  /*let checkResult = await common.checkPermission();
-  if (!checkResult) {
-    console.log(FAILD_PERMISSION_MSG);
-    process.exit(0);
-  }*/
-
   await changePermission(selectedDelegate, selectedModule.address, selectedPermission, isValid);
 }
 
@@ -197,12 +187,6 @@ async function addNewDelegate() {
     },
     limitMessage: "Must be a valid string"
   });
-
-  /*let checkResult = await common.checkPermission();
-  if (!checkResult) {
-    console.log(FAILD_PERMISSION_MSG);
-    process.exit(0);
-  }*/
 
   let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
   let receipt = await common.sendTransaction(Issuer, addPermissionAction, defaultGasPrice);

@@ -548,9 +548,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         if (transfersFrozen)
             return false;
 
-        if (modules[TRANSFER_KEY].length == 0)
-            return true;
-
         validTransfer = true;
         address module;
 

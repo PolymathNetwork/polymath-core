@@ -16,6 +16,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     uint256 public EXCLUDED_ADDRESS_LIMIT = 50;
     bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
     bytes32 public constant MANAGE = "MANAGE";
+    bytes32 public constant CHECKPOINT = "CHECKPOINT";
 
     struct Dividend {
         uint256 checkpointId;
@@ -71,6 +72,14 @@ contract DividendCheckpoint is ICheckpoint, Module {
      */
     function getDefaultExcluded() external view returns (address[]) {
         return excluded;
+    }
+
+    /**
+     * @notice Creates a checkpoint on the security token
+     * @return Checkpoint ID
+     */
+    function createCheckpoint() public withPerm(CHECKPOINT) returns (uint256) {
+        return ISecurityToken(securityToken).createCheckpoint();
     }
 
     /**

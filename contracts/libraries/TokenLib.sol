@@ -194,8 +194,11 @@ library TokenLib {
         for (uint256 i = 0; i < _investorData.investors.length; i++) {
             if (_investorData.investors[i] == address(0)) {
                 while(_investorData.investors.length > i) {
-                    if (_investorData.investors[_investorData.investors.length - 1] != address(0))
+                    if (_investorData.investors[_investorData.investors.length - 1] != address(0)) {
                         _investorData.investors[i] = _investorData.investors[_investorData.investors.length - 1];
+                        _investorData.investors.length--;
+                        break;
+                    }
                     _investorData.investors.length--;
                 }
             }

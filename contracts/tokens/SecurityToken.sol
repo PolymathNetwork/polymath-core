@@ -656,7 +656,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return success
      */
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
-        return TokenLib.checkPermission(modules[PERMISSION_KEY], _delegate, _module, _perm);
+        for (uint256 i = 0; i < modules[PERMISSION_KEY].length; i++) {
+            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived)
+                return TokenLib.checkPermission(modules[PERMISSION_KEY], _delegate, _module, _perm);
+        }
+        return false;
     }
 
     function _burn(address _from, uint256 _value, bytes _data) internal returns(bool) {

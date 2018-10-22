@@ -94,7 +94,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint256 _tierPrice, uint8 _tier);
     event FundsReceived(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, FundRaiseType _fundRaiseType, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
     event FundsReceivedPOLY(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
-    event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _tier);
+    event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens);
 
     event SetAddresses(
         address indexed _wallet,
@@ -276,10 +276,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             tempSold = tempSold.add(mintedPerTierTotal[i]);
             if (remainingTokens > 0) {
                 mintedPerTierTotal[i] = tokensPerTierTotal[i];
-                require(ISecurityToken(securityToken).mint(reserveWallet, remainingTokens), "Error in minting");
-                emit ReserveTokenMint(msg.sender, reserveWallet, remainingTokens, i);
             }
         }
+        require(ISecurityToken(securityToken).mint(reserveWallet, tempReturned), "Error in minting");
+        emit ReserveTokenMint(msg.sender, reserveWallet, tempReturned);
         finalAmountReturned = tempReturned;
         totalTokensSold = tempSold;
     }

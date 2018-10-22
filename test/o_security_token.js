@@ -866,6 +866,22 @@ contract("SecurityToken", accounts => {
             assert.equal(investors.length, 3);
         });
 
+        it("Should prune investor length test #2", async () => {
+            let balance = await I_SecurityToken.balanceOf(account_affiliate2);
+            let balance2 = await I_SecurityToken.balanceOf(account_investor1);
+            await I_SecurityToken.transfer(account_affiliate1, balance, { from: account_affiliate2});
+            await I_SecurityToken.transfer(account_affiliate1, balance2, { from: account_investor1});
+            await I_SecurityToken.pruneInvestors(0, 10, { from: token_owner });
+            let investors = await I_SecurityToken.getInvestors.call();
+            let expectedAccounts = [account_affiliate1];
+            for (let i = 0; i < expectedAccounts.length; i++) {
+                assert.equal(investors[i], expectedAccounts[i]);
+            }
+            assert.equal(investors.length, 1);
+            await I_SecurityToken.transfer(account_affiliate2, balance, { from: account_affiliate1});
+            await I_SecurityToken.transfer(account_investor1, balance2, { from: account_affiliate1});
+        });
+
         it("Should check the balance of investor at checkpoint", async () => {
             await catchRevert(I_SecurityToken.balanceOfAt(account_investor1, 5));
         });

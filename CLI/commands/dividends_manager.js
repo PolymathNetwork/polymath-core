@@ -221,7 +221,7 @@ async function transferTokens(address, amount){
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
     console.log(`
   Account ${event.from}
-  transfered ${web3.utils.fromWei(event.value)} tokens
+  transferred ${web3.utils.fromWei(event.value)} tokens
   to account ${event.to}`
     );
   } catch (err) {
@@ -262,7 +262,7 @@ async function setDefaultExclusions() {
     let setDefaultExclusionsActions = currentDividendsModule.methods.setDefaultExcluded(excluded);
     let receipt = await common.sendTransaction(Issuer, setDefaultExclusionsActions, defaultGasPrice);
     let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'SetDefaultExcludedAddresses');
-    console.log(chalk.green(`Exclusions were successfuly set.`));
+    console.log(chalk.green(`Exclusions were successfully set.`));
     showExcluded(event._excluded);    
   }
 }

@@ -208,9 +208,10 @@ node CLI/polymath-cli dividends_manager
 
 ## Package version requirements for your machine:
 
-- Homebrew v1.6.7
 - node v8.x.x or v9.x.x
+- npm v6.x.x or newer
 - Yarn v1.3 or newer
+- Homebrew v1.6.7 (for macOS)
 - Truffle v4.1.11 (core: 4.1.11)
 - Solidity v0.4.24 (solc-js)
 - Ganache CLI v6.1.3 (ganache-core: 2.1.2) or newer
@@ -221,10 +222,13 @@ The smart contracts are written in [Solidity](https://github.com/ethereum/solidi
 
 ```bash
 # Install Truffle package globally:
-$ yarn global add truffle
+$ npm install --global truffle
+
+# (Only for windows) set up build tools for node-gyp by running below command in powershell:
+$ npm install --global --production windows-build-tools
 
 # Install local node dependencies:
-$ yarn install
+$ yarn
 ```
 
 ## Testing
@@ -232,7 +236,11 @@ $ yarn install
 To test the code simply run:
 
 ```bash
-$ yarn run test
+# on *nix systems
+$ npm run test
+
+# on windows systems
+$ npm run wintest
 ```
 
 

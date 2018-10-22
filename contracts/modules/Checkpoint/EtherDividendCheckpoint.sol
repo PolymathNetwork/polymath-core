@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./DividendCheckpoint.sol";
+import "../../interfaces/IOwnable.sol";
 
 /**
  * @title Checkpoint module for issuing ether dividends
@@ -30,7 +31,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
      * @param _name name/title for identification
      */
-    function createDividend(uint256 _maturity, uint256 _expiry, bytes32 _name) payable external onlyOwner {
+    function createDividend(uint256 _maturity, uint256 _expiry, bytes32 _name) payable external withPerm(MANAGE) {
         createDividendWithExclusions(_maturity, _expiry, excluded, _name);
     }
 
@@ -41,7 +42,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _checkpointId Id of the checkpoint from which to issue dividend
      * @param _name name/title for identification
      */
-    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, uint256 _checkpointId, bytes32 _name) payable external onlyOwner {
+    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, uint256 _checkpointId, bytes32 _name) payable external withPerm(MANAGE) {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _checkpointId, excluded, _name);
     }
 
@@ -52,7 +53,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _excluded List of addresses to exclude
      * @param _name name/title for identification
      */
-    function createDividendWithExclusions(uint256 _maturity, uint256 _expiry, address[] _excluded, bytes32 _name) payable public onlyOwner {
+    function createDividendWithExclusions(uint256 _maturity, uint256 _expiry, address[] _excluded, bytes32 _name) payable public withPerm(MANAGE) {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, checkpointId, _excluded, _name);
     }
@@ -74,7 +75,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
     ) 
         payable 
         public 
-        onlyOwner 
+        withPerm(MANAGE) 
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _checkpointId, _excluded, _name);
     }
@@ -105,9 +106,6 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
         uint256 excludedSupply = 0;
-        for (uint256 i = 0; i < _excluded.length; i++) {
-            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOfAt(_excluded[i], _checkpointId));
-        }
         dividends.push(
           Dividend(
             _checkpointId,
@@ -116,16 +114,18 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
             _expiry,
             msg.value,
             0,
-            currentSupply.sub(excludedSupply),
+            0,
             false,
             0,
             0,
             _name
           )
         );
-        for (uint256 j = 0; j < _excluded.length; j++) {
-            dividends[dividends.length - 1].dividendExcluded[_excluded[j]] = true;
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOfAt(_excluded[i], _checkpointId));            
+            dividends[dividends.length - 1].dividendExcluded[_excluded[i]] = true;
         }
+        dividends[dividends.length -1].totalSupply = currentSupply.sub(excludedSupply);
         emit EtherDividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, msg.value, currentSupply, dividendIndex, _name);
     }
 
@@ -156,28 +156,30 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @notice Issuer can reclaim remaining unclaimed dividend amounts, for expired dividends
      * @param _dividendIndex Dividend to reclaim
      */
-    function reclaimDividend(uint256 _dividendIndex) external onlyOwner {
+    function reclaimDividend(uint256 _dividendIndex) external withPerm(MANAGE) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
         require(now >= dividends[_dividendIndex].expiry, "Dividend expiry is in the future");
         require(!dividends[_dividendIndex].reclaimed, "Dividend already claimed");
         Dividend storage dividend = dividends[_dividendIndex];
         dividend.reclaimed = true;
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
-        msg.sender.transfer(remainingAmount);
-        emit EtherDividendReclaimed(msg.sender, _dividendIndex, remainingAmount);
+        address owner = IOwnable(securityToken).owner();
+        owner.transfer(remainingAmount);
+        emit EtherDividendReclaimed(owner, _dividendIndex, remainingAmount);
     }
 
     /**
      * @notice Allows issuer to withdraw withheld tax
      * @param _dividendIndex Dividend to withdraw from
      */
-    function withdrawWithholding(uint256 _dividendIndex) external onlyOwner {
+    function withdrawWithholding(uint256 _dividendIndex) external withPerm(MANAGE) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingWithheld = dividend.dividendWithheld.sub(dividend.dividendWithheldReclaimed);
         dividend.dividendWithheldReclaimed = dividend.dividendWithheld;
-        msg.sender.transfer(remainingWithheld);
-        emit EtherDividendWithholdingWithdrawn(msg.sender, _dividendIndex, remainingWithheld);
+        address owner = IOwnable(securityToken).owner();
+        owner.transfer(remainingWithheld);
+        emit EtherDividendWithholdingWithdrawn(owner, _dividendIndex, remainingWithheld);
     }
 
 }

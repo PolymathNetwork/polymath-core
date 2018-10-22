@@ -148,7 +148,7 @@ function isPermissionValid() {
 
 async function changePermission(delegate, moduleAddress, permission, isValid) {
   let changePermissionAction = generalPermissionManager.methods.changePermission(delegate, moduleAddress, web3.utils.asciiToHex(permission), isValid);
-  let receipt = await common.sendTransaction(Issuer, changePermissionAction, defaultGasPrice, 0, 1.5);
+  let receipt = await common.sendTransaction(Issuer, changePermissionAction, defaultGasPrice, 0, 2);
   common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'ChangePermission');
   console.log(`Permission changed succesfully,`);
 }

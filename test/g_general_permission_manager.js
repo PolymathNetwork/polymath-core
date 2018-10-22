@@ -249,17 +249,6 @@ contract('GeneralPermissionManager', accounts => {
             );
         });
 
-        it("Security token should allow all permission if all permission managers are disabled", async () => {
-            await I_SecurityToken.archiveModule(I_GeneralPermissionManager.address, { from: token_owner });
-            assert.isTrue(
-                await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
-            );
-            await I_SecurityToken.unarchiveModule(I_GeneralPermissionManager.address, { from: token_owner });
-            assert.isFalse(
-                await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
-            );
-        });
-
         it("Should provide the permission", async () => {
             let tx = await I_GeneralPermissionManager.changePermission(
                 account_delegate,
@@ -274,6 +263,17 @@ contract('GeneralPermissionManager', accounts => {
         it("Should check the permission", async () => {
             assert.isTrue(
                 await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
+            );
+        });
+
+        it("Security token should deny all permission if all permission managers are disabled", async () => {
+            await I_SecurityToken.archiveModule(I_GeneralPermissionManager.address, { from: token_owner });
+            assert.isFalse(
+                await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
+            );
+            await I_SecurityToken.unarchiveModule(I_GeneralPermissionManager.address, { from: token_owner });
+            assert.isTrue(
+                await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
             );
         });
 

@@ -547,7 +547,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
             }
             bool isInvalid = false;
             bool isValid = false;
-            bool isForceValid = false;
             bool unarchived = false;
             address module;
             for (uint8 i = 0; i < modules[TRANSFER_KEY].length; i++) {
@@ -557,17 +556,15 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
                     ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
-                    }
-                    if (valid == ITransferManager.Result.VALID) {
+                    } else if (valid == ITransferManager.Result.VALID) {
                         isValid = true;
-                    }
-                    if (valid == ITransferManager.Result.FORCE_VALID) {
-                        isForceValid = true;
+                    } else if (valid == ITransferManager.Result.FORCE_VALID) {
+                        return true;
                     }
                 }
             }
             // If no unarchived modules, return true by default
-            return unarchived ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
+            return unarchived ? (isInvalid ? false : isValid) : true;
         }
         return false;
     }

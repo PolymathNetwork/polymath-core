@@ -405,11 +405,14 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
     */
     function pruneInvestors(uint256 _start, uint256 _iters) external onlyOwner {
-        for (uint256 i = _start; i < Math.min256(_start.add(_iters), investorData.investors.length); i++) {
-            if ((i < investorData.investors.length) && (balanceOf(investorData.investors[i]) == 0)) {
-                TokenLib.pruneInvestors(investorData, i);
+        uint iter = Math.min256(_start.add(_iters), investorData.investors.length);
+        for (uint256 i = _start; i < iter; i++) {
+            if (balanceOf(investorData.investors[i]) == 0) {
+                investorData.investorListed[investorData.investors[i]] = false;
+                investorData.investors[i] = address(0);
             }
         }
+        TokenLib.pruneInvestors(investorData);
     }
 
     /**

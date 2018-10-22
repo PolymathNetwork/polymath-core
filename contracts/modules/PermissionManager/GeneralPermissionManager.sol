@@ -204,8 +204,8 @@ contract GeneralPermissionManager is IPermissionManager, Module {
                 _allModulePerms = IModule(_currentTypeModules[j]).getPermissions();
                 for (k = 0; k < _allModulePerms.length; k++) {
                     if (perms[_currentTypeModules[j]][_delegate][_allModulePerms[k]]) {
-                        _allModules[counter]= _currentTypeModules[j];
-                        _allPerms[counter]=_allModulePerms[k];
+                        _allModules[counter] = _currentTypeModules[j];
+                        _allPerms[counter] = _allModulePerms[k];
                         counter++;
                     }
                 }

@@ -16,7 +16,7 @@ contract RegistryUpdater is Ownable {
         polymathRegistry = _polymathRegistry;
     }
 
-    function updateFromRegistry() onlyOwner public {
+    function updateFromRegistry() public onlyOwner {
         moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
         securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
         featureRegistry = PolymathRegistry(polymathRegistry).getAddress("FeatureRegistry");

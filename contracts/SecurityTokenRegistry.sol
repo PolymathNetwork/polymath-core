@@ -155,7 +155,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _polyToken is the address of the POLY ERC20 token
      * @param _owner is the owner of the STR
      */
-    function initialize(address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner) payable external {
+    function initialize(address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner) external payable {
         require(!getBool(Encoder.getKey("initialised")),"already initialized");
         require(_STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0), "Invalid address");
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Fees should not be 0");

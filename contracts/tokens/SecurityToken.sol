@@ -581,7 +581,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _data data to indicate validation
      * @return bool
      */
-    function verifyTransfer(address _from, address _to, uint256 _value, bytes _data) public view returns (bool) {
+    function verifyTransfer(address _from, address _to, uint256 _value, bytes _data) public returns (bool) {
         return _verifyTransfer(_from, _to, _value, _data, false);
     }
 

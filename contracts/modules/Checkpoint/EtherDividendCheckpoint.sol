@@ -126,12 +126,11 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
             require (_excluded[j] != address(0), "Invalid address");
             for (uint256 i = j + 1; i < _excluded.length; i++) {
                 require (_excluded[j] != _excluded[i], "Duplicate exclude address");
-                excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOfAt(_excluded[i], _checkpointId));            
-                dividends[dividends.length - 1].dividendExcluded[_excluded[i]] = true;
             }
-            dividends[dividends.length - 1].dividendExcluded[_excluded[j]] = true;
+            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOfAt(_excluded[j], _checkpointId));
+            dividends[dividendIndex].dividendExcluded[_excluded[j]] = true;
         }
-        dividends[dividends.length -1].totalSupply = currentSupply.sub(excludedSupply);
+        dividends[dividendIndex].totalSupply = currentSupply.sub(excludedSupply);
         emit EtherDividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, msg.value, currentSupply, dividendIndex, _name);
     }
 

@@ -1119,7 +1119,7 @@ contract("ERC20DividendCheckpoint", accounts => {
                 assert.equal(await I_ERC20DividendCheckpointFactory.getTitle.call(), "ERC20 Dividend Checkpoint", "Wrong Module added");
                 assert.equal(
                     await I_ERC20DividendCheckpointFactory.getInstructions.call(),
-                    "Create a ERC20 dividend which will be paid out to token holders proportional to their balances at the point the dividend is created",
+                    "Create ERC20 dividend to be paid out to token holders based on their balances at dividend creation time",
                     "Wrong Module added"
                 );
                 let tags = await I_ERC20DividendCheckpointFactory.getTags.call();

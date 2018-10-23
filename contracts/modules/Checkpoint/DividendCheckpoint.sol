@@ -51,10 +51,10 @@ contract DividendCheckpoint is ICheckpoint, Module {
     event SetWithholdingFixed(address[] _investors, uint256 _withholding, uint256 _timestamp);
 
     modifier validDividendIndex(uint256 _dividendIndex) {
-        require(_dividendIndex < dividends.length, "Incorrect dividend index");
-        require(!dividends[_dividendIndex].reclaimed, "Dividend has been reclaimed by issuer");
-        require(now >= dividends[_dividendIndex].maturity, "Dividend maturity is in the future");
-        require(now < dividends[_dividendIndex].expiry, "Dividend expiry is in the past");
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        require(!dividends[_dividendIndex].reclaimed, "Dividend reclaimed");
+        require(now >= dividends[_dividendIndex].maturity, "Dividend maturity in future");
+        require(now < dividends[_dividendIndex].expiry, "Dividend expiry in past");
         _;
     }
 
@@ -164,7 +164,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
-        require(!dividend.claimed[msg.sender], "Dividend already claimed by msg.sender");
+        require(!dividend.claimed[msg.sender], "Dividend already claimed");
         require(!dividend.dividendExcluded[msg.sender], "msg.sender excluded from Dividend");
         _payDividend(msg.sender, dividend, _dividendIndex);
     }
@@ -190,7 +190,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @return claim, withheld amounts
      */
     function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256, uint256) {
-        require(_dividendIndex < dividends.length, "Incorrect dividend index");
+        require(_dividendIndex < dividends.length, "Invalid dividend");
         Dividend storage dividend = dividends[_dividendIndex];
         if (dividend.claimed[_payee] || dividend.dividendExcluded[_payee]) {
             return (0, 0);

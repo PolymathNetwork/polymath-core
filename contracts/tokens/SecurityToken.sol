@@ -38,7 +38,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     SemanticVersion securityTokenVersion;
 
-    // off-chain data
+    // off-chain data 
     string public tokenDetails;
 
     uint8 constant PERMISSION_KEY = 1;
@@ -393,7 +393,24 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _value value of transfer
     */
     function _adjustInvestorCount(address _from, address _to, uint256 _value) internal {
-        TokenLib.adjustInvestorCount(investorData, _from, _to, _value, balanceOf(_from), balanceOf(_to));
+        TokenLib.adjustInvestorCount(investorData, _from, _to, _value, balanceOf(_to), balanceOf(_from));
+    }
+
+    /**
+    * @notice removes addresses with zero balances from the investors list
+    * @param _start Index in investor list at which to start removing zero balances
+    * @param _iters Max number of iterations of the for loop
+    * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
+    */
+    function pruneInvestors(uint256 _start, uint256 _iters) external onlyOwner {
+        uint iter = Math.min256(_start.add(_iters), investorData.investors.length);
+        for (uint256 i = _start; i < iter; i++) {
+            if (balanceOf(investorData.investors[i]) == 0) {
+                investorData.investorListed[investorData.investors[i]] = false;
+                investorData.investors[i] = address(0);
+            }
+        }
+        TokenLib.pruneInvestors(investorData);
     }
 
     /**
@@ -409,7 +426,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice returns the investor count
      */
     function getInvestorCount() external view returns(uint256) {
-        return investorData.investors.length;
+        return investorData.investorCount;
     }
 
     /**

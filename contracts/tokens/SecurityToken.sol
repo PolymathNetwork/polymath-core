@@ -111,8 +111,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event CheckpointCreated(uint256 indexed _checkpointId, uint256 _timestamp);
     // Emit when is permanently frozen by the issuer
     event FreezeMinting(uint256 _timestamp);
-    // Change the STR address in the event of a upgrade
-    event ChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
     // Events to log minting and burning
     event Minted(address indexed _to, uint256 _value);
     event Burnt(address indexed _from, uint256 _value);
@@ -151,7 +149,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     modifier checkGranularity(uint256 _value) {
-        require(_value % granularity == 0, "Incorrect granularity");
+        require(_value % granularity == 0, "Invalid granularity");
         _;
     }
 
@@ -383,7 +381,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _granularity granularity level of the token
     */
     function changeGranularity(uint256 _granularity) external onlyOwner {
-        require(_granularity != 0, "Incorrect granularity");
+        require(_granularity != 0, "Invalid granularity");
         emit GranularityChanged(granularity, _granularity);
         granularity = _granularity;
     }
@@ -482,7 +480,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bool success
      */
     function transferWithData(address _to, uint256 _value, bytes _data) public returns (bool success) {
-        require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer not valid");
+        require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer Invalid");
         require(super.transfer(_to, _value));
         return true;
     }
@@ -507,7 +505,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bool success
      */
     function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) public returns(bool) {
-        require(_updateTransfer(_from, _to, _value, _data), "Transfer not valid");
+        require(_updateTransfer(_from, _to, _value, _data), "Transfer Invalid");
         require(super.transferFrom(_from, _to, _value));
         return true;
     }
@@ -622,7 +620,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         bytes _data
         ) public onlyModuleOrOwner(MINT_KEY) isMintingAllowed() returns (bool success) {
         require(_investor != address(0), "Investor is 0");
-        require(_updateTransfer(address(0), _investor, _value, _data), "Transfer not valid");
+        require(_updateTransfer(address(0), _investor, _value, _data), "Transfer Invalid");
         _adjustTotalSupplyCheckpoints();
         totalSupply_ = totalSupply_.add(_value);
         balances[_investor] = balances[_investor].add(_value);
@@ -639,7 +637,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return success
      */
     function mintMulti(address[] _investors, uint256[] _values) external onlyModuleOrOwner(MINT_KEY) returns (bool success) {
-        require(_investors.length == _values.length, "Incorrect inputs");
+        require(_investors.length == _values.length, "Invalid inputs");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _values[i]);
         }
@@ -680,7 +678,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _data data to indicate validation
      */
     function burnWithData(uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
-        require(_burn(msg.sender, _value, _data), "Burn not valid");
+        require(_burn(msg.sender, _value, _data), "Burn Invalid");
     }
 
     /**
@@ -692,7 +690,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function burnFromWithData(address _from, uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
         require(_value <= allowed[_from][msg.sender], "Value too high");
         allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-        require(_burn(_from, _value, _data), "Burn not valid");
+        require(_burn(_from, _value, _data), "Burn Invalid");
     }
 
     /**

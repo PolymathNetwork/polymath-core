@@ -22,7 +22,7 @@ contract MockRedemptionManager is TrackedRedemption {
     }
 
     /**
-     * @notice Transfer tokens to Module to burn
+     * @notice Transfers tokens to Module to burn
      * @param _value The number of tokens to redeem
      */
     function transferToRedeem(uint256 _value) public {
@@ -31,7 +31,7 @@ contract MockRedemptionManager is TrackedRedemption {
     }
 
     /**
-     * @notice use to redeem tokens by the module
+     * @notice Used to redeem tokens by the module
      * @param _value The number of tokens to redeem
      */
     function redeemTokenByOwner(uint256 _value) public {

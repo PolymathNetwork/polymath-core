@@ -179,7 +179,9 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint256 moduleType = getUint(Encoder.getKey("registry", _moduleFactory));
 
         require(moduleType != 0, "Module factory should be registered");
-        require(msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),"msg.sender must be the Module Factory owner or registry curator");
+        /*solium-disable-next-line indentation*/
+        require(msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),
+                "msg.sender must be the Module Factory owner or registry curator"); /*solium-disable-line indentation*/
 
         uint256 index = getUint(Encoder.getKey("moduleListIndex", _moduleFactory));
         uint256 last = getArrayAddress(Encoder.getKey("moduleList", moduleType)).length - 1;

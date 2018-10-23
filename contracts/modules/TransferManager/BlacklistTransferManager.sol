@@ -31,9 +31,6 @@ contract BlacklistTransferManager is ITransferManager {
 
     //store the index of the blacklist to investor
     mapping(bytes32 => mapping(address => uint256)) blacklistToIndex;
-
-    //store the investor to blacklist status
-    mapping(address => mapping(bytes32 => bool)) investorBlacklistStatus;
    
     // Emit when new blacklist type is added
     event AddBlacklistType(
@@ -135,6 +132,20 @@ contract BlacklistTransferManager is ITransferManager {
     }
     
     /**
+    * @notice Used to add the multiple blacklist type
+    * @param _startTime start date of the blacklist type
+    * @param _endTime end date of the blacklist type
+    * @param _name name of the blacklist type
+    * @param _repeatPeriodTime repeat period of the blacklist type
+    */
+    function addBlacklistTypeMulti(uint256[] _startTime, uint256[] _endTime, bytes32[] _name, uint256[] _repeatPeriodTime) public withPerm(ADMIN) {
+        require (_startTime.length == _endTime.length && _endTime.length == _name.length && _name.length == _repeatPeriodTime.length, "Input array's length mismatch"); 
+        for (uint256 i = 0; i < _startTime.length; i++){
+            addBlacklistType(_startTime[i], _endTime[i], _name[i], _repeatPeriodTime[i]);
+        }
+    }
+
+    /**
      * @notice Internal function 
      */
     function _validParams(uint256 _startTime, uint256 _endTime, bytes32 _name, uint256 _repeatPeriodTime) internal pure {
@@ -158,6 +169,20 @@ contract BlacklistTransferManager is ITransferManager {
     }
 
     /**
+    * @notice Used to edit the mutiple blacklist type
+    * @param _startTime start date of the blacklist type
+    * @param _endTime end date of the blacklist type
+    * @param _name name of the blacklist type
+    * @param _repeatPeriodTime repeat period of the blacklist type
+    */
+    function modifyBlacklistTypeMulti(uint256[] _startTime, uint256[] _endTime, bytes32[] _name, uint256[] _repeatPeriodTime) public withPerm(ADMIN) {
+        require (_startTime.length == _endTime.length && _endTime.length == _name.length && _name.length == _repeatPeriodTime.length, "Input array's length mismatch"); 
+        for (uint256 i = 0; i < _startTime.length; i++){
+            modifyBlacklistType(_startTime[i], _endTime[i], _name[i], _repeatPeriodTime[i]);
+        }
+    }
+
+    /**
     * @notice Used to delete the blacklist type
     * @param _name name of the blacklist type
     */
@@ -170,6 +195,16 @@ contract BlacklistTransferManager is ITransferManager {
     }
 
     /**
+    * @notice Used to delete the mutiple blacklist type
+    * @param _name name of the blacklist type
+    */
+    function deleteBlacklistTypeMulti(bytes32[] _name) public withPerm(ADMIN) {
+        for(uint256 i = 0; i < _name.length; i++){
+            deleteBlacklistType(_name[i]);
+        }
+    }
+
+    /**
     * @notice Used to assign the blacklist type to the investor
     * @param _investor address of the investor
     * @param _blacklistName name of the blacklist
@@ -177,7 +212,6 @@ contract BlacklistTransferManager is ITransferManager {
     function addInvestorToBlacklist(address _investor, bytes32 _blacklistName) public withPerm(ADMIN) {
         require(blacklists[_blacklistName].endTime != 0, "Blacklist type doesn't exist");
         require(_investor != address(0), "Invalid investor address");
-        require(!investorBlacklistStatus[_investor][_blacklistName],"Investor already associated to the same blacklist");
         uint256 investorIndex = investorToBlacklist[_investor].length;
         // Add blacklist index to the investor 
         investorToIndex[_investor][_blacklistName] = investorIndex;
@@ -186,8 +220,43 @@ contract BlacklistTransferManager is ITransferManager {
         blacklistToIndex[_blacklistName][_investor] = blacklistIndex;
         investorToBlacklist[_investor].push(_blacklistName);
         blacklistToInvestor[_blacklistName].push(_investor);
-        investorBlacklistStatus[_investor][_blacklistName] = true;
         emit AddInvestorToBlacklist(_investor, _blacklistName);
+    }
+
+    /**
+    * @notice Used to assign the blacklist type to the multiple investor
+    * @param _investor address of the investor
+    * @param _blacklistName name of the blacklist
+    */
+    function addInvestorToBlacklistMulti(address[] _investor, bytes32 _blacklistName) public withPerm(ADMIN){
+        for(uint256 i = 0; i < _investor.length; i++){
+            addInvestorToBlacklist(_investor[i], _blacklistName);
+        }
+    }
+
+    /**
+    * @notice Used to assign the mutiple blacklist type to the multiple investor
+    * @param _investor address of the investor
+    * @param _blacklistName name of the blacklist
+    */
+    function addMultiInvestorToBlacklistMulti(address[] _investor, bytes32[] _blacklistName) public withPerm(ADMIN){
+        require (_investor.length == _blacklistName.length, "Input array's length mismatch"); 
+        for(uint256 i = 0; i < _investor.length; i++){
+            addInvestorToBlacklist(_investor[i], _blacklistName[i]);
+        }
+    }
+
+    /**
+    * @notice Used to assign the new blacklist type to the investor
+    * @param _startTime start date of the blacklist type
+    * @param _endTime end date of the blacklist type
+    * @param _name name of the blacklist type
+    * @param _repeatPeriodTime repeat period of the blacklist type
+    * @param _investor address of the investor
+    */
+    function addInvestorToNewBlacklist(uint256 _startTime, uint256 _endTime, bytes32 _name, uint256 _repeatPeriodTime, address _investor) public withPerm(ADMIN){
+        addBlacklistType(_startTime, _endTime, _name, _repeatPeriodTime);
+        addInvestorToBlacklist(_investor, _name);
     }
 
     /**
@@ -202,6 +271,16 @@ contract BlacklistTransferManager is ITransferManager {
         }
     }
 
+     /**
+    * @notice Used to delete the mutiple investor from the all associated blacklists
+    * @param _investor address of the investor
+    */
+    function deleteInvestorFromAllBlacklistMulti(address[] _investor) public withPerm(ADMIN) {
+        for(uint256 i = 0; i < _investor.length; i++){
+            deleteInvestorFromAllBlacklist(_investor[i]);
+        }
+    }
+
     /**
     * @notice Used to delete the investor from the blacklist
     * @param _investor address of the investor
@@ -210,7 +289,7 @@ contract BlacklistTransferManager is ITransferManager {
     function deleteInvestorFromBlacklist(address _investor, bytes32 _blacklistName) public withPerm(ADMIN) {
         require(_investor != address(0), "Invalid investor address");
         require(_blacklistName != bytes32(0),"Invalid blacklist name");
-        require(investorBlacklistStatus[_investor][_blacklistName],"Investor not associated to the blacklist");
+        require(investorToBlacklist[_investor][investorToIndex[_investor][_blacklistName]] == _blacklistName, "Investor not associated to the blacklist");
         // delete the investor from the blacklist type
         uint256 _blacklistIndex = blacklistToIndex[_blacklistName][_investor];
         uint256 _len = blacklistToInvestor[_blacklistName].length;
@@ -230,35 +309,23 @@ contract BlacklistTransferManager is ITransferManager {
         }
         investorToBlacklist[_investor].length--;
         // delete the blacklist index from the invetsor
-        investorBlacklistStatus[_investor][_blacklistName] = false;
         delete(investorToIndex[_investor][_blacklistName]);
         emit DeleteInvestorFromBlacklist(_investor, _blacklistName);
     }
 
-    /**
-    * @notice Used to assign the blacklist type to the multiple investor
+     /**
+    * @notice Used to delete the mutiple investor from the blacklist
     * @param _investor address of the investor
     * @param _blacklistName name of the blacklist
     */
-    function addInvestorToBlacklistMulti(address[] _investor, bytes32 _blacklistName) public withPerm(ADMIN){
+    function deleteInvestorFromBlacklistMulti(address[] _investor, bytes32[] _blacklistName) public withPerm(ADMIN) {
+        require (_investor.length == _blacklistName.length, "Input array's length mismatch"); 
         for(uint256 i = 0; i < _investor.length; i++){
-            addInvestorToBlacklist(_investor[i], _blacklistName);
+            deleteInvestorFromBlacklist(_investor[i], _blacklistName[i]);
         }
     }
 
-    /**
-    * @notice Used to assign the new blacklist type to the investor
-    * @param _startTime start date of the blacklist type
-    * @param _endTime end date of the blacklist type
-    * @param _name name of the blacklist type
-    * @param _repeatPeriodTime repeat period of the blacklist type
-    * @param _investor address of the investor
-    */
-    function addInvestorToNewBlacklist(uint256 _startTime, uint256 _endTime, bytes32 _name, uint256 _repeatPeriodTime, address _investor) public withPerm(ADMIN){
-        addBlacklistType(_startTime, _endTime, _name, _repeatPeriodTime);
-        addInvestorToBlacklist(_investor, _name);
-    }
-
+    
     /**
     * @notice get the list of the investors of a blacklist type
     * @param _blacklistName name of the blacklist type

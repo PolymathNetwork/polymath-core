@@ -386,6 +386,46 @@ contract('BlacklistTransferManager', accounts => {
             );    
         });
 
+        it("Should add the mutiple blacklist", async() => {
+            //Add the new blacklist
+            let startTime = [latestTime()+2000,latestTime()+3000];
+            let endTime = [latestTime()+5000,latestTime()+8000];
+            let name = ["y_blacklist","z_blacklist"];
+            let repeatTime = [15,30];
+            let tx = await I_BlacklistTransferManager.addBlacklistTypeMulti(startTime, endTime, name, repeatTime, { from: token_owner });
+            
+            let event_data = tx.logs;
+            for (var i = 0; i < event_data.length; i++) {
+                let blacklistName = event_data[i].args._name;
+                assert.equal(web3.utils.hexToUtf8(blacklistName), name[i], "Failed in adding the blacklist");
+            }
+        });
+
+        it("Should fail in adding the mutiple blacklist because only owner can add it", async() => {
+            //Add the new blacklist
+            let startTime = [latestTime()+2000,latestTime()+3000];
+            let endTime = [latestTime()+5000,latestTime()+8000];
+            let name = ["y_blacklist","z_blacklist"];
+            let repeatTime = [15,30];
+            await catchRevert(
+                I_BlacklistTransferManager.addBlacklistTypeMulti(startTime, endTime, name, repeatTime, { 
+                    from: account_investor1 
+                })
+            );
+        });
+
+        it("Should fail in adding the mutiple blacklist because array lenth are different", async() => {
+            //Add the new blacklist
+            let startTime = [latestTime()+2000,latestTime()+3000];
+            let endTime = [latestTime()+5000,latestTime()+8000];
+            let name = ["y_blacklist","z_blacklist","w_blacklist"];
+            let repeatTime = [15,30];
+            await catchRevert(
+                I_BlacklistTransferManager.addBlacklistTypeMulti(startTime, endTime, name, repeatTime, { 
+                    from: token_owner 
+                })
+            );
+        });
 
         it("Should modify the blacklist", async() => {
             //Modify the existing blacklist
@@ -435,6 +475,47 @@ contract('BlacklistTransferManager', accounts => {
             );   
         });
 
+        it("Should modify the mutiple blacklist", async() => {
+            //Add the new blacklist
+            let startTime = [latestTime()+3000,latestTime()+3000];
+            let endTime = [latestTime()+5000,latestTime()+7000];
+            let name = ["y_blacklist","z_blacklist"];
+            let repeatTime = [15,30];
+            let tx = await I_BlacklistTransferManager.modifyBlacklistTypeMulti(startTime, endTime, name, repeatTime, { from: token_owner });
+            
+            let event_data = tx.logs;
+            for (var i = 0; i < event_data.length; i++) {
+                let blacklistName = event_data[i].args._name;
+                assert.equal(web3.utils.hexToUtf8(blacklistName), name[i], "Failed in adding the blacklist");
+            }
+        });
+
+        it("Should fail in modifying the mutiple blacklist because only owner can add it", async() => {
+            //Add the new blacklist
+            let startTime = [latestTime()+3000,latestTime()+3000];
+            let endTime = [latestTime()+5000,latestTime()+7000];
+            let name = ["y_blacklist","z_blacklist"];
+            let repeatTime = [15,30];
+            await catchRevert(
+                I_BlacklistTransferManager.modifyBlacklistTypeMulti(startTime, endTime, name, repeatTime, { 
+                    from: account_investor1 
+                })
+            );
+        });
+
+        it("Should fail in modifying the mutiple blacklist because array length are different", async() => {
+            //Add the new blacklist
+            let startTime = [latestTime()+3000,latestTime()+3000];
+            let endTime = [latestTime()+5000,latestTime()+7000];
+            let name = ["y_blacklist","z_blacklist","w_blacklist"];
+            let repeatTime = [15,30];
+            await catchRevert(
+                I_BlacklistTransferManager.modifyBlacklistTypeMulti(startTime, endTime, name, repeatTime, { 
+                    from: token_owner 
+                })
+            );
+        });
+
         it("Should add investor to the blacklist", async() => {
             //Add investor to the existing blacklist
             let tx = await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "a_blacklist", { from: token_owner });
@@ -446,14 +527,6 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.addInvestorToBlacklist(account_investor2, "a_blacklist", { 
                     from: account_investor1 
-                })
-            );
-        });
-
-        it("Should fail in adding the investor to the same blacklist", async() => {
-            await catchRevert(
-                I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "a_blacklist", { 
-                    from: token_owner 
                 })
             );
         });
@@ -641,6 +714,27 @@ contract('BlacklistTransferManager', accounts => {
             );
         });
 
+        it("Should delete the mutiple blacklist type", async() => {
+            let name = ["y_blacklist","z_blacklist"];
+            let tx = await I_BlacklistTransferManager.deleteBlacklistTypeMulti(name, { from: token_owner });
+            
+            let event_data = tx.logs;
+            for (var i = 0; i < event_data.length; i++) {
+                let blacklistName = event_data[i].args._name;
+                assert.equal(web3.utils.hexToUtf8(blacklistName), name[i], "Failed in deleting the blacklist");
+            }
+
+        });
+
+        it("Should fail in deleting multiple blacklist type because only owner can do it.", async() => {
+            let name = ["b_blacklist","a_blacklist"];
+            await catchRevert(
+                I_BlacklistTransferManager.deleteBlacklistTypeMulti(name, { 
+                    from: account_investor1 
+                })
+            );
+        });
+
         it("Should delete the investor from all the associated blacklist", async() => {
             await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "g_blacklist", 20, { from: token_owner });
             await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "g_blacklist", { from: token_owner });
@@ -670,6 +764,55 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor5, { 
                     from: token_owner 
+                })
+            );
+        });
+
+        it("Should delete the mutiple investor from all the associated blacklist", async() => {
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor5, "g_blacklist", { from: token_owner });
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor2, "g_blacklist", { from: token_owner });
+            let investor = [account_investor5,account_investor2];
+            let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklistMulti(investor, { from: token_owner });
+            let event_data = tx.logs;
+            for (var i = 0; i < event_data.length; i++) {
+                let investorName = event_data[i].args._investor;
+                assert.equal(investorName.toLowerCase(), investor[i].toLowerCase(), "Failed in deleting the blacklist");
+            }
+        });
+
+        it("Should fail in deleting the mutiple investor from all the associated blacklist because only owner can do it.", async() => {
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor5, "g_blacklist", { from: token_owner });
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor2, "g_blacklist", { from: token_owner });
+            let investor = [account_investor5,account_investor2];
+            await catchRevert(
+                I_BlacklistTransferManager.deleteInvestorFromAllBlacklistMulti(investor, { 
+                    from: account_investor1 
+                })
+            );
+        });
+
+        it("Should delete the mutiple investor from particular associated blacklists", async() => {
+            await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "s_blacklist", 20, { from: token_owner });
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor5, "s_blacklist", { from: token_owner });
+            // await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor2, "g_blacklist", { from: token_owner });
+            let investor = [account_investor5,account_investor2];
+            let blacklistName = ["s_blacklist","g_blacklist"];
+            let tx = await I_BlacklistTransferManager.deleteInvestorFromBlacklistMulti(investor,blacklistName, { from: token_owner });
+            let event_data = tx.logs;
+            for (var i = 0; i < event_data.length; i++) {
+                let investorName = event_data[i].args._investor;
+                assert.equal(investorName.toLowerCase(), investor[i].toLowerCase(), "Failed in deleting the blacklist");
+            }
+        });
+
+        it("Should fail in deleting the mutiple investor from particular associated blacklist because only owner can do it.", async() => {
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor5, "s_blacklist", { from: token_owner });
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor2, "g_blacklist", { from: token_owner });
+            let investor = [account_investor5,account_investor2];
+            let blacklistName = ["s_blacklist","g_blacklist"];
+            await catchRevert(
+                I_BlacklistTransferManager.deleteInvestorFromBlacklistMulti(investor,blacklistName, { 
+                    from: account_investor1 
                 })
             );
         });
@@ -751,6 +894,44 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.addInvestorToBlacklistMulti([account_investor4,account_investor5], "b_blacklist", { 
                     from: account_investor1 
+                })
+            );
+        });
+
+        it("Should add mutiple investor to the mutiple blacklist", async() => {
+            await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "m_blacklist", 20, { from: token_owner });
+            await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "n_blacklist", 20, { from: token_owner });
+            let investor = [account_investor4,account_investor5];
+            let blacklistName =["m_blacklist","n_blacklist"];
+            let tx = await I_BlacklistTransferManager.addMultiInvestorToBlacklistMulti(investor, blacklistName, { from: token_owner });
+            
+            let event_data = tx.logs;
+            for (var i = 0; i < event_data.length; i++) {
+                let user = event_data[i].args._investor;
+                let blacklist = event_data[i].args._blacklistName;
+                assert.equal(user, investor[i], "Failed in adding the investor to blacklist");
+                assert.equal(web3.utils.hexToUtf8(blacklist), blacklistName[i], "Failed in adding the investor to blacklist");
+            }
+        
+        });
+
+        it("Should fail in adding the mutiple investor to the mutiple blacklist because only owner can do it.", async() => {
+            let investor = [account_investor4,account_investor5];
+            let blacklistName = ["m_blacklist","n_blacklist"];
+            await I_BlacklistTransferManager.deleteInvestorFromBlacklistMulti(investor,blacklistName, { from: token_owner });
+            await catchRevert(
+                I_BlacklistTransferManager.addMultiInvestorToBlacklistMulti(investor, blacklistName, { 
+                    from: account_investor1 
+                })
+            );
+        });
+
+        it("Should fail in adding mutiple investor to the mutiple blacklist because array length is not same", async() => {
+            let investor = [account_investor4,account_investor5];
+            let blacklistName =["m_blacklist"];
+            await catchRevert(
+                I_BlacklistTransferManager.addMultiInvestorToBlacklistMulti(investor, blacklistName, { 
+                    from: token_owner 
                 })
             );
         });

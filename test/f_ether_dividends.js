@@ -862,7 +862,18 @@ contract("EtherDividendCheckpoint", accounts => {
             ));
         });
 
+        it("should not allow manager without permission to create checkpoint", async () => {
+            await catchRevert(I_EtherDividendCheckpoint.createCheckpoint({ from: account_manager }));
+        });
+
         it("should give permission to manager", async () => {
+            await I_GeneralPermissionManager.changePermission(
+                account_manager,
+                I_EtherDividendCheckpoint.address,
+                "CHECKPOINT",
+                true,
+                { from: token_owner }
+            );
             let tx = await I_GeneralPermissionManager.changePermission(
                 account_manager,
                 I_EtherDividendCheckpoint.address,
@@ -930,6 +941,13 @@ contract("EtherDividendCheckpoint", accounts => {
                 { from: account_manager, value: web3.utils.toWei("12", "ether") }
             );
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 12);
+        });
+
+        it("should allow manager with permission to create checkpoint", async () => {
+            let initCheckpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
+            await I_EtherDividendCheckpoint.createCheckpoint({ from: account_manager });
+            let finalCheckpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
+            assert.equal(finalCheckpointID.toNumber(), initCheckpointID.toNumber() + 1);
         });
 
         describe("Test cases for the EtherDividendCheckpointFactory", async () => {

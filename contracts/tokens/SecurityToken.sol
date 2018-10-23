@@ -527,6 +527,10 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     /**
      * @notice validate transfer with TransferManager module if it exists
      * @dev TransferManager module has a key of 2
+     * @dev _isTransfer boolean flag is the deciding factor for whether the 
+     * state variables gets modified or not within the different modules. i.e isTransfer = true
+     * leads to change in the modules environment otherwise _verifyTransfer() works as a read-only
+     * function (no change in the state). 
      * @param _from sender of transfer
      * @param _to receiver of transfer
      * @param _value value of transfer

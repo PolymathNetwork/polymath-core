@@ -540,16 +540,13 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint256 _value,
         bytes _data,
         bool _isTransfer
-        ) internal checkGranularity(_value) returns (bool) {
+    ) internal checkGranularity(_value) returns (bool) {
         if (!transfersFrozen) {
-            if (modules[TRANSFER_KEY].length == 0) {
-                return true;
-            }
             bool isInvalid = false;
             bool isValid = false;
             bool unarchived = false;
             address module;
-            for (uint8 i = 0; i < modules[TRANSFER_KEY].length; i++) {
+            for (uint256 i = 0; i < modules[TRANSFER_KEY].length; i++) {
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;

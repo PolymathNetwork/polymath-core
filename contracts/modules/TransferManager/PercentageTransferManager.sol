@@ -1,3 +1,10 @@
+/**
+ * DISCLAIMER: Under certain conditions, the limit could be bypassed if a large token holder 
+ * redeems a huge portion of their tokens. It will cause the total supply to drop 
+ * which can result in some other token holders having a percentage of tokens 
+ * higher than the intended limit.
+ */
+
 pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";

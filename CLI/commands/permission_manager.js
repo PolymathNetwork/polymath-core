@@ -29,6 +29,7 @@ async function executeApp(remoteNetwork) {
   console.log("Issuer Account: " + Issuer.address + "\n");
 
   await setup();
+
   try {
     await selectST();
     await addPermissionModule();
@@ -186,6 +187,7 @@ async function addNewDelegate() {
     },
     limitMessage: "Must be a valid string"
   });
+
   let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
   let receipt = await common.sendTransaction(Issuer, addPermissionAction, defaultGasPrice);
   let event = common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'AddDelegate');

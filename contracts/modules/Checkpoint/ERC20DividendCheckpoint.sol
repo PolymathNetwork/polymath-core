@@ -126,9 +126,6 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
         uint256 excludedSupply = 0;
-        for (uint256 i = 0; i < _excluded.length; i++) {
-            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOfAt(_excluded[i], _checkpointId));
-        }
         dividends.push(
           Dividend(
             _checkpointId,
@@ -137,16 +134,18 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
             _expiry,
             _amount,
             0,
-            currentSupply.sub(excludedSupply),
+            0,
             false,
             0,
             0,
             _name
           )
         );
-        for (uint256 j = 0; j < _excluded.length; j++) {
-            dividends[dividends.length - 1].dividendExcluded[_excluded[j]] = true;
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOfAt(_excluded[i], _checkpointId));
+            dividends[dividends.length - 1].dividendExcluded[_excluded[i]] = true;
         }
+        dividends[dividends.length - 1].totalSupply = currentSupply.sub(excludedSupply);
         dividendTokens[dividendIndex] = _token;
         _emitERC20DividendDepositedEvent(_checkpointId, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);
     }

@@ -107,9 +107,6 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
         uint256 excludedSupply = 0;
-        for (uint256 i = 0; i < _excluded.length; i++) {
-            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOfAt(_excluded[i], _checkpointId));
-        }
         dividends.push(
           Dividend(
             _checkpointId,
@@ -118,16 +115,18 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
             _expiry,
             msg.value,
             0,
-            currentSupply.sub(excludedSupply),
+            0,
             false,
             0,
             0,
             _name
           )
         );
-        for (uint256 j = 0; j < _excluded.length; j++) {
-            dividends[dividends.length - 1].dividendExcluded[_excluded[j]] = true;
+        for (uint256 i = 0; i < _excluded.length; i++) {
+            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOfAt(_excluded[i], _checkpointId));            
+            dividends[dividends.length - 1].dividendExcluded[_excluded[i]] = true;
         }
+        dividends[dividends.length -1].totalSupply = currentSupply.sub(excludedSupply);
         emit EtherDividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, msg.value, currentSupply, dividendIndex, _name);
     }
 

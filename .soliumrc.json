@@ -12,6 +12,10 @@
       "error",
       4
     ],
+    "max-len": [
+      "warning",
+      180
+    ],
     "security/no-block-members": "off"
   }
 }

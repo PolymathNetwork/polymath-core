@@ -88,6 +88,7 @@ contract CappedSTOFactory is ModuleFactory {
      * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
+        /*solium-disable-next-line max-len*/
         return "Initialises a capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY/ETH to token rate), _fundRaiseType (whether you are raising in POLY or ETH), _polyToken (address of POLY token), _fundsReceiver (address which will receive funds)";
     }
 

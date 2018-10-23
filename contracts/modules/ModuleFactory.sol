@@ -114,8 +114,10 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _newVersion new version array
      */
     function changeSTVersionBounds(string _boundType, uint8[] _newVersion) external onlyOwner {
-        require(keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("lowerBound")) || keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("upperBound")),
-        "Must be a valid bound type");
+        /*solium-disable-next-line indentation*/
+        require(keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("lowerBound")) ||
+                keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("upperBound")), /*solium-disable-line indentation*/
+                "Must be a valid bound type"); /*solium-disable-line indentation*/
         require(_newVersion.length == 3);
         if (compatibleSTVersionRange[_boundType] != uint24(0)) { 
             uint8[] memory _currentVersion = VersionUtils.unpack(compatibleSTVersionRange[_boundType]);

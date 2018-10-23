@@ -85,6 +85,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
      * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
+        /*solium-disable-next-line max-len*/
         return "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist, and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.";
     }
 

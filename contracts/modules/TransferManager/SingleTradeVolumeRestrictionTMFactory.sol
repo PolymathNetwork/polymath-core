@@ -81,6 +81,7 @@ contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
     * @return string
     */
     function getInstructions() external view returns(string) {
+        /*solium-disable-next-line max-len*/
         return "Allows an issuer to impose volume restriction on a single trade. Init function takes two parameters. First parameter is a bool indicating if restriction is in percentage. The second parameter is the value in percentage or amount of tokens";
     }
 

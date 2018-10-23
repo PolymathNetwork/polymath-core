@@ -8,8 +8,9 @@ import "../../interfaces/IOwnable.sol";
  */
 contract EtherDividendCheckpoint is DividendCheckpoint {
     using SafeMath for uint256;
-
-    event EtherDividendDeposited(address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity, uint256 _expiry, uint256 _amount, uint256 _totalSupply, uint256 _dividendIndex, bytes32 indexed _name);
+    /*solium-disable-next-line indentation*/
+    event EtherDividendDeposited(address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity, uint256 _expiry,
+                                 uint256 _amount, uint256 _totalSupply, uint256 _dividendIndex, bytes32 indexed _name); /*solium-disable-line indentation*/
     event EtherDividendClaimed(address indexed _payee, uint256 _dividendIndex, uint256 _amount, uint256 _withheld);
     event EtherDividendReclaimed(address indexed _claimer, uint256 _dividendIndex, uint256 _claimedAmount);
     event EtherDividendClaimFailed(address indexed _payee, uint256 _dividendIndex, uint256 _amount, uint256 _withheld);

@@ -92,7 +92,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     event SetNonAccreditedLimit(address _investor, uint256 _limit);
     event SetAccredited(address _investor, bool _accredited);
     event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint256 _tierPrice, uint8 _tier);
-    event FundsReceived(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, FundRaiseType _fundRaiseType, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
+    /*solium-disable-next-line indentation*/
+    event FundsReceived(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, FundRaiseType _fundRaiseType,
+                        uint256 _receivedValue, uint256 _spentValue, uint256 _rate); /*solium-disable-line indentation*/
     event FundsReceivedPOLY(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _tier);
 

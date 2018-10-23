@@ -12,8 +12,10 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
 
     // Mapping to token address for each dividend
     mapping (uint256 => address) public dividendTokens;
-
-    event ERC20DividendDeposited(address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity, uint256 _expiry, address indexed _token, uint256 _amount, uint256 _totalSupply, uint256 _dividendIndex, bytes32 indexed _name);
+    /*solium-disable-next-line indentation*/
+    event ERC20DividendDeposited(address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity,
+                                 uint256 _expiry, address indexed _token, uint256 _amount, uint256 _totalSupply, /*solium-disable-line indentation*/
+                                 uint256 _dividendIndex, bytes32 indexed _name); /*solium-disable-line indentation*/
     event ERC20DividendClaimed(address indexed _payee, uint256 _dividendIndex, address indexed _token, uint256 _amount, uint256 _withheld);
     event ERC20DividendReclaimed(address indexed _claimer, uint256 _dividendIndex, address indexed _token, uint256 _claimedAmount);
     event ERC20DividendWithholdingWithdrawn(address indexed _claimer, uint256 _dividendIndex, address indexed _token, uint256 _withheldAmount);
@@ -153,7 +155,9 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @notice emits the ERC20DividendDeposited event. 
      * Seperated into a different function as a workaround for stack too deep error
      */
-    function _emitERC20DividendDepositedEvent(uint256 _checkpointId, uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 currentSupply, uint256 dividendIndex, bytes32 _name) internal {
+    /*solium-disable-next-line indentation*/
+    function _emitERC20DividendDepositedEvent(uint256 _checkpointId, uint256 _maturity, uint256 _expiry, address _token, uint256 _amount,
+                                              uint256 currentSupply, uint256 dividendIndex, bytes32 _name) internal { /*solium-disable-line indentation*/
         emit ERC20DividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);
     }
 

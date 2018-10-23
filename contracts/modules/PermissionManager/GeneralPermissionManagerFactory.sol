@@ -83,6 +83,7 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
      * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
+        /*solium-disable-next-line max-len*/
         return "Add and remove permissions for the SecurityToken and associated modules. Permission types should be encoded as bytes32 values, and attached using the withPerm modifier to relevant functions.No initFunction required.";
     }
 

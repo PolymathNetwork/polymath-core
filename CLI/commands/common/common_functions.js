@@ -3,6 +3,28 @@ const Tx = require('ethereumjs-tx');
 const permissionsList = require('./permissions_list');
 const abis = require('../helpers/contract_abis');
 
+async function connect(abi, address) {
+  contractRegistry = new web3.eth.Contract(abi, address);
+  contractRegistry.setProvider(web3.currentProvider);
+  return contractRegistry
+};
+
+async function checkPermission(contractName, functionName, contractRegistry) {
+  let permission = permissionsList.verifyPermission(contractName, functionName);
+  if (permission === undefined) {
+    return true
+  } else {
+    let stAddress = await contractRegistry.methods.securityToken().call();
+    let securityToken = await connect(abis.securityToken(), stAddress);
+    let stOwner = await securityToken.methods.owner().call();
+    if (stOwner == Issuer.address) {
+      return true
+    }
+    let result = await securityToken.methods.checkPermission(Issuer.address, contractRegistry.options.address, web3.utils.asciiToHex(permission)).call();
+    return result
+  }
+};
+
 module.exports = {
   convertToDaysRemaining: function (timeRemaining) {
     var seconds = parseInt(timeRemaining, 10);
@@ -50,17 +72,18 @@ module.exports = {
 `);
   },
   sendTransaction: async function (from, action, gasPrice, value, factor) {
-    let contractRegistry = await this.connect(action._parent.options.jsonInterface, action._parent._address);
-    try {
+    let contractRegistry = await connect(action._parent.options.jsonInterface, action._parent._address);
+    
+    //NOTE this is a condition to verify if the transaction comes from a module or not. 
+    if (contractRegistry.methods.hasOwnProperty('factory')) {
       let moduleAddress = await contractRegistry.methods.factory().call();
-      let moduleRegistry = await this.connect(abis.moduleFactory(), moduleAddress)
+      let moduleRegistry = await connect(abis.moduleFactory(), moduleAddress)
       let parentModule = await moduleRegistry.methods.getName().call();
-      let result = await this.checkPermission(web3.utils.hexToUtf8(parentModule), action._method.name, contractRegistry);
+      let result = await checkPermission(web3.utils.hexToUtf8(parentModule), action._method.name, contractRegistry);
       if (!result) {
         console.log("You haven't the right permissions to execute this method.");
         process.exit(0);
       }
-    } catch (e) {
     }
 
     if (typeof factor === 'undefined') factor = 1.2;
@@ -112,31 +135,5 @@ module.exports = {
     let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
     let filteredLogs = logs.filter(l => l.topics.includes(eventJsonInterface.signature));
     return filteredLogs.map(l => web3.eth.abi.decodeLog(eventJsonInterface.inputs, l.data, l.topics.slice(1)));
-  },
-  checkPermission: async function (contractName, functionName, contractRegistry) {
-    let permission = permissionsList.verifyPermission(contractName, functionName);
-    if (permission === undefined) {
-      return true
-    } else {
-      let stAddress = await contractRegistry.methods.securityToken().call();
-      let securityToken = await this.connect(abis.securityToken(), stAddress);
-      let stOwner = await securityToken.methods.owner().call();
-      if (stOwner == Issuer.address) {
-        return true
-      }
-      let result = await securityToken.methods.checkPermission(Issuer.address, contractRegistry.options.address, web3.utils.asciiToHex(permission)).call();
-      return result
-    }
-  },
-  connect: async function (abi, address) {
-    try {
-      contractRegistry = new web3.eth.Contract(abi, address);
-      contractRegistry.setProvider(web3.currentProvider);
-      return contractRegistry
-    } catch (err) {
-      console.log(err)
-      console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
-      process.exit(0);
-    }
   }
 };

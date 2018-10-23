@@ -31,11 +31,8 @@ All notable changes to this project will be documented in this file.
 * Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230     
 
 ## Fixed
-<<<<<<< HEAD
 * 0x0 and duplicate address in exclusions are no longer allowed in dividend modules.
-=======
 * All permissions are denied if no permission manager is active.
->>>>>>> development-1.5.0
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
 * Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230  
 * Change the function name of `withdraPoly` to `withdrawERC20` and make the function generalize to extract tokens from the ST contract. parmeters are contract address and the value need to extract from the securityToken.          

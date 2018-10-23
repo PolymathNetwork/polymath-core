@@ -143,12 +143,11 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
 
         for (uint256 j = 0; j < _excluded.length; j++) {
             require (_excluded[j] != address(0), "Invalid address");
-            for (uint256 i = j + 1; i < _excluded.length; i++) {
-                require (_excluded[j] != _excluded[i], "Duplicate exclude address");
-            }
+            require(!dividends[dividendIndex].dividendExcluded[_excluded[j]], "duped exclude address");
             excludedSupply = excludedSupply.add(securityTokenInstance.balanceOfAt(_excluded[j], _checkpointId));
             dividends[dividendIndex].dividendExcluded[_excluded[j]] = true;
         }
+
         dividends[dividendIndex].totalSupply = currentSupply.sub(excludedSupply);
         dividendTokens[dividendIndex] = _token;
         _emitERC20DividendDepositedEvent(_checkpointId, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);

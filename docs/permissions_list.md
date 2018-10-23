@@ -11,8 +11,8 @@
     </thead>
     <tbody>
         <tr>
-            <td rowspan=22> Checkpoint </td>
-            <td rowspan=11>ERC20DividendCheckpoint</td>
+            <td rowspan=24> Checkpoint </td>
+            <td rowspan=12>ERC20DividendCheckpoint</td>
             <td>pushDividendPayment()</td>
             <td rowspan=2> withPerm(DISTRIBUTE)</td>
         </tr>
@@ -47,8 +47,12 @@
         <tr>
             <td> withdrawWithholding() </td>
         </tr>
+        </tr>
+            <td> createCheckpoint() </td>
+            <td> withPerm(CHECKPOINT) </td>
+        </tr>
         <tr>
-            <td rowspan=11>EtherDividendCheckpoint</td>
+            <td rowspan=12>EtherDividendCheckpoint</td>
             <td>pushDividendPayment()</td>
             <td rowspan=2> withPerm(DISTRIBUTE) </td>
         </tr>
@@ -82,6 +86,10 @@
         </tr>
         <tr>
             <td> withdrawWithholding() </td>
+        </tr>
+        </tr>
+            <td> createCheckpoint() </td>
+            <td> withPerm(CHECKPOINT) </td>
         </tr>
          <tr>
             <td rowspan=3> PermissionManager </td>

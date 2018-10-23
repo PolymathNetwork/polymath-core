@@ -25,12 +25,10 @@ library TokenLib {
     }
 
     struct InvestorDataStorage {
-        // List of investors (may not be pruned to remove old investors with current zero balances)
-        mapping (address => bool) investorListed;
+        // Index of investors
+        mapping (address => uint256) investorIndex;
         // List of token holders
         address[] investors;
-        // Total number of non-zero token holders
-        uint256 investorCount;
     }
 
     // Emit when Module is archived from the SecurityToken
@@ -163,45 +161,22 @@ library TokenLib {
         address _from,
         address _to,
         uint256 _value,
-        uint256 _balanceTo,
-        uint256 _balanceFrom
+        uint256 _balanceFrom,
+        uint256 _balanceTo
         ) public  {
         if ((_value == 0) || (_from == _to)) {
             return;
         }
         // Check whether receiver is a new token holder
         if ((_balanceTo == 0) && (_to != address(0))) {
-            _investorData.investorCount = (_investorData.investorCount).add(1);
+            _investorData.investorIndex[_to] = _investorData.investors.length;
+            _investorData.investors.push(_to);
         }
         // Check whether sender is moving all of their tokens
         if (_value == _balanceFrom) {
-            _investorData.investorCount = (_investorData.investorCount).sub(1);
-        }
-        //Also adjust investor list
-        if (!_investorData.investorListed[_to] && (_to != address(0))) {
-            _investorData.investors.push(_to);
-            _investorData.investorListed[_to] = true;
-        }
-
-    }
-
-    /**
-    * @notice removes addresses with zero balances from the investors list
-    * @param _investorData is the date related to investor metrics
-    * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
-    */
-    function pruneInvestors(InvestorDataStorage storage _investorData) public {
-        for (uint256 i = 0; i < _investorData.investors.length; i++) {
-            if (_investorData.investors[i] == address(0)) {
-                while(_investorData.investors.length > i) {
-                    if (_investorData.investors[_investorData.investors.length - 1] != address(0)) {
-                        _investorData.investors[i] = _investorData.investors[_investorData.investors.length - 1];
-                        _investorData.investors.length--;
-                        break;
-                    }
-                    _investorData.investors.length--;
-                }
-            }
+            _investorData.investors[_investorData.investorIndex[_from]] = _investorData.investors[_investorData.investors.length - 1];
+            _investorData.investorIndex[_investorData.investors[_investorData.investorIndex[_from]]] = _investorData.investorIndex[_from];
+            _investorData.investors.length--;
         }
     }
 

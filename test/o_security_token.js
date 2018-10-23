@@ -3,7 +3,7 @@ import { duration, ensureException, promisifyLogWatch, latestBlock } from "./hel
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
-import { 
+import {
     setUpPolymathNetwork,
     deployGPMAndVerifyed,
     deployCappedSTOAndVerifyed,
@@ -501,7 +501,7 @@ contract("SecurityToken", accounts => {
         it("Should fail to get the total supply -- because checkpoint id is greater than present", async() => {
             await catchRevert(
                 I_SecurityToken.totalSupplyAt.call(50)
-            ); 
+            );
         })
     });
 
@@ -855,7 +855,7 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should prune investor length", async () => {
-            await I_SecurityToken.pruneInvestors(0, 10, { from: token_owner });
+            // await I_SecurityToken.pruneInvestors(0, 10, { from: token_owner });
             // Hardcode list of expected accounts based on transfers above
 
             let investors = await I_SecurityToken.getInvestors.call();
@@ -871,7 +871,7 @@ contract("SecurityToken", accounts => {
             let balance2 = await I_SecurityToken.balanceOf(account_investor1);
             await I_SecurityToken.transfer(account_affiliate1, balance, { from: account_affiliate2});
             await I_SecurityToken.transfer(account_affiliate1, balance2, { from: account_investor1});
-            await I_SecurityToken.pruneInvestors(0, 10, { from: token_owner });
+            // await I_SecurityToken.pruneInvestors(0, 10, { from: token_owner });
             let investors = await I_SecurityToken.getInvestors.call();
             let expectedAccounts = [account_affiliate1];
             for (let i = 0; i < expectedAccounts.length; i++) {
@@ -893,7 +893,7 @@ contract("SecurityToken", accounts => {
     });
 
     describe("Test cases for the Mock TrackedRedeemption", async() => {
-        
+
         it("Should add the tracked redeemption module successfully", async() => {
             [I_MockRedemptionManagerFactory] = await deployMockRedemptionAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
             let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "", 0, 0, {from: token_owner });
@@ -959,7 +959,7 @@ contract("SecurityToken", accounts => {
             await I_SecurityToken.approve(I_MockRedemptionManager.address, web3.utils.toWei("500"), {from: account_investor1});
             // Transfer the tokens to module (Burn)
             await I_MockRedemptionManager.transferToRedeem(web3.utils.toWei("500"), { from: account_investor1});
-            
+
             await catchRevert(
                 // Redeem tokens
                 I_MockRedemptionManager.redeemTokenByOwner(web3.utils.toWei("250"), {from: account_investor1})

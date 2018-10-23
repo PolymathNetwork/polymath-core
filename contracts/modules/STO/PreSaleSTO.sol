@@ -77,8 +77,10 @@ contract PreSaleSTO is ISTO {
         require(now <= endTime, "Current time should less than the endTime");
         require(_amount > 0, "No. of tokens provided should be greater the zero");
         ISecurityToken(securityToken).mint(_investor, _amount);
+        if (investors[_investor] == uint256(0)) {
+            investorCount = investorCount.add(1);
+        }
         investors[_investor] = investors[_investor].add(_amount);
-        investorCount = investorCount.add(1);
         fundsRaised[uint8(FundRaiseType.ETH)] = fundsRaised[uint8(FundRaiseType.ETH)].add(_etherContributed);
         fundsRaised[uint8(FundRaiseType.POLY)] = fundsRaised[uint8(FundRaiseType.POLY)].add(_polyContributed);
         totalTokensSold = totalTokensSold.add(_amount);

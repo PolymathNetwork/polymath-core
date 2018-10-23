@@ -495,7 +495,7 @@ async function investUsdTieredSTO(currency, amount) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
                 await common.sendTransaction(User, approveAction, defaultGasPrice);
             }
-            let actionBuyWithPoly = currentSTO.methods.buyWithPOLY(User.address, costWei);
+            let actionBuyWithPoly = currentSTO.methods.buyWithPOLY(User.address, costWei, 0, 1.5);
             let receipt = await common.sendTransaction(User, actionBuyWithPoly, defaultGasPrice);
             logTokensPurchasedUSDTieredSTO(receipt);
         } else {

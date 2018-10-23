@@ -352,7 +352,13 @@ contract("PreSaleSTO", accounts => {
             );
         });
 
-        it("Should failed at the time of buying the tokens -- Because STO has started", async () => {
+        it("Should buy some more tokens to previous investor", async() => {
+            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1000", "ether"), web3.utils.toWei("1", "ether"), 0, { from: account_issuer });
+            // No change in the investor count
+            assert.equal((await I_PreSaleSTO.getNumberInvestors.call()).toNumber(), 3);
+        })
+
+        it("Should failed at the time of buying the tokens -- Because STO has ended", async () => {
             await increaseTime(duration.days(100)); // increased beyond the end time of the STO
 
             await catchRevert(
@@ -382,7 +388,7 @@ contract("PreSaleSTO", accounts => {
             assert.equal(
                 (await I_PolyToken.balanceOf(account_investor1)).toNumber(),
                 initInvestorBalance.sub(value).toNumber(),
-                "tokens are not transfered out from investor account"
+                "tokens are not transferred out from investor account"
             );
             assert.equal(
                 (await I_PolyToken.balanceOf(token_owner)).toNumber(),

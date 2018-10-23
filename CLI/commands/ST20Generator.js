@@ -102,7 +102,7 @@ async function setup(){
 }
 
 async function step_ticker_reg(){
-  console.log('\n\x1b[34m%s\x1b[0m',"Token Creation - Symbol Registration");
+  console.log('\n\x1b[34m%s\x1b[0m',"Token Symbol Registration");
 
   let available = false;
   let regFee = web3.utils.fromWei(await securityTokenRegistry.methods.getTickerRegistrationFee().call());
@@ -208,7 +208,7 @@ async function step_Wallet_Issuance(){
       console.log("\n");
       console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Minting for Issuer");
 
-      console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control or you can trasfer to affiliates");
+      console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control or you can transfer to affiliates");
 
       let multimint;
       if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('multimint')) {
@@ -266,7 +266,7 @@ async function multi_mint_tokens() {
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
 
   shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${network}`);
-  console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transfered to token holders`));
+  console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transferred to token holders`));
 }
 
 async function step_STO_launch() {
@@ -730,7 +730,7 @@ function limitsConfigUSDTieredSTO() {
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('nonAccreditedLimitUSD')) {
     limits.nonAccreditedLimitUSD = web3.utils.toWei(_stoConfig.nonAccreditedLimitUSD.toString());
   } else {
-    limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the default limit for non accredited insvestors in USD? (${nonAccreditedLimit}): `, {
+    limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the default limit for non accredited investors in USD? (${nonAccreditedLimit}): `, {
       limit: function(input) {
         return new BigNumber(web3.utils.toWei(input)).gte(limits.minimumInvestmentUSD);
       },

@@ -14,12 +14,18 @@ interface IPermissionManager {
     */
     function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns(bool);
 
-     /**
+    /**
     * @notice Use to add a delegate
     * @param _delegate Ethereum address of the delegate
     * @param _details Details about the delegate i.e `Belongs to financial firm`
     */
     function addDelegate(address _delegate, bytes32 _details) external;
+
+    /**
+    * @notice Used to delete a delegate
+    * @param _delegate Ethereum address of the delegate
+    */
+    function deleteDelegate(address _delegate) external;
 
     /**
     * @notice use to check if an address is a delegate or not

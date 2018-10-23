@@ -209,18 +209,24 @@ contract('GeneralPermissionManager', accounts => {
         });
 
         it("Should fail in adding the delegate -- no delegate details provided", async() => {
-            catchRevert(
+            await catchRevert(
                 I_GeneralPermissionManager.addDelegate(account_delegate, '', { from: token_owner })
             );
         });
 
-        it("Should fail to provide the permission -- because delegate is not yet added", async() => {
+        it("Should fail in adding the delegate -- no delegate address provided", async() => {
             await catchRevert(
-                I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner})
+                I_GeneralPermissionManager.addDelegate('', delegateDetails, { from: token_owner })
             );
         });
 
-        it("Should successfuly add the delegate", async() => {
+        it("Should fail to remove the delegate -- failed because delegate does not exisit", async() => {
+            await catchRevert(
+                I_GeneralPermissionManager.deleteDelegate(account_delegate, { from: token_owner})
+            );
+        });
+
+        it("Should successfully add the delegate", async() => {
             let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner});
             assert.equal(tx.logs[0].args._delegate, account_delegate);
         });
@@ -258,6 +264,38 @@ contract('GeneralPermissionManager', accounts => {
             assert.isTrue(
                 await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
             );
+        });
+
+        it("Security token should deny all permission if all permission managers are disabled", async () => {
+            await I_SecurityToken.archiveModule(I_GeneralPermissionManager.address, { from: token_owner });
+            assert.isFalse(
+                await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
+            );
+            await I_SecurityToken.unarchiveModule(I_GeneralPermissionManager.address, { from: token_owner });
+            assert.isTrue(
+                await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
+            );
+        });
+
+        it("Should fail to remove the delegate -- failed because unauthorized msg.sender", async() => {
+            await catchRevert(
+                I_GeneralPermissionManager.deleteDelegate(account_delegate, { from: account_delegate})
+            );
+        });
+
+        it("Should remove the delegate", async() => {
+            await I_GeneralPermissionManager.deleteDelegate(account_delegate, { from: token_owner})
+        });
+
+        it("Should check the permission", async () => {
+            assert.isFalse(
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
+            );
+        });
+
+        it("Should successfully add the delegate", async() => {
+            let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner});
+            assert.equal(tx.logs[0].args._delegate, account_delegate);
         });
 
         it("Should check the delegate details", async() => {

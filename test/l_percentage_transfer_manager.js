@@ -58,6 +58,7 @@ contract("PercentageTransferManager", accounts => {
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
     const contact = "team@polymath.network";
+    const delegateDetails = "Hello I am legit delegate";
 
     // Module key
     const delegateManagerKey = 1;
@@ -347,12 +348,9 @@ contract("PercentageTransferManager", accounts => {
            )
         });
 
-        it("Modify holder percentage to 100", async () => {
-            // Add the Investor in to the whitelist
-            // Mint some tokens
-            await I_PercentageTransferManager.changeHolderPercentage(100 * 10 ** 16, { from: token_owner });
-
-            assert.equal((await I_PercentageTransferManager.maxHolderPercentage()).toNumber(), 100 * 10 ** 16);
+        it("Should successfully add the delegate", async() => {
+            let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner});
+            assert.equal(tx.logs[0].args._delegate, account_delegate);
         });
 
         it("Should provide the permission", async() => {
@@ -366,12 +364,12 @@ contract("PercentageTransferManager", accounts => {
             assert.equal(tx.logs[0].args._delegate, account_delegate);
         });
 
-        it("Admin shuold be able to modify holder percentage to 90", async () => {
+        it("Modify holder percentage to 100", async () => {
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_PercentageTransferManager.changeHolderPercentage(90 * 10 ** 16, { from: account_delegate });
+            await I_PercentageTransferManager.changeHolderPercentage(100 * 10 ** 16, { from: account_delegate });
 
-            assert.equal((await I_PercentageTransferManager.maxHolderPercentage()).toNumber(), 90 * 10 ** 16);
+            assert.equal((await I_PercentageTransferManager.maxHolderPercentage()).toNumber(), 100 * 10 ** 16);
         });
 
         it("Should be able to transfer between existing token holders up to limit", async () => {

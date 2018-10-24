@@ -52,9 +52,9 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
-        require(!dividends[_dividendIndex].reclaimed, "Dividend has been reclaimed by issuer");
-        require(now >= dividends[_dividendIndex].maturity, "Dividend maturity is in the future");
-        require(now < dividends[_dividendIndex].expiry, "Dividend expiry is in the past");
+        require(!dividends[_dividendIndex].reclaimed, "Dividend has already been reclaimed by issuer");
+        require(now >= dividends[_dividendIndex].maturity, "Dividend is not yet matured");
+        require(now < dividends[_dividendIndex].expiry, "Dividend is expired");
         _;
     }
 
@@ -158,7 +158,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
-        require(!dividend.claimed[msg.sender], "Dividend already claimed by msg.sender");
+        require(!dividend.claimed[msg.sender], "Dividend has already been claimed by msg.sender");
         require(!dividend.dividendExcluded[msg.sender], "msg.sender excluded from Dividend");
         _payDividend(msg.sender, dividend, _dividendIndex);
     }

@@ -12,7 +12,7 @@ contract PolymathRegistry is ReclaimTokens {
     event ChangeAddress(string _nameKey, address indexed _oldAddress, address indexed _newAddress);
 
     /**
-     * @notice Get the contract address
+     * @notice Gets the contract address
      * @param _nameKey is the key for the contract address mapping
      * @return address
      */
@@ -23,7 +23,7 @@ contract PolymathRegistry is ReclaimTokens {
     }
 
     /**
-     * @notice change the contract address
+     * @notice Changes the contract address
      * @param _nameKey is the key for the contract address mapping
      * @param _newAddress is the new contract address
      */

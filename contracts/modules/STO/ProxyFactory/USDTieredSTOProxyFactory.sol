@@ -10,7 +10,7 @@ contract USDTieredSTOProxyFactory is IUSDTieredSTOProxy {
     }
 
     /**
-     * @notice deploys the STO.
+     * @notice Deploys the STO.
      * @param _securityToken Contract address of the securityToken
      * @param _polyAddress Contract address of the PolyToken.
      * @param _factoryAddress Contract address of the factory
@@ -22,7 +22,7 @@ contract USDTieredSTOProxyFactory is IUSDTieredSTOProxy {
     }
 
     /**
-     * @notice Use to get the init function signature
+     * @notice Used to get the init function signature
      * @param _contractAddress Address of the STO contract
      * @return bytes4
      */

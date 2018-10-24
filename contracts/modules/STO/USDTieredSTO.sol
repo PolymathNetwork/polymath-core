@@ -217,10 +217,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(_ratePerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount rates & tokens / tier");
         require(_tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount tokens / tier & tokens / tier");
         for (uint8 i = 0; i < _ratePerTier.length; i++) {
-            require(_ratePerTier[i] > 0, "Rate > 0");
-            require(_tokensPerTierTotal[i] > 0, "Tokens per tier > 0");
-            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Discounted tokens / tier <= to tokens / tier");
-            require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Discounted rate / tier <= rate / tier");
+            require(_ratePerTier[i] > 0, "Rate is not larger than 0");
+            require(_tokensPerTierTotal[i] > 0, "Tokens per tier is not larger than 0");
+            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Discounted tokens / tier is larger than tokens / tier");
+            require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Discounted rate / tier is larger than rate / tier");
         }
         ratePerTier = _ratePerTier;
         ratePerTierDiscountPoly = _ratePerTierDiscountPoly;
@@ -261,7 +261,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     ////////////////////
 
     /**
-     * @notice Finalize the STO and mint remaining tokens to reserve address
+     * @notice Finalizes the STO and mint remaining tokens to reserve address
      * @notice Reserve address must be whitelisted to successfully finalize
      */
     function finalize() public onlyOwner {
@@ -285,7 +285,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     /**
-     * @notice Modify the list of accredited addresses
+     * @notice Modifies the list of accredited addresses
      * @param _investors Array of investor addresses to modify
      * @param _accredited Array of bools specifying accreditation status
      */
@@ -298,7 +298,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     /**
-     * @notice Modify the list of overrides for non-accredited limits in USD
+     * @notice Modifies the list of overrides for non-accredited limits in USD
      * @param _investors Array of investor addresses to modify
      * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
      */
@@ -306,7 +306,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         //nonAccreditedLimitUSDOverride
         require(_investors.length == _nonAccreditedLimit.length);
         for (uint256 i = 0; i < _investors.length; i++) {
-            require(_nonAccreditedLimit[i] > 0, "Limit can't be 0");
+            require(_nonAccreditedLimit[i] > 0, "Limit can not be 0");
             nonAccreditedLimitUSDOverride[_investors[i]] = _nonAccreditedLimit[i];
             emit SetNonAccreditedLimit(_investors[i], _nonAccreditedLimit[i]);
         }
@@ -389,7 +389,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       */
     function _buyTokens(address _beneficiary, uint256 _investmentValue, uint256 _rate, FundRaiseType _fundRaiseType) internal nonReentrant whenNotPaused returns(uint256, uint256) {
         if (!allowBeneficialInvestments) {
-            require(_beneficiary == msg.sender, "Beneficiary must match funder");
+            require(_beneficiary == msg.sender, "Beneficiary does not match funder");
         }
 
         require(isOpen(), "STO is not open");
@@ -399,7 +399,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 originalUSD = investedUSD;
 
         // Check for minimum investment
-        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
+        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment is less than minimumInvestmentUSD");
 
         // Check for non-accredited cap
         if (!accredited[_beneficiary]) {

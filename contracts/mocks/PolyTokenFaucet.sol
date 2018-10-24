@@ -30,7 +30,7 @@ contract PolyTokenFaucet {
 
     /* Token faucet - Not part of the ERC20 standard */
     function getTokens(uint256 _amount, address _recipient) public returns (bool) {
-        require(_amount <= 1000000 * uint256(10)**decimals, "Amount can not be more than 1 million");
+        require(_amount <= 1000000 * uint256(10)**decimals, "Amount should not exceed 1 million");
         require(_recipient != address(0), "Recipient address can not be empty");
         balances[_recipient] = balances[_recipient].add(_amount);
         totalSupply_ = totalSupply_.add(_amount);

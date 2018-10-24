@@ -817,6 +817,16 @@ contract('BlacklistTransferManager', accounts => {
             );
         });
 
+        it("Should fail in deleting the mutiple investor from particular associated blacklist because array length is incorrect.", async() => {
+            let investor = [account_investor5];
+            let blacklistName = ["s_blacklist","g_blacklist"];
+            await catchRevert(
+                I_BlacklistTransferManager.deleteInvestorFromBlacklistMulti(investor,blacklistName, { 
+                    from: token_owner 
+                })
+            );
+        });
+
         it("Should delete the investor from the blacklist type", async() => {
             await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "f_blacklist", 20, { from: token_owner });
             await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "f_blacklist", { from: token_owner });

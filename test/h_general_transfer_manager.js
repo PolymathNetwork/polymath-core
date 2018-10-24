@@ -609,7 +609,7 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should set a budget for the GeneralTransferManager", async () => {
-            await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, 10 * Math.pow(10, 18), { from: token_owner });
+            await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, 10 * Math.pow(10, 18), true, { from: token_owner });
 
             await catchRevert(I_GeneralTransferManager.takeFee(web3.utils.toWei("1", "ether"), { from: token_owner }));
             await I_PolyToken.getTokens(10 * Math.pow(10, 18), token_owner);

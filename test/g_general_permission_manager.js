@@ -266,6 +266,17 @@ contract('GeneralPermissionManager', accounts => {
             );
         });
 
+        it("Security token should deny all permission if all permission managers are disabled", async () => {
+            await I_SecurityToken.archiveModule(I_GeneralPermissionManager.address, { from: token_owner });
+            assert.isFalse(
+                await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
+            );
+            await I_SecurityToken.unarchiveModule(I_GeneralPermissionManager.address, { from: token_owner });
+            assert.isTrue(
+                await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
+            );
+        });
+
         it("Should fail to remove the delegate -- failed because unauthorized msg.sender", async() => {
             await catchRevert(
                 I_GeneralPermissionManager.deleteDelegate(account_delegate, { from: account_delegate})
@@ -370,7 +381,7 @@ contract('GeneralPermissionManager', accounts => {
         })
 
         it("Should return all modules and all permission", async() => {
-            let tx = await I_GeneralPermissionManager.getAllModulesAndPermsFromTypes.call(account_delegate3, [2,1], I_SecurityToken.address);
+            let tx = await I_GeneralPermissionManager.getAllModulesAndPermsFromTypes.call(account_delegate3, [2,1]);
             assert.equal(tx[0][0], I_GeneralTransferManager.address);
             assert.equal(tx[1][0], "0x57484954454c4953540000000000000000000000000000000000000000000000");
             assert.equal(tx[0][1], I_GeneralPermissionManager.address);

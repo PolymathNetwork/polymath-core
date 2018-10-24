@@ -2,15 +2,36 @@ function getPermissionList() {
     return {
         ERC20DividendCheckpoint: {
             pushDividendPayment: "DISTRIBUTE",
-            pushDividendPaymentToAddresses: "DISTRIBUTE"
+            pushDividendPaymentToAddresses: "DISTRIBUTE",
+            setDefaultExcluded: "MANAGE",
+            setWithholding: "MANAGE",
+            setWithholdingFixed: "MANAGE",
+            createDividend: "MANAGE",
+            createDividendWithCheckpoint: "MANAGE",
+            createDividendWithExclusions: "MANAGE",
+            createDividendWithCheckpointAndExclusions: "MANAGE",
+            reclaimDividend: "MANAGE",
+            withdrawWithholding: "MANAGE",
+            createCheckpoint: "CHECKPOINT"
         },
         EtherDividendCheckpoint: {
             pushDividendPayment: "DISTRIBUTE",
-            pushDividendPaymentToAddresses: "DISTRIBUTE"
+            pushDividendPaymentToAddresses: "DISTRIBUTE",
+            setDefaultExcluded: "MANAGE",
+            setWithholding: "MANAGE",
+            setWithholdingFixed: "MANAGE",
+            createDividend: "MANAGE",
+            createDividendWithCheckpoint: "MANAGE",
+            createDividendWithExclusions: "MANAGE",
+            createDividendWithCheckpointAndExclusions: "MANAGE",
+            reclaimDividend: "MANAGE",
+            withdrawWithholding: "MANAGE",
+            createCheckpoint: "CHECKPOINT"
         },
         GeneralPermissionManager: {
             addDelegate: "CHANGE_PERMISSION",
-            changePermission: "CHANGE_PERMISSION"
+            changePermission: "CHANGE_PERMISSION",
+            changePermissionMulti: "CHANGE_PERMISSION"
         },
         USDTieredSTO: {
             modifyFunding: "ONLY_OWNER",
@@ -44,7 +65,35 @@ function getPermissionList() {
             revokeManualBlocking: "TRANSFER_APPROVAL"
         },
         PercentageTransferManager: {
-            modifyWhitelist: "WHITELIST"
+            modifyWhitelist: "WHITELIST",
+            modifyWhitelistMulti: "WHITELIST",
+            setAllowPrimaryIssuance: "ADMIN",
+            changeHolderPercentage: "ONLY_OWNER"
+        },
+        LockupVolumeRestrictionTM: {
+            addLockup: "ADMIN",
+            addLockUpMulti: "ADMIN",
+            removeLockUp: "ADMIN",
+            modifyLockUp: "ADMIN"
+        },
+        SingleTradeVolumeRestrictionTM: {
+            setAllowPrimaryIssuance: "ADMIN",
+            changeTransferLimitToPercentage: "ADMIN",
+            changeTransferLimitToTokens: "ADMIN",
+            changeGlobalLimitInTokens: "ADMIN",
+            changeGlobalLimitInPercentage: "ADMIN",
+            addExemptWallet: "ADMIN",
+            removeExemptWallet: "ADMIN",
+            addExemptWalletMulti: "ADMIN",
+            removeExemptWalletMulti: "ADMIN",
+            setTransferLimitInTokens: "ADMIN",
+            setTransferLimitInPercentage: "ADMIN",
+            removeTransferLimitInPercentage: "ADMIN",
+            removeTransferLimitInTokens: "ADMIN",
+            setTransferLimitInTokensMulti: "ADMIN",
+            setTransferLimitInPercentageMulti: "ADMIN",
+            removeTransferLimitInTokensMulti: "ADMIN",
+            removeTransferLimitInPercentageMulti: "ADMIN"
         }
     }
 }

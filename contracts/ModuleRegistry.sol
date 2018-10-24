@@ -166,7 +166,10 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         // NB - here we index by the first type of the module.
         uint8 moduleType = moduleFactory.getTypes()[0];
         set(Encoder.getKey("registry", _moduleFactory), uint256(moduleType));
-        set(Encoder.getKey("moduleListIndex", _moduleFactory), uint256(getArrayAddress(Encoder.getKey("moduleList", uint256(moduleType))).length));
+        set(
+            Encoder.getKey("moduleListIndex", _moduleFactory),
+            uint256(getArrayAddress(Encoder.getKey("moduleList", uint256(moduleType))).length)
+        );
         pushArray(Encoder.getKey("moduleList", uint256(moduleType)), _moduleFactory);
         emit ModuleRegistered (_moduleFactory, IOwnable(_moduleFactory).owner());
     }
@@ -179,10 +182,10 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint256 moduleType = getUint(Encoder.getKey("registry", _moduleFactory));
 
         require(moduleType != 0, "Module factory should be registered");
-        /*solium-disable-next-line indentation*/
-        require(msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),
-                "msg.sender must be the Module Factory owner or registry curator"); /*solium-disable-line indentation*/
-
+        require(
+            msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),
+            "msg.sender must be the Module Factory owner or registry curator"
+        );
         uint256 index = getUint(Encoder.getKey("moduleListIndex", _moduleFactory));
         uint256 last = getArrayAddress(Encoder.getKey("moduleList", moduleType)).length - 1;
         address temp = getArrayAddress(Encoder.getKey("moduleList", moduleType))[last];

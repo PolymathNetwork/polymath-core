@@ -12,10 +12,10 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
 
     // Mapping to token address for each dividend
     mapping (uint256 => address) public dividendTokens;
-    /*solium-disable-next-line indentation*/
-    event ERC20DividendDeposited(address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity,
-                                 uint256 _expiry, address indexed _token, uint256 _amount, uint256 _totalSupply, /*solium-disable-line indentation*/
-                                 uint256 _dividendIndex, bytes32 indexed _name); /*solium-disable-line indentation*/
+    event ERC20DividendDeposited(
+        address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity,
+        uint256 _expiry, address indexed _token, uint256 _amount, uint256 _totalSupply,
+        uint256 _dividendIndex, bytes32 indexed _name);
     event ERC20DividendClaimed(address indexed _payee, uint256 _dividendIndex, address indexed _token, uint256 _amount, uint256 _withheld);
     event ERC20DividendReclaimed(address indexed _claimer, uint256 _dividendIndex, address indexed _token, uint256 _claimedAmount);
     event ERC20DividendWithholdingWithdrawn(address indexed _claimer, uint256 _dividendIndex, address indexed _token, uint256 _withheldAmount);
@@ -51,7 +51,10 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _checkpointId Checkpoint id from which to create dividends
      * @param _name name/title for identification
      */
-    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, uint256 _checkpointId, bytes32 _name) external withPerm(MANAGE) {
+    function createDividendWithCheckpoint(
+        uint256 _maturity, uint256 _expiry, address _token, uint256 _amount,
+        uint256 _checkpointId, bytes32 _name) external withPerm(MANAGE)
+    {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, _checkpointId, excluded, _name);
     }
 
@@ -64,7 +67,10 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _excluded List of addresses to exclude
      * @param _name name/title for identification
      */
-    function createDividendWithExclusions(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, address[] _excluded, bytes32 _name) public withPerm(MANAGE) {
+    function createDividendWithExclusions(
+        uint256 _maturity, uint256 _expiry, address _token, uint256 _amount,
+        address[] _excluded, bytes32 _name) public withPerm(MANAGE)
+    {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, checkpointId, _excluded, _name);
     }
@@ -159,9 +165,10 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @notice emits the ERC20DividendDeposited event. 
      * Seperated into a different function as a workaround for stack too deep error
      */
-    /*solium-disable-next-line indentation*/
-    function _emitERC20DividendDepositedEvent(uint256 _checkpointId, uint256 _maturity, uint256 _expiry, address _token, uint256 _amount,
-                                              uint256 currentSupply, uint256 dividendIndex, bytes32 _name) internal { /*solium-disable-line indentation*/
+    function _emitERC20DividendDepositedEvent(
+        uint256 _checkpointId, uint256 _maturity, uint256 _expiry, address _token, uint256 _amount,
+        uint256 currentSupply, uint256 dividendIndex, bytes32 _name) internal
+    {
         emit ERC20DividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);
     }
 

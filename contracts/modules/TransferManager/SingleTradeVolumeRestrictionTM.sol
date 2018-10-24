@@ -56,7 +56,10 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
      * @param _from Address of the sender
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(address _from, address /* _to */, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(
+        address _from, address /* _to */, uint256 _amount, bytes /* _data */, bool /* _isTransfer */)
+        public returns(Result)
+    {
         bool validTransfer;
 
         if (exemptWallets[_from] || paused) return Result.NA;

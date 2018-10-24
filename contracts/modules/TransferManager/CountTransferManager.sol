@@ -28,7 +28,10 @@ contract CountTransferManager is ITransferManager {
     /** @notice Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
      * @param _to Address of the receiver
      */
-    function verifyTransfer(address /* _from */, address _to, uint256 /* _amount */, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(
+        address /* _from */, address _to, uint256 /* _amount */, bytes /* _data */, bool /* _isTransfer */)
+        public returns(Result)
+    {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
                 // Allow transfers to existing maxHolders

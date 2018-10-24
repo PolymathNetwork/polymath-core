@@ -86,6 +86,7 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
      * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
+        /*solium-disable-next-line max-len*/
         return "Allows an issuer to set manual approvals or blocks for specific pairs of addresses and amounts. Init function takes no parameters.";
     }
 

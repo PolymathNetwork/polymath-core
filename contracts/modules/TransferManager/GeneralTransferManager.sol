@@ -187,7 +187,10 @@ contract GeneralTransferManager is ITransferManager {
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
     */
-    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO) public withPerm(WHITELIST) {
+    function modifyWhitelist(
+        address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO)
+        public withPerm(WHITELIST)
+    {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
         emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);

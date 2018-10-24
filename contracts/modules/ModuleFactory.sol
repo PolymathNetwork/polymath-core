@@ -30,7 +30,9 @@ contract ModuleFactory is IModuleFactory, Ownable {
     event ChangeFactorySetupFee(uint256 _oldSetupCost, uint256 _newSetupCost, address _moduleFactory);
     event ChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
     event ChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
-    event GenerateModuleFromFactory(address _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address _creator, uint256 _timestamp);
+    event GenerateModuleFromFactory(
+        address _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address _creator, uint256 _timestamp
+    );
     event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
 
     /**
@@ -114,10 +116,11 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _newVersion new version array
      */
     function changeSTVersionBounds(string _boundType, uint8[] _newVersion) external onlyOwner {
-        /*solium-disable-next-line indentation*/
-        require(keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("lowerBound")) ||
-                keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("upperBound")), /*solium-disable-line indentation*/
-                "Must be a valid bound type"); /*solium-disable-line indentation*/
+        require(
+            keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("lowerBound")) ||
+            keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("upperBound")),
+            "Must be a valid bound type"
+        );
         require(_newVersion.length == 3);
         if (compatibleSTVersionRange[_boundType] != uint24(0)) { 
             uint8[] memory _currentVersion = VersionUtils.unpack(compatibleSTVersionRange[_boundType]);

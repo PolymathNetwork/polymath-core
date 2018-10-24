@@ -155,9 +155,15 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _polyToken is the address of the POLY ERC20 token
      * @param _owner is the owner of the STR
      */
-    function initialize(address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner) external payable {
+    function initialize(
+        address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner)
+        external payable
+    {
         require(!getBool(Encoder.getKey("initialised")),"already initialized");
-        require(_STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0), "Invalid address");
+        require(
+            _STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0),
+            "Invalid address"
+        );
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Fees should not be 0");
         set(Encoder.getKey("polyToken"), _polyToken);
         set(Encoder.getKey("stLaunchFee"), _stLaunchFee);
@@ -530,7 +536,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _tokenDetails is the off-chain details of the token
      * @param _deployedAt is the timestamp at which the security token is deployed
      */
-    function modifySecurityToken(string _name, string _ticker, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt) external onlyOwner {
+    function modifySecurityToken(
+        string _name, string _ticker, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt)
+        external onlyOwner
+    {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "String length > 0");
         require(bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         require(_deployedAt != 0 && _owner != address(0), "0 value params not allowed");

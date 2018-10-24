@@ -22,7 +22,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
         uint256 checkpointId;
         uint256 created; // Time at which the dividend was created
         uint256 maturity; // Time after which dividend can be claimed - set to 0 to bypass
-        uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer - set to very high value to bypass
+        uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer -
+                         // set to very high value to bypass
         uint256 amount; // Dividend amount in WEI
         uint256 claimedAmount; // Amount of dividend claimed so far
         uint256 totalSupply; // Total supply at the associated checkpoint (avoids recalculating this)
@@ -130,7 +131,9 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _dividendIndex Dividend to push
      * @param _payees Addresses to which to push the dividend
      */
-    function pushDividendPaymentToAddresses(uint256 _dividendIndex, address[] _payees) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
+    function pushDividendPaymentToAddresses(
+        uint256 _dividendIndex, address[] _payees) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex)
+    {
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
             if ((!dividend.claimed[_payees[i]]) && (!dividend.dividendExcluded[_payees[i]])) {
@@ -145,7 +148,9 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _start Index in investor list at which to start pushing dividends
      * @param _iterations Number of addresses to push dividends for
      */
-    function pushDividendPayment(uint256 _dividendIndex, uint256 _start, uint256 _iterations) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
+    function pushDividendPayment(
+        uint256 _dividendIndex, uint256 _start, uint256 _iterations) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex)
+    {
         Dividend storage dividend = dividends[_dividendIndex];
         address[] memory investors = ISecurityToken(securityToken).getInvestors();
         uint256 numberInvestors = Math.min256(investors.length, _start.add(_iterations));

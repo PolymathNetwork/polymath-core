@@ -481,21 +481,25 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should change the budget of the module - fail incorrect address", async () => {
-            await catchRevert(I_SecurityToken.changeModuleBudget(0, 100 * Math.pow(10, 18), { from: token_owner }));
+            await catchRevert(I_SecurityToken.changeModuleBudget(0, 100 * Math.pow(10, 18), true, { from: token_owner }));
         });
 
         it("Should change the budget of the module", async () => {
-            let tx = await I_SecurityToken.changeModuleBudget(I_CappedSTO.address, 100 * Math.pow(10, 18), { from: token_owner });
+            let budget = await I_PolyToken.allowance.call(I_SecurityToken.address, I_CappedSTO.address);
+            let increaseAmount = 100 * Math.pow(10, 18);
+            let tx = await I_SecurityToken.changeModuleBudget(I_CappedSTO.address, increaseAmount, true, { from: token_owner });
             assert.equal(tx.logs[1].args._moduleTypes[0], stoKey);
             assert.equal(tx.logs[1].args._module, I_CappedSTO.address);
-            assert.equal(tx.logs[1].args._budget.dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
+            assert.equal(tx.logs[1].args._budget.toNumber(), budget.plus(increaseAmount).toNumber());
         });
 
         it("Should change the budget of the module (decrease it)", async() => {
-            let tx = await I_SecurityToken.changeModuleBudget(I_CappedSTO.address, 50 * Math.pow(10, 18), { from: token_owner });
+            let budget = await I_PolyToken.allowance.call(I_SecurityToken.address, I_CappedSTO.address);
+            let decreaseAmount = 100 * Math.pow(10, 18);
+            let tx = await I_SecurityToken.changeModuleBudget(I_CappedSTO.address, decreaseAmount, false, { from: token_owner });
             assert.equal(tx.logs[1].args._moduleTypes[0], stoKey);
             assert.equal(tx.logs[1].args._module, I_CappedSTO.address);
-            assert.equal(tx.logs[1].args._budget.dividedBy(new BigNumber(10).pow(18)).toNumber(), 50);
+            assert.equal(tx.logs[1].args._budget.toNumber(), budget.minus(decreaseAmount).toNumber());
         });
 
         it("Should fail to get the total supply -- because checkpoint id is greater than present", async() => {

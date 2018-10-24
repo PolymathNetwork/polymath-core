@@ -15,7 +15,8 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
     event ERC20DividendDeposited(
         address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity,
         uint256 _expiry, address indexed _token, uint256 _amount, uint256 _totalSupply,
-        uint256 _dividendIndex, bytes32 indexed _name);
+        uint256 _dividendIndex, bytes32 indexed _name
+    );
     event ERC20DividendClaimed(address indexed _payee, uint256 _dividendIndex, address indexed _token, uint256 _amount, uint256 _withheld);
     event ERC20DividendReclaimed(address indexed _claimer, uint256 _dividendIndex, address indexed _token, uint256 _claimedAmount);
     event ERC20DividendWithholdingWithdrawn(address indexed _claimer, uint256 _dividendIndex, address indexed _token, uint256 _withheldAmount);

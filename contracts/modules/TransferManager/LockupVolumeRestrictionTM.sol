@@ -128,8 +128,8 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint[] _totalAmounts
         ) external withPerm(ADMIN) {
         require(
-            _userAddresses.length == _lockUpPeriodsSeconds.length && 
-            _userAddresses.length == _releaseFrequenciesSeconds.length && 
+            _userAddresses.length == _lockUpPeriodsSeconds.length && /*solium-disable-line operator-whitespace*/
+            _userAddresses.length == _releaseFrequenciesSeconds.length && /*solium-disable-line operator-whitespace*/
             _userAddresses.length == _startTimes.length && 
             _userAddresses.length == _totalAmounts.length,
             "Input array length mismatch"

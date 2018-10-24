@@ -175,8 +175,7 @@ contract GeneralTransferManager is ITransferManager {
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
             return ((_onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
-                /*solium-disable-next-line security/no-block-members*/
-                (_onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA;
+                (_onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
         }
         return Result.NA;
     }

@@ -203,7 +203,7 @@
         </tr>
         <tr>
             <td> changeHolderPercentage() </td>
-            <td> onlyOwner() </td>
+            <td> withPerm(ADMIN) </td>
         </tr>
         <tr>
             <td rowspan=4> LockupVolumeRestrictionTM</td>

@@ -10,6 +10,7 @@ let tokenSymbol;
 let securityTokenRegistry;
 let securityToken;
 let generalPermissionManager;
+let isNewDelegate = false;
 
 const MODULES_TYPES = {
   PERMISSION: 1,
@@ -95,16 +96,25 @@ async function addPermissionModule() {
 async function changePermissionStep() {
   console.log('\n\x1b[34m%s\x1b[0m',"Permission Manager - Change Permission");
   let selectedDelegate = await selectDelegate();
-  let selectFlow = readlineSync.keyInSelect(['Remove', 'Change permission'], 'Select an option:', {cancel: false});
-  if (selectFlow == 0) {
-    await deleteDelegate(selectedDelegate);
-    console.log("Delegate successfully deleted.")
+  if (isNewDelegate) {
+    isNewDelegate = false;
+    changePermissionAction(selectedDelegate);
   } else {
-    let selectedModule = await selectModule();
-    let selectedPermission = await selectPermission(selectedModule.permissions);
-    let isValid = isPermissionValid();
-    await changePermission(selectedDelegate, selectedModule.address, selectedPermission, isValid);
+    let selectFlow = readlineSync.keyInSelect(['Remove', 'Change permission'], 'Select an option:', {cancel: false});
+    if (selectFlow == 0) {
+      await deleteDelegate(selectedDelegate);
+      console.log("Delegate successfully deleted.")
+    } else {
+      changePermissionAction(selectedDelegate);
+    }
   }
+}
+
+async function changePermissionAction(selectedDelegate) {
+  let selectedModule = await selectModule();
+  let selectedPermission = await selectPermission(selectedModule.permissions);
+  let isValid = isPermissionValid();
+  await changePermission(selectedDelegate, selectedModule.address, selectedPermission, isValid);
 }
 
 async function deleteDelegate(address) {
@@ -203,6 +213,7 @@ async function addNewDelegate() {
   let receipt = await common.sendTransaction(Issuer, addPermissionAction, defaultGasPrice);
   let event = common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'AddDelegate');
   console.log(`Delegate added succesfully: ${event._delegate} - ${event._details}`);
+  isNewDelegate = true;
   return event._delegate;
 }
 

@@ -30,6 +30,8 @@ contract GeneralTransferManager is ITransferManager {
     // An address can only send / receive tokens once their corresponding uint256 > block.number
     // (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
     mapping (address => TimeRestriction) public whitelist;
+    // Map of used nonces by customer
+    mapping(address => mapping(uint256 => bool)) public nonceMap;  
 
     //If true, there are no transfer restrictions, for any addresses
     bool public allowAllTransfers = false;
@@ -226,6 +228,7 @@ contract GeneralTransferManager is ITransferManager {
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
     * @param _validFrom is the time that this signature is valid from
     * @param _validTo is the time that this signature is valid until
+    * @param _nonce nonce of signature (avoid replay attack)
     * @param _v issuer signature
     * @param _r issuer signature
     * @param _s issuer signature
@@ -238,13 +241,16 @@ contract GeneralTransferManager is ITransferManager {
         bool _canBuyFromSTO,
         uint256 _validFrom,
         uint256 _validTo,
+        uint256 _nonce,
         uint8 _v,
         bytes32 _r,
         bytes32 _s
     ) public {
         require(_validFrom <= now, "ValidFrom is too early");
         require(_validTo >= now, "ValidTo is too late");
-        bytes32 hash = keccak256(abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo));
+        require(!nonceMap[_investor][_nonce], "Already used signature");
+        nonceMap[_investor][_nonce] = true;
+        bytes32 hash = keccak256(abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce));
         _checkSig(hash, _v, _r, _s);
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);

@@ -224,12 +224,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint256 moduleCost = moduleFactory.getSetupCost();
         require(moduleCost <= _maxCost, "Cost too high");
         //Approve fee for module
-        require(ERC20(polyToken).approve(_moduleFactory, moduleCost), "approve fail");
+        ERC20(polyToken).approve(_moduleFactory, moduleCost);
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
         require(modulesToData[module].module == address(0), "Module exists");
         //Approve ongoing budget
-        require(ERC20(polyToken).approve(module, _budget), "approve fail");
+        ERC20(polyToken).approve(module, _budget);
         //Add to SecurityToken module map
         bytes32 moduleName = moduleFactory.getName();
         uint256[] memory moduleIndexes = new uint256[](moduleTypes.length);
@@ -643,8 +643,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _values) external onlyModuleOrOwner(MINT_KEY) returns (bool success) {
-        require(_investors.length == _values.length, "invalid inputs");
+    function mintMulti(address[] _investors, uint256[] _values) external returns (bool success) {
+        require(_investors.length == _values.length, "Incorrect inputs");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _values[i]);
         }

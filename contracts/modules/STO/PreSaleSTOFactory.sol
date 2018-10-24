@@ -39,6 +39,7 @@ contract PreSaleSTOFactory is ModuleFactory {
         require(Util.getSig(_data) == preSaleSTO.getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/
         require(address(preSaleSTO).call(_data), "Unsuccessfull call");
+        /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(preSaleSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(preSaleSTO);
     }

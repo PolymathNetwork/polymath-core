@@ -202,6 +202,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         if (previousOwner != address(0)) {
             _deleteTickerOwnership(previousOwner, ticker);
         }
+        /*solium-disable-next-line security/no-block-members*/
         _addTicker(_owner, ticker, _tokenName, now, now.add(getExpiryLimit()), false, false, tickerFee);
     }
 
@@ -289,6 +290,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         _deleteTickerOwnership(owner, ticker);
         set(Encoder.getKey("tickerToSecurityToken", ticker), address(0));
         _storeTickerDetails(ticker, address(0), 0, 0, "", false);
+        /*solium-disable-next-line security/no-block-members*/
         emit TickerRemoved(ticker, now, msg.sender);
     }
 
@@ -299,6 +301,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function _tickerAvailable(string _ticker) internal view returns(bool) {
         if (_tickerOwner(_ticker) != address(0)) {
+            /*solium-disable-next-line security/no-block-members*/
             if ((now > getUint(Encoder.getKey("registeredTickers_expiryDate", _ticker))) && !_tickerStatus(_ticker)) {
                 return true;
             } else
@@ -412,6 +415,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         bytes32[] memory tempList = new bytes32[](tickers.length);
         for (uint i = 0; i < tickers.length; i++) {
             string memory ticker = Util.bytes32ToString(tickers[i]);
+            /*solium-disable-next-line security/no-block-members*/
             if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
                 tempList[counter] = tickers[i];
                 counter ++;
@@ -475,6 +479,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         string memory ticker = Util.upper(_ticker);
         bool tickerStatus = _tickerStatus(ticker);
         uint256 expiryDate = getUint(Encoder.getKey("registeredTickers_expiryDate", ticker));
+        /*solium-disable-next-line security/no-block-members*/
         if ((tickerStatus == true) || (expiryDate > now)) {
             return
             (
@@ -506,6 +511,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(!getBool(statusKey), "Already deployed");
         set(statusKey, true);
         require(_tickerOwner(ticker) == msg.sender, "Not authorised");
+        /*solium-disable-next-line security/no-block-members*/
         require(getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker gets expired");
 
         uint256 launchFee = getSecurityTokenLaunchFee();
@@ -522,8 +528,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             getAddress(Encoder.getKey("polymathRegistry"))
         );
 
+        /*solium-disable-next-line security/no-block-members*/
         _storeSecurityTokenData(newSecurityTokenAddress, ticker, _tokenDetails, now);
         set(Encoder.getKey("tickerToSecurityToken", ticker), newSecurityTokenAddress);
+        /*solium-disable-next-line security/no-block-members*/
         emit NewSecurityToken(ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, launchFee);
     }
 
@@ -548,6 +556,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         uint256 registrationTime = getUint(Encoder.getKey("registeredTickers_registrationDate", ticker));
         uint256 expiryTime = getUint(Encoder.getKey("registeredTickers_expiryDate", ticker));
         if (registrationTime == 0) {
+            /*solium-disable-next-line security/no-block-members*/
             registrationTime = now;
             expiryTime = registrationTime.add(getExpiryLimit());
         }
@@ -622,6 +631,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function pause() external whenNotPaused onlyOwner {
         set(Encoder.getKey("paused"), true);
+        /*solium-disable-next-line security/no-block-members*/
         emit Pause(now);
     }
 
@@ -630,6 +640,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function unpause() external whenPaused onlyOwner {
         set(Encoder.getKey("paused"), false);
+        /*solium-disable-next-line security/no-block-members*/
         emit Unpause(now);
     }
 

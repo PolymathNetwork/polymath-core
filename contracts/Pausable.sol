@@ -31,6 +31,7 @@ contract Pausable {
     */
     function _pause() internal whenNotPaused {
         paused = true;
+        /*solium-disable-next-line security/no-block-members*/
         emit Pause(now);
     }
 
@@ -39,6 +40,7 @@ contract Pausable {
     */
     function _unpause() internal whenPaused {
         paused = false;
+        /*solium-disable-next-line security/no-block-members*/
         emit Unpause(now);
     }
 

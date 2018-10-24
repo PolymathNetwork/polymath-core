@@ -64,6 +64,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
         require(delegateDetails[_delegate] == bytes32(0), "Already present");
         delegateDetails[_delegate] = _details;
         allDelegates.push(_delegate);
+        /*solium-disable-next-line security/no-block-members*/
         emit AddDelegate(_delegate, _details, now);
     }
 
@@ -231,6 +232,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      internal
     {
         perms[_module][_delegate][_perm] = _valid;
+        /*solium-disable-next-line security/no-block-members*/
         emit ChangePermission(_delegate, _module, _perm, _valid, now);
     }
 

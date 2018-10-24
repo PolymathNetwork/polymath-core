@@ -36,6 +36,7 @@ contract DummySTOFactory is ModuleFactory {
         require(Util.getSig(_data) == dummySTO.getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/
         require(address(dummySTO).call(_data), "Unsuccessfull call");
+        /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(dummySTO), getName(), address(this), msg.sender, setupCost, now);
         return address(dummySTO);
     }

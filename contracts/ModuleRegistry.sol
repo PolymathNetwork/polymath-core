@@ -351,6 +351,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      */
     function pause() external whenNotPaused onlyOwner {
         set(Encoder.getKey("paused"), true);
+        /*solium-disable-next-line security/no-block-members*/
+        /*solium-disable-next-line security/no-block-members*/
         emit Pause(now);
     }
 
@@ -359,6 +361,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      */
     function unpause() external whenPaused onlyOwner {
         set(Encoder.getKey("paused"), false);
+        /*solium-disable-next-line security/no-block-members*/
         emit Unpause(now);
     }
 

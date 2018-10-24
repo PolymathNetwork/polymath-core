@@ -96,6 +96,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
 
         // if a startTime of 0 is passed in, then start now.
         if (startTime == 0) {
+            /*solium-disable-next-line security/no-block-members*/
             startTime = now;
         }
 
@@ -190,6 +191,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint256 startTime = _startTime;
         // if a startTime of 0 is passed in, then start now.
         if (startTime == 0) {
+            /*solium-disable-next-line security/no-block-members*/
             startTime = now;
         }
 
@@ -272,12 +274,15 @@ contract LockupVolumeRestrictionTM is ITransferManager {
             uint allowedAmountForThisLockup = 0;
 
             // check if lockup has entirely passed
+            /*solium-disable-next-line security/no-block-members*/
             if (now >= aLockUp.startTime.add(aLockUp.lockUpPeriodSeconds)) {
                 // lockup has passed, or not started yet.  allow all.
                 allowedAmountForThisLockup = aLockUp.totalAmount.sub(aLockUp.alreadyWithdrawn);
+                /*solium-disable-next-line security/no-block-members*/
             } else if (now >= aLockUp.startTime) {
                 // lockup is active. calculate how many to allow to be withdrawn right now
                 // calculate how many periods have elapsed already
+                /*solium-disable-next-line security/no-block-members*/
                 uint elapsedPeriods = (now.sub(aLockUp.startTime)).div(aLockUp.releaseFrequencySeconds);
                 // calculate the total number of periods, overall
                 uint totalPeriods = aLockUp.lockUpPeriodSeconds.div(aLockUp.releaseFrequencySeconds);

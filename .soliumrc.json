@@ -11,7 +11,6 @@
     "indentation": [
       "error",
       4
-    ],
-    "security/no-block-members": "off"
+    ]
   }
 }

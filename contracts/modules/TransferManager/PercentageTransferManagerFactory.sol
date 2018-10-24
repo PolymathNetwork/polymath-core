@@ -36,6 +36,7 @@ contract PercentageTransferManagerFactory is ModuleFactory {
         require(Util.getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
         /*solium-disable-next-line security/no-low-level-calls*/
         require(address(percentageTransferManager).call(_data), "Unsuccessful call");
+        /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(percentageTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(percentageTransferManager);
 

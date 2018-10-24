@@ -245,6 +245,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         );
         names[moduleName].push(module);
         //Emit log event
+        /*solium-disable-next-line security/no-block-members*/
         emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, now);
     }
 
@@ -271,6 +272,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function removeModule(address _module) external onlyOwner {
         require(modulesToData[_module].isArchived, "Module archived");
         require(modulesToData[_module].module != address(0), "Module missing");
+        /*solium-disable-next-line security/no-block-members*/
         emit ModuleRemoved(modulesToData[_module].moduleTypes, _module, now);
         // Remove from module type list
         uint8[] memory moduleTypes = modulesToData[_module].moduleTypes;
@@ -438,6 +440,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function freezeTransfers() external onlyOwner {
         require(!transfersFrozen, "Already frozen");
         transfersFrozen = true;
+        /*solium-disable-next-line security/no-block-members*/
         emit FreezeTransfers(true, now);
     }
 
@@ -447,6 +450,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function unfreezeTransfers() external onlyOwner {
         require(transfersFrozen, "Not frozen");
         transfersFrozen = false;
+        /*solium-disable-next-line security/no-block-members*/
         emit FreezeTransfers(false, now);
     }
 
@@ -599,6 +603,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function freezeMinting() external isMintingAllowed() isEnabled("freezeMintingAllowed") onlyOwner {
         mintingFrozen = true;
+        /*solium-disable-next-line security/no-block-members*/
         emit FreezeMinting(now);
     }
 
@@ -707,7 +712,9 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
         require(currentCheckpointId < 2**256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
+        /*solium-disable-next-line security/no-block-members*/
         checkpointTimes.push(now);
+        /*solium-disable-next-line security/no-block-members*/
         emit CheckpointCreated(currentCheckpointId, now);
         return currentCheckpointId;
     }
@@ -758,6 +765,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         require(!controllerDisabled,"Controller disabled");
         controllerDisabled = true;
         delete controller;
+        /*solium-disable-next-line security/no-block-members*/
         emit DisableController(now);
     }
 

@@ -75,6 +75,7 @@ contract PreSaleSTO is ISTO {
     function allocateTokens(
         address _investor, uint256 _amount, uint256 _etherContributed, uint256 _polyContributed) public withPerm(PRE_SALE_ADMIN)
     {
+        /*solium-disable-next-line security/no-block-members*/
         require(now <= endTime, "Current time should less than the endTime");
         require(_amount > 0, "No. of tokens provided should be greater the zero");
         ISecurityToken(securityToken).mint(_investor, _amount);

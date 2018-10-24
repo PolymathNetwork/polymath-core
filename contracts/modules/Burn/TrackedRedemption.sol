@@ -39,6 +39,7 @@ contract TrackedRedemption is IBurn, Module {
     function redeemTokens(uint256 _value) public {
         ISecurityToken(securityToken).burnFromWithData(msg.sender, _value, "");
         redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
+        /*solium-disable-next-line security/no-block-members*/
         emit Redeemed(msg.sender, _value, now);
     }
     

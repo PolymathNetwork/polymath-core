@@ -124,6 +124,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         ISecurityToken securityTokenInstance = ISecurityToken(securityToken);
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
         require(_expiry > _maturity, "Expiry before maturity");
+        /*solium-disable-next-line security/no-block-members*/
         require(_expiry > now, "Expiry in past");
         require(_amount > 0, "No dividend sent");
         require(_token != address(0), "Invalid token");
@@ -136,7 +137,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         dividends.push(
           Dividend(
             _checkpointId,
-            now,
+            now, /*solium-disable-line security/no-block-members*/
             _maturity,
             _expiry,
             _amount,
@@ -169,6 +170,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         uint256 _checkpointId, uint256 _maturity, uint256 _expiry, address _token, uint256 _amount,
         uint256 currentSupply, uint256 dividendIndex, bytes32 _name) internal
     {
+        /*solium-disable-next-line security/no-block-members*/
         emit ERC20DividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);
     }
 
@@ -197,6 +199,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      */
     function reclaimDividend(uint256 _dividendIndex) external withPerm(MANAGE) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
+        /*solium-disable-next-line security/no-block-members*/
         require(now >= dividends[_dividendIndex].expiry, "Dividend expiry in future");
         require(!dividends[_dividendIndex].reclaimed, "already claimed");
         dividends[_dividendIndex].reclaimed = true;

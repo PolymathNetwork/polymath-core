@@ -194,6 +194,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     function modifyFunding(FundRaiseType[] _fundRaiseTypes) public onlyFactoryOrOwner {
+        /*solium-disable-next-line security/no-block-members*/
         require(now < startTime);
         _setFundRaiseType(_fundRaiseTypes);
         uint256 length = getNumberOfTiers();
@@ -208,6 +209,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD
     ) public onlyFactoryOrOwner {
+        /*solium-disable-next-line security/no-block-members*/
         require(now < startTime);
         minimumInvestmentUSD = _minimumInvestmentUSD;
         nonAccreditedLimitUSD = _nonAccreditedLimitUSD;
@@ -220,6 +222,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256[] _tokensPerTierTotal,
         uint256[] _tokensPerTierDiscountPoly
     ) public onlyFactoryOrOwner {
+        /*solium-disable-next-line security/no-block-members*/
         require(now < startTime);
         require(_tokensPerTierTotal.length > 0);
         require(_ratePerTier.length == _tokensPerTierTotal.length, "Mismatch b/w rates & tokens / tier");
@@ -242,7 +245,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _startTime,
         uint256 _endTime
     ) public onlyFactoryOrOwner {
+        /*solium-disable-next-line security/no-block-members*/
         require((startTime == 0) || (now < startTime));
+        /*solium-disable-next-line security/no-block-members*/
         require((_endTime > _startTime) && (_startTime > now), "Invalid times");
         startTime = _startTime;
         endTime = _endTime;
@@ -254,6 +259,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _reserveWallet,
         address _usdToken
     ) public onlyFactoryOrOwner {
+        /*solium-disable-next-line security/no-block-members*/
         require(now < startTime);
         require(_wallet != address(0) && _reserveWallet != address(0), "0x address is not allowed");
         if (fundRaiseTypes[uint8(FundRaiseType.DAI)]) {
@@ -517,8 +523,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     function isOpen() public view returns(bool) {
         if (isFinalized)
             return false;
+        /*solium-disable-next-line security/no-block-members*/
         if (now < startTime)
             return false;
+        /*solium-disable-next-line security/no-block-members*/
         if (now >= endTime)
             return false;
         if (capReached())

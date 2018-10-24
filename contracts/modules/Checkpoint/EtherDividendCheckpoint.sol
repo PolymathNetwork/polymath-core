@@ -105,6 +105,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
     {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
         require(_expiry > _maturity, "Expiry is before maturity");
+        /*solium-disable-next-line security/no-block-members*/
         require(_expiry > now, "Expiry is in the past");
         require(msg.value > 0, "No dividend sent");
         require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId());
@@ -115,7 +116,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         dividends.push(
           Dividend(
             _checkpointId,
-            now,
+            now, /*solium-disable-line security/no-block-members*/
             _maturity,
             _expiry,
             msg.value,
@@ -135,6 +136,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
             dividends[dividendIndex].dividendExcluded[_excluded[j]] = true;
         }
         dividends[dividendIndex].totalSupply = currentSupply.sub(excludedSupply);
+        /*solium-disable-next-line security/no-block-members*/
         emit EtherDividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, msg.value, currentSupply, dividendIndex, _name);
     }
 
@@ -168,6 +170,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      */
     function reclaimDividend(uint256 _dividendIndex) external withPerm(MANAGE) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
+        /*solium-disable-next-line security/no-block-members*/
         require(now >= dividends[_dividendIndex].expiry, "Dividend expiry is in the future");
         require(!dividends[_dividendIndex].reclaimed, "Dividend already claimed");
         Dividend storage dividend = dividends[_dividendIndex];

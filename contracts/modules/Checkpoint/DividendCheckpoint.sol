@@ -54,7 +54,9 @@ contract DividendCheckpoint is ICheckpoint, Module {
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         require(!dividends[_dividendIndex].reclaimed, "Dividend reclaimed");
+        /*solium-disable-next-line security/no-block-members*/
         require(now >= dividends[_dividendIndex].maturity, "Dividend maturity in future");
+        /*solium-disable-next-line security/no-block-members*/
         require(now < dividends[_dividendIndex].expiry, "Dividend expiry in past");
         _;
     }
@@ -96,6 +98,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
             }
         }
         excluded = _excluded;
+        /*solium-disable-next-line security/no-block-members*/
         emit SetDefaultExcludedAddresses(excluded, now);
     }
 
@@ -106,6 +109,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      */
     function setWithholding(address[] _investors, uint256[] _withholding) public withPerm(MANAGE) {
         require(_investors.length == _withholding.length, "Mismatched input lengths");
+        /*solium-disable-next-line security/no-block-members*/
         emit SetWithholding(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
             require(_withholding[i] <= 10**18, "Incorrect withholding tax");
@@ -120,6 +124,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      */
     function setWithholdingFixed(address[] _investors, uint256 _withholding) public withPerm(MANAGE) {
         require(_withholding <= 10**18, "Incorrect withholding tax");
+        /*solium-disable-next-line security/no-block-members*/
         emit SetWithholdingFixed(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
             withholdingTax[_investors[i]] = _withholding;

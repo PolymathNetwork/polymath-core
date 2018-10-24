@@ -60,6 +60,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
             return;
         }
         require(requestIds[_requestId] >= latestUpdate, "Result is stale");
+        /*solium-disable-next-line security/no-block-members*/
         require(requestIds[_requestId] <= now + oraclizeTimeTolerance, "Result is early");
         uint256 newPOLYUSD = parseInt(_result, 18);
         uint256 bound = POLYUSD.mul(sanityBounds).div(10**18);
@@ -82,12 +83,16 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
         if (_times.length == 0) {
             require(oraclize_getPrice(oracleQueryType, gasLimit) <= address(this).balance, "Insufficient Funds");
             requestId = oraclize_query(oracleQueryType, oracleURL, gasLimit);
+            /*solium-disable-next-line security/no-block-members*/
             requestIds[requestId] = now;
+            /*solium-disable-next-line security/no-block-members*/
             maximumScheduledUpdated = now;
+            /*solium-disable-next-line security/no-block-members*/
             emit NewOraclizeQuery(now, requestId, oracleURL);
         } else {
             require(oraclize_getPrice(oracleQueryType, gasLimit) * _times.length <= address(this).balance, "Insufficient Funds");
             for (uint256 i = 0; i < _times.length; i++) {
+                /*solium-disable-next-line security/no-block-members*/
                 require(_times[i] >= now, "Past scheduling is not allowed and scheduled time should be absolute timestamp");
                 requestId = oraclize_query(_times[i], oracleQueryType, oracleURL, gasLimit);
                 requestIds[requestId] = _times[i];
@@ -112,6 +117,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
         bytes32 requestId;
         require(_interval > 0, "Interval between scheduled time should be greater than zero");
         require(_iters > 0, "No iterations specified");
+        /*solium-disable-next-line security/no-block-members*/
         require(_startTime >= now, "Past scheduling is not allowed and scheduled time should be absolute timestamp");
         require(oraclize_getPrice(oracleQueryType, gasLimit) * _iters <= address(this).balance, "Insufficient Funds");
         for (uint256 i = 0; i < _iters; i++) {
@@ -130,8 +136,10 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @param _price POLYUSD price
     */
     function setPOLYUSD(uint256 _price) public onlyOwner {
+        /*solium-disable-next-line security/no-block-members*/
         emit PriceUpdated(_price, POLYUSD, 0, now);
         POLYUSD = _price;
+        /*solium-disable-next-line security/no-block-members*/
         latestUpdate = now;
     }
 
@@ -221,6 +229,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     */
     function setAdmin(address _admin, bool _valid) public onlyOwner {
         admin[_admin] = _valid;
+        /*solium-disable-next-line security/no-block-members*/
         emit AdminSet(_admin, _valid, now);
     }
 
@@ -257,6 +266,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @notice Returns price - should throw if not valid
     */
     function getPrice() external view returns(uint256) {
+        /*solium-disable-next-line security/no-block-members*/
         require(latestUpdate >= now - staleTime);
         return POLYUSD;
     }

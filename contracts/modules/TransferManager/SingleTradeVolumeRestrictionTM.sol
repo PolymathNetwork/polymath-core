@@ -111,6 +111,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     function setAllowPrimaryIssuance(bool _allowPrimaryIssuance) public withPerm(ADMIN) {
         require(_allowPrimaryIssuance != allowPrimaryIssuance, "Must change setting");
         allowPrimaryIssuance = _allowPrimaryIssuance;
+        /*solium-disable-next-line security/no-block-members*/
         emit SetAllowPrimaryIssuance(_allowPrimaryIssuance, now);
     }
 

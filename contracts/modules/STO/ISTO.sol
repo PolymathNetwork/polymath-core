@@ -59,6 +59,7 @@ contract ISTO is Module, Pausable  {
      * @notice pause (overridden function)
      */
     function pause() public onlyOwner {
+        /*solium-disable-next-line security/no-block-members*/
         require(now < endTime);
         super._pause();
     }

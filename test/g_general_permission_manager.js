@@ -381,7 +381,7 @@ contract('GeneralPermissionManager', accounts => {
         })
 
         it("Should return all modules and all permission", async() => {
-            let tx = await I_GeneralPermissionManager.getAllModulesAndPermsFromTypes.call(account_delegate3, [2,1], I_SecurityToken.address);
+            let tx = await I_GeneralPermissionManager.getAllModulesAndPermsFromTypes.call(account_delegate3, [2,1]);
             assert.equal(tx[0][0], I_GeneralTransferManager.address);
             assert.equal(tx[1][0], "0x57484954454c4953540000000000000000000000000000000000000000000000");
             assert.equal(tx[0][1], I_GeneralPermissionManager.address);

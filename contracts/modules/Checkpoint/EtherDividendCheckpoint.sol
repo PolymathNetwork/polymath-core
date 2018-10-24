@@ -144,6 +144,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         _dividend.claimed[_payee] = true;      
         uint256 claimAfterWithheld = claim.sub(withheld);
         if (claimAfterWithheld > 0) {
+            /*solium-disable-next-line security/no-send*/
             if (_payee.send(claimAfterWithheld)) {
                 _dividend.claimedAmount = _dividend.claimedAmount.add(claim);
                 _dividend.dividendWithheld = _dividend.dividendWithheld.add(withheld);

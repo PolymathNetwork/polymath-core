@@ -112,6 +112,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     */
     function upgradeToAndCall(string _newVersion, address _newImplementation, bytes _data) external payable ifOwner {
         _upgradeTo(_newVersion, _newImplementation);
+        /*solium-disable-next-line security/no-call-value*/
         require(address(this).call.value(msg.value)(_data), "Fail in executing the function of implementation contract");
     }
 

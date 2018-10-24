@@ -34,6 +34,7 @@ contract CountTransferManagerFactory is ModuleFactory {
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         CountTransferManager countTransferManager = new CountTransferManager(msg.sender, address(polyToken));
         require(Util.getSig(_data) == countTransferManager.getInitFunction(), "Provided data is not valid");
+        /*solium-disable-next-line security/no-low-level-calls*/
         require(address(countTransferManager).call(_data), "Unsuccessful call");
         emit GenerateModuleFromFactory(address(countTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(countTransferManager);

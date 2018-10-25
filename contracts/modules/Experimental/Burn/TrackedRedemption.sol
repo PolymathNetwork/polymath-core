@@ -1,8 +1,8 @@
 pragma solidity ^0.4.24;
 
-import "./IBurn.sol";
-import "../Module.sol";
-import "../../interfaces/ISecurityToken.sol";
+import "../../Burn/IBurn.sol";
+import "../../Module.sol";
+import "../../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
@@ -41,7 +41,7 @@ contract TrackedRedemption is IBurn, Module {
         redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
         emit Redeemed(msg.sender, _value, now);
     }
-    
+
     /**
      * @notice Returns the permissions flag that are associated with CountTransferManager
      */

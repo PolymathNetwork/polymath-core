@@ -1,8 +1,9 @@
 pragma solidity ^0.4.24;
 
-import "./../ModuleFactory.sol";
+import "./../../ModuleFactory.sol";
 import "./SingleTradeVolumeRestrictionTM.sol";
-import "../../libraries/Util.sol";
+import "../../../libraries/Util.sol";
+
 /**
  * @title Factory for deploying SingleTradeVolumeRestrictionManager
  */

@@ -71,7 +71,7 @@ contract PolyTokenFaucet {
     }
 
     /**
-     * @notice Returns the balance of a token holders
+     * @notice Returns the balance of a token holder
      * @param _owner The address from which the balance will be retrieved
      * @return The balance
      */

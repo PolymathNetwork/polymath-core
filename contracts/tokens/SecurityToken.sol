@@ -135,7 +135,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event DisableController(uint256 _timestamp);
 
     function _isModule(address _module, uint8 _type) internal view returns (bool) {
-        require(modulesToData[_module].module == _module, "Address mismatch");
+        require(modulesToData[_module].module == _module, "Wrong address");
         require(!modulesToData[_module].isArchived, "Module archived");
         for (uint256 i = 0; i < modulesToData[_module].moduleTypes.length; i++) {
             if (modulesToData[_module].moduleTypes[i] == _type) {
@@ -233,7 +233,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         uint8[] memory moduleTypes = moduleFactory.getTypes();
         uint256 moduleCost = moduleFactory.getSetupCost();
-        require(moduleCost <= _maxCost, "Cost too high");
+        require(moduleCost <= _maxCost, "Invalid cost");
         //Approve fee for module
         ERC20(polyToken).approve(_moduleFactory, moduleCost);
         //Creates instance of module from factory
@@ -279,7 +279,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _module address of module to unarchive
     */
     function removeModule(address _module) external onlyOwner {
-        require(modulesToData[_module].isArchived, "Module not archived");
+        require(modulesToData[_module].isArchived, "Not archived");
         require(modulesToData[_module].module != address(0), "Module missing");
         /*solium-disable-next-line security/no-block-members*/
         emit ModuleRemoved(modulesToData[_module].moduleTypes, _module, now);
@@ -380,7 +380,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint256 currentAllowance = IERC20(polyToken).allowance(address(this), _module);
         uint256 newAllowance;
         if (_increase) {
-            require(IERC20(polyToken).increaseApproval(_module, _change), "increaseApproval fail");
+            require(IERC20(polyToken).increaseApproval(_module, _change), "IncreaseApproval fail");
             newAllowance = currentAllowance.add(_change);
         } else {
             require(IERC20(polyToken).decreaseApproval(_module, _change), "Insufficient allowance");
@@ -796,7 +796,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _controller address of the controller
      */
     function setController(address _controller) public onlyOwner {
-        require(!controllerDisabled,"Controller disabled");
+        require(!controllerDisabled);
         emit SetController(controller, _controller);
         controller = _controller;
     }
@@ -806,7 +806,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @dev enabled via feature switch "disableControllerAllowed"
      */
     function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
-        require(!controllerDisabled,"Controller disabled");
+        require(!controllerDisabled);
         controllerDisabled = true;
         delete controller;
         /*solium-disable-next-line security/no-block-members*/

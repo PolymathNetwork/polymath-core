@@ -132,9 +132,10 @@ interface ISecurityToken {
      */
     function iterateInvestors(uint256 _start, uint256 _end, bytes _data, function(address, bytes memory) external _callback) external view;
 
-    * @notice Gets current checkpoint ID
-    * @return Id
-    */
+    /**
+     * @notice Gets current checkpoint ID
+     * @return Id
+     */
     function currentCheckpointId() external view returns (uint256);
 
     /**
@@ -301,7 +302,7 @@ interface ISecurityToken {
 
      /**
       * @notice Provides the granularity of the token
-      * @return uint256 
+      * @return uint256
       */
      function granularity() external view returns(uint256);
 }

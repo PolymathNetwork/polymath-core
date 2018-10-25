@@ -58,10 +58,10 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // Used to permanently halt all minting
     bool public mintingFrozen;
 
-    // Use to permanently halt controller actions
+    // Used to permanently halt controller actions
     bool public controllerDisabled;
 
-    // address whitelisted by issuer as controller
+    // Address whitelisted by issuer as controller
     address public controller;
 
     // Records added modules - module list should be order agnostic!
@@ -322,7 +322,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice returns a list of modules that match the provided name
+     * @notice Returns a list of modules that match the provided name
      * @param _name name of the module
      * @return address[] list of modules with this name
      */
@@ -331,7 +331,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice returns a list of modules that match the provided module type
+     * @notice Returns a list of modules that match the provided module type
      * @param _type type of the module
      * @return address[] list of modules with this type
      */
@@ -340,7 +340,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
    /**
-    * @notice allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
+    * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
     * @param _tokenContract Address of the ERC20Basic compliance token
     * @param _value amount of POLY to withdraw
@@ -352,6 +352,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
+
     * @notice allows owner to increase/decrease POLY approval of one of the modules
     * @param _module module address
     * @param _change change in allowance
@@ -381,7 +382,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-    * @notice allows owner to change token granularity
+    * @notice Allows owner to change token granularity
     * @param _granularity granularity level of the token
     */
     function changeGranularity(uint256 _granularity) external onlyOwner {
@@ -391,7 +392,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-    * @notice keeps track of the number of non-zero token holders
+    * @notice Keeps track of the number of non-zero token holders
     * @param _from sender of transfer
     * @param _to receiver of transfer
     * @param _value value of transfer
@@ -438,7 +439,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice iterates over all investors executing a callback for each individual investor
      * NB - can be used in batches if investor list is large
      * @param _start Posisiton of investor to start iteration from
-     * @param _start Posisiton of investor to stop iteration at
+     * @param _end Posisiton of investor to stop iteration at
      * @param _data Data to pass in the callback function
      * param _callback Callback function to call for every investor
      */
@@ -450,7 +451,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice returns the investor count
+     * @notice Returns the investor count
      * @return Investor count
      */
     function getInvestorCount() external view returns(uint256) {
@@ -467,7 +468,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice unfreeze transfers
+     * @notice Unfreeze transfers
      */
     function unfreezeTransfers() external onlyOwner {
         require(transfersFrozen, "Not frozen");
@@ -562,7 +563,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice validate transfer with TransferManager module if it exists
+     * @notice Validate transfer with TransferManager module if it exists
      * @dev TransferManager module has a key of 2
      * @dev _isTransfer boolean flag is the deciding factor for whether the
      * state variables gets modified or not within the different modules. i.e isTransfer = true
@@ -609,7 +610,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice validates a transfer with a TransferManager module if it exists
+     * @notice Validates a transfer with a TransferManager module if it exists
      * @dev TransferManager module has a key of 2
      * @param _from sender of transfer
      * @param _to receiver of transfer
@@ -631,7 +632,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice mints new tokens and assigns them to the target _investor.
+     * @notice Mints new tokens and assigns them to the target _investor.
      * @dev Can only be called by the issuer or STO attached to the token
      * @param _investor Address where the minted tokens will be delivered
      * @param _value Number of tokens be minted
@@ -665,7 +666,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice mints new tokens and assigns them to the target _investor.
+     * @notice Mints new tokens and assigns them to the target _investor.
      * @dev Can only be called by the issuer or STO attached to the token.
      * @param _investors A list of addresses to whom the minted tokens will be dilivered
      * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
@@ -779,7 +780,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice Use by the issuer to permanently disable controller functionality
+     * @notice Used by the issuer to permanently disable controller functionality
      * @dev enabled via feature switch "disableControllerAllowed"
      */
     function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
@@ -790,7 +791,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice Use by a controller to execute a forced transfer
+     * @notice Used by a controller to execute a forced transfer
      * @param _from address from which to take tokens
      * @param _to address where to send tokens
      * @param _value amount of tokens to transfer
@@ -808,7 +809,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice Use by a controller to execute a forced burn
+     * @notice Used by a controller to execute a forced burn
      * @param _from address from which to take tokens
      * @param _value amount of tokens to transfer
      * @param _data data to indicate validation

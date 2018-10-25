@@ -51,7 +51,7 @@ contract CountTransferManager is ITransferManager {
     }
 
     /**
-    * @notice sets the cap for the amount of token holders there can be
+    * @notice Sets the cap for the amount of token holders there can be
     * @param _maxHolderCount is the new maximum amount of token holders
     */
     function changeHolderCount(uint256 _maxHolderCount) public withPerm(ADMIN) {
@@ -67,7 +67,7 @@ contract CountTransferManager is ITransferManager {
     }
 
     /**
-     * @notice Return the permissions flag that are associated with CountTransferManager
+     * @notice Returns the permissions flag that are associated with CountTransferManager
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);

@@ -156,7 +156,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     /////////////////////////////
 
     /**
-     * @notice initializes instance of STR
+     * @notice Initializes instance of STR
      * @param _polymathRegistry is the address of the Polymath Registry
      * @param _STFactory is the address of the Proxy contract for Security Tokens
      * @param _stLaunchFee is the fee in POLY required to launch a token
@@ -616,7 +616,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     }
 
     /**
-    * @notice called by the owner to pause, triggers stopped state
+    * @notice Called by the owner to pause, triggers stopped state
     */
     function pause() external whenNotPaused onlyOwner {
         set(PAUSED, true);
@@ -624,7 +624,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     }
 
     /**
-    * @notice called by the owner to unpause, returns to normal state
+    * @notice Called by the owner to unpause, returns to normal state
     */
     function unpause() external whenPaused onlyOwner {
         set(PAUSED, false);
@@ -700,7 +700,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     }
 
     /**
-     * @notice get Protocol version
+     * @notice Gets Protocol version
      */
     function getProtocolVersion() public view returns(uint8[]) {
         return VersionUtils.unpack(uint24(getUint(Encoder.getKey("latestVersion"))));

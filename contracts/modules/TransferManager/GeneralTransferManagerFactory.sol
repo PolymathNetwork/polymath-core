@@ -25,7 +25,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
 
 
      /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
@@ -50,7 +50,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
      * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
-        return "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist, and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.";
+        return "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.";
     }
 
     /**

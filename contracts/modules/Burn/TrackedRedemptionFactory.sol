@@ -27,12 +27,12 @@ contract TrackedRedemptionFactory is ModuleFactory {
     }
 
     /**
-     * @notice used to launch the Module with the help of factory
-     * @return address Contract address of the Module
+     * @notice Used to launch the Module with the help of factory
+     * @return Address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Insufficent allowance or balance");
         address trackedRedemption = new TrackedRedemption(msg.sender, address(polyToken));
         emit GenerateModuleFromFactory(address(trackedRedemption), getName(), address(this), msg.sender, setupCost, now);
         return address(trackedRedemption);

@@ -40,8 +40,8 @@ library TokenLib {
 
     /**
     * @notice Archives a module attached to the SecurityToken
-    * @param _moduleData storage data
-    * @param _module address of module to archive
+    * @param _moduleData Storage data
+    * @param _module Address of module to archive
     */
     function archiveModule(ModuleData storage _moduleData, address _module) public {
         require(!_moduleData.isArchived, "Module archived");
@@ -52,8 +52,8 @@ library TokenLib {
 
     /**
     * @notice Unarchives a module attached to the SecurityToken
-    * @param _moduleData storage data
-    * @param _module address of module to unarchive
+    * @param _moduleData Storage data
+    * @param _module Address of module to unarchive
     */
     function unarchiveModule(ModuleData storage _moduleData, address _module) public {
         require(_moduleData.isArchived, "Module unarchived");
@@ -62,7 +62,7 @@ library TokenLib {
     }
 
     /**
-     * @notice Validate permissions with PermissionManager if it exists. If there's no permission return false
+     * @notice Validates permissions with PermissionManager if it exists. If there's no permission return false
      * @dev Note that IModule withPerm will allow ST owner all permissions by default
      * @dev this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
      * @param _modules is the modules to check permissions on
@@ -150,13 +150,13 @@ library TokenLib {
     }
 
     /**
-    * @notice keeps track of the number of non-zero token holders
+    * @notice Keeps track of the number of non-zero token holders
     * @param _investorData Date releated to investor metrics
-    * @param _from sender of transfer
-    * @param _to receiver of transfer
-    * @param _value value of transfer
-    * @param _balanceTo balance of the _to address
-    * @param _balanceFrom balance of the _from address
+    * @param _from Sender of transfer
+    * @param _to Receiver of transfer
+    * @param _value Value of transfer
+    * @param _balanceTo Balance of the _to address
+    * @param _balanceFrom Balance of the _from address
     */
     function adjustInvestorCount(
         InvestorDataStorage storage _investorData,

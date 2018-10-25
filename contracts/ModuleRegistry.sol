@@ -331,7 +331,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-    * @notice Reclaim all ERC20Basic compatible tokens
+    * @notice Reclaims all ERC20Basic compatible tokens
     * @param _tokenContract The address of the token contract
     */
     function reclaimERC20(address _tokenContract) external onlyOwner {
@@ -368,7 +368,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice Get the owner of the contract
+     * @notice Gets the owner of the contract
      * @return address owner
      */
     function owner() public view returns(address) {
@@ -376,7 +376,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice Check whether the contract operations is paused or not
+     * @notice Checks whether the contract operations is paused or not
      * @return bool
      */
     function isPaused() public view returns(bool) {

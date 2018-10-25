@@ -57,7 +57,7 @@ contract DummySTO is ISTO {
      */
     function generateTokens(address _investor, uint256 _amount) public withPerm(ADMIN) {
         require(!paused);
-        require(_amount > 0, "Amount should be greater than 0");
+        require(_amount > 0, "Amount is not greater than 0");
         ISecurityToken(securityToken).mint(_investor, _amount);
         if (investors[_investor] == 0) {
             investorCount = investorCount + 1;
@@ -68,21 +68,21 @@ contract DummySTO is ISTO {
     }
 
     /**
-     * @notice Return the total no. of investors
+     * @notice Returns the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256) {
         return investorCount;
     }
 
     /**
-     * @notice Return the total no. of investors
+     * @notice Returns the total no. of investors
      */
     function getTokensSold() public view returns (uint256) {
         return 0;
     }
 
     /**
-     * @notice Return the permissions flag that are associated with STO
+     * @notice Returns the permissions flag that are associated with STO
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);

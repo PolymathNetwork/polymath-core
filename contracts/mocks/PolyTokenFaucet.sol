@@ -30,7 +30,7 @@ contract PolyTokenFaucet {
 
     /* Token faucet - Not part of the ERC20 standard */
     function getTokens(uint256 _amount, address _recipient) public returns (bool) {
-        require(_amount <= 1000000 * uint256(10)**decimals, "Amount can not be more than 1 million");
+        require(_amount <= 1000000 * uint256(10)**decimals, "Amount should not exceed 1 million");
         require(_recipient != address(0), "Recipient address can not be empty");
         balances[_recipient] = balances[_recipient].add(_amount);
         totalSupply_ = totalSupply_.add(_amount);
@@ -39,7 +39,7 @@ contract PolyTokenFaucet {
     }
 
     /**
-     * @notice send `_value` token to `_to` from `msg.sender`
+     * @notice Sends `_value` tokens to `_to` from `msg.sender`
      * @param _to The address of the recipient
      * @param _value The amount of token to be transferred
      * @return Whether the transfer was successful or not
@@ -52,7 +52,7 @@ contract PolyTokenFaucet {
     }
 
     /**
-     * @notice send `_value` token to `_to` from `_from` on the condition it is approved by `_from`
+     * @notice sends `_value` tokens to `_to` from `_from` with the condition it is approved by `_from`
      * @param _from The address of the sender
      * @param _to The address of the recipient
      * @param _value The amount of token to be transferred
@@ -71,7 +71,7 @@ contract PolyTokenFaucet {
     }
 
     /**
-     * @notice `balanceOf` function to get the balance of token holders
+     * @notice Returns the balance of a token holder
      * @param _owner The address from which the balance will be retrieved
      * @return The balance
      */
@@ -80,7 +80,7 @@ contract PolyTokenFaucet {
     }
 
     /**
-     * @notice `msg.sender` approves `_spender` to spend `_value` tokens
+     * @notice Used by `msg.sender` to approve `_spender` to spend `_value` tokens
      * @param _spender The address of the account able to transfer the tokens
      * @param _value The amount of tokens to be approved for transfer
      * @return Whether the approval was successful or not
@@ -94,7 +94,7 @@ contract PolyTokenFaucet {
     /**
      * @param _owner The address of the account owning tokens
      * @param _spender The address of the account able to transfer the tokens
-     * @return Amount of remaining tokens allowed to spent
+     * @return Amount of remaining tokens allowed to be spent
      */
     function allowance(address _owner, address _spender) public view returns (uint256 remaining) {
         return allowed[_owner][_spender];
@@ -105,9 +105,9 @@ contract PolyTokenFaucet {
     }
 
     /**
-     * @dev Increase the amount of tokens that an owner allowed to a spender.
+     * @dev Increases the amount of tokens that an owner allowed to a spender.
      * approve should be called when allowed[_spender] == 0. To increment
-     * allowed value is better to use this function to avoid 2 calls (and wait until
+     * allowed value, it is better to use this function to avoid 2 calls (and wait until
      * the first transaction is mined)
      * From MonolithDAO Token.sol
      * @param _spender The address which will spend the funds.
@@ -130,7 +130,7 @@ contract PolyTokenFaucet {
     * @dev Decrease the amount of tokens that an owner allowed to a spender.
     *
     * approve should be called when allowed[_spender] == 0. To decrement
-    * allowed value is better to use this function to avoid 2 calls (and wait until
+    * allowed value, it is better to use this function to avoid 2 calls (and wait until
     * the first transaction is mined)
     * From MonolithDAO Token.sol
     * @param _spender The address which will spend the funds.

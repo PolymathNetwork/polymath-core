@@ -1105,18 +1105,18 @@ contract("ERC20DividendCheckpoint", accounts => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_ERC20DividendCheckpointFactory.getSetupCost.call()).toNumber(), 0);
                 assert.equal((await I_ERC20DividendCheckpointFactory.getTypes.call())[0], 4);
-                assert.equal(await I_ERC20DividendCheckpointFactory.getVersion.call(), "1.0.0");
+                assert.equal(await I_ERC20DividendCheckpointFactory.version.call(), "1.0.0");
                 assert.equal(
                     web3.utils.toAscii(await I_ERC20DividendCheckpointFactory.getName.call()).replace(/\u0000/g, ""),
                     "ERC20DividendCheckpoint",
                     "Wrong Module added"
                 );
                 assert.equal(
-                    await I_ERC20DividendCheckpointFactory.getDescription.call(),
+                    await I_ERC20DividendCheckpointFactory.description.call(),
                     "Create ERC20 dividends for token holders at a specific checkpoint",
                     "Wrong Module added"
                 );
-                assert.equal(await I_ERC20DividendCheckpointFactory.getTitle.call(), "ERC20 Dividend Checkpoint", "Wrong Module added");
+                assert.equal(await I_ERC20DividendCheckpointFactory.title.call(), "ERC20 Dividend Checkpoint", "Wrong Module added");
                 assert.equal(
                     await I_ERC20DividendCheckpointFactory.getInstructions.call(),
                     "Create ERC20 dividend to be paid out to token holders based on their balances at dividend creation time",

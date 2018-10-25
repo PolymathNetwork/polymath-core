@@ -267,14 +267,14 @@ contract("TrackedRedemption", accounts => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_TrackedRedemptionFactory.getSetupCost.call()).toNumber(), 0);
                 assert.equal((await I_TrackedRedemptionFactory.getTypes.call())[0], 5);
-                assert.equal(await I_TrackedRedemptionFactory.getVersion.call(), "1.0.0");
+                assert.equal(await I_TrackedRedemptionFactory.version.call(), "1.0.0");
                 assert.equal(
                     web3.utils.toAscii(await I_TrackedRedemptionFactory.getName.call()).replace(/\u0000/g, ""),
                     "TrackedRedemption",
                     "Wrong Module added"
                 );
-                assert.equal(await I_TrackedRedemptionFactory.getDescription.call(), "Track token redemptions", "Wrong Module added");
-                assert.equal(await I_TrackedRedemptionFactory.getTitle.call(), "Tracked Redemption", "Wrong Module added");
+                assert.equal(await I_TrackedRedemptionFactory.description.call(), "Track token redemptions", "Wrong Module added");
+                assert.equal(await I_TrackedRedemptionFactory.title.call(), "Tracked Redemption", "Wrong Module added");
                 assert.equal(
                     await I_TrackedRedemptionFactory.getInstructions.call(),
                     "Allows an investor to redeem security tokens which are tracked by this module",

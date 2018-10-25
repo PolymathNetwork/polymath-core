@@ -787,16 +787,16 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
                         .replace(/\u0000/g, ''),
                         "LockupVolumeRestrictionTM",
                         "Wrong Module added");
-            assert.equal(await I_VolumeRestrictionTransferManagerFactory.getDescription.call(),
+            assert.equal(await I_VolumeRestrictionTransferManagerFactory.description.call(),
                         "Manage transfers using lock ups over time",
                         "Wrong Module added");
-            assert.equal(await I_VolumeRestrictionTransferManagerFactory.getTitle.call(),
+            assert.equal(await I_VolumeRestrictionTransferManagerFactory.title.call(),
                         "Lockup Volume Restriction Transfer Manager",
                         "Wrong Module added");
             assert.equal(await I_VolumeRestrictionTransferManagerFactory.getInstructions.call(),
                         "Allows an issuer to set lockup periods for user addresses, with funds distributed over time. Init function takes no parameters.",
                         "Wrong Module added");
-            assert.equal(await I_VolumeRestrictionTransferManagerFactory.getVersion.call(), "1.0.0");
+            assert.equal(await I_VolumeRestrictionTransferManagerFactory.version.call(), "1.0.0");
         });
 
         it("Should get the tags of the factory", async() => {

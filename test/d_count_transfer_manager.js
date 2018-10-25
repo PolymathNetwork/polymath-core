@@ -358,11 +358,11 @@ contract("CountTransferManager", accounts => {
                     "Wrong Module added"
                 );
                 assert.equal(
-                    await I_CountTransferManagerFactory.getDescription.call(),
+                    await I_CountTransferManagerFactory.description.call(),
                     "Restrict the number of investors",
                     "Wrong Module added"
                 );
-                assert.equal(await I_CountTransferManagerFactory.getTitle.call(), "Count Transfer Manager", "Wrong Module added");
+                assert.equal(await I_CountTransferManagerFactory.title.call(), "Count Transfer Manager", "Wrong Module added");
                 assert.equal(
                     await I_CountTransferManagerFactory.getInstructions.call(),
                     "Allows an issuer to restrict the total number of non-zero token holders",
@@ -424,7 +424,7 @@ contract("CountTransferManager", accounts => {
 
             it("Should successfully change the version of the fatory", async() => {
                 await I_CountTransferManagerFactory.changeVersion("5.0.0", {from: account_polymath});
-                assert.equal(await I_CountTransferManagerFactory.getVersion.call(), "5.0.0");
+                assert.equal(await I_CountTransferManagerFactory.version.call(), "5.0.0");
             });
         })
 

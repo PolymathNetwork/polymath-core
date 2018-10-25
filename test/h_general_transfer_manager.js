@@ -797,8 +797,8 @@ contract("GeneralTransferManager", accounts => {
                 "DummySTO",
                 "Wrong Module added"
             );
-            assert.equal(await I_DummySTOFactory.getDescription.call(), "Dummy STO", "Wrong Module added");
-            assert.equal(await I_DummySTOFactory.getTitle.call(), "Dummy STO", "Wrong Module added");
+            assert.equal(await I_DummySTOFactory.description.call(), "Dummy STO", "Wrong Module added");
+            assert.equal(await I_DummySTOFactory.title.call(), "Dummy STO", "Wrong Module added");
             assert.equal(await I_DummySTOFactory.getInstructions.call(), "Dummy STO - you can mint tokens at will", "Wrong Module added");
         });
 
@@ -808,7 +808,7 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should get the version of factory", async() => {
-            let version = await I_DummySTOFactory.getVersion.call();
+            let version = await I_DummySTOFactory.version.call();
             assert.equal(version, "1.0.0");
         });
     });

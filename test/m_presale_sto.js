@@ -425,7 +425,7 @@ contract("PreSaleSTO", accounts => {
                 "Allows Issuer to configure pre-sale token allocations",
                 "Wrong Module added"
             );
-            assert.equal(await I_PreSaleSTOFactory.getTitle.call(), "PreSale STO", "Wrong Module added");
+            assert.equal(await I_PreSaleSTOFactory.title.call(), "PreSale STO", "Wrong Module added");
             assert.equal(
                 await I_PreSaleSTOFactory.getInstructions.call(),
                 "Configure and track pre-sale token allocations",

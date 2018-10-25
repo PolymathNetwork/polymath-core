@@ -15,11 +15,11 @@ contract ModuleFactory is IModuleFactory, Ownable {
     uint256 public usageCost;
     uint256 public monthlySubscriptionCost;
 
-    uint256 internal setupCost;
-    string internal description;
-    string internal version;
-    bytes32 internal name;
-    string internal title;
+    uint256 public setupCost;
+    string public description;
+    string public version;
+    bytes32 public name;
+    string public title;
 
     // @notice Allow only two variables to be stored
     // 1. lowerBound 
@@ -140,6 +140,20 @@ contract ModuleFactory is IModuleFactory, Ownable {
      */
     function getUpperSTVersionBounds() external view returns(uint8[]) {
         return VersionUtils.unpack(compatibleSTVersionRange["upperBound"]);
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCost() external view returns (uint256) {
+        return setupCost;
+    }
+
+   /**
+    * @notice Get the name of the Module
+    */
+    function getName() public view returns(bytes32) {
+        return name;
     }
 
 }

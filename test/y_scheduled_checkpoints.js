@@ -108,7 +108,7 @@ contract('ScheduledCheckpoint', accounts => {
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
 
-        
+
         -----------------------------------------------------------------------------
         `);
     });
@@ -170,12 +170,17 @@ contract('ScheduledCheckpoint', accounts => {
         let startTime;
         let interval;
         it("Should create a daily checkpoint", async () => {
-            console.log("1: " + latestTime());
             startTime = latestTime() + 100;
             interval = 24 * 60 * 60;
             console.log("Creating scheduled CP: " + startTime, interval);
             await I_ScheduledCheckpoint.addSchedule("CP1", startTime, interval, {from: token_owner});
             console.log("2: " + latestTime());
+        });
+
+        it("Remove (temp) daily checkpoint", async () => {
+            let snap_Id = await takeSnapshot();
+            await I_ScheduledCheckpoint.removeSchedule("CP1", {from: token_owner});
+            await revertToSnapshot(snap_Id);
         });
 
         it("Should Buy the tokens for account_investor1", async() => {

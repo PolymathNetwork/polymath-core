@@ -29,7 +29,7 @@ contract USDTieredSTOFactory is ModuleFactory {
     }
 
      /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {

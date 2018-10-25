@@ -43,21 +43,21 @@ contract PreSaleSTO is ISTO {
     }
 
     /**
-     * @notice Return the total no. of investors
+     * @notice Returns the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256) {
         return investorCount;
     }
 
     /**
-     * @notice Return the total no. of tokens sold
+     * @notice Returns the total no. of tokens sold
      */
     function getTokensSold() public view returns (uint256) {
         return totalTokensSold;
     }
 
     /**
-     * @notice Return the permissions flag that are associated with STO
+     * @notice Returns the permissions flag that are associated with STO
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);
@@ -82,7 +82,7 @@ contract PreSaleSTO is ISTO {
         withPerm(PRE_SALE_ADMIN)
     {
         /*solium-disable-next-line security/no-block-members*/
-        require(now <= endTime, "Current time should less than the endTime");
+        require(now <= endTime, "Already passed Endtime");
         require(_amount > 0, "No. of tokens provided should be greater the zero");
         ISecurityToken(securityToken).mint(_investor, _amount);
         if (investors[_investor] == uint256(0)) {
@@ -111,9 +111,9 @@ contract PreSaleSTO is ISTO {
         public
         withPerm(PRE_SALE_ADMIN)
     {
-        require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
-        require(_etherContributed.length == _polyContributed.length, "Mis-match in the length of the arrays");
-        require(_etherContributed.length == _investors.length, "Mis-match in the length of the arrays");
+        require(_investors.length == _amounts.length, "Mis-match in length of the arrays");
+        require(_etherContributed.length == _polyContributed.length, "Mis-match in length of the arrays");
+        require(_etherContributed.length == _investors.length, "Mis-match in length of the arrays");
         for (uint256 i = 0; i < _investors.length; i++) {
             allocateTokens(_investors[i], _amounts[i], _etherContributed[i], _polyContributed[i]);
         }

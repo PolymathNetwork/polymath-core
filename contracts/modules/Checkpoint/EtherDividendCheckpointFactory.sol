@@ -27,12 +27,12 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
     }
 
     /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
         if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Insufficent allowance or balance");
         address ethDividendCheckpoint = new EtherDividendCheckpoint(msg.sender, address(polyToken));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(ethDividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
@@ -52,7 +52,7 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
      * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
-        return "Create a dividend which will be paid out to token holders proportional to their balances at the point the dividend is created";
+        return "Create a dividend which will be paid out to token holders proportionally according to their balances at the point the dividend is created";
     }
 
     /**

@@ -111,7 +111,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice sets whether or not to consider primary issuance transfers
+    * @notice Sets whether or not to consider primary issuance transfers
     * @param _allowPrimaryIssuance whether to allow all primary issuance transfers
     */
     function setAllowPrimaryIssuance(bool _allowPrimaryIssuance) public withPerm(ADMIN) {
@@ -145,7 +145,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
         emit TransferLimitChangedToTokens();
     }
     /**
-    * @notice Change the global transfer limit
+    * @notice Changes the global transfer limit
     * @param _newGlobalTransferLimitInTokens new transfer limit in tokens
     * @dev This function can be used only when The manager is configured to use limits in tokens
     */
@@ -158,7 +158,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice Change the global transfer limit
+    * @notice Changes the global transfer limit
     * @param _newGlobalTransferLimitInPercentage new transfer limit in percentage.
     * Multiply the percentage by 10^16. Eg 22% will be 22*10^16
     * @dev This function can be used only when The manager is configured to use limits in percentage
@@ -172,7 +172,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice add an exempt wallet
+    * @notice Adds an exempt wallet
     * @param _wallet exempt wallet address
     */
     function addExemptWallet(address _wallet) public withPerm(ADMIN) {
@@ -182,7 +182,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice remove an exempt wallet
+    * @notice Removes an exempt wallet
     * @param _wallet exempt wallet address
     */
     function removeExemptWallet(address _wallet) public withPerm(ADMIN) {
@@ -192,7 +192,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice adds an array of exempt wallet
+    * @notice Adds an array of exempt wallet
     * @param _wallets array of exempt wallet addresses
     */
     function addExemptWalletMulti(address[] _wallets) public withPerm(ADMIN) {
@@ -203,7 +203,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice removes an array of exempt wallet
+    * @notice Removes an array of exempt wallet
     * @param _wallets array of exempt wallet addresses
     */
     function removeExemptWalletMulti(address[] _wallets) public withPerm(ADMIN) {
@@ -214,7 +214,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice set transfer limit per wallet
+    * @notice Sets transfer limit per wallet
     * @param _wallet wallet address
     * @param _transferLimit transfer limit for the wallet in tokens
     * @dev the manager has to be configured to use limits in tokens
@@ -227,7 +227,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice set transfer limit for a wallet
+    * @notice Sets transfer limit for a wallet
     * @param _wallet wallet address
     * @param _transferLimitInPercentage transfer limit for the wallet in percentage.
     * Multiply the percentage by 10^16. Eg 22% will be 22*10^16
@@ -242,7 +242,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
 
 
     /**
-    * @notice removes transfer limit set in percentage for a wallet
+    * @notice Removes transfer limit set in percentage for a wallet
     * @param _wallet wallet address
     */
     function removeTransferLimitInPercentage(address _wallet) public withPerm(ADMIN) {
@@ -252,7 +252,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice removes transfer limit set in tokens for a wallet
+    * @notice Removes transfer limit set in tokens for a wallet
     * @param _wallet wallet address
     */
     function removeTransferLimitInTokens(address _wallet) public withPerm(ADMIN) {
@@ -262,7 +262,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice sets transfer limits for an array of wallet
+    * @notice Sets transfer limits for an array of wallet
     * @param _wallets array of wallet addresses
     * @param _transferLimits array of transfer limits for each wallet in tokens
     * @dev The manager has to be configured to use tokens as limit
@@ -276,7 +276,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice sets transfer limits for an array of wallet
+    * @notice Sets transfer limits for an array of wallet
     * @param _wallets array of wallet addresses
     * @param _transferLimitsInPercentage array of transfer limits for each wallet in percentages
     * The percentage has to be multipled by 10 ** 16. Eg: 20% would be 20 * 10 ** 16
@@ -291,7 +291,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice removes transfer limits set in tokens for an array of wallet
+    * @notice Removes transfer limits set in tokens for an array of wallet
     * @param _wallets array of wallet addresses
     */
     function removeTransferLimitInTokensMulti(address[] _wallets) public withPerm(ADMIN) {
@@ -302,7 +302,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice removes transfer limits set in percentage for an array of wallet
+    * @notice Removes transfer limits set in percentage for an array of wallet
     * @param _wallets array of wallet addresses
     */
     function removeTransferLimitInPercentageMulti(address[] _wallets) public withPerm(ADMIN) {
@@ -320,7 +320,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-    * @notice Return the permissions flag that are associated with SingleTradeVolumeRestrictionManager
+    * @notice Returns the permissions flag that are associated with SingleTradeVolumeRestrictionManager
     */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);

@@ -24,9 +24,25 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         uint256 _dividendIndex,
         bytes32 indexed _name
     );
-    event ERC20DividendClaimed(address indexed _payee, uint256 _dividendIndex, address indexed _token, uint256 _amount, uint256 _withheld);
-    event ERC20DividendReclaimed(address indexed _claimer, uint256 _dividendIndex, address indexed _token, uint256 _claimedAmount);
-    event ERC20DividendWithholdingWithdrawn(address indexed _claimer, uint256 _dividendIndex, address indexed _token, uint256 _withheldAmount);
+    event ERC20DividendClaimed(
+        address indexed _payee,
+        uint256 _dividendIndex,
+        address indexed _token,
+        uint256 _amount,
+        uint256 _withheld
+    );
+    event ERC20DividendReclaimed(
+        address indexed _claimer,
+        uint256 _dividendIndex,
+        address indexed _token,
+        uint256 _claimedAmount
+    );
+    event ERC20DividendWithholdingWithdrawn(
+        address indexed _claimer,
+        uint256 _dividendIndex,
+        address indexed _token,
+        uint256 _withheldAmount
+    );
 
     /**
      * @notice Constructor
@@ -44,9 +60,18 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
      * @param _token Address of ERC20 token in which dividend is to be denominated
      * @param _amount Amount of specified token for dividend
-     * @param _name name/title for identification
+     * @param _name Name/Title for identification
      */
-    function createDividend(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, bytes32 _name) external withPerm(MANAGE) {
+    function createDividend(
+        uint256 _maturity,
+        uint256 _expiry,
+        address _token,
+        uint256 _amount,
+        bytes32 _name
+    ) 
+        external 
+        withPerm(MANAGE)
+    {
         createDividendWithExclusions(_maturity, _expiry, _token, _amount, excluded, _name);
     }
 
@@ -57,7 +82,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _token Address of ERC20 token in which dividend is to be denominated
      * @param _amount Amount of specified token for dividend
      * @param _checkpointId Checkpoint id from which to create dividends
-     * @param _name name/title for identification
+     * @param _name Name/Title for identification
      */
     function createDividendWithCheckpoint(
         uint256 _maturity,
@@ -80,7 +105,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _token Address of ERC20 token in which dividend is to be denominated
      * @param _amount Amount of specified token for dividend
      * @param _excluded List of addresses to exclude
-     * @param _name name/title for identification
+     * @param _name Name/Title for identification
      */
     function createDividendWithExclusions(
         uint256 _maturity,
@@ -105,7 +130,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _amount Amount of specified token for dividend
      * @param _checkpointId Checkpoint id from which to create dividends
      * @param _excluded List of addresses to exclude
-     * @param _name name/title for identification
+     * @param _name Name/Title for identification
      */
     function createDividendWithCheckpointAndExclusions(
         uint256 _maturity, 
@@ -130,7 +155,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _amount Amount of specified token for dividend
      * @param _checkpointId Checkpoint id from which to create dividends
      * @param _excluded List of addresses to exclude
-     * @param _name name/title for identification
+     * @param _name Name/Title for identification
      */
     function _createDividendWithCheckpointAndExclusions(
         uint256 _maturity, 
@@ -185,7 +210,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
     }
 
     /**
-     * @notice emits the ERC20DividendDeposited event. 
+     * @notice Emits the ERC20DividendDeposited event. 
      * Seperated into a different function as a workaround for stack too deep error
      */
     function _emitERC20DividendDepositedEvent(
@@ -206,8 +231,8 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
 
     /**
      * @notice Internal function for paying dividends
-     * @param _payee address of investor
-     * @param _dividend storage with previously issued dividends
+     * @param _payee Address of investor
+     * @param _dividend Storage with previously issued dividends
      * @param _dividendIndex Dividend to pay
      */
     function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {

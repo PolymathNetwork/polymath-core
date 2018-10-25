@@ -1,3 +1,10 @@
+/**
+ * DISCLAIMER: Under certain conditions, the function pushDividendPayment
+ * may fail due to block gas limits.
+ * If the total number of investors that ever held tokens is greater than ~15,000 then
+ * the function may fail. If this happens investors can pull their dividends, or the Issuer
+ * can use pushDividendPaymentToAddresses to provide an explict address list in batches
+ */
 pragma solidity ^0.4.24;
 
 import "./ICheckpoint.sol";
@@ -87,7 +94,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     /**
      * @notice Function to clear and set list of excluded addresses used for future dividends
-     * @param _excluded addresses of investor
+     * @param _excluded Addresses of investors
      */
     function setDefaultExcluded(address[] _excluded) public withPerm(MANAGE) {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many excluded addresses");
@@ -104,8 +111,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     /**
      * @notice Function to set withholding tax rates for investors
-     * @param _investors addresses of investor
-     * @param _withholding withholding tax for individual investors (multiplied by 10**16)
+     * @param _investors Addresses of investors
+     * @param _withholding Withholding tax for individual investors (multiplied by 10**16)
      */
     function setWithholding(address[] _investors, uint256[] _withholding) public withPerm(MANAGE) {
         require(_investors.length == _withholding.length, "Mismatched input lengths");
@@ -119,8 +126,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     /**
      * @notice Function to set withholding tax rates for investors
-     * @param _investors addresses of investor
-     * @param _withholding withholding tax for all investors (multiplied by 10**16)
+     * @param _investors Addresses of investor
+     * @param _withholding Withholding tax for all investors (multiplied by 10**16)
      */
     function setWithholdingFixed(address[] _investors, uint256 _withholding) public withPerm(MANAGE) {
         require(_withholding <= 10**18, "Incorrect withholding tax");
@@ -192,8 +199,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     /**
      * @notice Internal function for paying dividends
-     * @param _payee address of investor
-     * @param _dividend storage with previously issued dividends
+     * @param _payee Address of investor
+     * @param _dividend Storage with previously issued dividends
      * @param _dividendIndex Dividend to pay
      */
     function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal;

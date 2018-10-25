@@ -25,7 +25,7 @@ library TokenLib {
     }
 
     struct InvestorDataStorage {
-        // List of investors (may not be pruned to remove old investors with current zero balances)
+        // List of investors who have ever held a non-zero token balance
         mapping (address => bool) investorListed;
         // List of token holders
         address[] investors;
@@ -40,8 +40,8 @@ library TokenLib {
 
     /**
     * @notice Archives a module attached to the SecurityToken
-    * @param _moduleData storage data
-    * @param _module address of module to archive
+    * @param _moduleData Storage data
+    * @param _module Address of module to archive
     */
     function archiveModule(ModuleData storage _moduleData, address _module) public {
         require(!_moduleData.isArchived, "Module archived");
@@ -53,8 +53,8 @@ library TokenLib {
 
     /**
     * @notice Unarchives a module attached to the SecurityToken
-    * @param _moduleData storage data
-    * @param _module address of module to unarchive
+    * @param _moduleData Storage data
+    * @param _module Address of module to unarchive
     */
     function unarchiveModule(ModuleData storage _moduleData, address _module) public {
         require(_moduleData.isArchived, "Module unarchived");
@@ -64,7 +64,7 @@ library TokenLib {
     }
 
     /**
-     * @notice Validate permissions with PermissionManager if it exists. If there's no permission return false
+     * @notice Validates permissions with PermissionManager if it exists. If there's no permission return false
      * @dev Note that IModule withPerm will allow ST owner all permissions by default
      * @dev this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
      * @param _modules is the modules to check permissions on
@@ -152,13 +152,13 @@ library TokenLib {
     }
 
     /**
-    * @notice keeps track of the number of non-zero token holders
+    * @notice Keeps track of the number of non-zero token holders
     * @param _investorData Date releated to investor metrics
-    * @param _from sender of transfer
-    * @param _to receiver of transfer
-    * @param _value value of transfer
-    * @param _balanceTo balance of the _to address
-    * @param _balanceFrom balance of the _from address
+    * @param _from Sender of transfer
+    * @param _to Receiver of transfer
+    * @param _value Value of transfer
+    * @param _balanceTo Balance of the _to address
+    * @param _balanceFrom Balance of the _from address
     */
     function adjustInvestorCount(
         InvestorDataStorage storage _investorData,
@@ -185,18 +185,6 @@ library TokenLib {
             _investorData.investorListed[_to] = true;
         }
 
-    }
-
-     /**
-    * @notice removes addresses with zero balances from the investors list
-    * @param _investorData is the date related to investor metrics
-    * @param _index is the index in investor list
-    * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
-    */
-    function pruneInvestors(InvestorDataStorage storage _investorData, uint256 _index) public {
-        _investorData.investorListed[_investorData.investors[_index]] = false;
-        _investorData.investors[_index] = _investorData.investors[_investorData.investors.length - 1];
-        _investorData.investors.length--;
     }
 
 }

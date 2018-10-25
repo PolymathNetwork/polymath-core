@@ -68,21 +68,21 @@ contract DummySTO is ISTO {
     }
 
     /**
-     * @notice Return the total no. of investors
+     * @notice Returns the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256) {
         return investorCount;
     }
 
     /**
-     * @notice Return the total no. of investors
+     * @notice Returns the total no. of investors
      */
     function getTokensSold() public view returns (uint256) {
         return 0;
     }
 
     /**
-     * @notice Return the permissions flag that are associated with STO
+     * @notice Returns the permissions flag that are associated with STO
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);

@@ -19,8 +19,8 @@ contract MockBurnFactory is TrackedRedemptionFactory {
     }
 
     /**
-     * @notice used to launch the Module with the help of factory
-     * @return address Contract address of the Module
+     * @notice Used to launch the Module with the help of factory
+     * @return Address Contract address of the Module
      */
     function deploy(bytes /*_data*/) external returns(address) {
         if(setupCost > 0)

@@ -7,7 +7,7 @@ import "../SecurityTokenRegistry.sol";
  */
 contract SecurityTokenRegistryMock is SecurityTokenRegistry {
     
-    /// @notice It is dummy functionality
+    /// @notice It is a dummy function
     /// Alert! Alert! Do not use it for the mainnet release
     function changeTheDeployedAddress(string _ticker, address _newSecurityTokenAddress) public {
         set(Encoder.getKey("tickerToSecurityToken", _ticker), _newSecurityTokenAddress);

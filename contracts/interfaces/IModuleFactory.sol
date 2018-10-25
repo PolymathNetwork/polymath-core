@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 /**
- * @title Interface that any module factory contract should implement
+ * @title Interface that every module factory contract should implement
  */
 interface IModuleFactory {
 
@@ -42,27 +42,27 @@ interface IModuleFactory {
     function getTags() external view returns (bytes32[]);
 
     /**
-     * @notice used to change the fee of the setup cost
-     * @param _newSetupCost new setup cost
+     * @notice Used to change the setup fee
+     * @param _newSetupCost New setup fee
      */
     function changeFactorySetupFee(uint256 _newSetupCost) external;
 
     /**
-     * @notice used to change the fee of the usage cost
-     * @param _newUsageCost new usage cost
+     * @notice Used to change the usage fee
+     * @param _newUsageCost New usage fee
      */
     function changeFactoryUsageFee(uint256 _newUsageCost) external;
 
     /**
-     * @notice used to change the fee of the subscription cost
-     * @param _newSubscriptionCost new subscription cost
+     * @notice Used to change the subscription fee
+     * @param _newSubscriptionCost New subscription fee
      */
     function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) external;
 
     /**
      * @notice Function use to change the lower and upper bound of the compatible version st
      * @param _boundType Type of bound
-     * @param _newVersion new version array
+     * @param _newVersion New version array
      */
     function changeSTVersionBounds(string _boundType, uint8[] _newVersion) external;
 
@@ -72,14 +72,14 @@ interface IModuleFactory {
     function getSetupCost() external view returns (uint256);
 
     /**
-     * @notice use to get the lower bound
-     * @return lower bound
+     * @notice Used to get the lower bound
+     * @return Lower bound
      */
     function getLowerSTVersionBounds() external view returns(uint8[]);
 
      /**
-     * @notice use to get the upper bound
-     * @return upper bound
+     * @notice Used to get the upper bound
+     * @return Upper bound
      */
     function getUpperSTVersionBounds() external view returns(uint8[]);
 

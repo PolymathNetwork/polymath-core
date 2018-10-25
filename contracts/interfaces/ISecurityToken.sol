@@ -115,6 +115,19 @@ interface ISecurityToken {
     function getInvestors() external view returns (address[]);
 
     /**
+     * @notice returns an array of investors at a given checkpoint
+     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
+     * @return list of addresses
+     */
+    function getInvestorsAt(uint256 _checkpointId) external view returns(address[]);
+
+    /**
+     * @notice iterates over all investors executing a callback for each individual investor
+     * NB - can be used in batches if investor list is large
+     */
+    function iterateInvestors(uint256 _start, uint256 _end, bytes _data, function(address, bytes memory) external _callback) external view;
+
+    /**
     * @notice gets current checkpoint ID
     * @return id
     */
@@ -281,10 +294,10 @@ interface ISecurityToken {
       * @return bool success
       */
      function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
-     
+
      /**
       * @notice Provide the granularity of the token
-      * @return uint256 
+      * @return uint256
       */
      function granularity() external view returns(uint256);
 }

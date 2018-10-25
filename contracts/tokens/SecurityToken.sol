@@ -437,7 +437,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice iterates over all investors executing a callback for each individual investor
      * NB - can be used in batches if investor list is large
      */
-    function iterateInvestors(uint256 _start, uint256 _end, bytes _data, function(address, bytes memory) external _callback) external {
+    function iterateInvestors(uint256 _start, uint256 _end, bytes _data, function(address, bytes memory) external _callback) external view {
         require(_end <= investorData.investors.length, "Invalid end");
         for (uint256 i = _start; i < _end; i++) {
             _callback(investorData.investors[i], _data);

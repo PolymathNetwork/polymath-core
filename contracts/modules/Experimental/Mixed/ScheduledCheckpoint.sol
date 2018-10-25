@@ -1,8 +1,8 @@
 pragma solidity ^0.4.24;
 
-import "./ICheckpoint.sol";
-import "../TransferManager/ITransferManager.sol";
-import "../../interfaces/ISecurityToken.sol";
+import "./../../Checkpoint/ICheckpoint.sol";
+import "../../TransferManager/ITransferManager.sol";
+import "../../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**

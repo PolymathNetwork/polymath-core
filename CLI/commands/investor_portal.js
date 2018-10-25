@@ -36,6 +36,7 @@ let STOAddress;
 
 // Global display variables
 let displayCanBuy;
+let displayValidKYC;
 
 // Start Script
 async function executeApp(investorAddress, investorPrivKey, symbol, currency, amount, remoteNetwork) {
@@ -192,14 +193,15 @@ async function showCappedSTOInfo() {
         }
     }
 
+    let now = Math.floor(Date.now()/1000);
+
     await generalTransferManager.methods.whitelist(User.address).call({}, function(error, result){
         displayCanBuy = result.canBuyFromSTO;
+        displayValidKYC = parseInt(result.expiryTime) > now;
     });
 
-    let now = Math.floor(Date.now()/1000);
     let timeTitle;
     let timeRemaining;
-
     if(now < displayStartTime){
         timeTitle = "STO starts in: ";
         timeRemaining = displayStartTime - now;
@@ -229,6 +231,9 @@ async function showCappedSTOInfo() {
     if(!displayCanBuy) {
         console.log(chalk.red(`Your address is not approved to participate in this token sale.\n`));
         process.exit(0);
+    } else if (!displayValidKYC) {
+        console.log(chalk.red(`Your KYC is expired.\n`));
+        process.exit(0);
     } else if (now < displayStartTime) {
         console.log(chalk.red(`The token sale has not yet started.\n`));
         process.exit(0);
@@ -252,8 +257,10 @@ async function showUserInfoForUSDTieredSTO()
 
     await generalTransferManager.methods.whitelist(User.address).call({}, function(error, result){
         displayCanBuy = result.canBuyFromSTO;
+        displayValidKYC = parseInt(result.expiryTime) > Math.floor(Date.now()/1000);
     });
-    console.log(`    - Whitelisted:           ${(displayCanBuy)? 'YES' : 'NO'}`)
+    console.log(`    - Whitelisted:           ${(displayCanBuy)? 'YES' : 'NO'}`);
+    console.log(`    - Valid KYC:             ${(displayValidKYC)? 'YES' : 'NO'}`);
 
     let displayIsUserAccredited = await currentSTO.methods.accredited(User.address).call();
     console.log(`    - Accredited:            ${(displayIsUserAccredited)? "YES" : "NO"}`)
@@ -382,6 +389,9 @@ async function showUSDTieredSTOInfo() {
     if (!displayCanBuy) {
         console.log(chalk.red(`Your address is not approved to participate in this token sale.\n`));
         process.exit(0);
+    } else if (!displayValidKYC) {
+        console.log(chalk.red(`Your KYC is expired.\n`));
+        process.exit(0);
     } else if (now < displayStartTime) {
         console.log(chalk.red(`The token sale has not yet started.\n`));
         process.exit(0);
@@ -486,7 +496,7 @@ async function investUsdTieredSTO(currency, amount) {
                 await common.sendTransaction(User, approveAction, defaultGasPrice);
             }
             let actionBuyWithPoly = currentSTO.methods.buyWithPOLY(User.address, costWei);
-            let receipt = await common.sendTransaction(User, actionBuyWithPoly, defaultGasPrice);
+            let receipt = await common.sendTransaction(User, actionBuyWithPoly,defaultGasPrice, 0, 2);
             logTokensPurchasedUSDTieredSTO(receipt);
         } else {
             console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} POLY but have ${userBalance} POLY.`));

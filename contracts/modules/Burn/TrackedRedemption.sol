@@ -33,7 +33,7 @@ contract TrackedRedemption is IBurn, Module {
     }
 
     /**
-     * @notice Redeem tokens and track redemptions
+     * @notice To redeem tokens and track redemptions
      * @param _value The number of tokens to redeem
      */
     function redeemTokens(uint256 _value) public {
@@ -41,9 +41,9 @@ contract TrackedRedemption is IBurn, Module {
         redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
         emit Redeemed(msg.sender, _value, now);
     }
-
+    
     /**
-     * @notice Return the permissions flag that are associated with CountTransferManager
+     * @notice Returns the permissions flag that are associated with CountTransferManager
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](0);

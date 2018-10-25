@@ -94,7 +94,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     event TokenPurchase(address indexed _purchaser, address indexed _beneficiary, uint256 _tokens, uint256 _usdAmount, uint256 _tierPrice, uint8 _tier);
     event FundsReceived(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, FundRaiseType _fundRaiseType, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
     event FundsReceivedPOLY(address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, uint256 _receivedValue, uint256 _spentValue, uint256 _rate);
-    event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _tier);
+    event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _latestTier);
 
     event SetAddresses(
         address indexed _wallet,
@@ -219,7 +219,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         for (uint8 i = 0; i < _ratePerTier.length; i++) {
             require(_ratePerTier[i] > 0, "Rate > 0");
             require(_tokensPerTierTotal[i] > 0, "Tokens per tier > 0");
-            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Discounted tokens / tier <= to tokens / tier");
+            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Discounted tokens / tier <= tokens / tier");
             require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Discounted rate / tier <= rate / tier");
         }
         ratePerTier = _ratePerTier;
@@ -261,7 +261,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     ////////////////////
 
     /**
-     * @notice Finalize the STO and mint remaining tokens to reserve address
+     * @notice Finalizes the STO and mint remaining tokens to reserve address
      * @notice Reserve address must be whitelisted to successfully finalize
      */
     function finalize() public onlyOwner {
@@ -276,16 +276,16 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             tempSold = tempSold.add(mintedPerTierTotal[i]);
             if (remainingTokens > 0) {
                 mintedPerTierTotal[i] = tokensPerTierTotal[i];
-                require(ISecurityToken(securityToken).mint(reserveWallet, remainingTokens), "Error in minting");
-                emit ReserveTokenMint(msg.sender, reserveWallet, remainingTokens, i);
             }
         }
+        require(ISecurityToken(securityToken).mint(reserveWallet, tempReturned), "Error in minting");
+        emit ReserveTokenMint(msg.sender, reserveWallet, tempReturned, currentTier);
         finalAmountReturned = tempReturned;
         totalTokensSold = tempSold;
     }
 
     /**
-     * @notice Modify the list of accredited addresses
+     * @notice Modifies the list of accredited addresses
      * @param _investors Array of investor addresses to modify
      * @param _accredited Array of bools specifying accreditation status
      */
@@ -298,7 +298,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     /**
-     * @notice Modify the list of overrides for non-accredited limits in USD
+     * @notice Modifies the list of overrides for non-accredited limits in USD
      * @param _investors Array of investor addresses to modify
      * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
      */
@@ -306,7 +306,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         //nonAccreditedLimitUSDOverride
         require(_investors.length == _nonAccreditedLimit.length);
         for (uint256 i = 0; i < _investors.length; i++) {
-            require(_nonAccreditedLimit[i] > 0, "Limit can't be 0");
+            require(_nonAccreditedLimit[i] > 0, "Limit can not be 0");
             nonAccreditedLimitUSDOverride[_investors[i]] = _nonAccreditedLimit[i];
             emit SetNonAccreditedLimit(_investors[i], _nonAccreditedLimit[i]);
         }
@@ -389,7 +389,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       */
     function _buyTokens(address _beneficiary, uint256 _investmentValue, uint256 _rate, FundRaiseType _fundRaiseType) internal nonReentrant whenNotPaused returns(uint256, uint256) {
         if (!allowBeneficialInvestments) {
-            require(_beneficiary == msg.sender, "Beneficiary must match funder");
+            require(_beneficiary == msg.sender, "Beneficiary does not match funder");
         }
 
         require(isOpen(), "STO is not open");

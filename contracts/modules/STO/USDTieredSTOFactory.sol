@@ -29,7 +29,7 @@ contract USDTieredSTOFactory is ModuleFactory {
     }
 
      /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
@@ -43,7 +43,6 @@ contract USDTieredSTOFactory is ModuleFactory {
         require(address(usdTieredSTO).call(_data), "Unsuccessfull call");
         emit GenerateModuleFromFactory(usdTieredSTO, getName(), address(this), msg.sender, setupCost, now);
         return address(usdTieredSTO);
-        // return 0xca35b7d915458ef540ade6068dfe2f44e8fa733c;
     }
 
     /**
@@ -56,42 +55,7 @@ contract USDTieredSTOFactory is ModuleFactory {
     }
 
     /**
-     * @notice Get the name of the Module
-     */
-    function getName() public view returns(bytes32) {
-        return name;
-    }
-
-    /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() external view returns(string) {
-        return description;
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() external view returns(string) {
-        return title;
-    }
-
-    /**
-     * @notice Get the version of the Module
-     */
-    function getVersion() external view returns(string) {
-        return version;
-    }
-
-    /**
-     * @notice Get the setup cost of the module
-     */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
-    }
-
-    /**
-     * @notice Get the Instructions that helped to used the module
+     * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
         return "Initialises a USD tiered STO.";

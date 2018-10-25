@@ -15,6 +15,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     uint256 public EXCLUDED_ADDRESS_LIMIT = 50;
     bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
+    bytes32 public constant MANAGE = "MANAGE";
+    bytes32 public constant CHECKPOINT = "CHECKPOINT";
 
     struct Dividend {
         uint256 checkpointId;
@@ -49,10 +51,10 @@ contract DividendCheckpoint is ICheckpoint, Module {
     event SetWithholdingFixed(address[] _investors, uint256 _withholding, uint256 _timestamp);
 
     modifier validDividendIndex(uint256 _dividendIndex) {
-        require(_dividendIndex < dividends.length, "Incorrect dividend index");
-        require(!dividends[_dividendIndex].reclaimed, "Dividend has been reclaimed by issuer");
-        require(now >= dividends[_dividendIndex].maturity, "Dividend maturity is in the future");
-        require(now < dividends[_dividendIndex].expiry, "Dividend expiry is in the past");
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        require(!dividends[_dividendIndex].reclaimed, "Dividend reclaimed");
+        require(now >= dividends[_dividendIndex].maturity, "Dividend maturity in future");
+        require(now < dividends[_dividendIndex].expiry, "Dividend expiry in past");
         _;
     }
 
@@ -65,7 +67,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     }
 
     /**
-     * @notice Return the default excluded addresses
+     * @notice Returns the default excluded addresses
      * @return List of excluded addresses
      */
     function getDefaultExcluded() external view returns (address[]) {
@@ -73,21 +75,35 @@ contract DividendCheckpoint is ICheckpoint, Module {
     }
 
     /**
-     * @notice Function to clear and set list of excluded addresses used for future dividends
-     * @param _excluded addresses of investor
+     * @notice Creates a checkpoint on the security token
+     * @return Checkpoint ID
      */
-    function setDefaultExcluded(address[] _excluded) public onlyOwner {
+    function createCheckpoint() public withPerm(CHECKPOINT) returns (uint256) {
+        return ISecurityToken(securityToken).createCheckpoint();
+    }
+
+    /**
+     * @notice Function to clear and set a list of excluded addresses used for future dividends
+     * @param _excluded Addresses of investor
+     */
+    function setDefaultExcluded(address[] _excluded) public withPerm(MANAGE) {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many excluded addresses");
+        for (uint256 j = 0; j < _excluded.length; j++) {
+            require (_excluded[j] != address(0), "Invalid address");
+            for (uint256 i = j + 1; i < _excluded.length; i++) {
+                require (_excluded[j] != _excluded[i], "Duplicate exclude address");
+            }
+        }
         excluded = _excluded;
         emit SetDefaultExcludedAddresses(excluded, now);
     }
 
     /**
      * @notice Function to set withholding tax rates for investors
-     * @param _investors addresses of investor
-     * @param _withholding withholding tax for individual investors (multiplied by 10**16)
+     * @param _investors Addresses of investor
+     * @param _withholding Withholding tax for individual investors (multiplied by 10**16)
      */
-    function setWithholding(address[] _investors, uint256[] _withholding) public onlyOwner {
+    function setWithholding(address[] _investors, uint256[] _withholding) public withPerm(MANAGE) {
         require(_investors.length == _withholding.length, "Mismatched input lengths");
         emit SetWithholding(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
@@ -98,10 +114,10 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     /**
      * @notice Function to set withholding tax rates for investors
-     * @param _investors addresses of investor
-     * @param _withholding withholding tax for all investors (multiplied by 10**16)
+     * @param _investors Addresses of investor
+     * @param _withholding Withholding tax for all investors (multiplied by 10**16)
      */
-    function setWithholdingFixed(address[] _investors, uint256 _withholding) public onlyOwner {
+    function setWithholdingFixed(address[] _investors, uint256 _withholding) public withPerm(MANAGE) {
         require(_withholding <= 10**18, "Incorrect withholding tax");
         emit SetWithholdingFixed(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
@@ -112,7 +128,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     /**
      * @notice Issuer can push dividends to provided addresses
      * @param _dividendIndex Dividend to push
-     * @param _payees Addresses to which to push the dividend
+     * @param _payees Addresses to push the dividend to
      */
     function pushDividendPaymentToAddresses(uint256 _dividendIndex, address[] _payees) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
         Dividend storage dividend = dividends[_dividendIndex];
@@ -148,33 +164,33 @@ contract DividendCheckpoint is ICheckpoint, Module {
     function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
-        require(!dividend.claimed[msg.sender], "Dividend already claimed by msg.sender");
+        require(!dividend.claimed[msg.sender], "Dividend already claimed");
         require(!dividend.dividendExcluded[msg.sender], "msg.sender excluded from Dividend");
         _payDividend(msg.sender, dividend, _dividendIndex);
     }
 
     /**
      * @notice Internal function for paying dividends
-     * @param _payee address of investor
-     * @param _dividend storage with previously issued dividends
+     * @param _payee Address of investor
+     * @param _dividend Storage with previously issued dividends
      * @param _dividendIndex Dividend to pay
      */
     function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal;
 
     /**
-     * @notice Issuer can reclaim remaining unclaimed dividend amounts, for expired dividends
+     * @notice Issuer can reclaim remaining unclaimed dividend amounts for expired dividends
      * @param _dividendIndex Dividend to reclaim
      */
     function reclaimDividend(uint256 _dividendIndex) external;
 
     /**
-     * @notice Calculate amount of dividends claimable
+     * @notice Calculate the amount of dividends that is claimable
      * @param _dividendIndex Dividend to calculate
      * @param _payee Affected investor address
      * @return claim, withheld amounts
      */
     function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256, uint256) {
-        require(_dividendIndex < dividends.length, "Incorrect dividend index");
+        require(_dividendIndex < dividends.length, "Invalid dividend");
         Dividend storage dividend = dividends[_dividendIndex];
         if (dividend.claimed[_payee] || dividend.dividendExcluded[_payee]) {
             return (0, 0);
@@ -220,8 +236,9 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @return bytes32 array
      */
     function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](1);
+        bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = DISTRIBUTE;
+        allPermissions[1] = MANAGE;
         return allPermissions;
     }
 

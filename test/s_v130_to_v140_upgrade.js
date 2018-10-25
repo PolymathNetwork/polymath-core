@@ -33,6 +33,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     // Initial fee for ticker registry and security token registry
     const REGFEE = web3.utils.toWei("250");
     const STOSetupCost = 0;
+    const address_zero = "0x0000000000000000000000000000000000000000";
 
     // Module key
     const STOKEY = 3;
@@ -187,7 +188,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
             console.log(I_POLYOracle.address);
             assert.notEqual(
                 I_POLYOracle.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "POLYOracle contract was not deployed"
             );
             tx = await I_PolymathRegistry.changeAddress("PolyUsdOracle", I_POLYOracle.address, { from: POLYMATH });
@@ -198,13 +199,13 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         it("Should successfully deploy ETH Oracle and register on PolymathRegistry", async () => {
             I_USDOracle = await ETHOracle.new(
                 "0x216d678c14be600cb88338e763bb57755ca2b1cf",
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "ETH",
                 { from: POLYMATH }
             );
             assert.notEqual(
                 I_USDOracle.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "USDOracle contract was not deployed"
             );
             tx = await I_PolymathRegistry.changeAddress("EthUsdOracle", I_USDOracle.address, { from: POLYMATH });
@@ -227,7 +228,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
             );
             assert.notEqual(
                 I_USDTieredSTOFactory.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "USDTieredSTOFactory contract was not deployed"
             );
             let setupCost = await I_USDTieredSTOFactory.setupCost({ from: POLYMATH });
@@ -249,7 +250,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
             I_UpgradedCappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, { from: POLYMATH });
             assert.notEqual(
                 I_UpgradedCappedSTOFactory.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "CappedSTOFactory contract was not deployed"
             );
             let setupCost = await I_UpgradedCappedSTOFactory.setupCost({ from: POLYMATH });
@@ -281,7 +282,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
             });
             assert.notEqual(
                 I_ManualApprovalTransferManagerFactory.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "ManualApprovalTransferManagerFactory contract was not deployed"
             );
         });

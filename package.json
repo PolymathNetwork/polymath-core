@@ -8,6 +8,8 @@
   },
   "scripts": {
     "test": "scripts/test.sh 2> /dev/null",
+    "wintest": "scripts\\wintest.cmd",
+    "wincov": "scripts\\wincov.cmd",
     "docs": "scripts/docs.sh",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -16,7 +18,7 @@
     "lint:all": "npm run lint && npm run lint:sol",
     "lint:all:fix": "npm run lint:fix && npm run lint:sol:fix",
     "compile": "truffle compile --optimize-runs 200",
-    "ganache-cli": "node_modules/.bin/ganache-cli -i 15 --gasLimit 90000000",
+    "ganache-cli": "node_modules/.bin/ganache-cli -i 15 --gasLimit 8000000",
     "migrate:local": "truffle migrate --network=development --reset --all",
     "migrate:ropsten": "truffle migrate --network=ropsten --reset --all",
     "migrate:kovan": "truffle migrate --network=kovan --reset --all",
@@ -63,13 +65,14 @@
     "ethers": "^3.0.15",
     "fs": "0.0.1-security",
     "openzeppelin-solidity": "1.10.0",
-    "prettier": "^1.14.3",
     "readline-sync": "^1.4.9",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.2",
     "shelljs": "^0.8.2",
     "solc": "^0.4.24",
     "truffle-contract": "^3.0.4",
     "truffle-hdwallet-provider-privkey": "^0.1.0",
-    "web3": "^1.0.0-beta.33"
+    "web3": "1.0.0-beta.34"
   },
   "devDependencies": {
     "@soldoc/soldoc": "^0.4.3",
@@ -83,6 +86,7 @@
     "ethereumjs-abi": "^0.6.5",
     "fast-csv": "^2.4.1",
     "ganache-cli": "^6.1.8",
+    "prettier": "^1.14.3",
     "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.5.11",
     "solidity-docgen": "^0.1.0",

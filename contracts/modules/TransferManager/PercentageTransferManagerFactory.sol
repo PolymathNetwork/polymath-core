@@ -34,7 +34,7 @@ contract PercentageTransferManagerFactory is ModuleFactory {
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender, address(polyToken));
         require(Util.getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
-        require(address(percentageTransferManager).call(_data), "Un-successfull call");
+        require(address(percentageTransferManager).call(_data), "Unsuccessful call");
         emit GenerateModuleFromFactory(address(percentageTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(percentageTransferManager);
 
@@ -51,42 +51,7 @@ contract PercentageTransferManagerFactory is ModuleFactory {
     }
 
     /**
-     * @notice Get the name of the Module
-     */
-    function getName() public view returns(bytes32) {
-        return name;
-    }
-
-    /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() external view returns(string) {
-        return description;
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() external view returns(string) {
-        return title;
-    }
-
-    /**
-     * @notice Get the version of the Module
-     */
-    function getVersion() external view returns(string) {
-        return version;
-    }
-
-    /**
-     * @notice Get the setup cost of the module
-     */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
-    }
-
-    /**
-     * @notice Get the Instructions that helped to used the module
+     * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
         return "Allows an issuer to restrict the total number of non-zero token holders";

@@ -18,38 +18,38 @@ interface ISecurityToken {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
-    //transfer, transferFrom must respect use respect the result of verifyTransfer
+    //transfer, transferFrom must respect the result of verifyTransfer
     function verifyTransfer(address _from, address _to, uint256 _value) external returns (bool success);
 
     /**
-     * @notice mints new tokens and assigns them to the target _investor.
+     * @notice Mints new tokens and assigns them to the target _investor.
      * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
-     * @param _investor address the tokens will be minted to
+     * @param _investor Address the tokens will be minted to
      * @param _value is the amount of tokens that will be minted to the investor
      */
     function mint(address _investor, uint256 _value) external returns (bool success);
 
     /**
-     * @notice mints new tokens and assigns them to the target _investor.
+     * @notice Mints new tokens and assigns them to the target _investor.
      * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
-     * @param _investor address the tokens will be minted to
-     * @param _value is the amount of tokens that will be minted to the investor
-     * @param _data data to indicate validation
+     * @param _investor Address the tokens will be minted to
+     * @param _value is The amount of tokens that will be minted to the investor
+     * @param _data Data to indicate validation
      */
     function mintWithData(address _investor, uint256 _value, bytes _data) external returns (bool success);
 
     /**
-     * @notice Burn function used to burn the securityToken on behalf of someone else
+     * @notice Used to burn the securityToken on behalf of someone else
      * @param _from Address for whom to burn tokens
-     * @param _value No. of token that get burned
-     * @param _data data to indicate validation
+     * @param _value No. of tokens to be burned
+     * @param _data Data to indicate validation
      */
     function burnFromWithData(address _from, uint256 _value, bytes _data) external;
 
     /**
-     * @notice Burn function used to burn the securityToken
-     * @param _value No. of tokens that get burned
-     * @param _data data to indicate validation
+     * @notice Used to burn the securityToken
+     * @param _value No. of tokens to be burned
+     * @param _data Data to indicate validation
      */
     function burnWithData(uint256 _value, bytes _data) external;
 
@@ -63,29 +63,29 @@ interface ISecurityToken {
 
     /**
      * @notice Returns module list for a module type
-     * @param _module address of the module
-     * @return bytes32 name
-     * @return address module address
-     * @return address module factory address
-     * @return bool module archived
-     * @return uint8 module type
-     * @return uint256 module index
-     * @return uint256 name index
+     * @param _module Address of the module
+     * @return bytes32 Name
+     * @return address Module address
+     * @return address Module factory address
+     * @return bool Module archived
+     * @return uint8 Module type
+     * @return uint256 Module index
+     * @return uint256 Name index
 
      */
     function getModule(address _module) external view returns(bytes32, address, address, bool, uint8, uint256, uint256);
 
     /**
-     * @notice returns module list for a module name
-     * @param _name name of the module
-     * @return address[] list of modules with this name
+     * @notice Returns module list for a module name
+     * @param _name Name of the module
+     * @return address[] List of modules with this name
      */
     function getModulesByName(bytes32 _name) external view returns (address[]);
 
     /**
-     * @notice returns module list for a module type
-     * @param _type type of the module
-     * @return address[] list of modules with this type
+     * @notice Returns module list for a module type
+     * @param _type Type of the module
+     * @return address[] List of modules with this type
      */
     function getModulesByType(uint8 _type) external view returns (address[]);
 
@@ -96,7 +96,7 @@ interface ISecurityToken {
     function totalSupplyAt(uint256 _checkpointId) external view returns (uint256);
 
     /**
-     * @notice Queries balances at a specified checkpoint
+     * @notice Queries balance at a specified checkpoint
      * @param _investor Investor to query balance for
      * @param _checkpointId Checkpoint ID to query as of
      */
@@ -108,80 +108,81 @@ interface ISecurityToken {
     function createCheckpoint() external returns (uint256);
 
     /**
-     * @notice gets length of investors array
+     * @notice Gets length of investors array
      * NB - this length may differ from investorCount if the list has not been pruned of zero-balance investors
-     * @return length
+     * @return Length
      */
     function getInvestors() external view returns (address[]);
 
     /**
-    * @notice gets current checkpoint ID
-    * @return id
+    * @notice Gets current checkpoint ID
+    * @return Id
     */
     function currentCheckpointId() external view returns (uint256);
 
     /**
-    * @notice gets an investor at a particular index
-    * @param _index index to return address from
-    * @return investor address
+    * @notice Gets an investor at a particular index
+    * @param _index Index to return address from
+    * @return Investor address
     */
     function investors(uint256 _index) external view returns (address);
 
-    /**
-    * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
+   /**
+    * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
-    * @param _value amount of POLY to withdraw
+    * @param _tokenContract Address of the ERC20Basic compliance token
+    * @param _value Amount of POLY to withdraw
     */
-    function withdrawPoly(uint256 _value) external;
+    function withdrawERC20(address _tokenContract, uint256 _value) external;
 
     /**
-    * @notice allows owner to approve more POLY to one of the modules
-    * @param _module module address
-    * @param _budget new budget
+    * @notice Allows owner to approve more POLY to one of the modules
+    * @param _module Module address
+    * @param _budget New budget
     */
     function changeModuleBudget(address _module, uint256 _budget) external;
 
     /**
-     * @notice changes the tokenDetails
+     * @notice Changes the tokenDetails
      * @param _newTokenDetails New token details
      */
     function updateTokenDetails(string _newTokenDetails) external;
 
     /**
-    * @notice allows owner to change token granularity
-    * @param _granularity granularity level of the token
+    * @notice Allows the owner to change token granularity
+    * @param _granularity Granularity level of the token
     */
     function changeGranularity(uint256 _granularity) external;
 
     /**
-    * @notice removes addresses with zero balances from the investors list
-    * @param _start Index in investor list at which to start removing zero balances
+    * @notice Removes addresses with zero balances from the investors list
+    * @param _start Index in investors list at which to start removing zero balances
     * @param _iters Max number of iterations of the for loop
     * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
     */
     function pruneInvestors(uint256 _start, uint256 _iters) external;
 
     /**
-     * @notice freeze all the transfers
+     * @notice Freezes all the transfers
      */
     function freezeTransfers() external;
 
     /**
-     * @notice un-freeze all the transfers
+     * @notice Un-freezes all the transfers
      */
     function unfreezeTransfers() external;
 
     /**
-     * @notice End token minting period permanently
+     * @notice Ends token minting period permanently
      */
     function freezeMinting() external;
 
     /**
-     * @notice mints new tokens and assigns them to the target investors.
+     * @notice Mints new tokens and assigns them to the target investors.
      * Can only be called by the STO attached to the token or by the Issuer (Security Token contract owner)
      * @param _investors A list of addresses to whom the minted tokens will be delivered
      * @param _values A list of the amount of tokens to mint to corresponding addresses from _investor[] list
-     * @return success
+     * @return Success
      */
     function mintMulti(address[] _investors, uint256[] _values) external returns (bool success);
 
@@ -222,13 +223,13 @@ interface ISecurityToken {
     function removeModule(address _module) external;
 
     /**
-     * @notice Use by the issuer to set the controller addresses
+     * @notice Used by the issuer to set the controller addresses
      * @param _controller address of the controller
      */
     function setController(address _controller) external;
 
     /**
-     * @notice Use by a controller to execute a forced transfer
+     * @notice Used by a controller to execute a forced transfer
      * @param _from address from which to take tokens
      * @param _to address where to send tokens
      * @param _value amount of tokens to transfer
@@ -238,7 +239,7 @@ interface ISecurityToken {
     function forceTransfer(address _from, address _to, uint256 _value, bytes _data, bytes _log) external;
 
     /**
-     * @notice Use by a controller to execute a foced burn
+     * @notice Used by a controller to execute a foced burn
      * @param _from address from which to take tokens
      * @param _value amount of tokens to transfer
      * @param _data data to indicate validation
@@ -247,18 +248,18 @@ interface ISecurityToken {
     function forceBurn(address _from, uint256 _value, bytes _data, bytes _log) external;
 
     /**
-     * @notice Use by the issuer to permanently disable controller functionality
+     * @notice Used by the issuer to permanently disable controller functionality
      * @dev enabled via feature switch "disableControllerAllowed"
      */
      function disableController() external;
 
      /**
-     * @notice Use to get the version of the securityToken
+     * @notice Used to get the version of the securityToken
      */
      function getVersion() external view returns(uint8[]);
 
      /**
-     * @notice gets the investor count
+     * @notice Gets the investor count
      */
      function getInvestorCount() external view returns(uint256);
 
@@ -282,7 +283,7 @@ interface ISecurityToken {
      function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
      
      /**
-      * @notice Provide the granularity of the token
+      * @notice Provides the granularity of the token
       * @return uint256 
       */
      function granularity() external view returns(uint256);

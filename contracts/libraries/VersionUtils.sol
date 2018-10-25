@@ -46,7 +46,7 @@ library VersionUtils {
     }
 
     /**
-     * @notice This function use to compare the lower bound with the latest version
+     * @notice Used to compare the lower bound with the latest version
      * @param _version1 Array holds the lower bound of the version
      * @param _version2 Array holds the latest version of the ST
      * @return bool
@@ -77,7 +77,7 @@ library VersionUtils {
     }
 
     /**
-     * @notice This function use to compare the upper bound with the latest version
+     * @notice Used to compare the upper bound with the latest version
      * @param _version1 Array holds the upper bound of the version
      * @param _version2 Array holds the latest version of the ST
      * @return bool
@@ -109,7 +109,7 @@ library VersionUtils {
 
 
     /**
-     * @notice Use to pack the uint8[] array data into uint24 value
+     * @notice Used to pack the uint8[] array data into uint24 value
      * @param _major Major version
      * @param _minor Minor version
      * @param _patch Patch version
@@ -119,7 +119,7 @@ library VersionUtils {
     }
 
     /**
-     * @notice Use to convert packed data into uint8 array
+     * @notice Used to convert packed data into uint8 array
      * @param _packedVersion Packed data
      */
     function unpack(uint24 _packedVersion) internal pure returns (uint8[]) {

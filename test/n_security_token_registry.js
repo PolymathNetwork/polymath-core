@@ -70,6 +70,7 @@ contract("SecurityTokenRegistry", accounts => {
     const name2 = "Demo2 Token";
     const symbol2 = "DET2";
     const tokenDetails2 = "This is equity type of issuance";
+    const address_zero = "0x0000000000000000000000000000000000000000";
 
     // Module key
     const permissionManagerKey = 1;
@@ -125,7 +126,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
-            "0x0000000000000000000000000000000000000000",
+            address_zero,
             "SecurityTokenRegistry contract was not deployed"
         );
 
@@ -155,7 +156,7 @@ contract("SecurityTokenRegistry", accounts => {
     describe("Test the initialize the function", async () => {
         it("Should successfully update the implementation address -- fail because polymathRegistry address is 0x", async () => {
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 I_STFactory.address,
                 initRegFee,
                 initRegFee,
@@ -173,7 +174,7 @@ contract("SecurityTokenRegistry", accounts => {
         it("Should successfully update the implementation address -- fail because STFactory address is 0x", async () => {
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
                 I_PolymathRegistry.address,
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 initRegFee,
                 initRegFee,
                 I_PolyToken.address,
@@ -227,7 +228,7 @@ contract("SecurityTokenRegistry", accounts => {
                 I_STFactory.address,
                 initRegFee,
                 initRegFee,
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 account_polymath
             ]);
             catchRevert(
@@ -245,7 +246,24 @@ contract("SecurityTokenRegistry", accounts => {
                 initRegFee,
                 initRegFee,
                 I_PolyToken.address,
-                "0x0000000000000000000000000000000000000000"
+                address_zero
+            ]);
+            catchRevert(
+                I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
+                    from: account_polymath
+                }),
+                "tx-> revert because owner address is 0x"
+            );
+        });
+
+        it("Should successfully update the implementation address -- fail because all params get 0", async () => {
+            let bytesProxy = encodeProxyCall(STRProxyParameters, [
+                address_zero,
+                address_zero,
+                0,
+                0,
+                address_zero,
+                address_zero
             ]);
             catchRevert(
                 I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
@@ -321,7 +339,7 @@ contract("SecurityTokenRegistry", accounts => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_temp });
 
             catchRevert(
-                I_STRProxied.registerTicker("0x0000000000000000000000000000000000000000", symbol, name, { from: account_temp }),
+                I_STRProxied.registerTicker(address_zero, symbol, name, { from: account_temp }),
                 "tx revert -> owner should not be 0x"
             );
         });
@@ -342,6 +360,15 @@ contract("SecurityTokenRegistry", accounts => {
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, symbol, `Symbol should be ${symbol}`);
         });
+
+        it("Should register the ticker when the tickerRegFee is 0", async() => {
+            let snap_Id = await takeSnapshot();
+            await I_STRProxied.changeTickerRegistrationFee(0, { from: account_polymath });
+            let tx = await I_STRProxied.registerTicker(account_temp, "ZERO", name, { from: account_temp });
+            assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
+            assert.equal(tx.logs[0].args._ticker, "ZERO", `Symbol should be ZERO`);
+            await revertToSnapshot(snap_Id);
+        })
 
         it("Should fail to register same symbol again", async () => {
             // Give POLY to token issuer
@@ -421,7 +448,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should get the details of unregistered token", async () => {
             let tx = await I_STRProxied.getTickerDetails.call("TORO");
-            assert.equal(tx[0], "0x0000000000000000000000000000000000000000", "Should be 0x as ticker is not exists in the registry");
+            assert.equal(tx[0], address_zero, "Should be 0x as ticker is not exists in the registry");
             assert.equal(tx[3], "", "Should be an empty string");
             assert.equal(tx[4], false, "Status if the symbol should be undeployed -- false");
         });
@@ -435,7 +462,7 @@ contract("SecurityTokenRegistry", accounts => {
             assert.equal(data[4], false, "Token is not launched yet so it should return False");
             data = await I_SecurityTokenRegistry.getTickerDetails(symbol, { from: token_owner });
             console.log("This is the data from the original securityTokenRegistry contract");
-            assert.equal(data[0], "0x0000000000000000000000000000000000000000", "Token owner should be 0x");
+            assert.equal(data[0], address_zero, "Token owner should be 0x");
         });
 
         it("Should fail to generate new security token if fee not provided", async () => {
@@ -475,7 +502,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should fail to generate the securityToken -- Because msg.sender is not the rightful owner of the ticker", async () => {
             catchRevert(
-                I_STRProxied.generateSecurityToken("", symbol, tokenDetails, false, { from: account_temp }),
+                I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_temp }),
                 "tx revert -> Because msg.sender is not the rightful owner of the ticker"
             );
         });
@@ -502,6 +529,27 @@ contract("SecurityTokenRegistry", accounts => {
                 "tx revert -> Because ticker is already in use"
             );
         });
+
+        it("Should fail to generate the SecurityToken because ticker gets expired", async() => {
+            let snap_Id = await takeSnapshot();
+            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, "CCC", name, { from: token_owner });
+            await increaseTime(duration.days(65));
+            catchRevert(
+                I_STRProxied.generateSecurityToken(name, "CCC", tokenDetails, false, { from: token_owner }),
+                "tx revert -> Because ticker is expired"
+            );
+            await revertToSnapshot(snap_Id);
+        });
+
+        it("Should generate the SecurityToken when launch fee is 0", async() => {
+            let snap_Id = await takeSnapshot();
+            await I_STRProxied.changeSecurityLaunchFee(0, { from: account_polymath });
+            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, "CCC", name, { from: token_owner });
+            await I_STRProxied.generateSecurityToken(name, "CCC", tokenDetails, false, { from: token_owner }),
+            await revertToSnapshot(snap_Id);
+        });
     });
 
     describe("Generate SecurityToken v2", async () => {
@@ -512,7 +560,7 @@ contract("SecurityTokenRegistry", accounts => {
 
             assert.notEqual(
                 I_STFactory002.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "STFactory002 contract was not deployed"
             );
             await I_STRProxied.setProtocolVersion(I_STFactory002.address, 0, 2, 0, { from: account_polymath });
@@ -554,7 +602,7 @@ contract("SecurityTokenRegistry", accounts => {
             I_SecurityTokenRegistryV2 = await SecurityTokenRegistryMock.new({ from: account_polymath });
             assert.notEqual(
                 I_SecurityTokenRegistryV2.address.valueOf(),
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
                 "SecurityTokenRegistry contract was not deployed"
             );
         });
@@ -596,6 +644,15 @@ contract("SecurityTokenRegistry", accounts => {
                 "tx revert -> msg.sender is not polymath account"
             );
         });
+
+        it("Should fail to genrate the custom security token -- ticker length is greater than 10 chars", async() => {
+            catchRevert(
+                I_STRProxied.modifySecurityToken("LOGAN", "LOGLOGLOGLOG", account_temp, dummy_token, "I am custom ST", latestTime(), {
+                    from: account_polymath
+                }),
+                "tx revert -> msg.sender is not polymath account"
+            );
+        })
 
         it("Should fail to generate the custom security token -- name should not be 0 length ", async () => {
             catchRevert(
@@ -678,6 +735,12 @@ contract("SecurityTokenRegistry", accounts => {
             assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
             assert.equal(symbolDetails[3], "LOGAN2", `Name of the symbol should be LOGAN`);
         });
+
+        it("Should successfully modify the ticker", async() => {
+            let snap_Id = await takeSnapshot();
+            let tx = await I_STRProxied.modifyTicker(account_temp, "LOG2", "LOGAN2", latestTime(), latestTime() + duration.days(60), false, {from: account_polymath});
+            await revertToSnapshot(snap_Id);
+        })
     });
 
     describe("Test case for modifyTicker", async () => {
@@ -1026,10 +1089,23 @@ contract("SecurityTokenRegistry", accounts => {
     });
     describe("Test cases for IRegistry functionality", async () => {
         describe("Test cases for reclaiming funds", async () => {
-            it("Should successfully reclaim POLY tokens", async () => {
+            
+            it("Should successfully reclaim POLY tokens -- fail because token address will be 0x", async() => {
                 I_PolyToken.transfer(I_STRProxied.address, web3.utils.toWei("1"), { from: token_owner });
+                catchRevert(
+                    I_STRProxied.reclaimERC20("0x000000000000000000000000000000000000000", { from: account_polymath })
+                );
+            });
+
+            it("Should successfully reclaim POLY tokens -- not authorised", async() => {
+                catchRevert(
+                    I_STRProxied.reclaimERC20(I_PolyToken.address, { from: account_temp })
+                );
+            });
+
+            it("Should successfully reclaim POLY tokens", async () => {
                 let bal1 = await I_PolyToken.balanceOf.call(account_polymath);
-                await I_STRProxied.reclaimERC20(I_PolyToken.address);
+                await I_STRProxied.reclaimERC20(I_PolyToken.address, { from: account_polymath });
                 let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
                 assert.isAtLeast(
                     bal2.dividedBy(new BigNumber(10).pow(18)).toNumber(),
@@ -1059,5 +1135,57 @@ contract("SecurityTokenRegistry", accounts => {
                 assert.isNotOk(status);
             });
         });
+
+        describe("Test cases for the setProtocolVersion", async() => {
+
+            it("Should successfully change the protocolVersion -- failed because of bad owner", async() => {
+                catchRevert(
+                    I_STRProxied.setProtocolVersion(accounts[8], 5, 6, 7, { from: account_temp })
+                );
+            });
+    
+            it("Should successfully change the protocolVersion -- failed because factory address is 0x", async() => {
+                catchRevert(
+                    I_STRProxied.setProtocolVersion("0x000000000000000000000000000000000000000", 5, 6, 7, { from: account_polymath })
+                );
+            });
+    
+            it("Should successfully change the protocolVersion -- not a valid vesrion", async() => {
+                catchRevert(
+                    I_STRProxied.setProtocolVersion(accounts[8], 0, 0, 0, { from: account_polymath })
+                );
+            });
+
+            it("Should successfully change the protocolVersion -- fail in second attempt because of invalid version", async() => {
+                let snap_Id = await takeSnapshot();
+                await I_STRProxied.setProtocolVersion(accounts[8], 1, 2, 1, {from: account_polymath });
+                await catchRevert(
+                    I_STRProxied.setProtocolVersion(accounts[8], 0, 2, 1, {from: account_polymath })
+                );
+                await revertToSnapshot(snap_Id);
+            });
+    
+        });
+
+        describe("Test cases for the transferOwnership", async() => {
+
+            it("Should fail to transfer the ownership -- not authorised", async() => {
+                catchRevert(
+                    I_STRProxied.transferOwnership(account_temp, { from: account_issuer})
+                );
+            });
+
+            it("Should fail to transfer the ownership -- 0x address is not allowed", async() => {
+                catchRevert(
+                    I_STRProxied.transferOwnership("0x000000000000000000000000000000000000000", { from: account_polymath})
+                );
+            });
+
+            it("Should successfully transfer the ownership of the STR", async() => {
+                let tx = await I_STRProxied.transferOwnership(account_temp, { from: account_polymath });
+                assert.equal(tx.logs[0].args.previousOwner, account_polymath);
+                assert.equal(tx.logs[0].args.newOwner, account_temp);
+            });
+        })
     });
 });

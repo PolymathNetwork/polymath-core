@@ -11,7 +11,7 @@ const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock
 const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpointFactory.sol");
 const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpointFactory.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
-const SingleTradeVolumeRestrictionManagerFactory = artifacts.require('./SingleTradeVolumeRestrictionManagerFactory.sol');
+const SingleTradeVolumeRestrictionManagerFactory = artifacts.require('./SingleTradeVolumeRestrictionTMFactory.sol');
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
 const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
@@ -23,11 +23,13 @@ const STFactory = artifacts.require("./STFactory.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
-const VolumeRestrictionTransferManagerFactory = artifacts.require("./VolumeRestrictionTransferManagerFactory");
+const VolumeRestrictionTransferManagerFactory = artifacts.require("./LockupVolumeRestrictionTMFactory");
 const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PolyToken = artifacts.require("./PolyToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
+const MockBurnFactory = artifacts.require("./MockBurnFactory.sol");
+const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
 
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
@@ -37,6 +39,8 @@ let I_USDTieredSTOProxyFactory;
 let I_USDTieredSTOFactory;
 let I_TrackedRedemptionFactory;
 let I_ScheduledCheckpointFactory;
+let I_MockBurnFactory;
+let I_MockWrongTypeBurnFactory;
 let I_SingleTradeVolumeRestrictionManagerFactory;
 let I_ManualApprovalTransferManagerFactory;
 let I_VolumeRestrictionTransferManagerFactory;
@@ -239,7 +243,7 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
     return new Array(I_PercentageTransferManagerFactory);
 }
 
-export async function deployVolumeRTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
     I_VolumeRestrictionTransferManagerFactory = await VolumeRestrictionTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
     assert.notEqual(
         I_VolumeRestrictionTransferManagerFactory.address.valueOf(),
@@ -321,7 +325,7 @@ export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstanc
 
 export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
     I_PreSaleSTOFactory = await PreSaleSTOFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
-    
+
     assert.notEqual(
         I_PreSaleSTOFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -336,14 +340,14 @@ export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInst
     I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new({from: accountPolymath});
 
     I_USDTieredSTOFactory = await USDTieredSTOFactory.new(polyToken, setupCost, 0, 0, I_USDTieredSTOProxyFactory.address, { from: accountPolymath });
-    
+
     assert.notEqual(
         I_USDTieredSTOFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
         "USDTieredSTOFactory contract was not deployed"
     );
 
-    await registerAndVerifyByMR(I_USDTieredSTOFactory.address, accountPolymath, MRProxyInstance);   
+    await registerAndVerifyByMR(I_USDTieredSTOFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_USDTieredSTOFactory);
 }
 
@@ -392,7 +396,31 @@ export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstan
 }
 
 
+export async function deployMockRedemptionAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_MockBurnFactory = await MockBurnFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
 
+    assert.notEqual(
+        I_MockBurnFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "MockBurnfactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_MockBurnFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_MockBurnFactory);
+}
+
+export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_MockWrongTypeBurnFactory = await MockWrongTypeFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+
+    assert.notEqual(
+        I_MockWrongTypeBurnFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "MockWrongTypeBurnFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_MockWrongTypeBurnFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_MockWrongTypeBurnFactory);
+}
 
 
 

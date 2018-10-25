@@ -58,10 +58,10 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // Used to permanently halt all minting
     bool public mintingFrozen;
 
-    // Use to permanently halt controller actions
+    // Used to permanently halt controller actions
     bool public controllerDisabled;
 
-    // address whitelisted by issuer as controller
+    // Address whitelisted by issuer as controller
     address public controller;
 
     // Records added modules - module list should be order agnostic!
@@ -151,7 +151,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     modifier checkGranularity(uint256 _value) {
-        require(_value % granularity == 0, "Incorrect granularity");
+        require(_value % granularity == 0, "Invalid granularity");
         _;
     }
 
@@ -224,12 +224,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint256 moduleCost = moduleFactory.getSetupCost();
         require(moduleCost <= _maxCost, "Cost too high");
         //Approve fee for module
-        require(ERC20(polyToken).approve(_moduleFactory, moduleCost), "Insufficient funds");
+        ERC20(polyToken).approve(_moduleFactory, moduleCost);
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
         require(modulesToData[module].module == address(0), "Module exists");
         //Approve ongoing budget
-        require(ERC20(polyToken).approve(module, _budget), "Insufficient funds");
+        ERC20(polyToken).approve(module, _budget);
         //Add to SecurityToken module map
         bytes32 moduleName = moduleFactory.getName();
         uint256[] memory moduleIndexes = new uint256[](moduleTypes.length);
@@ -265,7 +265,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _module address of module to unarchive
     */
     function removeModule(address _module) external onlyOwner {
-        require(modulesToData[_module].isArchived, "Module archived");
+        require(modulesToData[_module].isArchived, "Module not archived");
         require(modulesToData[_module].module != address(0), "Module missing");
         emit ModuleRemoved(modulesToData[_module].moduleTypes, _module, now);
         // Remove from module type list
@@ -324,7 +324,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice returns a list of modules that match the provided name
+     * @notice Returns a list of modules that match the provided name
      * @param _name name of the module
      * @return address[] list of modules with this name
      */
@@ -333,7 +333,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice returns a list of modules that match the provided module type
+     * @notice Returns a list of modules that match the provided module type
      * @param _type type of the module
      * @return address[] list of modules with this type
      */
@@ -341,29 +341,37 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         return modules[_type];
     }
 
-    /**
-    * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
+   /**
+    * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
+    * @param _tokenContract Address of the ERC20Basic compliance token
     * @param _value amount of POLY to withdraw
     */
-    function withdrawPoly(uint256 _value) external onlyOwner {
-        require(ERC20(polyToken).transfer(owner, _value), "Insufficient balance");
+    function withdrawERC20(address _tokenContract, uint256 _value) external onlyOwner {
+        require(_tokenContract != address(0));
+        IERC20 token = IERC20(_tokenContract);
+        require(token.transfer(owner, _value));
     }
 
     /**
-    * @notice allows owner to approve more POLY to one of the modules
+
+    * @notice allows owner to increase/decrease POLY approval of one of the modules
     * @param _module module address
-    * @param _budget new budget
+    * @param _change change in allowance
+    * @param _increase true if budget has to be increased, false if decrease
     */
-    function changeModuleBudget(address _module, uint256 _budget) external onlyOwner {
+    function changeModuleBudget(address _module, uint256 _change, bool _increase) external onlyOwner {
         require(modulesToData[_module].module != address(0), "Module missing");
-        uint256 _currentAllowance = IERC20(polyToken).allowance(address(this), _module);
-        if (_budget < _currentAllowance) {
-            require(IERC20(polyToken).decreaseApproval(_module, _currentAllowance.sub(_budget)), "Insufficient balance");
+        uint256 currentAllowance = IERC20(polyToken).allowance(address(this), _module);
+        uint256 newAllowance;
+        if (_increase) {
+            require(IERC20(polyToken).increaseApproval(_module, _change), "increaseApproval fail");
+            newAllowance = currentAllowance.add(_change);
         } else {
-            require(IERC20(polyToken).increaseApproval(_module, _budget.sub(_currentAllowance)), "Insufficient balance");
+            require(IERC20(polyToken).decreaseApproval(_module, _change), "Insufficient allowance");
+            newAllowance = currentAllowance.sub(_change);
         }
-        emit ModuleBudgetChanged(modulesToData[_module].moduleTypes, _module, _currentAllowance, _budget);
+        emit ModuleBudgetChanged(modulesToData[_module].moduleTypes, _module, currentAllowance, newAllowance);
     }
 
     /**
@@ -376,7 +384,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-    * @notice allows owner to change token granularity
+    * @notice Allows owner to change token granularity
     * @param _granularity granularity level of the token
     */
     function changeGranularity(uint256 _granularity) external onlyOwner {
@@ -386,7 +394,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-    * @notice keeps track of the number of non-zero token holders
+    * @notice Keeps track of the number of non-zero token holders
     * @param _from sender of transfer
     * @param _to receiver of transfer
     * @param _value value of transfer
@@ -396,7 +404,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-    * @notice removes addresses with zero balances from the investors list
+    * @notice Removes addresses with zero balances from the investors list
     * @param _start Index in investor list at which to start removing zero balances
     * @param _iters Max number of iterations of the for loop
     * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
@@ -410,7 +418,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice returns an array of investors
+     * @notice Returns an array of investors
      * NB - this length may differ from investorCount if list has not been pruned of zero balance investors
      * @return length
      */
@@ -419,7 +427,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice returns the investor count
+     * @notice Returns the investor count
      */
     function getInvestorCount() external view returns(uint256) {
         return investorData.investorCount;
@@ -429,16 +437,16 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @notice freezes transfers
      */
     function freezeTransfers() external onlyOwner {
-        require(!transfersFrozen, "transfers already frozen");
+        require(!transfersFrozen, "Already frozen");
         transfersFrozen = true;
         emit FreezeTransfers(true, now);
     }
 
     /**
-     * @notice unfreeze transfers
+     * @notice Unfreeze transfers
      */
     function unfreezeTransfers() external onlyOwner {
-        require(transfersFrozen, "transfer are not fronzen");
+        require(transfersFrozen, "Not frozen");
         transfersFrozen = false;
         emit FreezeTransfers(false, now);
     }
@@ -476,7 +484,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bool success
      */
     function transferWithData(address _to, uint256 _value, bytes _data) public returns (bool success) {
-        require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer not valid");
+        require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer invalid");
         require(super.transfer(_to, _value));
         return true;
     }
@@ -501,14 +509,22 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bool success
      */
     function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) public returns(bool) {
-        require(_updateTransfer(_from, _to, _value, _data), "Transfer not valid");
+        require(_updateTransfer(_from, _to, _value, _data), "Transfer invalid");
         require(super.transferFrom(_from, _to, _value));
         return true;
     }
 
+    /**
+     * @notice Updates internal variables when performing a transfer
+     * @param _from sender of transfer
+     * @param _to receiver of transfer
+     * @param _value value of transfer
+     * @param _data data to indicate validation
+     * @return bool success
+     */
     function _updateTransfer(address _from, address _to, uint256 _value, bytes _data) internal nonReentrant returns(bool) {
         // NB - the ordering in this function implies the following:
-        //  - investor counts are updated before transfer managers are called - i.e. transfer managers will eee
+        //  - investor counts are updated before transfer managers are called - i.e. transfer managers will see
         //investor counts including the current transfer.
         //  - checkpoints are updated after the transfer managers are called. This allows TMs to create
         //checkpoints as though they have been created before the current transactions,
@@ -522,8 +538,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice validate transfer with TransferManager module if it exists
+     * @notice Validate transfer with TransferManager module if it exists
      * @dev TransferManager module has a key of 2
+     * @dev _isTransfer boolean flag is the deciding factor for whether the
+     * state variables gets modified or not within the different modules. i.e isTransfer = true
+     * leads to change in the modules environment otherwise _verifyTransfer() works as a read-only
+     * function (no change in the state).
      * @param _from sender of transfer
      * @param _to receiver of transfer
      * @param _value value of transfer
@@ -537,28 +557,23 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint256 _value,
         bytes _data,
         bool _isTransfer
-        ) internal checkGranularity(_value) returns (bool) {
+    ) internal checkGranularity(_value) returns (bool) {
         if (!transfersFrozen) {
-            if (modules[TRANSFER_KEY].length == 0) {
-                return true;
-            }
             bool isInvalid = false;
             bool isValid = false;
             bool isForceValid = false;
             bool unarchived = false;
             address module;
-            for (uint8 i = 0; i < modules[TRANSFER_KEY].length; i++) {
+            for (uint256 i = 0; i < modules[TRANSFER_KEY].length; i++) {
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
                     ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
-                    }
-                    if (valid == ITransferManager.Result.VALID) {
+                    } else if (valid == ITransferManager.Result.VALID) {
                         isValid = true;
-                    }
-                    if (valid == ITransferManager.Result.FORCE_VALID) {
+                    } else if (valid == ITransferManager.Result.FORCE_VALID) {
                         isForceValid = true;
                     }
                 }
@@ -570,7 +585,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice validates a transfer with a TransferManager module if it exists
+     * @notice Validates a transfer with a TransferManager module if it exists
      * @dev TransferManager module has a key of 2
      * @param _from sender of transfer
      * @param _to receiver of transfer
@@ -592,7 +607,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice mints new tokens and assigns them to the target _investor.
+     * @notice Mints new tokens and assigns them to the target _investor.
      * @dev Can only be called by the issuer or STO attached to the token
      * @param _investor Address where the minted tokens will be delivered
      * @param _value Number of tokens be minted
@@ -616,7 +631,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         bytes _data
         ) public onlyModuleOrOwner(MINT_KEY) isMintingAllowed() returns (bool success) {
         require(_investor != address(0), "Investor is 0");
-        require(_updateTransfer(address(0), _investor, _value, _data), "Transfer not valid");
+        require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
         _adjustTotalSupplyCheckpoints();
         totalSupply_ = totalSupply_.add(_value);
         balances[_investor] = balances[_investor].add(_value);
@@ -626,13 +641,13 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice mints new tokens and assigns them to the target _investor.
+     * @notice Mints new tokens and assigns them to the target _investor.
      * @dev Can only be called by the issuer or STO attached to the token.
      * @param _investors A list of addresses to whom the minted tokens will be dilivered
      * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _values) external onlyModuleOrOwner(MINT_KEY) returns (bool success) {
+    function mintMulti(address[] _investors, uint256[] _values) external returns (bool success) {
         require(_investors.length == _values.length, "Incorrect inputs");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _values[i]);
@@ -650,7 +665,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return success
      */
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
-        return TokenLib.checkPermission(modules[PERMISSION_KEY], _delegate, _module, _perm);
+        for (uint256 i = 0; i < modules[PERMISSION_KEY].length; i++) {
+            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived)
+                return TokenLib.checkPermission(modules[PERMISSION_KEY], _delegate, _module, _perm);
+        }
+        return false;
     }
 
     function _burn(address _from, uint256 _value, bytes _data) internal returns(bool) {
@@ -670,7 +689,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _data data to indicate validation
      */
     function burnWithData(uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
-        require(_burn(msg.sender, _value, _data), "Burn not valid");
+        require(_burn(msg.sender, _value, _data), "Burn invalid");
     }
 
     /**
@@ -682,7 +701,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function burnFromWithData(address _from, uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
         require(_value <= allowed[_from][msg.sender], "Value too high");
         allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-        require(_burn(_from, _value, _data), "Burn not valid");
+        require(_burn(_from, _value, _data), "Burn invalid");
     }
 
     /**
@@ -730,24 +749,24 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _controller address of the controller
      */
     function setController(address _controller) public onlyOwner {
-        require(!controllerDisabled);
+        require(!controllerDisabled,"Controller disabled");
         emit SetController(controller, _controller);
         controller = _controller;
     }
 
     /**
-     * @notice Use by the issuer to permanently disable controller functionality
+     * @notice Used by the issuer to permanently disable controller functionality
      * @dev enabled via feature switch "disableControllerAllowed"
      */
     function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
-        require(!controllerDisabled);
+        require(!controllerDisabled,"Controller disabled");
         controllerDisabled = true;
         delete controller;
         emit DisableController(now);
     }
 
     /**
-     * @notice Use by a controller to execute a forced transfer
+     * @notice Used by a controller to execute a forced transfer
      * @param _from address from which to take tokens
      * @param _to address where to send tokens
      * @param _value amount of tokens to transfer
@@ -765,7 +784,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-     * @notice Use by a controller to execute a forced burn
+     * @notice Used by a controller to execute a forced burn
      * @param _from address from which to take tokens
      * @param _value amount of tokens to transfer
      * @param _data data to indicate validation

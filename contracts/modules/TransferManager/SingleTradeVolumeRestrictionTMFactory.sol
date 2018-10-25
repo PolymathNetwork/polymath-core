@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
 import "./../ModuleFactory.sol";
-import "./SingleTradeVolumeRestrictionManager.sol";
+import "./SingleTradeVolumeRestrictionTM.sol";
 import "../../libraries/Util.sol";
 /**
  * @title Factory for deploying SingleTradeVolumeRestrictionManager
  */
-contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
+contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
 
 
     /**
@@ -20,7 +20,7 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
-        name = "SingleTradeVolumeRestriction";
+        name = "SingleTradeVolumeRestrictionTM";
         title = "Single Trade Volume Restriction Manager";
         description = "Imposes volume restriction on a single trade";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
@@ -28,16 +28,16 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
     }
 
     /**
-    * @notice used to launch the Module with the help of factory
+    * @notice Used to launch the Module with the help of factory
     * @return address Contract address of the Module
     */
     function deploy(bytes _data) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        SingleTradeVolumeRestrictionManager singleTradeVolumeRestrictionManager = new SingleTradeVolumeRestrictionManager(msg.sender, address(polyToken));
+        SingleTradeVolumeRestrictionTM singleTradeVolumeRestrictionManager = new SingleTradeVolumeRestrictionTM(msg.sender, address(polyToken));
 
         require(Util.getSig(_data) == singleTradeVolumeRestrictionManager.getInitFunction(), "Provided data is not valid");
-        require(address(singleTradeVolumeRestrictionManager).call(_data), "Un-successfull call");
+        require(address(singleTradeVolumeRestrictionManager).call(_data), "Unsuccessful call");
         emit GenerateModuleFromFactory(address(singleTradeVolumeRestrictionManager), getName(), address(this), msg.sender, setupCost, now);
         return address(singleTradeVolumeRestrictionManager);
     }
@@ -53,30 +53,6 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
     }
 
     /**
-    * @notice Get the name of the Module
-    * @return bytes32
-    */
-    function getName() public view returns(bytes32) {
-        return name;
-    }
-
-    /**
-    * @notice Get the description of the Module
-    * @return string
-    */
-    function getDescription() external view returns(string) {
-        return description;
-    }
-
-    /**
-    * @notice Get the title of the Module
-    * @return string
-    */
-    function getTitle() external view returns(string) {
-        return title;
-    }
-
-    /**
     * @notice Get the Instructions that help to use the module
     * @return string
     */
@@ -84,21 +60,6 @@ contract SingleTradeVolumeRestrictionManagerFactory is ModuleFactory {
         return "Allows an issuer to impose volume restriction on a single trade. Init function takes two parameters. First parameter is a bool indicating if restriction is in percentage. The second parameter is the value in percentage or amount of tokens";
     }
 
-    /**
-    * @notice Get the version of the Module
-    * @return string
-    */
-    function getVersion() external view returns(string) {
-        return version;
-    }
-
-    /**
-    * @notice Get the setup cost of the module
-    * return uint256
-    */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
-    }
     /**
     * @notice Get the tags related to the module factory
     * @return bytes32[]

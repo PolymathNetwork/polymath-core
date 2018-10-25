@@ -25,7 +25,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
 
 
      /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
@@ -47,45 +47,10 @@ contract GeneralTransferManagerFactory is ModuleFactory {
     }
 
     /**
-     * @notice Get the name of the Module
-     */
-    function getName() public view returns(bytes32) {
-        return name;
-    }
-
-    /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() external view returns(string) {
-        return description;
-    }
-
-    /**
-     * @notice Get the version of the Module
-     */
-    function getVersion() external view returns(string) {
-        return version;
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() external view returns(string) {
-        return title;
-    }
-
-    /**
-     * @notice Get the setup cost of the module
-     */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
-    }
-
-    /**
-     * @notice Get the Instructions that helped to used the module
+     * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
-        return "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist, and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.";
+        return "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.";
     }
 
     /**

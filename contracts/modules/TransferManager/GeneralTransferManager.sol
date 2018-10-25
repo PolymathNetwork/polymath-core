@@ -30,6 +30,8 @@ contract GeneralTransferManager is ITransferManager {
     // An address can only send / receive tokens once their corresponding uint256 > block.number
     // (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
     mapping (address => TimeRestriction) public whitelist;
+    // Map of used nonces by customer
+    mapping(address => mapping(uint256 => bool)) public nonceMap;  
 
     //If true, there are no transfer restrictions, for any addresses
     bool public allowAllTransfers = false;
@@ -144,12 +146,14 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @notice default implementation of verifyTransfer used by SecurityToken
-    * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
-    * If the transfer request comes from a token holder, it checks that:
-    * a) Both are on the whitelist
-    * b) Seller's sale lockup period is over
-    * c) Buyer's purchase lockup is over
+     * @notice Default implementation of verifyTransfer used by SecurityToken
+     * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
+     * If the transfer request comes from a token holder, it checks that:
+     * a) Both are on the whitelist
+     * b) Seller's sale lockup period is over
+     * c) Buyer's purchase lockup is over
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
     */
     function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
@@ -178,7 +182,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @notice adds or removes addresses from the whitelist.
+    * @notice Adds or removes addresses from the whitelist.
     * @param _investor is the address to whitelist
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
@@ -192,7 +196,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @notice adds or removes addresses from the whitelist.
+    * @notice Adds or removes addresses from the whitelist.
     * @param _investors List of the addresses to whitelist
     * @param _fromTimes An array of the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTimes An array of the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
@@ -216,7 +220,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @notice adds or removes addresses from the whitelist - can be called by anyone with a valid signature
+    * @notice Adds or removes addresses from the whitelist - can be called by anyone with a valid signature
     * @param _investor is the address to whitelist
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
@@ -224,6 +228,7 @@ contract GeneralTransferManager is ITransferManager {
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
     * @param _validFrom is the time that this signature is valid from
     * @param _validTo is the time that this signature is valid until
+    * @param _nonce nonce of signature (avoid replay attack)
     * @param _v issuer signature
     * @param _r issuer signature
     * @param _s issuer signature
@@ -236,13 +241,16 @@ contract GeneralTransferManager is ITransferManager {
         bool _canBuyFromSTO,
         uint256 _validFrom,
         uint256 _validTo,
+        uint256 _nonce,
         uint8 _v,
         bytes32 _r,
         bytes32 _s
     ) public {
         require(_validFrom <= now, "ValidFrom is too early");
         require(_validTo >= now, "ValidTo is too late");
-        bytes32 hash = keccak256(abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo));
+        require(!nonceMap[_investor][_nonce], "Already used signature");
+        nonceMap[_investor][_nonce] = true;
+        bytes32 hash = keccak256(abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce));
         _checkSig(hash, _v, _r, _s);
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
@@ -250,23 +258,13 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @notice used to verify the signature
+     * @notice Used to verify the signature
      */
     function _checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
         address signer = ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash)), _v, _r, _s);
         require(signer == Ownable(securityToken).owner() || signer == signingAddress, "Incorrect signer");
-    }
-
-    /**
-     * @notice Return the permissions flag that are associated with general trnasfer manager
-     */
-    function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](2);
-        allPermissions[0] = WHITELIST;
-        allPermissions[1] = FLAGS;
-        return allPermissions;
     }
 
     /**
@@ -285,6 +283,16 @@ contract GeneralTransferManager is ITransferManager {
     function _isSTOAttached() internal view returns(bool) {
         bool attached = ISecurityToken(securityToken).getModulesByType(3).length > 0;
         return attached;
+    }
+
+    /**
+     * @notice Return the permissions flag that are associated with general trnasfer manager
+     */
+    function getPermissions() public view returns(bytes32[]) {
+        bytes32[] memory allPermissions = new bytes32[](2);
+        allPermissions[0] = WHITELIST;
+        allPermissions[1] = FLAGS;
+        return allPermissions;
     }
 
 }

@@ -51,6 +51,7 @@ contract("TrackedRedemption", accounts => {
     let I_PolyToken;
     let I_MRProxied;
     let I_PolymathRegistry;
+    let P_TrackedRedemptionFactory;
 
     // SecurityToken Details
     const name = "Team";
@@ -104,6 +105,7 @@ contract("TrackedRedemption", accounts => {
       
         // STEP 4: Deploy the TrackedRedemption
         [I_TrackedRedemptionFactory] = await deployRedemptionAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [P_TrackedRedemptionFactory] = await deployRedemptionAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
 
         // Printing all the contract addresses
         console.log(`
@@ -151,6 +153,20 @@ contract("TrackedRedemption", accounts => {
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
             I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+        });
+
+        it("Should successfully attach the paid TrackedRedemption with the security token", async () => {
+            let snapId = await takeSnapshot();
+            await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
+            const tx = await I_SecurityToken.addModule(P_TrackedRedemptionFactory.address, "", web3.utils.toWei("500"), 0, { from: token_owner });
+            assert.equal(tx.logs[3].args._types[0].toNumber(), burnKey, "TrackedRedemption doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[3].args._name).replace(/\u0000/g, ""),
+                "TrackedRedemption",
+                "TrackedRedemption module was not added"
+            );
+            I_TrackedRedemption = TrackedRedemption.at(tx.logs[3].args._module);
+            await revertToSnapshot(snapId);
         });
 
         it("Should successfully attach the TrackedRedemption with the security token", async () => {
@@ -249,16 +265,16 @@ contract("TrackedRedemption", accounts => {
 
         describe("Test cases for the TrackedRedemptionFactory", async () => {
             it("should get the exact details of the factory", async () => {
-                assert.equal((await I_TrackedRedemptionFactory.setupCost.call()).toNumber(), 0);
+                assert.equal((await I_TrackedRedemptionFactory.getSetupCost.call()).toNumber(), 0);
                 assert.equal((await I_TrackedRedemptionFactory.getTypes.call())[0], 5);
-                assert.equal(await I_TrackedRedemptionFactory.getVersion.call(), "1.0.0");
+                assert.equal(await I_TrackedRedemptionFactory.version.call(), "1.0.0");
                 assert.equal(
                     web3.utils.toAscii(await I_TrackedRedemptionFactory.getName.call()).replace(/\u0000/g, ""),
                     "TrackedRedemption",
                     "Wrong Module added"
                 );
-                assert.equal(await I_TrackedRedemptionFactory.getDescription.call(), "Track token redemptions", "Wrong Module added");
-                assert.equal(await I_TrackedRedemptionFactory.getTitle.call(), "Tracked Redemption", "Wrong Module added");
+                assert.equal(await I_TrackedRedemptionFactory.description.call(), "Track token redemptions", "Wrong Module added");
+                assert.equal(await I_TrackedRedemptionFactory.title.call(), "Tracked Redemption", "Wrong Module added");
                 assert.equal(
                     await I_TrackedRedemptionFactory.getInstructions.call(),
                     "Allows an investor to redeem security tokens which are tracked by this module",

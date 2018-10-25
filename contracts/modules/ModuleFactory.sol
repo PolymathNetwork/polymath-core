@@ -12,15 +12,16 @@ import "../libraries/VersionUtils.sol";
 contract ModuleFactory is IModuleFactory, Ownable {
 
     IERC20 public polyToken;
-    uint256 public setupCost;
     uint256 public usageCost;
     uint256 public monthlySubscriptionCost;
+
+    uint256 public setupCost;
     string public description;
     string public version;
     bytes32 public name;
     string public title;
 
-    // @notice Allow only two variables to store
+    // @notice Allow only two variables to be stored
     // 1. lowerBound 
     // 2. upperBound
     // @dev (0.0.0 will act as the wildcard) 
@@ -38,14 +39,14 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public {
-      polyToken = IERC20(_polyAddress);
-      setupCost = _setupCost;
-      usageCost = _usageCost;
-      monthlySubscriptionCost = _subscriptionCost;
+        polyToken = IERC20(_polyAddress);
+        setupCost = _setupCost;
+        usageCost = _usageCost;
+        monthlySubscriptionCost = _subscriptionCost;
     }
 
     /**
-     * @notice used to change the fee of the setup cost
+     * @notice Used to change the fee of the setup cost
      * @param _newSetupCost new setup cost
      */
     function changeFactorySetupFee(uint256 _newSetupCost) public onlyOwner {
@@ -54,7 +55,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice used to change the fee of the usage cost
+     * @notice Used to change the fee of the usage cost
      * @param _newUsageCost new usage cost
      */
     function changeFactoryUsageFee(uint256 _newUsageCost) public onlyOwner {
@@ -63,7 +64,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice used to change the fee of the subscription cost
+     * @notice Used to change the fee of the subscription cost
      * @param _newSubscriptionCost new subscription cost
      */
     function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) public onlyOwner {
@@ -73,38 +74,38 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Update the title of the ModuleFactory
+     * @notice Updates the title of the ModuleFactory
      * @param _newTitle New Title that will replace the old one.
      */
     function changeTitle(string _newTitle) public onlyOwner {
-        require(bytes(_newTitle).length > 0);
+        require(bytes(_newTitle).length > 0, "Invalid title");
         title = _newTitle;
     }
 
     /**
-     * @notice Update the description of the ModuleFactory
+     * @notice Updates the description of the ModuleFactory
      * @param _newDesc New description that will replace the old one.
      */
     function changeDescription(string _newDesc) public onlyOwner {
-        require(bytes(_newDesc).length > 0);
+        require(bytes(_newDesc).length > 0, "Invalid description");
         description = _newDesc;
     }
 
     /**
-     * @notice Update the name of the ModuleFactory
+     * @notice Updates the name of the ModuleFactory
      * @param _newName New name that will replace the old one.
      */
     function changeName(bytes32 _newName) public onlyOwner {
-        require(_newName != bytes32(0));
+        require(_newName != bytes32(0),"Invalid name");
         name = _newName;
     }
 
     /**
-     * @notice Update the version of the ModuleFactory
+     * @notice Updates the version of the ModuleFactory
      * @param _newVersion New name that will replace the old one.
      */
     function changeVersion(string _newVersion) public onlyOwner {
-        require(bytes(_newVersion).length > 0 );
+        require(bytes(_newVersion).length > 0, "Invalid version");
         version = _newVersion;
     }
 
@@ -126,7 +127,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice use to get the lower bound
+     * @notice Used to get the lower bound
      * @return lower bound
      */
     function getLowerSTVersionBounds() external view returns(uint8[]) {
@@ -134,11 +135,25 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice use to get the upper bound
+     * @notice Used to get the upper bound
      * @return upper bound
      */
     function getUpperSTVersionBounds() external view returns(uint8[]) {
         return VersionUtils.unpack(compatibleSTVersionRange["upperBound"]);
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCost() external view returns (uint256) {
+        return setupCost;
+    }
+
+   /**
+    * @notice Get the name of the Module
+    */
+    function getName() public view returns(bytes32) {
+        return name;
     }
 
 }

@@ -8,7 +8,7 @@ import { catchRevert } from "./helpers/exceptions";
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
-const SingleTradeVolumeRestrictionManager = artifacts.require('./SingleTradeVolumeRestrictionManager');
+const SingleTradeVolumeRestrictionManager = artifacts.require('./SingleTradeVolumeRestrictionTM');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 
@@ -231,7 +231,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
       assert.equal(
         web3.utils.toAscii(tx.logs[3].args._name)
         .replace(/\u0000/g, ''),
-        "SingleTradeVolumeRestriction",
+        "SingleTradeVolumeRestrictionTM",
         "SingleTradeVolumeRestrictionManagerFactory module was not added"
       );
       P_SingleTradeVolumeRestrictionManager = SingleTradeVolumeRestrictionManager.at(tx.logs[3].args._module);
@@ -246,7 +246,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
       assert.equal(
         web3.utils.toAscii(tx.logs[2].args._name)
         .replace(/\u0000/g, ''),
-        "SingleTradeVolumeRestriction",
+        "SingleTradeVolumeRestrictionTM",
         "SingleTradeVolumeRestriction module was not added"
       );
       I_SingleTradeVolumeRestrictionManager = SingleTradeVolumeRestrictionManager.at(tx.logs[2].args._module);
@@ -261,7 +261,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
       assert.equal(
         web3.utils.toAscii(tx.logs[2].args._name)
         .replace(/\u0000/g, ''),
-        "SingleTradeVolumeRestriction",
+        "SingleTradeVolumeRestrictionTM",
         "SingleTradeVolumeRestriction module was not added"
       );
       I_SingleTradeVolumeRestrictionPercentageManager = SingleTradeVolumeRestrictionManager.at(tx.logs[2].args._module);
@@ -276,6 +276,15 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
         'Wrong permissions'
       );
     });
+
+    it("Should allow the primary issuance", async() => {
+      let snapId = await takeSnapshot();
+      await I_SingleTradeVolumeRestrictionManager.setAllowPrimaryIssuance(true, {from: token_owner});
+      await catchRevert(
+        I_SingleTradeVolumeRestrictionManager.setAllowPrimaryIssuance(true, {from: token_owner})
+      )
+      await revertToSnapshot(snapId);
+    })
 
     it("add exempt wallet -- Not authorised ", async () => {
       await catchRevert (
@@ -691,17 +700,17 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
   describe("SingleTradeVolumeRestrictionManager Factory test cases", async () => {
 
     it("Should get the exact details of the factory", async () => {
-      assert.equal(await I_SingleTradeVolumeRestrictionManagerFactory.setupCost.call(), 0);
+      assert.equal(await I_SingleTradeVolumeRestrictionManagerFactory.getSetupCost.call(), 0);
       assert.equal((await I_SingleTradeVolumeRestrictionManagerFactory.getTypes.call())[0], 2);
       let name = web3.utils.toUtf8(await I_SingleTradeVolumeRestrictionManagerFactory.getName.call());
-      assert.equal(name, "SingleTradeVolumeRestriction", "Wrong Module added");
-      let desc = await I_SingleTradeVolumeRestrictionManagerFactory.getDescription.call();
+      assert.equal(name, "SingleTradeVolumeRestrictionTM", "Wrong Module added");
+      let desc = await I_SingleTradeVolumeRestrictionManagerFactory.description.call();
       assert.equal(desc, "Imposes volume restriction on a single trade", "Wrong Module added");
-      let title = await I_SingleTradeVolumeRestrictionManagerFactory.getTitle.call();
+      let title = await I_SingleTradeVolumeRestrictionManagerFactory.title.call();
       assert.equal(title, "Single Trade Volume Restriction Manager", "Wrong Module added");
       let inst = await I_SingleTradeVolumeRestrictionManagerFactory.getInstructions.call();
       assert.equal(inst, "Allows an issuer to impose volume restriction on a single trade. Init function takes two parameters. First parameter is a bool indicating if restriction is in percentage. The second parameter is the value in percentage or amount of tokens", "Wrong Module added");
-      let version = await I_SingleTradeVolumeRestrictionManagerFactory.getVersion.call();
+      let version = await I_SingleTradeVolumeRestrictionManagerFactory.version.call();
       assert.equal(version, "1.0.0", "Version not correct");
     });
 

@@ -95,16 +95,16 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     }
 
     /**
-      * @notice low level token purchase ***DO NOT OVERRIDE***
+      * @notice Low level token purchase ***DO NOT OVERRIDE***
       * @param _beneficiary Address performing the token purchase
       */
     function buyTokens(address _beneficiary) public payable nonReentrant {
         if (!allowBeneficialInvestments) {
-            require(_beneficiary == msg.sender, "Beneficiary must match funding provider");
+            require(_beneficiary == msg.sender, "Beneficiary address does not match msg.sender");
         }
 
         require(!paused);
-        require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "ETH should be the mode of investment");
+        require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "Mode of investment is not ETH.");
 
         uint256 weiAmount = msg.value;
         _processTx(_beneficiary, weiAmount);
@@ -119,7 +119,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
       */
     function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant{
         require(!paused);
-        require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "POLY should be the mode of investment");
+        require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "Mode of investment is not POLY.");
         _processTx(msg.sender, _investedPOLY);
         _forwardPoly(msg.sender, wallet, _investedPOLY);
         _postValidatePurchase(msg.sender, _investedPOLY);
@@ -150,6 +150,13 @@ contract CappedSTO is ISTO, ReentrancyGuard {
 
     /**
      * @notice Return the STO details
+     * @return Unixtimestamp at which offering gets start.
+     * @return Unixtimestamp at which offering ends.
+     * @return Number of tokens this STO will be allowed to sell to investors.
+     * @return Amount of funds raised
+     * @return Number of individual investors this STO have.
+     * @return Amount of tokens get sold. 
+     * @return Boolean value to justify whether the fund raise type is POLY or not, i.e true for POLY.
      */
     function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
         return (
@@ -238,7 +245,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     }
 
     /**
-    * @notice Override for extensions that require an internal state to check for validity
+    * @notice Overrides for extensions that require an internal state to check for validity
       (current user contributions, etc.)
     */
     function _updatePurchasingState(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
@@ -246,7 +253,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     }
 
     /**
-    * @notice Override to extend the way in which ether is converted to tokens.
+    * @notice Overrides to extend the way in which ether is converted to tokens.
     * @param _investedAmount Value in wei to be converted into tokens
     * @return Number of tokens that can be purchased with the specified _investedAmount
     */

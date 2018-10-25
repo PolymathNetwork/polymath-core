@@ -26,7 +26,7 @@ interface IModuleRegistry {
     /**
     * @notice Called by Polymath to verify modules for SecurityToken to use.
     * @notice A module can not be used by an ST unless first approved/verified by Polymath
-    * @notice (The only exception to this is that the author of the module is the owner of the ST)
+    * @notice (The only exception to this is that the author of the module is the owner of the ST - Only if enabled by the FeatureRegistry)
     * @param _moduleFactory is the address of the module factory to be registered
     */
     function verifyModule(address _moduleFactory, bool _verified) external;

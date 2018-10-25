@@ -24,7 +24,10 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
 
     bytes32[] public names;
 
-    mapping (bytes32 => Schedule) schedules;
+    mapping (bytes32 => Schedule) public schedules;
+
+    event AddSchedule(bytes32 _name, uint256 _startTime, uint256 _interval, uint256 _timestamp);
+    event RemoveSchedule(bytes32 _name, uint256 _timestamp);
 
     /**
      * @notice Constructor
@@ -58,6 +61,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
         schedules[_name].interval = _interval;
         schedules[_name].index = names.length;
         names.push(_name);
+        emit AddSchedule(_name, _startTime, _interval, now);
     }
 
     /**
@@ -73,6 +77,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
             schedules[names[index]].index = index;
         }
         delete schedules[_name];
+        emit RemoveSchedule(_name, now);
     }
 
 

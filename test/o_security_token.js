@@ -17,6 +17,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 const MockRedemptionManager = artifacts.require("./MockRedemptionManager.sol");
+const MockCallback = artifacts.require("./MockCallback.sol");
 
 const Web3 = require("web3");
 const BigNumber = require("bignumber.js");
@@ -37,6 +38,7 @@ contract("SecurityToken", accounts => {
     let account_temp;
     let account_controller;
     let address_zero = "0x0000000000000000000000000000000000000000";
+    let holla = "0x486f6c6c6121";
 
     let balanceOfReceiver;
     // investor Details
@@ -67,6 +69,7 @@ contract("SecurityToken", accounts => {
     let I_PolymathRegistry;
     let I_MockRedemptionManagerFactory;
     let I_MockRedemptionManager;
+    let I_MockCallback;
 
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
@@ -891,6 +894,18 @@ contract("SecurityToken", accounts => {
             assert.equal(investors.length, 1);
             await I_SecurityToken.transfer(account_affiliate2, balance, { from: account_affiliate1});
             await I_SecurityToken.transfer(account_investor1, balance2, { from: account_affiliate1});
+        });
+
+        it("Should revert when trying to iterate non existent investors", async () => {
+            I_MockCallback = await MockCallback.new(I_SecurityToken.address);
+            await catchRevert(I_MockCallback.iterateInvestors(0, 100000000, ''));
+        });
+
+        it("Should iterate investors and call callback function", async () => {
+            let investors = await I_SecurityToken.getInvestors.call();
+            let tx = await I_MockCallback.iterateInvestors(0, 1, holla);
+            assert.equal(tx.logs[0].args.investor, investors[0]);
+            assert.equal(tx.logs[0].args.data, holla);
         });
 
         it("Should check the balance of investor at checkpoint", async () => {

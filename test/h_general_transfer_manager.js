@@ -769,17 +769,17 @@ contract("GeneralTransferManager", accounts => {
                 "Wrong Module added"
             );
             assert.equal(
-                await I_GeneralTransferManagerFactory.getDescription.call(),
+                await I_GeneralTransferManagerFactory.description.call(),
                 "Manage transfers using a time based whitelist",
                 "Wrong Module added"
             );
-            assert.equal(await I_GeneralTransferManagerFactory.getTitle.call(), "General Transfer Manager", "Wrong Module added");
+            assert.equal(await I_GeneralTransferManagerFactory.title.call(), "General Transfer Manager", "Wrong Module added");
             assert.equal(
                 await I_GeneralTransferManagerFactory.getInstructions.call(),
                 "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist, and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.",
                 "Wrong Module added"
             );
-            assert.equal(await I_GeneralPermissionManagerFactory.getVersion.call(), "1.0.0");
+            assert.equal(await I_GeneralPermissionManagerFactory.version.call(), "1.0.0");
         });
 
         it("Should get the tags of the factory", async () => {

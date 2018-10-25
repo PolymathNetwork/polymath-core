@@ -10,6 +10,7 @@ let tokenSymbol;
 let securityTokenRegistry;
 let securityToken;
 let generalPermissionManager;
+let isNewDelegate = false;
 
 const MODULES_TYPES = {
   PERMISSION: 1,
@@ -29,6 +30,7 @@ async function executeApp(remoteNetwork) {
   console.log("Issuer Account: " + Issuer.address + "\n");
 
   await setup();
+
   try {
     await selectST();
     await addPermissionModule();
@@ -94,10 +96,30 @@ async function addPermissionModule() {
 async function changePermissionStep() {
   console.log('\n\x1b[34m%s\x1b[0m',"Permission Manager - Change Permission");
   let selectedDelegate = await selectDelegate();
+  if (isNewDelegate) {
+    isNewDelegate = false;
+    changePermissionAction(selectedDelegate);
+  } else {
+    let selectFlow = readlineSync.keyInSelect(['Remove', 'Change permission'], 'Select an option:', {cancel: false});
+    if (selectFlow == 0) {
+      await deleteDelegate(selectedDelegate);
+      console.log("Delegate successfully deleted.")
+    } else {
+      changePermissionAction(selectedDelegate);
+    }
+  }
+}
+
+async function changePermissionAction(selectedDelegate) {
   let selectedModule = await selectModule();
   let selectedPermission = await selectPermission(selectedModule.permissions);
   let isValid = isPermissionValid();
   await changePermission(selectedDelegate, selectedModule.address, selectedPermission, isValid);
+}
+
+async function deleteDelegate(address) {
+  let deleteDelegateAction = generalPermissionManager.methods.deleteDelegate(address);
+  await common.sendTransaction(Issuer, deleteDelegateAction, defaultGasPrice, 0, 2);
 }
 
 // Helper functions
@@ -186,10 +208,12 @@ async function addNewDelegate() {
     },
     limitMessage: "Must be a valid string"
   });
+
   let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
   let receipt = await common.sendTransaction(Issuer, addPermissionAction, defaultGasPrice);
   let event = common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'AddDelegate');
   console.log(`Delegate added succesfully: ${event._delegate} - ${event._details}`);
+  isNewDelegate = true;
   return event._delegate;
 }
 

@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
+* `ChangeModuleBudget` in SecurityToken now takes in the change in budget rather than absoulte budget. Added boolean paramter to decide increase/decrease.
 * Added `createCheckpoint() withPerm(CHECKPOINT)` to dividend checkpoint modules.
 * Added `deleteDelegate()` to general permission manager. It will disable the delegate but not delete the perms.
 * Migrated from `npm` to `yarn`.
@@ -31,6 +32,8 @@ All notable changes to this project will be documented in this file.
 * Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230     
 
 ## Fixed
+* `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
+* 0x0 and duplicate address in exclusions are no longer allowed in dividend modules.
 * All permissions are denied if no permission manager is active.
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
 * Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230  

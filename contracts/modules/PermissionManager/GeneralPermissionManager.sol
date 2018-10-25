@@ -172,16 +172,15 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @notice Used to return all permission of a single or multiple module
      * @dev possible that function get out of gas is there are lot of modules and perm related to them
      * @param _delegate Ethereum address of the delegate
-     * @param _tokenAddress Ethereum address of the security token
      * @param _types uint8[] of types
      * @return address[] the address array of Modules this delegate has permission
      * @return bytes32[] the permission array of the corresponding Modules
      */
-    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] _types, address _tokenAddress) external view returns(address[], bytes32[]) {
+    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] _types) external view returns(address[], bytes32[]) {
         uint256 counter = 0;
         // loop through _types and get their modules from securityToken->getModulesByType
         for (uint256 i = 0; i < _types.length; i++) {
-            address[] memory _currentTypeModules = ISecurityToken(_tokenAddress).getModulesByType(_types[i]);
+            address[] memory _currentTypeModules = ISecurityToken(securityToken).getModulesByType(_types[i]);
             // loop through each modules to get their perms from IModule->getPermissions
             for (uint256 j = 0; j < _currentTypeModules.length; j++){
                 bytes32[] memory _allModulePerms = IModule(_currentTypeModules[j]).getPermissions();
@@ -199,7 +198,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
         counter = 0;
 
         for (i = 0; i < _types.length; i++){
-            _currentTypeModules = ISecurityToken(_tokenAddress).getModulesByType(_types[i]);
+            _currentTypeModules = ISecurityToken(securityToken).getModulesByType(_types[i]);
             for (j = 0; j < _currentTypeModules.length; j++) {
                 _allModulePerms = IModule(_currentTypeModules[j]).getPermissions();
                 for (k = 0; k < _allModulePerms.length; k++) {

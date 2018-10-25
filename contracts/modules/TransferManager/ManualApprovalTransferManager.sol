@@ -35,30 +35,30 @@ contract ManualApprovalTransferManager is ITransferManager {
     mapping (address => mapping (address => ManualBlocking)) public manualBlockings;
 
     event AddManualApproval(
-        address _from,
-        address _to,
+        address indexed _from,
+        address indexed _to,
         uint256 _allowance,
         uint256 _expiryTime,
-        address _addedBy
+        address indexed _addedBy
     );
 
     event AddManualBlocking(
-        address _from,
-        address _to,
+        address indexed _from,
+        address indexed _to,
         uint256 _expiryTime,
-        address _addedBy
+        address indexed _addedBy
     );
 
     event RevokeManualApproval(
-        address _from,
-        address _to,
-        address _addedBy
+        address indexed _from,
+        address indexed _to,
+        address indexed _addedBy
     );
 
     event RevokeManualBlocking(
-        address _from,
-        address _to,
-        address _addedBy
+        address indexed _from,
+        address indexed _to,
+        address indexed _addedBy
     );
 
     /**

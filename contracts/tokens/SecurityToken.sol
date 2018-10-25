@@ -151,7 +151,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     modifier checkGranularity(uint256 _value) {
-        require(_value % granularity == 0, "Incorrect granularity");
+        require(_value % granularity == 0, "Invalid granularity");
         _;
     }
 
@@ -224,12 +224,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint256 moduleCost = moduleFactory.getSetupCost();
         require(moduleCost <= _maxCost, "Cost too high");
         //Approve fee for module
-        require(ERC20(polyToken).approve(_moduleFactory, moduleCost), "Insufficient funds");
+        ERC20(polyToken).approve(_moduleFactory, moduleCost);
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
         require(modulesToData[module].module == address(0), "Module exists");
         //Approve ongoing budget
-        require(ERC20(polyToken).approve(module, _budget), "Insufficient funds");
+        ERC20(polyToken).approve(module, _budget);
         //Add to SecurityToken module map
         bytes32 moduleName = moduleFactory.getName();
         uint256[] memory moduleIndexes = new uint256[](moduleTypes.length);
@@ -265,7 +265,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _module address of module to unarchive
     */
     function removeModule(address _module) external onlyOwner {
-        require(modulesToData[_module].isArchived, "Module archived");
+        require(modulesToData[_module].isArchived, "Module not archived");
         require(modulesToData[_module].module != address(0), "Module missing");
         emit ModuleRemoved(modulesToData[_module].moduleTypes, _module, now);
         // Remove from module type list
@@ -354,19 +354,24 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-    * @notice Allows owner to approve more POLY to one of the modules
+
+    * @notice allows owner to increase/decrease POLY approval of one of the modules
     * @param _module module address
-    * @param _budget new budget
+    * @param _change change in allowance
+    * @param _increase true if budget has to be increased, false if decrease
     */
-    function changeModuleBudget(address _module, uint256 _budget) external onlyOwner {
+    function changeModuleBudget(address _module, uint256 _change, bool _increase) external onlyOwner {
         require(modulesToData[_module].module != address(0), "Module missing");
-        uint256 _currentAllowance = IERC20(polyToken).allowance(address(this), _module);
-        if (_budget < _currentAllowance) {
-            require(IERC20(polyToken).decreaseApproval(_module, _currentAllowance.sub(_budget)), "Insufficient balance");
+        uint256 currentAllowance = IERC20(polyToken).allowance(address(this), _module);
+        uint256 newAllowance;
+        if (_increase) {
+            require(IERC20(polyToken).increaseApproval(_module, _change), "increaseApproval fail");
+            newAllowance = currentAllowance.add(_change);
         } else {
-            require(IERC20(polyToken).increaseApproval(_module, _budget.sub(_currentAllowance)), "Insufficient balance");
+            require(IERC20(polyToken).decreaseApproval(_module, _change), "Insufficient allowance");
+            newAllowance = currentAllowance.sub(_change);
         }
-        emit ModuleBudgetChanged(modulesToData[_module].moduleTypes, _module, _currentAllowance, _budget);
+        emit ModuleBudgetChanged(modulesToData[_module].moduleTypes, _module, currentAllowance, newAllowance);
     }
 
     /**
@@ -479,7 +484,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bool success
      */
     function transferWithData(address _to, uint256 _value, bytes _data) public returns (bool success) {
-        require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer not valid");
+        require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer invalid");
         require(super.transfer(_to, _value));
         return true;
     }
@@ -504,7 +509,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bool success
      */
     function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) public returns(bool) {
-        require(_updateTransfer(_from, _to, _value, _data), "Transfer not valid");
+        require(_updateTransfer(_from, _to, _value, _data), "Transfer invalid");
         require(super.transferFrom(_from, _to, _value));
         return true;
     }
@@ -527,6 +532,10 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     /**
      * @notice Validate transfer with TransferManager module if it exists
      * @dev TransferManager module has a key of 2
+     * @dev _isTransfer boolean flag is the deciding factor for whether the 
+     * state variables gets modified or not within the different modules. i.e isTransfer = true
+     * leads to change in the modules environment otherwise _verifyTransfer() works as a read-only
+     * function (no change in the state). 
      * @param _from sender of transfer
      * @param _to receiver of transfer
      * @param _value value of transfer
@@ -540,28 +549,23 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint256 _value,
         bytes _data,
         bool _isTransfer
-        ) internal checkGranularity(_value) returns (bool) {
+    ) internal checkGranularity(_value) returns (bool) {
         if (!transfersFrozen) {
-            if (modules[TRANSFER_KEY].length == 0) {
-                return true;
-            }
             bool isInvalid = false;
             bool isValid = false;
             bool isForceValid = false;
             bool unarchived = false;
             address module;
-            for (uint8 i = 0; i < modules[TRANSFER_KEY].length; i++) {
+            for (uint256 i = 0; i < modules[TRANSFER_KEY].length; i++) {
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
                     ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
-                    }
-                    if (valid == ITransferManager.Result.VALID) {
+                    } else if (valid == ITransferManager.Result.VALID) {
                         isValid = true;
-                    }
-                    if (valid == ITransferManager.Result.FORCE_VALID) {
+                    } else if (valid == ITransferManager.Result.FORCE_VALID) {
                         isForceValid = true;
                     }
                 }
@@ -619,7 +623,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         bytes _data
         ) public onlyModuleOrOwner(MINT_KEY) isMintingAllowed() returns (bool success) {
         require(_investor != address(0), "Investor is 0");
-        require(_updateTransfer(address(0), _investor, _value, _data), "Transfer not valid");
+        require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
         _adjustTotalSupplyCheckpoints();
         totalSupply_ = totalSupply_.add(_value);
         balances[_investor] = balances[_investor].add(_value);
@@ -635,7 +639,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _values) external onlyModuleOrOwner(MINT_KEY) returns (bool success) {
+    function mintMulti(address[] _investors, uint256[] _values) external returns (bool success) {
         require(_investors.length == _values.length, "Incorrect inputs");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _values[i]);
@@ -677,7 +681,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _data data to indicate validation
      */
     function burnWithData(uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
-        require(_burn(msg.sender, _value, _data), "Burn not valid");
+        require(_burn(msg.sender, _value, _data), "Burn invalid");
     }
 
     /**
@@ -689,7 +693,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function burnFromWithData(address _from, uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
         require(_value <= allowed[_from][msg.sender], "Value too high");
         allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-        require(_burn(_from, _value, _data), "Burn not valid");
+        require(_burn(_from, _value, _data), "Burn invalid");
     }
 
     /**

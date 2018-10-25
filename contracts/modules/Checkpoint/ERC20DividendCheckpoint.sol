@@ -113,16 +113,17 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
     ) 
         internal  
     {
+        ISecurityToken securityTokenInstance = ISecurityToken(securityToken);
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
-        require(_expiry > _maturity, "Expiry is before maturity");
-        require(_expiry > now, "Expiry is in the past");
+        require(_expiry > _maturity, "Expiry before maturity");
+        require(_expiry > now, "Expiry in past");
         require(_amount > 0, "No dividend sent");
         require(_token != address(0), "Invalid token");
-        require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "Invalid checkpoint");
-        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount), "Unable to transfer tokens for dividend");
+        require(_checkpointId <= securityTokenInstance.currentCheckpointId(), "Invalid checkpoint");
+        require(IERC20(_token).transferFrom(msg.sender, address(this), _amount), "insufficent allowance");
         require(_name[0] != 0);
         uint256 dividendIndex = dividends.length;
-        uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
+        uint256 currentSupply = securityTokenInstance.totalSupplyAt(_checkpointId);
         uint256 excludedSupply = 0;
         dividends.push(
           Dividend(
@@ -139,11 +140,15 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
             _name
           )
         );
-        for (uint256 i = 0; i < _excluded.length; i++) {
-            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOfAt(_excluded[i], _checkpointId));
-            dividends[dividends.length - 1].dividendExcluded[_excluded[i]] = true;
+
+        for (uint256 j = 0; j < _excluded.length; j++) {
+            require (_excluded[j] != address(0), "Invalid address");
+            require(!dividends[dividendIndex].dividendExcluded[_excluded[j]], "duped exclude address");
+            excludedSupply = excludedSupply.add(securityTokenInstance.balanceOfAt(_excluded[j], _checkpointId));
+            dividends[dividendIndex].dividendExcluded[_excluded[j]] = true;
         }
-        dividends[dividends.length - 1].totalSupply = currentSupply.sub(excludedSupply);
+
+        dividends[dividendIndex].totalSupply = currentSupply.sub(excludedSupply);
         dividendTokens[dividendIndex] = _token;
         _emitERC20DividendDepositedEvent(_checkpointId, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);
     }
@@ -168,7 +173,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         _dividend.claimedAmount = claim.add(_dividend.claimedAmount);
         uint256 claimAfterWithheld = claim.sub(withheld);
         if (claimAfterWithheld > 0) {
-            require(IERC20(dividendTokens[_dividendIndex]).transfer(_payee, claimAfterWithheld), "Unable to transfer tokens");
+            require(IERC20(dividendTokens[_dividendIndex]).transfer(_payee, claimAfterWithheld), "transfer failed");
             _dividend.dividendWithheld = _dividend.dividendWithheld.add(withheld);
             investorWithheld[_payee] = investorWithheld[_payee].add(withheld);
             emit ERC20DividendClaimed(_payee, _dividendIndex, dividendTokens[_dividendIndex], claim, withheld);
@@ -180,14 +185,14 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _dividendIndex Dividend to reclaim
      */
     function reclaimDividend(uint256 _dividendIndex) external withPerm(MANAGE) {
-        require(_dividendIndex < dividends.length, "Incorrect dividend index");
-        require(now >= dividends[_dividendIndex].expiry, "Invalid dividend expiry.");
-        require(!dividends[_dividendIndex].reclaimed, "Dividend has already been claimed");
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        require(now >= dividends[_dividendIndex].expiry, "Dividend expiry in future");
+        require(!dividends[_dividendIndex].reclaimed, "already claimed");
         dividends[_dividendIndex].reclaimed = true;
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
         address owner = IOwnable(securityToken).owner();
-        require(IERC20(dividendTokens[_dividendIndex]).transfer(owner, remainingAmount), "Unable to transfer tokens");
+        require(IERC20(dividendTokens[_dividendIndex]).transfer(owner, remainingAmount), "transfer failed");
         emit ERC20DividendReclaimed(owner, _dividendIndex, dividendTokens[_dividendIndex], remainingAmount);
     }
 
@@ -196,12 +201,12 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _dividendIndex Dividend to withdraw from
      */
     function withdrawWithholding(uint256 _dividendIndex) external withPerm(MANAGE) {
-        require(_dividendIndex < dividends.length, "Incorrect dividend index");
+        require(_dividendIndex < dividends.length, "Invalid dividend");
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingWithheld = dividend.dividendWithheld.sub(dividend.dividendWithheldReclaimed);
         dividend.dividendWithheldReclaimed = dividend.dividendWithheld;
         address owner = IOwnable(securityToken).owner();
-        require(IERC20(dividendTokens[_dividendIndex]).transfer(owner, remainingWithheld), "Unable to transfer tokens");
+        require(IERC20(dividendTokens[_dividendIndex]).transfer(owner, remainingWithheld), "transfer failed");
         emit ERC20DividendWithholdingWithdrawn(owner, _dividendIndex, dividendTokens[_dividendIndex], remainingWithheld);
     }
 

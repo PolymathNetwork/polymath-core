@@ -1,3 +1,10 @@
+/**
+ * DISCLAIMER: Under certain conditions, the limit could be bypassed if a large token holder 
+ * redeems a huge portion of their tokens. It will cause the total supply to drop 
+ * which can result in some other token holders having a percentage of tokens 
+ * higher than the intended limit.
+ */
+
 pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";
@@ -85,7 +92,7 @@ contract PercentageTransferManager is ITransferManager {
     * @notice sets the maximum percentage that an individual token holder can hold
     * @param _maxHolderPercentage is the new maximum percentage (multiplied by 10**16)
     */
-    function changeHolderPercentage(uint256 _maxHolderPercentage) public onlyOwner {
+    function changeHolderPercentage(uint256 _maxHolderPercentage) public withPerm(ADMIN) {
         emit ModifyHolderPercentage(maxHolderPercentage, _maxHolderPercentage);
         maxHolderPercentage = _maxHolderPercentage;
     }

@@ -12,9 +12,10 @@ import "../libraries/VersionUtils.sol";
 contract ModuleFactory is IModuleFactory, Ownable {
 
     IERC20 public polyToken;
-    uint256 public setupCost;
     uint256 public usageCost;
     uint256 public monthlySubscriptionCost;
+
+    uint256 public setupCost;
     string public description;
     string public version;
     bytes32 public name;
@@ -139,6 +140,20 @@ contract ModuleFactory is IModuleFactory, Ownable {
      */
     function getUpperSTVersionBounds() external view returns(uint8[]) {
         return VersionUtils.unpack(compatibleSTVersionRange["upperBound"]);
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCost() external view returns (uint256) {
+        return setupCost;
+    }
+
+   /**
+    * @notice Get the name of the Module
+    */
+    function getName() public view returns(bytes32) {
+        return name;
     }
 
 }

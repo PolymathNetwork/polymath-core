@@ -381,7 +381,7 @@ contract('GeneralPermissionManager', accounts => {
         })
 
         it("Should return all modules and all permission", async() => {
-            let tx = await I_GeneralPermissionManager.getAllModulesAndPermsFromTypes.call(account_delegate3, [2,1], I_SecurityToken.address);
+            let tx = await I_GeneralPermissionManager.getAllModulesAndPermsFromTypes.call(account_delegate3, [2,1]);
             assert.equal(tx[0][0], I_GeneralTransferManager.address);
             assert.equal(tx[1][0], "0x57484954454c4953540000000000000000000000000000000000000000000000");
             assert.equal(tx[0][1], I_GeneralPermissionManager.address);
@@ -392,20 +392,20 @@ contract('GeneralPermissionManager', accounts => {
 
     describe("General Permission Manager Factory test cases", async () => {
         it("should get the exact details of the factory", async () => {
-            assert.equal(await I_GeneralPermissionManagerFactory.setupCost.call(), 0);
+            assert.equal(await I_GeneralPermissionManagerFactory.getSetupCost.call(), 0);
             assert.equal((await I_GeneralPermissionManagerFactory.getTypes.call())[0], 1);
-            assert.equal(await I_GeneralPermissionManagerFactory.getVersion.call(), "1.0.0");
+            assert.equal(await I_GeneralPermissionManagerFactory.version.call(), "1.0.0");
             assert.equal(
                 web3.utils.toAscii(await I_GeneralPermissionManagerFactory.getName.call()).replace(/\u0000/g, ""),
                 "GeneralPermissionManager",
                 "Wrong Module added"
             );
             assert.equal(
-                await I_GeneralPermissionManagerFactory.getDescription.call(),
+                await I_GeneralPermissionManagerFactory.description.call(),
                 "Manage permissions within the Security Token and attached modules",
                 "Wrong Module added"
             );
-            assert.equal(await I_GeneralPermissionManagerFactory.getTitle.call(), "General Permission Manager", "Wrong Module added");
+            assert.equal(await I_GeneralPermissionManagerFactory.title.call(), "General Permission Manager", "Wrong Module added");
             assert.equal(
                 await I_GeneralPermissionManagerFactory.getInstructions.call(),
                 "Add and remove permissions for the SecurityToken and associated modules. Permission types should be encoded as bytes32 values, and attached using the withPerm modifier to relevant functions.No initFunction required.",
@@ -419,7 +419,7 @@ contract('GeneralPermissionManager', accounts => {
         });
 
         it("Should ge the version of the factory", async() => {
-            let version = await I_GeneralPermissionManagerFactory.getVersion.call();
+            let version = await I_GeneralPermissionManagerFactory.version.call();
             assert.equal(version, "1.0.0");
         })
     });

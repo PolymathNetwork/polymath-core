@@ -392,7 +392,7 @@ contract('GeneralPermissionManager', accounts => {
 
     describe("General Permission Manager Factory test cases", async () => {
         it("should get the exact details of the factory", async () => {
-            assert.equal(await I_GeneralPermissionManagerFactory.setupCost.call(), 0);
+            assert.equal(await I_GeneralPermissionManagerFactory.getSetupCost.call(), 0);
             assert.equal((await I_GeneralPermissionManagerFactory.getTypes.call())[0], 1);
             assert.equal(await I_GeneralPermissionManagerFactory.getVersion.call(), "1.0.0");
             assert.equal(

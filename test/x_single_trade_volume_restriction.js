@@ -700,7 +700,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
   describe("SingleTradeVolumeRestrictionManager Factory test cases", async () => {
 
     it("Should get the exact details of the factory", async () => {
-      assert.equal(await I_SingleTradeVolumeRestrictionManagerFactory.setupCost.call(), 0);
+      assert.equal(await I_SingleTradeVolumeRestrictionManagerFactory.getSetupCost.call(), 0);
       assert.equal((await I_SingleTradeVolumeRestrictionManagerFactory.getTypes.call())[0], 2);
       let name = web3.utils.toUtf8(await I_SingleTradeVolumeRestrictionManagerFactory.getName.call());
       assert.equal(name, "SingleTradeVolumeRestrictionTM", "Wrong Module added");

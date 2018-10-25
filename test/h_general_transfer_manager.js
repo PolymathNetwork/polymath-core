@@ -761,7 +761,7 @@ contract("GeneralTransferManager", accounts => {
 
     describe("General Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
-            assert.equal(await I_GeneralTransferManagerFactory.setupCost.call(), 0);
+            assert.equal(await I_GeneralTransferManagerFactory.getSetupCost.call(), 0);
             assert.equal((await I_GeneralTransferManagerFactory.getTypes.call())[0], 2);
             assert.equal(
                 web3.utils.toAscii(await I_GeneralTransferManagerFactory.getName.call()).replace(/\u0000/g, ""),
@@ -790,7 +790,7 @@ contract("GeneralTransferManager", accounts => {
 
     describe("Dummy STO Factory test cases", async () => {
         it("should get the exact details of the factory", async () => {
-            assert.equal(await I_DummySTOFactory.setupCost.call(), 0);
+            assert.equal(await I_DummySTOFactory.getSetupCost.call(), 0);
             assert.equal((await I_DummySTOFactory.getTypes.call())[0], 3);
             assert.equal(
                 web3.utils.toAscii(await I_DummySTOFactory.getName.call()).replace(/\u0000/g, ""),

@@ -850,7 +850,7 @@ contract("CappedSTO", accounts => {
 
         describe("Test cases for the CappedSTOFactory", async () => {
             it("should get the exact details of the factory", async () => {
-                assert.equal((await I_CappedSTOFactory.setupCost.call()).toNumber(), cappedSTOSetupCost);
+                assert.equal((await I_CappedSTOFactory.getSetupCost.call()).toNumber(), cappedSTOSetupCost);
                 assert.equal((await I_CappedSTOFactory.getTypes.call())[0], 3);
                 assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()), "CappedSTO", "Wrong Module added");
                 assert.equal(

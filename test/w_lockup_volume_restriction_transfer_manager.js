@@ -781,7 +781,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
     describe("VolumeRestriction Transfer Manager Factory test cases", async() => {
 
         it("Should get the exact details of the factory", async() => {
-            assert.equal(await I_VolumeRestrictionTransferManagerFactory.setupCost.call(),0);
+            assert.equal(await I_VolumeRestrictionTransferManagerFactory.getSetupCost.call(),0);
             assert.equal((await I_VolumeRestrictionTransferManagerFactory.getTypes.call())[0],2);
             assert.equal(web3.utils.toAscii(await I_VolumeRestrictionTransferManagerFactory.getName.call())
                         .replace(/\u0000/g, ''),

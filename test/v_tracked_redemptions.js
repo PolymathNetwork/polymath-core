@@ -265,7 +265,7 @@ contract("TrackedRedemption", accounts => {
 
         describe("Test cases for the TrackedRedemptionFactory", async () => {
             it("should get the exact details of the factory", async () => {
-                assert.equal((await I_TrackedRedemptionFactory.setupCost.call()).toNumber(), 0);
+                assert.equal((await I_TrackedRedemptionFactory.getSetupCost.call()).toNumber(), 0);
                 assert.equal((await I_TrackedRedemptionFactory.getTypes.call())[0], 5);
                 assert.equal(await I_TrackedRedemptionFactory.getVersion.call(), "1.0.0");
                 assert.equal(

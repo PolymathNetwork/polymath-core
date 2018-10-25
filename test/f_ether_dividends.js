@@ -952,7 +952,7 @@ contract("EtherDividendCheckpoint", accounts => {
 
         describe("Test cases for the EtherDividendCheckpointFactory", async () => {
             it("should get the exact details of the factory", async () => {
-                assert.equal((await I_EtherDividendCheckpointFactory.setupCost.call()).toNumber(), 0);
+                assert.equal((await I_EtherDividendCheckpointFactory.getSetupCost.call()).toNumber(), 0);
                 assert.equal((await I_EtherDividendCheckpointFactory.getTypes.call())[0], 4);
                 assert.equal(await I_EtherDividendCheckpointFactory.getVersion.call(), "1.0.0");
                 assert.equal(

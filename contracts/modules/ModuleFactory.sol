@@ -12,13 +12,14 @@ import "../libraries/VersionUtils.sol";
 contract ModuleFactory is IModuleFactory, Ownable {
 
     IERC20 public polyToken;
-    uint256 public setupCost;
     uint256 public usageCost;
     uint256 public monthlySubscriptionCost;
-    string public description;
-    string public version;
-    bytes32 public name;
-    string public title;
+
+    uint256 internal setupCost;
+    string internal description;
+    string internal version;
+    bytes32 internal name;
+    string internal title;
 
     // @notice Allow only two variables to be stored
     // 1. lowerBound 

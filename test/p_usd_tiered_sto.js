@@ -4303,7 +4303,7 @@ contract("USDTieredSTO", accounts => {
 
     describe("Test cases for the USDTieredSTOFactory", async () => {
         it("should get the exact details of the factory", async () => {
-            assert.equal((await I_USDTieredSTOFactory.setupCost.call()).toNumber(), STOSetupCost);
+            assert.equal((await I_USDTieredSTOFactory.getSetupCost.call()).toNumber(), STOSetupCost);
             assert.equal((await I_USDTieredSTOFactory.getTypes.call())[0], 3);
             assert.equal(web3.utils.hexToString(await I_USDTieredSTOFactory.getName.call()), "USDTieredSTO", "Wrong Module added");
             assert.equal(await I_USDTieredSTOFactory.getDescription.call(), "USD Tiered STO", "Wrong Module added");

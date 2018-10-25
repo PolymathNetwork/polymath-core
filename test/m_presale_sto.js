@@ -413,7 +413,7 @@ contract("PreSaleSTO", accounts => {
 
     describe("Test cases for the PresaleSTOFactory", async () => {
         it("should get the exact details of the factory", async () => {
-            assert.equal(await I_PreSaleSTOFactory.setupCost.call(), 0);
+            assert.equal(await I_PreSaleSTOFactory.getSetupCost.call(), 0);
             assert.equal((await I_PreSaleSTOFactory.getTypes.call())[0], 3);
             assert.equal(
                 web3.utils.toAscii(await I_PreSaleSTOFactory.getName.call()).replace(/\u0000/g, ""),

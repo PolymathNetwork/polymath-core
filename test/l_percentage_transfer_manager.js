@@ -372,7 +372,7 @@ contract("PercentageTransferManager", accounts => {
 
     describe("Percentage Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
-            assert.equal(await I_PercentageTransferManagerFactory.setupCost.call(), 0);
+            assert.equal(await I_PercentageTransferManagerFactory.getSetupCost.call(), 0);
             assert.equal((await I_PercentageTransferManagerFactory.getTypes.call())[0], 2);
             assert.equal(
                 web3.utils.toAscii(await I_PercentageTransferManagerFactory.getName.call()).replace(/\u0000/g, ""),

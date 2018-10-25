@@ -1103,7 +1103,7 @@ contract("ERC20DividendCheckpoint", accounts => {
 
         describe("Test cases for the ERC20DividendCheckpointFactory", async () => {
             it("should get the exact details of the factory", async () => {
-                assert.equal((await I_ERC20DividendCheckpointFactory.setupCost.call()).toNumber(), 0);
+                assert.equal((await I_ERC20DividendCheckpointFactory.getSetupCost.call()).toNumber(), 0);
                 assert.equal((await I_ERC20DividendCheckpointFactory.getTypes.call())[0], 4);
                 assert.equal(await I_ERC20DividendCheckpointFactory.getVersion.call(), "1.0.0");
                 assert.equal(

@@ -175,7 +175,7 @@ contract PolyToken is IERC20 {
     }
 
     /**
-    * @dev Decreases the amount of tokens that an owner has allowed aspender to spend
+    * @dev Decreases the amount of tokens that an owner has allowed a spender to spend
     *
     * approve should be called when allowed[_spender] == 0. To decrement
     * allowed value, it is better to use this function to avoid 2 calls (and wait until

@@ -117,7 +117,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         require(_expiry > _maturity, "Invalid expiry or/and maturity");
         require(_expiry > now, "Invalid expiry");
         require(_amount > 0, "No dividend sent");
-        require(_token != address(0), "0x is not a valid token");
+        require(_token != address(0), "Invalid token");
         require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "Invalid checkpoint");
         require(IERC20(_token).transferFrom(msg.sender, address(this), _amount), "Unable to transfer tokens for dividend");
         require(_name[0] != 0);

@@ -761,7 +761,7 @@ contract("GeneralTransferManager", accounts => {
 
     describe("General Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
-            assert.equal(await I_GeneralTransferManagerFactory.setupCost.call(), 0);
+            assert.equal(await I_GeneralTransferManagerFactory.getSetupCost.call(), 0);
             assert.equal((await I_GeneralTransferManagerFactory.getTypes.call())[0], 2);
             assert.equal(
                 web3.utils.toAscii(await I_GeneralTransferManagerFactory.getName.call()).replace(/\u0000/g, ""),
@@ -769,17 +769,17 @@ contract("GeneralTransferManager", accounts => {
                 "Wrong Module added"
             );
             assert.equal(
-                await I_GeneralTransferManagerFactory.getDescription.call(),
+                await I_GeneralTransferManagerFactory.description.call(),
                 "Manage transfers using a time based whitelist",
                 "Wrong Module added"
             );
-            assert.equal(await I_GeneralTransferManagerFactory.getTitle.call(), "General Transfer Manager", "Wrong Module added");
+            assert.equal(await I_GeneralTransferManagerFactory.title.call(), "General Transfer Manager", "Wrong Module added");
             assert.equal(
                 await I_GeneralTransferManagerFactory.getInstructions.call(),
                 "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist, and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.",
                 "Wrong Module added"
             );
-            assert.equal(await I_GeneralPermissionManagerFactory.getVersion.call(), "1.0.0");
+            assert.equal(await I_GeneralPermissionManagerFactory.version.call(), "1.0.0");
         });
 
         it("Should get the tags of the factory", async () => {
@@ -790,15 +790,15 @@ contract("GeneralTransferManager", accounts => {
 
     describe("Dummy STO Factory test cases", async () => {
         it("should get the exact details of the factory", async () => {
-            assert.equal(await I_DummySTOFactory.setupCost.call(), 0);
+            assert.equal(await I_DummySTOFactory.getSetupCost.call(), 0);
             assert.equal((await I_DummySTOFactory.getTypes.call())[0], 3);
             assert.equal(
                 web3.utils.toAscii(await I_DummySTOFactory.getName.call()).replace(/\u0000/g, ""),
                 "DummySTO",
                 "Wrong Module added"
             );
-            assert.equal(await I_DummySTOFactory.getDescription.call(), "Dummy STO", "Wrong Module added");
-            assert.equal(await I_DummySTOFactory.getTitle.call(), "Dummy STO", "Wrong Module added");
+            assert.equal(await I_DummySTOFactory.description.call(), "Dummy STO", "Wrong Module added");
+            assert.equal(await I_DummySTOFactory.title.call(), "Dummy STO", "Wrong Module added");
             assert.equal(await I_DummySTOFactory.getInstructions.call(), "Dummy STO - you can mint tokens at will", "Wrong Module added");
         });
 
@@ -808,7 +808,7 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should get the version of factory", async() => {
-            let version = await I_DummySTOFactory.getVersion.call();
+            let version = await I_DummySTOFactory.version.call();
             assert.equal(version, "1.0.0");
         });
     });

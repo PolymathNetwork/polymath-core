@@ -58,19 +58,19 @@ interface IModuleFactory {
 
     /**
      * @notice Used to change the setup fee
-     * @param _newSetupCost New setup cost
+     * @param _newSetupCost New setup fee
      */
     function changeFactorySetupFee(uint256 _newSetupCost) external;
 
     /**
      * @notice Used to change the usage fee
-     * @param _newUsageCost New usage cost
+     * @param _newUsageCost New usage fee
      */
     function changeFactoryUsageFee(uint256 _newUsageCost) external;
 
     /**
      * @notice Used to change the subscription fee
-     * @param _newSubscriptionCost New subscription cost
+     * @param _newSubscriptionCost New subscription fee
      */
     function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) external;
 

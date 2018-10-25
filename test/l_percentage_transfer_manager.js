@@ -22,6 +22,7 @@ contract("PercentageTransferManager", accounts => {
     let account_investor2;
     let account_investor3;
     let account_investor4;
+    let account_delegate;
 
     // investor Details
     let fromTime = latestTime();
@@ -57,6 +58,7 @@ contract("PercentageTransferManager", accounts => {
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
     const contact = "team@polymath.network";
+    const delegateDetails = "Hello I am legit delegate";
 
     // Module key
     const delegateManagerKey = 1;
@@ -92,6 +94,7 @@ contract("PercentageTransferManager", accounts => {
         account_investor1 = accounts[7];
         account_investor2 = accounts[8];
         account_investor3 = accounts[9];
+        account_delegate = accounts[6];
 
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
@@ -166,6 +169,18 @@ contract("PercentageTransferManager", accounts => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
             I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
+
+        it("Should successfully attach the General permission manager factory with the security token", async () => {
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
+            assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
+                "GeneralPermissionManager",
+                "GeneralPermissionManagerFactory module was not added"
+            );
+            I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
+        });
+
     });
 
     describe("Buy tokens using on-chain whitelist", async () => {
@@ -333,10 +348,32 @@ contract("PercentageTransferManager", accounts => {
            )
         });
 
+        it("Should not be able to modify holder percentage to 100 - Unauthorized msg.sender", async () => {
+            await catchRevert(
+                I_PercentageTransferManager.changeHolderPercentage(100 * 10 ** 16, { from: account_delegate })
+            )
+        });
+
+        it("Should successfully add the delegate", async() => {
+            let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner});
+            assert.equal(tx.logs[0].args._delegate, account_delegate);
+        });
+
+        it("Should provide the permission", async() => {
+            let tx = await I_GeneralPermissionManager.changePermission(
+                account_delegate,
+                I_PercentageTransferManager.address,
+                "ADMIN",
+                true,
+                {from: token_owner}
+            );
+            assert.equal(tx.logs[0].args._delegate, account_delegate);
+        });
+
         it("Modify holder percentage to 100", async () => {
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_PercentageTransferManager.changeHolderPercentage(100 * 10 ** 16, { from: token_owner });
+            await I_PercentageTransferManager.changeHolderPercentage(100 * 10 ** 16, { from: account_delegate });
 
             assert.equal((await I_PercentageTransferManager.maxHolderPercentage()).toNumber(), 100 * 10 ** 16);
         });

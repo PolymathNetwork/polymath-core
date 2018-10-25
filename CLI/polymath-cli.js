@@ -17,26 +17,21 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 
 program
-  .version('0.0.1')
-  .description('CLI for Polymath-core')
+  .version('1.0.1')
+  .description('Command Line Interface for Polymath-core')
   .option('-r, --remote-node <network>', 'Use Infura to connect to a remote node on selected network');
 
 program
   .command('st20generator')
   .alias('st')
-  .option('-c, --config <file>', "Uses configuration file to configure ST and STO")
+  .option('-t, --ticker <ticker>', 'Unique token ticker')
+  .option('-o, --transferOwnership <newOwner>', `Transfers the ticker's ownership to newOwner account. If newOwner is 'false', this step is skipped`)
+  .option('-n, --tokenName <tokenName>', 'Token name')
+  .option('-d, --details <details>', 'Off-chain details of the token')
+  .option('-D, --divisible [div]', 'If token is divisible or not [true]', /^(true|false)/, 'true')
   .description('Wizard-like script that will guide technical users in the creation and deployment of an ST-20 token')
   .action(async function(cmd) {
-    let tokenConfig;
-    let mintingConfig;
-    let stoCofig;
-    if (cmd.config) {
-      let config = yaml.safeLoad(fs.readFileSync(`${__dirname}/data/${cmd.config}`, 'utf8'));
-      tokenConfig = config.securityToken;
-      mintingConfig = config.initialMint;
-      stoCofig = config.sto;
-    }
-    await st20generator.executeApp(tokenConfig, mintingConfig, stoCofig, program.remoteNode);
+    await st20generator.executeApp(cmd.ticker, cmd.transferOwnership, cmd.tokenName, cmd.details, cmd.divisible, program.remoteNode);
   });
 
 program

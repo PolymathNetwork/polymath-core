@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./MockRedemptionManager.sol";
-import "../modules/Burn/TrackedRedemptionFactory.sol";
+import "../modules/Experimental/Burn/TrackedRedemptionFactory.sol";
 
 /**
  * @title Mock Contract Not fit for production environment

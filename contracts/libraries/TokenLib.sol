@@ -1,11 +1,11 @@
 pragma solidity ^0.4.24;
 
 import "../modules/PermissionManager/IPermissionManager.sol";
-import "./KindMath.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 library TokenLib {
 
-    using KindMath for uint256;
+    using SafeMath for uint256;
 
     // Struct for module data
     struct ModuleData {

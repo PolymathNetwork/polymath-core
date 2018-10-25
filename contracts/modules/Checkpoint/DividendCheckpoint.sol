@@ -1,4 +1,12 @@
-pragma solidity ^0.4.24;
+/**
+ * DISCLAIMER: Under certain conditions, the function pushDividendPayment
+ * may fail due to block gas limits.
+ * If the total number of investors that ever held tokens is greater than ~15,000 then
+ * the function may fail. If this happens investors can pull their dividends, or the Issuer
+ * can use pushDividendPaymentToAddresses to provide an explict address list in batches
+ */
+
+ pragma solidity ^0.4.24;
 
 import "./ICheckpoint.sol";
 import "../Module.sol";
@@ -67,7 +75,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     }
 
     /**
-     * @notice Returns the default excluded addresses
+     * @notice Return the default excluded addresses
      * @return List of excluded addresses
      */
     function getDefaultExcluded() external view returns (address[]) {
@@ -83,8 +91,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
     }
 
     /**
-     * @notice Function to clear and set a list of excluded addresses used for future dividends
-     * @param _excluded Addresses of investor
+     * @notice Function to clear and set list of excluded addresses used for future dividends
+     * @param _excluded addresses of investor
      */
     function setDefaultExcluded(address[] _excluded) public withPerm(MANAGE) {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many excluded addresses");
@@ -100,8 +108,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     /**
      * @notice Function to set withholding tax rates for investors
-     * @param _investors Addresses of investor
-     * @param _withholding Withholding tax for individual investors (multiplied by 10**16)
+     * @param _investors addresses of investor
+     * @param _withholding withholding tax for individual investors (multiplied by 10**16)
      */
     function setWithholding(address[] _investors, uint256[] _withholding) public withPerm(MANAGE) {
         require(_investors.length == _withholding.length, "Mismatched input lengths");
@@ -114,8 +122,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     /**
      * @notice Function to set withholding tax rates for investors
-     * @param _investors Addresses of investor
-     * @param _withholding Withholding tax for all investors (multiplied by 10**16)
+     * @param _investors addresses of investor
+     * @param _withholding withholding tax for all investors (multiplied by 10**16)
      */
     function setWithholdingFixed(address[] _investors, uint256 _withholding) public withPerm(MANAGE) {
         require(_withholding <= 10**18, "Incorrect withholding tax");
@@ -128,7 +136,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     /**
      * @notice Issuer can push dividends to provided addresses
      * @param _dividendIndex Dividend to push
-     * @param _payees Addresses to push the dividend to
+     * @param _payees Addresses to which to push the dividend
      */
     function pushDividendPaymentToAddresses(uint256 _dividendIndex, address[] _payees) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
         Dividend storage dividend = dividends[_dividendIndex];
@@ -171,20 +179,20 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     /**
      * @notice Internal function for paying dividends
-     * @param _payee Address of investor
-     * @param _dividend Storage with previously issued dividends
+     * @param _payee address of investor
+     * @param _dividend storage with previously issued dividends
      * @param _dividendIndex Dividend to pay
      */
     function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal;
 
     /**
-     * @notice Issuer can reclaim remaining unclaimed dividend amounts for expired dividends
+     * @notice Issuer can reclaim remaining unclaimed dividend amounts, for expired dividends
      * @param _dividendIndex Dividend to reclaim
      */
     function reclaimDividend(uint256 _dividendIndex) external;
 
     /**
-     * @notice Calculate the amount of dividends that is claimable
+     * @notice Calculate amount of dividends claimable
      * @param _dividendIndex Dividend to calculate
      * @param _payee Affected investor address
      * @return claim, withheld amounts

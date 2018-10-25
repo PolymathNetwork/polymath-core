@@ -80,7 +80,7 @@ contract PolyTokenFaucet {
     }
 
     /**
-     * @notice Used for `msg.sender` to approve `_spender` to spend `_value` tokens
+     * @notice Used by `msg.sender` to approve `_spender` to spend `_value` tokens
      * @param _spender The address of the account able to transfer the tokens
      * @param _value The amount of tokens to be approved for transfer
      * @return Whether the approval was successful or not

@@ -348,7 +348,7 @@ contract("PercentageTransferManager", accounts => {
            )
         });
 
-        it("Should not be able to modify holder percentage to 100", async () => {
+        it("Should not be able to modify holder percentage to 100 - Unauthorized msg.sender", async () => {
             await catchRevert(
                 I_PercentageTransferManager.changeHolderPercentage(100 * 10 ** 16, { from: account_delegate })
             )

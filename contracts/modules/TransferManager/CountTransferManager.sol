@@ -29,8 +29,14 @@ contract CountTransferManager is ITransferManager {
      * @param _to Address of the receiver
      */
     function verifyTransfer(
-        address /* _from */, address _to, uint256 /* _amount */, bytes /* _data */, bool /* _isTransfer */)
-        public returns(Result)
+        address /* _from */,
+        address _to,
+        uint256 /* _amount */,
+        bytes /* _data */,
+        bool /* _isTransfer */
+    )
+        public
+        returns(Result)
     {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {

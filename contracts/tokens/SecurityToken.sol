@@ -120,7 +120,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     // Events to log controller actions
     event SetController(address indexed _oldController, address indexed _newController);
     event ForceTransfer(
-        address indexed _controller, address indexed _from, address indexed _to, uint256 _value, bool _verifyTransfer, bytes _data
+        address indexed _controller,
+        address indexed _from,
+        address indexed _to,
+        uint256 _value,
+        bool _verifyTransfer,
+        bytes _data
     );
     event ForceBurn(address indexed _controller, address indexed _from, uint256 _value, bool _verifyTransfer, bytes _data);
     event DisableController(uint256 _timestamp);

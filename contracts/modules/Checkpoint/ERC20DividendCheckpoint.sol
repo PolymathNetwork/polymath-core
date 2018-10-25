@@ -53,8 +53,15 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _name name/title for identification
      */
     function createDividendWithCheckpoint(
-        uint256 _maturity, uint256 _expiry, address _token, uint256 _amount,
-        uint256 _checkpointId, bytes32 _name) external withPerm(MANAGE)
+        uint256 _maturity,
+        uint256 _expiry,
+        address _token,
+        uint256 _amount,
+        uint256 _checkpointId,
+        bytes32 _name
+    )
+        external
+        withPerm(MANAGE)
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, _checkpointId, excluded, _name);
     }
@@ -69,8 +76,15 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _name name/title for identification
      */
     function createDividendWithExclusions(
-        uint256 _maturity, uint256 _expiry, address _token, uint256 _amount,
-        address[] _excluded, bytes32 _name) public withPerm(MANAGE)
+        uint256 _maturity,
+        uint256 _expiry,
+        address _token,
+        uint256 _amount,
+        address[] _excluded,
+        bytes32 _name
+    )
+        public
+        withPerm(MANAGE)
     {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, checkpointId, _excluded, _name);
@@ -168,8 +182,16 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * Seperated into a different function as a workaround for stack too deep error
      */
     function _emitERC20DividendDepositedEvent(
-        uint256 _checkpointId, uint256 _maturity, uint256 _expiry, address _token, uint256 _amount,
-        uint256 currentSupply, uint256 dividendIndex, bytes32 _name) internal
+        uint256 _checkpointId,
+        uint256 _maturity,
+        uint256 _expiry,
+        address _token,
+        uint256 _amount,
+        uint256 currentSupply,
+        uint256 dividendIndex,
+        bytes32 _name
+    )
+        internal
     {
         /*solium-disable-next-line security/no-block-members*/
         emit ERC20DividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);

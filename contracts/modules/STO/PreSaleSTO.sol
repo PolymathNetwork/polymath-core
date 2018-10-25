@@ -73,7 +73,13 @@ contract PreSaleSTO is ISTO {
      * @param _polyContributed How much POLY was contributed
      */
     function allocateTokens(
-        address _investor, uint256 _amount, uint256 _etherContributed, uint256 _polyContributed) public withPerm(PRE_SALE_ADMIN)
+        address _investor,
+        uint256 _amount,
+        uint256 _etherContributed,
+        uint256 _polyContributed
+    )
+        public
+        withPerm(PRE_SALE_ADMIN)
     {
         /*solium-disable-next-line security/no-block-members*/
         require(now <= endTime, "Current time should less than the endTime");
@@ -97,7 +103,13 @@ contract PreSaleSTO is ISTO {
      * @param _polyContributed Array of amount of POLY contributed by each investor
      */
     function allocateTokensMulti(
-        address[] _investors, uint256[] _amounts, uint256[] _etherContributed, uint256[] _polyContributed) public withPerm(PRE_SALE_ADMIN)
+        address[] _investors,
+        uint256[] _amounts,
+        uint256[] _etherContributed,
+        uint256[] _polyContributed
+    )
+        public
+        withPerm(PRE_SALE_ADMIN)
     {
         require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
         require(_etherContributed.length == _polyContributed.length, "Mis-match in the length of the arrays");

@@ -92,16 +92,29 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     event SetNonAccreditedLimit(address _investor, uint256 _limit);
     event SetAccredited(address _investor, bool _accredited);
     event TokenPurchase(
-        address indexed _purchaser, address indexed _beneficiary,
-        uint256 _tokens, uint256 _usdAmount, uint256 _tierPrice, uint8 _tier
+        address indexed _purchaser,
+        address indexed _beneficiary,
+        uint256 _tokens,
+        uint256 _usdAmount,
+        uint256 _tierPrice,
+        uint8 _tier
     );
     event FundsReceived(
-        address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount, FundRaiseType _fundRaiseType,
-        uint256 _receivedValue, uint256 _spentValue, uint256 _rate
+        address indexed _purchaser,
+        address indexed _beneficiary,
+        uint256 _usdAmount,
+        FundRaiseType _fundRaiseType,
+        uint256 _receivedValue,
+        uint256 _spentValue,
+        uint256 _rate
     );
     event FundsReceivedPOLY(
-        address indexed _purchaser, address indexed _beneficiary, uint256 _usdAmount,
-        uint256 _receivedValue, uint256 _spentValue, uint256 _rate
+        address indexed _purchaser,
+        address indexed _beneficiary,
+        uint256 _usdAmount,
+        uint256 _receivedValue,
+        uint256 _spentValue,
+        uint256 _rate
     );
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _latestTier);
 
@@ -403,8 +416,15 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _fundRaiseType Fund raise type (POLY, ETH, DAI)
       */
     function _buyTokens(
-        address _beneficiary, uint256 _investmentValue, uint256 _rate, FundRaiseType _fundRaiseType)
-        internal nonReentrant whenNotPaused returns(uint256, uint256)
+        address _beneficiary,
+        uint256 _investmentValue,
+        uint256 _rate,
+        FundRaiseType _fundRaiseType
+    )
+        internal
+        nonReentrant
+        whenNotPaused
+        returns(uint256, uint256)
     {
         if (!allowBeneficialInvestments) {
             require(_beneficiary == msg.sender, "Beneficiary must match funder");
@@ -490,8 +510,14 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     function _purchaseTier(
-        address _beneficiary, uint256 _tierPrice, uint256 _tierRemaining, uint256 _investedUSD, uint8 _tier)
-        internal returns(uint256, uint256)
+        address _beneficiary,
+        uint256 _tierPrice,
+        uint256 _tierRemaining,
+        uint256 _investedUSD,
+        uint8 _tier
+    )
+        internal
+        returns(uint256, uint256)
     {
         uint256 maximumTokens = DecimalMath.div(_investedUSD, _tierPrice);
         uint256 spentUSD;

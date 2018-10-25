@@ -165,8 +165,15 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _owner is the owner of the STR
      */
     function initialize(
-        address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner)
-        external payable
+        address _polymathRegistry,
+        address _STFactory,
+        uint256 _stLaunchFee,
+        uint256 _tickerRegFee,
+        address _polyToken,
+        address _owner
+    )
+        external
+        payable
     {
         require(!getBool(INITIALIZE),"already initialized");
         require(
@@ -553,8 +560,15 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _deployedAt is the timestamp at which the security token is deployed
      */
     function modifySecurityToken(
-        string _name, string _ticker, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt)
-        external onlyOwner
+        string _name,
+        string _ticker,
+        address _owner,
+        address _securityToken,
+        string _tokenDetails,
+        uint256 _deployedAt
+    )
+        external
+        onlyOwner
     {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "String length > 0");
         require(bytes(_ticker).length <= 10, "Ticker length range (0,10]");
@@ -657,7 +671,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
         uint256 fee = getUint(TICKERREGFEE);
-        require(fee != _tickerRegFee, "Fee isn't equal to the registration fee");
+        require(fee != _tickerRegFee, "Fee not changed");
         emit ChangeTickerRegistrationFee(fee, _tickerRegFee);
         set(TICKERREGFEE, _tickerRegFee);
     }
@@ -668,7 +682,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
         uint256 fee = getUint(STLAUNCHFEE);
-        require(fee != _stLaunchFee, "Fee isn't equal to the launch fee");
+        require(fee != _stLaunchFee, "Fee not changed");
         emit ChangeSecurityLaunchFee(fee, _stLaunchFee);
         set(STLAUNCHFEE, _stLaunchFee);
     }

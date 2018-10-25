@@ -32,7 +32,11 @@ contract ModuleFactory is IModuleFactory, Ownable {
     event ChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
     event ChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
     event GenerateModuleFromFactory(
-        address _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address _creator, uint256 _timestamp
+        address _module,
+        bytes32 indexed _moduleName,
+        address indexed _moduleFactory,
+        address _creator,
+        uint256 _timestamp
     );
     event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
 

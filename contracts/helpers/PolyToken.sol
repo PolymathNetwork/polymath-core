@@ -115,7 +115,7 @@ contract PolyToken is IERC20 {
     */
     function transfer(address _to, uint256 _value) public returns (bool) {
         require(_to != address(0), "Invalid address");
-        require(_value <= balances[msg.sender], "Value is greater than balance");
+        require(_value <= balances[msg.sender], "Insufficient tokens transferable");
 
         // SafeMath.sub will throw if there is not enough balance.
         balances[msg.sender] = balances[msg.sender].sub(_value);
@@ -132,8 +132,8 @@ contract PolyToken is IERC20 {
     */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
         require(_to != address(0), "Invalid address");
-        require(_value <= balances[_from], "Value is greater than balance");
-        require(_value <= allowed[_from][msg.sender], "Value is greater than allowed");
+        require(_value <= balances[_from], "Insufficient tokens transferable");
+        require(_value <= allowed[_from][msg.sender], "Insufficient tokens allowable");
 
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);

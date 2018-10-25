@@ -396,7 +396,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-     * @notice Return the permissions flag that are associated with Percentage transfer Manager
+     * @notice Returns the permissions flag that are associated with Percentage transfer Manager
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);

@@ -87,7 +87,7 @@ contract ManualApprovalTransferManager is ITransferManager {
      */
     function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool _isTransfer) public returns(Result) {
         // function must only be called by the associated security token if _isTransfer == true
-        require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
+        require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
         // manual blocking takes precidence over manual approval
         if (!paused) {
             if (manualBlockings[_from][_to].expiryTime >= now) {
@@ -104,7 +104,7 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     /**
-    * @notice adds a pair of addresses to manual approvals
+    * @notice Adds a pair of addresses to manual approvals
     * @param _from is the address from which transfers are approved
     * @param _to is the address to which transfers are approved
     * @param _allowance is the approved amount of tokens
@@ -120,7 +120,7 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     /**
-    * @notice adds a pair of addresses to manual blockings
+    * @notice Adds a pair of addresses to manual blockings
     * @param _from is the address from which transfers are blocked
     * @param _to is the address to which transfers are blocked
     * @param _expiryTime is the time until which the transfer is blocked
@@ -135,7 +135,7 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     /**
-    * @notice removes a pairs of addresses from manual approvals
+    * @notice Removes a pairs of addresses from manual approvals
     * @param _from is the address from which transfers are approved
     * @param _to is the address to which transfers are approved
     */
@@ -147,7 +147,7 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     /**
-    * @notice removes a pairs of addresses from manual approvals
+    * @notice Removes a pairs of addresses from manual approvals
     * @param _from is the address from which transfers are approved
     * @param _to is the address to which transfers are approved
     */
@@ -159,7 +159,7 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     /**
-     * @notice Return the permissions flag that are associated with ManualApproval transfer manager
+     * @notice Returns the permissions flag that are associated with ManualApproval transfer manager
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);

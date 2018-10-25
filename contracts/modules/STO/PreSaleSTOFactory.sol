@@ -25,7 +25,7 @@ contract PreSaleSTOFactory is ModuleFactory {
     }
 
     /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */

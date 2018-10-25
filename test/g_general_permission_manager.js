@@ -408,7 +408,7 @@ contract('GeneralPermissionManager', accounts => {
             assert.equal(await I_GeneralPermissionManagerFactory.title.call(), "General Permission Manager", "Wrong Module added");
             assert.equal(
                 await I_GeneralPermissionManagerFactory.getInstructions.call(),
-                "Add and remove permissions for the SecurityToken and associated modules. Permission types should be encoded as bytes32 values, and attached using the withPerm modifier to relevant functions.No initFunction required.",
+                "Add and remove permissions for the SecurityToken and associated modules. Permission types should be encoded as bytes32 values and attached using withPerm modifier to relevant functions. No initFunction required.",
                 "Wrong Module added"
             );
         });

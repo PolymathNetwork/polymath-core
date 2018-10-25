@@ -146,7 +146,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @notice default implementation of verifyTransfer used by SecurityToken
+     * @notice Default implementation of verifyTransfer used by SecurityToken
      * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
      * If the transfer request comes from a token holder, it checks that:
      * a) Both are on the whitelist
@@ -182,7 +182,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @notice adds or removes addresses from the whitelist.
+    * @notice Adds or removes addresses from the whitelist.
     * @param _investor is the address to whitelist
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
@@ -196,7 +196,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @notice adds or removes addresses from the whitelist.
+    * @notice Adds or removes addresses from the whitelist.
     * @param _investors List of the addresses to whitelist
     * @param _fromTimes An array of the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTimes An array of the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
@@ -220,7 +220,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @notice adds or removes addresses from the whitelist - can be called by anyone with a valid signature
+    * @notice Adds or removes addresses from the whitelist - can be called by anyone with a valid signature
     * @param _investor is the address to whitelist
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
@@ -258,7 +258,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @notice used to verify the signature
+     * @notice Used to verify the signature
      */
     function _checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
         //Check that the signature is valid

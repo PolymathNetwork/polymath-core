@@ -46,7 +46,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice used to change the fee of the setup cost
+     * @notice Used to change the fee of the setup cost
      * @param _newSetupCost new setup cost
      */
     function changeFactorySetupFee(uint256 _newSetupCost) public onlyOwner {
@@ -55,7 +55,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice used to change the fee of the usage cost
+     * @notice Used to change the fee of the usage cost
      * @param _newUsageCost new usage cost
      */
     function changeFactoryUsageFee(uint256 _newUsageCost) public onlyOwner {
@@ -64,7 +64,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice used to change the fee of the subscription cost
+     * @notice Used to change the fee of the subscription cost
      * @param _newSubscriptionCost new subscription cost
      */
     function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) public onlyOwner {
@@ -74,7 +74,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Update the title of the ModuleFactory
+     * @notice Updates the title of the ModuleFactory
      * @param _newTitle New Title that will replace the old one.
      */
     function changeTitle(string _newTitle) public onlyOwner {
@@ -83,7 +83,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Update the description of the ModuleFactory
+     * @notice Updates the description of the ModuleFactory
      * @param _newDesc New description that will replace the old one.
      */
     function changeDescription(string _newDesc) public onlyOwner {
@@ -92,7 +92,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Update the name of the ModuleFactory
+     * @notice Updates the name of the ModuleFactory
      * @param _newName New name that will replace the old one.
      */
     function changeName(bytes32 _newName) public onlyOwner {
@@ -101,7 +101,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Update the version of the ModuleFactory
+     * @notice Updates the version of the ModuleFactory
      * @param _newVersion New name that will replace the old one.
      */
     function changeVersion(string _newVersion) public onlyOwner {
@@ -127,7 +127,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice use to get the lower bound
+     * @notice Used to get the lower bound
      * @return lower bound
      */
     function getLowerSTVersionBounds() external view returns(uint8[]) {
@@ -135,7 +135,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice use to get the upper bound
+     * @notice Used to get the upper bound
      * @return upper bound
      */
     function getUpperSTVersionBounds() external view returns(uint8[]) {

@@ -968,7 +968,7 @@ contract("EtherDividendCheckpoint", accounts => {
                 assert.equal(await I_EtherDividendCheckpointFactory.title.call(), "Ether Dividend Checkpoint", "Wrong Module added");
                 assert.equal(
                     await I_EtherDividendCheckpointFactory.getInstructions.call(),
-                    "Create a dividend which will be paid out to token holders proportional to their balances at the point the dividend is created",
+                    "Create a dividend which will be paid out to token holders proportionally according to their balances at the point the dividend is created",
                     "Wrong Module added"
                 );
                 let tags = await I_EtherDividendCheckpointFactory.getTags.call();

@@ -9,8 +9,15 @@ import "../../interfaces/IOwnable.sol";
 contract EtherDividendCheckpoint is DividendCheckpoint {
     using SafeMath for uint256;
     event EtherDividendDeposited(
-        address indexed _depositor, uint256 _checkpointId, uint256 _created, uint256 _maturity, uint256 _expiry,
-        uint256 _amount, uint256 _totalSupply, uint256 _dividendIndex, bytes32 indexed _name
+        address indexed _depositor,
+        uint256 _checkpointId,
+        uint256 _created,
+        uint256 _maturity,
+        uint256 _expiry,
+        uint256 _amount,
+        uint256 _totalSupply,
+        uint256 _dividendIndex,
+        bytes32 indexed _name
     );
     event EtherDividendClaimed(address indexed _payee, uint256 _dividendIndex, uint256 _amount, uint256 _withheld);
     event EtherDividendReclaimed(address indexed _claimer, uint256 _dividendIndex, uint256 _claimedAmount);
@@ -45,7 +52,14 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _name name/title for identification
      */
     function createDividendWithCheckpoint(
-        uint256 _maturity, uint256 _expiry, uint256 _checkpointId, bytes32 _name) external payable withPerm(MANAGE)
+        uint256 _maturity,
+        uint256 _expiry,
+        uint256 _checkpointId,
+        bytes32 _name
+    ) 
+        external
+        payable
+        withPerm(MANAGE)
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _checkpointId, excluded, _name);
     }
@@ -58,7 +72,14 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _name name/title for identification
      */
     function createDividendWithExclusions(
-        uint256 _maturity, uint256 _expiry, address[] _excluded, bytes32 _name) public payable withPerm(MANAGE)
+        uint256 _maturity,
+        uint256 _expiry,
+        address[] _excluded,
+        bytes32 _name
+    ) 
+        public
+        payable
+        withPerm(MANAGE)
     {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, checkpointId, _excluded, _name);

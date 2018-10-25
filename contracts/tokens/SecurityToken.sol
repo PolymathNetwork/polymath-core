@@ -127,7 +127,13 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         bool _verifyTransfer,
         bytes _data
     );
-    event ForceBurn(address indexed _controller, address indexed _from, uint256 _value, bool _verifyTransfer, bytes _data);
+    event ForceBurn(
+        address indexed _controller,
+        address indexed _from,
+        uint256 _value,
+        bool _verifyTransfer,
+        bytes _data
+    );
     event DisableController(uint256 _timestamp);
 
     function _isModule(address _module, uint8 _type) internal view returns (bool) {

@@ -348,6 +348,12 @@ contract("PercentageTransferManager", accounts => {
            )
         });
 
+        it("Should not be able to modify holder percentage to 100", async () => {
+            await catchRevert(
+                I_PercentageTransferManager.changeHolderPercentage(100 * 10 ** 16, { from: account_delegate })
+            )
+        });
+
         it("Should successfully add the delegate", async() => {
             let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner});
             assert.equal(tx.logs[0].args._delegate, account_delegate);

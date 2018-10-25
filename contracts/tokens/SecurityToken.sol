@@ -529,11 +529,19 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _data data to indicate validation
      * @return bool success
      */
-    function _updateTransfer(address _from, address _to, uint256 _value, bytes _data) internal returns(bool) {
+    function _updateTransfer(address _from, address _to, uint256 _value, bytes _data) internal nonReentrant returns(bool) {
+        // NB - the ordering in this function implies the following:
+        //  - investor counts are updated before transfer managers are called - i.e. transfer managers will see
+        //investor counts including the current transfer.
+        //  - checkpoints are updated after the transfer managers are called. This allows TMs to create
+        //checkpoints as though they have been created before the current transactions,
+        //  - to avoid the situation where a transfer manager transfers tokens, and this function is called recursively,
+        //the function is marked as nonReentrant. This means that no TM can transfer (or mint / burn) tokens.
         _adjustInvestorCount(_from, _to, _value);
+        bool verified = _verifyTransfer(_from, _to, _value, _data, true);
         _adjustBalanceCheckpoints(_from);
         _adjustBalanceCheckpoints(_to);
-        return _verifyTransfer(_from, _to, _value, _data, true);
+        return verified;
     }
 
     /**
@@ -556,28 +564,23 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint256 _value,
         bytes _data,
         bool _isTransfer
-        ) internal checkGranularity(_value) returns (bool) {
+    ) internal checkGranularity(_value) returns (bool) {
         if (!transfersFrozen) {
-            if (modules[TRANSFER_KEY].length == 0) {
-                return true;
-            }
             bool isInvalid = false;
             bool isValid = false;
             bool isForceValid = false;
             bool unarchived = false;
             address module;
-            for (uint8 i = 0; i < modules[TRANSFER_KEY].length; i++) {
+            for (uint256 i = 0; i < modules[TRANSFER_KEY].length; i++) {
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
                     ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
-                    }
-                    if (valid == ITransferManager.Result.VALID) {
+                    } else if (valid == ITransferManager.Result.VALID) {
                         isValid = true;
-                    }
-                    if (valid == ITransferManager.Result.FORCE_VALID) {
+                    } else if (valid == ITransferManager.Result.FORCE_VALID) {
                         isForceValid = true;
                     }
                 }

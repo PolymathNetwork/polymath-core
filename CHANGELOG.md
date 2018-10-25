@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
+* Removed investors list pruning
+* Added `getInvestorsAt` which returns the investors (non-zero balances) at a particular checkpoint
+* Added `iterateInvestors` to allow an arbitrary callback to iterate over a large list of investors without hitting block gas limits.
 * `ChangeModuleBudget` in SecurityToken now takes in the change in budget rather than absoulte budget. Added boolean paramter to decide increase/decrease.
 * Added `createCheckpoint() withPerm(CHECKPOINT)` to dividend checkpoint modules.
 * Added `deleteDelegate()` to general permission manager. It will disable the delegate but not delete the perms.

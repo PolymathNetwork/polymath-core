@@ -1,4 +1,12 @@
-pragma solidity ^0.4.24;
+/**
+ * DISCLAIMER: Under certain conditions, the function pushDividendPayment
+ * may fail due to block gas limits.
+ * If the total number of investors that ever held tokens is greater than ~15,000 then
+ * the function may fail. If this happens investors can pull their dividends, or the Issuer
+ * can use pushDividendPaymentToAddresses to provide an explict address list in batches
+ */
+
+ pragma solidity ^0.4.24;
 
 import "./ICheckpoint.sol";
 import "../Module.sol";

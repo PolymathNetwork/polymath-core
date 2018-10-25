@@ -25,7 +25,7 @@ library TokenLib {
     }
 
     struct InvestorDataStorage {
-        // List of investors (may not be pruned to remove old investors with current zero balances)
+        // List of investors who have ever held a non-zero token balance
         mapping (address => bool) investorListed;
         // List of token holders
         address[] investors;
@@ -183,26 +183,6 @@ library TokenLib {
             _investorData.investorListed[_to] = true;
         }
 
-    }
-
-    /**
-    * @notice removes addresses with zero balances from the investors list
-    * @param _investorData is the date related to investor metrics
-    * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
-    */
-    function pruneInvestors(InvestorDataStorage storage _investorData) public {
-        for (uint256 i = 0; i < _investorData.investors.length; i++) {
-            if (_investorData.investors[i] == address(0)) {
-                while(_investorData.investors.length > i) {
-                    if (_investorData.investors[_investorData.investors.length - 1] != address(0)) {
-                        _investorData.investors[i] = _investorData.investors[_investorData.investors.length - 1];
-                        _investorData.investors.length--;
-                        break;
-                    }
-                    _investorData.investors.length--;
-                }
-            }
-        }
     }
 
 }

@@ -151,6 +151,13 @@ contract CappedSTO is ISTO, ReentrancyGuard {
 
     /**
      * @notice Return the STO details
+     * @return Unixtimestamp at which offering gets start.
+     * @return Unixtimestamp at which offering ends.
+     * @return Number of tokens this STO will be allowed to sell to investors.
+     * @return Amount of funds raised
+     * @return Number of individual investors this STO have.
+     * @return Amount of tokens get sold. 
+     * @return Boolean value to justify whether the fund raise type is POLY or not, i.e true for POLY.
      */
     function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
         return (

@@ -38,7 +38,6 @@ let securityTokenRegistry;
 let polyToken;
 let usdToken;
 let securityToken;
-let generalTransferManager;
 let currentSTO;
 
 // App flow
@@ -218,11 +217,6 @@ async function step_Wallet_Issuance(){
         multimint = (isAffiliate == "Y" || isAffiliate == "y");
       }
 
-      // Add address to whitelist
-      let generalTransferManagerAddress = (await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call())[0];
-      let generalTransferManagerABI = abis.generalTransferManager();
-      generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
-
       if (multimint)
         await multi_mint_tokens();
       else {
@@ -241,7 +235,11 @@ async function step_Wallet_Issuance(){
           canBuyFromSTO = readlineSync.keyInYNStrict(`Is address '(${mintWallet})' allowed to buy tokens from the STO? `);
         }
 
-       let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
+        // Add address to whitelist
+        let generalTransferManagerAddress = (await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call())[0];
+        let generalTransferManagerABI = abis.generalTransferManager();
+        let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
+        let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
         await common.sendTransaction(Issuer, modifyWhitelistAction, defaultGasPrice);
 
         // Mint tokens
@@ -1002,7 +1000,7 @@ async function usdTieredSTO_configure() {
       switch (index) {
         case 0:
           let reserveWallet = await currentSTO.methods.reserveWallet().call();
-          let isVerified = await generalTransferManager.methods.verifyTransfer(STO_Address, reserveWallet, 0, web3.utils.fromAscii("")).call();
+          let isVerified = await securityToken.methods.verifyTransfer(STO_Address, reserveWallet, 0, web3.utils.fromAscii("")).call();
           if (isVerified == "2") {
             if (readlineSync.keyInYNStrict()) {
               let finalizeAction = currentSTO.methods.finalize();

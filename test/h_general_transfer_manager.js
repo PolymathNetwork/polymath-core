@@ -352,6 +352,7 @@ contract("GeneralTransferManager", accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + duration.days(5);
+            let nonce = 5;
             const sig = signData(
                 account_investor2,
                 account_investor2,
@@ -361,6 +362,7 @@ contract("GeneralTransferManager", accounts => {
                 true,
                 validFrom,
                 validTo,
+                nonce,
                 token_owner_pk
             );
 
@@ -377,6 +379,7 @@ contract("GeneralTransferManager", accounts => {
                     true,
                     validFrom,
                     validTo,
+                    nonce,
                     v,
                     r,
                     s,
@@ -393,6 +396,7 @@ contract("GeneralTransferManager", accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime() - 100;
             let validTo = latestTime() - 1;
+            let nonce = 5;
             const sig = signData(
                 I_GeneralTransferManager.address,
                 account_investor2,
@@ -402,6 +406,7 @@ contract("GeneralTransferManager", accounts => {
                 true,
                 validFrom,
                 validTo,
+                nonce,
                 token_owner_pk
             );
 
@@ -418,6 +423,7 @@ contract("GeneralTransferManager", accounts => {
                     true,
                     validFrom,
                     validTo,
+                    nonce,
                     v,
                     r,
                     s,
@@ -434,7 +440,7 @@ contract("GeneralTransferManager", accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + 60 * 60;
-
+            let nonce = 5;
             const sig = signData(
                 account_investor2,
                 account_investor2,
@@ -444,6 +450,7 @@ contract("GeneralTransferManager", accounts => {
                 true,
                 validFrom,
                 validTo,
+                nonce,
                 "2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200"
             );
 
@@ -460,6 +467,7 @@ contract("GeneralTransferManager", accounts => {
                     true,
                     validFrom,
                     validTo,
+                    nonce,
                     v,
                     r,
                     s,
@@ -476,6 +484,7 @@ contract("GeneralTransferManager", accounts => {
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
             let validTo = latestTime() + duration.days(5);
+            let nonce = 5;
             const sig = signData(
                 I_GeneralTransferManager.address,
                 account_investor2,
@@ -485,12 +494,14 @@ contract("GeneralTransferManager", accounts => {
                 true,
                 validFrom,
                 validTo,
+                nonce,
                 token_owner_pk
             );
 
             const r = `0x${sig.r.toString("hex")}`;
             const s = `0x${sig.s.toString("hex")}`;
             const v = sig.v;
+
             let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
                 account_investor2,
                 latestTime(),
@@ -499,6 +510,7 @@ contract("GeneralTransferManager", accounts => {
                 true,
                 validFrom,
                 validTo,
+                nonce,
                 v,
                 r,
                 s,
@@ -522,6 +534,49 @@ contract("GeneralTransferManager", accounts => {
 
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("1", "ether"));
         });
+
+        it("Should fail if the txn is generated with same nonce", async() => {
+            // Add the Investor in to the whitelist
+            //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
+            let validFrom = latestTime();
+            let validTo = latestTime() + duration.days(5);
+            let nonce = 5;
+            const sig = signData(
+                I_GeneralTransferManager.address,
+                account_investor2,
+                latestTime(),
+                latestTime() + duration.days(80),
+                expiryTime + duration.days(200),
+                true,
+                validFrom,
+                validTo,
+                nonce,
+                token_owner_pk
+            );
+
+            const r = `0x${sig.r.toString("hex")}`;
+            const s = `0x${sig.s.toString("hex")}`;
+            const v = sig.v;
+
+            await catchRevert(I_GeneralTransferManager.modifyWhitelistSigned(
+                account_investor2,
+                latestTime(),
+                latestTime() + duration.days(80),
+                expiryTime + duration.days(200),
+                true,
+                validFrom,
+                validTo,
+                nonce,
+                v,
+                r,
+                s,
+                {
+                    from: account_investor2,
+                    gas: 6000000
+                }
+            )
+            );
+        })
 
         it("Should fail in changing the signing address", async () => {
             await catchRevert(I_GeneralTransferManager.changeSigningAddress(account_polymath, { from: account_investor4 }));
@@ -554,7 +609,7 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should set a budget for the GeneralTransferManager", async () => {
-            await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, 10 * Math.pow(10, 18), { from: token_owner });
+            await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, 10 * Math.pow(10, 18), true, { from: token_owner });
 
             await catchRevert(I_GeneralTransferManager.takeFee(web3.utils.toWei("1", "ether"), { from: token_owner }));
             await I_PolyToken.getTokens(10 * Math.pow(10, 18), token_owner);

@@ -107,6 +107,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         require(_owner != address(0) && _polymathRegistry != address(0), "0x address is invalid");
         set(Encoder.getKey("polymathRegistry"), _polymathRegistry);
         set(Encoder.getKey("owner"), _owner);
+        set(Encoder.getKey("paused"), false);
         set(Encoder.getKey("initialised"), true);
     }
 
@@ -126,7 +127,6 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
                 require(getBool(Encoder.getKey("verified", _moduleFactory)), "ModuleFactory must be verified");
             }
             require(_isCompatibleModule(_moduleFactory, msg.sender), "Version should within the compatible range of ST");
-            require(getUint(Encoder.getKey("registry",_moduleFactory)) != 0, "ModuleFactory type should not be 0");
             pushArray(Encoder.getKey("reputation", _moduleFactory), msg.sender);
             emit ModuleUsed(_moduleFactory, msg.sender);
         }
@@ -147,9 +147,9 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      */
     function registerModule(address _moduleFactory) external whenNotPausedOrOwner {
         if (IFeatureRegistry(getAddress(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
-            require(msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == getAddress(Encoder.getKey("owner")),"msg.sender must be the Module Factory owner or registry curator");
+            require(msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),"msg.sender must be the Module Factory owner or registry curator");
         } else {
-            require(msg.sender == getAddress(Encoder.getKey("owner")), "Only owner allowed to register modules");
+            require(msg.sender == owner(), "Only owner allowed to register modules");
         }
         require(getUint(Encoder.getKey("registry", _moduleFactory)) == 0, "Module factory should not be pre-registered");
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
@@ -179,7 +179,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint256 moduleType = getUint(Encoder.getKey("registry", _moduleFactory));
 
         require(moduleType != 0, "Module factory should be registered");
-        require(msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == getAddress(Encoder.getKey("owner")),"msg.sender must be the Module Factory owner or registry curator");
+        require(msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),"msg.sender must be the Module Factory owner or registry curator");
 
         uint256 index = getUint(Encoder.getKey("moduleListIndex", _moduleFactory));
         uint256 last = getArrayAddress(Encoder.getKey("moduleList", moduleType)).length - 1;

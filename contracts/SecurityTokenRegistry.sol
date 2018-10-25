@@ -62,6 +62,15 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
 
     using SafeMath for uint256;
 
+    bytes32 constant INITIALIZE = 0x9ef7257c3339b099aacf96e55122ee78fb65a36bd2a6c19249882be9c98633bf;
+    bytes32 constant POLYTOKEN = 0xacf8fbd51bb4b83ba426cdb12f63be74db97c412515797993d2a385542e311d7;
+    bytes32 constant STLAUNCHFEE = 0xd677304bb45536bb7fdfa6b9e47a3c58fe413f9e8f01474b0a4b9c6e0275baf2;
+    bytes32 constant TICKERREGFEE = 0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2;
+    bytes32 constant EXPIRYLIMIT = 0x604268e9a73dfd777dcecb8a614493dd65c638bad2f5e7d709d378bd2fb0baee;
+    bytes32 constant PAUSED = 0xee35723ac350a69d2a92d3703f17439cbaadf2f093a21ba5bf5f1a53eb2a14d9;
+    bytes32 constant OWNER = 0x02016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0;
+    bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d;
+
     // Emit when network becomes paused
     event Pause(uint256 _timestammp);
      // Emit when network becomes unpaused
@@ -156,18 +165,18 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _owner is the owner of the STR
      */
     function initialize(address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner) payable external {
-        require(!getBool(Encoder.getKey("initialised")),"already initialized");
+        require(!getBool(INITIALIZE),"already initialized");
         require(_STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0), "Invalid address");
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Fees should not be 0");
-        set(Encoder.getKey("polyToken"), _polyToken);
-        set(Encoder.getKey("stLaunchFee"), _stLaunchFee);
-        set(Encoder.getKey("tickerRegFee"), _tickerRegFee);
-        set(Encoder.getKey("expiryLimit"), uint256(60 * 1 days));
-        set(Encoder.getKey("paused"), false);
-        set(Encoder.getKey("owner"), _owner);
-        set(Encoder.getKey("polymathRegistry"), _polymathRegistry);
+        set(POLYTOKEN, _polyToken);
+        set(STLAUNCHFEE, _stLaunchFee);
+        set(TICKERREGFEE, _tickerRegFee);
+        set(EXPIRYLIMIT, uint256(60 * 1 days));
+        set(PAUSED, false);
+        set(OWNER, _owner);
+        set(POLYMATHREGISTRY, _polymathRegistry);
         _setProtocolVersion(_STFactory, uint8(0), uint8(0), uint8(2));
-        set(Encoder.getKey("initialised"), true);
+        set(INITIALIZE, true);
     }
 
     /////////////////////////////
@@ -188,7 +197,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         // Attempt to charge the reg fee if it is > 0 POLY
         uint256 tickerFee = getTickerRegistrationFee();
         if (tickerFee > 0)
-            require(IERC20(getAddress(Encoder.getKey("polyToken"))).transferFrom(msg.sender, address(this), tickerFee), "Insufficent allowance");
+            require(IERC20(getAddress(POLYTOKEN)).transferFrom(msg.sender, address(this), tickerFee), "Insufficent allowance");
         string memory ticker = Util.upper(_ticker);
         require(_tickerAvailable(ticker), "Ticker is reserved");
         // Check whether ticker was previously registered (and expired)
@@ -390,9 +399,8 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function changeExpiryLimit(uint256 _newExpiry) external onlyOwner {
         require(_newExpiry >= 1 days, "Expiry should >= 1 day");
-        bytes32 key = Encoder.getKey("expiryLimit");
-        emit ChangeExpiryLimit(getUint(key), _newExpiry);
-        set(key, _newExpiry);
+        emit ChangeExpiryLimit(getUint(EXPIRYLIMIT), _newExpiry);
+        set(EXPIRYLIMIT, _newExpiry);
     }
 
     /**
@@ -504,7 +512,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
 
         uint256 launchFee = getSecurityTokenLaunchFee();
         if (launchFee > 0)
-            require(IERC20(getAddress(Encoder.getKey("polyToken"))).transferFrom(msg.sender, address(this), launchFee), "Insufficient allowance");
+            require(IERC20(getAddress(POLYTOKEN)).transferFrom(msg.sender, address(this), launchFee), "Insufficient allowance");
 
         address newSecurityTokenAddress = ISTFactory(getSTFactoryAddress()).deployToken(
             _name,
@@ -513,7 +521,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             _tokenDetails,
             msg.sender,
             _divisible,
-            getAddress(Encoder.getKey("polymathRegistry"))
+            getAddress(POLYMATHREGISTRY)
         );
 
         _storeSecurityTokenData(newSecurityTokenAddress, ticker, _tokenDetails, now);
@@ -603,16 +611,15 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function transferOwnership(address _newOwner) external onlyOwner {
         require(_newOwner != address(0));
-        bytes32 key = Encoder.getKey("owner");
-        emit OwnershipTransferred(getAddress(key), _newOwner);
-        set(key, _newOwner);
+        emit OwnershipTransferred(getAddress(OWNER), _newOwner);
+        set(OWNER, _newOwner);
     }
 
     /**
     * @notice called by the owner to pause, triggers stopped state
     */
     function pause() external whenNotPaused onlyOwner {
-        set(Encoder.getKey("paused"), true);
+        set(PAUSED, true);
         emit Pause(now);
     }
 
@@ -620,7 +627,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @notice called by the owner to unpause, returns to normal state
     */
     function unpause() external whenPaused onlyOwner {
-        set(Encoder.getKey("paused"), false);
+        set(PAUSED, false);
         emit Unpause(now);
     }
 
@@ -629,11 +636,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @param _tickerRegFee is the registration fee in POLY tokens (base 18 decimals)
     */
     function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
-        bytes32 key = Encoder.getKey("tickerRegFee");
-        uint256 fee = getUint(key);
+        uint256 fee = getUint(TICKERREGFEE);
         require(fee != _tickerRegFee);
         emit ChangeTickerRegistrationFee(fee, _tickerRegFee);
-        set(key, _tickerRegFee);
+        set(TICKERREGFEE, _tickerRegFee);
     }
 
    /**
@@ -641,11 +647,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @param _stLaunchFee is the registration fee in POLY tokens (base 18 decimals)
     */
     function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
-        bytes32 key = Encoder.getKey("stLaunchFee");
-        uint256 fee = getUint(key);
+        uint256 fee = getUint(STLAUNCHFEE);
         require(fee != _stLaunchFee);
         emit ChangeSecurityLaunchFee(fee, _stLaunchFee);
-        set(key, _stLaunchFee);
+        set(STLAUNCHFEE, _stLaunchFee);
     }
 
     /**
@@ -669,6 +674,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @param _patch Patch version of the proxy
     */
     function setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external onlyOwner {
+        require(_STFactoryAddress != address(0), "0x address is not allowed");
         _setProtocolVersion(_STFactoryAddress, _major, _minor, _patch);
     }
 
@@ -706,7 +712,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function updatePolyTokenAddress(address _newAddress) external onlyOwner {
         require(_newAddress != address(0));
-        set(Encoder.getKey("polyToken"), _newAddress);
+        set(POLYTOKEN, _newAddress);
     }
 
     /**
@@ -714,7 +720,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @return Fee amount
      */
     function getSecurityTokenLaunchFee() public view returns(uint256) {
-        return getUint(Encoder.getKey("stLaunchFee"));
+        return getUint(STLAUNCHFEE);
     }
 
     /**
@@ -722,7 +728,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @return Fee amount
      */
     function getTickerRegistrationFee() public view returns(uint256) {
-        return getUint(Encoder.getKey("tickerRegFee"));
+        return getUint(TICKERREGFEE);
     }
 
     /**
@@ -730,7 +736,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @return Expiry limit
      */
     function getExpiryLimit() public view returns(uint256) {
-        return getUint(Encoder.getKey("expiryLimit"));
+        return getUint(EXPIRYLIMIT);
     }
 
     /**
@@ -738,7 +744,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @return bool
      */
     function isPaused() public view returns(bool) {
-        return getBool(Encoder.getKey("paused"));
+        return getBool(PAUSED);
     }
 
     /**
@@ -746,7 +752,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @return address owner
      */
     function owner() public view returns(address) {
-        return getAddress(Encoder.getKey("owner"));
+        return getAddress(OWNER);
     }
 
 }

@@ -1,3 +1,10 @@
+/**
+ * DISCLAIMER: Under certain conditions, the limit could be bypassed if a large token holder 
+ * redeems a huge portion of their tokens. It will cause the total supply to drop 
+ * which can result in some other token holders having a percentage of tokens 
+ * higher than the intended limit.
+ */
+
 pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";
@@ -42,7 +49,11 @@ contract PercentageTransferManager is ITransferManager {
     {
     }
 
-    /// @notice Used to verify the transfer transaction according to the rule implemented in the trnasfer managers
+    /** @notice Used to verify the transfer transaction and prevent a given account to end up with more tokens than allowed
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
+     * @param _amount The amount of tokens to transfer
+     */
     function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {

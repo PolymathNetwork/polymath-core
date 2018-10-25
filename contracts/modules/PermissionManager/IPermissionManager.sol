@@ -14,12 +14,18 @@ interface IPermissionManager {
     */
     function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns(bool);
 
-     /**
+    /**
     * @notice Use to add a delegate
     * @param _delegate Ethereum address of the delegate
     * @param _details Details about the delegate i.e `Belongs to financial firm`
     */
     function addDelegate(address _delegate, bytes32 _details) external;
+
+    /**
+    * @notice Used to delete a delegate
+    * @param _delegate Ethereum address of the delegate
+    */
+    function deleteDelegate(address _delegate) external;
 
     /**
     * @notice use to check if an address is a delegate or not
@@ -72,12 +78,11 @@ interface IPermissionManager {
     * @notice use to return all permission of a single or multiple module
     * @dev possible that function get out of gas is there are lot of modules and perm related to them
     * @param _delegate Ethereum address of the delegate
-    * @param _tokenAddress Ethereum address of the security token
     * @param _types uint8[] of types
     * @return address[] the address array of Modules this delegate has permission
     * @return bytes32[] the permission array of the corresponding Modules
     */
-    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] _types, address _tokenAddress) external view returns(address[], bytes32[]);
+    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] _types) external view returns(address[], bytes32[]);
 
     /**
     * @notice Use to get the Permission flag related the `this` contract

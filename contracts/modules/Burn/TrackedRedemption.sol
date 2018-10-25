@@ -41,7 +41,7 @@ contract TrackedRedemption is IBurn, Module {
         redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
         emit Redeemed(msg.sender, _value, now);
     }
-
+    
     /**
      * @notice Return the permissions flag that are associated with CountTransferManager
      */

@@ -84,7 +84,7 @@ contract LockupVolumeRestrictionTMFactory is ModuleFactory {
     }
 
     /**
-     * @notice Get the Instructions that helped to used the module
+     * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
         return "Allows an issuer to set lockup periods for user addresses, with funds distributed over time. Init function takes no parameters.";

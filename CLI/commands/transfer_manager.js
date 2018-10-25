@@ -111,11 +111,12 @@ async function start_explorer() {
             },
             limitMessage: `Amount must be less or equal than ${fromBalance} ${tokenSymbol}`,
           });
-          let data = readlineSync.question('Enter the data attached to the transfer by controller to emit in event: ');
-          let forceTransferAction = securityToken.methods.forceTransfer(from, to, web3.utils.toWei(amount), web3.utils.asciiToHex(data));
+          let data = readlineSync.question('Enter the data to indicate validation: ');
+          let log = readlineSync.question('Enter the data attached to the transfer by controller to emit in event: ');
+          let forceTransferAction = securityToken.methods.forceTransfer(from, to, web3.utils.toWei(amount), web3.utils.asciiToHex(data), web3.utils.asciiToHex(log));
           let forceTransferReceipt = await common.sendTransaction(Issuer, forceTransferAction, defaultGasPrice, 0, 1.5);
           let forceTransferEvent = common.getEventFromLogs(securityToken._jsonInterface, forceTransferReceipt.logs, 'ForceTransfer');
-          console.log(chalk.green(`  ${forceTransferEvent._controller} has successfully forced a transfer of ${web3.utils.fromWei(forceTransferEvent._amount)} ${tokenSymbol} 
+          console.log(chalk.green(`  ${forceTransferEvent._controller} has successfully forced a transfer of ${web3.utils.fromWei(forceTransferEvent._value)} ${tokenSymbol} 
   from ${forceTransferEvent._from} to ${forceTransferEvent._to} 
   Verified transfer: ${forceTransferEvent._verifyTransfer}
   Data: ${web3.utils.hexToAscii(forceTransferEvent._data)}

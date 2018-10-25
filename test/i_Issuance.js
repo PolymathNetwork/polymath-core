@@ -63,6 +63,7 @@ contract("Issuance", accounts => {
     const transferManagerKey = 2;
     const stoKey = 3;
     const budget = 0;
+    const address_zero = "0x0000000000000000000000000000000000000000";
 
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
@@ -171,7 +172,7 @@ contract("Issuance", accounts => {
 
                 assert.notEqual(
                     I_CappedSTOFactory.address.valueOf(),
-                    "0x0000000000000000000000000000000000000000",
+                    address_zero,
                     "CappedSTOFactory contract was not deployed"
                 );
 

@@ -20,7 +20,8 @@ const MODULES_TYPES = {
   PERMISSION: 1,
   TRANSFER: 2,
   STO: 3,
-  DIVIDENDS: 4
+  DIVIDENDS: 4,
+  BURN: 5
 }
 
 const cappedSTOFee = 20000;
@@ -37,7 +38,6 @@ let securityTokenRegistry;
 let polyToken;
 let usdToken;
 let securityToken;
-let generalTransferManager;
 let currentSTO;
 
 // App flow
@@ -101,7 +101,7 @@ async function setup(){
 }
 
 async function step_ticker_reg(){
-  console.log('\n\x1b[34m%s\x1b[0m',"Token Creation - Symbol Registration");
+  console.log('\n\x1b[34m%s\x1b[0m',"Token Symbol Registration");
 
   let available = false;
   let regFee = web3.utils.fromWei(await securityTokenRegistry.methods.getTickerRegistrationFee().call());
@@ -207,7 +207,7 @@ async function step_Wallet_Issuance(){
       console.log("\n");
       console.log('\x1b[34m%s\x1b[0m',"Token Creation - Token Minting for Issuer");
 
-      console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control or you can trasfer to affiliates");
+      console.log("Before setting up the STO, you can mint any amount of tokens that will remain under your control or you can transfer to affiliates");
 
       let multimint;
       if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('multimint')) {
@@ -216,11 +216,6 @@ async function step_Wallet_Issuance(){
         let isAffiliate = readlineSync.question('Press'+ chalk.green(` "Y" `) + 'if you have list of affiliates addresses with you otherwise hit' + chalk.green(' Enter ') + 'and get the minted tokens to a particular address: ');
         multimint = (isAffiliate == "Y" || isAffiliate == "y");
       }
-
-      // Add address to whitelist
-      let generalTransferManagerAddress = (await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call())[0];
-      let generalTransferManagerABI = abis.generalTransferManager();
-      generalTransferManager = new web3.eth.Contract(generalTransferManagerABI,generalTransferManagerAddress);
 
       if (multimint)
         await multi_mint_tokens();
@@ -240,7 +235,11 @@ async function step_Wallet_Issuance(){
           canBuyFromSTO = readlineSync.keyInYNStrict(`Is address '(${mintWallet})' allowed to buy tokens from the STO? `);
         }
 
-       let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
+        // Add address to whitelist
+        let generalTransferManagerAddress = (await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call())[0];
+        let generalTransferManagerABI = abis.generalTransferManager();
+        let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
+        let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
         await common.sendTransaction(Issuer, modifyWhitelistAction, defaultGasPrice);
 
         // Mint tokens
@@ -265,7 +264,7 @@ async function multi_mint_tokens() {
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
 
   shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${network}`);
-  console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transfered to token holders`));
+  console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transferred to token holders`));
 }
 
 async function step_STO_launch() {
@@ -729,7 +728,7 @@ function limitsConfigUSDTieredSTO() {
   if (typeof _stoConfig !== 'undefined' && _stoConfig.hasOwnProperty('nonAccreditedLimitUSD')) {
     limits.nonAccreditedLimitUSD = web3.utils.toWei(_stoConfig.nonAccreditedLimitUSD.toString());
   } else {
-    limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the default limit for non accredited insvestors in USD? (${nonAccreditedLimit}): `, {
+    limits.nonAccreditedLimitUSD = web3.utils.toWei(readlineSync.question(`What is the default limit for non accredited investors in USD? (${nonAccreditedLimit}): `, {
       limit: function(input) {
         return new BigNumber(web3.utils.toWei(input)).gte(limits.minimumInvestmentUSD);
       },
@@ -1001,7 +1000,7 @@ async function usdTieredSTO_configure() {
       switch (index) {
         case 0:
           let reserveWallet = await currentSTO.methods.reserveWallet().call();
-          let isVerified = await generalTransferManager.methods.verifyTransfer(STO_Address, reserveWallet, 0, web3.utils.fromAscii("")).call();
+          let isVerified = await securityToken.methods.verifyTransfer(STO_Address, reserveWallet, 0, web3.utils.fromAscii("")).call();
           if (isVerified == "2") {
             if (readlineSync.keyInYNStrict()) {
               let finalizeAction = currentSTO.methods.finalize();

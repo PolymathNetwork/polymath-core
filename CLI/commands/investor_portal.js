@@ -496,7 +496,7 @@ async function investUsdTieredSTO(currency, amount) {
                 await common.sendTransaction(User, approveAction, defaultGasPrice);
             }
             let actionBuyWithPoly = currentSTO.methods.buyWithPOLY(User.address, costWei);
-            let receipt = await common.sendTransaction(User, actionBuyWithPoly, defaultGasPrice);
+            let receipt = await common.sendTransaction(User, actionBuyWithPoly,defaultGasPrice, 0, 2);
             logTokensPurchasedUSDTieredSTO(receipt);
         } else {
             console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} POLY but have ${userBalance} POLY.`));

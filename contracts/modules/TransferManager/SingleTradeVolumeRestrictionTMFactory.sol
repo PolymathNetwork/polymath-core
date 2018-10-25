@@ -37,7 +37,7 @@ contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
         SingleTradeVolumeRestrictionTM singleTradeVolumeRestrictionManager = new SingleTradeVolumeRestrictionTM(msg.sender, address(polyToken));
 
         require(Util.getSig(_data) == singleTradeVolumeRestrictionManager.getInitFunction(), "Provided data is not valid");
-        require(address(singleTradeVolumeRestrictionManager).call(_data), "Un-successfull call");
+        require(address(singleTradeVolumeRestrictionManager).call(_data), "Unsuccessful call");
         emit GenerateModuleFromFactory(address(singleTradeVolumeRestrictionManager), getName(), address(this), msg.sender, setupCost, now);
         return address(singleTradeVolumeRestrictionManager);
     }

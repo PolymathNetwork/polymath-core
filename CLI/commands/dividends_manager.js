@@ -128,13 +128,9 @@ async function start_explorer(){
           await transferTokens(_to2,_amount2);
         break;
         case 'Create checkpoint':
-          if (await isDividendsModuleAttached()) {
-            let createCheckpointAction = currentDividendsModule.methods.createCheckpoint();
-            await common.sendTransaction(Issuer, createCheckpointAction, defaultGasPrice);
-          } else {
-            console.log("You must to attach Dividends module to perform this action.");
-            process.exit(1);
-          }
+          await addDividendsModule();
+          let createCheckpointAction = currentDividendsModule.methods.createCheckpoint();
+          await common.sendTransaction(Issuer, createCheckpointAction, defaultGasPrice);
         break;
         case 'Set default exclusions for dividends':
           await setDefaultExclusions();

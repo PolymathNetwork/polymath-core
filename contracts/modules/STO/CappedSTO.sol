@@ -104,7 +104,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
             require(_beneficiary == msg.sender, "Beneficiary must match funding provider");
         }
 
-        require(!paused);
+        require(!paused, "Should not be paused");
         require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "ETH should be the mode of investment");
 
         uint256 weiAmount = msg.value;
@@ -119,7 +119,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant{
-        require(!paused);
+        require(!paused, "Should not be paused");
         require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "POLY should be the mode of investment");
         _processTx(msg.sender, _investedPOLY);
         _forwardPoly(msg.sender, wallet, _investedPOLY);

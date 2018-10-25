@@ -131,7 +131,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         require(_token != address(0), "Invalid token");
         require(_checkpointId <= securityTokenInstance.currentCheckpointId(), "Invalid checkpoint");
         require(IERC20(_token).transferFrom(msg.sender, address(this), _amount), "insufficent allowance");
-        require(_name[0] != 0);
+        require(_name[0] != 0, "Invalid name");
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = securityTokenInstance.totalSupplyAt(_checkpointId);
         uint256 excludedSupply = 0;

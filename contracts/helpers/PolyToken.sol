@@ -84,7 +84,7 @@ contract PolyToken is IERC20 {
     * @dev Assigns the totalSupply to the PolyDistribution contract
     */
     constructor (address _polyDistributionContractAddress) public {
-        require(_polyDistributionContractAddress != address(0));
+        require(_polyDistributionContractAddress != address(0), "Invalid address");
         balances[_polyDistributionContractAddress] = totalSupply;
         emit Transfer(address(0), _polyDistributionContractAddress, totalSupply);
     }
@@ -114,8 +114,8 @@ contract PolyToken is IERC20 {
     * @param _value The amount to be transferred.
     */
     function transfer(address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0));
-        require(_value <= balances[msg.sender]);
+        require(_to != address(0), "Invalid address");
+        require(_value <= balances[msg.sender], "Value is greater than balance");
 
         // SafeMath.sub will throw if there is not enough balance.
         balances[msg.sender] = balances[msg.sender].sub(_value);
@@ -131,9 +131,9 @@ contract PolyToken is IERC20 {
     * @param _value uint256 the amount of tokens to be transferred
     */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0));
-        require(_value <= balances[_from]);
-        require(_value <= allowed[_from][msg.sender]);
+        require(_to != address(0), "Invalid address");
+        require(_value <= balances[_from], "Value is greater than balance");
+        require(_value <= allowed[_from][msg.sender], "Value is greater than allowed");
 
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);

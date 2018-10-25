@@ -12,7 +12,7 @@ contract RegistryUpdater is Ownable {
     address public polyToken;
 
     constructor (address _polymathRegistry) public {
-        require(_polymathRegistry != address(0));
+        require(_polymathRegistry != address(0), "Invalid address");
         polymathRegistry = _polymathRegistry;
     }
 

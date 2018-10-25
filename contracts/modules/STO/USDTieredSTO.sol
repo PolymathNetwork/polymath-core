@@ -131,18 +131,18 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
     modifier validETH {
         require(_getOracle(bytes32("ETH"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
-        require(fundRaiseTypes[uint8(FundRaiseType.ETH)]);
+        require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "Fund raise in ETH should be allowed");
         _;
     }
 
     modifier validPOLY {
         require(_getOracle(bytes32("POLY"), bytes32("USD")) != address(0), "Invalid POLYUSD Oracle");
-        require(fundRaiseTypes[uint8(FundRaiseType.POLY)]);
+        require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "Fund raise in POLY should be allowed");
         _;
     }
 
     modifier validDAI {
-        require(fundRaiseTypes[uint8(FundRaiseType.DAI)]);
+        require(fundRaiseTypes[uint8(FundRaiseType.DAI)], "Fund raise in DAI should be allowed");
         _;
     }
 
@@ -195,7 +195,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
     function modifyFunding(FundRaiseType[] _fundRaiseTypes) public onlyFactoryOrOwner {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime);
+        require(now < startTime, "STO shouldn't be started");
         _setFundRaiseType(_fundRaiseTypes);
         uint256 length = getNumberOfTiers();
         mintedPerTierTotal = new uint256[](length);
@@ -210,7 +210,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _minimumInvestmentUSD
     ) public onlyFactoryOrOwner {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime);
+        require(now < startTime, "STO shouldn't be started");
         minimumInvestmentUSD = _minimumInvestmentUSD;
         nonAccreditedLimitUSD = _nonAccreditedLimitUSD;
         emit SetLimits(minimumInvestmentUSD, nonAccreditedLimitUSD);
@@ -223,8 +223,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256[] _tokensPerTierDiscountPoly
     ) public onlyFactoryOrOwner {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime);
-        require(_tokensPerTierTotal.length > 0);
+        require(now < startTime, "STO shouldn't be started");
+        require(_tokensPerTierTotal.length > 0, "Length should be greater 0");
         require(_ratePerTier.length == _tokensPerTierTotal.length, "Mismatch b/w rates & tokens / tier");
         require(_ratePerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount rates & tokens / tier");
         require(_tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount tokens / tier & tokens / tier");
@@ -246,7 +246,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _endTime
     ) public onlyFactoryOrOwner {
         /*solium-disable-next-line security/no-block-members*/
-        require((startTime == 0) || (now < startTime));
+        require((startTime == 0) || (now < startTime), "Invalid startTime");
         /*solium-disable-next-line security/no-block-members*/
         require((_endTime > _startTime) && (_startTime > now), "Invalid times");
         startTime = _startTime;
@@ -260,7 +260,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _usdToken
     ) public onlyFactoryOrOwner {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime);
+        require(now < startTime, "STO shouldn't be started");
         require(_wallet != address(0) && _reserveWallet != address(0), "0x address is not allowed");
         if (fundRaiseTypes[uint8(FundRaiseType.DAI)]) {
             require(_usdToken != address(0), "0x usdToken address is not allowed");
@@ -280,7 +280,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @notice Reserve address must be whitelisted to successfully finalize
      */
     function finalize() public onlyOwner {
-        require(!isFinalized);
+        require(!isFinalized, "STO is finalized");
         isFinalized = true;
         uint256 tempReturned;
         uint256 tempSold;
@@ -305,7 +305,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @param _accredited Array of bools specifying accreditation status
      */
     function changeAccredited(address[] _investors, bool[] _accredited) public onlyOwner {
-        require(_investors.length == _accredited.length);
+        require(_investors.length == _accredited.length, "Investor addresses don't match to accreditation statuses");
         for (uint256 i = 0; i < _investors.length; i++) {
             accredited[_investors[i]] = _accredited[i];
             emit SetAccredited(_investors[i], _accredited[i]);
@@ -319,7 +319,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function changeNonAccreditedLimit(address[] _investors, uint256[] _nonAccreditedLimit) public onlyOwner {
         //nonAccreditedLimitUSDOverride
-        require(_investors.length == _nonAccreditedLimit.length);
+        require(_investors.length == _nonAccreditedLimit.length, "Investor addresses don't match to non-accredited limits");
         for (uint256 i = 0; i < _investors.length; i++) {
             require(_nonAccreditedLimit[i] > 0, "Limit can't be 0");
             nonAccreditedLimitUSDOverride[_investors[i]] = _nonAccreditedLimit[i];
@@ -392,7 +392,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         fundsRaised[uint8(_fundRaiseType)] = fundsRaised[uint8(_fundRaiseType)].add(spentValue);
         // Forward DAI to issuer wallet
         IERC20 token = _fundRaiseType == FundRaiseType.POLY ? polyToken : usdToken;
-        require(token.transferFrom(msg.sender, wallet, spentValue));
+        require(token.transferFrom(msg.sender, wallet, spentValue), "Transfer failed");
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, _fundRaiseType, _tokenAmount, spentValue, rate);
     }
 

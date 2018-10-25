@@ -108,8 +108,8 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         /*solium-disable-next-line security/no-block-members*/
         require(_expiry > now, "Expiry is in the past");
         require(msg.value > 0, "No dividend sent");
-        require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId());
-        require(_name[0] != 0);
+        require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "CheckpointId less than ");
+        require(_name[0] != 0,"Invalid name");
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
         uint256 excludedSupply = 0;

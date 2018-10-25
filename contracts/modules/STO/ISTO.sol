@@ -37,10 +37,10 @@ contract ISTO is Module, Pausable  {
     * @param _tokenContract The address of the token contract
     */
     function reclaimERC20(address _tokenContract) external onlyOwner {
-        require(_tokenContract != address(0));
+        require(_tokenContract != address(0), "Invalid address");
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(msg.sender, balance));
+        require(token.transfer(msg.sender, balance), "Transfer failed");
     }
 
     /**
@@ -60,7 +60,7 @@ contract ISTO is Module, Pausable  {
      */
     function pause() public onlyOwner {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < endTime);
+        require(now < endTime, "STO has been finalized");
         super._pause();
     }
 

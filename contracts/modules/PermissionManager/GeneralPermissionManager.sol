@@ -89,7 +89,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @return bool
      */
     function checkDelegate(address _potentialDelegate) external view returns(bool) {
-        require(_potentialDelegate != address(0));
+        require(_potentialDelegate != address(0), "Invalid address");
 
         if (delegateDetails[_potentialDelegate] != bytes32(0)) {
             return true;

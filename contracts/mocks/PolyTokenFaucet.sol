@@ -59,9 +59,9 @@ contract PolyTokenFaucet {
      * @return Whether the transfer was successful or not
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0));
-        require(_value <= balances[_from]);
-        require(_value <= allowed[_from][msg.sender]);
+        require(_to != address(0), "Invalid address");
+        require(_value <= balances[_from], "Value is greater than balance");
+        require(_value <= allowed[_from][msg.sender], "Value is greater than allowed");
 
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);

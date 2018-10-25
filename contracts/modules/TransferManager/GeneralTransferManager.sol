@@ -257,7 +257,9 @@ contract GeneralTransferManager is ITransferManager {
         require(_validTo >= now, "ValidTo is too late");
         require(!nonceMap[_investor][_nonce], "Already used signature");
         nonceMap[_investor][_nonce] = true;
-        bytes32 hash = keccak256(abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce));
+        bytes32 hash = keccak256(
+            abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce)
+        );
         _checkSig(hash, _v, _r, _s);
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);

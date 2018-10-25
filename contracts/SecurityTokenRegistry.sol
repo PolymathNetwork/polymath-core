@@ -628,7 +628,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @param _newOwner The address to transfer ownership to.
     */
     function transferOwnership(address _newOwner) external onlyOwner {
-        require(_newOwner != address(0));
+        require(_newOwner != address(0), "Invalid address");
         emit OwnershipTransferred(getAddress(OWNER), _newOwner);
         set(OWNER, _newOwner);
     }
@@ -657,7 +657,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
         uint256 fee = getUint(TICKERREGFEE);
-        require(fee != _tickerRegFee);
+        require(fee != _tickerRegFee, "Fee isn't equal to the registration fee");
         emit ChangeTickerRegistrationFee(fee, _tickerRegFee);
         set(TICKERREGFEE, _tickerRegFee);
     }
@@ -668,7 +668,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
         uint256 fee = getUint(STLAUNCHFEE);
-        require(fee != _stLaunchFee);
+        require(fee != _stLaunchFee, "Fee isn't equal to the launch fee");
         emit ChangeSecurityLaunchFee(fee, _stLaunchFee);
         set(STLAUNCHFEE, _stLaunchFee);
     }
@@ -678,10 +678,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @param _tokenContract is the address of the token contract
     */
     function reclaimERC20(address _tokenContract) external onlyOwner {
-        require(_tokenContract != address(0));
+        require(_tokenContract != address(0), "Invalid address");
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(owner(), balance));
+        require(token.transfer(owner(), balance), "Transfer failed");
     }
 
     /**
@@ -731,7 +731,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _newAddress is the address of the polytoken.
      */
     function updatePolyTokenAddress(address _newAddress) external onlyOwner {
-        require(_newAddress != address(0));
+        require(_newAddress != address(0), "Invalid address");
         set(POLYTOKEN, _newAddress);
     }
 

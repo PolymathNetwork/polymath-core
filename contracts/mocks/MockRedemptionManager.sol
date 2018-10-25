@@ -35,7 +35,7 @@ contract MockRedemptionManager is TrackedRedemption {
      * @param _value The number of tokens to redeem
      */
     function redeemTokenByOwner(uint256 _value) public {
-        require(tokenToRedeem[msg.sender] >= _value);
+        require(tokenToRedeem[msg.sender] >= _value, "Value is greater than available");
         tokenToRedeem[msg.sender] = tokenToRedeem[msg.sender].sub(_value);
         redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
         ISecurityToken(securityToken).burnWithData(_value, "");

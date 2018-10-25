@@ -263,7 +263,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     */
     function setTransferLimitInTokensMulti(address[] _wallets, uint[] _transferLimits) public withPerm(ADMIN) {
         require(_wallets.length > 0, "Wallets cannot be empty");
-        require(_wallets.length == _transferLimits.length);
+        require(_wallets.length == _transferLimits.length, "Wallets don't match to transfer limits");
         for (uint256 i = 0; i < _wallets.length; i++ ) {
             setTransferLimitInTokens(_wallets[i], _transferLimits[i]);
         }
@@ -278,7 +278,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     */
     function setTransferLimitInPercentageMulti(address[] _wallets, uint[] _transferLimitsInPercentage) public withPerm(ADMIN) {
         require(_wallets.length > 0, "Wallets cannot be empty");
-        require(_wallets.length == _transferLimitsInPercentage.length);
+        require(_wallets.length == _transferLimitsInPercentage.length, "Wallets don't match to percentage limits");
         for (uint256 i = 0; i < _wallets.length; i++) {
             setTransferLimitInPercentage(_wallets[i], _transferLimitsInPercentage[i]);
         }

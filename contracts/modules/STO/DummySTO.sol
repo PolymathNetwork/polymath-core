@@ -56,7 +56,7 @@ contract DummySTO is ISTO {
      * @param _amount Amount of ETH or Poly invested by the investor
      */
     function generateTokens(address _investor, uint256 _amount) public withPerm(ADMIN) {
-        require(!paused);
+        require(!paused, "Should not be paused");
         require(_amount > 0, "Amount should be greater than 0");
         ISecurityToken(securityToken).mint(_investor, _amount);
         if (investors[_investor] == 0) {

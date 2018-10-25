@@ -38,7 +38,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     SemanticVersion securityTokenVersion;
 
-    // off-chain data 
+    // off-chain data
     string public tokenDetails;
 
     uint8 constant PERMISSION_KEY = 1;
@@ -111,8 +111,6 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     event CheckpointCreated(uint256 indexed _checkpointId, uint256 _timestamp);
     // Emit when is permanently frozen by the issuer
     event FreezeMinting(uint256 _timestamp);
-    // Change the STR address in the event of a upgrade
-    event ChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
     // Events to log minting and burning
     event Minted(address indexed _to, uint256 _value);
     event Burnt(address indexed _from, uint256 _value);
@@ -388,7 +386,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _granularity granularity level of the token
     */
     function changeGranularity(uint256 _granularity) external onlyOwner {
-        require(_granularity != 0, "Incorrect granularity");
+        require(_granularity != 0, "Invalid granularity");
         emit GranularityChanged(granularity, _granularity);
         granularity = _granularity;
     }
@@ -404,30 +402,57 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     /**
-    * @notice Removes addresses with zero balances from the investors list
-    * @param _start Index in investor list at which to start removing zero balances
-    * @param _iters Max number of iterations of the for loop
-    * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
-    */
-    function pruneInvestors(uint256 _start, uint256 _iters) external onlyOwner {
-        for (uint256 i = _start; i < Math.min256(_start.add(_iters), investorData.investors.length); i++) {
-            if ((i < investorData.investors.length) && (balanceOf(investorData.investors[i]) == 0)) {
-                TokenLib.pruneInvestors(investorData, i);
-            }
-        }
-    }
-
-    /**
-     * @notice Returns an array of investors
-     * NB - this length may differ from investorCount if list has not been pruned of zero balance investors
-     * @return length
+     * @notice returns an array of investors
+     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
+     * @return list of addresses
      */
     function getInvestors() external view returns(address[]) {
         return investorData.investors;
     }
 
     /**
+     * @notice returns an array of investors at a given checkpoint
+     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
+     * @param _checkpointId Checkpoint id at which investor list is to be populated
+     * @return list of investors
+     */
+    function getInvestorsAt(uint256 _checkpointId) external view returns(address[]) {
+        uint256 count = 0;
+        uint256 i;
+        for (i = 0; i < investorData.investors.length; i++) {
+            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
+                count++;
+            }
+        }
+        address[] memory investors = new address[](count);
+        count = 0;
+        for (i = 0; i < investorData.investors.length; i++) {
+            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
+                investors[count] = investorData.investors[i];
+                count++;
+            }
+        }
+        return investors;
+    }
+
+    /**
+     * @notice iterates over all investors executing a callback for each individual investor
+     * NB - can be used in batches if investor list is large
+     * @param _start Posisiton of investor to start iteration from
+     * @param _end Posisiton of investor to stop iteration at
+     * @param _data Data to pass in the callback function
+     * param _callback Callback function to call for every investor
+     */
+    function iterateInvestors(uint256 _start, uint256 _end, bytes _data, function(address, bytes memory) external _callback) external view {
+        require(_end <= investorData.investors.length, "Invalid end");
+        for (uint256 i = _start; i < _end; i++) {
+            _callback(investorData.investors[i], _data);
+        }
+    }
+
+    /**
      * @notice Returns the investor count
+     * @return Investor count
      */
     function getInvestorCount() external view returns(uint256) {
         return investorData.investorCount;
@@ -540,10 +565,10 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     /**
      * @notice Validate transfer with TransferManager module if it exists
      * @dev TransferManager module has a key of 2
-     * @dev _isTransfer boolean flag is the deciding factor for whether the 
+     * @dev _isTransfer boolean flag is the deciding factor for whether the
      * state variables gets modified or not within the different modules. i.e isTransfer = true
      * leads to change in the modules environment otherwise _verifyTransfer() works as a read-only
-     * function (no change in the state). 
+     * function (no change in the state).
      * @param _from sender of transfer
      * @param _to receiver of transfer
      * @param _value value of transfer

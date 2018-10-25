@@ -536,13 +536,13 @@ contract("ManualApprovalTransferManager", accounts => {
 
     describe("ManualApproval Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
-            assert.equal(await I_ManualApprovalTransferManagerFactory.setupCost.call(), 0);
+            assert.equal(await I_ManualApprovalTransferManagerFactory.getSetupCost.call(), 0);
             assert.equal((await I_ManualApprovalTransferManagerFactory.getTypes.call())[0], 2);
             let name = web3.utils.toUtf8(await I_ManualApprovalTransferManagerFactory.getName.call());
             assert.equal(name, "ManualApprovalTransferManager", "Wrong Module added");
-            let desc = await I_ManualApprovalTransferManagerFactory.getDescription.call();
+            let desc = await I_ManualApprovalTransferManagerFactory.description.call();
             assert.equal(desc, "Manage transfers using single approvals / blocking", "Wrong Module added");
-            let title = await I_ManualApprovalTransferManagerFactory.getTitle.call();
+            let title = await I_ManualApprovalTransferManagerFactory.title.call();
             assert.equal(title, "Manual Approval Transfer Manager", "Wrong Module added");
             let inst = await I_ManualApprovalTransferManagerFactory.getInstructions.call();
             assert.equal(
@@ -550,7 +550,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 "Allows an issuer to set manual approvals or blocks for specific pairs of addresses and amounts. Init function takes no parameters.",
                 "Wrong Module added"
             );
-            assert.equal(await I_ManualApprovalTransferManagerFactory.getVersion.call(), "1.0.0");
+            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "1.0.0");
         });
 
         it("Should get the tags of the factory", async () => {

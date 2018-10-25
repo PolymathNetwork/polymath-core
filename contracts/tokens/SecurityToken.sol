@@ -513,9 +513,17 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         return true;
     }
 
+    /**
+     * @notice Updates internal variables when performing a transfer
+     * @param _from sender of transfer
+     * @param _to receiver of transfer
+     * @param _value value of transfer
+     * @param _data data to indicate validation
+     * @return bool success
+     */
     function _updateTransfer(address _from, address _to, uint256 _value, bytes _data) internal nonReentrant returns(bool) {
         // NB - the ordering in this function implies the following:
-        //  - investor counts are updated before transfer managers are called - i.e. transfer managers will eee
+        //  - investor counts are updated before transfer managers are called - i.e. transfer managers will see
         //investor counts including the current transfer.
         //  - checkpoints are updated after the transfer managers are called. This allows TMs to create
         //checkpoints as though they have been created before the current transactions,
@@ -548,28 +556,23 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint256 _value,
         bytes _data,
         bool _isTransfer
-        ) internal checkGranularity(_value) returns (bool) {
+    ) internal checkGranularity(_value) returns (bool) {
         if (!transfersFrozen) {
-            if (modules[TRANSFER_KEY].length == 0) {
-                return true;
-            }
             bool isInvalid = false;
             bool isValid = false;
             bool isForceValid = false;
             bool unarchived = false;
             address module;
-            for (uint8 i = 0; i < modules[TRANSFER_KEY].length; i++) {
+            for (uint256 i = 0; i < modules[TRANSFER_KEY].length; i++) {
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
                     ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
-                    }
-                    if (valid == ITransferManager.Result.VALID) {
+                    } else if (valid == ITransferManager.Result.VALID) {
                         isValid = true;
-                    }
-                    if (valid == ITransferManager.Result.FORCE_VALID) {
+                    } else if (valid == ITransferManager.Result.FORCE_VALID) {
                         isForceValid = true;
                     }
                 }

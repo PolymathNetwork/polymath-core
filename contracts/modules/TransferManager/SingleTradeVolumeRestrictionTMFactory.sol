@@ -55,30 +55,6 @@ contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
     }
 
     /**
-    * @notice Get the name of the Module
-    * @return bytes32
-    */
-    function getName() public view returns(bytes32) {
-        return name;
-    }
-
-    /**
-    * @notice Get the description of the Module
-    * @return string
-    */
-    function getDescription() external view returns(string) {
-        return description;
-    }
-
-    /**
-    * @notice Get the title of the Module
-    * @return string
-    */
-    function getTitle() external view returns(string) {
-        return title;
-    }
-
-    /**
     * @notice Get the Instructions that help to use the module
     * @return string
     */
@@ -87,21 +63,6 @@ contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
         return "Allows an issuer to impose volume restriction on a single trade. Init function takes two parameters. First parameter is a bool indicating if restriction is in percentage. The second parameter is the value in percentage or amount of tokens";
     }
 
-    /**
-    * @notice Get the version of the Module
-    * @return string
-    */
-    function getVersion() external view returns(string) {
-        return version;
-    }
-
-    /**
-    * @notice Get the setup cost of the module
-    * return uint256
-    */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
-    }
     /**
     * @notice Get the tags related to the module factory
     * @return bytes32[]

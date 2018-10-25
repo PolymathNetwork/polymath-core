@@ -32,21 +32,6 @@ interface IModuleFactory {
     function getName() external view returns(bytes32);
 
     /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() external view returns(string);
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() external view returns(string);
-
-    /**
-     * @notice Get the version of the Module
-     */
-    function getVersion() external view returns(string);
-
-    /**
      * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns (string);
@@ -81,7 +66,7 @@ interface IModuleFactory {
      */
     function changeSTVersionBounds(string _boundType, uint8[] _newVersion) external;
 
-    /**
+   /**
      * @notice Get the setup cost of the module
      */
     function getSetupCost() external view returns (uint256);

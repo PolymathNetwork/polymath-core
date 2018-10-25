@@ -199,11 +199,10 @@
         </tr>
         <tr>
             <td> setAllowPrimaryIssuance() </td>
-            <td> withPerm(ADMIN) </td>
+            <td rowspan=2> withPerm(ADMIN) </td>
         </tr>
         <tr>
             <td> changeHolderPercentage() </td>
-            <td> onlyOwner() </td>
         </tr>
         <tr>
             <td rowspan=4> LockupVolumeRestrictionTM</td>

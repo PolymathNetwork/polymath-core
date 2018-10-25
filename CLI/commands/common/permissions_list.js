@@ -68,7 +68,7 @@ function getPermissionList() {
             modifyWhitelist: "WHITELIST",
             modifyWhitelistMulti: "WHITELIST",
             setAllowPrimaryIssuance: "ADMIN",
-            changeHolderPercentage: "ONLY_OWNER"
+            changeHolderPercentage: "ADMIN"
         },
         LockupVolumeRestrictionTM: {
             addLockup: "ADMIN",

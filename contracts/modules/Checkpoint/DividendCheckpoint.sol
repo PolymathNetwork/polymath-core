@@ -5,8 +5,7 @@
  * the function may fail. If this happens investors can pull their dividends, or the Issuer
  * can use pushDividendPaymentToAddresses to provide an explict address list in batches
  */
-
- pragma solidity ^0.4.24;
+pragma solidity ^0.4.24;
 
 import "./ICheckpoint.sol";
 import "../Module.sol";
@@ -30,7 +29,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
         uint256 checkpointId;
         uint256 created; // Time at which the dividend was created
         uint256 maturity; // Time after which dividend can be claimed - set to 0 to bypass
-        uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer - set to very high value to bypass
+        uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer -
+                         // set to very high value to bypass
         uint256 amount; // Dividend amount in WEI
         uint256 claimedAmount; // Amount of dividend claimed so far
         uint256 totalSupply; // Total supply at the associated checkpoint (avoids recalculating this)
@@ -61,7 +61,9 @@ contract DividendCheckpoint is ICheckpoint, Module {
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         require(!dividends[_dividendIndex].reclaimed, "Dividend reclaimed");
+        /*solium-disable-next-line security/no-block-members*/
         require(now >= dividends[_dividendIndex].maturity, "Dividend maturity in future");
+        /*solium-disable-next-line security/no-block-members*/
         require(now < dividends[_dividendIndex].expiry, "Dividend expiry in past");
         _;
     }
@@ -92,7 +94,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     /**
      * @notice Function to clear and set list of excluded addresses used for future dividends
-     * @param _excluded addresses of investor
+     * @param _excluded Addresses of investors
      */
     function setDefaultExcluded(address[] _excluded) public withPerm(MANAGE) {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many excluded addresses");
@@ -103,16 +105,18 @@ contract DividendCheckpoint is ICheckpoint, Module {
             }
         }
         excluded = _excluded;
+        /*solium-disable-next-line security/no-block-members*/
         emit SetDefaultExcludedAddresses(excluded, now);
     }
 
     /**
      * @notice Function to set withholding tax rates for investors
-     * @param _investors addresses of investor
-     * @param _withholding withholding tax for individual investors (multiplied by 10**16)
+     * @param _investors Addresses of investors
+     * @param _withholding Withholding tax for individual investors (multiplied by 10**16)
      */
     function setWithholding(address[] _investors, uint256[] _withholding) public withPerm(MANAGE) {
         require(_investors.length == _withholding.length, "Mismatched input lengths");
+        /*solium-disable-next-line security/no-block-members*/
         emit SetWithholding(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
             require(_withholding[i] <= 10**18, "Incorrect withholding tax");
@@ -122,11 +126,12 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     /**
      * @notice Function to set withholding tax rates for investors
-     * @param _investors addresses of investor
-     * @param _withholding withholding tax for all investors (multiplied by 10**16)
+     * @param _investors Addresses of investor
+     * @param _withholding Withholding tax for all investors (multiplied by 10**16)
      */
     function setWithholdingFixed(address[] _investors, uint256 _withholding) public withPerm(MANAGE) {
         require(_withholding <= 10**18, "Incorrect withholding tax");
+        /*solium-disable-next-line security/no-block-members*/
         emit SetWithholdingFixed(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
             withholdingTax[_investors[i]] = _withholding;
@@ -138,7 +143,14 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _dividendIndex Dividend to push
      * @param _payees Addresses to which to push the dividend
      */
-    function pushDividendPaymentToAddresses(uint256 _dividendIndex, address[] _payees) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
+    function pushDividendPaymentToAddresses(
+        uint256 _dividendIndex,
+        address[] _payees
+    )
+        public
+        withPerm(DISTRIBUTE)
+        validDividendIndex(_dividendIndex)
+    {
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
             if ((!dividend.claimed[_payees[i]]) && (!dividend.dividendExcluded[_payees[i]])) {
@@ -153,7 +165,15 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _start Index in investor list at which to start pushing dividends
      * @param _iterations Number of addresses to push dividends for
      */
-    function pushDividendPayment(uint256 _dividendIndex, uint256 _start, uint256 _iterations) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
+    function pushDividendPayment(
+        uint256 _dividendIndex,
+        uint256 _start,
+        uint256 _iterations
+    )
+        public
+        withPerm(DISTRIBUTE)
+        validDividendIndex(_dividendIndex)
+    {
         Dividend storage dividend = dividends[_dividendIndex];
         address[] memory investors = ISecurityToken(securityToken).getInvestors();
         uint256 numberInvestors = Math.min256(investors.length, _start.add(_iterations));
@@ -179,8 +199,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
     /**
      * @notice Internal function for paying dividends
-     * @param _payee address of investor
-     * @param _dividend storage with previously issued dividends
+     * @param _payee Address of investor
+     * @param _dividend Storage with previously issued dividends
      * @param _dividendIndex Dividend to pay
      */
     function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal;

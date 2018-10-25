@@ -23,7 +23,15 @@ interface ISecurityTokenRegistry {
      * @param _tokenDetails Off-chain details of the token
      * @param _deployedAt Timestamp at which security token comes deployed on the ethereum blockchain
      */
-    function modifySecurityToken(string _name, string _ticker, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt) external;
+    function modifySecurityToken(
+        string _name,
+        string _ticker,
+        address _owner,
+        address _securityToken,
+        string _tokenDetails,
+        uint256 _deployedAt
+    )
+        external;
 
     /**
      * @notice Registers the token ticker for its particular owner
@@ -120,7 +128,15 @@ interface ISecurityTokenRegistry {
      * @param _expiryDate Expiry date of the ticker
      * @param _status Token deployed status
      */
-    function modifyTicker(address _owner, string _ticker, string _tokenName, uint256 _registrationDate, uint256 _expiryDate, bool _status) external;
+    function modifyTicker(
+        address _owner,
+        string _ticker,
+        string _tokenName,
+        uint256 _registrationDate,
+        uint256 _expiryDate,
+        bool _status
+    )
+        external;
 
      /**
      * @notice Removes the ticker details and associated ownership & security token mapping

@@ -35,10 +35,11 @@ contract MockRedemptionManager is TrackedRedemption {
      * @param _value The number of tokens to redeem
      */
     function redeemTokenByOwner(uint256 _value) public {
-        require(tokenToRedeem[msg.sender] >= _value);
+        require(tokenToRedeem[msg.sender] >= _value, "Insufficient tokens redeemable");
         tokenToRedeem[msg.sender] = tokenToRedeem[msg.sender].sub(_value);
         redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
         ISecurityToken(securityToken).burnWithData(_value, "");
+        /*solium-disable-next-line security/no-block-members*/
         emit RedeemedTokenByOwner(msg.sender, address(this), _value, now);
     }
 

@@ -90,9 +90,11 @@ contract ManualApprovalTransferManager is ITransferManager {
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
         // manual blocking takes precidence over manual approval
         if (!paused) {
+            /*solium-disable-next-line security/no-block-members*/
             if (manualBlockings[_from][_to].expiryTime >= now) {
                 return Result.INVALID;
             }
+            /*solium-disable-next-line security/no-block-members*/
             if ((manualApprovals[_from][_to].expiryTime >= now) && (manualApprovals[_from][_to].allowance >= _amount)) {
                 if (_isTransfer) {
                     manualApprovals[_from][_to].allowance = manualApprovals[_from][_to].allowance.sub(_amount);
@@ -113,6 +115,7 @@ contract ManualApprovalTransferManager is ITransferManager {
     function addManualApproval(address _from, address _to, uint256 _allowance, uint256 _expiryTime) public withPerm(TRANSFER_APPROVAL) {
         require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
+        /*solium-disable-next-line security/no-block-members*/
         require(_expiryTime > now, "Invalid expiry time");
         require(manualApprovals[_from][_to].allowance == 0, "Approval already exists");
         manualApprovals[_from][_to] = ManualApproval(_allowance, _expiryTime);
@@ -128,6 +131,7 @@ contract ManualApprovalTransferManager is ITransferManager {
     function addManualBlocking(address _from, address _to, uint256 _expiryTime) public withPerm(TRANSFER_APPROVAL) {
         require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
+        /*solium-disable-next-line security/no-block-members*/
         require(_expiryTime > now, "Invalid expiry time");
         require(manualBlockings[_from][_to].expiryTime == 0, "Blocking already exists");
         manualBlockings[_from][_to] = ManualBlocking(_expiryTime);

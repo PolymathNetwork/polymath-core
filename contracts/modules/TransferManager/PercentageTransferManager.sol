@@ -104,6 +104,7 @@ contract PercentageTransferManager is ITransferManager {
     */
     function modifyWhitelist(address _investor, bool _valid) public withPerm(WHITELIST) {
         whitelist[_investor] = _valid;
+        /*solium-disable-next-line security/no-block-members*/
         emit ModifyWhitelist(_investor, now, msg.sender, _valid);
     }
 
@@ -126,6 +127,7 @@ contract PercentageTransferManager is ITransferManager {
     function setAllowPrimaryIssuance(bool _allowPrimaryIssuance) public withPerm(ADMIN) {
         require(_allowPrimaryIssuance != allowPrimaryIssuance, "Must change setting");
         allowPrimaryIssuance = _allowPrimaryIssuance;
+        /*solium-disable-next-line security/no-block-members*/
         emit SetAllowPrimaryIssuance(_allowPrimaryIssuance, now);
     }
 

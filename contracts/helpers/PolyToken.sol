@@ -84,7 +84,7 @@ contract PolyToken is IERC20 {
     * @dev Assigns the totalSupply to the PolyDistribution contract
     */
     constructor (address _polyDistributionContractAddress) public {
-        require(_polyDistributionContractAddress != address(0));
+        require(_polyDistributionContractAddress != address(0), "Invalid address");
         balances[_polyDistributionContractAddress] = totalSupply;
         emit Transfer(address(0), _polyDistributionContractAddress, totalSupply);
     }
@@ -114,8 +114,8 @@ contract PolyToken is IERC20 {
     * @param _value The amount to be transferred
     */
     function transfer(address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0));
-        require(_value <= balances[msg.sender]);
+        require(_to != address(0), "Invalid address");
+        require(_value <= balances[msg.sender], "Insufficient tokens transferable");
 
         // SafeMath.sub will throw if the balance is not enough
         balances[msg.sender] = balances[msg.sender].sub(_value);
@@ -131,9 +131,9 @@ contract PolyToken is IERC20 {
     * @param _value uint256 The amount of tokens to be transferred
     */
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
-        require(_to != address(0));
-        require(_value <= balances[_from]);
-        require(_value <= allowed[_from][msg.sender]);
+        require(_to != address(0), "Invalid address");
+        require(_value <= balances[_from], "Insufficient tokens transferable");
+        require(_value <= allowed[_from][msg.sender], "Insufficient tokens allowable");
 
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);
@@ -189,7 +189,7 @@ contract PolyToken is IERC20 {
         if (_subtractedValue > oldValue) {
             allowed[msg.sender][_spender] = 0;
         } else {
-          allowed[msg.sender][_spender] = oldValue.sub(_subtractedValue);
+            allowed[msg.sender][_spender] = oldValue.sub(_subtractedValue);
         }
         emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
         return true;

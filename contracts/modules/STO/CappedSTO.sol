@@ -66,6 +66,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     {
         require(_rate > 0, "Rate of token should be greater than 0");
         require(_fundsReceiver != address(0), "Zero address is not permitted");
+        /*solium-disable-next-line security/no-block-members*/
         require(_startTime >= now && _endTime > _startTime, "Date parameters are not valid");
         require(_cap > 0, "Cap should be greater than 0");
         require(_fundRaiseTypes.length == 1, "It only selects single fund raise type");
@@ -103,8 +104,8 @@ contract CappedSTO is ISTO, ReentrancyGuard {
             require(_beneficiary == msg.sender, "Beneficiary address does not match msg.sender");
         }
 
-        require(!paused);
-        require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "Mode of investment is not ETH.");
+        require(!paused, "Should not be paused");
+        require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "Mode of investment is not ETH");
 
         uint256 weiAmount = msg.value;
         _processTx(_beneficiary, weiAmount);
@@ -118,8 +119,8 @@ contract CappedSTO is ISTO, ReentrancyGuard {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant{
-        require(!paused);
-        require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "Mode of investment is not POLY.");
+        require(!paused, "Should not be paused");
+        require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "Mode of investment is not POLY");
         _processTx(msg.sender, _investedPOLY);
         _forwardPoly(msg.sender, wallet, _investedPOLY);
         _postValidatePurchase(msg.sender, _investedPOLY);
@@ -209,6 +210,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
         require(_investedAmount != 0, "Amount invested should not be equal to 0");
         require(totalTokensSold.add(_getTokenAmount(_investedAmount)) <= cap, "Investment more than cap is not allowed");
+        /*solium-disable-next-line security/no-block-members*/
         require(now >= startTime && now <= endTime, "Offering is closed/Not yet started");
     }
 

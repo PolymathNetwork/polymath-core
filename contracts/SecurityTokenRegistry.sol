@@ -164,9 +164,22 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _polyToken is the address of the POLY ERC20 token
      * @param _owner is the owner of the STR
      */
-    function initialize(address _polymathRegistry, address _STFactory, uint256 _stLaunchFee, uint256 _tickerRegFee, address _polyToken, address _owner) payable external {
+    function initialize(
+        address _polymathRegistry,
+        address _STFactory,
+        uint256 _stLaunchFee,
+        uint256 _tickerRegFee,
+        address _polyToken,
+        address _owner
+    )
+        external
+        payable
+    {
         require(!getBool(INITIALIZE),"already initialized");
-        require(_STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0), "Invalid address");
+        require(
+            _STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0),
+            "Invalid address"
+        );
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Fees should not be 0");
         set(POLYTOKEN, _polyToken);
         set(STLAUNCHFEE, _stLaunchFee);
@@ -205,6 +218,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         if (previousOwner != address(0)) {
             _deleteTickerOwnership(previousOwner, ticker);
         }
+        /*solium-disable-next-line security/no-block-members*/
         _addTicker(_owner, ticker, _tokenName, now, now.add(getExpiryLimit()), false, false, tickerFee);
     }
 
@@ -292,6 +306,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         _deleteTickerOwnership(owner, ticker);
         set(Encoder.getKey("tickerToSecurityToken", ticker), address(0));
         _storeTickerDetails(ticker, address(0), 0, 0, "", false);
+        /*solium-disable-next-line security/no-block-members*/
         emit TickerRemoved(ticker, now, msg.sender);
     }
 
@@ -302,6 +317,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function _tickerAvailable(string _ticker) internal view returns(bool) {
         if (_tickerOwner(_ticker) != address(0)) {
+            /*solium-disable-next-line security/no-block-members*/
             if ((now > getUint(Encoder.getKey("registeredTickers_expiryDate", _ticker))) && !_tickerStatus(_ticker)) {
                 return true;
             } else
@@ -414,6 +430,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         bytes32[] memory tempList = new bytes32[](tickers.length);
         for (uint i = 0; i < tickers.length; i++) {
             string memory ticker = Util.bytes32ToString(tickers[i]);
+            /*solium-disable-next-line security/no-block-members*/
             if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
                 tempList[counter] = tickers[i];
                 counter ++;
@@ -477,6 +494,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         string memory ticker = Util.upper(_ticker);
         bool tickerStatus = _tickerStatus(ticker);
         uint256 expiryDate = getUint(Encoder.getKey("registeredTickers_expiryDate", ticker));
+        /*solium-disable-next-line security/no-block-members*/
         if ((tickerStatus == true) || (expiryDate > now)) {
             return
             (
@@ -508,6 +526,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(!getBool(statusKey), "Already deployed");
         set(statusKey, true);
         require(_tickerOwner(ticker) == msg.sender, "Not authorised");
+        /*solium-disable-next-line security/no-block-members*/
         require(getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker gets expired");
 
         uint256 launchFee = getSecurityTokenLaunchFee();
@@ -524,8 +543,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             getAddress(POLYMATHREGISTRY)
         );
 
+        /*solium-disable-next-line security/no-block-members*/
         _storeSecurityTokenData(newSecurityTokenAddress, ticker, _tokenDetails, now);
         set(Encoder.getKey("tickerToSecurityToken", ticker), newSecurityTokenAddress);
+        /*solium-disable-next-line security/no-block-members*/
         emit NewSecurityToken(ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, launchFee);
     }
 
@@ -538,7 +559,17 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _tokenDetails is the off-chain details of the token
      * @param _deployedAt is the timestamp at which the security token is deployed
      */
-    function modifySecurityToken(string _name, string _ticker, address _owner, address _securityToken, string _tokenDetails, uint256 _deployedAt) external onlyOwner {
+    function modifySecurityToken(
+        string _name,
+        string _ticker,
+        address _owner,
+        address _securityToken,
+        string _tokenDetails,
+        uint256 _deployedAt
+    )
+        external
+        onlyOwner
+    {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "String length > 0");
         require(bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         require(_deployedAt != 0 && _owner != address(0), "0 value params not allowed");
@@ -547,6 +578,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         uint256 registrationTime = getUint(Encoder.getKey("registeredTickers_registrationDate", ticker));
         uint256 expiryTime = getUint(Encoder.getKey("registeredTickers_expiryDate", ticker));
         if (registrationTime == 0) {
+            /*solium-disable-next-line security/no-block-members*/
             registrationTime = now;
             expiryTime = registrationTime.add(getExpiryLimit());
         }
@@ -610,7 +642,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @param _newOwner The address to transfer ownership to.
     */
     function transferOwnership(address _newOwner) external onlyOwner {
-        require(_newOwner != address(0));
+        require(_newOwner != address(0), "Invalid address");
         emit OwnershipTransferred(getAddress(OWNER), _newOwner);
         set(OWNER, _newOwner);
     }
@@ -620,6 +652,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function pause() external whenNotPaused onlyOwner {
         set(PAUSED, true);
+        /*solium-disable-next-line security/no-block-members*/
         emit Pause(now);
     }
 
@@ -628,6 +661,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function unpause() external whenPaused onlyOwner {
         set(PAUSED, false);
+        /*solium-disable-next-line security/no-block-members*/
         emit Unpause(now);
     }
 
@@ -637,7 +671,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
         uint256 fee = getUint(TICKERREGFEE);
-        require(fee != _tickerRegFee);
+        require(fee != _tickerRegFee, "Fee not changed");
         emit ChangeTickerRegistrationFee(fee, _tickerRegFee);
         set(TICKERREGFEE, _tickerRegFee);
     }
@@ -648,7 +682,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
         uint256 fee = getUint(STLAUNCHFEE);
-        require(fee != _stLaunchFee);
+        require(fee != _stLaunchFee, "Fee not changed");
         emit ChangeSecurityLaunchFee(fee, _stLaunchFee);
         set(STLAUNCHFEE, _stLaunchFee);
     }
@@ -658,10 +692,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     * @param _tokenContract is the address of the token contract
     */
     function reclaimERC20(address _tokenContract) external onlyOwner {
-        require(_tokenContract != address(0));
+        require(_tokenContract != address(0), "Invalid address");
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(owner(), balance));
+        require(token.transfer(owner(), balance), "Transfer failed");
     }
 
     /**
@@ -711,7 +745,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _newAddress is the address of the polytoken.
      */
     function updatePolyTokenAddress(address _newAddress) external onlyOwner {
-        require(_newAddress != address(0));
+        require(_newAddress != address(0), "Invalid address");
         set(POLYTOKEN, _newAddress);
     }
 

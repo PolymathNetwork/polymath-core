@@ -7,16 +7,16 @@ contract MockCallback {
 
 	event Callback(address investor, bytes data);
 
-	constructor(ISecurityToken _securityToken) {
+	constructor(ISecurityToken _securityToken) public {
 		require(address(_securityToken) != address(0), "Invalid Security Token");
 		securityToken = _securityToken;
 	}
 
-	function emitCallback(address _investor, bytes _data) {
+	function emitCallback(address _investor, bytes _data) public {
 		emit Callback(_investor, _data);
 	}
 
-	function iterateInvestors(uint256 _start, uint256 _end, bytes _data) {
+	function iterateInvestors(uint256 _start, uint256 _end, bytes _data) public {
 		securityToken.iterateInvestors(_start, _end, _data, this.emitCallback);
 	}
 }

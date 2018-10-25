@@ -46,6 +46,7 @@ library TokenLib {
     function archiveModule(ModuleData storage _moduleData, address _module) public {
         require(!_moduleData.isArchived, "Module archived");
         require(_moduleData.module != address(0), "Module missing");
+        /*solium-disable-next-line security/no-block-members*/
         emit ModuleArchived(_moduleData.moduleTypes, _module, now);
         _moduleData.isArchived = true;
     }
@@ -57,6 +58,7 @@ library TokenLib {
     */
     function unarchiveModule(ModuleData storage _moduleData, address _module) public {
         require(_moduleData.isArchived, "Module unarchived");
+        /*solium-disable-next-line security/no-block-members*/
         emit ModuleUnarchived(_moduleData.moduleTypes, _module, now);
         _moduleData.isArchived = false;
     }

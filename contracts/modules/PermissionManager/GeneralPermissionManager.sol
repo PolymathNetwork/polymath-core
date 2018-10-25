@@ -64,6 +64,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
         require(delegateDetails[_delegate] == bytes32(0), "Already present");
         delegateDetails[_delegate] = _details;
         allDelegates.push(_delegate);
+        /*solium-disable-next-line security/no-block-members*/
         emit AddDelegate(_delegate, _details, now);
     }
 
@@ -88,7 +89,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @return bool
      */
     function checkDelegate(address _potentialDelegate) external view returns(bool) {
-        require(_potentialDelegate != address(0));
+        require(_potentialDelegate != address(0), "Invalid address");
 
         if (delegateDetails[_potentialDelegate] != bytes32(0)) {
             return true;
@@ -203,8 +204,8 @@ contract GeneralPermissionManager is IPermissionManager, Module {
                 _allModulePerms = IModule(_currentTypeModules[j]).getPermissions();
                 for (k = 0; k < _allModulePerms.length; k++) {
                     if (perms[_currentTypeModules[j]][_delegate][_allModulePerms[k]]) {
-                        _allModules[counter]= _currentTypeModules[j];
-                        _allPerms[counter]=_allModulePerms[k];
+                        _allModules[counter] = _currentTypeModules[j];
+                        _allPerms[counter] = _allModulePerms[k];
                         counter++;
                     }
                 }
@@ -231,6 +232,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      internal
     {
         perms[_module][_delegate][_perm] = _valid;
+        /*solium-disable-next-line security/no-block-members*/
         emit ChangePermission(_delegate, _module, _perm, _valid, now);
     }
 

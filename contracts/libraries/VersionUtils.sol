@@ -52,9 +52,9 @@ library VersionUtils {
      * @return bool
      */
     function compareLowerBound(uint8[] _version1, uint8[] _version2) internal pure returns(bool) {
-        require(_version1.length == _version2.length);
+        require(_version1.length == _version2.length, "Input length mismatch");
         uint counter = 0;
-        for (uint8 j = 0; j< _version1.length; j++) {
+        for (uint8 j = 0; j < _version1.length; j++) {
             if (_version1[j] == 0)
                 counter ++;
         }
@@ -83,9 +83,9 @@ library VersionUtils {
      * @return bool
      */
     function compareUpperBound(uint8[] _version1, uint8[] _version2) internal pure returns(bool) {
-        require(_version1.length == _version2.length);
+        require(_version1.length == _version2.length, "Input length mismatch");
         uint counter = 0;
-        for (uint8 j = 0; j< _version1.length; j++) {
+        for (uint8 j = 0; j < _version1.length; j++) {
             if (_version1[j] == 0)
                 counter ++;
         }

@@ -121,7 +121,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
             keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("upperBound")),
             "Must be a valid bound type"
         );
-        require(_newVersion.length == 3, "Version length should be 3");
+        require(_newVersion.length == 3);
         if (compatibleSTVersionRange[_boundType] != uint24(0)) { 
             uint8[] memory _currentVersion = VersionUtils.unpack(compatibleSTVersionRange[_boundType]);
             require(VersionUtils.isValidVersion(_currentVersion, _newVersion), "Failed because of in-valid version");

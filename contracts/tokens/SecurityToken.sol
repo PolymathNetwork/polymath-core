@@ -138,7 +138,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     // Require msg.sender to be the specified module type
     modifier onlyModule(uint8 _type) {
-        require(_isModule(msg.sender, _type), "Sender must be the specified module type");
+        require(_isModule(msg.sender, _type));
         _;
     }
 
@@ -147,7 +147,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         if (msg.sender == owner) {
             _;
         } else {
-            require(_isModule(msg.sender, _type), "Sender must be the specified module type");
+            require(_isModule(msg.sender, _type));
             _;
         }
     }
@@ -163,7 +163,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     }
 
     modifier isEnabled(string _nameKey) {
-        require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey), "Feature must be enabled");
+        require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey));
         _;
     }
 
@@ -354,9 +354,9 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     * @param _value amount of POLY to withdraw
     */
     function withdrawERC20(address _tokenContract, uint256 _value) external onlyOwner {
-        require(_tokenContract != address(0), "Invalid address");
+        require(_tokenContract != address(0));
         IERC20 token = IERC20(_tokenContract);
-        require(token.transfer(owner, _value), "Transfer failed");
+        require(token.transfer(owner, _value));
     }
 
     /**
@@ -492,7 +492,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function transferWithData(address _to, uint256 _value, bytes _data) public returns (bool success) {
         require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer invalid");
-        require(super.transfer(_to, _value), "Transfer failed");
+        require(super.transfer(_to, _value));
         return true;
     }
 
@@ -517,7 +517,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) public returns(bool) {
         require(_updateTransfer(_from, _to, _value, _data), "Transfer invalid");
-        require(super.transferFrom(_from, _to, _value), "Transfer failed");
+        require(super.transferFrom(_from, _to, _value));
         return true;
     }
 
@@ -714,7 +714,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return uint256
      */
     function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
-        require(currentCheckpointId < 2**256 - 1, "Invalid CheckpointId");
+        require(currentCheckpointId < 2**256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
         /*solium-disable-next-line security/no-block-members*/
         checkpointTimes.push(now);
@@ -737,7 +737,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return uint256
      */
     function totalSupplyAt(uint256 _checkpointId) external view returns(uint256) {
-        require(_checkpointId <= currentCheckpointId, "Invalid checkpointId");
+        require(_checkpointId <= currentCheckpointId);
         return TokenLib.getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
     }
 
@@ -747,7 +747,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _checkpointId Checkpoint ID to query as of
      */
     function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256) {
-        require(_checkpointId <= currentCheckpointId, "Invalid checkpointId");
+        require(_checkpointId <= currentCheckpointId);
         return TokenLib.getValueAt(checkpointBalances[_investor], _checkpointId, balanceOf(_investor));
     }
 
@@ -782,8 +782,8 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _log data attached to the transfer by controller to emit in event
      */
     function forceTransfer(address _from, address _to, uint256 _value, bytes _data, bytes _log) public onlyController {
-        require(_to != address(0), "Invalid address");
-        require(_value <= balances[_from], "Value is greater than balance");
+        require(_to != address(0));
+        require(_value <= balances[_from]);
         bool verified = _updateTransfer(_from, _to, _value, _data);
         balances[_from] = balances[_from].sub(_value);
         balances[_to] = balances[_to].add(_value);

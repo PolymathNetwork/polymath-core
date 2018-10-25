@@ -114,8 +114,8 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         internal  
     {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
-        require(_expiry > _maturity, "Invalid expiry or/and maturity");
-        require(_expiry > now, "Invalid expiry");
+        require(_expiry > _maturity, "Expiry is before maturity");
+        require(_expiry > now, "Expiry is in the past");
         require(_amount > 0, "No dividend sent");
         require(_token != address(0), "Invalid token");
         require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "Invalid checkpoint");

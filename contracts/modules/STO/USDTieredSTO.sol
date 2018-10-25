@@ -217,10 +217,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(_ratePerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount rates & tokens / tier");
         require(_tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount tokens / tier & tokens / tier");
         for (uint8 i = 0; i < _ratePerTier.length; i++) {
-            require(_ratePerTier[i] > 0, "Rate is not larger than 0");
-            require(_tokensPerTierTotal[i] > 0, "Tokens per tier is not larger than 0");
-            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Discounted tokens / tier is larger than tokens / tier");
-            require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Discounted rate / tier is larger than rate / tier");
+            require(_ratePerTier[i] > 0, "Rate > 0");
+            require(_tokensPerTierTotal[i] > 0, "Tokens per tier > 0");
+            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Discounted tokens / tier <= tokens / tier");
+            require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Discounted rate / tier <= rate / tier");
         }
         ratePerTier = _ratePerTier;
         ratePerTierDiscountPoly = _ratePerTierDiscountPoly;
@@ -399,7 +399,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 originalUSD = investedUSD;
 
         // Check for minimum investment
-        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment is less than minimumInvestmentUSD");
+        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
 
         // Check for non-accredited cap
         if (!accredited[_beneficiary]) {

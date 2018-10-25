@@ -77,7 +77,7 @@ interface IModuleFactory {
     /**
      * @notice Function use to change the lower and upper bound of the compatible version st
      * @param _boundType Type of bound
-     * @param _newVersion New versions array
+     * @param _newVersion New version array
      */
     function changeSTVersionBounds(string _boundType, uint8[] _newVersion) external;
 

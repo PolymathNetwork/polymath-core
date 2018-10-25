@@ -74,7 +74,7 @@ contract PreSaleSTO is ISTO {
      */
     function allocateTokens(address _investor, uint256 _amount, uint256 _etherContributed, uint256 _polyContributed) public withPerm(PRE_SALE_ADMIN)
     {
-        require(now <= endTime, "EndTime is in the past");
+        require(now <= endTime, "Already passed Endtime");
         require(_amount > 0, "No. of tokens provided should be greater than zero");
         ISecurityToken(securityToken).mint(_investor, _amount);
         if (investors[_investor] == uint256(0)) {

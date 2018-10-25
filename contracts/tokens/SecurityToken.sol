@@ -544,6 +544,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         if (!transfersFrozen) {
             bool isInvalid = false;
             bool isValid = false;
+            bool isForceValid = false;
             bool unarchived = false;
             address module;
             for (uint256 i = 0; i < modules[TRANSFER_KEY].length; i++) {
@@ -556,12 +557,12 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
                     } else if (valid == ITransferManager.Result.VALID) {
                         isValid = true;
                     } else if (valid == ITransferManager.Result.FORCE_VALID) {
-                        return true;
+                        isForceValid = true;
                     }
                 }
             }
             // If no unarchived modules, return true by default
-            return unarchived ? (isInvalid ? false : isValid) : true;
+            return unarchived ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
         }
         return false;
     }

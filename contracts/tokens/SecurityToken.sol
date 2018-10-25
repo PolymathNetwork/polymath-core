@@ -523,7 +523,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      */
     function _updateTransfer(address _from, address _to, uint256 _value, bytes _data) internal nonReentrant returns(bool) {
         // NB - the ordering in this function implies the following:
-        //  - investor counts are updated before transfer managers are called - i.e. transfer managers will eee
+        //  - investor counts are updated before transfer managers are called - i.e. transfer managers will see
         //investor counts including the current transfer.
         //  - checkpoints are updated after the transfer managers are called. This allows TMs to create
         //checkpoints as though they have been created before the current transactions,

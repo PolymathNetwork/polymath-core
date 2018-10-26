@@ -126,7 +126,7 @@ interface ISecurityToken {
      * @notice iterates over all investors executing a callback for each individual investor
      * NB - can be used in batches if investor list is large
      * @param _start Posisiton of investor to start iteration from
-     * @param _start Posisiton of investor to stop iteration at
+     * @param _end Posisiton of investor to stop iteration at
      * @param _data Data to pass in the callback function
      * param _callback Callback function to call for every investor
      */

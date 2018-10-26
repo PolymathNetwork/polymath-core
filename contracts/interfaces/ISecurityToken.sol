@@ -123,15 +123,14 @@ interface ISecurityToken {
     function getInvestorsAt(uint256 _checkpointId) external view returns(address[]);
 
     /**
-     * @notice iterates over all investors executing a callback for each individual investor
+     * @notice generates subset of investors
      * NB - can be used in batches if investor list is large
-     * @param _start Posisiton of investor to start iteration from
-     * @param _end Posisiton of investor to stop iteration at
-     * @param _data Data to pass in the callback function
-     * param _callback Callback function to call for every investor
+     * @param _start Position of investor to start iteration from
+     * @param _end Position of investor to stop iteration at
+     * @return list of investors
      */
-    function iterateInvestors(uint256 _start, uint256 _end, bytes _data, function(address, bytes memory) external _callback) external view;
-
+    function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[]);
+    
     /**
      * @notice Gets current checkpoint ID
      * @return Id

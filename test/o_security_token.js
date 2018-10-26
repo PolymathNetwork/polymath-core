@@ -17,7 +17,6 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 const MockRedemptionManager = artifacts.require("./MockRedemptionManager.sol");
-const MockCallback = artifacts.require("./MockCallback.sol");
 
 const Web3 = require("web3");
 const BigNumber = require("bignumber.js");
@@ -38,7 +37,6 @@ contract("SecurityToken", accounts => {
     let account_temp;
     let account_controller;
     let address_zero = "0x0000000000000000000000000000000000000000";
-    let holla = "0x486f6c6c6121";
 
     let balanceOfReceiver;
     // investor Details
@@ -69,8 +67,6 @@ contract("SecurityToken", accounts => {
     let I_PolymathRegistry;
     let I_MockRedemptionManagerFactory;
     let I_MockRedemptionManager;
-    let I_MockCallback;
-
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const name = "Demo Token";
@@ -896,16 +892,28 @@ contract("SecurityToken", accounts => {
             await I_SecurityToken.transfer(account_investor1, balance2, { from: account_affiliate1});
         });
 
-        it("Should revert when trying to iterate non existent investors", async () => {
-            I_MockCallback = await MockCallback.new(I_SecurityToken.address);
-            await catchRevert(I_MockCallback.iterateInvestors(0, 100000000, ''));
-        });
-
-        it("Should iterate investors and call callback function", async () => {
+        it("Should get filtered investors", async () => {
             let investors = await I_SecurityToken.getInvestors.call();
-            let tx = await I_MockCallback.iterateInvestors(0, 1, holla);
-            assert.equal(tx.logs[0].args.investor, investors[0]);
-            assert.equal(tx.logs[0].args.data, holla);
+            console.log("All Investors: " + investors);
+            let filteredInvestors = await I_SecurityToken.iterateInvestors.call(0, 1);
+            console.log("Filtered Investors (0, 1): " + filteredInvestors);
+            assert.equal(filteredInvestors[0], investors[0]);
+            assert.equal(filteredInvestors.length, 1);
+            filteredInvestors = await I_SecurityToken.iterateInvestors.call(2, 4);
+            console.log("Filtered Investors (2, 4): " + filteredInvestors);
+            assert.equal(filteredInvestors[0], investors[2]);
+            assert.equal(filteredInvestors[1], investors[3]);
+            assert.equal(filteredInvestors.length, 2);
+            filteredInvestors = await I_SecurityToken.iterateInvestors.call(0, 4);
+            console.log("Filtered Investors (0, 4): " + filteredInvestors);
+            assert.equal(filteredInvestors[0], investors[0]);
+            assert.equal(filteredInvestors[1], investors[1]);
+            assert.equal(filteredInvestors[2], investors[2]);
+            assert.equal(filteredInvestors[3], investors[3]);
+            assert.equal(filteredInvestors.length, 4);
+            await catchRevert(
+                I_SecurityToken.iterateInvestors(0, 5)
+            );
         });
 
         it("Should check the balance of investor at checkpoint", async () => {

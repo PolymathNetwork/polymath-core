@@ -129,7 +129,7 @@ async function start_explorer(){
         break;
         case 'Create checkpoint':
           let createCheckpointAction = securityToken.methods.createCheckpoint();
-          await common.sendTransaction(Issuer, createCheckpointAction, defaultGasPrice);
+          await common.sendTransaction(createCheckpointAction, {});
         break;
         case 'Set default exclusions for dividends':
           await setDefaultExclusions();
@@ -199,7 +199,7 @@ async function mintTokens(address, amount){
 
     try {
       let mintAction = securityToken.methods.mint(address,web3.utils.toWei(amount));
-      let receipt = await common.sendTransaction(Issuer, mintAction, defaultGasPrice);
+      let receipt = await common.sendTransaction(mintAction, {});
       let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`
   Minted ${web3.utils.fromWei(event.value)} tokens
@@ -217,7 +217,7 @@ async function transferTokens(address, amount){
 
   try{
     let transferAction = securityToken.methods.transfer(address,web3.utils.toWei(amount));
-    let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 1.5);
+    let receipt = await common.sendTransaction(transferAction, {factor: 1.5});
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
     console.log(`
   Account ${event.from}
@@ -260,7 +260,7 @@ async function setDefaultExclusions() {
   if (readlineSync.keyInYNStrict(`Do you want to continue?`)) {
     let excluded = getExcludedFromDataFile();
     let setDefaultExclusionsActions = currentDividendsModule.methods.setDefaultExcluded(excluded);
-    let receipt = await common.sendTransaction(Issuer, setDefaultExclusionsActions, defaultGasPrice);
+    let receipt = await common.sendTransaction(setDefaultExclusionsActions, {});
     let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'SetDefaultExcludedAddresses');
     console.log(chalk.green(`Exclusions were successfully set.`));
     showExcluded(event._excluded);    
@@ -290,14 +290,14 @@ async function taxHoldingMenu() {
       });
       let percentageWei = web3.utils.toWei((percentage / 100).toString());
       let setWithHoldingFixedAction = currentDividendsModule.methods.setWithholdingFixed([address], percentageWei);
-      let receipt = await common.sendTransaction(Issuer, setWithHoldingFixedAction, defaultGasPrice); 
+      let receipt = await common.sendTransaction(setWithHoldingFixedAction, {}); 
       console.log(chalk.green(`Successfully set tax withholding of ${percentage}% for ${address}.`));
       break;
     case 'Withdraw withholding for dividend':
       let _dividend = await selectDividend({withRemainingWithheld: true});
       if (_dividend !== null) {
         let withdrawWithholdingAction = currentDividendsModule.methods.withdrawWithholding(_dividend.index);
-        let receipt = await common.sendTransaction(Issuer, withdrawWithholdingAction, defaultGasPrice);
+        let receipt = await common.sendTransaction(withdrawWithholdingAction, {});
         let eventName;
         if (dividendsType == 'POLY') {
           eventName = 'ERC20DividendWithholdingWithdrawn';
@@ -326,7 +326,7 @@ async function createDividends(name, dividend, checkpointId) {
   let createDividendAction;
   if (dividendsType == 'POLY') {
     let approveAction = polyToken.methods.approve(currentDividendsModule._address, web3.utils.toWei(dividend));
-    await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
+    await common.sendTransaction(approveAction, {});
     if (checkpointId > 0) {
       if (useDefaultExcluded) {
         createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), checkpointId, web3.utils.toHex(name));
@@ -342,7 +342,7 @@ async function createDividends(name, dividend, checkpointId) {
         createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, polyToken._address, web3.utils.toWei(dividend), excluded, web3.utils.toHex(name));
       }
     }
-    let receipt = await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice);
+    let receipt = await common.sendTransaction(createDividendAction, {});
     let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'ERC20DividendDeposited');
     console.log(chalk.green(`Dividend ${event._dividendIndex} deposited`));
   } else if (dividendsType == 'ETH') {
@@ -361,7 +361,7 @@ async function createDividends(name, dividend, checkpointId) {
         createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, excluded, web3.utils.toHex(name));
       }
     }
-    let receipt = await common.sendTransaction(Issuer, createDividendAction, defaultGasPrice, web3.utils.toWei(dividend));
+    let receipt = await common.sendTransaction(createDividendAction, {gasPrice: web3.utils.toWei(dividend)});
     let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'EtherDividendDeposited');
     console.log(`
   Dividend ${event._dividendIndex} deposited`
@@ -372,7 +372,7 @@ async function createDividends(name, dividend, checkpointId) {
 async function pushDividends(dividend, account){
   let accs = account.split(',');
   let pushDividendPaymentToAddressesAction = currentDividendsModule.methods.pushDividendPaymentToAddresses(dividend.index, accs);
-  let receipt = await common.sendTransaction(Issuer, pushDividendPaymentToAddressesAction, defaultGasPrice);
+  let receipt = await common.sendTransaction(pushDividendPaymentToAddressesAction, {});
   let successEventName;
   if (dividendsType == 'POLY') {
     successEventName = 'ERC20DividendClaimed';
@@ -400,7 +400,7 @@ async function pushDividends(dividend, account){
 
 async function reclaimedDividend(dividend) {
   let reclaimDividendAction = currentDividendsModule.methods.reclaimDividend(dividend.index);
-  let receipt = await common.sendTransaction(Issuer, reclaimDividendAction, defaultGasPrice);
+  let receipt = await common.sendTransaction(reclaimDividendAction, {});
   let eventName;
   if (dividendsType == 'POLY') {
     eventName = 'ERC20DividendReclaimed';
@@ -417,7 +417,7 @@ async function reclaimedDividend(dividend) {
 async function whitelistAddress(address) {
   let now = Math.floor(Date.now() / 1000);
   let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(address, now, now, now + 31536000, true);
-  await common.sendTransaction(Issuer, modifyWhitelistAction, defaultGasPrice);
+  await common.sendTransaction(modifyWhitelistAction, {});
   console.log(chalk.green(`\nWhitelisting successful for ${address}.`));
 }
 
@@ -480,7 +480,7 @@ async function addDividendsModule() {
 
     let dividendsFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.DIVIDENDS, dividendsFactoryName);
     let addModuleAction = securityToken.methods.addModule(dividendsFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
-    let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
+    let receipt = await common.sendTransaction(addModuleAction, {});
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
     console.log(`Module deployed at address: ${event._module}`);
     currentDividendsModule = new web3.eth.Contract(dividendsModuleABI, event._module);

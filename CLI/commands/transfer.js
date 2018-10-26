@@ -46,7 +46,7 @@ async function transfer() {
 
   try{
     let transferAction = securityToken.methods.transfer(_transferTo,web3.utils.toWei(_transferAmount,"ether"));
-    let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice);
+    let receipt = await common.sendTransaction(transferAction, {});
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
     console.log(`
   Account ${event.from}

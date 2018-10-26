@@ -427,10 +427,10 @@ async function investCappedSTO(currency, amount) {
             let allowance = await polyToken.methods.allowance(STOAddress, User.address).call();
             if (allowance < costWei) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
-                await common.sendTransaction(User, approveAction, defaultGasPrice);
+                await common.sendTransaction(approveAction, {from: User});
             }
             let actionBuyTokensWithPoly = currentSTO.methods.buyTokensWithPoly(costWei);
-            let receipt = await common.sendTransaction(User, actionBuyTokensWithPoly, defaultGasPrice);
+            let receipt = await common.sendTransaction(actionBuyTokensWithPoly, {from: User});
             logTokensPurchasedCappedSTO(receipt);
         } else {
             console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} POLY but have ${userBalance} POLY.`));
@@ -439,7 +439,7 @@ async function investCappedSTO(currency, amount) {
         }
     } else {
         let actionBuyTokens = currentSTO.methods.buyTokens(User.address);
-        let receipt = await common.sendTransaction(User, actionBuyTokens, defaultGasPrice, costWei);
+        let receipt = await common.sendTransaction(actionBuyTokens, {from: User, value: costWei});
         logTokensPurchasedCappedSTO(receipt);
     }
     await showTokenInfo();
@@ -493,10 +493,10 @@ async function investUsdTieredSTO(currency, amount) {
             let allowance = await polyToken.methods.allowance(STOAddress, User.address).call();
             if (allowance < costWei) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
-                await common.sendTransaction(User, approveAction, defaultGasPrice);
+                await common.sendTransaction(approveAction, {from: User});
             }
             let actionBuyWithPoly = currentSTO.methods.buyWithPOLY(User.address, costWei);
-            let receipt = await common.sendTransaction(User, actionBuyWithPoly,defaultGasPrice, 0, 2);
+            let receipt = await common.sendTransaction(actionBuyWithPoly, {from: User, factor: 2});
             logTokensPurchasedUSDTieredSTO(receipt);
         } else {
             console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} POLY but have ${userBalance} POLY.`));
@@ -509,10 +509,10 @@ async function investUsdTieredSTO(currency, amount) {
             let allowance = await usdToken.methods.allowance(STOAddress, User.address).call();
             if (allowance < costWei) {
                 let approveAction = usdToken.methods.approve(STOAddress, costWei);
-                await common.sendTransaction(User, approveAction, defaultGasPrice);
+                await common.sendTransaction(approveAction, {from: User});
             }
             let actionBuyWithUSD = currentSTO.methods.buyWithUSD(User.address, costWei);
-            let receipt = await common.sendTransaction(User, actionBuyWithUSD, defaultGasPrice, 0, 1.5);
+            let receipt = await common.sendTransaction(actionBuyWithUSD, {from: User, factor: 1.5});
             logTokensPurchasedUSDTieredSTO(receipt);
         } else {
             console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} DAI but have ${userBalance} DAI.`));
@@ -521,7 +521,7 @@ async function investUsdTieredSTO(currency, amount) {
         } 
     } else {
         let actionBuyWithETH = currentSTO.methods.buyWithETH(User.address);
-        let receipt = await common.sendTransaction(User, actionBuyWithETH, defaultGasPrice, costWei);
+        let receipt = await common.sendTransaction(actionBuyWithETH, {from: User, value: costWei});
         logTokensPurchasedUSDTieredSTO(receipt);
     }
 

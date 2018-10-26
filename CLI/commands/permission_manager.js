@@ -77,7 +77,7 @@ async function addPermissionModule() {
     if (readlineSync.keyInYNStrict('Do you want to add General Permission Manager Module to your Security Token?')) {
       let permissionManagerFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.PERMISSION, 'GeneralPermissionManager');
       let addModuleAction = securityToken.methods.addModule(permissionManagerFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
-      let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
+      let receipt = await common.sendTransaction(addModuleAction, {});
       let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
       console.log(`Module deployed at address: ${event._module}`);
       generalPermissionManagerAddress = event._module;
@@ -119,7 +119,7 @@ async function changePermissionAction(selectedDelegate) {
 
 async function deleteDelegate(address) {
   let deleteDelegateAction = generalPermissionManager.methods.deleteDelegate(address);
-  await common.sendTransaction(Issuer, deleteDelegateAction, defaultGasPrice, 0, 2);
+  await common.sendTransaction(deleteDelegateAction, {factor: 2});
 }
 
 // Helper functions
@@ -169,7 +169,7 @@ function isPermissionValid() {
 
 async function changePermission(delegate, moduleAddress, permission, isValid) {
   let changePermissionAction = generalPermissionManager.methods.changePermission(delegate, moduleAddress, web3.utils.asciiToHex(permission), isValid);
-  let receipt = await common.sendTransaction(Issuer, changePermissionAction, defaultGasPrice, 0, 2);
+  let receipt = await common.sendTransaction(changePermissionAction, {factor: 2});
   common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'ChangePermission');
   console.log(`Permission changed succesfully,`);
 }
@@ -210,7 +210,7 @@ async function addNewDelegate() {
   });
 
   let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
-  let receipt = await common.sendTransaction(Issuer, addPermissionAction, defaultGasPrice);
+  let receipt = await common.sendTransaction(addPermissionAction, {});
   let event = common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'AddDelegate');
   console.log(`Delegate added succesfully: ${event._delegate} - ${event._details}`);
   isNewDelegate = true;

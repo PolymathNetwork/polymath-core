@@ -71,7 +71,7 @@ async function start_explorer() {
         case 'Disable controller':
           if (readlineSync.keyInYNStrict()) { 
             let disableControllerAction = securityToken.methods.disableController();
-            await common.sendTransaction(Issuer, disableControllerAction, defaultGasPrice);
+            await common.sendTransaction(disableControllerAction, {});
             console.log(chalk.green(`Forced transfers have been disabled permanently`));
           }
         break;
@@ -84,7 +84,7 @@ async function start_explorer() {
             defaultInput: Issuer.address
           });
           let setControllerAction = securityToken.methods.setController(controllerAddress);
-          let setControllerReceipt = await common.sendTransaction(Issuer, setControllerAction, defaultGasPrice);
+          let setControllerReceipt = await common.sendTransaction(setControllerAction, {});
           let setControllerEvent = common.getEventFromLogs(securityToken._jsonInterface, setControllerReceipt.logs, 'SetController');
           console.log(chalk.green(`New controller is ${setControllerEvent._newController}`));
         break;
@@ -114,7 +114,7 @@ async function start_explorer() {
           let data = readlineSync.question('Enter the data to indicate validation: ');
           let log = readlineSync.question('Enter the data attached to the transfer by controller to emit in event: ');
           let forceTransferAction = securityToken.methods.forceTransfer(from, to, web3.utils.toWei(amount), web3.utils.asciiToHex(data), web3.utils.asciiToHex(log));
-          let forceTransferReceipt = await common.sendTransaction(Issuer, forceTransferAction, defaultGasPrice, 0, 1.5);
+          let forceTransferReceipt = await common.sendTransaction(forceTransferAction, {factor: 1.5});
           let forceTransferEvent = common.getEventFromLogs(securityToken._jsonInterface, forceTransferReceipt.logs, 'ForceTransfer');
           console.log(chalk.green(`  ${forceTransferEvent._controller} has successfully forced a transfer of ${web3.utils.fromWei(forceTransferEvent._value)} ${tokenSymbol} 
   from ${forceTransferEvent._from} to ${forceTransferEvent._to} 

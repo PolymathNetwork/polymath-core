@@ -30,7 +30,7 @@ function getFinalOptions(options) {
   const defaultOptions = {
     from: Issuer,
     gasPrice: defaultGasPrice,
-    value: 0,
+    value: undefined,
     factor: 1.2
   }
   return Object.assign(defaultOptions, options)
@@ -138,7 +138,7 @@ module.exports = {
     .on('receipt', function(receipt){
       console.log(`
   Congratulations! The transaction was successfully completed.
-  Gas used: ${receipt.gasUsed} - Gas spent: ${web3.utils.fromWei((new web3.utils.BN(gasPrice)).mul(new web3.utils.BN(receipt.gasUsed)))} Ether
+  Gas used: ${receipt.gasUsed} - Gas spent: ${web3.utils.fromWei((new web3.utils.BN(options.gasPrice)).mul(new web3.utils.BN(receipt.gasUsed)))} Ether
   Review it on Etherscan.
   TxHash: ${receipt.transactionHash}\n`
       );

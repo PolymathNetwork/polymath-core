@@ -23,7 +23,8 @@ contract USDTieredSTOFactory is ModuleFactory {
         version = "1.0.0";
         name = "USDTieredSTO";
         title = "USD Tiered STO";
-        description = "USD Tiered STO";
+        /*solium-disable-next-line max-len*/
+        description = "It allows both accredited and non-accredited investors to contribute into the STO. Non-accredited investors will be capped at a maximum investment limit (as a default or specific to their jurisdiction). Tokens will sold according to tiers sequentially & each tier has its own price and volume of tokens to sell. Upon receipt of funds (ETH, POLY or DAI), security tokens will automatically transfer to investor’s wallet address";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }

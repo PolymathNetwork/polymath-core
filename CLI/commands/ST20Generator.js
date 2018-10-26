@@ -122,7 +122,7 @@ async function step_ticker_reg(){
       available = true;
       await approvePoly(securityTokenRegistryAddress, regFee);
       let registerTickerAction = securityTokenRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "");
-      await common.sendTransaction(Issuer, registerTickerAction, defaultGasPrice, 0, 1.5);
+      await common.sendTransaction(registerTickerAction, {factor: 1.5});
     } else if (details[0] == Issuer.address) {
       available = true;
     } else {
@@ -139,7 +139,7 @@ async function step_ticker_reg(){
         limitMessage: "Must be a valid address"
       });
       let transferTickerOwnershipAction = securityTokenRegistry.methods.transferTickerOwnership(newOwner, tokenSymbol);
-      let receipt = await common.sendTransaction(Issuer, transferTickerOwnershipAction, defaultGasPrice, 0, 1.5);
+      let receipt = await common.sendTransaction(transferTickerOwnershipAction, {factor: 1.5});
       let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'ChangeTickerOwnership');
       console.log(chalk.green(`Ownership trasferred successfully. The new owner is ${event._newOwner}`));
       process.exit(0);
@@ -183,7 +183,7 @@ async function step_token_deploy(){
 
     await approvePoly(securityTokenRegistryAddress, launchFee);
     let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility);
-    let receipt = await common.sendTransaction(Issuer, generateSecurityTokenAction, defaultGasPrice);
+    let receipt = await common.sendTransaction(generateSecurityTokenAction, {});
     let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'NewSecurityToken');
     console.log(`Deployed Token at address: ${event._securityTokenAddress}`);
     let securityTokenABI = abis.securityToken();
@@ -240,7 +240,7 @@ async function step_Wallet_Issuance(){
         let generalTransferManagerABI = abis.generalTransferManager();
         let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
         let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
-        await common.sendTransaction(Issuer, modifyWhitelistAction, defaultGasPrice);
+        await common.sendTransaction(modifyWhitelistAction, {});
 
         // Mint tokens
         if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('singleMint') && _mintingConfig.singleMint.hasOwnProperty('tokenAmount')) {
@@ -251,7 +251,7 @@ async function step_Wallet_Issuance(){
         if (issuerTokens == "") issuerTokens = '500000';
 
         let mintAction = securityToken.methods.mint(mintWallet, web3.utils.toWei(issuerTokens));
-        await common.sendTransaction(Issuer, mintAction, defaultGasPrice);
+        await common.sendTransaction(mintAction, {});
       }
     }
   }
@@ -352,7 +352,7 @@ async function cappedSTO_launch() {
       process.exit(0);
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
-      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 2);
+      let receipt = await common.sendTransaction(transferAction, {factor: 2});
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }
@@ -440,7 +440,7 @@ async function cappedSTO_launch() {
 
   let cappedSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.STO, "CappedSTO");
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
-  let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
+  let receipt = await common.sendTransaction(addModuleAction, {});
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
 
@@ -757,7 +757,7 @@ async function usdTieredSTO_launch() {
       process.exit(0);
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, transferAmount);
-      let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice, 0, 2);
+      let receipt = await common.sendTransaction(transferAction, {factor: 2});
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }
@@ -826,7 +826,7 @@ async function usdTieredSTO_launch() {
 
   let usdTieredSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.STO, 'USDTieredSTO');
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
-  let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
+  let receipt = await common.sendTransaction(addModuleAction, {});
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
 
@@ -1004,7 +1004,7 @@ async function usdTieredSTO_configure() {
           if (isVerified == "2") {
             if (readlineSync.keyInYNStrict()) {
               let finalizeAction = currentSTO.methods.finalize();
-              await common.sendTransaction(Issuer, finalizeAction, defaultGasPrice);
+              await common.sendTransaction(finalizeAction, {});
             }
           } else {
             console.log(chalk.red(`Reserve wallet (${reserveWallet}) is not able to receive remaining tokens. Check if this address is whitelisted.`));
@@ -1017,7 +1017,7 @@ async function usdTieredSTO_configure() {
           let accredited = [isAccredited];
           let changeAccreditedAction = currentSTO.methods.changeAccredited(investors, accredited);
           // 2 GAS?
-          await common.sendTransaction(Issuer, changeAccreditedAction, defaultGasPrice);
+          await common.sendTransaction(changeAccreditedAction, {});
           break;
         case 2:
           shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${network}`);
@@ -1029,7 +1029,7 @@ async function usdTieredSTO_configure() {
           let limits = [web3.utils.toWei(limit)];
           let changeNonAccreditedLimitAction = currentSTO.methods.changeNonAccreditedLimit(accounts, limits);
           // 2 GAS?
-          await common.sendTransaction(Issuer, changeNonAccreditedLimitAction, defaultGasPrice);
+          await common.sendTransaction(changeNonAccreditedLimitAction, {});
           break;
         case 4:
           shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${network}`);
@@ -1062,25 +1062,25 @@ async function usdTieredSTO_configure() {
 async function modfifyTimes() {
   let times = timesConfigUSDTieredSTO();
   let modifyTimesAction = currentSTO.methods.modifyTimes(times.startTime, times.endTime);
-  await common.sendTransaction(Issuer, modifyTimesAction, defaultGasPrice);
+  await common.sendTransaction(modifyTimesAction, {});
 }
 
 async function modfifyLimits() {
   let limits = limitsConfigUSDTieredSTO();
   let modifyLimitsAction = currentSTO.methods.modifyLimits(limits.nonAccreditedLimitUSD, limits.minimumInvestmentUSD);
-  await common.sendTransaction(Issuer, modifyLimitsAction, defaultGasPrice);
+  await common.sendTransaction(modifyLimitsAction, {});
 }
 
 async function modfifyFunding() {
   let funding = fundingConfigUSDTieredSTO();
   let modifyFundingAction = currentSTO.methods.modifyFunding(funding.raiseType);
-  await common.sendTransaction(Issuer, modifyFundingAction, defaultGasPrice);
+  await common.sendTransaction(modifyFundingAction, {});
 }
 
 async function modfifyAddresses() {
   let addresses = addressesConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(FUND_RAISE_TYPES.DAI).call());
   let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.wallet, addresses.reserveWallet, addresses.usdToken);
-  await common.sendTransaction(Issuer, modifyAddressesAction, defaultGasPrice);
+  await common.sendTransaction(modifyAddressesAction, {});
 }
 
 async function modfifyTiers() {
@@ -1091,7 +1091,7 @@ async function modfifyTiers() {
     tiers.tokensPerTier,
     tiers.tokensPerTierDiscountPoly,
   );
-  await common.sendTransaction(Issuer, modifyTiersAction, defaultGasPrice);
+  await common.sendTransaction(modifyTiersAction, {});
 }
 
 //////////////////////
@@ -1148,7 +1148,7 @@ async function approvePoly(spender, fee) {
       return true;
     } else {
       let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
-      await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
+      await common.sendTransaction(approveAction, {});
     }
   } else {
       let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);

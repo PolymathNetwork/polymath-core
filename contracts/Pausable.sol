@@ -27,18 +27,20 @@ contract Pausable {
     }
 
    /**
-    * @notice called by the owner to pause, triggers stopped state
+    * @notice Called by the owner to pause, triggers stopped state
     */
-    function _pause() whenNotPaused internal {
+    function _pause() internal whenNotPaused {
         paused = true;
+        /*solium-disable-next-line security/no-block-members*/
         emit Pause(now);
     }
 
     /**
-    * @notice called by the owner to unpause, returns to normal state
+    * @notice Called by the owner to unpause, returns to normal state
     */
-    function _unpause() whenPaused internal {
+    function _unpause() internal whenPaused {
         paused = false;
+        /*solium-disable-next-line security/no-block-members*/
         emit Unpause(now);
     }
 

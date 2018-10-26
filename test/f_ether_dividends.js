@@ -952,23 +952,23 @@ contract("EtherDividendCheckpoint", accounts => {
 
         describe("Test cases for the EtherDividendCheckpointFactory", async () => {
             it("should get the exact details of the factory", async () => {
-                assert.equal((await I_EtherDividendCheckpointFactory.setupCost.call()).toNumber(), 0);
+                assert.equal((await I_EtherDividendCheckpointFactory.getSetupCost.call()).toNumber(), 0);
                 assert.equal((await I_EtherDividendCheckpointFactory.getTypes.call())[0], 4);
-                assert.equal(await I_EtherDividendCheckpointFactory.getVersion.call(), "1.0.0");
+                assert.equal(await I_EtherDividendCheckpointFactory.version.call(), "1.0.0");
                 assert.equal(
                     web3.utils.toAscii(await I_EtherDividendCheckpointFactory.getName.call()).replace(/\u0000/g, ""),
                     "EtherDividendCheckpoint",
                     "Wrong Module added"
                 );
                 assert.equal(
-                    await I_EtherDividendCheckpointFactory.getDescription.call(),
+                    await I_EtherDividendCheckpointFactory.description.call(),
                     "Create ETH dividends for token holders at a specific checkpoint",
                     "Wrong Module added"
                 );
-                assert.equal(await I_EtherDividendCheckpointFactory.getTitle.call(), "Ether Dividend Checkpoint", "Wrong Module added");
+                assert.equal(await I_EtherDividendCheckpointFactory.title.call(), "Ether Dividend Checkpoint", "Wrong Module added");
                 assert.equal(
                     await I_EtherDividendCheckpointFactory.getInstructions.call(),
-                    "Create a dividend which will be paid out to token holders proportional to their balances at the point the dividend is created",
+                    "Create a dividend which will be paid out to token holders proportionally according to their balances at the point the dividend is created",
                     "Wrong Module added"
                 );
                 let tags = await I_EtherDividendCheckpointFactory.getTags.call();

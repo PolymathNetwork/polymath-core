@@ -11,7 +11,7 @@ contract MockModuleRegistry is ModuleRegistry {
     /// Alert! Alert! Do not use it for the mainnet release
     function addMoreReputation(address _moduleFactory, address[] _tokens) public onlyOwner {
         for (uint8 i = 0; i < _tokens.length; i++) {
-            pushArray(Encoder.getKey('reputation', _moduleFactory), _tokens[i]);
+            pushArray(Encoder.getKey("reputation", _moduleFactory), _tokens[i]);
         }
     }
 

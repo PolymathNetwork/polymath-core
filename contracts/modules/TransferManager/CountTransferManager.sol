@@ -28,7 +28,16 @@ contract CountTransferManager is ITransferManager {
     /** @notice Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
      * @param _to Address of the receiver
      */
-    function verifyTransfer(address /* _from */, address _to, uint256 /* _amount */, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(
+        address /* _from */,
+        address _to,
+        uint256 /* _amount */,
+        bytes /* _data */,
+        bool /* _isTransfer */
+    )
+        public
+        returns(Result)
+    {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
                 // Allow transfers to existing maxHolders
@@ -51,7 +60,7 @@ contract CountTransferManager is ITransferManager {
     }
 
     /**
-    * @notice sets the cap for the amount of token holders there can be
+    * @notice Sets the cap for the amount of token holders there can be
     * @param _maxHolderCount is the new maximum amount of token holders
     */
     function changeHolderCount(uint256 _maxHolderCount) public withPerm(ADMIN) {
@@ -67,7 +76,7 @@ contract CountTransferManager is ITransferManager {
     }
 
     /**
-     * @notice Return the permissions flag that are associated with CountTransferManager
+     * @notice Returns the permissions flag that are associated with CountTransferManager
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);

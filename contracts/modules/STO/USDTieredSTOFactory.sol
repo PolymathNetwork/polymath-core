@@ -29,7 +29,7 @@ contract USDTieredSTOFactory is ModuleFactory {
     }
 
      /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
@@ -40,7 +40,9 @@ contract USDTieredSTOFactory is ModuleFactory {
         address usdTieredSTO = IUSDTieredSTOProxy(USDTieredSTOProxyAddress).deploySTO(msg.sender, address(polyToken), address(this));
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == IUSDTieredSTOProxy(USDTieredSTOProxyAddress).getInitFunction(usdTieredSTO), "Invalid data");
+        /*solium-disable-next-line security/no-low-level-calls*/
         require(address(usdTieredSTO).call(_data), "Unsuccessfull call");
+        /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(usdTieredSTO, getName(), address(this), msg.sender, setupCost, now);
         return address(usdTieredSTO);
     }
@@ -52,41 +54,6 @@ contract USDTieredSTOFactory is ModuleFactory {
         uint8[] memory res = new uint8[](1);
         res[0] = 3;
         return res;
-    }
-
-    /**
-     * @notice Get the name of the Module
-     */
-    function getName() public view returns(bytes32) {
-        return name;
-    }
-
-    /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() external view returns(string) {
-        return description;
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() external view returns(string) {
-        return title;
-    }
-
-    /**
-     * @notice Get the version of the Module
-     */
-    function getVersion() external view returns(string) {
-        return version;
-    }
-
-    /**
-     * @notice Get the setup cost of the module
-     */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
     }
 
     /**

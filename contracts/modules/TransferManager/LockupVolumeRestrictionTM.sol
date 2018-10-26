@@ -96,6 +96,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
 
         // if a startTime of 0 is passed in, then start now.
         if (startTime == 0) {
+            /*solium-disable-next-line security/no-block-members*/
             startTime = now;
         }
 
@@ -127,9 +128,9 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint[] _totalAmounts
         ) external withPerm(ADMIN) {
         require(
-            _userAddresses.length == _lockUpPeriodsSeconds.length &&
-            _userAddresses.length == _releaseFrequenciesSeconds.length &&
-            _userAddresses.length == _startTimes.length &&
+            _userAddresses.length == _lockUpPeriodsSeconds.length && /*solium-disable-line operator-whitespace*/
+            _userAddresses.length == _releaseFrequenciesSeconds.length && /*solium-disable-line operator-whitespace*/
+            _userAddresses.length == _startTimes.length && 
             _userAddresses.length == _totalAmounts.length,
             "Input array length mismatch"
         );
@@ -190,6 +191,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint256 startTime = _startTime;
         // if a startTime of 0 is passed in, then start now.
         if (startTime == 0) {
+            /*solium-disable-next-line security/no-block-members*/
             startTime = now;
         }
 
@@ -272,12 +274,15 @@ contract LockupVolumeRestrictionTM is ITransferManager {
             uint allowedAmountForThisLockup = 0;
 
             // check if lockup has entirely passed
+            /*solium-disable-next-line security/no-block-members*/
             if (now >= aLockUp.startTime.add(aLockUp.lockUpPeriodSeconds)) {
                 // lockup has passed, or not started yet.  allow all.
                 allowedAmountForThisLockup = aLockUp.totalAmount.sub(aLockUp.alreadyWithdrawn);
+                /*solium-disable-next-line security/no-block-members*/
             } else if (now >= aLockUp.startTime) {
                 // lockup is active. calculate how many to allow to be withdrawn right now
                 // calculate how many periods have elapsed already
+                /*solium-disable-next-line security/no-block-members*/
                 uint elapsedPeriods = (now.sub(aLockUp.startTime)).div(aLockUp.releaseFrequencySeconds);
                 // calculate the total number of periods, overall
                 uint totalPeriods = aLockUp.lockUpPeriodSeconds.div(aLockUp.releaseFrequencySeconds);
@@ -396,7 +401,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-     * @notice Return the permissions flag that are associated with Percentage transfer Manager
+     * @notice Returns the permissions flag that are associated with Percentage transfer Manager
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);

@@ -27,7 +27,7 @@ contract TestSTOFactory is DummySTOFactory {
     }
 
     /**
-     * @notice Get the tags related to the module factory
+     * @notice Gets the tags related to the module factory
      */
     function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](4);

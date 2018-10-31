@@ -93,5 +93,10 @@
     "solium": "^1.1.6",
     "truffle": "^4.1.13",
     "truffle-wallet-provider": "0.0.5"
+  },
+  "greenkeeper": {
+    "ignore": [
+      "openzeppelin-solidity"
+    ]
   }
 }

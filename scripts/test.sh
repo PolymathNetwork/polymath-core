@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Global variable 
+# Global variable
 bridge_pid
 
 # Exit script as soon as a command fails.
@@ -63,36 +63,47 @@ start_testrpc() {
   if ! [ -z "${TRAVIS_PULL_REQUEST+x}" ] && [ "$TRAVIS_PULL_REQUEST" != false ]; then
     node_modules/.bin/testrpc-sc --gasLimit 0xfffffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
   else
-    node_modules/.bin/ganache-cli --gasLimit 0xfffffffffff "${accounts[@]}" > /dev/null &
+    node_modules/.bin/ganache-cli --gasLimit 8000000 "${accounts[@]}" > /dev/null &
   fi
-  
+
 
   testrpc_pid=$!
 }
 
 if testrpc_running; then
   echo "Using existing testrpc instance"
-  bridge_running
-  if bridge_running; then
-    echo "Using existing ethereum-bridge instance"
-  else
-    echo "Runnning the new ethereum-bridge instance"
-    start_bridge
+  # Do not start ethereum bridge unless it is a cron job from travis
+  if [ "$TRAVIS_EVENT_TYPE" = "cron" ]; then
+    bridge_running
+    if bridge_running; then
+      echo "Using existing ethereum-bridge instance"
+    else
+      echo "Runnning the new ethereum-bridge instance"
+      start_bridge
+    fi
   fi
 else
   echo "Starting our own testrpc instance"
   start_testrpc
-  echo "Starting our own ethereum-bridge instance"
-  sleep 10
-  start_bridge
+  # Do not start ethereum bridge unless it is a cron job from travis
+  if [ "$TRAVIS_EVENT_TYPE" = "cron" ]; then
+    echo "Starting our own ethereum-bridge instance"
+    sleep 10
+    start_bridge
+  fi
 fi
 
 if ! [ -z "${TRAVIS_PULL_REQUEST+x}" ] && [ "$TRAVIS_PULL_REQUEST" != false ]; then
+  curl -o node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
   node_modules/.bin/solidity-coverage
-
   if [ "$CONTINUOUS_INTEGRATION" = true ]; then
     cat coverage/lcov.info | node_modules/.bin/coveralls
   fi
 else
-  node_modules/.bin/truffle test `ls test/*.js`
+  # Do not run a_poly_oracle,js tests unless it is a cron job from travis
+  if [ "$TRAVIS_EVENT_TYPE" = "cron" ]; then
+    node_modules/.bin/truffle test `ls test/*.js`
+  else
+    node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js -and ! -name s_v130_to_v140_upgrade.js`
+  fi
 fi

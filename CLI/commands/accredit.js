@@ -8,7 +8,6 @@ var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis')
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
-let tickerRegistry;
 let securityTokenRegistry;
 let securityToken;
 let usdTieredSTO;
@@ -34,13 +33,9 @@ let badData = new Array();
 startScript();
 
 async function startScript() {
+  if (remoteNetwork == 'undefined') remoteNetwork = undefined;
   await global.initialize(remoteNetwork);
   try {
-    let tickerRegistryAddress = await contracts.tickerRegistry();
-    let tickerRegistryABI = abis.tickerRegistry();
-    tickerRegistry = new web3.eth.Contract(tickerRegistryABI, tickerRegistryAddress);
-    tickerRegistry.setProvider(web3.currentProvider);
-    
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
     let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
@@ -113,44 +108,39 @@ async function changeAccredited() {
   if (tokenDeployedAddress != "0x0000000000000000000000000000000000000000") {
     let securityTokenABI = abis.securityToken();
     securityToken = new web3.eth.Contract(securityTokenABI, tokenDeployedAddress);
-    let result = await securityToken.methods.getModule(3, 0).call();
-    if (result[1] != "0x0000000000000000000000000000000000000000") {
-      let stoName = web3.utils.toAscii(result[0]).replace(/\u0000/g, '');
-      if (stoName == 'USDTieredSTO') {
-          let usdTieredSTOABI = abis.usdTieredSTO();
-          usdTieredSTO = new web3.eth.Contract(usdTieredSTOABI, result[1]);
-          console.log(`
+    let result = await securityToken.methods.getModulesByName(web3.utils.toHex('USDTieredSTO')).call();
+    if (result.length > 0) {
+      let usdTieredSTOABI = abis.usdTieredSTO();
+      usdTieredSTO = new web3.eth.Contract(usdTieredSTOABI, result[0]);
+      console.log(`
 -------------------------------------------------------
 ----- Sending accreditation changes to blockchain -----
 -------------------------------------------------------
-          `);
-          //this for loop will do the batches, so it should run 75, 75, 50 with 200
-          for (let i = 0; i < distribData.length; i++) {
-            try {
-              let investorArray = [];
-              let isAccreditedArray = [];
-        
-              //splitting the user arrays to be organized by input
-              for (let j = 0; j < distribData[i].length; j++) {
-                investorArray.push(distribData[i][j][0])
-                isAccreditedArray.push(distribData[i][j][1])
-              }
-        
-              let changeAccreditedAction = usdTieredSTO.methods.changeAccredited(investorArray, isAccreditedArray);
-              let r = await common.sendTransaction(Issuer, changeAccreditedAction, defaultGasPrice);
-              console.log(`Batch ${i} - Attempting to change accredited accounts:\n\n`, investorArray, "\n\n");
-              console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
-              console.log("Change accredited transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");
-              console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
-            } catch (err) {
-              console.log("ERROR:", err);
-            }
+      `);
+      //this for loop will do the batches, so it should run 75, 75, 50 with 200
+      for (let i = 0; i < distribData.length; i++) {
+        try {
+          let investorArray = [];
+          let isAccreditedArray = [];
+    
+          //splitting the user arrays to be organized by input
+          for (let j = 0; j < distribData[i].length; j++) {
+            investorArray.push(distribData[i][j][0])
+            isAccreditedArray.push(distribData[i][j][1])
           }
-        } else {
-            console.log(chalk.red(`The STO attached is ${stoName} and this module only works for USDTieredSTO.`));
+    
+          let changeAccreditedAction = usdTieredSTO.methods.changeAccredited(investorArray, isAccreditedArray);
+          let r = await common.sendTransaction(Issuer, changeAccreditedAction, defaultGasPrice);
+          console.log(`Batch ${i} - Attempting to change accredited accounts:\n\n`, investorArray, "\n\n");
+          console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
+          console.log("Change accredited transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");
+          console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
+        } catch (err) {
+          console.log("ERROR:", err);
         }
+      }
     } else {
-        console.log(chalk.red(`There is no STO module attached to the ${tokenSymbol.toUpperCase()} Token. No further actions can be taken.`));
+      console.log(chalk.red(`There is no USDTieredSTO module attached to the ${tokenSymbol.toUpperCase()} Token. No further actions can be taken.`));
     } 
   } else {
     console.log(chalk.red(`Token symbol provided is not a registered Security Token.`));

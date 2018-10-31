@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./ISTO.sol";
-import "../../interfaces/IST20.sol";
+import "../../interfaces/ISecurityToken.sol";
 
 /**
  * @title STO module for sample implementation of a different crowdsale module
@@ -15,7 +15,7 @@ contract DummySTO is ISTO {
     uint256 public cap;
     string public someString;
 
-    event LogGenerateTokens(address _investor, uint256 _amount);
+    event GenerateTokens(address _investor, uint256 _amount);
 
     mapping (address => uint256) public investors;
 
@@ -25,7 +25,7 @@ contract DummySTO is ISTO {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _securityToken, address _polyAddress) public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
@@ -56,47 +56,33 @@ contract DummySTO is ISTO {
      * @param _amount Amount of ETH or Poly invested by the investor
      */
     function generateTokens(address _investor, uint256 _amount) public withPerm(ADMIN) {
-        require(!paused);
+        require(!paused, "Should not be paused");
         require(_amount > 0, "Amount should be greater than 0");
-        IST20(securityToken).mint(_investor, _amount);
+        ISecurityToken(securityToken).mint(_investor, _amount);
         if (investors[_investor] == 0) {
             investorCount = investorCount + 1;
         }
         //TODO: Add SafeMath maybe
         investors[_investor] = investors[_investor] + _amount;
-        emit LogGenerateTokens (_investor, _amount);
+        emit GenerateTokens (_investor, _amount);
     }
 
     /**
-     * @notice Return ETH raised by the STO
-     */
-    function getRaisedEther() public view returns (uint256) {
-        return 0;
-    }
-
-    /**
-     * @notice Return POLY raised by the STO
-     */
-    function getRaisedPOLY() public view returns (uint256) {
-        return 0;
-    }
-
-    /**
-     * @notice Return the total no. of investors
+     * @notice Returns the total no. of investors
      */
     function getNumberInvestors() public view returns (uint256) {
         return investorCount;
     }
 
     /**
-     * @notice Return the total no. of investors
+     * @notice Returns the total no. of investors
      */
     function getTokensSold() public view returns (uint256) {
         return 0;
     }
 
     /**
-     * @notice Return the permissions flag that are associated with STO
+     * @notice Returns the permissions flag that are associated with STO
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);

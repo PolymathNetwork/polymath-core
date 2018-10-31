@@ -6,8 +6,12 @@ var investor_portal = require('./commands/investor_portal');
 var module_manager = require('./commands/module_manager');
 var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
+var transfer_ownership = require('./commands/transfer_ownership');
 var dividends_manager = require('./commands/dividends_manager');
+var transfer_manager = require('./commands/transfer_manager');
+var contract_manager = require('./commands/contract_manager');
 var strMigrator = require('./commands/strMigrator');
+var permission_manager = require('./commands/permission_manager');
 var program = require('commander');
 const yaml = require('js-yaml');
 const fs = require('fs');
@@ -76,11 +80,19 @@ program
   });
 
 program
+  .command('transfer_ownership <contractAddress> <transferTo>')
+  .alias('to')
+  .description('Transfer Ownership of an own contract to another account')
+  .action(async function(contractAddress, transferTo) {
+    await transfer_ownership.executeApp(contractAddress, transferTo, program.remoteNode);
+  });
+
+program
   .command('whitelist <tokenSymbol> [batchSize]')
   .alias('w')
   .description('Mass-update a whitelist of allowed/known investors')
   .action(async function(tokenSymbol, batchSize) {
-    shell.exec(`${__dirname}/commands/scripts/script.sh Whitelist ${tokenSymbol} ${batchSize} ${remoteNetwork} ${program.remoteNode}`);
+    shell.exec(`${__dirname}/commands/scripts/script.sh Whitelist ${tokenSymbol} ${batchSize} ${program.remoteNode}`);
   });
 
 program
@@ -89,6 +101,22 @@ program
   .description('Runs dividends_manager')
   .action(async function(dividendsType) {
     await dividends_manager.executeApp(dividendsType, program.remoteNode);
+  });
+
+program
+  .command('transfer_manager')
+  .alias('tm')
+  .description('Runs transfer_manager')
+  .action(async function() {
+    await transfer_manager.executeApp(program.remoteNode);
+  });
+
+program
+  .command('contract_manager')
+  .alias('cm')
+  .description('Runs contract_manager')
+  .action(async function() {
+    await contract_manager.executeApp(program.remoteNode);
   });
 
 program
@@ -108,11 +136,19 @@ program
   });
 
 program
-  .command('strMigrator [fromStrAddress] [toStrAddress]')
+  .command('strMigrator [toStrAddress] [fromTrAddress] [fromStrAddress]')
   .alias('str')
   .description('Runs STR Migrator')
-  .action(async function(fromStrAddress, toStrAddress) {
-    await strMigrator.executeApp(fromStrAddress, toStrAddress, program.remoteNode);
+  .action(async function(toStrAddress, fromTrAddress, fromStrAddress) {
+    await strMigrator.executeApp(toStrAddress, fromTrAddress, fromStrAddress, program.remoteNode);
+  });
+
+program
+  .command('permission_manager')
+  .alias('pm')
+  .description('Runs permission_manager')
+  .action(async function() {
+    await permission_manager.executeApp(program.remoteNode);
   });
 
 program.parse(process.argv);

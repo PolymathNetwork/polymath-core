@@ -1,10 +1,74 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# v1.4.1
+# v1.5.0 - Release Candidate
+
+[__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
+
+## Added
+* Added `getInvestorsAt` which returns the investors (non-zero balances) at a particular checkpoint
+* Added `iterateInvestors` to allow an a subset of `investors` to be returned from the security token in case `investors` is large.
+* `ChangeModuleBudget` in SecurityToken now takes in the change in budget rather than absoulte budget. Added boolean paramter to decide increase/decrease.
+* Added `createCheckpoint() withPerm(CHECKPOINT)` to dividend checkpoint modules.
+* Added `deleteDelegate()` to general permission manager. It will disable the delegate but not delete the perms.
+* Migrated from `npm` to `yarn`.
+* Added `SingleTradeVolumeRestrictionManager` module
+* Added flag in `PercentageTransferManager` to allow ignoring of issuance transfers
+* Added `transferWithData`, `transferFromWithData`, `mintWithData`, `burnWithData` to allow passing of a `bytes _data` for off-chain validation
+* Added ability for modules to have multiple types
+* Added `name` field to dividends struct in DividendCheckpoint. #295
+* Added `getTagsByType`, `getTagsByTypeAndToken`, `getModulesByType`, `getModulesByTypeAndToken` to MR
+* Added `getTokensByOwner` to STR
+* Added withholding tax to ether & erc20 dividends
+* Generalised MakerDAO oracle to allow different instances referencing different currencies
+* Added DAI as a fundraising currency to USDTieredSTO
+* `transferTickerOwnership()` function is introduced in `TickerRegistry` to transfer the ticker ownership after the registeration #191.
+* `getTickersByOwner()` function is used to get the list of tickers owned by the issuer #189.   
+* New function `addCustomTicker()` is used the add the Ticker in tickerRegistry. To avail the facility to Registry owner to add the tokens without paying the fee #190.  
+* Adding the functionality to change the `version`,`name`,`description`,`title` of a Module factory.   
+* Add the `registrationTimestamp` in the `SecurityTokenData` structure that also leads the change in the `getSecurityTokenData()` return parameters. #199
+* Add `_deployedAt` new parameter in the `addCustomSecurityToken`. #199
+* Add `getReputationOfFactory()` & `getModuleListOfType()` functions to get the array type data from the ModuleRegistry contract.   
+* Add `_setupCost` in `LogGenerateModuleFromFactory` event.   
+* Add new function `getAllModulesByName()`, To get the list of modules having the same name. #198.  
+* Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230     
+
+## Fixed
+* `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
+* 0x0 and duplicate address in exclusions are no longer allowed in dividend modules.
+* All permissions are denied if no permission manager is active.
+* Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
+* Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230  
+* Change the function name of `withdraPoly` to `withdrawERC20` and make the function generalize to extract tokens from the ST contract. parmeters are contract address and the value need to extract from the securityToken.          
+
+## Removed
+* Removed investors list pruning
+* Remove `swarmHash` from the `registerTicker(), addCustomTicker(), generateSecurityToken(), addCustomSecurityToken()` functions of TickerRegistry.sol and SecurityTokenRegistry.sol. #230  
+* Remove `Log` prefix from all the event present in the ecosystem.    
+* Removed `addTagByModuleType` & `removeTagsByModuleType` from MR.
+
+======
+
+# v1.4.1 - Release Candidate
+
+[__1.4.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
+
+## Added
+
+* Test cases for 1.4.1 migration
+* STR Migration script
+* Encrypted API Key for CMC queries in PolyOracle
+
+## Changed
+
+* Remove endData update from unpause function
+* Allow custom tokens to be added when STR is paused
+* PolyOracle does not revert on out of order callbacks (silently ignores instead)
+* Removed USDTieredSTO > STR dependency by moving oracle registry to PolymathRegistry
 
 ## Fixed
 
+* Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions      
 * Fix #239: fix basic fee logic for ongoing module fees
 * Fix #238: make beneficial investments optionally supported (default to not
 allowed)
@@ -37,8 +101,9 @@ allowed)
 
 * Modified function name in TickerRegistry and SecurityTokenRegistry from `changePolyRegisterationFee` to `changePolyRegistrationFee`. Event name is modified too from `LogChangePolyRegisterationFee` to `LogChangePolyRegistrationFee`
 * Minor CLI fixes
+* Change in the datastructure of SymbolDetails new variable `expiredTimestamp` introduced and change the variable name `timestamp` to `registeredTimestamp` in Tickerregistry.sol #192.      
 * Rounding edge cases in USDTieredSTO.sol that could have reverted valid transactions
-* Bug in ManualApprovalTransferManager that allowed anyone to reduce anyone's transfer allowance 
+* Bug in ManualApprovalTransferManager that allowed anyone to reduce anyone's transfer allowance
 
 =======
 # v1.3.0  

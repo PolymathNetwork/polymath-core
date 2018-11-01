@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
 import "./ERC20DividendCheckpoint.sol";
-import "../../interfaces/IModuleFactory.sol";
+import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying ERC20DividendCheckpoint module
  */
-contract ERC20DividendCheckpointFactory is IModuleFactory {
+contract ERC20DividendCheckpointFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -16,60 +16,49 @@ contract ERC20DividendCheckpointFactory is IModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-
+        version = "1.0.0";
+        name = "ERC20DividendCheckpoint";
+        title = "ERC20 Dividend Checkpoint";
+        description = "Create ERC20 dividends for token holders at a specific checkpoint";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
     /**
-     * @notice used to launch the Module with the help of factory
-     * @return address Contract address of the Module
+     * @notice Used to launch the Module with the help of factory
+     * @return Address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        return address(new ERC20DividendCheckpoint(msg.sender, address(polyToken)));
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "insufficent allowance");
+        address erc20DividendCheckpoint = new ERC20DividendCheckpoint(msg.sender, address(polyToken));
+        /*solium-disable-next-line security/no-block-members*/
+        emit GenerateModuleFromFactory(erc20DividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
+        return erc20DividendCheckpoint;
     }
 
     /**
      * @notice Type of the Module factory
      */
-    function getType() public view returns(uint8) {
-        return 4;
+    function getTypes() external view returns(uint8[]) {
+        uint8[] memory res = new uint8[](1);
+        res[0] = 4;
+        return res;
     }
 
     /**
-     * @notice Get the name of the Module
+     * @notice Returns the instructions associated with the module
      */
-    function getName() public view returns(bytes32) {
-        return "ERC20DividendCheckpoint";
-    }
-
-    /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() public view returns(string) {
-        return "Create ERC20 dividends for token holders at a specific checkpoint";
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() public  view returns(string) {
-        return "ERC20 Dividend Checkpoint";
-    }
-
-    /**
-     * @notice Get the Instructions that helped to used the module
-     */
-    function getInstructions() public view returns(string) {
-        return "Create a ERC20 dividend which will be paid out to token holders proportional to their balances at the point the dividend is created";
+    function getInstructions() external view returns(string) {
+        return "Create ERC20 dividend to be paid out to token holders based on their balances at dividend creation time";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() public view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](3);
         availableTags[0] = "ERC20";
         availableTags[1] = "Dividend";

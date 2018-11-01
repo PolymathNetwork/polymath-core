@@ -36,7 +36,7 @@ create_docs() {
     # Command to generate the documentation using the solidity-docgen
 
     migrate=$(SOLC_ARGS="openzeppelin-solidity="$CORE_ROUTE"/node_modules/openzeppelin-solidity" \
-solidity-docgen -x $CORE_ROUTE/contracts/external,$CORE_ROUTE/contracts/mocks $CORE_ROUTE $CORE_ROUTE/contracts $CORE_ROUTE/polymath-developer-portal/)
+solidity-docgen -x external/oraclizeAPI.sol,mocks/MockPolyOracle.sol,oracles/PolyOracle.sol $CORE_ROUTE $CORE_ROUTE/contracts $CORE_ROUTE/polymath-developer-portal/)
     
     echo "Successfully docs are generated..."
     

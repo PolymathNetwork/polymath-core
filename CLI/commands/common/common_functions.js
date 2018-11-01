@@ -1,5 +1,29 @@
 const chalk = require('chalk');
 const Tx = require('ethereumjs-tx');
+const permissionsList = require('./permissions_list');
+const abis = require('../helpers/contract_abis');
+
+async function connect(abi, address) {
+  contractRegistry = new web3.eth.Contract(abi, address);
+  contractRegistry.setProvider(web3.currentProvider);
+  return contractRegistry
+};
+
+async function checkPermission(contractName, functionName, contractRegistry) {
+  let permission = permissionsList.verifyPermission(contractName, functionName);
+  if (permission === undefined) {
+    return true
+  } else {
+    let stAddress = await contractRegistry.methods.securityToken().call();
+    let securityToken = await connect(abis.securityToken(), stAddress);
+    let stOwner = await securityToken.methods.owner().call();
+    if (stOwner == Issuer.address) {
+      return true
+    }
+    let result = await securityToken.methods.checkPermission(Issuer.address, contractRegistry.options.address, web3.utils.asciiToHex(permission)).call();
+    return result
+  }
+};
 
 module.exports = {
   convertToDaysRemaining: function (timeRemaining) {
@@ -48,9 +72,28 @@ module.exports = {
 `);
   },
   sendTransaction: async function (from, action, gasPrice, value, factor) {
+    let contractRegistry = await connect(action._parent.options.jsonInterface, action._parent._address);
+    
+    //NOTE this is a condition to verify if the transaction comes from a module or not. 
+    if (contractRegistry.methods.hasOwnProperty('factory')) {
+      let moduleAddress = await contractRegistry.methods.factory().call();
+      let moduleRegistry = await connect(abis.moduleFactory(), moduleAddress)
+      let parentModule = await moduleRegistry.methods.getName().call();
+      let result = await checkPermission(web3.utils.hexToUtf8(parentModule), action._method.name, contractRegistry);
+      if (!result) {
+        console.log("You haven't the right permissions to execute this method.");
+        process.exit(0);
+      }
+    }
+
     if (typeof factor === 'undefined') factor = 1.2;
 
+    let block = await web3.eth.getBlock("latest");
+    let networkGasLimit = block.gasLimit;
+
     let gas = Math.round(factor * (await action.estimateGas({ from: from.address, value: value})));
+    if (gas > networkGasLimit) gas = networkGasLimit;
+  
     console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gas} ----`));    
 
     let nonce = await web3.eth.getTransactionCount(from.address);

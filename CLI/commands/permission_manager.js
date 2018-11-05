@@ -12,14 +12,6 @@ let securityToken;
 let generalPermissionManager;
 let isNewDelegate = false;
 
-const MODULES_TYPES = {
-  PERMISSION: 1,
-  TRANSFER: 2,
-  STO: 3,
-  DIVIDEND: 4,
-  BURN: 5
-}
-
 async function executeApp(remoteNetwork) {
   await global.initialize(remoteNetwork);
 
@@ -75,7 +67,7 @@ async function addPermissionModule() {
   if (result.length == 0) {
     console.log(chalk.red(`General Permission Manager is not attached.`));
     if (readlineSync.keyInYNStrict('Do you want to add General Permission Manager Module to your Security Token?')) {
-      let permissionManagerFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.PERMISSION, 'GeneralPermissionManager');
+      let permissionManagerFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, global.constants.MODULES_TYPES.PERMISSION, 'GeneralPermissionManager');
       let addModuleAction = securityToken.methods.addModule(permissionManagerFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
       let receipt = await common.sendTransaction(addModuleAction, {});
       let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
@@ -221,8 +213,8 @@ async function getModulesWithPermissions() {
   let modules = [];
   let moduleABI = abis.moduleInterface();
   
-  for (const type in MODULES_TYPES) {
-    let modulesAttached = await securityToken.methods.getModulesByType(MODULES_TYPES[type]).call();
+  for (const type in global.constants.MODULES_TYPES) {
+    let modulesAttached = await securityToken.methods.getModulesByType(global.constants.MODULES_TYPES[type]).call();
     for (const m of modulesAttached) {
       let contractTemp = new web3.eth.Contract(moduleABI, m);
       let permissions = await contractTemp.methods.getPermissions().call();

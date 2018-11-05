@@ -1,11 +1,3 @@
-const duration = {
-  seconds: function (val) { return val; },
-  minutes: function (val) { return val * this.seconds(60); },
-  hours: function (val) { return val * this.minutes(60); },
-  days: function (val) { return val * this.hours(24); },
-  weeks: function (val) { return val * this.days(7); },
-  years: function (val) { return val * this.days(365); },
-};
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
@@ -165,7 +157,7 @@ async function strActions() {
       case 'Change Expiry Limit':
         let currentExpiryLimit = await currentContract.methods.getExpiryLimit().call();
         console.log(chalk.yellow(`Current expiry limit is ${Math.floor(parseInt(currentExpiryLimit)/60/60/24)} days`));
-        let newExpiryLimit = duration.days(readlineSync.questionInt('Enter a new value in days for expiry limit: '));
+        let newExpiryLimit = global.constants.DURATION.days(readlineSync.questionInt('Enter a new value in days for expiry limit: '));
         let changeExpiryLimitAction = currentContract.methods.changeExpiryLimit(newExpiryLimit);
         let changeExpiryLimitReceipt = await common.sendTransaction(changeExpiryLimitAction, {});
         let changeExpiryLimitEvent = common.getEventFromLogs(currentContract._jsonInterface, changeExpiryLimitReceipt.logs, 'ChangeExpiryLimit');

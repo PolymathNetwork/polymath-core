@@ -1,11 +1,3 @@
-const duration = {
-  seconds: function (val) { return val; },
-  minutes: function (val) { return val * this.seconds(60); },
-  hours: function (val) { return val * this.minutes(60); },
-  days: function (val) { return val * this.hours(24); },
-  weeks: function (val) { return val * this.days(7); },
-  years: function (val) { return val * this.days(365); },
-};
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
 var moment = require('moment');
@@ -13,14 +5,6 @@ var common = require('./common/common_functions');
 var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
-
-const MODULES_TYPES = {
-  PERMISSION: 1,
-  TRANSFER: 2,
-  STO: 3,
-  DIVIDENDS: 4,
-  BURN: 5
-}
 
 // App flow
 let tokenSymbol;
@@ -318,7 +302,7 @@ async function createDividends(name, dividend, checkpointId) {
 
   let time = Math.floor(Date.now()/1000);
   let maturityTime = readlineSync.questionInt('Enter the dividend maturity time from which dividend can be paid (Unix Epoch time)\n(Now = ' + time + ' ): ', {defaultInput: time});
-  let defaultTime = time + duration.minutes(10);
+  let defaultTime = time + global.constants.DURATION.minutes(10);
   let expiryTime = readlineSync.questionInt('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = ' + defaultTime + ' ): ', {defaultInput: defaultTime});
   
   let useDefaultExcluded = readlineSync.keyInYNStrict(`Do you want to use the default excluded addresses for this dividend? If not, data from 'dividendsExclusions_data.csv' will be used instead.`);
@@ -478,7 +462,7 @@ async function addDividendsModule() {
       dividendsModuleABI = abis.etherDividendCheckpoint();
     }
 
-    let dividendsFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.DIVIDENDS, dividendsFactoryName);
+    let dividendsFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, global.constants.MODULES_TYPES.DIVIDENDS, dividendsFactoryName);
     let addModuleAction = securityToken.methods.addModule(dividendsFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
     let receipt = await common.sendTransaction(addModuleAction, {});
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');

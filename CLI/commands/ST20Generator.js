@@ -16,14 +16,6 @@ let tokenName;
 let tokenSymbol;
 let selectedSTO;
 
-const MODULES_TYPES = {
-  PERMISSION: 1,
-  TRANSFER: 2,
-  STO: 3,
-  DIVIDENDS: 4,
-  BURN: 5
-}
-
 const cappedSTOFee = 20000;
 const usdTieredSTOFee = 100000;
 const tokenDetails = "";
@@ -192,7 +184,7 @@ async function step_token_deploy(){
 }
 
 async function step_Wallet_Issuance(){
-  let result = await securityToken.methods.getModulesByType(MODULES_TYPES.STO).call();
+  let result = await securityToken.methods.getModulesByType(global.constants.MODULES_TYPES.STO).call();
   if (result.length > 0) {
     console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address " + result[0] + ". Skipping initial minting");
   } else {
@@ -271,7 +263,7 @@ async function step_STO_launch() {
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration");
 
-  let result = await securityToken.methods.getModulesByType(MODULES_TYPES.STO).call();
+  let result = await securityToken.methods.getModulesByType(global.constants.MODULES_TYPES.STO).call();
   if (result.length > 0) {
     STO_Address = result[0];
     let stoModuleData = await securityToken.methods.getModule(STO_Address).call();
@@ -438,7 +430,7 @@ async function cappedSTO_launch() {
     ]
   }, [startTime, endTime, web3.utils.toWei(cap), rate, raiseType, wallet]);
 
-  let cappedSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.STO, "CappedSTO");
+  let cappedSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, global.constants.MODULES_TYPES.STO, "CappedSTO");
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let receipt = await common.sendTransaction(addModuleAction, {});
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
@@ -824,7 +816,7 @@ async function usdTieredSTO_launch() {
     addresses.usdToken
   ]);
 
-  let usdTieredSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.STO, 'USDTieredSTO');
+  let usdTieredSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, global.constants.MODULES_TYPES.STO, 'USDTieredSTO');
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let receipt = await common.sendTransaction(addModuleAction, {});
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');

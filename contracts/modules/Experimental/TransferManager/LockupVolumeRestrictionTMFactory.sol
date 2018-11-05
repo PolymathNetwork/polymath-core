@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
+import "./../../ModuleFactory.sol";
 import "./LockupVolumeRestrictionTM.sol";
-import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying ManualApprovalTransferManager module

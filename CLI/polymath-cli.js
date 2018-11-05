@@ -48,11 +48,11 @@ program
   });
 
 program
-  .command('investor_portal [investor] [symbol] [currency] [amount]')
+  .command('investor_portal [investor] [privateKey] [symbol] [currency] [amount]')
   .alias('i')
   .description('Participate in any STO you have been whitelisted for')
-  .action(async function(investor, symbol, currency, amount) {
-    await investor_portal.executeApp(investor, symbol, currency, amount, program.remoteNode);
+  .action(async function(investor, privateKey, symbol, currency, amount) {
+    await investor_portal.executeApp(investor, privateKey, symbol, currency, amount, program.remoteNode);
   });
 
 program

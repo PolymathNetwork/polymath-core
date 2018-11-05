@@ -493,10 +493,8 @@ contract("USDTieredSTO Sim", accounts => {
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     Token_counter = new BigNumber(0);
                                 }
-                                POLY_Tier = USD_Tier.mul(10 ** 18)
-                                    .toFixed(0)
-                                    .div(USDPOLY)
-                                    .toFixed(0);
+                                POLY_Tier = new BigNumber(USD_Tier.mul(10 ** 18).toFixed(0));
+                                POLY_Tier = POLY_Tier.div(USDPOLY).toFixed(0);
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Tokens_discount[tier] = Tokens_discount[tier].sub(Token_Tier);
@@ -516,10 +514,8 @@ contract("USDTieredSTO Sim", accounts => {
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     Token_counter = new BigNumber(0);
                                 }
-                                POLY_Tier = USD_Tier.mul(10 ** 18)
-                                    .toFixed(0)
-                                    .div(USDPOLY)
-                                    .toFixed(0);
+                                POLY_Tier = new BigNumber(USD_Tier.mul(10 ** 18).toFixed(0));
+                                POLY_Tier = POLY_Tier.div(USDPOLY).toFixed(0);
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Token_counter = Token_counter.sub(Token_Tier);
@@ -626,11 +622,11 @@ contract("USDTieredSTO Sim", accounts => {
                 Tokens_discount,
                 tokensSold
             ) {
-                investment_Token = investment_Token.toFixed(0);
-                investment_USD = investment_USD.toFixed(0);
-                investment_POLY = investment_POLY.toFixed(0);
-                investment_DAI = investment_DAI.toFixed(0);
-                investment_ETH = investment_ETH.toFixed(0);
+                investment_Token = new BigNumber(investment_Token.toFixed(0));
+                investment_USD = new BigNumber(investment_USD.toFixed(0));
+                investment_POLY = new BigNumber(investment_POLY.toFixed(0));
+                investment_DAI = new BigNumber(investment_DAI.toFixed(0));
+                investment_ETH = new BigNumber(investment_ETH.toFixed(0));
                 console.log(`
             ------------------- New Investment -------------------
             Investor:   ${_investor}

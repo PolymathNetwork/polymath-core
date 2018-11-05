@@ -391,7 +391,7 @@ contract("ModuleRegistry", accounts => {
                 await I_MRProxied.verifyModule(I_TestSTOFactory.address, true, { from: account_polymath });
                 // Taking the snapshot the revert the changes from here
                 let id = await takeSnapshot();
-                await I_TestSTOFactory.changeSTVersionBounds("lowerBound", [0, 1, 0], { from: account_polymath });
+                await I_TestSTOFactory.changeSTVersionBounds("lowerBound", [2, 1, 0], { from: account_polymath });
                 let _lstVersion = await I_TestSTOFactory.getLowerSTVersionBounds.call();
                 assert.equal(_lstVersion[2], 0);
                 assert.equal(_lstVersion[1], 1);
@@ -409,7 +409,7 @@ contract("ModuleRegistry", accounts => {
                 let _ustVersion = await I_TestSTOFactory.getUpperSTVersionBounds.call();
                 assert.equal(_ustVersion[0], 0);
                 assert.equal(_ustVersion[2], 1);
-                await I_STRProxied.setProtocolVersion(I_STFactory.address, 1, 0, 1);
+                await I_STRProxied.setProtocolVersion(I_STFactory.address, 2, 0, 1);
 
                 // Generate the new securityToken
                 let newSymbol = "toro";

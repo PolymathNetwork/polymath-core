@@ -4,6 +4,7 @@ const fs = require('fs');
 const NonceTrackerSubprovider = require("web3-provider-engine/subproviders/nonce-tracker")
 
 const HDWalletProvider = require("truffle-hdwallet-provider-privkey");
+const key = fs.readFileSync('./privKey').toString();
 
 module.exports = {
   networks: {
@@ -38,7 +39,7 @@ module.exports = {
     },
     kovan: {
       provider: () => {
-        const key = fs.readFileSync('./privKey').toString();
+
         let wallet = new HDWalletProvider(key, "https://kovan.infura.io/")
         var nonceTracker = new NonceTrackerSubprovider()
         wallet.engine._providers.unshift(nonceTracker)
@@ -47,7 +48,7 @@ module.exports = {
       },
       network_id: '42', // Match any network id
       gas: 7900000,
-      gasPrice: 5000000000
+      gasPrice: 10000000000
     },
     coverage: {
       host: "localhost",

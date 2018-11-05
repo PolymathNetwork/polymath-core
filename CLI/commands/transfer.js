@@ -14,12 +14,12 @@ let securityToken;
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
-async function startScript(tokenSymbol, transferTo, transferAmount, remoteNetwork) {
+async function startScript(tokenSymbol, transferTo, transferAmount) {
   _tokenSymbol = tokenSymbol;
   _transferTo = transferTo;
   _transferAmount = transferAmount;
 
-  await global.initialize(remoteNetwork);
+  await global.initialize();
 
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
@@ -61,7 +61,7 @@ async function transfer() {
 };
 
 module.exports = {
-  executeApp: async function(tokenSymbol, transferTo, transferAmount, remoteNetwork) {
-        return startScript(tokenSymbol, transferTo, transferAmount, remoteNetwork);
+  executeApp: async function(tokenSymbol, transferTo, transferAmount) {
+        return startScript(tokenSymbol, transferTo, transferAmount);
     }
 }

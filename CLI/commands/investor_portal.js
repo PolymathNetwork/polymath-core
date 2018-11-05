@@ -34,8 +34,8 @@ let displayCanBuy;
 let displayValidKYC;
 
 // Start Script
-async function executeApp(investorAddress, investorPrivKey, symbol, currency, amount, remoteNetwork) {
-    await global.initialize(remoteNetwork);
+async function executeApp(investorAddress, investorPrivKey, symbol, currency, amount) {
+    await global.initialize();
 
     common.logAsciiBull();
     console.log("********************************************");
@@ -559,7 +559,7 @@ function logTokensPurchasedCappedSTO(receipt) {
 }
 
 module.exports = {
-    executeApp: async function(investorAddress, investorPrivKey, symbol, currency, amount, remoteNetwork) {
-          return executeApp(investorAddress, investorPrivKey, symbol, currency, amount, remoteNetwork);
+    executeApp: async function(investorAddress, investorPrivKey, symbol, currency, amount) {
+          return executeApp(investorAddress, investorPrivKey, symbol, currency, amount);
       }
 }

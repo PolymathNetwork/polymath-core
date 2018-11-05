@@ -8,8 +8,8 @@ var abis = require('./helpers/contract_abis')
 let contract;
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
-async function startScript(contractAddress, transferTo, remoteNetwork) {
-  await global.initialize(remoteNetwork);
+async function startScript(contractAddress, transferTo) {
+  await global.initialize();
 
   if (!web3.utils.isAddress(contractAddress) || !web3.utils.isAddress(transferTo)) {
     console.log(chlak.red(`Please enter valid addresses`));
@@ -35,7 +35,7 @@ async function transferOwnership(transferTo) {
 };
 
 module.exports = {
-  executeApp: async function(contractAddress, transferTo, remoteNetwork) {
-        return startScript(contractAddress, transferTo, remoteNetwork);
+  executeApp: async function(contractAddress, transferTo) {
+        return startScript(contractAddress, transferTo);
     }
 }

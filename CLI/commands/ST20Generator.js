@@ -33,15 +33,12 @@ let _tokenConfig;
 let _mintingConfig;
 let _stoConfig;
 
-let network;
-
-async function executeApp(tokenConfig, mintingConfig, stoConfig, remoteNetwork) {
+async function executeApp(tokenConfig, mintingConfig, stoConfig) {
   _tokenConfig = tokenConfig;
   _mintingConfig = mintingConfig;
   _stoConfig = stoConfig;
 
-  network = remoteNetwork;
-  await global.initialize(remoteNetwork);
+  await global.initialize();
 
   common.logAsciiBull();
   console.log("********************************************");
@@ -247,11 +244,11 @@ async function step_Wallet_Issuance(){
 
 async function multi_mint_tokens() {
   //await whitelist.startWhitelisting(tokenSymbol);
-  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75 ${network}`);
+  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75 ${global.constants.NETWORK}`);
   console.log(chalk.green(`\nCongrats! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
 
-  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${network}`);
+  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${global.constants.NETWORK}`);
   console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transferred to token holders`));
 }
 
@@ -1008,7 +1005,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(changeAccreditedAction, {});
           break;
         case 2:
-          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${network}`);
+          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${global.constants.NETWORK}`);
           break;
         case 3:
           let account = readlineSync.question('Enter the address to change non accredited limit: ');
@@ -1020,7 +1017,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(changeNonAccreditedLimitAction, {});
           break;
         case 4:
-          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${network}`);
+          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${global.constants.NETWORK}`);
           break;
         case 5:
           await modfifyTimes();
@@ -1148,7 +1145,7 @@ async function approvePoly(spender, fee) {
 }
 
 module.exports = {
-  executeApp: async function(tokenConfig, mintingConfig, stoConfig, remoteNetwork) {
-    return executeApp(tokenConfig, mintingConfig, stoConfig, remoteNetwork);
+  executeApp: async function(tokenConfig, mintingConfig, stoConfig) {
+    return executeApp(tokenConfig, mintingConfig, stoConfig);
   }
 }

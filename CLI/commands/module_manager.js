@@ -47,8 +47,8 @@ async function setup() {
 }
 
 // Start function
-async function executeApp(remoteNetwork) {
-    await global.initialize(remoteNetwork);
+async function executeApp() {
+    await global.initialize();
 
     common.logAsciiBull();
     console.log(chalk.yellow(`******************************************`));
@@ -441,7 +441,7 @@ async function polyBalance(_user) {
 }
 
 module.exports = {
-    executeApp: async function(remoteNetwork) {
-          return executeApp(remoteNetwork);
+    executeApp: async function() {
+          return executeApp();
       }
 }

@@ -23,7 +23,8 @@ function getGasPrice (networkId) {
 }
 
 module.exports = {
-  initialize: async function (remoteNetwork) {
+  initialize: async function() {
+    let remoteNetwork = constants.NETWORK;
     if (typeof web3 === 'undefined' || typeof Issuer === 'undefined' || typeof defaultGasPrice === 'undefined') {
       if (typeof remoteNetwork !== 'undefined') {
         web3 = new Web3(new Web3.providers.HttpProvider(`https://${remoteNetwork}.infura.io/`));

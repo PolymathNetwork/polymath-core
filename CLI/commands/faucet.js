@@ -11,8 +11,8 @@ var chalk = require('chalk');
 let polyToken;
 let usdToken;
 
-async function executeApp(beneficiary, amount, remoteNetwork) {
-  await global.initialize(remoteNetwork);
+async function executeApp(beneficiary, amount) {
+  await global.initialize();
 
   console.log("\n");
   console.log("***************************")
@@ -108,7 +108,7 @@ async function transferTokens(to, amount) {
 }
 
 module.exports = {
-  executeApp: async function(beneficiary, amount, remoteNetwork) {
-        return executeApp(beneficiary, amount, remoteNetwork);
+  executeApp: async function(beneficiary, amount) {
+        return executeApp(beneficiary, amount);
     }
 }

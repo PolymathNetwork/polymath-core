@@ -11,8 +11,8 @@ let tokenSymbol;
 let securityToken;
 let securityTokenRegistry;
 
-async function executeApp(remoteNetwork) {
-  await global.initialize(remoteNetwork);
+async function executeApp() {
+  await global.initialize();
   
   common.logAsciiBull();
   console.log("*********************************************");
@@ -138,7 +138,7 @@ async function start_explorer() {
 }
 
 module.exports = {
-  executeApp: async function(type, remoteNetwork) {
-    return executeApp(type, remoteNetwork);
+  executeApp: async function(type) {
+    return executeApp(type);
   }
 }

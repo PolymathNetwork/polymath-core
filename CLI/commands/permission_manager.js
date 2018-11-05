@@ -12,8 +12,8 @@ let securityToken;
 let generalPermissionManager;
 let isNewDelegate = false;
 
-async function executeApp(remoteNetwork) {
-  await global.initialize(remoteNetwork);
+async function executeApp() {
+  await global.initialize();
 
   common.logAsciiBull();
   console.log("***********************************************");
@@ -232,7 +232,7 @@ async function getModulesWithPermissions() {
 }
 
 module.exports = {
-  executeApp: async function(remoteNetwork) {
-        return executeApp(remoteNetwork);
+  executeApp: async function() {
+        return executeApp();
     }
 }

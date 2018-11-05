@@ -14,9 +14,9 @@ let securityTokenRegistry;
 let generalTransferManager;
 let currentDividendsModule;
 
-async function executeApp(type, remoteNetwork) {
+async function executeApp(type) {
   dividendsType = type;
-  await global.initialize(remoteNetwork);
+  await global.initialize();
 
   common.logAsciiBull();
   console.log("**********************************************");
@@ -583,7 +583,7 @@ function showExcluded(excluded) {
 }
 
 module.exports = {
-  executeApp: async function(type, remoteNetwork) {
-    return executeApp(type, remoteNetwork);
+  executeApp: async function(type) {
+    return executeApp(type);
   }
 }

@@ -8,8 +8,8 @@ var abis = require('./helpers/contract_abis');
 // App flow
 let currentContract = null;
 
-async function executeApp(remoteNetwork) {
-  await global.initialize(remoteNetwork);
+async function executeApp() {
+  await global.initialize();
 
   common.logAsciiBull();
   console.log("*********************************************");
@@ -189,7 +189,7 @@ async function strActions() {
 }
 
 module.exports = {
-  executeApp: async function(remoteNetwork) {
-        return executeApp(remoteNetwork);
+  executeApp: async function() {
+        return executeApp();
     }
 }

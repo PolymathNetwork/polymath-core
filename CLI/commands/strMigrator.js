@@ -6,11 +6,8 @@ var contracts = require('./helpers/contract_addresses');
 var common = require('./common/common_functions');
 var global = require('./common/global');
 
-let network;
-
-async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, remoteNetwork) {
-    network = remoteNetwork;
-    await global.initialize(remoteNetwork);
+async function executeApp(toStrAddress, fromTrAddress, fromStrAddress) {
+    await global.initialize();
 
     common.logAsciiBull();
     console.log("****************************************");
@@ -360,7 +357,7 @@ ${failed.map(ticker => chalk.red(`${ticker.ticker}`)).join('\n')}
 }
 
 async function getABIfromEtherscan(_address) {
-    let urlDomain = network == 'kovan' ? 'api-kovan' : 'api';
+    let urlDomain = global.constants.NETWORK == 'kovan' ? 'api-kovan' : 'api';
     const options = {
         url: `https://${urlDomain}.etherscan.io/api`,
         qs: {
@@ -377,7 +374,7 @@ async function getABIfromEtherscan(_address) {
 }
 
 module.exports = {
-    executeApp: async function(toStrAddress, fromTrAddress, fromStrAddress, remoteNetwork) {
-        return executeApp(toStrAddress, fromTrAddress, fromStrAddress, remoteNetwork);
+    executeApp: async function(toStrAddress, fromTrAddress, fromStrAddress) {
+        return executeApp(toStrAddress, fromTrAddress, fromStrAddress);
     }
 };

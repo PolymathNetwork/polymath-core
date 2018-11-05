@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
+import "./../../ModuleFactory.sol";
 import "./LockupVolumeRestrictionTM.sol";
-import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying ManualApprovalTransferManager module
@@ -27,13 +27,14 @@ contract LockupVolumeRestrictionTMFactory is ModuleFactory {
     }
 
      /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         LockupVolumeRestrictionTM lockupVolumeRestrictionTransferManager = new LockupVolumeRestrictionTM(msg.sender, address(polyToken));
+        /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(lockupVolumeRestrictionTransferManager), getName(), address(this), msg.sender, now);
         return address(lockupVolumeRestrictionTransferManager);
     }

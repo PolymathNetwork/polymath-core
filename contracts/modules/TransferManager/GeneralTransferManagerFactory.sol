@@ -25,13 +25,14 @@ contract GeneralTransferManagerFactory is ModuleFactory {
 
 
      /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address generalTransferManager = new GeneralTransferManager(msg.sender, address(polyToken));
+        /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(generalTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(generalTransferManager);
     }
@@ -50,14 +51,15 @@ contract GeneralTransferManagerFactory is ModuleFactory {
      * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
-        return "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist, and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.";
+        /*solium-disable-next-line max-len*/
+        return "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
     function getTags() public view returns(bytes32[]) {
-         bytes32[] memory availableTags = new bytes32[](2);
+        bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "General";
         availableTags[1] = "Transfer Restriction";
         return availableTags;

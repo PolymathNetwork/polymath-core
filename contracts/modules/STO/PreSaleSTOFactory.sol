@@ -25,7 +25,7 @@ contract PreSaleSTOFactory is ModuleFactory {
     }
 
     /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
@@ -37,7 +37,9 @@ contract PreSaleSTOFactory is ModuleFactory {
         PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == preSaleSTO.getInitFunction(), "Invalid data");
+        /*solium-disable-next-line security/no-low-level-calls*/
         require(address(preSaleSTO).call(_data), "Unsuccessfull call");
+        /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(preSaleSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(preSaleSTO);
     }

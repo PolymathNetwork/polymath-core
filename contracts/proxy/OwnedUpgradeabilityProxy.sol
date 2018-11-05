@@ -110,8 +110,9 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @param _data represents the msg.data to bet sent in the low level call. This parameter may include the function
     * signature of the implementation to be called with the needed payload
     */
-    function upgradeToAndCall(string _newVersion, address _newImplementation, bytes _data) payable external ifOwner {
+    function upgradeToAndCall(string _newVersion, address _newImplementation, bytes _data) external payable ifOwner {
         _upgradeTo(_newVersion, _newImplementation);
+        /*solium-disable-next-line security/no-call-value*/
         require(address(this).call.value(msg.value)(_data), "Fail in executing the function of implementation contract");
     }
 

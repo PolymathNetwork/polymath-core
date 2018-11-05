@@ -3,7 +3,7 @@ import { duration, ensureException, promisifyLogWatch, latestBlock } from "./hel
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
-import { 
+import {
     setUpPolymathNetwork,
     deployGPMAndVerifyed,
     deployCappedSTOAndVerifyed,
@@ -67,7 +67,6 @@ contract("SecurityToken", accounts => {
     let I_PolymathRegistry;
     let I_MockRedemptionManagerFactory;
     let I_MockRedemptionManager;
-
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const name = "Demo Token";
@@ -505,7 +504,7 @@ contract("SecurityToken", accounts => {
         it("Should fail to get the total supply -- because checkpoint id is greater than present", async() => {
             await catchRevert(
                 I_SecurityToken.totalSupplyAt.call(50)
-            ); 
+            );
         })
     });
 
@@ -858,16 +857,63 @@ contract("SecurityToken", accounts => {
             assert.equal(newInvestorCount.toNumber() + 1, currentInvestorCount.toNumber(), "Investor count drops by one");
         });
 
-        it("Should prune investor length", async () => {
-            await I_SecurityToken.pruneInvestors(0, 10, { from: token_owner });
-            // Hardcode list of expected accounts based on transfers above
-
-            let investors = await I_SecurityToken.getInvestors.call();
+        it("Should use getInvestorsAt to determine balances now", async () => {
+            await I_SecurityToken.createCheckpoint({ from: token_owner });
+            let investors = await I_SecurityToken.getInvestorsAt.call(1);
+            console.log("Filtered investors:" + investors);
             let expectedAccounts = [account_affiliate1, account_affiliate2, account_investor1];
             for (let i = 0; i < expectedAccounts.length; i++) {
                 assert.equal(investors[i], expectedAccounts[i]);
             }
             assert.equal(investors.length, 3);
+        });
+
+        it("Should prune investor length test #2", async () => {
+            let balance = await I_SecurityToken.balanceOf(account_affiliate2);
+            let balance2 = await I_SecurityToken.balanceOf(account_investor1);
+            await I_SecurityToken.transfer(account_affiliate1, balance, { from: account_affiliate2});
+            await I_SecurityToken.transfer(account_affiliate1, balance2, { from: account_investor1});
+            await I_SecurityToken.createCheckpoint({ from: token_owner });
+            let investors = await I_SecurityToken.getInvestors.call();
+            console.log("All investors:" + investors);
+            let expectedAccounts = [account_affiliate1, account_affiliate2, account_investor1, account_temp];
+            for (let i = 0; i < expectedAccounts.length; i++) {
+                assert.equal(investors[i], expectedAccounts[i]);
+            }
+            assert.equal(investors.length, 4);
+            investors = await I_SecurityToken.getInvestorsAt.call(2);
+            console.log("Filtered investors:" + investors);
+            expectedAccounts = [account_affiliate1];
+            for (let i = 0; i < expectedAccounts.length; i++) {
+                assert.equal(investors[i], expectedAccounts[i]);
+            }
+            assert.equal(investors.length, 1);
+            await I_SecurityToken.transfer(account_affiliate2, balance, { from: account_affiliate1});
+            await I_SecurityToken.transfer(account_investor1, balance2, { from: account_affiliate1});
+        });
+
+        it("Should get filtered investors", async () => {
+            let investors = await I_SecurityToken.getInvestors.call();
+            console.log("All Investors: " + investors);
+            let filteredInvestors = await I_SecurityToken.iterateInvestors.call(0, 1);
+            console.log("Filtered Investors (0, 1): " + filteredInvestors);
+            assert.equal(filteredInvestors[0], investors[0]);
+            assert.equal(filteredInvestors.length, 1);
+            filteredInvestors = await I_SecurityToken.iterateInvestors.call(2, 4);
+            console.log("Filtered Investors (2, 4): " + filteredInvestors);
+            assert.equal(filteredInvestors[0], investors[2]);
+            assert.equal(filteredInvestors[1], investors[3]);
+            assert.equal(filteredInvestors.length, 2);
+            filteredInvestors = await I_SecurityToken.iterateInvestors.call(0, 4);
+            console.log("Filtered Investors (0, 4): " + filteredInvestors);
+            assert.equal(filteredInvestors[0], investors[0]);
+            assert.equal(filteredInvestors[1], investors[1]);
+            assert.equal(filteredInvestors[2], investors[2]);
+            assert.equal(filteredInvestors[3], investors[3]);
+            assert.equal(filteredInvestors.length, 4);
+            await catchRevert(
+                I_SecurityToken.iterateInvestors(0, 5)
+            );
         });
 
         it("Should check the balance of investor at checkpoint", async () => {
@@ -881,7 +927,7 @@ contract("SecurityToken", accounts => {
     });
 
     describe("Test cases for the Mock TrackedRedeemption", async() => {
-        
+
         it("Should add the tracked redeemption module successfully", async() => {
             [I_MockRedemptionManagerFactory] = await deployMockRedemptionAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
             let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "", 0, 0, {from: token_owner });
@@ -947,7 +993,7 @@ contract("SecurityToken", accounts => {
             await I_SecurityToken.approve(I_MockRedemptionManager.address, web3.utils.toWei("500"), {from: account_investor1});
             // Transfer the tokens to module (Burn)
             await I_MockRedemptionManager.transferToRedeem(web3.utils.toWei("500"), { from: account_investor1});
-            
+
             await catchRevert(
                 // Redeem tokens
                 I_MockRedemptionManager.redeemTokenByOwner(web3.utils.toWei("250"), {from: account_investor1})

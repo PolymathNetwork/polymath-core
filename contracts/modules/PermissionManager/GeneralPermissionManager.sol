@@ -21,7 +21,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
 
     /// Event emitted after any permission get changed for the delegate
     event ChangePermission(address indexed _delegate, address _module, bytes32 _perm, bool _valid, uint256 _timestamp);
-    /// Use to notify when delegate is added in permission manager contract
+    /// Used to notify when delegate is added in permission manager contract
     event AddDelegate(address indexed _delegate, bytes32 _details, uint256 _timestamp);
 
 
@@ -40,7 +40,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
-     * @notice Use to check the permission on delegate corresponds to module contract address
+     * @notice Used to check the permission on delegate corresponds to module contract address
      * @param _delegate Ethereum address of the delegate
      * @param _module Ethereum contract address of the module
      * @param _perm Permission flag
@@ -54,7 +54,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
-     * @notice Use to add a delegate
+     * @notice Used to add a delegate
      * @param _delegate Ethereum address of the delegate
      * @param _details Details about the delegate i.e `Belongs to financial firm`
      */
@@ -64,6 +64,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
         require(delegateDetails[_delegate] == bytes32(0), "Already present");
         delegateDetails[_delegate] = _details;
         allDelegates.push(_delegate);
+        /*solium-disable-next-line security/no-block-members*/
         emit AddDelegate(_delegate, _details, now);
     }
 
@@ -83,12 +84,12 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
-     * @notice use to check if an address is a delegate or not
+     * @notice Used to check if an address is a delegate or not
      * @param _potentialDelegate the address of potential delegate
      * @return bool
      */
     function checkDelegate(address _potentialDelegate) external view returns(bool) {
-        require(_potentialDelegate != address(0));
+        require(_potentialDelegate != address(0), "Invalid address");
 
         if (delegateDetails[_potentialDelegate] != bytes32(0)) {
             return true;
@@ -97,7 +98,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
-     * @notice Use to provide/change the permission to the delegate corresponds to the module contract
+     * @notice Used to provide/change the permission to the delegate corresponds to the module contract
      * @param _delegate Ethereum address of the delegate
      * @param _module Ethereum contract address of the module
      * @param _perm Permission flag
@@ -118,7 +119,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
-     * @notice Use to change one or more permissions for a single delegate at once
+     * @notice Used to change one or more permissions for a single delegate at once
      * @param _delegate Ethereum address of the delegate
      * @param _modules Multiple module matching the multiperms, needs to be same length
      * @param _perms Multiple permission flag needs to be changed
@@ -144,7 +145,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
-     * @notice use to return all delegates with a given permission and module
+     * @notice Used to return all delegates with a given permission and module
      * @param _module Ethereum contract address of the module
      * @param _perm Permission flag
      * @return address[]
@@ -169,7 +170,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
-     * @notice use to return all permission of a single or multiple module
+     * @notice Used to return all permission of a single or multiple module
      * @dev possible that function get out of gas is there are lot of modules and perm related to them
      * @param _delegate Ethereum address of the delegate
      * @param _types uint8[] of types
@@ -203,8 +204,8 @@ contract GeneralPermissionManager is IPermissionManager, Module {
                 _allModulePerms = IModule(_currentTypeModules[j]).getPermissions();
                 for (k = 0; k < _allModulePerms.length; k++) {
                     if (perms[_currentTypeModules[j]][_delegate][_allModulePerms[k]]) {
-                        _allModules[counter]= _currentTypeModules[j];
-                        _allPerms[counter]=_allModulePerms[k];
+                        _allModules[counter] = _currentTypeModules[j];
+                        _allPerms[counter] = _allModulePerms[k];
                         counter++;
                     }
                 }
@@ -215,7 +216,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     }
 
     /**
-     * @notice Use to provide/change the permission to the delegate corresponds to the module contract
+     * @notice Used to provide/change the permission to the delegate corresponds to the module contract
      * @param _delegate Ethereum address of the delegate
      * @param _module Ethereum contract address of the module
      * @param _perm Permission flag
@@ -231,11 +232,12 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      internal
     {
         perms[_module][_delegate][_perm] = _valid;
+        /*solium-disable-next-line security/no-block-members*/
         emit ChangePermission(_delegate, _module, _perm, _valid, now);
     }
 
     /**
-     * @notice use to get all delegates
+     * @notice Used to get all delegates
      * @return address[]
      */
     function getAllDelegates() external view returns(address[]) {

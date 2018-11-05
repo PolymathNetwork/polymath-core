@@ -24,7 +24,7 @@ contract DummySTOFactory is ModuleFactory {
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
     /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
@@ -34,7 +34,9 @@ contract DummySTOFactory is ModuleFactory {
         DummySTO dummySTO = new DummySTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == dummySTO.getInitFunction(), "Invalid data");
+        /*solium-disable-next-line security/no-low-level-calls*/
         require(address(dummySTO).call(_data), "Unsuccessfull call");
+        /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(dummySTO), getName(), address(this), msg.sender, setupCost, now);
         return address(dummySTO);
     }

@@ -146,7 +146,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-     * @notice default implementation of verifyTransfer used by SecurityToken
+     * @notice Default implementation of verifyTransfer used by SecurityToken
      * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
      * If the transfer request comes from a token holder, it checks that:
      * a) Both are on the whitelist
@@ -175,28 +175,39 @@ contract GeneralTransferManager is ITransferManager {
                 return _onWhitelist(_to) ? Result.VALID : Result.NA;
             }
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
+            /*solium-disable-next-line security/no-block-members*/
             return ((_onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
-                (_onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA;
+                (_onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
         }
         return Result.NA;
     }
 
     /**
-    * @notice adds or removes addresses from the whitelist.
+    * @notice Adds or removes addresses from the whitelist.
     * @param _investor is the address to whitelist
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
     */
-    function modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO) public withPerm(WHITELIST) {
+    function modifyWhitelist(
+        address _investor,
+        uint256 _fromTime,
+        uint256 _toTime,
+        uint256 _expiryTime,
+        bool _canBuyFromSTO
+    )
+        public
+        withPerm(WHITELIST)
+    {
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        /*solium-disable-next-line security/no-block-members*/
         emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**
-    * @notice adds or removes addresses from the whitelist.
+    * @notice Adds or removes addresses from the whitelist.
     * @param _investors List of the addresses to whitelist
     * @param _fromTimes An array of the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTimes An array of the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
@@ -220,7 +231,7 @@ contract GeneralTransferManager is ITransferManager {
     }
 
     /**
-    * @notice adds or removes addresses from the whitelist - can be called by anyone with a valid signature
+    * @notice Adds or removes addresses from the whitelist - can be called by anyone with a valid signature
     * @param _investor is the address to whitelist
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
@@ -246,19 +257,24 @@ contract GeneralTransferManager is ITransferManager {
         bytes32 _r,
         bytes32 _s
     ) public {
+        /*solium-disable-next-line security/no-block-members*/
         require(_validFrom <= now, "ValidFrom is too early");
+        /*solium-disable-next-line security/no-block-members*/
         require(_validTo >= now, "ValidTo is too late");
         require(!nonceMap[_investor][_nonce], "Already used signature");
         nonceMap[_investor][_nonce] = true;
-        bytes32 hash = keccak256(abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce));
+        bytes32 hash = keccak256(
+            abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce)
+        );
         _checkSig(hash, _v, _r, _s);
         //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        /*solium-disable-next-line security/no-block-members*/
         emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**
-     * @notice used to verify the signature
+     * @notice Used to verify the signature
      */
     function _checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
         //Check that the signature is valid
@@ -274,7 +290,7 @@ contract GeneralTransferManager is ITransferManager {
      */
     function _onWhitelist(address _investor) internal view returns(bool) {
         return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) &&
-            (whitelist[_investor].expiryTime >= now));
+            (whitelist[_investor].expiryTime >= now)); /*solium-disable-line security/no-block-members*/
     }
 
     /**

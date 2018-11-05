@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
+* Added `getInvestorsAt` which returns the investors (non-zero balances) at a particular checkpoint
+* Added `iterateInvestors` to allow an a subset of `investors` to be returned from the security token in case `investors` is large.
 * `ChangeModuleBudget` in SecurityToken now takes in the change in budget rather than absoulte budget. Added boolean paramter to decide increase/decrease.
 * Added `createCheckpoint() withPerm(CHECKPOINT)` to dividend checkpoint modules.
 * Added `deleteDelegate()` to general permission manager. It will disable the delegate but not delete the perms.
@@ -40,6 +42,7 @@ All notable changes to this project will be documented in this file.
 * Change the function name of `withdraPoly` to `withdrawERC20` and make the function generalize to extract tokens from the ST contract. parmeters are contract address and the value need to extract from the securityToken.          
 
 ## Removed
+* Removed investors list pruning
 * Remove `swarmHash` from the `registerTicker(), addCustomTicker(), generateSecurityToken(), addCustomSecurityToken()` functions of TickerRegistry.sol and SecurityTokenRegistry.sol. #230  
 * Remove `Log` prefix from all the event present in the ecosystem.    
 * Removed `addTagByModuleType` & `removeTagsByModuleType` from MR.

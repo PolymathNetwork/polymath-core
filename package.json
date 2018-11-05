@@ -60,7 +60,7 @@
     "babel-preset-stage-2": "6.24.1",
     "babel-preset-stage-3": "6.24.1",
     "babel-register": "6.26.0",
-    "bignumber.js": "^8.0.1",
+    "bignumber.js": "7.2.1",
     "chalk": "^2.4.1",
     "coveralls": "^3.0.1",
     "ethereumjs-testrpc": "^6.0.3",
@@ -74,7 +74,7 @@
     "solc": "^0.4.24",
     "truffle-contract": "^3.0.4",
     "truffle-hdwallet-provider-privkey": "^0.3.0",
-    "web3": "1.0.0-beta.36"
+    "web3": "1.0.0-beta.34"
   },
   "devDependencies": {
     "@soldoc/soldoc": "^0.4.3",
@@ -98,7 +98,9 @@
   },
   "greenkeeper": {
     "ignore": [
-      "openzeppelin-solidity"
+      "openzeppelin-solidity",
+      "web3",
+      "bignumber.js"
     ]
   }
 }

@@ -552,10 +552,8 @@ contract("USDTieredSTO Sim", accounts => {
                                 Token_Tier = Token_Tier.sub(Token_overflow);
                                 Token_counter = new BigNumber(0);
                             }
-                            ETH_Tier = USD_Tier.mul(10 ** 18)
-                                .toFixed(0)
-                                .div(USDETH)
-                                .toFixed(0);
+                            ETH_Tier = new BigNumber(USD_Tier.mul(10 ** 18).toFixed(0));
+                            ETH_Tier = ETH_Tier.div(USDETH).toFixed(0);
                             USD_remaining = USD_remaining.sub(USD_Tier);
                             Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                             Token_counter = Token_counter.sub(Token_Tier);

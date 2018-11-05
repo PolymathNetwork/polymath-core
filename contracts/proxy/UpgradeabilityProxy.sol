@@ -28,10 +28,13 @@ contract UpgradeabilityProxy is Proxy {
     * @param _newImplementation representing the address of the new implementation to be set
     */
     function _upgradeTo(string _newVersion, address _newImplementation) internal {
-        require(__implementation != _newImplementation && _newImplementation != address(0), "Old address is not allowed and implementation address should not be 0x");
+        require(
+            __implementation != _newImplementation && _newImplementation != address(0),
+            "Old address is not allowed and implementation address should not be 0x"
+        );
         require(AddressUtils.isContract(_newImplementation), "Cannot set a proxy implementation to a non-contract address");
         require(bytes(_newVersion).length > 0, "Version should not be empty string");
-        require(keccak256(abi.encodePacked(__version)) != keccak256(abi.encodePacked(_newVersion)));
+        require(keccak256(abi.encodePacked(__version)) != keccak256(abi.encodePacked(_newVersion)), "New version equals to current");
         __version = _newVersion;
         __implementation = _newImplementation;
         emit Upgraded(_newVersion, _newImplementation);

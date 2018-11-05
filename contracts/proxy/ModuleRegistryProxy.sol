@@ -10,6 +10,7 @@ import "./OwnedUpgradeabilityProxy.sol";
  * Besides, it allows upgrading the contract's behaviour towards further implementations, and provides basic
  * authorization control functionalities
  */
+/*solium-disable-next-line no-empty-blocks*/
 contract ModuleRegistryProxy is EternalStorage, OwnedUpgradeabilityProxy {
 
 }

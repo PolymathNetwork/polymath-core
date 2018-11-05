@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./MockRedemptionManager.sol";
-import "../modules/Burn/TrackedRedemptionFactory.sol";
+import "../modules/Experimental/Burn/TrackedRedemptionFactory.sol";
 
 /**
  * @title Mock Contract Not fit for production environment
@@ -19,14 +19,15 @@ contract MockBurnFactory is TrackedRedemptionFactory {
     }
 
     /**
-     * @notice used to launch the Module with the help of factory
-     * @return address Contract address of the Module
+     * @notice Used to launch the Module with the help of factory
+     * @return Address Contract address of the Module
      */
     function deploy(bytes /*_data*/) external returns(address) {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Unable to pay setup cost");
         //Check valid bytes - can only call module init function
         MockRedemptionManager mockRedemptionManager = new MockRedemptionManager(msg.sender, address(polyToken));
+        /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(mockRedemptionManager), getName(), address(this), msg.sender, setupCost, now);
         return address(mockRedemptionManager);
     }

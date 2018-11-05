@@ -32,39 +32,40 @@ contract ISTO is Module, Pausable  {
     event SetFundRaiseTypes(FundRaiseType[] _fundRaiseTypes);
 
     /**
-    * @notice Reclaim ERC20Basic compatible tokens
+    * @notice Reclaims ERC20Basic compatible tokens
     * @dev We duplicate here due to the overriden owner & onlyOwner
     * @param _tokenContract The address of the token contract
     */
     function reclaimERC20(address _tokenContract) external onlyOwner {
-        require(_tokenContract != address(0));
+        require(_tokenContract != address(0), "Invalid address");
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(msg.sender, balance));
+        require(token.transfer(msg.sender, balance), "Transfer failed");
     }
 
     /**
-     * @notice Return funds raised by the STO
+     * @notice Returns funds raised by the STO
      */
     function getRaised(FundRaiseType _fundRaiseType) public view returns (uint256) {
         return fundsRaised[uint8(_fundRaiseType)];
     }
 
     /**
-     * @notice Return the total no. of tokens sold
+     * @notice Returns the total no. of tokens sold
      */
     function getTokensSold() public view returns (uint256);
 
     /**
-     * @notice pause (overridden function)
+     * @notice Pause (overridden function)
      */
     function pause() public onlyOwner {
-        require(now < endTime);
+        /*solium-disable-next-line security/no-block-members*/
+        require(now < endTime, "STO has been finalized");
         super._pause();
     }
 
     /**
-     * @notice unpause (overridden function)
+     * @notice Unpause (overridden function)
      */
     function unpause() public onlyOwner {
         super._unpause();
@@ -72,7 +73,7 @@ contract ISTO is Module, Pausable  {
 
     function _setFundRaiseType(FundRaiseType[] _fundRaiseTypes) internal {
         // FundRaiseType[] parameter type ensures only valid values for _fundRaiseTypes
-        require(_fundRaiseTypes.length > 0, "Raise type not specified");
+        require(_fundRaiseTypes.length > 0, "Raise type is not specified");
         fundRaiseTypes[uint8(FundRaiseType.ETH)] = false;
         fundRaiseTypes[uint8(FundRaiseType.POLY)] = false;
         fundRaiseTypes[uint8(FundRaiseType.DAI)] = false;

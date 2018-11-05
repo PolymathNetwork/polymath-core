@@ -19,11 +19,7 @@ let selectedSTO;
 const cappedSTOFee = 20000;
 const usdTieredSTOFee = 100000;
 const tokenDetails = "";
-const FUND_RAISE_TYPES = {
-  ETH: 0,
-  POLY: 1,
-  DAI: 2
-}
+
 ////////////////////////
 // Artifacts
 let securityTokenRegistry;
@@ -450,14 +446,14 @@ async function cappedSTO_status() {
   let displayRaiseType;
   let displayFundsRaised;
   let displayWalletBalance;
-  let raiseType = await currentSTO.methods.fundRaiseTypes(FUND_RAISE_TYPES.ETH).call();
+  let raiseType = await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES.ETH).call();
   if (raiseType) {
     displayRaiseType = 'ETH';
-    displayFundsRaised = await currentSTO.methods.fundsRaised(FUND_RAISE_TYPES.ETH).call();
+    displayFundsRaised = await currentSTO.methods.fundsRaised(global.constants.FUND_RAISE_TYPES.ETH).call();
     displayWalletBalance = web3.utils.fromWei(await web3.eth.getBalance(displayWallet));
   } else {
     displayRaiseType = 'POLY';
-    displayFundsRaised = await currentSTO.methods.fundsRaised(FUND_RAISE_TYPES.POLY).call();
+    displayFundsRaised = await currentSTO.methods.fundsRaised(global.constants.FUND_RAISE_TYPES.POLY).call();
     displayWalletBalance = await currentBalance(displayWallet);
   }
   let displayTokensSold = await currentSTO.methods.totalTokensSold().call();
@@ -517,16 +513,16 @@ function fundingConfigUSDTieredSTO() {
 
   funding.raiseType = [];
   if (selectedFunding.includes('E')) {
-    funding.raiseType.push(FUND_RAISE_TYPES.ETH);
+    funding.raiseType.push(global.constants.FUND_RAISE_TYPES.ETH);
   }
   if (selectedFunding.includes('P')) {
-    funding.raiseType.push(FUND_RAISE_TYPES.POLY);
+    funding.raiseType.push(global.constants.FUND_RAISE_TYPES.POLY);
   }
   if (selectedFunding.includes('D')) {
-    funding.raiseType.push(FUND_RAISE_TYPES.DAI);
+    funding.raiseType.push(global.constants.FUND_RAISE_TYPES.DAI);
   }
   if (funding.raiseType.length == 0) {
-    funding.raiseType = [FUND_RAISE_TYPES.ETH, FUND_RAISE_TYPES.POLY, FUND_RAISE_TYPES.DAI];
+    funding.raiseType = [global.constants.FUND_RAISE_TYPES.ETH, global.constants.FUND_RAISE_TYPES.POLY, global.constants.FUND_RAISE_TYPES.DAI];
   }
 
   return funding;
@@ -756,8 +752,8 @@ async function usdTieredSTO_launch() {
   }
 
   let funding = fundingConfigUSDTieredSTO();
-  let addresses = addressesConfigUSDTieredSTO(funding.raiseType.includes(FUND_RAISE_TYPES.DAI));
-  let tiers = tiersConfigUSDTieredSTO(funding.raiseType.includes(FUND_RAISE_TYPES.POLY));
+  let addresses = addressesConfigUSDTieredSTO(funding.raiseType.includes(global.constants.FUND_RAISE_TYPES.DAI));
+  let tiers = tiersConfigUSDTieredSTO(funding.raiseType.includes(global.constants.FUND_RAISE_TYPES.POLY));
   let limits = limitsConfigUSDTieredSTO();
   let times = timesConfigUSDTieredSTO();
   let bytesSTO = web3.eth.abi.encodeFunctionCall( {
@@ -843,8 +839,8 @@ async function usdTieredSTO_status() {
   let tiersLength = await currentSTO.methods.getNumberOfTiers().call();;
 
   let raiseTypes = [];
-  for (const fundType in FUND_RAISE_TYPES) {
-    if (await currentSTO.methods.fundRaiseTypes(FUND_RAISE_TYPES[fundType]).call()) {
+  for (const fundType in global.constants.FUND_RAISE_TYPES) {
+    if (await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES[fundType]).call()) {
         raiseTypes.push(fundType);
     }
   }
@@ -873,7 +869,7 @@ async function usdTieredSTO_status() {
         }
       }
 
-      let mintedPerTier = await currentSTO.methods.mintedPerTier(FUND_RAISE_TYPES[type], t).call();
+      let mintedPerTier = await currentSTO.methods.mintedPerTier(global.constants.FUND_RAISE_TYPES[type], t).call();
       displayMintedPerTierPerType += `
         Sold for ${type}:\t\t   ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
     }
@@ -898,23 +894,23 @@ async function usdTieredSTO_status() {
   for (const type of raiseTypes) {
     let balance = await getBalance(displayWallet, type);
     let walletBalance = web3.utils.fromWei(balance);
-    let walletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(FUND_RAISE_TYPES[type], balance).call());
+    let walletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(global.constants.FUND_RAISE_TYPES[type], balance).call());
     displayWalletBalancePerType += `
         Balance ${type}:\t\t   ${walletBalance} ${type} (${walletBalanceUSD} USD)`;
     
     balance = await getBalance(displayReserveWallet, type);
     let reserveWalletBalance = web3.utils.fromWei(balance);
-    let reserveWalletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(FUND_RAISE_TYPES[type], balance).call());
+    let reserveWalletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(global.constants.FUND_RAISE_TYPES[type], balance).call());
     displayReserveWalletBalancePerType += `
         Balance ${type}:\t\t   ${reserveWalletBalance} ${type} (${reserveWalletBalanceUSD} USD)`;
     
-    let fundsRaised = web3.utils.fromWei(await currentSTO.methods.fundsRaised(FUND_RAISE_TYPES[type]).call());
+    let fundsRaised = web3.utils.fromWei(await currentSTO.methods.fundsRaised(global.constants.FUND_RAISE_TYPES[type]).call());
     displayFundsRaisedPerType += `
         ${type}:\t\t\t   ${fundsRaised} ${type}`;
 
     //Only show sold for if more than one raise type are allowed
     if (raiseTypes.length > 1) {
-      let tokensSoldPerType = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(FUND_RAISE_TYPES[type]).call());
+      let tokensSoldPerType = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(global.constants.FUND_RAISE_TYPES[type]).call());
       displayTokensSoldPerType += `
         Sold for ${type}:\t\t   ${tokensSoldPerType} ${displayTokenSymbol}`;
     }
@@ -1070,13 +1066,13 @@ async function modfifyFunding() {
 }
 
 async function modfifyAddresses() {
-  let addresses = addressesConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(FUND_RAISE_TYPES.DAI).call());
+  let addresses = addressesConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES.DAI).call());
   let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.wallet, addresses.reserveWallet, addresses.usdToken);
   await common.sendTransaction(modifyAddressesAction, {});
 }
 
 async function modfifyTiers() {
-  let tiers = tiersConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(FUND_RAISE_TYPES.POLY).call());
+  let tiers = tiersConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES.POLY).call());
   let modifyTiersAction = currentSTO.methods.modifyTiers(
     tiers.ratePerTier,
     tiers.ratePerTierDiscountPoly,

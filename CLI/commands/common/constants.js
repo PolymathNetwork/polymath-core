@@ -25,5 +25,10 @@ module.exports = Object.freeze({
         years: function(val) {
             return val * this.days(365)
         }
+    },
+    FUND_RAISE_TYPES: {
+        ETH: 0,
+        POLY: 1,
+        DAI: 2
     }
 });

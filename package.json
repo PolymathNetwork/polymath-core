@@ -73,7 +73,7 @@
     "shelljs": "^0.8.2",
     "solc": "^0.4.24",
     "truffle-contract": "^3.0.4",
-    "truffle-hdwallet-provider-privkey": "^0.3.0",
+    "truffle-hdwallet-provider-privkey": "0.2.0",
     "web3": "1.0.0-beta.34"
   },
   "devDependencies": {
@@ -100,7 +100,8 @@
     "ignore": [
       "openzeppelin-solidity",
       "web3",
-      "bignumber.js"
+      "bignumber.js",
+      "truffle-hdwallet-provider-privkey"
     ]
   }
 }

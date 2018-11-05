@@ -7320,10 +7320,10 @@ truffle-error@^0.0.3:
   resolved "https://registry.yarnpkg.com/truffle-error/-/truffle-error-0.0.3.tgz#4bf55242e14deee1c7194932709182deff2c97ca"
   integrity sha1-S/VSQuFN7uHHGUkycJGC3v8sl8o=
 
-truffle-hdwallet-provider-privkey@^0.3.0:
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/truffle-hdwallet-provider-privkey/-/truffle-hdwallet-provider-privkey-0.3.0.tgz#6688f5f3db5dce2cb9f502f7b52dab7b5e2522a3"
-  integrity sha512-rXwYWz9/lgmZQft0lAwj1JTATzG9FErhvI4xy/Vz5gNFjQCGC7yu3aYBc3XI8g2nrIyYUFqaZbrgHmYcAjw/1A==
+truffle-hdwallet-provider-privkey@0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/truffle-hdwallet-provider-privkey/-/truffle-hdwallet-provider-privkey-0.2.0.tgz#91e9e8a6a5005970a5b442fa89fc198ecd1f71ef"
+  integrity sha512-p4dCmB/roQaHaRMe7Ihej4/Cdmq7Usi6aZsPv/cc2x7S5bYLSwwpgQBdjz4PjPSgNh8zqLte6ZhWkkW1CEq1iQ==
   dependencies:
     ethereumjs-tx "^1.3.4"
     ethereumjs-wallet "^0.6.0"

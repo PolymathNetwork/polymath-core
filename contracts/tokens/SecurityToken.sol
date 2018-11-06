@@ -8,7 +8,7 @@ import "../interfaces/IFeatureRegistry.sol";
 import "../modules/TransferManager/ITransferManager.sol";
 import "../RegistryUpdater.sol";
 import "../libraries/Util.sol";
-import "../interfaces/IERC20Extended.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
@@ -377,13 +377,13 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     */
     function changeModuleBudget(address _module, uint256 _change, bool _increase) external onlyOwner {
         require(modulesToData[_module].module != address(0), "Module missing");
-        uint256 currentAllowance = IERC20Extended(polyToken).allowance(address(this), _module);
+        uint256 currentAllowance = IERC20(polyToken).allowance(address(this), _module);
         uint256 newAllowance;
         if (_increase) {
-            require(IERC20Extended(polyToken).increaseApproval(_module, _change), "IncreaseApproval fail");
+            require(ERC20(polyToken).increaseAllowance(_module, _change), "IncreaseApproval fail");
             newAllowance = currentAllowance.add(_change);
         } else {
-            require(IERC20Extended(polyToken).decreaseApproval(_module, _change), "Insufficient allowance");
+            require(ERC20(polyToken).decreaseAllowance(_module, _change), "Insufficient allowance");
             newAllowance = currentAllowance.sub(_change);
         }
         emit ModuleBudgetChanged(modulesToData[_module].moduleTypes, _module, currentAllowance, newAllowance);

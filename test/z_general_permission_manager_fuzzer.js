@@ -30,7 +30,6 @@ contract('GeneralPermissionManager', accounts => {
     let account_investor4;
     let account_delegate;
     let account_delegate2;
-    let account_delegate3;
     // investor Details
     let fromTime = latestTime();
     let toTime = latestTime();
@@ -99,9 +98,9 @@ contract('GeneralPermissionManager', accounts => {
 
         account_investor1 = accounts[8];
         account_investor2 = accounts[9];
+        account_investor3 = accounts[5];
         account_delegate = accounts[7];
         account_delegate2 = accounts[6];
-        account_delegate3 = accounts[5];
 
 
         // Step 1: Deploy the genral PM ecosystem
@@ -326,9 +325,8 @@ contract('GeneralPermissionManager', accounts => {
                 }
 
 	        	let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-	        	await I_GeneralPermissionManager.changePermission(accounts[j], I_CountTransferManager.address, randomPerms, true, { from: token_owner });	
-    		
-         		if (randomPerms === 'ADMIN') {
+	        	await I_GeneralPermissionManager.changePermission(accounts[j], I_CountTransferManager.address, randomPerms, true, { from: token_owner });          		
+                if (randomPerms === 'ADMIN') {
                     // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should pass");
          			await I_CountTransferManager.changeHolderCount(i + 1, { from: accounts[j] });
          			assert.equal((await I_CountTransferManager.maxHolderCount()).toNumber(), i + 1);
@@ -355,28 +353,37 @@ contract('GeneralPermissionManager', accounts => {
                 true,
                 {
                     from: account_issuer
-                });
+            });
 
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
             console.log("1");
 
+            let tx2 = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor3,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(10),
+                true,
+                {
+                    from: account_issuer
+            });
+
+
+            console.log("2");
             // Jump time
             await increaseTime(5000);
 
-            // //give permission if current permission is removed by fuzz test
-            // let currentPerm = await I_GeneralPermissionManager.checkPermission(token_owner, I_SecurityToken.address, 'ADMIN');
-            // console.log ("perm is "+ currentPerm);
-            // if (currentPerm === false) {
-            //         await I_GeneralPermissionManager.changePermission(token_owner, I_SecurityToken.address, 'ADMIN', true, { from: account_polymath }); 
-            //         console.log("1.5");
-            // }
-            // console.log("1.6");
-
             // Mint some tokens
             await I_SecurityToken.mint(account_investor2, web3.utils.toWei('9', 'ether'), { from: token_owner });
+            console.log("1.5");
+            await I_SecurityToken.mint(account_investor3, web3.utils.toWei('9', 'ether'), { from: token_owner });
             console.log("2");
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor2)).toNumber(),
+                web3.utils.toWei('9', 'ether')
+            );
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor3)).toNumber(),
                 web3.utils.toWei('9', 'ether')
             );
         });
@@ -423,6 +430,112 @@ contract('GeneralPermissionManager', accounts => {
                 }
             }
         });
+
+        it("should pass fuzz test for remove lock up", async () => {
+            let balance = await I_SecurityToken.balanceOf(account_investor2);
+            console.log("1");
+            for (var i = 2; i < testRepeat; i++) {
+                var j = Math.floor(Math.random() * 10);
+                if (j === 1 || j === 0) { j = 2 };
+                if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
+                    await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
+                }
+
+                // target permission should alaways be false for each test before assigning
+                if (await I_GeneralPermissionManager.checkPermission(accounts[j], I_VolumeRestrictionTransferManager.address, 'ADMIN') === true) {
+                    await I_GeneralPermissionManager.changePermission(accounts[j], I_VolumeRestrictionTransferManager.address, 'ADMIN', false, { from: token_owner });
+                }
+
+                let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_VolumeRestrictionTransferManager.address, randomPerms, true, { from: token_owner });  
+
+                // if lockup count is 0, add a lockup.
+                let lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor2, { from : token_owner });
+            
+                if (lockUpCount === 0) {
+                    console.log("lock up count is " + lockUpCount);
+                    await I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 12, 4, 0, balance, token_owner);
+                }
+
+                let lockUpCountNow = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor2, { from : token_owner });
+
+                console.log("lock up count now is "+lockUpCountNow);
+
+                // try remove lock up
+                if (randomPerms === 'ADMIN') {
+                    // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should pass");
+                    await I_VolumeRestrictionTransferManager.removeLockUp(account_investor2, 0, { from:accounts[j] });
+                    console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " passed");
+                } else {
+                    // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should failed");
+                    await catchRevert(I_VolumeRestrictionTransferManager.removeLockUp(account_investor2, 0, { from:accounts[j] }));
+                    console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " failed as expected");
+                }
+            }
+        });
+
+        it("should pass fuzz test for add multiple lock ups", async () => {
+            let balance = await I_SecurityToken.balanceOf(account_investor2);
+            let balance2 = await I_SecurityToken.balanceOf(account_investor3);
+
+            
+            // add mutiple lock ups at once
+            for (var i = 2; i < testRepeat; i++) {
+                var j = Math.floor(Math.random() * 10);
+                if (j === 1 || j === 0) { j = 2 };
+                if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
+                    await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
+                }
+
+                // target permission should alaways be false for each test before assigning
+                if (await I_GeneralPermissionManager.checkPermission(accounts[j], I_VolumeRestrictionTransferManager.address, 'ADMIN') === true) {
+                    await I_GeneralPermissionManager.changePermission(accounts[j], I_VolumeRestrictionTransferManager.address, 'ADMIN', false, { from: token_owner });
+                }
+
+                let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_VolumeRestrictionTransferManager.address, randomPerms, true, { from: token_owner });  
+
+                 // check current lockup count before adding multiple
+                let lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor2);
+                let lockUpCount2 = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor3);
+
+                //try add multi lock ups
+                if (randomPerms === 'ADMIN') {
+                    // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should pass");
+                    await I_VolumeRestrictionTransferManager.addLockUpMulti(
+                        [account_investor2, account_investor3],
+                        [24, 8],
+                        [4, 4],
+                        [0, 0],
+                        [balance, balance2],
+                        { from: accounts[j] }
+                    );
+                    console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " passed");
+                    assert.equal(await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor2), lockUpCount+1);
+                    assert.equal(await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor3), lockUpCount2+1);
+                } else {
+                    // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should failed");
+                    await catchRevert(
+                        I_VolumeRestrictionTransferManager.addLockUpMulti(
+                        [account_investor2, account_investor3],
+                        [24, 8],
+                        [4, 4],
+                        [0, 0],
+                        [balance, balance2],
+                        { from: accounts[j] }
+                    ));
+                    console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " failed as expected");
+                }
+            }
+
+        });
+
+        it("should pass fuzz test for modify lock ups", async () => {
+            // add a lock up if there is no existing one
+
+            // modify lock up
+        });
+
     });
 });
 

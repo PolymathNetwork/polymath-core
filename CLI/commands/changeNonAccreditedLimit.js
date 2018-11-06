@@ -130,7 +130,7 @@ async function changeNonAccreditedLimit() {
           }
     
           let changeNonAccreditedLimitAction = usdTieredSTO.methods.changeNonAccreditedLimit(investorArray, limitArray);
-          let r = await common.sendTransaction(changeNonAccreditedLimitAction, {});
+          let r = await common.sendTransaction(changeNonAccreditedLimitAction);
           console.log(`Batch ${i} - Attempting to change non accredited limits to accounts:\n\n`, investorArray, "\n\n");
           console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
           console.log("Change accredited transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString()), "Ether");

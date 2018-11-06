@@ -368,7 +368,7 @@ async function whitelist() {
         let investor = readlineSync.question(chalk.yellow(`Enter the address to be whitelisted: `));
         let now = await latestTime();
         let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(investor, now, now, now + 31556952, true);
-        await common.sendTransaction(modifyWhitelistAction, {});
+        await common.sendTransaction(modifyWhitelistAction);
         console.log(chalk.green(`\nWhitelisting successful for ${investor}.`));
     } catch (e) {
         console.log(e);
@@ -390,7 +390,7 @@ async function mintTokens() {
     let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
     try {
         let mintAction = securityToken.methods.mint(_investor, web3.utils.toWei(_amount));
-        await common.sendTransaction(mintAction, {});
+        await common.sendTransaction(mintAction);
         console.log(chalk.green(`\nMinting Successful.`));
     } catch (e) {
         console.log(e);
@@ -411,7 +411,7 @@ async function freezeMinting() {
 
     if (await featureRegistry.methods.getFeatureStatus('freezeMintingAllowed').call()) {
         let freezeMintingAction = securityToken.methods.freezeMinting();
-        await common.sendTransaction(freezeMintingAction, {});
+        await common.sendTransaction(freezeMintingAction);
         console.log(chalk.green(`\nFreeze minting was successful.`));
     } else {
         console.log(chalk.red(`\nFreeze minting is not allowed by Polymath.`));

@@ -168,7 +168,7 @@ async function step_token_deploy(){
 
     await approvePoly(securityTokenRegistryAddress, launchFee);
     let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility);
-    let receipt = await common.sendTransaction(generateSecurityTokenAction, {});
+    let receipt = await common.sendTransaction(generateSecurityTokenAction);
     let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'NewSecurityToken');
     console.log(`Deployed Token at address: ${event._securityTokenAddress}`);
     let securityTokenABI = abis.securityToken();
@@ -225,7 +225,7 @@ async function step_Wallet_Issuance(){
         let generalTransferManagerABI = abis.generalTransferManager();
         let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
         let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(mintWallet,Math.floor(Date.now()/1000),Math.floor(Date.now()/1000),Math.floor(Date.now()/1000 + 31536000), canBuyFromSTO);
-        await common.sendTransaction(modifyWhitelistAction, {});
+        await common.sendTransaction(modifyWhitelistAction);
 
         // Mint tokens
         if (typeof _mintingConfig !== 'undefined' && _mintingConfig.hasOwnProperty('singleMint') && _mintingConfig.singleMint.hasOwnProperty('tokenAmount')) {
@@ -236,7 +236,7 @@ async function step_Wallet_Issuance(){
         if (issuerTokens == "") issuerTokens = '500000';
 
         let mintAction = securityToken.methods.mint(mintWallet, web3.utils.toWei(issuerTokens));
-        await common.sendTransaction(mintAction, {});
+        await common.sendTransaction(mintAction);
       }
     }
   }
@@ -425,7 +425,7 @@ async function cappedSTO_launch() {
 
   let cappedSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, global.constants.MODULES_TYPES.STO, "CappedSTO");
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
-  let receipt = await common.sendTransaction(addModuleAction, {});
+  let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
 
@@ -811,7 +811,7 @@ async function usdTieredSTO_launch() {
 
   let usdTieredSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, global.constants.MODULES_TYPES.STO, 'USDTieredSTO');
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
-  let receipt = await common.sendTransaction(addModuleAction, {});
+  let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
 
@@ -989,7 +989,7 @@ async function usdTieredSTO_configure() {
           if (isVerified == "2") {
             if (readlineSync.keyInYNStrict()) {
               let finalizeAction = currentSTO.methods.finalize();
-              await common.sendTransaction(finalizeAction, {});
+              await common.sendTransaction(finalizeAction);
             }
           } else {
             console.log(chalk.red(`Reserve wallet (${reserveWallet}) is not able to receive remaining tokens. Check if this address is whitelisted.`));
@@ -1002,7 +1002,7 @@ async function usdTieredSTO_configure() {
           let accredited = [isAccredited];
           let changeAccreditedAction = currentSTO.methods.changeAccredited(investors, accredited);
           // 2 GAS?
-          await common.sendTransaction(changeAccreditedAction, {});
+          await common.sendTransaction(changeAccreditedAction);
           break;
         case 2:
           shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${global.constants.NETWORK}`);
@@ -1014,7 +1014,7 @@ async function usdTieredSTO_configure() {
           let limits = [web3.utils.toWei(limit)];
           let changeNonAccreditedLimitAction = currentSTO.methods.changeNonAccreditedLimit(accounts, limits);
           // 2 GAS?
-          await common.sendTransaction(changeNonAccreditedLimitAction, {});
+          await common.sendTransaction(changeNonAccreditedLimitAction);
           break;
         case 4:
           shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${global.constants.NETWORK}`);
@@ -1047,25 +1047,25 @@ async function usdTieredSTO_configure() {
 async function modfifyTimes() {
   let times = timesConfigUSDTieredSTO();
   let modifyTimesAction = currentSTO.methods.modifyTimes(times.startTime, times.endTime);
-  await common.sendTransaction(modifyTimesAction, {});
+  await common.sendTransaction(modifyTimesAction);
 }
 
 async function modfifyLimits() {
   let limits = limitsConfigUSDTieredSTO();
   let modifyLimitsAction = currentSTO.methods.modifyLimits(limits.nonAccreditedLimitUSD, limits.minimumInvestmentUSD);
-  await common.sendTransaction(modifyLimitsAction, {});
+  await common.sendTransaction(modifyLimitsAction);
 }
 
 async function modfifyFunding() {
   let funding = fundingConfigUSDTieredSTO();
   let modifyFundingAction = currentSTO.methods.modifyFunding(funding.raiseType);
-  await common.sendTransaction(modifyFundingAction, {});
+  await common.sendTransaction(modifyFundingAction);
 }
 
 async function modfifyAddresses() {
   let addresses = addressesConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES.DAI).call());
   let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.wallet, addresses.reserveWallet, addresses.usdToken);
-  await common.sendTransaction(modifyAddressesAction, {});
+  await common.sendTransaction(modifyAddressesAction);
 }
 
 async function modfifyTiers() {
@@ -1076,7 +1076,7 @@ async function modfifyTiers() {
     tiers.tokensPerTier,
     tiers.tokensPerTierDiscountPoly,
   );
-  await common.sendTransaction(modifyTiersAction, {});
+  await common.sendTransaction(modifyTiersAction);
 }
 
 //////////////////////
@@ -1133,7 +1133,7 @@ async function approvePoly(spender, fee) {
       return true;
     } else {
       let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
-      await common.sendTransaction(approveAction, {});
+      await common.sendTransaction(approveAction);
     }
   } else {
       let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);

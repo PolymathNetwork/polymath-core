@@ -79,7 +79,7 @@ async function send_poly(beneficiary, amount) {
         beneficiary = readlineSync.question(`Enter beneficiary 10K USD Tokens ('${Issuer.address}'): `);
         if (beneficiary == "") beneficiary = Issuer.address;
         let getTokensAction = usdToken.methods.getTokens(web3.utils.toWei('10000'), beneficiary);
-        await common.sendTransaction(getTokensAction, {});
+        await common.sendTransaction(getTokensAction);
         let balance = await usdToken.methods.balanceOf(beneficiary).call();
         let balanceInPoly = new BigNumber(balance).dividedBy(new BigNumber(10).pow(18));
         console.log(chalk.green(`Congratulations! balance of ${beneficiary} address is ${balanceInPoly.toNumber()} USD Tokens`));    
@@ -97,7 +97,7 @@ async function send_poly(beneficiary, amount) {
 async function transferTokens(to, amount) {
     try {
         let getTokensAction = polyToken.methods.getTokens(amount, to);
-        await common.sendTransaction(getTokensAction, {});
+        await common.sendTransaction(getTokensAction);
     } catch (err){
         console.log(err.message);
         return;

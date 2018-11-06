@@ -161,7 +161,7 @@ function readFile() {
         }
       }
       let mintMultiAction = securityToken.methods.mintMulti(affiliatesVerifiedArray, tokensVerifiedArray);
-      let r = await common.sendTransaction(mintMultiAction, {});
+      let r = await common.sendTransaction(mintMultiAction);
       console.log(`Batch ${i} - Attempting to send the Minted tokens to affiliates accounts:\n\n`, affiliatesVerifiedArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
       console.log("Multi Mint transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");

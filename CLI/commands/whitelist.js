@@ -167,7 +167,7 @@ async function setInvestors() {
       //toTimes is ability to buy coins TOwards your account (3rd row in csv, 3rd parameter in modifyWhiteList() )
       //expiryTime is time at which KYC of investor get expired (4th row in csv, 4rd parameter in modifyWhiteList() )
       let modifyWhitelistMultiAction = generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray);
-      let r = await common.sendTransaction(modifyWhitelistMultiAction, {});
+      let r = await common.sendTransaction(modifyWhitelistMultiAction);
       console.log(`Batch ${i} - Attempting to modifyWhitelist accounts:\n\n`, investorArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
       console.log("Whitelist transaxction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");

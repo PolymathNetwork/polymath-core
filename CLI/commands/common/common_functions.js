@@ -2,7 +2,6 @@ const chalk = require('chalk');
 const Tx = require('ethereumjs-tx');
 const permissionsList = require('./permissions_list');
 const abis = require('../helpers/contract_abis');
-const global = require('global');
 
 async function connect(abi, address) {
   contractRegistry = new web3.eth.Contract(abi, address);
@@ -27,6 +26,9 @@ async function checkPermission(contractName, functionName, contractRegistry) {
 };
 
 function getFinalOptions(options) {
+  if (typeof options != "object") {
+    options = {}
+  }
   const defaultOptions = {
     from: Issuer,
     gasPrice: defaultGasPrice,
@@ -36,7 +38,7 @@ function getFinalOptions(options) {
   return Object.assign(defaultOptions, options)
 };
 
-async function getGas(options, action) {
+async function getGasLimit(options, action) {
   let block = await web3.eth.getBlock("latest");
   let networkGasLimit = block.gasLimit;
   let gas = Math.round(options.factor * (await action.estimateGas({ from: options.from.address, value: options.value})));
@@ -99,9 +101,9 @@ module.exports = {
     await checkPermissions(action);
 
     options = getFinalOptions(options);
-    let gas = await getGas(options, action);
+    let gasLimit = await getGasLimit(options, action);
   
-    console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gas} ----`));    
+    console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gasLimit} ----`));    
 
     let nonce = await web3.eth.getTransactionCount(options.from.address);
     let abi = action.encodeABI();
@@ -109,7 +111,7 @@ module.exports = {
       from: options.from.address,
       to: action._parent._address,
       data: abi,
-      gasLimit: gas,
+      gasLimit: gasLimit,
       gasPrice: options.gasPrice,
       nonce: nonce,
       value: web3.utils.toHex(options.value)

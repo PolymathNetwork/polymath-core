@@ -71,7 +71,7 @@ async function start_explorer() {
         case 'Disable controller':
           if (readlineSync.keyInYNStrict()) { 
             let disableControllerAction = securityToken.methods.disableController();
-            await common.sendTransaction(disableControllerAction, {});
+            await common.sendTransaction(disableControllerAction);
             console.log(chalk.green(`Forced transfers have been disabled permanently`));
           }
         break;
@@ -84,7 +84,7 @@ async function start_explorer() {
             defaultInput: Issuer.address
           });
           let setControllerAction = securityToken.methods.setController(controllerAddress);
-          let setControllerReceipt = await common.sendTransaction(setControllerAction, {});
+          let setControllerReceipt = await common.sendTransaction(setControllerAction);
           let setControllerEvent = common.getEventFromLogs(securityToken._jsonInterface, setControllerReceipt.logs, 'SetController');
           console.log(chalk.green(`New controller is ${setControllerEvent._newController}`));
         break;

@@ -88,7 +88,7 @@ async function registerTickers() {
     process.exit(0);
   } else {
     let approveAction = polyToken.methods.approve(securityTokenRegistryAddress, totalFee);
-    let receipt = await common.sendTransaction(approveAction, {});
+    let receipt = await common.sendTransaction(approveAction);
     totalGas = totalGas.add(receipt.gasUsed);
   }
 
@@ -115,7 +115,7 @@ async function registerTickers() {
     if (valid) {
       try {
         let registerTickerAction = securityTokenRegistry.methods.registerTicker(owner, ticker_data[i].symbol, ticker_data[i].name);
-        let receipt = await common.sendTransaction(registerTickerAction, {});
+        let receipt = await common.sendTransaction(registerTickerAction);
         registered_tickers.push(ticker_data[i]);
         console.log(ticker_data[i]);
         totalGas = totalGas.add(receipt.gasUsed);

@@ -28,7 +28,7 @@ async function transferOwnership(transferTo) {
       console.log(chalk.red(`You are not the current owner ot this contract. Current owner is ${currentOwner}.`));
   } else {
     let transferOwnershipAction = contract.methods.transferOwnership(transferTo);
-    let receipt = await common.sendTransaction(transferOwnershipAction, {});
+    let receipt = await common.sendTransaction(transferOwnershipAction);
     let event = common.getEventFromLogs(contract._jsonInterface, receipt.logs, 'OwnershipTransferred');
     console.log(chalk.green(`Ownership transferred successfully. New owner is ${event.newOwner}`));
   }

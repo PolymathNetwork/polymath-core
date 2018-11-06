@@ -175,28 +175,30 @@ node CLI/polymath-cli dividends_manager
 New Kovan PolyTokenFaucet: 0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792
 
     ----------------------- Polymath Network Smart Contracts: -----------------------
-    PolymathRegistry:                     0x9903e7b5acfe5fa9713771a8d861eb1df8cd7046
-    SecurityTokenRegistry (Proxy):        0xbefb81114d532bddddc724af20c3516fa75f0afb
-    ModuleRegistry (Proxy):               0x0fac8d8cce224eead73c1187df96570aa80a568b
-    FeatureRegistry:                      0xa8f85006fdacb3d59ffae564c05433f0c949e911
+    PolymathRegistry:                     0x5b215a7d39ee305ad28da29bf2f0425c6c2a00b3
+    SecurityTokenRegistry (Proxy):        0x91110c2f67e2881a8540417be9eadf5bc9f2f248
+    ModuleRegistry (Proxy):               0xde6d19d7a68d453244227b6ccc5d8e6c2314627a
+    FeatureRegistry:                      0x8967a7cfc4b455398be2356cd05cd43b7a39697e
 
     ETHOracle:                            0xCE5551FC9d43E9D2CC255139169FC889352405C8
     POLYOracle:                           0x461d98EF2A0c7Ac1416EF065840fF5d4C946206C
 
-    STFactory:                            0x43b12219fbaf65fea59494a06ab29a4a3795c5f3
-    GeneralTransferManagerFactory:        0xfe7e2bb6c200d5222c82d0f8fecca5f8fe4ab8ce
-    GeneralPermissionManagerFactory:      0xde5eaa8d73f43fc5e7badb203f03ecae2b29bd92
+    STFactory:                            0x22f56100c6f18b656dbf1b156334206326fc672a
+    GeneralTransferManagerFactory:        0x650e9507e983077d6f822472a7dcc37626d55c7f
+    GeneralPermissionManagerFactory:      0xbf0bd6305b523ce055baa6dfaa9676d6b9e6090b
 
-    CappedSTOFactory:                     0xe14d7dd044cc6cfe37548b6791416c59f19bfc0d
-    USDTieredSTOFactory:                  0xf9f0bb9f868d411dd9a9511a79d172449e3c15f5
-    USDTieredSTOProxyFactory:             0xf4fcbdd22dc62d901ae67cba41173f3cd47e9bde
+    CappedSTOFactory:                     0xa4a24780b93a378eb25ec4bfbf93bc8e79d7eeeb
+    USDTieredSTOFactory:                  0x9106d7fbbd2996ef787913876341d0070cbdfc95
+    USDTieredSTOProxyFactory:             0xb004ff6893b95dc8a19b9e09b2920a44a609bae3
 
-    CountTransferManagerFactory:          0x3c3c1f40ae2bdca82b90541b2cfbd41caa941c0e
-    PercentageTransferManagerFactory:     0x8cd00c3914b2967a8b79815037f51c76874236b8
-    ManualApprovalTransferManagerFactory: 0x19288e00a1f507b9c03570668854da533d398395
-    EtherDividendCheckpointFactory:       0x2861425ba5abbf50089c473b28f6c40a8ea5262a
-    ERC20DividendCheckpointFactory:       0xbf9495550417feaacc43f86d2244581b6d688431
+    CountTransferManagerFactory:          0xc7cf0c1ddc85c18672951f9bfeb7163ecc8f0e2f
+    PercentageTransferManagerFactory:     0xfea5fcb254bcb4ada0f86903ff822d6372325cb1
+    ManualApprovalTransferManagerFactory: 0x8e96e7199b9ba096d666033f058ebb0050786baf
+    EtherDividendCheckpointFactory:       0x18ae137fc6581e121f3d37ed85c423dbc3c9b964
+    ERC20DividendCheckpointFactory:       0x8c724a1504643e02bb02b23cdd414da637872c80
     ---------------------------------------------------------------------------------
+    
+
 
 
 ## Mainnet

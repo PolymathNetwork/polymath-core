@@ -1,7 +1,6 @@
 pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/Math.sol";
-import "../interfaces/IERC20.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IModuleRegistry.sol";
@@ -9,9 +8,10 @@ import "../interfaces/IFeatureRegistry.sol";
 import "../modules/TransferManager/ITransferManager.sol";
 import "../RegistryUpdater.sol";
 import "../libraries/Util.sol";
-import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "../libraries/TokenLib.sol";
 
 /**
@@ -24,7 +24,7 @@ import "../libraries/TokenLib.sol";
 * @notice - ST does not inherit from ISecurityToken due to:
 * @notice - https://github.com/ethereum/solidity/issues/4847
 */
-contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, RegistryUpdater {
+contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
     TokenLib.InvestorDataStorage investorData;
@@ -153,7 +153,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     // Require msg.sender to be the specified module type or the owner of the token
     modifier onlyModuleOrOwner(uint8 _type) {
-        if (msg.sender == owner) {
+        if (msg.sender == owner()) {
             _;
         } else {
             require(_isModule(msg.sender, _type));
@@ -203,7 +203,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         address _polymathRegistry
     )
     public
-    DetailedERC20(_name, _symbol, _decimals)
+    ERC20Detailed(_name, _symbol, _decimals)
     RegistryUpdater(_polymathRegistry)
     {
         //When it is created, the owner is the STR
@@ -365,7 +365,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function withdrawERC20(address _tokenContract, uint256 _value) external onlyOwner {
         require(_tokenContract != address(0));
         IERC20 token = IERC20(_tokenContract);
-        require(token.transfer(owner, _value));
+        require(token.transfer(owner(), _value));
     }
 
     /**

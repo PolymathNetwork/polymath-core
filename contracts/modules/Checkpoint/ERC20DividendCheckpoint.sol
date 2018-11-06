@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./DividendCheckpoint.sol";
 import "../../interfaces/IOwnable.sol";
-import "../../interfaces/IERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title Checkpoint module for issuing ERC20 dividends

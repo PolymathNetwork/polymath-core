@@ -31,7 +31,7 @@ contract PreSaleSTOFactory is ModuleFactory {
      */
     function deploy(bytes _data) external returns(address) {
         if (setupCost > 0) {
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Sufficent Allowance is not provided");
         }
         //Check valid bytes - can only call module init function
         PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender, address(polyToken));

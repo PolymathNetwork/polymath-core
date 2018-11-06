@@ -31,7 +31,7 @@ contract CountTransferManagerFactory is ModuleFactory {
      */
     function deploy(bytes _data) external returns(address) {
         if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom due to insufficent Allowance provided");
+            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom due to insufficent Allowance provided");
         CountTransferManager countTransferManager = new CountTransferManager(msg.sender, address(polyToken));
         require(Util.getSig(_data) == countTransferManager.getInitFunction(), "Provided data is not valid");
         /*solium-disable-next-line security/no-low-level-calls*/

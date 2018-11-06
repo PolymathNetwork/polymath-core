@@ -24,7 +24,7 @@ contract MockBurnFactory is TrackedRedemptionFactory {
      */
     function deploy(bytes /*_data*/) external returns(address) {
         if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Unable to pay setup cost");
+            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Unable to pay setup cost");
         //Check valid bytes - can only call module init function
         MockRedemptionManager mockRedemptionManager = new MockRedemptionManager(msg.sender, address(polyToken));
         /*solium-disable-next-line security/no-block-members*/

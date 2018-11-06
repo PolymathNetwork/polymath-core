@@ -16,7 +16,6 @@ contract ReclaimTokens is Ownable {
         require(_tokenContract != address(0), "Invalid address");
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
-//        TODO oz ???
-//        require(token.transfer(owner, balance), "Transfer failed");
+        require(token.transfer(owner(), balance), "Transfer failed");
     }
 }

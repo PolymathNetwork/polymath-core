@@ -1,5 +1,4 @@
 var common = require('./common/common_functions');
-var global = require('./common/global');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require('./helpers/contract_addresses');
@@ -18,8 +17,6 @@ async function startScript(tokenSymbol, transferTo, transferAmount) {
   _tokenSymbol = tokenSymbol;
   _transferTo = transferTo;
   _transferAmount = transferAmount;
-
-  await global.initialize();
 
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();

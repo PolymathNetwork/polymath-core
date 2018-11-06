@@ -2,7 +2,6 @@
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
-var global = require('./common/global');
 
 // Load contract artifacts
 var contracts = require('./helpers/contract_addresses');
@@ -48,7 +47,6 @@ async function setup() {
 
 // Start function
 async function executeApp() {
-    await global.initialize();
 
     common.logAsciiBull();
     console.log(chalk.yellow(`******************************************`));

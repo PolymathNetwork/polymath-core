@@ -1,7 +1,6 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js');
 var common = require('./common/common_functions');
-var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis')
 var chalk = require('chalk');
@@ -12,7 +11,6 @@ let polyToken;
 let usdToken;
 
 async function executeApp(beneficiary, amount) {
-  await global.initialize();
 
   console.log("\n");
   console.log("***************************")

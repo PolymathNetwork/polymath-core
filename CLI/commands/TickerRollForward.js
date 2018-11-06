@@ -3,14 +3,10 @@ var csv = require('fast-csv');
 var BigNumber = require('bignumber.js');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
-var global = require('./common/global');
 
 /////////////////////////  ARTIFACTS  /////////////////////////
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
-
-////////////////////////////USER INPUTS//////////////////////////////////////////
-let remoteNetwork = process.argv.slice(2)[0]; //batch size
 
 ///////////////////////// GLOBAL VARS /////////////////////////
 let ticker_data = [];
@@ -47,7 +43,6 @@ function FailedRegistration(_ticker, _error) {
 startScript();
 
 async function startScript() {
-  await global.initialize(remoteNetwork);
 
   securityTokenRegistryAddress = await contracts.securityTokenRegistry();
   let securityTokenRegistryABI = abis.securityTokenRegistry();

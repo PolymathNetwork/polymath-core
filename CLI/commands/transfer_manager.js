@@ -1,8 +1,6 @@
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
-var moment = require('moment');
 var common = require('./common/common_functions');
-var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
@@ -12,7 +10,6 @@ let securityToken;
 let securityTokenRegistry;
 
 async function executeApp() {
-  await global.initialize();
   
   common.logAsciiBull();
   console.log("*********************************************");

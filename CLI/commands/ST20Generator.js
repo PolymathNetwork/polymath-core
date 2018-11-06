@@ -6,7 +6,7 @@ const shell = require('shelljs');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 var common = require('./common/common_functions');
-var global = require('./common/global');
+var gbl = require('./common/global');
 
 let securityTokenRegistryAddress;
 
@@ -37,8 +37,6 @@ async function executeApp(tokenConfig, mintingConfig, stoConfig) {
   _tokenConfig = tokenConfig;
   _mintingConfig = mintingConfig;
   _stoConfig = stoConfig;
-
-  await global.initialize();
 
   common.logAsciiBull();
   console.log("********************************************");
@@ -177,7 +175,7 @@ async function step_token_deploy(){
 }
 
 async function step_Wallet_Issuance(){
-  let result = await securityToken.methods.getModulesByType(global.constants.MODULES_TYPES.STO).call();
+  let result = await securityToken.methods.getModulesByType(gbl.constants.MODULES_TYPES.STO).call();
   if (result.length > 0) {
     console.log('\x1b[32m%s\x1b[0m',"STO has already been created at address " + result[0] + ". Skipping initial minting");
   } else {
@@ -244,11 +242,11 @@ async function step_Wallet_Issuance(){
 
 async function multi_mint_tokens() {
   //await whitelist.startWhitelisting(tokenSymbol);
-  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75 ${global.constants.NETWORK}`);
+  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75 ${gbl.constants.NETWORK}`);
   console.log(chalk.green(`\nCongrats! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
 
-  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${global.constants.NETWORK}`);
+  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${gbl.constants.NETWORK}`);
   console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transferred to token holders`));
 }
 
@@ -256,7 +254,7 @@ async function step_STO_launch() {
   console.log("\n");
   console.log('\x1b[34m%s\x1b[0m',"Token Creation - STO Configuration");
 
-  let result = await securityToken.methods.getModulesByType(global.constants.MODULES_TYPES.STO).call();
+  let result = await securityToken.methods.getModulesByType(gbl.constants.MODULES_TYPES.STO).call();
   if (result.length > 0) {
     STO_Address = result[0];
     let stoModuleData = await securityToken.methods.getModule(STO_Address).call();
@@ -423,7 +421,7 @@ async function cappedSTO_launch() {
     ]
   }, [startTime, endTime, web3.utils.toWei(cap), rate, raiseType, wallet]);
 
-  let cappedSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, global.constants.MODULES_TYPES.STO, "CappedSTO");
+  let cappedSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.STO, "CappedSTO");
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
@@ -443,14 +441,14 @@ async function cappedSTO_status() {
   let displayRaiseType;
   let displayFundsRaised;
   let displayWalletBalance;
-  let raiseType = await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES.ETH).call();
+  let raiseType = await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.ETH).call();
   if (raiseType) {
     displayRaiseType = 'ETH';
-    displayFundsRaised = await currentSTO.methods.fundsRaised(global.constants.FUND_RAISE_TYPES.ETH).call();
+    displayFundsRaised = await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES.ETH).call();
     displayWalletBalance = web3.utils.fromWei(await web3.eth.getBalance(displayWallet));
   } else {
     displayRaiseType = 'POLY';
-    displayFundsRaised = await currentSTO.methods.fundsRaised(global.constants.FUND_RAISE_TYPES.POLY).call();
+    displayFundsRaised = await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES.POLY).call();
     displayWalletBalance = await currentBalance(displayWallet);
   }
   let displayTokensSold = await currentSTO.methods.totalTokensSold().call();
@@ -510,16 +508,16 @@ function fundingConfigUSDTieredSTO() {
 
   funding.raiseType = [];
   if (selectedFunding.includes('E')) {
-    funding.raiseType.push(global.constants.FUND_RAISE_TYPES.ETH);
+    funding.raiseType.push(gbl.constants.FUND_RAISE_TYPES.ETH);
   }
   if (selectedFunding.includes('P')) {
-    funding.raiseType.push(global.constants.FUND_RAISE_TYPES.POLY);
+    funding.raiseType.push(gbl.constants.FUND_RAISE_TYPES.POLY);
   }
   if (selectedFunding.includes('D')) {
-    funding.raiseType.push(global.constants.FUND_RAISE_TYPES.DAI);
+    funding.raiseType.push(gbl.constants.FUND_RAISE_TYPES.DAI);
   }
   if (funding.raiseType.length == 0) {
-    funding.raiseType = [global.constants.FUND_RAISE_TYPES.ETH, global.constants.FUND_RAISE_TYPES.POLY, global.constants.FUND_RAISE_TYPES.DAI];
+    funding.raiseType = [gbl.constants.FUND_RAISE_TYPES.ETH, gbl.constants.FUND_RAISE_TYPES.POLY, gbl.constants.FUND_RAISE_TYPES.DAI];
   }
 
   return funding;
@@ -749,8 +747,8 @@ async function usdTieredSTO_launch() {
   }
 
   let funding = fundingConfigUSDTieredSTO();
-  let addresses = addressesConfigUSDTieredSTO(funding.raiseType.includes(global.constants.FUND_RAISE_TYPES.DAI));
-  let tiers = tiersConfigUSDTieredSTO(funding.raiseType.includes(global.constants.FUND_RAISE_TYPES.POLY));
+  let addresses = addressesConfigUSDTieredSTO(funding.raiseType.includes(gbl.constants.FUND_RAISE_TYPES.DAI));
+  let tiers = tiersConfigUSDTieredSTO(funding.raiseType.includes(gbl.constants.FUND_RAISE_TYPES.POLY));
   let limits = limitsConfigUSDTieredSTO();
   let times = timesConfigUSDTieredSTO();
   let bytesSTO = web3.eth.abi.encodeFunctionCall( {
@@ -809,7 +807,7 @@ async function usdTieredSTO_launch() {
     addresses.usdToken
   ]);
 
-  let usdTieredSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, global.constants.MODULES_TYPES.STO, 'USDTieredSTO');
+  let usdTieredSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.STO, 'USDTieredSTO');
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
   let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
@@ -836,8 +834,8 @@ async function usdTieredSTO_status() {
   let tiersLength = await currentSTO.methods.getNumberOfTiers().call();;
 
   let raiseTypes = [];
-  for (const fundType in global.constants.FUND_RAISE_TYPES) {
-    if (await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES[fundType]).call()) {
+  for (const fundType in gbl.constants.FUND_RAISE_TYPES) {
+    if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES[fundType]).call()) {
         raiseTypes.push(fundType);
     }
   }
@@ -866,7 +864,7 @@ async function usdTieredSTO_status() {
         }
       }
 
-      let mintedPerTier = await currentSTO.methods.mintedPerTier(global.constants.FUND_RAISE_TYPES[type], t).call();
+      let mintedPerTier = await currentSTO.methods.mintedPerTier(gbl.constants.FUND_RAISE_TYPES[type], t).call();
       displayMintedPerTierPerType += `
         Sold for ${type}:\t\t   ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
     }
@@ -891,23 +889,23 @@ async function usdTieredSTO_status() {
   for (const type of raiseTypes) {
     let balance = await getBalance(displayWallet, type);
     let walletBalance = web3.utils.fromWei(balance);
-    let walletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(global.constants.FUND_RAISE_TYPES[type], balance).call());
+    let walletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
     displayWalletBalancePerType += `
         Balance ${type}:\t\t   ${walletBalance} ${type} (${walletBalanceUSD} USD)`;
     
     balance = await getBalance(displayReserveWallet, type);
     let reserveWalletBalance = web3.utils.fromWei(balance);
-    let reserveWalletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(global.constants.FUND_RAISE_TYPES[type], balance).call());
+    let reserveWalletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
     displayReserveWalletBalancePerType += `
         Balance ${type}:\t\t   ${reserveWalletBalance} ${type} (${reserveWalletBalanceUSD} USD)`;
     
-    let fundsRaised = web3.utils.fromWei(await currentSTO.methods.fundsRaised(global.constants.FUND_RAISE_TYPES[type]).call());
+    let fundsRaised = web3.utils.fromWei(await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES[type]).call());
     displayFundsRaisedPerType += `
         ${type}:\t\t\t   ${fundsRaised} ${type}`;
 
     //Only show sold for if more than one raise type are allowed
     if (raiseTypes.length > 1) {
-      let tokensSoldPerType = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(global.constants.FUND_RAISE_TYPES[type]).call());
+      let tokensSoldPerType = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(gbl.constants.FUND_RAISE_TYPES[type]).call());
       displayTokensSoldPerType += `
         Sold for ${type}:\t\t   ${tokensSoldPerType} ${displayTokenSymbol}`;
     }
@@ -1005,7 +1003,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(changeAccreditedAction);
           break;
         case 2:
-          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${global.constants.NETWORK}`);
+          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${gbl.constants.NETWORK}`);
           break;
         case 3:
           let account = readlineSync.question('Enter the address to change non accredited limit: ');
@@ -1017,7 +1015,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(changeNonAccreditedLimitAction);
           break;
         case 4:
-          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${global.constants.NETWORK}`);
+          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${gbl.constants.NETWORK}`);
           break;
         case 5:
           await modfifyTimes();
@@ -1063,13 +1061,13 @@ async function modfifyFunding() {
 }
 
 async function modfifyAddresses() {
-  let addresses = addressesConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES.DAI).call());
+  let addresses = addressesConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.DAI).call());
   let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.wallet, addresses.reserveWallet, addresses.usdToken);
   await common.sendTransaction(modifyAddressesAction);
 }
 
 async function modfifyTiers() {
-  let tiers = tiersConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES.POLY).call());
+  let tiers = tiersConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.POLY).call());
   let modifyTiersAction = currentSTO.methods.modifyTiers(
     tiers.ratePerTier,
     tiers.ratePerTierDiscountPoly,

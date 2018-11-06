@@ -1,6 +1,5 @@
 var chalk = require('chalk');
 var common = require('./common/common_functions');
-var global = require('./common/global');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var abis = require('./helpers/contract_abis')
@@ -9,7 +8,6 @@ let contract;
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
 async function startScript(contractAddress, transferTo) {
-  await global.initialize();
 
   if (!web3.utils.isAddress(contractAddress) || !web3.utils.isAddress(transferTo)) {
     console.log(chlak.red(`Please enter valid addresses`));

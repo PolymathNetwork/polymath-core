@@ -3,7 +3,7 @@ var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
-var global = require('./common/global');
+var gbl = require('./common/global');
 
 // Load Contract artifacts
 var contracts = require('./helpers/contract_addresses');
@@ -35,7 +35,6 @@ let displayValidKYC;
 
 // Start Script
 async function executeApp(investorAddress, investorPrivKey, symbol, currency, amount) {
-    await global.initialize();
 
     common.logAsciiBull();
     console.log("********************************************");
@@ -158,13 +157,13 @@ async function showUserInfo(_user) {
     console.log(`
     *******************    User Information    ********************
     - Address:               ${_user}`);
-    if (await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES.POLY)) {
+    if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.POLY)) {
         console.log(`    - POLY balance:\t     ${await polyBalance(_user)}`);
     }
-    if (await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES.ETH)) {
+    if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.ETH)) {
         console.log(`    - ETH balance:\t     ${web3.utils.fromWei(await web3.eth.getBalance(_user))}`);
     }
-    if (await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES.DAI)) {
+    if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.DAI)) {
         console.log(`    - DAI balance:\t     ${await usdBalance(_user)}`);
     }
 }
@@ -180,11 +179,11 @@ async function showCappedSTOInfo() {
 
     let displayRaiseType;
     let displayFundsRaised;
-    for (const fundType in global.constants.FUND_RAISE_TYPES) {
-        if (await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES[fundType]).call()) {
+    for (const fundType in gbl.constants.FUND_RAISE_TYPES) {
+        if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES[fundType]).call()) {
             raiseTypes.push(fundType);
             displayRaiseType = fundType;
-            displayFundsRaised = await currentSTO.methods.fundsRaised(global.constants.FUND_RAISE_TYPES[fundType]).call();
+            displayFundsRaised = await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES[fundType]).call();
         }
     }
 
@@ -240,9 +239,9 @@ async function showCappedSTOInfo() {
 
 async function showUserInfoForUSDTieredSTO()
 {
-    for (const fundType in global.constants.FUND_RAISE_TYPES) {
-        if (await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES[fundType]).call()) {
-            let displayInvestorInvested = web3.utils.fromWei(await currentSTO.methods.investorInvested(User.address, global.constants.FUND_RAISE_TYPES[fundType]).call());
+    for (const fundType in gbl.constants.FUND_RAISE_TYPES) {
+        if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES[fundType]).call()) {
+            let displayInvestorInvested = web3.utils.fromWei(await currentSTO.methods.investorInvested(User.address, gbl.constants.FUND_RAISE_TYPES[fundType]).call());
             console.log(`    - Invested in ${fundType}:\t     ${displayInvestorInvested} ${fundType}`);
         }
     }
@@ -282,8 +281,8 @@ async function showUSDTieredSTOInfo() {
     let displayTokenSymbol = await securityToken.methods.symbol().call();
     let tiersLength = await currentSTO.methods.getNumberOfTiers().call();
 
-    for (const fundType in global.constants.FUND_RAISE_TYPES) {
-        if (await currentSTO.methods.fundRaiseTypes(global.constants.FUND_RAISE_TYPES[fundType]).call()) {
+    for (const fundType in gbl.constants.FUND_RAISE_TYPES) {
+        if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES[fundType]).call()) {
             raiseTypes.push(fundType);
         }
     }
@@ -312,7 +311,7 @@ async function showUSDTieredSTOInfo() {
                 }
             }
 
-            let mintedPerTier = await currentSTO.methods.mintedPerTier(global.constants.FUND_RAISE_TYPES[type], t).call();
+            let mintedPerTier = await currentSTO.methods.mintedPerTier(gbl.constants.FUND_RAISE_TYPES[type], t).call();
             displayMintedPerTierPerType += `
         Sold for ${type}:\t\t   ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
         }
@@ -333,13 +332,13 @@ async function showUSDTieredSTOInfo() {
     let displayFundsRaisedPerType = '';
     let displayTokensSoldPerType = '';
     for (const type of raiseTypes) {
-        let fundsRaised = web3.utils.fromWei(await currentSTO.methods.fundsRaised(global.constants.FUND_RAISE_TYPES[type]).call());
+        let fundsRaised = web3.utils.fromWei(await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES[type]).call());
         displayFundsRaisedPerType += `
         ${type}:\t\t\t   ${fundsRaised} ${type}`;
 
         //Only show sold per raise type is more than one are allowed
         if (raiseTypes.length > 1) {
-            let tokensSoldPerType = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(global.constants.FUND_RAISE_TYPES[type]).call());
+            let tokensSoldPerType = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(gbl.constants.FUND_RAISE_TYPES[type]).call());
             displayTokensSoldPerType += `
         Sold for ${type}:\t\t   ${tokensSoldPerType} ${displayTokenSymbol}`;
         }
@@ -452,7 +451,7 @@ async function investUsdTieredSTO(currency, amount) {
         }
     } else {
         for (const type of raiseTypes) {
-            let displayPrice = web3.utils.fromWei(await currentSTO.methods.convertToUSD(global.constants.FUND_RAISE_TYPES[type], web3.utils.toWei("1")).call());
+            let displayPrice = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], web3.utils.toWei("1")).call());
             console.log(chalk.green(`   Current ${type} price:\t\t   ${displayPrice} USD`));
         }
         if (raiseTypes.length > 1) {
@@ -468,7 +467,7 @@ async function investUsdTieredSTO(currency, amount) {
     if (typeof amount === 'undefined') {
         let investorInvestedUSD = web3.utils.fromWei(await currentSTO.methods.investorInvestedUSD(User.address).call());
         let minimumInvestmentUSD = await currentSTO.methods.minimumInvestmentUSD().call();
-        let minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(global.constants.FUND_RAISE_TYPES[raiseType], minimumInvestmentUSD).call();
+        let minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(gbl.constants.FUND_RAISE_TYPES[raiseType], minimumInvestmentUSD).call();
         cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `), {
             limit: function(input) {
                 return investorInvestedUSD != 0 || parseInt(input) > parseInt(web3.utils.fromWei(minimumInvestmentRaiseType));

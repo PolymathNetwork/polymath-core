@@ -2,7 +2,7 @@ var readlineSync = require('readline-sync');
 var chalk = require('chalk');
 var moment = require('moment');
 var common = require('./common/common_functions');
-var global = require('./common/global');
+var gbl = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
@@ -16,7 +16,6 @@ let currentDividendsModule;
 
 async function executeApp(type) {
   dividendsType = type;
-  await global.initialize();
 
   common.logAsciiBull();
   console.log("**********************************************");
@@ -302,7 +301,7 @@ async function createDividends(name, dividend, checkpointId) {
 
   let time = Math.floor(Date.now()/1000);
   let maturityTime = readlineSync.questionInt('Enter the dividend maturity time from which dividend can be paid (Unix Epoch time)\n(Now = ' + time + ' ): ', {defaultInput: time});
-  let defaultTime = time + global.constants.DURATION.minutes(10);
+  let defaultTime = time + gbl.constants.DURATION.minutes(10);
   let expiryTime = readlineSync.questionInt('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = ' + defaultTime + ' ): ', {defaultInput: defaultTime});
   
   let useDefaultExcluded = readlineSync.keyInYNStrict(`Do you want to use the default excluded addresses for this dividend? If not, data from 'dividendsExclusions_data.csv' will be used instead.`);
@@ -462,7 +461,7 @@ async function addDividendsModule() {
       dividendsModuleABI = abis.etherDividendCheckpoint();
     }
 
-    let dividendsFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, global.constants.MODULES_TYPES.DIVIDENDS, dividendsFactoryName);
+    let dividendsFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.DIVIDENDS, dividendsFactoryName);
     let addModuleAction = securityToken.methods.addModule(dividendsFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
     let receipt = await common.sendTransaction(addModuleAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');

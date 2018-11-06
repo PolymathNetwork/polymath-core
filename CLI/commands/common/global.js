@@ -1,6 +1,8 @@
 const Web3 = require('web3');
 const constants = require('./constants');
 
+global.web3, global.Issuer, global.defaultGasPrice;
+
 function getGasPrice (networkId) {
   let gasPrice;
   switch (networkId) {
@@ -23,8 +25,7 @@ function getGasPrice (networkId) {
 }
 
 module.exports = {
-  initialize: async function() {
-    let remoteNetwork = constants.NETWORK;
+  initialize: async function(remoteNetwork) {
     if (typeof web3 === 'undefined' || typeof Issuer === 'undefined' || typeof defaultGasPrice === 'undefined') {
       if (typeof remoteNetwork !== 'undefined') {
         web3 = new Web3(new Web3.providers.HttpProvider(`https://${remoteNetwork}.infura.io/`));

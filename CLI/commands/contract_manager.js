@@ -1,7 +1,7 @@
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
-var global = require('./common/global');
+var gbl = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
@@ -9,7 +9,6 @@ var abis = require('./helpers/contract_abis');
 let currentContract = null;
 
 async function executeApp() {
-  await global.initialize();
 
   common.logAsciiBull();
   console.log("*********************************************");
@@ -157,7 +156,7 @@ async function strActions() {
       case 'Change Expiry Limit':
         let currentExpiryLimit = await currentContract.methods.getExpiryLimit().call();
         console.log(chalk.yellow(`Current expiry limit is ${Math.floor(parseInt(currentExpiryLimit)/60/60/24)} days`));
-        let newExpiryLimit = global.constants.DURATION.days(readlineSync.questionInt('Enter a new value in days for expiry limit: '));
+        let newExpiryLimit = gbl.constants.DURATION.days(readlineSync.questionInt('Enter a new value in days for expiry limit: '));
         let changeExpiryLimitAction = currentContract.methods.changeExpiryLimit(newExpiryLimit);
         let changeExpiryLimitReceipt = await common.sendTransaction(changeExpiryLimitAction);
         let changeExpiryLimitEvent = common.getEventFromLogs(currentContract._jsonInterface, changeExpiryLimitReceipt.logs, 'ChangeExpiryLimit');

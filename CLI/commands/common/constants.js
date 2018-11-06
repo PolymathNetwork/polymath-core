@@ -1,5 +1,4 @@
 module.exports = Object.freeze({
-    NETWORK: undefined,
     MODULES_TYPES: {
         PERMISSION: 1,
         TRANSFER: 2,

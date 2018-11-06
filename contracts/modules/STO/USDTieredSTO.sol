@@ -434,7 +434,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(_investmentValue > 0, "No funds were sent");
 
         uint256 investedUSD = DecimalMath.mul(_rate, _investmentValue);
-        uint256 originalUSD = investedUSD;
+        uint256 spentValue = investedUSD;
 
         // Check for minimum investment
         require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
@@ -469,11 +469,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         }
 
         // Calculate spent in base currency (ETH, DAI or POLY)
-        uint256 spentValue;
         if (spentUSD == 0) {
             spentValue = 0;
         } else {
-            spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, originalUSD), _investmentValue);
+            spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, spentValue), _investmentValue);
         }
 
         // Return calculated amounts

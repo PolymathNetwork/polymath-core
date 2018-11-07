@@ -129,10 +129,13 @@ async function selectDelegate() {
   let permissions = await getDelegatesAndPermissions();
   
   let options = ['Add new delegate'];
+
   options = options.concat(delegates.map(function(d) { 
+    let perm = renderTable(permissions, d.address);
+
     return `Account: ${d.address}
     Details: ${d.details}
-    Permisions: ${JSON.stringify(permissions[d.address])}`
+    Permisions: ${perm}`
   }));
 
   let index = readlineSync.keyInSelect(options, 'Select a delegate:', {cancel: false});
@@ -264,6 +267,19 @@ async function getDelegatesAndPermissions() {
         }
       }
     }
+  }
+  return result
+}
+
+function renderTable(permisions, address) {
+  let result = ``;
+  if (permisions[address] != undefined) {
+    for (const obj of permisions[address]) {
+      result += `
+      ${obj.module} -> ${obj.permission}`;
+    }
+  } else {
+    result = `-`;
   }
   return result
 }

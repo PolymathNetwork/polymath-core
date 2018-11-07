@@ -126,11 +126,13 @@ async function deleteDelegate(address) {
 async function selectDelegate() {
   let result;
   let delegates = await getDelegates();
+  let permissions = await getDelegatesAndPermissions();
   
   let options = ['Add new delegate'];
   options = options.concat(delegates.map(function(d) { 
     return `Account: ${d.address}
-    Details: ${d.details}`
+    Details: ${d.details}
+    Permisions: ${JSON.stringify(permissions[d.address])}`
   }));
 
   let index = readlineSync.keyInSelect(options, 'Select a delegate:', {cancel: false});
@@ -237,6 +239,33 @@ async function getModulesWithPermissions() {
   }
 
   return modules;
+}
+
+async function getDelegatesAndPermissions() {
+  let moduleABI = abis.moduleInterface();
+  let result = [];
+  for (const type in MODULES_TYPES) {
+    let modulesAttached = await securityToken.methods.getModulesByType(MODULES_TYPES[type]).call();
+    for (const module of modulesAttached) {
+      let contractTemp = new web3.eth.Contract(moduleABI, module);
+      let permissions = await contractTemp.methods.getPermissions().call();
+      if (permissions.length > 0) {
+        for (const permission of permissions) {
+          let allDelegates = await generalPermissionManager.methods.getAllDelegatesWithPerm(module, permission).call();
+          let moduleName = web3.utils.hexToUtf8((await securityToken.methods.getModule(module).call())[0]);
+          let permissionName = web3.utils.hexToUtf8(permission);
+          for (delegateAddr of allDelegates) {
+            if (result[delegateAddr] != undefined) {
+              result[delegateAddr].push({module: moduleName, permission: permissionName})
+            } else {
+              result[delegateAddr] = [{module: moduleName, permission: permissionName}]
+            }
+          }
+        }
+      }
+    }
+  }
+  return result
 }
 
 module.exports = {

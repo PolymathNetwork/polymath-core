@@ -217,7 +217,7 @@ async function addNewDelegate() {
   let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
   let receipt = await common.sendTransaction(Issuer, addPermissionAction, defaultGasPrice);
   let event = common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'AddDelegate');
-  console.log(`Delegate added succesfully: ${event._delegate} - ${event._details}`);
+  console.log(`Delegate added succesfully: ${event._delegate} - ${web3.utils.hexToAscii(event._details)}`);
   isNewDelegate = true;
   return event._delegate;
 }

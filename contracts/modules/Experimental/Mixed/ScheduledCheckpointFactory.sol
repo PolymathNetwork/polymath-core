@@ -1,27 +1,27 @@
 pragma solidity ^0.4.24;
 
-import "./TrackedRedemption.sol";
-import "../ModuleFactory.sol";
+import "./ScheduledCheckpoint.sol";
+import "../../ModuleFactory.sol";
 
 /**
- * @title Factory for deploying GeneralTransferManager module
+ * @title Factory for deploying EtherDividendCheckpoint module
  */
-contract TrackedRedemptionFactory is ModuleFactory {
+contract ScheduledCheckpointFactory is ModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
-     * @param _setupCost Setup cost of module
-     * @param _usageCost Usage cost of module
-     * @param _subscriptionCost Monthly cost of module
+     * @param _setupCost Setup cost of the module
+     * @param _usageCost Usage cost of the module
+     * @param _subscriptionCost Subscription cost of the module
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
-        name = "TrackedRedemption";
-        title = "Tracked Redemption";
-        description = "Track token redemptions";
+        name = "ScheduledCheckpoint";
+        title = "Schedule Checkpoints";
+        description = "Allows you to schedule checkpoints in the future";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -31,19 +31,20 @@ contract TrackedRedemptionFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
-        if (setupCost > 0)
+        if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        address trackedRedemption = new TrackedRedemption(msg.sender, address(polyToken));
-        emit GenerateModuleFromFactory(address(trackedRedemption), getName(), address(this), msg.sender, setupCost, now);
-        return address(trackedRedemption);
+        address scheduledCheckpoint = new ScheduledCheckpoint(msg.sender, address(polyToken));
+        emit GenerateModuleFromFactory(scheduledCheckpoint, getName(), address(this), msg.sender, setupCost, now);
+        return scheduledCheckpoint;
     }
 
     /**
      * @notice Type of the Module factory
      */
     function getTypes() external view returns(uint8[]) {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 5;
+        uint8[] memory res = new uint8[](2);
+        res[0] = 4;
+        res[1] = 2;
         return res;
     }
 
@@ -62,17 +63,17 @@ contract TrackedRedemptionFactory is ModuleFactory {
     }
 
     /**
+     * @notice Get the title of the Module
+     */
+    function getTitle() external  view returns(string) {
+        return title;
+    }
+
+    /**
      * @notice Get the version of the Module
      */
     function getVersion() external view returns(string) {
         return version;
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() external view returns(string) {
-        return title;
     }
 
     /**
@@ -83,10 +84,10 @@ contract TrackedRedemptionFactory is ModuleFactory {
     }
 
     /**
-     * @notice Returns the instructions associated with the module
+     * @notice Get the Instructions that helped to used the module
      */
     function getInstructions() external view returns(string) {
-        return "Allows an investor to redeem security tokens which are tracked by this module";
+        return "Schedule a series of future checkpoints by specifying a start time and interval of each checkpoint";
     }
 
     /**
@@ -94,9 +95,8 @@ contract TrackedRedemptionFactory is ModuleFactory {
      */
     function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "Redemption";
-        availableTags[1] = "Tracked";
+        availableTags[0] = "Scheduled";
+        availableTags[1] = "Checkpoint";
         return availableTags;
     }
-
 }

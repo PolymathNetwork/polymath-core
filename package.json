@@ -18,7 +18,7 @@
     "lint:all": "npm run lint && npm run lint:sol",
     "lint:all:fix": "npm run lint:fix && npm run lint:sol:fix",
     "compile": "truffle compile --optimize-runs 200",
-    "ganache-cli": "node_modules/.bin/ganache-cli -i 15 --gasLimit 90000000",
+    "ganache-cli": "node_modules/.bin/ganache-cli -i 15 --gasLimit 8000000",
     "migrate:local": "truffle migrate --network=development --reset --all",
     "migrate:ropsten": "truffle migrate --network=ropsten --reset --all",
     "migrate:kovan": "truffle migrate --network=kovan --reset --all",
@@ -93,5 +93,10 @@
     "solium": "^1.1.6",
     "truffle": "^4.1.13",
     "truffle-wallet-provider": "0.0.5"
+  },
+  "greenkeeper": {
+    "ignore": [
+      "openzeppelin-solidity"
+    ]
   }
 }

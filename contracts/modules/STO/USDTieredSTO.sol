@@ -17,6 +17,15 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     /////////////
     // Storage //
     /////////////
+    struct Tier {
+        uint256 rate;
+        uint256 rateDiscountPoly;
+        uint256 tokenTotal;
+        uint256 tokensDiscountPoly;
+        uint256 mintedTotal;
+        mapping (uint8 => uint256) minted; //fundtype => minted
+        uint256 mintedDiscountPoly;
+    }
 
     string public POLY_ORACLE = "PolyUsdOracle";
     string public ETH_ORACLE = "EthUsdOracle";
@@ -27,32 +36,35 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Determine whether users can invest on behalf of a beneficiary
     bool public allowBeneficialInvestments = false;
 
+    // Whether or not the STO has been finalized
+    bool public isFinalized;
+
     // Address where ETH, POLY & DAI funds are delivered
     address public wallet;
 
     // Address of issuer reserve wallet for unsold tokens
     address public reserveWallet;
 
-    // How many token units a buyer gets per USD per tier (multiplied by 10**18)
-    uint256[] public ratePerTier;
+    // // How many token units a buyer gets per USD per tier (multiplied by 10**18)
+    // uint256[] public ratePerTier;
 
-    // How many token units a buyer gets per USD per tier (multiplied by 10**18) when investing in POLY up to tokensPerTierDiscountPoly
-    uint256[] public ratePerTierDiscountPoly;
+    // // How many token units a buyer gets per USD per tier (multiplied by 10**18) when investing in POLY up to tokensPerTierDiscountPoly
+    // uint256[] public ratePerTierDiscountPoly;
 
-    // How many tokens are available in each tier (relative to totalSupply)
-    uint256[] public tokensPerTierTotal;
+    // // How many tokens are available in each tier (relative to totalSupply)
+    // uint256[] public tokensPerTierTotal;
 
-    // How many token units are available in each tier (relative to totalSupply) at the ratePerTierDiscountPoly rate
-    uint256[] public tokensPerTierDiscountPoly;
+    // // How many token units are available in each tier (relative to totalSupply) at the ratePerTierDiscountPoly rate
+    // uint256[] public tokensPerTierDiscountPoly;
 
-    // How many tokens have been minted in each tier (relative to totalSupply)
-    uint256[] public mintedPerTierTotal;
+    // // How many tokens have been minted in each tier (relative to totalSupply)
+    // uint256[] public mintedPerTierTotal;
 
-    // How many tokens have been minted in each tier (relative to totalSupply) for each fund raise type
-    mapping (uint8 => uint256[]) public mintedPerTier;
+    // // How many tokens have been minted in each tier (relative to totalSupply) for each fund raise type
+    // mapping (uint8 => uint256[]) public mintedPerTier;
 
-    // How many tokens have been minted in each tier (relative to totalSupply) at discounted POLY rate
-    uint256[] public mintedPerTierDiscountPoly;
+    // // How many tokens have been minted in each tier (relative to totalSupply) at discounted POLY rate
+    // uint256[] public mintedPerTierDiscountPoly;
 
     // Current tier
     uint8 public currentTier;
@@ -78,11 +90,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Minimum investable amount in USD
     uint256 public minimumInvestmentUSD;
 
-    // Whether or not the STO has been finalized
-    bool public isFinalized;
-
     // Final amount of tokens returned to issuer
     uint256 public finalAmountReturned;
+
+    // Tiers
+    Tier public tiers;
 
     ////////////
     // Events //
@@ -108,16 +120,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _spentValue,
         uint256 _rate
     );
-    event FundsReceivedPOLY(
-        address indexed _purchaser,
-        address indexed _beneficiary,
-        uint256 _usdAmount,
-        uint256 _receivedValue,
-        uint256 _spentValue,
-        uint256 _rate
-    );
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _latestTier);
-
     event SetAddresses(
         address indexed _wallet,
         address indexed _reserveWallet,
@@ -143,19 +146,19 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     ///////////////
 
     modifier validETH {
-        require(_getOracle(bytes32("ETH"), bytes32("USD")) != address(0), "Invalid ETHUSD Oracle");
-        require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "Fund raise in ETH should be allowed");
+        require(_getOracle(bytes32("ETH"), bytes32("USD")) != address(0), "Invalid Oracle");
+        require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "ETH not allowed");
         _;
     }
 
     modifier validPOLY {
-        require(_getOracle(bytes32("POLY"), bytes32("USD")) != address(0), "Invalid POLYUSD Oracle");
-        require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "Fund raise in POLY should be allowed");
+        require(_getOracle(bytes32("POLY"), bytes32("USD")) != address(0), "Invalid Oracle");
+        require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "POLY not allowed");
         _;
     }
 
     modifier validDAI {
-        require(fundRaiseTypes[uint8(FundRaiseType.DAI)], "Fund raise in DAI should be allowed");
+        require(fundRaiseTypes[uint8(FundRaiseType.DAI)], "DAI not allowed");
         _;
     }
 
@@ -164,10 +167,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     ///////////////////////
 
     constructor (address _securityToken, address _polyAddress, address _factory) public Module(_securityToken, _polyAddress) {
+        require(_factory != address(0), "Invalid factory");
         oracleKeys[bytes32("ETH")][bytes32("USD")] = ETH_ORACLE;
         oracleKeys[bytes32("POLY")][bytes32("USD")] = POLY_ORACLE;
-        require(_factory != address(0), "In-valid address");
-        factory = _factory;
+        factory = _factory; //Explicitly setting factory as we are using proxy deployment for this module
     }
 
     /**
@@ -197,33 +200,26 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _reserveWallet,
         address _usdToken
     ) public onlyFactory {
-        modifyTimes(_startTime, _endTime);
-        // NB - modifyTiers must come before modifyFunding
-        modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
-        // NB - modifyFunding must come before modifyAddresses
-        modifyFunding(_fundRaiseTypes);
-        modifyAddresses(_wallet, _reserveWallet, _usdToken);
-        modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
+        _modifyTimes(_startTime, _endTime);
+        _modifyTimes(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
+        // NB - _setFundRaiseType must come before modifyAddresses
+        _setFundRaiseType(_fundRaiseTypes);
+        _modifyAddresses(_wallet, _reserveWallet, _usdToken);
+        _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
-    function modifyFunding(FundRaiseType[] _fundRaiseTypes) public onlyFactoryOrOwner {
+    function modifyFunding(FundRaiseType[] _fundRaiseTypes) external {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO shouldn't be started");
+        require(now < startTime, "STO already started");
         _setFundRaiseType(_fundRaiseTypes);
-        uint256 length = getNumberOfTiers();
-        mintedPerTierTotal = new uint256[](length);
-        mintedPerTierDiscountPoly = new uint256[](length);
-        for (uint8 i = 0; i < _fundRaiseTypes.length; i++) {
-            mintedPerTier[uint8(_fundRaiseTypes[i])] = new uint256[](length);
-        }
     }
 
     function modifyLimits(
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD
-    ) public onlyFactoryOrOwner {
+    ) external onlyFactoryOrOwner {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO shouldn't be started");
+        require(now < startTime, "STO already started");
         minimumInvestmentUSD = _minimumInvestmentUSD;
         nonAccreditedLimitUSD = _nonAccreditedLimitUSD;
         emit SetLimits(minimumInvestmentUSD, nonAccreditedLimitUSD);
@@ -234,32 +230,70 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256[] _ratePerTierDiscountPoly,
         uint256[] _tokensPerTierTotal,
         uint256[] _tokensPerTierDiscountPoly
-    ) public onlyFactoryOrOwner {
+    ) external onlyFactoryOrOwner {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO shouldn't be started");
-        require(_tokensPerTierTotal.length > 0, "Length should be > 0");
-        require(_ratePerTier.length == _tokensPerTierTotal.length, "Mismatch b/w rates & tokens / tier");
-        require(_ratePerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount rates & tokens / tier");
-        require(_tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, "Mismatch b/w discount tokens / tier & tokens / tier");
-        for (uint8 i = 0; i < _ratePerTier.length; i++) {
-            require(_ratePerTier[i] > 0, "Rate > 0");
-            require(_tokensPerTierTotal[i] > 0, "Tokens per tier > 0");
-            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Discounted tokens / tier <= tokens / tier");
-            require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Discounted rate / tier <= rate / tier");
-        }
-        ratePerTier = _ratePerTier;
-        ratePerTierDiscountPoly = _ratePerTierDiscountPoly;
-        tokensPerTierTotal = _tokensPerTierTotal;
-        tokensPerTierDiscountPoly = _tokensPerTierDiscountPoly;
-        emit SetTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
+        require(now < startTime, "STO already started");
+        _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
     }
 
     function modifyTimes(
         uint256 _startTime,
         uint256 _endTime
-    ) public onlyFactoryOrOwner {
+    ) external onlyFactoryOrOwner {
+        _modifyTimes(_startTime, _endTime);
+    }
+
+    function modifyAddresses(
+        address _wallet,
+        address _reserveWallet,
+        address _usdToken
+    ) external onlyFactoryOrOwner {
         /*solium-disable-next-line security/no-block-members*/
-        require((startTime == 0) || (now < startTime), "Invalid startTime");
+        require(now < startTime, "STO already started");
+        _modifyAddresses(_wallet, _reserveWallet, _usdToken);
+    }
+
+    function _modifyLimits(
+        uint256 _nonAccreditedLimitUSD,
+        uint256 _minimumInvestmentUSD
+    ) internal {
+        minimumInvestmentUSD = _minimumInvestmentUSD;
+        nonAccreditedLimitUSD = _nonAccreditedLimitUSD;
+        emit SetLimits(minimumInvestmentUSD, nonAccreditedLimitUSD);
+    }
+
+    function _modifyTiers(
+        uint256[] _ratePerTier,
+        uint256[] _ratePerTierDiscountPoly,
+        uint256[] _tokensPerTierTotal,
+        uint256[] _tokensPerTierDiscountPoly
+    ) internal {
+        require(_tokensPerTierTotal.length > 0, "No tiers provided");
+        require(_ratePerTier.length == _tokensPerTierTotal.length &&
+            _ratePerTierDiscountPoly.length == _tokensPerTierTotal.length &&
+            _tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, 
+            "Tier data length mismatch"
+        );
+        delete tiers;
+        for (uint256 i = 0; i < _ratePerTier.length; i++) {
+            require(_ratePerTier[i] > 0, "Invalid rate");
+            require(_tokensPerTierTotal[i] > 0, "Invalid token amount");
+            require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Too many discounted tokens");
+            require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Invalid discount");
+            tiers.length++;
+            Tier storage currentTier = tiers[i];
+            currentTier.rate = _ratePerTier[i];
+            currentTier.rateDiscountPoly = _ratePerTierDiscountPoly[i];
+            currentTier.tokenTotal = _tokensPerTierTotal[i];
+            currentTier.tokensDiscountPoly = _tokensPerTierDiscountPoly[i];
+        }
+        emit SetTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
+    }
+
+    function _modifyTimes(
+        uint256 _startTime,
+        uint256 _endTime
+    ) internal {
         /*solium-disable-next-line security/no-block-members*/
         require((_endTime > _startTime) && (_startTime > now), "Invalid times");
         startTime = _startTime;
@@ -267,16 +301,14 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         emit SetTimes(_startTime, _endTime);
     }
 
-    function modifyAddresses(
+    function _modifyAddresses(
         address _wallet,
         address _reserveWallet,
         address _usdToken
-    ) public onlyFactoryOrOwner {
-        /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO shouldn't be started");
-        require(_wallet != address(0) && _reserveWallet != address(0), "Invalid address");
+    ) internal {
+        require(_wallet != address(0) && _reserveWallet != address(0), "Invalid wallet");
         if (fundRaiseTypes[uint8(FundRaiseType.DAI)]) {
-            require(_usdToken != address(0), "Invalid address");
+            require(_usdToken != address(0), "Invalid usdToken");
         }
         wallet = _wallet;
         reserveWallet = _reserveWallet;

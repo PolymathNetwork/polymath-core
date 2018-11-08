@@ -258,10 +258,13 @@ async function getDelegatesAndPermissions() {
           let moduleName = web3.utils.hexToUtf8((await securityToken.methods.getModule(module).call())[0]);
           let permissionName = web3.utils.hexToUtf8(permission);
           for (delegateAddr of allDelegates) {
-            if (result[delegateAddr] != undefined) {
-              result[delegateAddr].push({module: moduleName, permission: permissionName})
+            if (result[delegateAddr] == undefined) {
+              result[delegateAddr] = []
+            } 
+            if (result[delegateAddr][moduleName] == undefined) {
+              result[delegateAddr][moduleName] = [{permission: permissionName}]
             } else {
-              result[delegateAddr] = [{module: moduleName, permission: permissionName}]
+              result[delegateAddr][moduleName].push({permission: permissionName})
             }
           }
         }
@@ -271,15 +274,19 @@ async function getDelegatesAndPermissions() {
   return result
 }
 
-function renderTable(permisions, address) {
+function renderTable(permissions, address) {
   let result = ``;
-  if (permisions[address] != undefined) {
-    for (const obj of permisions[address]) {
+  if (permissions[address] != undefined) {
+    Object.keys(permissions[address]).forEach((module) => {
       result += `
-      ${obj.module} -> ${obj.permission}`;
-    }
+      ${module} -> `;
+      (permissions[address][module]).forEach((perm) => {
+        result += `${perm.permission}, `;
+      })
+      result = result.slice(0, -2);
+    })
   } else {
-    result = `-`;
+    result += `-`;
   }
   return result
 }

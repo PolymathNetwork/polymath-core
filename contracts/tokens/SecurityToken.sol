@@ -722,11 +722,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         require(_value <= balanceOf(_from), "Value too high");
         bool verified = _updateTransfer(_from, address(0), _value, _data);
         _adjustTotalSupplyCheckpoints();
-        if (msg.sender == _from) {
-            _burn(_from, _value);
-        } else {
-            _burnFrom(_from, _value);
-        }
+        _burn(_from, _value);
         emit Burnt(_from, _value);
         return verified;
     }
@@ -740,6 +736,15 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         require(_burn(msg.sender, _value, _data), "Burn invalid");
     }
 
+    function _burnFrom(address _from, uint256 _value, bytes _data) internal returns(bool) {
+        require(_value <= balanceOf(_from), "Value too high");
+        bool verified = _updateTransfer(_from, address(0), _value, _data);
+        _adjustTotalSupplyCheckpoints();
+        _burnFrom(_from, _value);
+        emit Burnt(_from, _value);
+        return verified;
+    }
+
     /**
      * @notice Burn function used to burn the securityToken on behalf of someone else
      * @param _from Address for whom to burn tokens
@@ -747,7 +752,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      */
     function burnFromWithData(address _from, uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
-        require(_burn(_from, _value, _data), "Burn invalid");
+        require(_value <= allowance(_from, msg.sender), "Value too high");
+        require(_burnFrom(_from, _value, _data), "Burn invalid");
     }
 
     /**

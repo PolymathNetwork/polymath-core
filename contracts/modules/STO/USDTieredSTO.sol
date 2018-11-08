@@ -18,12 +18,25 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Storage //
     /////////////
     struct Tier {
+        // How many token units a buyer gets per USD in this tier (multiplied by 10**18)
         uint256 rate;
-        uint256 rateDiscountPoly;
+
+        // How many token units a buyer gets per USD in this tier (multiplied by 10**18) when investing in POLY up to tokensDiscountPoly
+        uint256 rateDiscountPoly; 
+
+        // How many tokens are available in this tier (relative to totalSupply)
         uint256 tokenTotal;
+
+        // How many token units are available in this tier (relative to totalSupply) at the ratePerTierDiscountPoly rate
         uint256 tokensDiscountPoly;
+
+        // How many tokens have been minted in this tier (relative to totalSupply)
         uint256 mintedTotal;
-        mapping (uint8 => uint256) minted; //fundtype => minted
+
+        // How many tokens have been minted in this tier (relative to totalSupply) for each fund raise type
+        mapping (uint8 => uint256) minted;
+
+        // How many tokens have been minted in this tier (relative to totalSupply) at discounted POLY rate
         uint256 mintedDiscountPoly;
     }
 
@@ -44,27 +57,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
     // Address of issuer reserve wallet for unsold tokens
     address public reserveWallet;
-
-    // // How many token units a buyer gets per USD per tier (multiplied by 10**18)
-    // uint256[] public ratePerTier;
-
-    // // How many token units a buyer gets per USD per tier (multiplied by 10**18) when investing in POLY up to tokensPerTierDiscountPoly
-    // uint256[] public ratePerTierDiscountPoly;
-
-    // // How many tokens are available in each tier (relative to totalSupply)
-    // uint256[] public tokensPerTierTotal;
-
-    // // How many token units are available in each tier (relative to totalSupply) at the ratePerTierDiscountPoly rate
-    // uint256[] public tokensPerTierDiscountPoly;
-
-    // // How many tokens have been minted in each tier (relative to totalSupply)
-    // uint256[] public mintedPerTierTotal;
-
-    // // How many tokens have been minted in each tier (relative to totalSupply) for each fund raise type
-    // mapping (uint8 => uint256[]) public mintedPerTier;
-
-    // // How many tokens have been minted in each tier (relative to totalSupply) at discounted POLY rate
-    // uint256[] public mintedPerTierDiscountPoly;
 
     // Current tier
     uint256 public currentTier;
@@ -93,7 +85,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Final amount of tokens returned to issuer
     uint256 public finalAmountReturned;
 
-    // Tiers
+    // Array of Tiers
     Tier[] public tiers;
 
     ////////////
@@ -427,9 +419,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     /**
-      * @notice Purchase tokens using POLY
+      * @notice Purchase tokens using DAI
       * @param _beneficiary Address where security tokens will be sent
-      * @param _investedDAI Amount of POLY invested
+      * @param _investedDAI Amount of DAI invested
       */
     function buyWithUSD(address _beneficiary, uint256 _investedDAI) public validDAI {
         _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI, uint256(10) ** 18);
@@ -487,16 +479,20 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
                 investedUSD = investorLimitUSD.sub(investorInvestedUSD[_beneficiary]);
         }
         uint256 spentUSD;
+        uint256 spentValue;
         // Iterate over each tier and process payment
         for (uint256 i = currentTier; i < tiers.length; i++) {
+            bool gotoNextTier;
             // Update current tier if needed
             if (currentTier != i)
                 currentTier = i;
             // If there are tokens remaining, process investment
             if (tiers[i].mintedTotal < tiers[i].tokenTotal) {
-                spentUSD = spentUSD.add(_calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), _fundRaiseType));
+                //spentValue used as temp variable here to prevent stackoverflow
+                (spentValue, gotoNextTier) = _calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), _fundRaiseType);
+                spentUSD = spentUSD.add(spentValue);
                 // If all funds have been spent, exit the loop
-                if (investedUSD == spentUSD)
+                if (!gotoNextTier)
                     break;
             }
             
@@ -510,8 +506,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
         }
 
-        // Calculate spent in base currency (ETH, DAI or POLY)
-        uint256 spentValue;
         if (spentUSD == 0) {
             spentValue = 0;
         } else {
@@ -529,10 +523,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         FundRaiseType _fundRaiseType
     ) 
         internal
-        returns(uint256)
+        returns(uint256 spentUSD, bool gotoNextTier)
      {
         // First purchase any discounted tokens if POLY investment
-        uint256 spentUSD;
         uint256 tierSpentUSD;
         uint256 tierPurchasedTokens;
         uint256 investedUSD = _investedUSD;
@@ -542,9 +535,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             uint256 discountRemaining = tierData.tokensDiscountPoly.sub(tierData.mintedDiscountPoly);
             uint256 totalRemaining = tierData.tokenTotal.sub(tierData.mintedTotal);
             if (totalRemaining < discountRemaining)
-                (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, tierData.rateDiscountPoly, totalRemaining, investedUSD, _tier);
+                (spentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTier(_beneficiary, tierData.rateDiscountPoly, totalRemaining, investedUSD, _tier);
             else
-                (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, tierData.rateDiscountPoly, discountRemaining, investedUSD, _tier);
+                (spentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTier(_beneficiary, tierData.rateDiscountPoly, discountRemaining, investedUSD, _tier);
             investedUSD = investedUSD.sub(spentUSD);
             tierData.mintedDiscountPoly = tierData.mintedDiscountPoly.add(tierPurchasedTokens);
             tierData.minted[uint8(_fundRaiseType)] = tierData.minted[uint8(_fundRaiseType)].add(tierPurchasedTokens);
@@ -552,12 +545,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
         if ((investedUSD > 0) && (tierData.tokenTotal.sub(tierData.mintedTotal) > 0)) {
-            (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, tierData.rate, tierData.tokenTotal.sub(tierData.mintedTotal), investedUSD, _tier);
+            (tierSpentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTier(_beneficiary, tierData.rate, tierData.tokenTotal.sub(tierData.mintedTotal), investedUSD, _tier);
             spentUSD = spentUSD.add(tierSpentUSD);
             tierData.minted[uint8(_fundRaiseType)] = tierData.minted[uint8(_fundRaiseType)].add(tierPurchasedTokens);
             tierData.mintedTotal = tierData.mintedTotal.add(tierPurchasedTokens);
         }
-        return spentUSD;
     }
 
     function _purchaseTier(
@@ -568,14 +560,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _tier
     )
         internal
-        returns(uint256, uint256)
+        returns(uint256 spentUSD, uint256 purchasedTokens, bool gotoNextTier)
     {
         uint256 maximumTokens = DecimalMath.div(_investedUSD, _tierPrice);
         uint256 granularity = ISecurityToken(securityToken).granularity();
         maximumTokens = maximumTokens.div(granularity);
         maximumTokens = maximumTokens.mul(granularity);
-        uint256 spentUSD;
-        uint256 purchasedTokens;
         if (maximumTokens > _tierRemaining) {
             spentUSD = DecimalMath.mul(_tierRemaining, _tierPrice);
             // In case of rounding issues, ensure that spentUSD is never more than investedUSD
@@ -583,13 +573,13 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
                 spentUSD = _investedUSD;
             }
             purchasedTokens = _tierRemaining;
+            gotoNextTier = true;
         } else {
             spentUSD = DecimalMath.mul(maximumTokens, _tierPrice);
             purchasedTokens = maximumTokens;
         }
         require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
         emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
-        return (spentUSD, purchasedTokens);
     }
 
     /////////////

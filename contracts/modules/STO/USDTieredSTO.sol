@@ -385,8 +385,16 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     * @notice fallback function - assumes ETH being invested
     */
     function () external payable {
-        uint256 rate = getRate(FundRaiseType.ETH);
-        buyWithETH(msg.sender, rate);
+        buyWithETHRateLimited(msg.sender, 0);
+    }
+
+    // For backwards compatibility
+    function buyWithETH(address _beneficiary) public payable {
+        buyWithETHRateLimited(_beneficiary, 0);
+    }
+
+    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public {
+        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, 0);
     }
 
     /**
@@ -394,7 +402,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _beneficiary Address where security tokens will be sent
       * @param _minRate Minumum conversion rate (FundType => USD) at which buying is authorized
       */
-    function buyWithETH(address _beneficiary, uint256 _minRate) public payable validETH {
+    function buyWithETHRateLimited(address _beneficiary, uint256 _minRate) public payable validETH {
         uint256 rate = getRate(FundRaiseType.ETH);
         require(rate >= _minRate, "Current rate below min");
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, msg.value, rate, FundRaiseType.ETH);
@@ -414,7 +422,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _investedPOLY Amount of POLY invested
       * @param _minRate Maximum rate at which buying is authorized
       */
-    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY, uint256 _minRate) public validPOLY {
+    function buyWithPOLYRateLimited(address _beneficiary, uint256 _investedPOLY, uint256 _minRate) public validPOLY {
         _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, _minRate);
     }
 
@@ -422,10 +430,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @notice Purchase tokens using POLY
       * @param _beneficiary Address where security tokens will be sent
       * @param _investedDAI Amount of POLY invested
-      * @param _minRate Maximum rate at which buying is authorized
       */
-    function buyWithUSD(address _beneficiary, uint256 _investedDAI, uint256 _minRate) public validDAI {
-        _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI, _minRate);
+    function buyWithUSD(address _beneficiary, uint256 _investedDAI) public validDAI {
+        _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI, uint256(10) ** 18);
     }
 
     function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType, uint256 _minRate) internal {
@@ -467,7 +474,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(_investmentValue > 0, "No funds were sent");
 
         uint256 investedUSD = DecimalMath.mul(_rate, _investmentValue);
-        uint256 originalUSD = investedUSD;
 
         // Check for minimum investment
         //require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
@@ -476,7 +482,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         // Check for non-accredited cap
         if (!accredited[_beneficiary]) {
             uint256 investorLimitUSD = (nonAccreditedLimitUSDOverride[_beneficiary] == 0) ? nonAccreditedLimitUSD : nonAccreditedLimitUSDOverride[_beneficiary];
-            //require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Non-accredited investor has reached limit"); not required.
+            require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Over Non-accredited investor limit");
             if (investedUSD.add(investorInvestedUSD[_beneficiary]) > investorLimitUSD)
                 investedUSD = investorLimitUSD.sub(investorInvestedUSD[_beneficiary]);
         }
@@ -509,7 +515,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         if (spentUSD == 0) {
             spentValue = 0;
         } else {
-            spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, originalUSD), _investmentValue);
+            spentValue = DecimalMath.div(spentUSD, _rate);
         }
 
         // Return calculated amounts
@@ -565,7 +571,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         returns(uint256, uint256)
     {
         uint256 maximumTokens = DecimalMath.div(_investedUSD, _tierPrice);
-        maximumTokens = maximumTokens.sub(maximumTokens.div(ISecurityToken(securityToken).granularity()));
+        uint256 granularity = ISecurityToken(securityToken).granularity();
+        maximumTokens = maximumTokens.div(granularity);
+        maximumTokens = maximumTokens.mul(granularity);
         uint256 spentUSD;
         uint256 purchasedTokens;
         if (maximumTokens > _tierRemaining) {

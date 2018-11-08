@@ -3875,11 +3875,9 @@ contract("USDTieredSTO", accounts => {
             let stoId = 4;
             let tierId = 0;
             let investment_Tokens = BigNumber(10.5).mul(10**18);
-            let investment_ETH = await convert(stoId, tierId, true, "TOKEN", "ETH", investment_Tokens);
-            console.log(investment_ETH.toString());
+            let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Tokens);
             let refund_Tokens = BigNumber(0.5).mul(10**18);
-            let refund_ETH = await convert(stoId, tierId, true, "TOKEN", "ETH", refund_Tokens);
-            console.log(refund_ETH.toString());
+            let refund_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", refund_Tokens);
 
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);

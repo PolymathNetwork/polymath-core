@@ -417,8 +417,8 @@ contract("ModuleRegistry", accounts => {
                 await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: account_issuer });
                 await I_STRProxied.registerTicker(account_issuer, newSymbol, name, { from: account_issuer });
                 let tx = await I_STRProxied.generateSecurityToken(name, newSymbol, tokenDetails, true, { from: account_issuer });
-                assert.equal(tx.logs[1].args._ticker, newSymbol.toUpperCase());
-                I_SecurityToken2 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+                assert.equal(tx.logs[2].args._ticker, newSymbol.toUpperCase());
+                I_SecurityToken2 = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
                 let bytesData = encodeModuleCall(
                     ["uint256", "uint256", "uint256", "string"],

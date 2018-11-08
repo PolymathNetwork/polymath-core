@@ -850,8 +850,8 @@ contract("SecurityToken", accounts => {
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             // console.log(currentInvestorCount.toString(), currentBalance.toString());
             let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance, "", "", { from: account_controller });
-            // console.log(tx.logs[0].args._value.toNumber(), currentBalance.toNumber());
-            assert.equal(tx.logs[0].args._value.toNumber(), currentBalance.toNumber());
+            // console.log(tx.logs[1].args._value.toNumber(), currentBalance.toNumber());
+            assert.equal(tx.logs[1].args._value.toNumber(), currentBalance.toNumber());
             let newInvestorCount = await I_SecurityToken.getInvestorCount.call();
             // console.log(newInvestorCount.toString());
             assert.equal(newInvestorCount.toNumber() + 1, currentInvestorCount.toNumber(), "Investor count drops by one");
@@ -1085,19 +1085,21 @@ contract("SecurityToken", accounts => {
                 end_balInv2.toNumber(),
                 "Investor balance not changed"
             );
-            console.log(tx.logs[0].args);
-            console.log(tx.logs[1].args);
-            assert.equal(account_controller, tx.logs[0].args._controller, "Event not emitted as expected");
-            assert.equal(account_investor1, tx.logs[0].args._from, "Event not emitted as expected");
-            assert.equal(account_investor2, tx.logs[0].args._to, "Event not emitted as expected");
-            assert.equal(web3.utils.toWei("10", "ether"), tx.logs[0].args._value, "Event not emitted as expected");
-            console.log(tx.logs[0].args._verifyTransfer);
-            assert.equal(false, tx.logs[0].args._verifyTransfer, "Event not emitted as expected");
-            assert.equal("reason", web3.utils.hexToUtf8(tx.logs[0].args._data), "Event not emitted as expected");
+            let eventForceTransfer = tx.logs[1];
+            let eventTransfer = tx.logs[0];
+            console.log(eventForceTransfer.args);
+            console.log(eventTransfer.args);
+            assert.equal(account_controller, eventForceTransfer.args._controller, "Event not emitted as expected");
+            assert.equal(account_investor1, eventForceTransfer.args._from, "Event not emitted as expected");
+            assert.equal(account_investor2, eventForceTransfer.args._to, "Event not emitted as expected");
+            assert.equal(web3.utils.toWei("10", "ether"), eventForceTransfer.args._value, "Event not emitted as expected");
+            console.log(eventForceTransfer.args._verifyTransfer);
+            assert.equal(false, eventForceTransfer.args._verifyTransfer, "Event not emitted as expected");
+            assert.equal("reason", web3.utils.hexToUtf8(eventForceTransfer.args._data), "Event not emitted as expected");
 
-            assert.equal(account_investor1, tx.logs[1].args.from, "Event not emitted as expected");
-            assert.equal(account_investor2, tx.logs[1].args.to, "Event not emitted as expected");
-            assert.equal(web3.utils.toWei("10", "ether"), tx.logs[1].args.value, "Event not emitted as expected");
+            assert.equal(account_investor1, eventTransfer.args.from, "Event not emitted as expected");
+            assert.equal(account_investor2, eventTransfer.args.to, "Event not emitted as expected");
+            assert.equal(web3.utils.toWei("10", "ether"), eventTransfer.args.value, "Event not emitted as expected");
         });
 
         it("Should fail to freeze controller functionality because not owner", async () => {

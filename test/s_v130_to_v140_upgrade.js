@@ -151,14 +151,14 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         // (A) :  TOK1
         await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER1 });
         let tx = await I_STRProxied.generateSecurityToken(name1, symbol1, tokenDetails1, false, { from: ISSUER1 });
-        assert.equal(tx.logs[1].args._ticker, symbol1, "SecurityToken doesn't get deployed");
-        I_SecurityToken1 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+        assert.equal(tx.logs[2].args._ticker, symbol1, "SecurityToken doesn't get deployed");
+        I_SecurityToken1 = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
         // (B) :  TOK2
         await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER2 });
         tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails2, false, { from: ISSUER2 });
-        assert.equal(tx.logs[1].args._ticker, symbol2, "SecurityToken doesn't get deployed");
-        I_SecurityToken2 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+        assert.equal(tx.logs[2].args._ticker, symbol2, "SecurityToken doesn't get deployed");
+        I_SecurityToken2 = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
         // Printing all the contract addresses
         console.log(`

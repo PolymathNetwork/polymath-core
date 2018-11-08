@@ -583,9 +583,9 @@ contract("SecurityTokenRegistry", accounts => {
             let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, symbol2, "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[2].args._ticker, symbol2, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken002 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+            I_SecurityToken002 = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
             let tokens = await I_STRProxied.getTokensByOwner.call(token_owner);
             assert.equal(tokens[0], I_SecurityToken.address);
             assert.equal(tokens[1], I_SecurityToken002.address);
@@ -952,7 +952,7 @@ contract("SecurityTokenRegistry", accounts => {
             let tx = await I_STRProxied.generateSecurityToken("Polymath", "POLY", tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, "POLY", "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[2].args._ticker, "POLY", "SecurityToken doesn't get deployed");
         });
     });
 

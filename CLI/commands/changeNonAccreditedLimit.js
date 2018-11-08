@@ -3,6 +3,7 @@ var csv = require('fast-csv');
 var BigNumber = require('bignumber.js');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
+var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis')
 
@@ -15,6 +16,7 @@ let usdTieredSTO;
 let tokenSymbol = process.argv.slice(2)[0]; //token symbol
 let BATCH_SIZE = process.argv.slice(2)[1]; //batch size
 if (!BATCH_SIZE) BATCH_SIZE = 75;
+let remoteNetwork = process.argv.slice(2)[2];
 
 /////////////////////////GLOBAL VARS//////////////////////////////////////////
 //distribData is an array of batches. i.e. if there are 200 entries, with batch sizes of 75, we get [[75],[75],[50]]
@@ -31,6 +33,8 @@ let badData = new Array();
 startScript();
 
 async function startScript() {
+  if (remoteNetwork == 'undefined') remoteNetwork = undefined;
+  await global.initialize(remoteNetwork);
 
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();

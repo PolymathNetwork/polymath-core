@@ -3,6 +3,7 @@ var csv = require('fast-csv');
 var BigNumber = require('bignumber.js');
 const chalk = require('chalk');
 var common = require('./common/common_functions');
+var global = require('./common/global');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require('./helpers/contract_addresses');
@@ -16,6 +17,7 @@ let securityToken;
 let tokenSymbol = process.argv.slice(2)[0]; //token symbol
 let BATCH_SIZE = process.argv.slice(2)[1]; //batch size
 if (!BATCH_SIZE) BATCH_SIZE = 75;
+let remoteNetwork = process.argv.slice(2)[2];
 
 /////////////////////////GLOBAL VARS//////////////////////////////////////////
 
@@ -33,6 +35,8 @@ let badData = new Array();
 startScript();
 
 async function startScript() {
+  if (remoteNetwork == 'undefined') remoteNetwork = undefined;
+  await global.initialize(remoteNetwork);
 
   try {    
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();

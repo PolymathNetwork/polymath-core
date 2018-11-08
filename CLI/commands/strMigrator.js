@@ -356,7 +356,7 @@ ${failed.map(ticker => chalk.red(`${ticker.ticker}`)).join('\n')}
 }
 
 async function getABIfromEtherscan(_address) {
-    let urlDomain = gbl.constants.NETWORK == 'kovan' ? 'api-kovan' : 'api';
+    let urlDomain = remoteNetwork == 'kovan' ? 'api-kovan' : 'api';
     const options = {
         url: `https://${urlDomain}.etherscan.io/api`,
         qs: {

@@ -242,11 +242,11 @@ async function step_Wallet_Issuance(){
 
 async function multi_mint_tokens() {
   //await whitelist.startWhitelisting(tokenSymbol);
-  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75 ${gbl.constants.NETWORK}`);
+  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75 ${remoteNetwork}`);
   console.log(chalk.green(`\nCongrats! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
 
-  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${gbl.constants.NETWORK}`);
+  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${remoteNetwork}`);
   console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transferred to token holders`));
 }
 
@@ -1003,7 +1003,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(changeAccreditedAction);
           break;
         case 2:
-          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${gbl.constants.NETWORK}`);
+          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${remoteNetwork}`);
           break;
         case 3:
           let account = readlineSync.question('Enter the address to change non accredited limit: ');
@@ -1015,7 +1015,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(changeNonAccreditedLimitAction);
           break;
         case 4:
-          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${gbl.constants.NETWORK}`);
+          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${remoteNetwork}`);
           break;
         case 5:
           await modfifyTimes();

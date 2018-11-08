@@ -67,7 +67,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // uint256[] public mintedPerTierDiscountPoly;
 
     // Current tier
-    uint8 public currentTier;
+    uint256 public currentTier;
 
     // Amount of USD funds raised
     uint256 public fundsRaisedUSD;
@@ -94,7 +94,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     uint256 public finalAmountReturned;
 
     // Tiers
-    Tier public tiers;
+    Tier[] public tiers;
 
     ////////////
     // Events //
@@ -109,7 +109,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _tokens,
         uint256 _usdAmount,
         uint256 _tierPrice,
-        uint8 _tier
+        uint256 _tier
     );
     event FundsReceived(
         address indexed _purchaser,
@@ -120,7 +120,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _spentValue,
         uint256 _rate
     );
-    event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint8 _latestTier);
+    event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint256 _latestTier);
     event SetAddresses(
         address indexed _wallet,
         address indexed _reserveWallet,
@@ -201,7 +201,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _usdToken
     ) public onlyFactory {
         _modifyTimes(_startTime, _endTime);
-        _modifyTimes(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
+        _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
         // NB - _setFundRaiseType must come before modifyAddresses
         _setFundRaiseType(_fundRaiseTypes);
         _modifyAddresses(_wallet, _reserveWallet, _usdToken);
@@ -280,12 +280,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             require(_tokensPerTierTotal[i] > 0, "Invalid token amount");
             require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Too many discounted tokens");
             require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Invalid discount");
-            tiers.length++;
-            Tier storage currentTier = tiers[i];
-            currentTier.rate = _ratePerTier[i];
-            currentTier.rateDiscountPoly = _ratePerTierDiscountPoly[i];
-            currentTier.tokenTotal = _tokensPerTierTotal[i];
-            currentTier.tokensDiscountPoly = _tokensPerTierDiscountPoly[i];
+            tiers.push(Tier(_ratePerTier[i], _ratePerTierDiscountPoly[i], _tokensPerTierTotal[i], _tokensPerTierDiscountPoly[i], 0, 0));
         }
         emit SetTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
     }
@@ -330,12 +325,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 tempReturned;
         uint256 tempSold;
         uint256 remainingTokens;
-        for (uint8 i = 0; i < tokensPerTierTotal.length; i++) {
-            remainingTokens = tokensPerTierTotal[i].sub(mintedPerTierTotal[i]);
+        for (uint256 i = 0; i < tiers.length; i++) {
+            remainingTokens = tiers[i].tokenTotal.sub(tiers[i].mintedTotal);
             tempReturned = tempReturned.add(remainingTokens);
-            tempSold = tempSold.add(mintedPerTierTotal[i]);
+            tempSold = tempSold.add(tiers[i].mintedTotal);
             if (remainingTokens > 0) {
-                mintedPerTierTotal[i] = tokensPerTierTotal[i];
+                tiers[i].mintedTotal = tiers[i].tokenTotal;
             }
         }
         require(ISecurityToken(securityToken).mint(reserveWallet, tempReturned), "Error in minting");
@@ -366,7 +361,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         //nonAccreditedLimitUSDOverride
         require(_investors.length == _nonAccreditedLimit.length, "Array length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
-            require(_nonAccreditedLimit[i] > 0, "Limit can not be 0");
+            require(_nonAccreditedLimit[i] > 0, "Limit = 0");
             nonAccreditedLimitUSDOverride[_investors[i]] = _nonAccreditedLimit[i];
             emit SetNonAccreditedLimit(_investors[i], _nonAccreditedLimit[i]);
         }
@@ -390,15 +385,18 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     * @notice fallback function - assumes ETH being invested
     */
     function () external payable {
-        buyWithETH(msg.sender);
+        uint256 rate = getRate(FundRaiseType.ETH);
+        buyWithETH(msg.sender, rate);
     }
 
     /**
       * @notice Purchase tokens using ETH
       * @param _beneficiary Address where security tokens will be sent
+      * @param _minRate Minumum conversion rate (FundType => USD) at which buying is authorized
       */
-    function buyWithETH(address _beneficiary) public payable validETH {
+    function buyWithETH(address _beneficiary, uint256 _minRate) public payable validETH {
         uint256 rate = getRate(FundRaiseType.ETH);
+        require(rate >= _minRate, "Current rate below min");
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, msg.value, rate, FundRaiseType.ETH);
         // Modify storage
         investorInvested[_beneficiary][uint8(FundRaiseType.ETH)] = investorInvested[_beneficiary][uint8(FundRaiseType.ETH)].add(spentValue);
@@ -414,23 +412,26 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @notice Purchase tokens using POLY
       * @param _beneficiary Address where security tokens will be sent
       * @param _investedPOLY Amount of POLY invested
+      * @param _minRate Maximum rate at which buying is authorized
       */
-    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public validPOLY {
-        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY);
+    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY, uint256 _minRate) public validPOLY {
+        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, _minRate);
     }
 
     /**
       * @notice Purchase tokens using POLY
       * @param _beneficiary Address where security tokens will be sent
       * @param _investedDAI Amount of POLY invested
+      * @param _minRate Maximum rate at which buying is authorized
       */
-    function buyWithUSD(address _beneficiary, uint256 _investedDAI) public validDAI {
-        _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI);
+    function buyWithUSD(address _beneficiary, uint256 _investedDAI, uint256 _minRate) public validDAI {
+        _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI, _minRate);
     }
 
-    function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType) internal {
-        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.DAI, "POLY & DAI supported");
+    function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType, uint256 _minRate) internal {
+        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.DAI, "Invalid raise type");
         uint256 rate = getRate(_fundRaiseType);
+        require(rate >= _minRate, "Current rate below min");
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _tokenAmount, rate, _fundRaiseType);
         // Modify storage
         investorInvested[_beneficiary][uint8(_fundRaiseType)] = investorInvested[_beneficiary][uint8(_fundRaiseType)].add(spentValue);
@@ -459,37 +460,40 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         returns(uint256, uint256)
     {
         if (!allowBeneficialInvestments) {
-            require(_beneficiary == msg.sender, "Beneficiary does not match funder");
+            require(_beneficiary == msg.sender, "Beneficiary != funder");
         }
 
-        require(isOpen(), "STO is not open");
+        require(isOpen(), "STO not open");
         require(_investmentValue > 0, "No funds were sent");
 
         uint256 investedUSD = DecimalMath.mul(_rate, _investmentValue);
         uint256 originalUSD = investedUSD;
 
         // Check for minimum investment
-        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
+        //require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
+        require(investedUSD >= minimumInvestmentUSD, "investment < minimumInvestmentUSD"); //Why do we need to add?
 
         // Check for non-accredited cap
         if (!accredited[_beneficiary]) {
             uint256 investorLimitUSD = (nonAccreditedLimitUSDOverride[_beneficiary] == 0) ? nonAccreditedLimitUSD : nonAccreditedLimitUSDOverride[_beneficiary];
-            require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Non-accredited investor has reached limit");
+            //require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Non-accredited investor has reached limit"); not required.
             if (investedUSD.add(investorInvestedUSD[_beneficiary]) > investorLimitUSD)
                 investedUSD = investorLimitUSD.sub(investorInvestedUSD[_beneficiary]);
         }
         uint256 spentUSD;
         // Iterate over each tier and process payment
-        for (uint8 i = currentTier; i < ratePerTier.length; i++) {
+        for (uint256 i = currentTier; i < tiers.length; i++) {
             // Update current tier if needed
             if (currentTier != i)
                 currentTier = i;
             // If there are tokens remaining, process investment
-            if (mintedPerTierTotal[i] < tokensPerTierTotal[i])
+            if (tiers[i].mintedTotal < tiers[i].tokenTotal) {
                 spentUSD = spentUSD.add(_calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), _fundRaiseType));
-            // If all funds have been spent, exit the loop
-            if (investedUSD == spentUSD)
-                break;
+                // If all funds have been spent, exit the loop
+                if (investedUSD == spentUSD)
+                    break;
+            }
+            
         }
 
         // Modify storage
@@ -514,7 +518,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
     function _calculateTier(
         address _beneficiary,
-        uint8 _tier,
+        uint256 _tier,
         uint256 _investedUSD,
         FundRaiseType _fundRaiseType
     ) 
@@ -526,25 +530,26 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 tierSpentUSD;
         uint256 tierPurchasedTokens;
         uint256 investedUSD = _investedUSD;
+        Tier storage tierData = tiers[_tier];
         // Check whether there are any remaining discounted tokens
-        if ((_fundRaiseType == FundRaiseType.POLY) && (tokensPerTierDiscountPoly[_tier] > mintedPerTierDiscountPoly[_tier])) {
-            uint256 discountRemaining = tokensPerTierDiscountPoly[_tier].sub(mintedPerTierDiscountPoly[_tier]);
-            uint256 totalRemaining = tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]);
+        if ((_fundRaiseType == FundRaiseType.POLY) && (tierData.tokensDiscountPoly > tierData.mintedDiscountPoly)) {
+            uint256 discountRemaining = tierData.tokensDiscountPoly.sub(tierData.mintedDiscountPoly);
+            uint256 totalRemaining = tierData.tokenTotal.sub(tierData.mintedTotal);
             if (totalRemaining < discountRemaining)
-                (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], totalRemaining, investedUSD, _tier);
+                (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, tierData.rateDiscountPoly, totalRemaining, investedUSD, _tier);
             else
-                (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTierDiscountPoly[_tier], discountRemaining, investedUSD, _tier);
+                (spentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, tierData.rateDiscountPoly, discountRemaining, investedUSD, _tier);
             investedUSD = investedUSD.sub(spentUSD);
-            mintedPerTierDiscountPoly[_tier] = mintedPerTierDiscountPoly[_tier].add(tierPurchasedTokens);
-            mintedPerTier[uint8(FundRaiseType.POLY)][_tier] = mintedPerTier[uint8(FundRaiseType.POLY)][_tier].add(tierPurchasedTokens);
-            mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
+            tierData.mintedDiscountPoly = tierData.mintedDiscountPoly.add(tierPurchasedTokens);
+            tierData.minted[uint8(_fundRaiseType)] = tierData.minted[uint8(_fundRaiseType)].add(tierPurchasedTokens);
+            tierData.mintedTotal = tierData.mintedTotal.add(tierPurchasedTokens);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
-        if ((investedUSD > 0) && (tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]) > 0)) {
-            (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, ratePerTier[_tier], tokensPerTierTotal[_tier].sub(mintedPerTierTotal[_tier]), investedUSD, _tier);
+        if ((investedUSD > 0) && (tierData.tokenTotal.sub(tierData.mintedTotal) > 0)) {
+            (tierSpentUSD, tierPurchasedTokens) = _purchaseTier(_beneficiary, tierData.rate, tierData.tokenTotal.sub(tierData.mintedTotal), investedUSD, _tier);
             spentUSD = spentUSD.add(tierSpentUSD);
-            mintedPerTier[uint8(_fundRaiseType)][_tier] = mintedPerTier[uint8(_fundRaiseType)][_tier].add(tierPurchasedTokens);
-            mintedPerTierTotal[_tier] = mintedPerTierTotal[_tier].add(tierPurchasedTokens);
+            tierData.minted[uint8(_fundRaiseType)] = tierData.minted[uint8(_fundRaiseType)].add(tierPurchasedTokens);
+            tierData.mintedTotal = tierData.mintedTotal.add(tierPurchasedTokens);
         }
         return spentUSD;
     }
@@ -554,12 +559,13 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _tierPrice,
         uint256 _tierRemaining,
         uint256 _investedUSD,
-        uint8 _tier
+        uint256 _tier
     )
         internal
         returns(uint256, uint256)
     {
         uint256 maximumTokens = DecimalMath.div(_investedUSD, _tierPrice);
+        maximumTokens = maximumTokens.sub(maximumTokens.div(ISecurityToken(securityToken).granularity()));
         uint256 spentUSD;
         uint256 purchasedTokens;
         if (maximumTokens > _tierRemaining) {
@@ -570,7 +576,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             }
             purchasedTokens = _tierRemaining;
         } else {
-            spentUSD = _investedUSD;
+            spentUSD = DecimalMath.mul(maximumTokens, _tierPrice);
             purchasedTokens = maximumTokens;
         }
         require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
@@ -608,7 +614,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         if (isFinalized) {
             return (finalAmountReturned == 0);
         }
-        return (mintedPerTierTotal[mintedPerTierTotal.length - 1] == tokensPerTierTotal[tokensPerTierTotal.length - 1]);
+        return (tiers[tiers.length - 1].mintedTotal == tiers[tiers.length - 1].tokenTotal);
     }
 
     function getRate(FundRaiseType _fundRaiseType) public view returns (uint256) {
@@ -662,8 +668,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function getTokensMinted() public view returns (uint256) {
         uint256 tokensMinted;
-        for (uint8 i = 0; i < mintedPerTierTotal.length; i++) {
-            tokensMinted = tokensMinted.add(mintedPerTierTotal[i]);
+        for (uint256 i = 0; i < tiers.length; i++) {
+            tokensMinted = tokensMinted.add(tiers[i].mintedTotal);
         }
         return tokensMinted;
     }
@@ -674,8 +680,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function getTokensSoldFor(FundRaiseType _fundRaiseType) public view returns (uint256) {
         uint256 tokensSold;
-        for (uint8 i = 0; i < mintedPerTier[uint8(_fundRaiseType)].length; i++) {
-            tokensSold = tokensSold.add(mintedPerTier[uint8(_fundRaiseType)][i]);
+        for (uint256 i = 0; i < tiers.length; i++) {
+            tokensSold = tokensSold.add(tiers[i].minted[uint8(_fundRaiseType)]);
         }
         return tokensSold;
     }
@@ -685,7 +691,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return uint256 Total number of tiers
      */
     function getNumberOfTiers() public view returns (uint256) {
-        return tokensPerTierTotal.length;
+        return tiers.length;
     }
 
     /**

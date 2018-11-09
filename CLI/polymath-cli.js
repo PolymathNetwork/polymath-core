@@ -137,10 +137,11 @@ program
 
 program
   .command('strMigrator [toStrAddress] [fromTrAddress] [fromStrAddress]')
+  .option('-tick, --singleTicker <ticker>', 'It only reads and migrates the ticker and token for given token symbol')
   .alias('str')
   .description('Runs STR Migrator')
-  .action(async function(toStrAddress, fromTrAddress, fromStrAddress) {
-    await strMigrator.executeApp(toStrAddress, fromTrAddress, fromStrAddress, program.remoteNode);
+  .action(async function(toStrAddress, fromTrAddress, fromStrAddress, cmd) {
+    await strMigrator.executeApp(toStrAddress, fromTrAddress, fromStrAddress, cmd.singleTicker, program.remoteNode);
   });
 
 program

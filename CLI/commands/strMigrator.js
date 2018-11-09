@@ -255,12 +255,7 @@ async function step_get_deployed_tokens(securityTokenRegistry, singleTicker) {
 }
 
 async function step_launch_STs(tokens, securityTokenRegistry) {
-    if (readlineSync.keyInYNStrict(`Do you want to migrate a single Security Token?`)) {
-        let tokenToMigrate = readlineSync.question(`Enter the Security Token symbol to migrate: `);
-        tokens = tokens.filter(t => t.ticker == tokenToMigrate);
-    } 
-
-    if (tickers.length == 0) {
+    if (tokens.length == 0) {
         console.log(chalk.yellow(`There are no security tokens to migrate!`));
     } else if (readlineSync.keyInYNStrict(`Do you want to migrate ${tokens.length} Security Tokens?`)) {
         let i = 0;

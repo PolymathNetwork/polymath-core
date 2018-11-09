@@ -238,8 +238,8 @@ async function getModulesWithPermissions() {
 async function getDelegatesAndPermissions() {
   let moduleABI = abis.moduleInterface();
   let result = [];
-  for (const type in MODULES_TYPES) {
-    let modulesAttached = await securityToken.methods.getModulesByType(MODULES_TYPES[type]).call();
+  for (const type in gbl.constants.MODULES_TYPES) {
+    let modulesAttached = await securityToken.methods.getModulesByType(gbl.constants.MODULES_TYPES[type]).call();
     for (const module of modulesAttached) {
       let contractTemp = new web3.eth.Contract(moduleABI, module);
       let permissions = await contractTemp.methods.getPermissions().call();

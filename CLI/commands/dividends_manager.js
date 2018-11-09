@@ -344,7 +344,7 @@ async function createDividends(name, dividend, checkpointId) {
         createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, excluded, web3.utils.toHex(name));
       }
     }
-    let receipt = await common.sendTransaction(createDividendAction, {gasPrice: web3.utils.toWei(dividend)});
+    let receipt = await common.sendTransaction(createDividendAction, {value: web3.utils.toWei(dividend)});
     let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'EtherDividendDeposited');
     console.log(`
   Dividend ${event._dividendIndex} deposited`

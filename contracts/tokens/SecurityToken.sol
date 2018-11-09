@@ -826,7 +826,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _log data attached to the transfer by controller to emit in event
      */
     function forceTransfer(address _from, address _to, uint256 _value, bytes _data, bytes _log) public onlyController {
-        require(_to != address(0));
         bool verified = _updateTransfer(_from, _to, _value, _data);
         _transfer(_from, _to, _value);
         emit ForceTransfer(msg.sender, _from, _to, _value, verified, _log);

@@ -708,6 +708,37 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     /**
+     * @notice Return the STO details
+     * @return Unixtimestamp at which offering gets start.
+     * @return Unixtimestamp at which offering ends.
+     * @return Currently active tier
+     * @return Array of Number of tokens this STO will be allowed to sell at different tiers.
+     * @return Array Rate at which tokens are sold at different tiers
+     * @return Amount of funds raised
+     * @return Number of individual investors this STO have.
+     * @return Amount of tokens sold. 
+     */
+    function getSTODetails() public view returns(uint256, uint256, uint256, uint256[], uint256[], uint256, uint256, uint256) {
+        uint256 len = tiers.length;
+        uint256[] memory cap = new uint256[](len);
+        uint256[] memory rate = new uint256[](len);
+        for(uint256 i = 0; i < len; i++) {
+            cap[i] = tiers[i].tokenTotal;
+            rate[i] = tiers[i].rate;
+        }
+        return (
+            startTime,
+            endTime,
+            currentTier,
+            cap,
+            rate,
+            fundsRaisedUSD,
+            investorCount,
+            getTokensSold()
+        );
+    }
+
+    /**
      * @notice This function returns the signature of configure function
      * @return bytes4 Configure function signature
      */

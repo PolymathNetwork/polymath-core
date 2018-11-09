@@ -6,7 +6,8 @@ All notable changes to this project will be documented in this file.
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
 ## Added
-* Added an Array of Tiers that will hold data about every tier in USDSTO.
+* Added `getSTODetails` to USDTSTO.
+* Added an Array of Tiers that will hold data about every tier in USDTSTO.
 * Added `buyWithETHRateLimited`, `buyWithPOLYRateLimited` and `buyWithUSDRateLimited` to USDTSTO.
 * Added `getInvestorsAt` which returns the investors (non-zero balances) at a particular checkpoint
 * Added `iterateInvestors` to allow an a subset of `investors` to be returned from the security token in case `investors` is large.

@@ -678,7 +678,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _value,
         bytes _data
         ) public onlyModuleOrOwner(MINT_KEY) isMintingAllowed() returns (bool success) {
-        require(_investor != address(0), "Investor is 0");
         require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
         _adjustTotalSupplyCheckpoints();
         _mint(_investor, _value);
@@ -719,7 +718,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     }
 
     function _burn(address _from, uint256 _value, bytes _data) internal returns(bool) {
-        require(_value <= balanceOf(_from), "Value too high");
         bool verified = _updateTransfer(_from, address(0), _value, _data);
         _adjustTotalSupplyCheckpoints();
         _burn(_from, _value);
@@ -752,7 +750,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      */
     function burnFromWithData(address _from, uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
-        require(_value <= allowance(_from, msg.sender), "Value too high");
         require(_burnFrom(_from, _value, _data), "Burn invalid");
     }
 
@@ -830,7 +827,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      */
     function forceTransfer(address _from, address _to, uint256 _value, bytes _data, bytes _log) public onlyController {
         require(_to != address(0));
-        require(_value <= balanceOf(_from));
         bool verified = _updateTransfer(_from, _to, _value, _data);
         _transfer(_from, _to, _value);
         emit ForceTransfer(msg.sender, _from, _to, _value, verified, _log);

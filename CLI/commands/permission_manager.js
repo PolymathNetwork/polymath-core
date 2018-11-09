@@ -261,10 +261,10 @@ async function getDelegatesAndPermissions() {
             if (result[delegateAddr] == undefined) {
               result[delegateAddr] = []
             } 
-            if (result[delegateAddr][moduleName] == undefined) {
-              result[delegateAddr][moduleName] = [{permission: permissionName}]
+            if (result[delegateAddr][moduleName + '-' + module] == undefined) {
+              result[delegateAddr][moduleName + '-' + module] = [{permission: permissionName}]
             } else {
-              result[delegateAddr][moduleName].push({permission: permissionName})
+              result[delegateAddr][moduleName + '-' + module].push({permission: permissionName})
             }
           }
         }
@@ -279,7 +279,7 @@ function renderTable(permissions, address) {
   if (permissions[address] != undefined) {
     Object.keys(permissions[address]).forEach((module) => {
       result += `
-      ${module} -> `;
+      ${module.split('-')[0]} (${module.split('-')[1]}) -> `;
       (permissions[address][module]).forEach((perm) => {
         result += `${perm.permission}, `;
       })

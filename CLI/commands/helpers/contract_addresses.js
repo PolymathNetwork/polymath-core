@@ -16,7 +16,7 @@ function getPolymathRegistryAddress(networkId) {
       result = JSON.parse(require('fs').readFileSync('./build/contracts/PolymathRegistry.json').toString()).networks[networkId].address;
       break;
     case 42: // KOVAN
-      result = "0x05a6519e49e34239f78167abf293d94dae61b299";
+      result = "0xad09dc7939f09601674c69a07132bc642abeeb10";
       break;
   }
 

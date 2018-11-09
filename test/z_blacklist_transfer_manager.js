@@ -797,7 +797,7 @@ contract('BlacklistTransferManager', accounts => {
             // await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor2, "g_blacklist", { from: token_owner });
             let investor = [account_investor5,account_investor2];
             let blacklistName = ["s_blacklist","g_blacklist"];
-            let tx = await I_BlacklistTransferManager.deleteInvestorFromBlacklistMulti(investor,blacklistName, { from: token_owner });
+            let tx = await I_BlacklistTransferManager.deleteMultiInvestorsFromBlacklistMulti(investor,blacklistName, { from: token_owner });
             let event_data = tx.logs;
             for (var i = 0; i < event_data.length; i++) {
                 let investorName = event_data[i].args._investor;
@@ -811,7 +811,7 @@ contract('BlacklistTransferManager', accounts => {
             let investor = [account_investor5,account_investor2];
             let blacklistName = ["s_blacklist","g_blacklist"];
             await catchRevert(
-                I_BlacklistTransferManager.deleteInvestorFromBlacklistMulti(investor,blacklistName, { 
+                I_BlacklistTransferManager.deleteMultiInvestorsFromBlacklistMulti(investor,blacklistName, { 
                     from: account_investor1 
                 })
             );
@@ -821,7 +821,7 @@ contract('BlacklistTransferManager', accounts => {
             let investor = [account_investor5];
             let blacklistName = ["s_blacklist","g_blacklist"];
             await catchRevert(
-                I_BlacklistTransferManager.deleteInvestorFromBlacklistMulti(investor,blacklistName, { 
+                I_BlacklistTransferManager.deleteMultiInvestorsFromBlacklistMulti(investor,blacklistName, { 
                     from: token_owner 
                 })
             );
@@ -928,7 +928,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should fail in adding the mutiple investor to the mutiple blacklist because only owner can do it.", async() => {
             let investor = [account_investor4,account_investor5];
             let blacklistName = ["m_blacklist","n_blacklist"];
-            await I_BlacklistTransferManager.deleteInvestorFromBlacklistMulti(investor,blacklistName, { from: token_owner });
+            await I_BlacklistTransferManager.deleteMultiInvestorsFromBlacklistMulti(investor,blacklistName, { from: token_owner });
             await catchRevert(
                 I_BlacklistTransferManager.addMultiInvestorToBlacklistMulti(investor, blacklistName, { 
                     from: account_investor1 
@@ -967,14 +967,17 @@ contract('BlacklistTransferManager', accounts => {
                         .replace(/\u0000/g, ''),
                         "BlacklistTransferManager",
                         "Wrong Module added");
-            assert.equal(await I_BlacklistTransferManagerFactory.getDescription.call(),
+            assert.equal(await I_BlacklistTransferManagerFactory.description.call(),
                         "Automate blacklist to restrict selling",
                         "Wrong Module added");
-            assert.equal(await I_BlacklistTransferManagerFactory.getTitle.call(),
+            assert.equal(await I_BlacklistTransferManagerFactory.title.call(),
                         "Blacklist Transfer Manager",
                         "Wrong Module added");
             assert.equal(await I_BlacklistTransferManagerFactory.getInstructions.call(),
                         "Allows an issuer to blacklist the addresses.",
+                        "Wrong Module added");
+            assert.equal(await I_BlacklistTransferManagerFactory.version.call(),
+                        "1.0.0",
                         "Wrong Module added");
         
         });

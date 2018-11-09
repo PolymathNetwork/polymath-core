@@ -3972,6 +3972,30 @@ contract("USDTieredSTO", accounts => {
             );
         });
 
+        it("should fail when rate set my contract is too low", async () => {
+            let stoId = 4;
+            let tierId = 0;
+            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
+            let investment_Tokens = new BigNumber(10 ** 18);
+            let investment_POLY = await convert(stoId, tierId, true, "TOKEN", "POLY", investment_Tokens);
+            let investment_ETH = await convert(stoId, tierId, true, "TOKEN", "ETH", investment_Tokens);
+            const minTokens = new BigNumber(10 ** 20);
+
+            await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
+            await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
+
+            // Buy With POLY
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLYRateLimited(ACCREDITED1, investment_POLY, minTokens, {
+                from: ACCREDITED1,
+                gasPrice: GAS_PRICE
+            }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETHRateLimited(ACCREDITED1, minTokens, {
+                from: ACCREDITED1,
+                gasPrice: GAS_PRICE,
+                value: investment_ETH
+            }));
+        });
+
         it("should fail and revert despite oracle price change when NONACCREDITED cap reached", async () => {
             let stoId = 2;
             let tierId = 0;

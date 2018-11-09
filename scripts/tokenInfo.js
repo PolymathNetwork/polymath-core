@@ -14,7 +14,11 @@ async function getTokens() {
     let strEvents = await web3.eth.getPastLogs({fromBlock:'0x5C5C18', address:securityTokenRegistry.address, topics: ["0x2510d802a0818e71139a7680a6388bcffcd3fa686e02a0f7319488c5bdb38fcb"]});
     for (let i = 0; i < strEvents.length; i++) {
         let tokenAddress = '0x' + strEvents[i].topics[1].slice(26,66)
-        await getInfo(tokenAddress);
+        try {
+            await getInfo(tokenAddress);
+        } catch(exception) {
+            console.log('Failed to load info of', tokenAddress, exception);
+        }
     }
 }
 

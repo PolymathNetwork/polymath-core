@@ -188,7 +188,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         set(PAUSED, false);
         set(OWNER, _owner);
         set(POLYMATHREGISTRY, _polymathRegistry);
-        _setProtocolVersion(_STFactory, uint8(0), uint8(0), uint8(2));
+        _setProtocolVersion(_STFactory, uint8(2), uint8(0), uint8(0));
         set(INITIALIZE, true);
     }
 

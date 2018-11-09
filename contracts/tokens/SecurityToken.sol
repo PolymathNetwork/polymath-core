@@ -210,7 +210,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         updateFromRegistry();
         tokenDetails = _tokenDetails;
         granularity = _granularity;
-        securityTokenVersion = SemanticVersion(0,0,2);
+        securityTokenVersion = SemanticVersion(2,0,0);
     }
 
     /**

@@ -563,9 +563,9 @@ contract("SecurityTokenRegistry", accounts => {
                 address_zero,
                 "STFactory002 contract was not deployed"
             );
-            await I_STRProxied.setProtocolVersion(I_STFactory002.address, 0, 2, 0, { from: account_polymath });
+            await I_STRProxied.setProtocolVersion(I_STFactory002.address, 2, 2, 0, { from: account_polymath });
             let _protocol = await I_STRProxied.getProtocolVersion.call();
-            assert.equal(_protocol[0], 0);
+            assert.equal(_protocol[0], 2);
             assert.equal(_protocol[1], 2);
             assert.equal(_protocol[2], 0);
         });
@@ -1158,9 +1158,9 @@ contract("SecurityTokenRegistry", accounts => {
 
             it("Should successfully change the protocolVersion -- fail in second attempt because of invalid version", async() => {
                 let snap_Id = await takeSnapshot();
-                await I_STRProxied.setProtocolVersion(accounts[8], 1, 2, 1, {from: account_polymath });
+                await I_STRProxied.setProtocolVersion(accounts[8], 2, 3, 1, {from: account_polymath });
                 await catchRevert(
-                    I_STRProxied.setProtocolVersion(accounts[8], 0, 2, 1, {from: account_polymath })
+                    I_STRProxied.setProtocolVersion(accounts[8], 1, 3, 1, {from: account_polymath })
                 );
                 await revertToSnapshot(snap_Id);
             });

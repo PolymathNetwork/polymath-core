@@ -117,11 +117,16 @@ async function deleteDelegate(address) {
 async function selectDelegate() {
   let result;
   let delegates = await getDelegates();
+  let permissions = await getDelegatesAndPermissions();
   
   let options = ['Add new delegate'];
+
   options = options.concat(delegates.map(function(d) { 
+    let perm = renderTable(permissions, d.address);
+
     return `Account: ${d.address}
-    Details: ${d.details}`
+    Details: ${d.details}
+    Permisions: ${perm}`
   }));
 
   let index = readlineSync.keyInSelect(options, 'Select a delegate:', {cancel: false});
@@ -203,7 +208,7 @@ async function addNewDelegate() {
   let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
   let receipt = await common.sendTransaction(addPermissionAction);
   let event = common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'AddDelegate');
-  console.log(`Delegate added succesfully: ${event._delegate} - ${event._details}`);
+  console.log(`Delegate added succesfully: ${event._delegate} - ${web3.utils.hexToAscii(event._details)}`);
   isNewDelegate = true;
   return event._delegate;
 }
@@ -228,6 +233,53 @@ async function getModulesWithPermissions() {
   }
 
   return modules;
+}
+
+async function getDelegatesAndPermissions() {
+  let moduleABI = abis.moduleInterface();
+  let result = [];
+  for (const type in gbl.constants.MODULES_TYPES) {
+    let modulesAttached = await securityToken.methods.getModulesByType(gbl.constants.MODULES_TYPES[type]).call();
+    for (const module of modulesAttached) {
+      let contractTemp = new web3.eth.Contract(moduleABI, module);
+      let permissions = await contractTemp.methods.getPermissions().call();
+      if (permissions.length > 0) {
+        for (const permission of permissions) {
+          let allDelegates = await generalPermissionManager.methods.getAllDelegatesWithPerm(module, permission).call();
+          let moduleName = web3.utils.hexToUtf8((await securityToken.methods.getModule(module).call())[0]);
+          let permissionName = web3.utils.hexToUtf8(permission);
+          for (delegateAddr of allDelegates) {
+            if (result[delegateAddr] == undefined) {
+              result[delegateAddr] = []
+            } 
+            if (result[delegateAddr][moduleName + '-' + module] == undefined) {
+              result[delegateAddr][moduleName + '-' + module] = [{permission: permissionName}]
+            } else {
+              result[delegateAddr][moduleName + '-' + module].push({permission: permissionName})
+            }
+          }
+        }
+      }
+    }
+  }
+  return result
+}
+
+function renderTable(permissions, address) {
+  let result = ``;
+  if (permissions[address] != undefined) {
+    Object.keys(permissions[address]).forEach((module) => {
+      result += `
+      ${module.split('-')[0]} (${module.split('-')[1]}) -> `;
+      (permissions[address][module]).forEach((perm) => {
+        result += `${perm.permission}, `;
+      })
+      result = result.slice(0, -2);
+    })
+  } else {
+    result += `-`;
+  }
+  return result
 }
 
 module.exports = {

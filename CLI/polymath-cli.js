@@ -13,6 +13,7 @@ var contract_manager = require('./commands/contract_manager');
 var strMigrator = require('./commands/strMigrator');
 var permission_manager = require('./commands/permission_manager');
 var program = require('commander');
+var gbl = require('./commands/common/global');
 const yaml = require('js-yaml');
 const fs = require('fs');
 
@@ -36,7 +37,8 @@ program
       mintingConfig = config.initialMint;
       stoCofig = config.sto;
     }
-    await st20generator.executeApp(tokenConfig, mintingConfig, stoCofig, program.remoteNode);
+    await gbl.initialize(program.remoteNode);
+    await st20generator.executeApp(tokenConfig, mintingConfig, stoCofig);
   });
 
 program
@@ -44,7 +46,8 @@ program
   .alias('f')
   .description('Poly faucet for local private netwtorks')
   .action(async function(beneficiary, amount) {
-    await faucet.executeApp(beneficiary, amount, program.remoteNode);
+    await gbl.initialize(program.remoteNode);
+    await faucet.executeApp(beneficiary, amount);
   });
 
 program
@@ -52,7 +55,8 @@ program
   .alias('i')
   .description('Participate in any STO you have been whitelisted for')
   .action(async function(investor, privateKey, symbol, currency, amount) {
-    await investor_portal.executeApp(investor, privateKey, symbol, currency, amount, program.remoteNode);
+    await gbl.initialize(program.remoteNode);
+    await investor_portal.executeApp(investor, privateKey, symbol, currency, amount);
   });
 
 program
@@ -60,7 +64,8 @@ program
   .alias('mm')
   .description('View modules attached to a token and their status')
   .action(async function() {
-    await module_manager.executeApp(program.remoteNode);
+    await gbl.initialize(program.remoteNode);
+    await module_manager.executeApp();
   });
 
 program
@@ -68,6 +73,7 @@ program
   .alias('mi')
   .description('Distribute tokens to previously whitelisted investors')
   .action(async function(tokenSymbol, batchSize) {
+    await gbl.initialize(program.remoteNode);
     shell.exec(`${__dirname}/commands/scripts/script.sh Multimint ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
   });
 
@@ -76,7 +82,8 @@ program
   .alias('t')
   .description('Transfer ST tokens to another account')
   .action(async function(tokenSymbol, transferTo, transferAmount) {
-    await transfer.executeApp(tokenSymbol, transferTo, transferAmount, program.remoteNode);
+    await gbl.initialize(program.remoteNode);
+    await transfer.executeApp(tokenSymbol, transferTo, transferAmount);
   });
 
 program
@@ -84,7 +91,8 @@ program
   .alias('to')
   .description('Transfer Ownership of an own contract to another account')
   .action(async function(contractAddress, transferTo) {
-    await transfer_ownership.executeApp(contractAddress, transferTo, program.remoteNode);
+    await gbl.initialize(program.remoteNode);
+    await transfer_ownership.executeApp(contractAddress, transferTo);
   });
 
 program
@@ -92,6 +100,7 @@ program
   .alias('w')
   .description('Mass-update a whitelist of allowed/known investors')
   .action(async function(tokenSymbol, batchSize) {
+    await gbl.initialize(program.remoteNode);
     shell.exec(`${__dirname}/commands/scripts/script.sh Whitelist ${tokenSymbol} ${batchSize} ${program.remoteNode}`);
   });
 
@@ -100,7 +109,8 @@ program
   .alias('dm')
   .description('Runs dividends_manager')
   .action(async function(dividendsType) {
-    await dividends_manager.executeApp(dividendsType, program.remoteNode);
+    await gbl.initialize(program.remoteNode);
+    await dividends_manager.executeApp(dividendsType);
   });
 
 program
@@ -108,7 +118,8 @@ program
   .alias('tm')
   .description('Runs transfer_manager')
   .action(async function() {
-    await transfer_manager.executeApp(program.remoteNode);
+    await gbl.initialize(program.remoteNode);
+    await transfer_manager.executeApp();
   });
 
 program
@@ -116,7 +127,8 @@ program
   .alias('cm')
   .description('Runs contract_manager')
   .action(async function() {
-    await contract_manager.executeApp(program.remoteNode);
+    await gbl.initialize(program.remoteNode);
+    await contract_manager.executeApp();
   });
 
 program
@@ -124,6 +136,7 @@ program
   .alias('a')
   .description('Runs accredit')
   .action(async function(tokenSymbol, batchSize) {
+    await gbl.initialize(program.remoteNode);
     shell.exec(`${__dirname}/commands/scripts/script.sh Accredit ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
   });
 
@@ -132,6 +145,7 @@ program
   .alias('nal')
   .description('Runs changeNonAccreditedLimit')
   .action(async function(tokenSymbol, batchSize) {
+    await gbl.initialize(program.remoteNode);
     shell.exec(`${__dirname}/commands/scripts/script.sh NonAccreditedLimit ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
   });
 
@@ -140,7 +154,8 @@ program
   .alias('str')
   .description('Runs STR Migrator')
   .action(async function(toStrAddress, fromTrAddress, fromStrAddress) {
-    await strMigrator.executeApp(toStrAddress, fromTrAddress, fromStrAddress, program.remoteNode);
+    await gbl.initialize(program.remoteNode);
+    await strMigrator.executeApp(toStrAddress, fromTrAddress, fromStrAddress);
   });
 
 program
@@ -148,7 +163,8 @@ program
   .alias('pm')
   .description('Runs permission_manager')
   .action(async function() {
-    await permission_manager.executeApp(program.remoteNode);
+    await gbl.initialize(program.remoteNode);
+    await permission_manager.executeApp();
   });
 
 program.parse(process.argv);

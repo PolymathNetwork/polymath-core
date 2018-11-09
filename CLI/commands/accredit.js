@@ -35,6 +35,7 @@ startScript();
 async function startScript() {
   if (remoteNetwork == 'undefined') remoteNetwork = undefined;
   await global.initialize(remoteNetwork);
+
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
     let securityTokenRegistryABI = abis.securityTokenRegistry();
@@ -130,7 +131,7 @@ async function changeAccredited() {
           }
     
           let changeAccreditedAction = usdTieredSTO.methods.changeAccredited(investorArray, isAccreditedArray);
-          let r = await common.sendTransaction(Issuer, changeAccreditedAction, defaultGasPrice);
+          let r = await common.sendTransaction(changeAccreditedAction);
           console.log(`Batch ${i} - Attempting to change accredited accounts:\n\n`, investorArray, "\n\n");
           console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
           console.log("Change accredited transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");

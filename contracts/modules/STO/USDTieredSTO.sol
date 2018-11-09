@@ -717,15 +717,19 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return Amount of funds raised
      * @return Number of individual investors this STO have.
      * @return Amount of tokens sold. 
+     * @return Array of bools to show if funding is allowed in ETH, POLY, DAI respectively
      */
-    function getSTODetails() public view returns(uint256, uint256, uint256, uint256[], uint256[], uint256, uint256, uint256) {
-        uint256 len = tiers.length;
-        uint256[] memory cap = new uint256[](len);
-        uint256[] memory rate = new uint256[](len);
-        for(uint256 i = 0; i < len; i++) {
+    function getSTODetails() public view returns(uint256, uint256, uint256, uint256[], uint256[], uint256, uint256, uint256, bool[]) {
+        uint256[] memory cap = new uint256[](tiers.length);
+        uint256[] memory rate = new uint256[](tiers.length);
+        for(uint256 i = 0; i < tiers.length; i++) {
             cap[i] = tiers[i].tokenTotal;
             rate[i] = tiers[i].rate;
         }
+        bool[] memory _fundRaiseTypes = new bool[](3);
+        _fundRaiseTypes[0] = fundRaiseTypes[uint8(FundRaiseType.ETH)];
+        _fundRaiseTypes[1] = fundRaiseTypes[uint8(FundRaiseType.POLY)];
+        _fundRaiseTypes[2] = fundRaiseTypes[uint8(FundRaiseType.DAI)];
         return (
             startTime,
             endTime,
@@ -734,7 +738,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             rate,
             fundsRaisedUSD,
             investorCount,
-            getTokensSold()
+            getTokensSold(),
+            _fundRaiseTypes
         );
     }
 

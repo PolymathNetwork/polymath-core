@@ -473,7 +473,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(_investmentValue > 0, "No funds were sent");
 
         uint256 investedUSD = DecimalMath.mul(_rate, _investmentValue);
-
+        _rate = investedUSD; // Reusing variable to prevent stackoverflow
         // Check for minimum investment
         require(investedUSD >= minimumInvestmentUSD, "investment < minimumInvestmentUSD");
 
@@ -515,7 +515,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         if (spentUSD == 0) {
             spentValue = 0;
         } else {
-            spentValue = DecimalMath.div(spentUSD, _rate);
+            //_rate is actually OriginalUSD. Reusing variable to prevent stackoverflow
+            spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, _rate), _investmentValue); 
         }
 
         // Return calculated amounts

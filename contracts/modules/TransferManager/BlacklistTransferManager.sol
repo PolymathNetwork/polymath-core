@@ -55,13 +55,13 @@ contract BlacklistTransferManager is ITransferManager {
 
     // Emit when new investor is added to the blacklist type
     event AddInvestorToBlacklist(
-        address _investor, 
+        address indexed _investor, 
         bytes32 _blacklistName
     );
     
     // Emit when investor is deleted from the blacklist type
     event DeleteInvestorFromBlacklist(
-        address _investor,
+        address indexed _investor,
         bytes32 _blacklist
     );
 

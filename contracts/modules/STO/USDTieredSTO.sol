@@ -389,15 +389,20 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, 0);
     }
 
+    function buyWithUSD(address _beneficiary, uint256 _investedDAI) public validDAI {
+        _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI, 0);
+    }
+
     /**
       * @notice Purchase tokens using ETH
       * @param _beneficiary Address where security tokens will be sent
-      * @param _minRate Minumum conversion rate (FundType => USD) at which buying is authorized
+      * @param _minTokens Minumum number of tokens to buy or else revert
       */
-    function buyWithETHRateLimited(address _beneficiary, uint256 _minRate) public payable validETH {
+    function buyWithETHRateLimited(address _beneficiary, uint256 _minTokens) public payable validETH {
         uint256 rate = getRate(FundRaiseType.ETH);
-        require(rate >= _minRate, "Current rate below min");
+        uint256 initialMinted = getTokensMinted();
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, msg.value, rate, FundRaiseType.ETH);
+        require(getTokensMinted().sub(initialMinted) >= _minTokens, "Insufficient tokens minted");
         // Modify storage
         investorInvested[_beneficiary][uint8(FundRaiseType.ETH)] = investorInvested[_beneficiary][uint8(FundRaiseType.ETH)].add(spentValue);
         fundsRaised[uint8(FundRaiseType.ETH)] = fundsRaised[uint8(FundRaiseType.ETH)].add(spentValue);
@@ -412,26 +417,28 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @notice Purchase tokens using POLY
       * @param _beneficiary Address where security tokens will be sent
       * @param _investedPOLY Amount of POLY invested
-      * @param _minRate Maximum rate at which buying is authorized
+      * @param _minTokens Minumum number of tokens to buy or else revert
       */
-    function buyWithPOLYRateLimited(address _beneficiary, uint256 _investedPOLY, uint256 _minRate) public validPOLY {
-        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, _minRate);
+    function buyWithPOLYRateLimited(address _beneficiary, uint256 _investedPOLY, uint256 _minTokens) public validPOLY {
+        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, _minTokens);        
     }
 
     /**
       * @notice Purchase tokens using DAI
       * @param _beneficiary Address where security tokens will be sent
       * @param _investedDAI Amount of DAI invested
+      * @param _minTokens Minumum number of tokens to buy or else revert
       */
-    function buyWithUSD(address _beneficiary, uint256 _investedDAI) public validDAI {
-        _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI, uint256(10) ** 18);
+    function buyWithUSDRateLimited(address _beneficiary, uint256 _investedDAI, uint256 _minTokens) public validDAI {
+        _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI, _minTokens);
     }
 
-    function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType, uint256 _minRate) internal {
+    function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType, uint256 _minTokens) internal {
         require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.DAI, "Invalid raise type");
+        uint256 initialMinted = getTokensMinted();
         uint256 rate = getRate(_fundRaiseType);
-        require(rate >= _minRate, "Current rate below min");
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _tokenAmount, rate, _fundRaiseType);
+        require(getTokensMinted().sub(initialMinted) >= _minTokens, "Insufficient tokens minted");
         // Modify storage
         investorInvested[_beneficiary][uint8(_fundRaiseType)] = investorInvested[_beneficiary][uint8(_fundRaiseType)].add(spentValue);
         fundsRaised[uint8(_fundRaiseType)] = fundsRaised[uint8(_fundRaiseType)].add(spentValue);
@@ -468,8 +475,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 investedUSD = DecimalMath.mul(_rate, _investmentValue);
 
         // Check for minimum investment
-        //require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
-        require(investedUSD >= minimumInvestmentUSD, "investment < minimumInvestmentUSD"); //Why do we need to add?
+        require(investedUSD >= minimumInvestmentUSD, "investment < minimumInvestmentUSD");
 
         // Check for non-accredited cap
         if (!accredited[_beneficiary]) {

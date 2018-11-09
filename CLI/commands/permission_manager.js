@@ -1,7 +1,7 @@
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
-var global = require('./common/global');
+var gbl = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
@@ -12,16 +12,7 @@ let securityToken;
 let generalPermissionManager;
 let isNewDelegate = false;
 
-const MODULES_TYPES = {
-  PERMISSION: 1,
-  TRANSFER: 2,
-  STO: 3,
-  DIVIDEND: 4,
-  BURN: 5
-}
-
-async function executeApp(remoteNetwork) {
-  await global.initialize(remoteNetwork);
+async function executeApp() {
 
   common.logAsciiBull();
   console.log("***********************************************");
@@ -75,9 +66,9 @@ async function addPermissionModule() {
   if (result.length == 0) {
     console.log(chalk.red(`General Permission Manager is not attached.`));
     if (readlineSync.keyInYNStrict('Do you want to add General Permission Manager Module to your Security Token?')) {
-      let permissionManagerFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.PERMISSION, 'GeneralPermissionManager');
+      let permissionManagerFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.PERMISSION, 'GeneralPermissionManager');
       let addModuleAction = securityToken.methods.addModule(permissionManagerFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
-      let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
+      let receipt = await common.sendTransaction(addModuleAction);
       let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
       console.log(`Module deployed at address: ${event._module}`);
       generalPermissionManagerAddress = event._module;
@@ -119,7 +110,7 @@ async function changePermissionAction(selectedDelegate) {
 
 async function deleteDelegate(address) {
   let deleteDelegateAction = generalPermissionManager.methods.deleteDelegate(address);
-  await common.sendTransaction(Issuer, deleteDelegateAction, defaultGasPrice, 0, 2);
+  await common.sendTransaction(deleteDelegateAction, {factor: 2});
 }
 
 // Helper functions
@@ -174,7 +165,7 @@ function isPermissionValid() {
 
 async function changePermission(delegate, moduleAddress, permission, isValid) {
   let changePermissionAction = generalPermissionManager.methods.changePermission(delegate, moduleAddress, web3.utils.asciiToHex(permission), isValid);
-  let receipt = await common.sendTransaction(Issuer, changePermissionAction, defaultGasPrice, 0, 2);
+  let receipt = await common.sendTransaction(changePermissionAction, {factor: 2});
   common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'ChangePermission');
   console.log(`Permission changed succesfully,`);
 }
@@ -215,7 +206,7 @@ async function addNewDelegate() {
   });
 
   let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
-  let receipt = await common.sendTransaction(Issuer, addPermissionAction, defaultGasPrice);
+  let receipt = await common.sendTransaction(addPermissionAction);
   let event = common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'AddDelegate');
   console.log(`Delegate added succesfully: ${event._delegate} - ${web3.utils.hexToAscii(event._details)}`);
   isNewDelegate = true;
@@ -226,8 +217,8 @@ async function getModulesWithPermissions() {
   let modules = [];
   let moduleABI = abis.moduleInterface();
   
-  for (const type in MODULES_TYPES) {
-    let modulesAttached = await securityToken.methods.getModulesByType(MODULES_TYPES[type]).call();
+  for (const type in gbl.constants.MODULES_TYPES) {
+    let modulesAttached = await securityToken.methods.getModulesByType(gbl.constants.MODULES_TYPES[type]).call();
     for (const m of modulesAttached) {
       let contractTemp = new web3.eth.Contract(moduleABI, m);
       let permissions = await contractTemp.methods.getPermissions().call();
@@ -292,7 +283,7 @@ function renderTable(permissions, address) {
 }
 
 module.exports = {
-  executeApp: async function(remoteNetwork) {
-        return executeApp(remoteNetwork);
+  executeApp: async function() {
+        return executeApp();
     }
 }

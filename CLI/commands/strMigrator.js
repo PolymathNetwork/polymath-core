@@ -8,7 +8,7 @@ var global = require('./common/global');
 
 let network;
 
-async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, remoteNetwork) {
+async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, remoteNetwork) {
     network = remoteNetwork;
     await global.initialize(remoteNetwork);
 
@@ -22,10 +22,10 @@ async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, remoteNet
     try {
         let toSecurityTokenRegistry = await step_instance_toSTR(toStrAddress);
         let fromTickerRegistry = await step_instance_fromTR(fromTrAddress);
-        let tickers = await step_get_registered_tickers(fromTickerRegistry);
+        let tickers = await step_get_registered_tickers(fromTickerRegistry, singleTicker);
         await step_register_tickers(tickers, toSecurityTokenRegistry); 
         let fromSecurityTokenRegistry = await step_instance_fromSTR(fromStrAddress);
-        let tokens = await step_get_deployed_tokens(fromSecurityTokenRegistry);           
+        let tokens = await step_get_deployed_tokens(fromSecurityTokenRegistry, singleTicker);           
         await step_launch_STs(tokens, toSecurityTokenRegistry); 
     } catch (err) {
         console.log(err);
@@ -85,7 +85,7 @@ async function step_instance_fromTR(fromTrAddress){
     return fromTR;
 }
 
-async function step_get_registered_tickers(tickerRegistry) {
+async function step_get_registered_tickers(tickerRegistry, singleTicker) {
     let tickers = [];
     let expiryTime = await tickerRegistry.methods.expiryLimit().call();
 
@@ -95,31 +95,33 @@ async function step_get_registered_tickers(tickerRegistry) {
     } else {
         for (let log of logs) {
             let event = common.getEventFromLogs(tickerRegistry._jsonInterface, [log], 'LogRegisterTicker');
-            let details = await tickerRegistry.methods.getDetails(event._symbol).call();
-            let expiredTicker = details[0] == '0x0000000000000000000000000000000000000000';
-            let _symbol = event._symbol;
-            let _owner = expiredTicker ? event._owner : details[0];
-            let _name = expiredTicker ? event._name : details[2];
-            let _registrationDate = expiredTicker ? event._timestamp : details[1];
-            let _status = details[4];
-            
-            console.log(`------------ Ticker Registered ------------`);
-            console.log(`Ticker: ${_symbol}`);
-            console.log(`Owner: ${_owner}`);
-            console.log(`Token name: ${_name}`);
-            console.log(`Timestamp: ${_registrationDate}`);
-            console.log(`Transaction hash: ${log.transactionHash}`);
-            console.log(`-------------------------------------------`);
-            console.log(`\n`);
-            
-            tickers.push({ 
-                ticker: _symbol, 
-                owner: _owner, 
-                name: _name, 
-                registrationDate: new web3.utils.BN(_registrationDate), 
-                expiryDate: new web3.utils.BN(_registrationDate).add(new web3.utils.BN(expiryTime)),
-                status: _status
-            });
+            if (typeof singleTicker !== undefined && event._symbol == singleTicker) {
+                let details = await tickerRegistry.methods.getDetails(event._symbol).call();
+                let expiredTicker = details[0] == '0x0000000000000000000000000000000000000000';
+                let _symbol = event._symbol;
+                let _owner = expiredTicker ? event._owner : details[0];
+                let _name = expiredTicker ? event._name : details[2];
+                let _registrationDate = expiredTicker ? event._timestamp : details[1];
+                let _status = details[4];
+                
+                console.log(`------------ Ticker Registered ------------`);
+                console.log(`Ticker: ${_symbol}`);
+                console.log(`Owner: ${_owner}`);
+                console.log(`Token name: ${_name}`);
+                console.log(`Timestamp: ${_registrationDate}`);
+                console.log(`Transaction hash: ${log.transactionHash}`);
+                console.log(`-------------------------------------------`);
+                console.log(`\n`);
+                
+                tickers.push({ 
+                    ticker: _symbol, 
+                    owner: _owner, 
+                    name: _name, 
+                    registrationDate: new web3.utils.BN(_registrationDate), 
+                    expiryDate: new web3.utils.BN(_registrationDate).add(new web3.utils.BN(expiryTime)),
+                    status: _status
+                });
+            }
         }
     }
 
@@ -128,11 +130,6 @@ async function step_get_registered_tickers(tickerRegistry) {
 }
 
 async function step_register_tickers(tickers, securityTokenRegistry) {
-    if (readlineSync.keyInYNStrict(`Do you want to migrate a single Ticker?`)) {
-        let tickerToMigrate = readlineSync.question(`Enter the ticker to migrate: `);
-        tickers = tickers.filter(t => t.ticker == tickerToMigrate);
-    } 
-    
     if (tickers.length == 0) {
         console.log(chalk.yellow(`There are no tickers to migrate!`));
     } else if (readlineSync.keyInYNStrict(`Do you want to migrate ${tickers.length} Tickers?`)) {
@@ -187,7 +184,7 @@ async function step_instance_fromSTR(fromStrAddress){
     return fromSTR;
 }
 
-async function step_get_deployed_tokens(securityTokenRegistry) {
+async function step_get_deployed_tokens(securityTokenRegistry, singleTicker) {
     let tokens = [];
     
     //let events = await securityTokenRegistry.getPastEvents('LogNewSecurityToken', { fromBlock: 0});
@@ -197,57 +194,59 @@ async function step_get_deployed_tokens(securityTokenRegistry) {
     } else {
         for (let log of logs) {
             let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, [log], 'LogNewSecurityToken');
-            let tokenAddress = event._securityTokenAddress;
-            let securityTokenABI = JSON.parse(require('fs').readFileSync('./CLI/data/SecurityToken1-4-0.json').toString()).abi;
-            console.log(`Creating SecurityToken contract instance of address: ${tokenAddress}...`);
-            let token = new web3.eth.Contract(securityTokenABI, tokenAddress);
-            token.setProvider(web3.currentProvider);
+            if (typeof singleTicker !== undefined && event._ticker == singleTicker) {
+                let tokenAddress = event._securityTokenAddress;
+                let securityTokenABI = JSON.parse(require('fs').readFileSync('./CLI/data/SecurityToken1-4-0.json').toString()).abi;
+                console.log(`Creating SecurityToken contract instance of address: ${tokenAddress}...`);
+                let token = new web3.eth.Contract(securityTokenABI, tokenAddress);
+                token.setProvider(web3.currentProvider);
 
-            let tokenName = await token.methods.name().call();
-            let tokenSymbol = await token.methods.symbol().call();
-            let tokenOwner = await token.methods.owner().call();
-            let tokenDetails = await token.methods.tokenDetails().call();
-            let tokenDivisible = await token.methods.granularity().call() == 1;
-            let tokenDeployedAt = (await web3.eth.getBlock(web3.utils.hexToNumber(log.blockNumber))).timestamp;
+                let tokenName = await token.methods.name().call();
+                let tokenSymbol = await token.methods.symbol().call();
+                let tokenOwner = await token.methods.owner().call();
+                let tokenDetails = await token.methods.tokenDetails().call();
+                let tokenDivisible = await token.methods.granularity().call() == 1;
+                let tokenDeployedAt = (await web3.eth.getBlock(web3.utils.hexToNumber(log.blockNumber))).timestamp;
 
-            let gmtAddress = (await token.methods.getModule(2, 0).call())[1];
-            let gtmABI = JSON.parse(require('fs').readFileSync('./CLI/data/GeneralTransferManager1-4-0.json').toString()).abi;
-            let gmt = new web3.eth.Contract(gtmABI, gmtAddress);
-            //let gtmEvents = await gmt.getPastEvents('LogModifyWhitelist', { fromBlock: event.blockNumber}); 
-            let gtmLogs = await getLogsFromEtherscan(gmt.options.address, 0, 'latest', 'LogModifyWhitelist(address,uint256,address,uint256,uint256,uint256,bool)');
-            let gtmEvents = common.getMultipleEventsFromLogs(gmt._jsonInterface, gtmLogs, 'LogModifyWhitelist');   
+                let gmtAddress = (await token.methods.getModule(2, 0).call())[1];
+                let gtmABI = JSON.parse(require('fs').readFileSync('./CLI/data/GeneralTransferManager1-4-0.json').toString()).abi;
+                let gmt = new web3.eth.Contract(gtmABI, gmtAddress);
+                //let gtmEvents = await gmt.getPastEvents('LogModifyWhitelist', { fromBlock: event.blockNumber}); 
+                let gtmLogs = await getLogsFromEtherscan(gmt.options.address, 0, 'latest', 'LogModifyWhitelist(address,uint256,address,uint256,uint256,uint256,bool)');
+                let gtmEvents = common.getMultipleEventsFromLogs(gmt._jsonInterface, gtmLogs, 'LogModifyWhitelist');   
 
-            let mintedEvents = [];
-            if (gtmEvents.length > 0) {
-                //mintedEvents = await token.getPastEvents('Minted', { fromBlock: event.blockNumber});
-                let mintedLogs = await getLogsFromEtherscan(token.options.address, 0, 'latest', 'Minted(address,uint256)');
-                mintedEvents = common.getMultipleEventsFromLogs(token._jsonInterface, mintedLogs, 'Minted');  
+                let mintedEvents = [];
+                if (gtmEvents.length > 0) {
+                    //mintedEvents = await token.getPastEvents('Minted', { fromBlock: event.blockNumber});
+                    let mintedLogs = await getLogsFromEtherscan(token.options.address, 0, 'latest', 'Minted(address,uint256)');
+                    mintedEvents = common.getMultipleEventsFromLogs(token._jsonInterface, mintedLogs, 'Minted');  
+                }
+
+                console.log(`--------- SecurityToken launched ---------`);
+                console.log(`Token address: ${event._securityTokenAddress}`);
+                console.log(`Symbol: ${tokenSymbol}`);
+                console.log(`Name: ${tokenName}`);
+                console.log(`Owner: ${tokenOwner}`);
+                console.log(`Details: ${tokenDetails}`);
+                console.log(`Divisble: ${tokenDivisible}`);
+                console.log(`Deployed at: ${tokenDeployedAt}`);
+                console.log(`Transaction hash: ${log.transactionHash}`);
+                console.log(`------------------------------------------`);
+                console.log(``);
+
+
+                tokens.push({ 
+                    name: tokenName, 
+                    ticker: tokenSymbol, 
+                    owner: tokenOwner, 
+                    details: tokenDetails, 
+                    address: tokenAddress, 
+                    deployedAt: tokenDeployedAt, 
+                    divisble: tokenDivisible,
+                    gmtEvents: gtmEvents,
+                    mintedEvents: mintedEvents
+                });
             }
-
-            console.log(`--------- SecurityToken launched ---------`);
-            console.log(`Token address: ${event._securityTokenAddress}`);
-            console.log(`Symbol: ${tokenSymbol}`);
-            console.log(`Name: ${tokenName}`);
-            console.log(`Owner: ${tokenOwner}`);
-            console.log(`Details: ${tokenDetails}`);
-            console.log(`Divisble: ${tokenDivisible}`);
-            console.log(`Deployed at: ${tokenDeployedAt}`);
-            console.log(`Transaction hash: ${log.transactionHash}`);
-            console.log(`------------------------------------------`);
-            console.log(``);
-
-
-            tokens.push({ 
-                name: tokenName, 
-                ticker: tokenSymbol, 
-                owner: tokenOwner, 
-                details: tokenDetails, 
-                address: tokenAddress, 
-                deployedAt: tokenDeployedAt, 
-                divisble: tokenDivisible,
-                gmtEvents: gtmEvents,
-                mintedEvents: mintedEvents
-            });
         }
     }
 
@@ -401,7 +400,7 @@ async function getABIfromEtherscan(_address) {
 }
 
 module.exports = {
-    executeApp: async function(toStrAddress, fromTrAddress, fromStrAddress, remoteNetwork) {
-        return executeApp(toStrAddress, fromTrAddress, fromStrAddress, remoteNetwork);
+    executeApp: async function(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, remoteNetwork) {
+        return executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, remoteNetwork);
     }
 };

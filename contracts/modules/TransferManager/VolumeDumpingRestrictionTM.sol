@@ -198,7 +198,7 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
         for(uint256 j = 0; j < rollingPeriodLength; j++){
 
             uint rollingPeriod = rollingPeriods[_userAddress][j];
-            
+
             // length of the period ids
             uint256 length = volumePeriodIds[_userAddress][rollingPeriod].length;
 
@@ -313,6 +313,8 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
                 );
             }
             
+        } else {
+            require(_startTime >= now, "Invalid start time");
         }
 
         volumeRestriction[_userAddress] = newVolumeRestriction;
@@ -439,7 +441,7 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
         require(_endTime > _startTime, "Invalid endtime");
         require(_rollingPeriod > 0 && _rollingPeriod < _endTime, "Invalid rolling period");
         if(modify == false){
-            require(_startTime == 0 || _startTime >= now, "Invalid start time");
+            require(_startTime >= now, "Invalid start time");
         }
     }
 }

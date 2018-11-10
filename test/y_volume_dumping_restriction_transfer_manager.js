@@ -353,6 +353,12 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             assert.equal(rollingPeriod, logs['args']['rollingPeriod'], "Invalid rolling period");
         })
 
+        it("Should prevent adding another dumping restriction for an address", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, percent, 0, endTime, rollingPeriod, { from: token_owner })
+            )
+        })
+
         it("Should verify transfer of multiple break up of tokens up to limit in a dumping restriction period", async() => {
             // a readonly transaction
             const result = await I_VolumeRestrictionTransferManager.verifyTransfer.call(account_investor2, 0, web3.utils.toWei('0.9', 'ether'), "", false);
@@ -537,10 +543,52 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             }
         })
 
+        it("Should be possible to create and modify volume dumping already active restrictions", async() => {
+            /**
+             * This test checks for the roll over of the active period Id already spent
+             * amount to a new periodId
+             */
+            // create restriction
+            let endTime = latestTime() + duration.years(2);
+            let percent = 10 * Math.pow(10, 16)
+
+            let rollingPeriod = 20;
+
+            let currentTime = (await web3.eth.getBlock('latest')).timestamp;
+            await I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor1, percent, 0, endTime, rollingPeriod, { from: token_owner });
+            await I_VolumeRestrictionTransferManager.getAllowedAmount.call(account_investor1, 0, {from: account_investor1});
+            await I_SecurityToken.changeGranularity(Math.pow(10, 15), {from: token_owner});
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('0.1', 'ether'), { from: account_investor1 });
+
+            let priorRemainingAmount = await I_VolumeRestrictionTransferManager.getAllowedAmount.call(account_investor1, 0, {from: account_investor1});
+            increaseTime(10)
+
+            await I_VolumeRestrictionTransferManager.modifyVolumeDumpingRestriction(account_investor1, percent, currentTime, endTime, 30, { from: token_owner })
+
+            let newRemainingAmount = await I_VolumeRestrictionTransferManager.getAllowedAmount.call(account_investor1, 0, {from: account_investor1});
+
+            await I_VolumeRestrictionTransferManager.removeRestriction(account_investor1, { from: token_owner })
+
+            assert.equal(priorRemainingAmount.toNumber(), newRemainingAmount.toNumber(), "Failed to roll over the active period id amount to new period id")
+        })
+
+        it("Should modify start time of a not started volume dumping restriction", async() => {
+            let endTime = latestTime() + duration.years(3);
+            let percent = 10 * Math.pow(10, 16)
+            let startTime = latestTime() + duration.years(2);
+            let newStartTime = latestTime() + duration.years(1);
+
+            let rollingPeriod = 20;
+
+            await I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor1, percent, startTime, endTime, rollingPeriod, { from: token_owner });
+            await I_VolumeRestrictionTransferManager.modifyVolumeDumpingRestriction(account_investor1, percent, newStartTime, endTime, rollingPeriod, { from: token_owner })
+            await I_VolumeRestrictionTransferManager.removeRestriction(account_investor1, { from: token_owner })
+        })
+
         it("Should revert if the parameters are bad when creating multiple volume dumping restrictions", async() => {
             const accounts = [account_investor3, account_investor4]
             const percents  = [ 10 ]
-            const startTimes = [(await web3.eth.getBlock('latest')).timestamp+10, 0]
+            const startTimes = [(await web3.eth.getBlock('latest')).timestamp + 10, 0]
             const endTimes = [endTimeFn(1), endTimeFn(2)]
             const rollingPeriods = [30]
 

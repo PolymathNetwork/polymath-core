@@ -31,7 +31,7 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
     mapping(address => VolumeRestriction) internal volumeRestriction;
 
     // Maps user address to a rollingPeriod then periodId & amount transferred so far in that periodId
-    // using the rolling period helps prevent collision in cases where its changed
+    // using the rolling period helps prevent collision of period id in cases where its changed
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) internal volumeTally;
 
     // map user address to a list of rolling period & periodIds
@@ -371,6 +371,24 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
             userRestriction.endTime,
             userRestriction.rollingPeriod
         );
+    }
+
+    /**
+    * @notice Get the remaining allowed amount for a user in a period
+    * @param _userAddress User Address to get the rule
+    */
+    function getAllowedAmount(address _userAddress, uint256 _periodId) public view returns (uint256) {
+        VolumeRestriction storage userDumpingRestriction = volumeRestriction[_userAddress];
+
+        uint256 percentAllowed = userDumpingRestriction.percentAllowed;
+
+        uint256 currentUserBalance = ISecurityToken(securityToken).balanceOf(_userAddress);
+
+        uint256 alreadyWithdrawn = volumeTally[_userAddress][userDumpingRestriction.rollingPeriod][_periodId];
+        uint256 totalAmountAllowedForPeriod = currentUserBalance.add(alreadyWithdrawn).mul(percentAllowed).div(100 * uint256(10)**16);
+        uint256 allowedAmount = totalAmountAllowedForPeriod.sub(alreadyWithdrawn);
+
+        return allowedAmount;
     }
 
     /**

@@ -24,14 +24,21 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
         uint256 rollingPeriod;
     }
 
+    // used to store modify rolling period logs
+    mapping(address => mapping(bool => uint256)) modifyRollingPeriod;
+
     // Maps user address to a volumerestriction rule
     mapping(address => VolumeRestriction) internal volumeRestriction;
 
-    // Maps user address to a periodId & amount transferred so far in that periodId
-    mapping(address => mapping(uint256 => uint256)) internal volumeTally;
+    // Maps user address to a rollingPeriod then periodId & amount transferred so far in that periodId
+    // using the rolling period helps prevent collision in cases where its changed
+    mapping(address => mapping(uint256 => mapping(uint256 => uint256))) internal volumeTally;
 
-    // map user address to a list of periodIds
-    mapping(address => uint256[]) internal volumePeriodIds;
+    // map user address to a list of rolling period & periodIds
+    mapping(address => mapping(uint256 => uint256[])) internal volumePeriodIds;
+
+    // map user address to a list of rolling periods
+    mapping(address => uint256[]) internal rollingPeriods;
     
     event ModifyVolumeDumping (
         address indexed restrictedAddress, 
@@ -86,6 +93,7 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
             }
             
             uint256 periodId =  now.sub(userDumpingRestriction.startTime).div(userDumpingRestriction.rollingPeriod);
+            uint256 rollingPeriod = userDumpingRestriction.rollingPeriod;
 
             // // the remainig transferable amount
             uint256 allowedRemainingAmount = _currentAllowedAmount(_from, periodId);
@@ -97,7 +105,7 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
                     return Result.VALID;
                 }
 
-                volumeTally[_from][periodId] = volumeTally[_from][periodId].add(_amount);
+                volumeTally[_from][rollingPeriod][periodId] = volumeTally[_from][rollingPeriod][periodId].add(_amount);
                 return Result.VALID;
             }
             return Result.INVALID;
@@ -133,6 +141,9 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
         // add the volume dumping restriction
         volumeRestriction[_userAddress] = VolumeRestriction(_percentAllowed, _startTime, _endTime, _rollingPeriod);
 
+        // push the rolling period
+        rollingPeriods[_userAddress].push(_rollingPeriod);
+        
         emit AddNewVolumeDumping(
             _userAddress,
             _percentAllowed,
@@ -180,16 +191,21 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
         // not allowed to delete past entries
         require(toRemove.endTime > now, "Cannot remove past restrictions");
 
-        uint256 length = volumePeriodIds[_userAddress].length;
+        uint256 rollingPeriodLength = rollingPeriods[_userAddress].length;
        
         // delete all the volume tally period ids for the user address
-        for( uint256 i = 0; i < length; i++ ){
-            uint256 periodId = volumePeriodIds[_userAddress][i];
-            delete volumeTally[_userAddress][periodId];
-        }
+        for(uint256 j = 0; j < rollingPeriodLength; j++){
+            uint rollingPeriod = rollingPeriods[_userAddress][j];
+            uint256 length = volumePeriodIds[_userAddress][rollingPeriod].length;
 
+            for( uint256 i = 0; i < length; i++ ){
+                uint256 periodId = volumePeriodIds[_userAddress][rollingPeriod][i];
+                delete volumeTally[_userAddress][rollingPeriod][periodId];
+            }
+            volumePeriodIds[_userAddress][rollingPeriod].length = 0;
+        }
+        
         // reset the period ids
-        volumePeriodIds[_userAddress].length = 0;
 
         delete volumeRestriction[_userAddress];        
         
@@ -231,34 +247,18 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
         uint256 currentTime = now;
 
         uint256 currentPeriodId = currentTime.sub(_oldUserDumpingRestriction.startTime).div(_oldUserDumpingRestriction.rollingPeriod);
-        uint256 newPeriodId = currentTime.sub(_newUserDumpingRestriction.startTime).div(_newUserDumpingRestriction.rollingPeriod);
+        uint256 newPeriodId = currentTime.sub(_newUserDumpingRestriction.startTime).div(_newUserDumpingRestriction.rollingPeriod);       
 
-        // this means there is a change in param 
-        // required to calculate period id
-        if(currentPeriodId != newPeriodId){
+        // Already spent amount for the current active
+        // period id
+        uint256 currentPeriodAmount = volumeTally[_userAddress][_oldUserDumpingRestriction.rollingPeriod][currentPeriodId];
+        // set the volume tally of the 
+        // new period id to the already spent
+        // amount of the old period id
+        volumeTally[_userAddress][_newUserDumpingRestriction.rollingPeriod][newPeriodId] = currentPeriodAmount;
 
-            // Already spent amount for the current active
-            // period id
-            uint256 currentPeriodAmount = volumeTally[_userAddress][currentPeriodId];
-
-            uint256 length = volumePeriodIds[_userAddress].length;       
-           // delete all existing period ids 
-            // to prevent id collision
-            for( uint256 i = 0; i < length; i++ ){
-                uint256 periodId = volumePeriodIds[_userAddress][i];
-                delete volumeTally[_userAddress][periodId];
-            }
-
-            // reset the period ids
-            volumePeriodIds[_userAddress].length = 0;
-
-            // set the volume tally of the 
-            // new period id to the already spent
-            // amount of the old period id
-            volumeTally[_userAddress][newPeriodId] = currentPeriodAmount;
-            // push the new period id
-            volumePeriodIds[_userAddress].push(newPeriodId);
-        }
+        // push the new period id
+        volumePeriodIds[_userAddress][_newUserDumpingRestriction.rollingPeriod].push(newPeriodId);
     }
     
     /**
@@ -281,27 +281,37 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
             _startTime = now;
         }
 
-        _checkVolumeDumpingParams(_userAddress, _percentAllowed, _startTime, _endTime, _rollingPeriod);
+        _checkModifyVolumeDumpingParams(_userAddress, _percentAllowed, _startTime, _endTime, _rollingPeriod);
 
         // don't allow modifying entries that have ended
         require(volumeRestriction[_userAddress].endTime > now, "Cannot modify past restrictions");
 
+        VolumeRestriction memory newVolumeRestriction = VolumeRestriction(_percentAllowed, _startTime, _endTime, _rollingPeriod);
+
         // allow modifying the start time 
         // only if the restriction period has not started
-        if(volumeRestriction[_userAddress].startTime < now){
+        if( now > volumeRestriction[_userAddress].startTime ){
+            
             require(volumeRestriction[_userAddress].startTime == _startTime, "Cannot modify start time of already started restriction");
+
+            // check if the rolling period is changed
+            // since its used in calculating the period id
+            if( volumeRestriction[_userAddress].rollingPeriod != _rollingPeriod ) {
+                // add modified rolling period
+                rollingPeriods[_userAddress].push(_rollingPeriod);
+                // move the already spent amount in
+                // previous acitve rolling period periodId to new 
+                // rolling period periodId
+                movePeriodAmounts(
+                    volumeRestriction[_userAddress], 
+                    newVolumeRestriction,
+                    _userAddress
+                );
+            }
+            
         }
 
-        // perform if the restriction period has started
-        if(volumeRestriction[_userAddress].startTime > now){
-            movePeriodAmounts(
-                volumeRestriction[_userAddress], 
-                VolumeRestriction(_percentAllowed, _startTime, _endTime, _rollingPeriod),
-                _userAddress
-            );
-        }
-
-        volumeRestriction[_userAddress] = VolumeRestriction(_percentAllowed, _startTime, _endTime, _rollingPeriod);
+        volumeRestriction[_userAddress] = newVolumeRestriction;
 
         emit ModifyVolumeDumping(
             _userAddress,
@@ -383,12 +393,12 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
         VolumeRestriction storage userDumpingRestriction = volumeRestriction[_userAddress];
         
         // get already withdrawn amount in period
-        uint256 alreadyWithdrawn = volumeTally[_userAddress][_periodId];
+        uint256 alreadyWithdrawn = volumeTally[_userAddress][userDumpingRestriction.rollingPeriod][_periodId];
         
         // if the already with drawn is 0
         // means its essentially a new period
         if(alreadyWithdrawn == 0){
-            volumePeriodIds[_userAddress].push(_periodId);
+            volumePeriodIds[_userAddress][userDumpingRestriction.rollingPeriod].push(_periodId);
         }
 
         uint256 currentUserBalance = ISecurityToken(securityToken).balanceOf(_userAddress);
@@ -405,7 +415,7 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
     }
 
     /**
-     * @notice Parameter checking function for creating or editing a volume restriction.  This function will cause an exception if any of the parameters are bad.
+     * @notice Parameter checking function for creating a volume restriction.  This function will cause an exception if any of the parameters are bad.
      * @param _userAddress Address of the user to apply the volume dumping restriction
      * @param _percentAllowed Percent of tokens balance allowed to transfer within a rolling period
      * @param _startTime When the dumping restriction, 0 means now in seconds
@@ -422,6 +432,28 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
         require(address(0) != _userAddress, "Invalid user address");
         require(_percentAllowed > 0 && _percentAllowed <= 100 * uint256(10)**16, "Invalid percent input");
         require(_startTime == 0 || _startTime >= now, "Invalid start time");
+        require(_endTime > _startTime, "Invalid endtime");
+        require(_rollingPeriod > 0 && _rollingPeriod < _endTime, "Invalid rolling period");        
+    }
+
+    /**
+     * @notice Parameter checking function for editing a volume restriction.  This function will cause an exception if any of the parameters are bad.
+     * @param _userAddress Address of the user to apply the volume dumping restriction
+     * @param _percentAllowed Percent of tokens balance allowed to transfer within a rolling period
+     * @param _startTime When the dumping restriction, 0 means now in seconds
+     * @param _endTime When the dumping restriction ends in seconds
+     * @param _rollingPeriod Ttime period in seconds
+    */
+    function _checkModifyVolumeDumpingParams( 
+        address _userAddress, 
+        uint256 _percentAllowed, 
+        uint256 _startTime, 
+        uint256 _endTime, 
+        uint256 _rollingPeriod
+        ) internal view {
+        require(address(0) != _userAddress, "Invalid user address");
+        require(_percentAllowed > 0 && _percentAllowed <= 100 * uint256(10)**16, "Invalid percent input");
+        require(_startTime == 0 || _startTime >= now || _startTime < now, "Invalid start time");
         require(_endTime > _startTime, "Invalid endtime");
         require(_rollingPeriod > 0 && _rollingPeriod < _endTime, "Invalid rolling period");        
     }

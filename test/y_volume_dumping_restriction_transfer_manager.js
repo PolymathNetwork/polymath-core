@@ -343,9 +343,11 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
         })
 
         it("Should create a dumping restriction", async() => {
+            console.log({endTime})
             const tx = await I_VolumeRestrictionTransferManager.addDumpingRestriction(account_investor2, percent, 0, endTime, rollingPeriod, { from: token_owner });
             const logs = tx.logs[0]
-            const startTime = (await web3.eth.getBlock('latest')).timestamp
+            startTime = (await web3.eth.getBlock('latest')).timestamp
+            console.log({startTime})
             // check the add new dumping restriction event emitted
             assert.equal("AddNewVolumeDumping", logs['event'], "Invalid percent");
             assert.equal(endTime, logs['args']['endTime'], "Invalid end time");
@@ -390,9 +392,12 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
 
         it("Should modify volume dumping restriction", async() => {
             let percent = 20
-            let startTime = 0
             let endTime = latestTime() + duration.seconds(30);
             let rollingPeriod = 30
+            
+            let t = (await web3.eth.getBlock('latest')).timestamp
+            console.log({t})
+            console.log({endTime})
 
             await I_VolumeRestrictionTransferManager.modifyVolumeDumpingRestriction(account_investor2, percent, startTime, endTime, rollingPeriod, { from: token_owner });
             
@@ -421,6 +426,18 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             assert.equal(0, result[1].toNumber(), "Failed to remove the dumping restriction");
         });
 
+        it("Should prevent modifying of a dump restriction start time when alredy started", async() => {
+            let percent = 20
+            let startTime = 0
+            let endTime = latestTime() + duration.years(5);
+            let rollingPeriod = 30
+
+            // increase evm time to 30 seconds
+            await increaseTime(30)
+            await catchRevert(
+                I_VolumeRestrictionTransferManager.modifyVolumeDumpingRestriction(account_investor2, percent, startTime, endTime, rollingPeriod, { from: token_owner })
+            )
+        })
 
         it("Should prevent modifying of a dump restriction where end time is in past", async() => {
             let percent = 20
@@ -451,6 +468,8 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             assert.equal(result.logs[0].args['from'], account_investor2, message);
             assert.equal(result.logs[0].args['to'], account_investor1, message);
         })
+        
+        let evmStartTimes = []
 
         it("Should be possible to create multiple volume dumping restrictions at once", async() => {
             const accounts = [account_investor3, account_investor4]
@@ -458,12 +477,14 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
             const startTimes = [0, 0]
             const endTimes = [endTimeFn(1), endTimeFn(2)]
             const rollingPeriods = [10, 10]
+            // evmStartTimes = (await web3.eth.getBlock('latest')).timestamp
 
             let result = await I_VolumeRestrictionTransferManager.addDumpingRestrictionMulti(accounts, percents, startTimes, endTimes, rollingPeriods, { from: token_owner });
 
             for (let account in accounts) {
                 result = await I_VolumeRestrictionTransferManager.getVolumeDumpingRestrictions(accounts[account], { from: token_owner });
-
+                // get the start times
+                evmStartTimes[account] = result[1].toNumber()
                 assert.equal(percents[account], result[0].toNumber(), "Failed to create the percent");
                 assert.equal(endTimes[account], result[2].toNumber(), "Failed to create end time");
                 assert.equal(rollingPeriods[account], result[3].toNumber(), "Failed to create rolling period");
@@ -473,7 +494,7 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
         it("Should revert if the parameters are bad when modifying multiple volume dumping restrictions", async() => {
             const accounts = [account_investor3, account_investor4]
             const percents = [10]
-            const startTimes = [(await web3.eth.getBlock('latest')).timestamp+10, 0]
+            const startTimes = [(await web3.eth.getBlock('latest')).timestamp + 10, 0]
             const endTimes = [endTimeFn(1), endTimeFn(2)]
             const rollingPeriods = [30]
 
@@ -485,11 +506,11 @@ contract('VolumeDumpingRestrictionTransferManager', accounts => {
         it("Should be possible to modify multiple volume dumping restrictions at once", async() => {
             const accounts = [account_investor3, account_investor4]
             const percents = [ 20, 30 ]
-            const startTimes = [0, (await web3.eth.getBlock('latest')).timestamp+100]
+            console.log({evmStartTimes})
             const endTimes = [endTimeFn(1), endTimeFn(2)]
             const rollingPeriods = [20, 20]
 
-            let result = await I_VolumeRestrictionTransferManager.modifyVolumeDumpingRestrictionMulti(accounts, percents, startTimes, endTimes, rollingPeriods, { from: token_owner });
+            let result = await I_VolumeRestrictionTransferManager.modifyVolumeDumpingRestrictionMulti(accounts, percents, evmStartTimes, endTimes, rollingPeriods, { from: token_owner });
 
             for (let account in accounts) {
                 result = await I_VolumeRestrictionTransferManager.getVolumeDumpingRestrictions(accounts[account], { from: token_owner });

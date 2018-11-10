@@ -1000,8 +1000,8 @@ async function usdTieredSTO_configure() {
       switch (index) {
         case 0:
           let reserveWallet = await currentSTO.methods.reserveWallet().call();
-          let isVerified = await securityToken.methods.verifyTransfer(STO_Address, reserveWallet, 0, web3.utils.fromAscii("")).call();
-          if (isVerified == "2") {
+          let isVerified = await securityToken.methods.verifyTransfer("0x0000000000000000000000000000000000000000", reserveWallet, 0, web3.utils.fromAscii("")).call();
+          if (isVerified) {
             if (readlineSync.keyInYNStrict()) {
               let finalizeAction = currentSTO.methods.finalize();
               await common.sendTransaction(Issuer, finalizeAction, defaultGasPrice);

@@ -95,7 +95,7 @@ async function step_get_registered_tickers(tickerRegistry, singleTicker) {
     } else {
         for (let log of logs) {
             let event = common.getEventFromLogs(tickerRegistry._jsonInterface, [log], 'LogRegisterTicker');
-            if (typeof singleTicker !== undefined && event._symbol == singleTicker) {
+            if (typeof singleTicker === 'undefined' || event._symbol == singleTicker) {
                 let details = await tickerRegistry.methods.getDetails(event._symbol).call();
                 let expiredTicker = details[0] == '0x0000000000000000000000000000000000000000';
                 let _symbol = event._symbol;
@@ -194,7 +194,7 @@ async function step_get_deployed_tokens(securityTokenRegistry, singleTicker) {
     } else {
         for (let log of logs) {
             let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, [log], 'LogNewSecurityToken');
-            if (typeof singleTicker !== undefined && event._ticker == singleTicker) {
+            if (typeof singleTicker === 'undefined' || event._ticker == singleTicker) {
                 let tokenAddress = event._securityTokenAddress;
                 let securityTokenABI = JSON.parse(require('fs').readFileSync('./CLI/data/SecurityToken1-4-0.json').toString()).abi;
                 console.log(`Creating SecurityToken contract instance of address: ${tokenAddress}...`);

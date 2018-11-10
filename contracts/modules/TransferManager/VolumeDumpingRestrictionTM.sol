@@ -194,8 +194,12 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
         uint256 rollingPeriodLength = rollingPeriods[_userAddress].length;
        
         // delete all the volume tally period ids for the user address
+        //loop throught the rolling periods
         for(uint256 j = 0; j < rollingPeriodLength; j++){
+
             uint rollingPeriod = rollingPeriods[_userAddress][j];
+            
+            // length of the period ids
             uint256 length = volumePeriodIds[_userAddress][rollingPeriod].length;
 
             for( uint256 i = 0; i < length; i++ ){
@@ -205,8 +209,7 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
             volumePeriodIds[_userAddress][rollingPeriod].length = 0;
         }
         
-        // reset the period ids
-
+        // remove voluem restriction
         delete volumeRestriction[_userAddress];        
         
         emit RemoveVolumeDumping(
@@ -252,9 +255,10 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
         // Already spent amount for the current active
         // period id
         uint256 currentPeriodAmount = volumeTally[_userAddress][_oldUserDumpingRestriction.rollingPeriod][currentPeriodId];
+
         // set the volume tally of the 
         // new period id to the already spent
-        // amount of the old period id
+        // amount of the old acitve period id
         volumeTally[_userAddress][_newUserDumpingRestriction.rollingPeriod][newPeriodId] = currentPeriodAmount;
 
         // push the new period id

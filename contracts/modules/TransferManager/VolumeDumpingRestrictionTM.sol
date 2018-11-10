@@ -133,7 +133,7 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
             _startTime = now;
         }
 
-        _checkVolumeDumpingParams(_userAddress, _percentAllowed, _startTime, _endTime, _rollingPeriod);
+        _checkVolumeDumpingParams(_userAddress, _percentAllowed, _startTime, _endTime, _rollingPeriod, false);
         
         // deny if restriction already exists
         require(volumeRestriction[_userAddress].percentAllowed == 0, "volume dumping restriction already exists");
@@ -281,7 +281,7 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
             _startTime = now;
         }
 
-        _checkModifyVolumeDumpingParams(_userAddress, _percentAllowed, _startTime, _endTime, _rollingPeriod);
+        _checkVolumeDumpingParams(_userAddress, _percentAllowed, _startTime, _endTime, _rollingPeriod, true);
 
         // don't allow modifying entries that have ended
         require(volumeRestriction[_userAddress].endTime > now, "Cannot modify past restrictions");
@@ -427,34 +427,15 @@ contract VolumeDumpingRestrictionTM is ITransferManager {
         uint256 _percentAllowed, 
         uint256 _startTime, 
         uint256 _endTime, 
-        uint256 _rollingPeriod
+        uint256 _rollingPeriod,
+        bool modify
         ) internal view {
         require(address(0) != _userAddress, "Invalid user address");
         require(_percentAllowed > 0 && _percentAllowed <= 100 * uint256(10)**16, "Invalid percent input");
-        require(_startTime == 0 || _startTime >= now, "Invalid start time");
         require(_endTime > _startTime, "Invalid endtime");
-        require(_rollingPeriod > 0 && _rollingPeriod < _endTime, "Invalid rolling period");        
-    }
-
-    /**
-     * @notice Parameter checking function for editing a volume restriction.  This function will cause an exception if any of the parameters are bad.
-     * @param _userAddress Address of the user to apply the volume dumping restriction
-     * @param _percentAllowed Percent of tokens balance allowed to transfer within a rolling period
-     * @param _startTime When the dumping restriction, 0 means now in seconds
-     * @param _endTime When the dumping restriction ends in seconds
-     * @param _rollingPeriod Ttime period in seconds
-    */
-    function _checkModifyVolumeDumpingParams( 
-        address _userAddress, 
-        uint256 _percentAllowed, 
-        uint256 _startTime, 
-        uint256 _endTime, 
-        uint256 _rollingPeriod
-        ) internal view {
-        require(address(0) != _userAddress, "Invalid user address");
-        require(_percentAllowed > 0 && _percentAllowed <= 100 * uint256(10)**16, "Invalid percent input");
-        require(_startTime == 0 || _startTime >= now || _startTime < now, "Invalid start time");
-        require(_endTime > _startTime, "Invalid endtime");
-        require(_rollingPeriod > 0 && _rollingPeriod < _endTime, "Invalid rolling period");        
+        require(_rollingPeriod > 0 && _rollingPeriod < _endTime, "Invalid rolling period");
+        if(modify == false){
+            require(_startTime == 0 || _startTime >= now, "Invalid start time");
+        }
     }
 }

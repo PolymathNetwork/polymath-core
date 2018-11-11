@@ -170,6 +170,36 @@ node CLI/polymath-cli dividends_manager
 
 # Setting up Polymath Core
 
+### v2.0.0 MAINNET
+
+    ----------------------- Polymath Network Smart Contracts: -----------------------
+    PolymathRegistry:                     0xdfabf3e4793cd30affb47ab6fa4cf4eef26bbc27
+    SecurityTokenRegistry (Proxy):        0x240f9f86b1465bf1b8eb29bc88cbf65573dfdd97
+    ModuleRegistry (Proxy):               0x4566d68ea96fc2213f2446f0dd0f482146cee96d
+    FeatureRegistry:                      0xa3eacb03622bf1513880892b7270d965f693ffb5
+
+    ETHOracle:                            0x60055e9a93aae267da5a052e95846fa9469c0e7a
+    POLYOracle:                           0x52cb4616E191Ff664B0bff247469ce7b74579D1B
+
+    STFactory:                            0x47da34f192d3fd946fd6ce7494e9eedf171a1208
+    GeneralTransferManagerFactory:        0xdc95598ef2bbfdb66d02d5f3eea98ea39fbc8b26
+    GeneralPermissionManagerFactory:      0xf0aa1856360277c60052d6095c5b787b01388cdd
+
+    CappedSTOFactory:                     0x77d89663e8819023a87bfe2bc9baaa6922c0e57c
+    USDTieredSTOFactory:                  0x5a3a30bddae1f857a19b1aed93b5cdb3c3da809a
+    USDTieredSTOProxyFactory:             0x4965930872da851dc81275b142920de3c976de74
+
+    CountTransferManagerFactory:          0xd9fd7e34d6e2c47a69e02131cf8554d52c3445d5
+    PercentageTransferManagerFactory:     0xe6267a9c0a227d21c95b782b1bd32bb41fc3b43b
+    ManualApprovalTransferManagerFactory: 0xda89fe5b254c04e2ee10d5acb24ed72f1d60ceed
+    EtherDividendCheckpointFactory:       0x968c74c52f15b2de323eca8c677f6c9266bfefd6
+    ERC20DividendCheckpointFactory:       0x82f9f1ab41bacb1433c79492e54bf13bccd7f9ae
+    ---------------------------------------------------------------------------------
+    
+New SecurityTokenRegistry 0x538136ed73011a766bf0a126a27300c3a7a2e6a6
+(fixed bug with getTickersByOwner())
+
+
 ### v2.0.0 KOVAN
 
 New Kovan PolyTokenFaucet: 0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792

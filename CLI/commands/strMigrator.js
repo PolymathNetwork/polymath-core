@@ -210,7 +210,8 @@ async function step_get_deployed_tokens(securityTokenRegistry, singleTicker) {
                 let tokenOwner = await token.methods.owner().call();
                 let tokenDetails = await token.methods.tokenDetails().call();
                 let tokenDivisible = await token.methods.granularity().call() == 1;
-                let tokenDeployedAt = (await web3.eth.getBlock(web3.utils.hexToNumber(log.blockNumber))).timestamp;
+                let tokenDeployedAt = (await getBlockfromEtherscan(web3.utils.hexToNumber(log.blockNumber))).timeStamp;
+
 
                 let gmtAddress = (await token.methods.getModule(2, 0).call())[1];
                 let gtmABI = JSON.parse(require('fs').readFileSync('./CLI/data/GeneralTransferManager1-4-0.json').toString()).abi;
@@ -283,6 +284,7 @@ async function step_launch_STs(tokens, securityTokenRegistry) {
                 minNonce = minNonce + 1;
                 // Instancing Security Token
                 let newTokenAddress = deployTokenReceipt.logs[deployTokenReceipt.logs.length -1].address; //Last log is the ST creation
+                console.log(chalk.green(`The migrated to 2.0.0 Security Token address is ${newTokenAddress}`));
                 let newTokenABI = abis.securityToken();
                 let newToken = new web3.eth.Contract(newTokenABI, newTokenAddress); 
 
@@ -401,6 +403,23 @@ async function getABIfromEtherscan(_address) {
     };
     let data = await request(options);
     return JSON.parse(data.result);
+}
+
+async function getBlockfromEtherscan(_blockNumber) {
+    let urlDomain = network == 'kovan' ? 'api-kovan' : 'api';
+    const options = {
+        url: `https://${urlDomain}.etherscan.io/api`,
+        qs: {
+            module: 'block',
+            action: 'getblockreward',
+            blockno: _blockNumber,
+            apikey: 'THM9IUVC2DJJ6J5MTICDE6H1HGQK14X559'
+        },
+        method: 'GET',
+        json: true
+    };
+    let data = await request(options);
+    return data.result;
 }
 
 module.exports = {

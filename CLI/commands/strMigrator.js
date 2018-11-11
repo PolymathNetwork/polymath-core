@@ -22,7 +22,6 @@ async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTic
   
     try {
         minNonce = await common.getNonce(Issuer);
-        console.log(minNonce);
         let toSecurityTokenRegistry = await step_instance_toSTR(toStrAddress);
         let fromTickerRegistry = await step_instance_fromTR(fromTrAddress);
         let tickers = await step_get_registered_tickers(fromTickerRegistry, singleTicker);

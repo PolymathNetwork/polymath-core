@@ -129,7 +129,7 @@ module.exports = {
       );
     });
   },
-  sendTransactionWithNonce: async function (from, action, gasPrice, value, factor, minNonce) {
+  sendTransactionWithNonce: async function (from, action, gasPrice, minNonce, value, factor) {
     let contractRegistry = await connect(action._parent.options.jsonInterface, action._parent._address);
     
     //NOTE this is a condition to verify if the transaction comes from a module or not. 
@@ -155,8 +155,10 @@ module.exports = {
     console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gas} ----`));    
 
     let nonce = await web3.eth.getTransactionCount(from.address);
-    if (nonce < minNonce)
+      
+    if (nonce < minNonce) {
       nonce = minNonce;
+    }
     let abi = action.encodeABI();
     let parameter = {
       from: from.address,

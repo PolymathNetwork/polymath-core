@@ -7,6 +7,7 @@ var common = require('./common/common_functions');
 var global = require('./common/global');
 
 let network;
+let minNonce;
 
 async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, remoteNetwork) {
     network = remoteNetwork;
@@ -27,6 +28,7 @@ async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTic
         let fromSecurityTokenRegistry = await step_instance_fromSTR(fromStrAddress);
         let tokens = await step_get_deployed_tokens(fromSecurityTokenRegistry, singleTicker);           
         await step_launch_STs(tokens, toSecurityTokenRegistry); 
+        minNonce = await common.getNonce(Issuer);
     } catch (err) {
         console.log(err);
         return;
@@ -275,7 +277,8 @@ async function step_launch_STs(tokens, securityTokenRegistry) {
             try {
                 // Deploying 2.0.0 Token
                 let deployTokenAction = STFactory.methods.deployToken(t.name, t.ticker, 18, t.details, Issuer.address, t.divisble, polymathRegistryAddress)
-                let deployTokenReceipt = await common.sendTransaction(Issuer, deployTokenAction, defaultGasPrice);
+                let deployTokenReceipt = await common.sendTransactionWithNonce(Issuer, deployTokenAction, defaultGasPrice, minNonce);
+                minNonce = minNonce.add(1);
                 // Instancing Security Token
                 let newTokenAddress = deployTokenReceipt.logs[deployTokenReceipt.logs.length -1].address; //Last log is the ST creation
                 let newTokenABI = abis.securityToken();

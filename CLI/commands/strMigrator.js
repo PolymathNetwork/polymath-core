@@ -9,7 +9,7 @@ var global = require('./common/global');
 let network;
 let minNonce;
 
-async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, remoteNetwork) {
+async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, tokenAddress, remoteNetwork) {
     network = remoteNetwork;
     await global.initialize(remoteNetwork);
 
@@ -23,12 +23,14 @@ async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTic
     try {
         minNonce = await common.getNonce(Issuer);
         let toSecurityTokenRegistry = await step_instance_toSTR(toStrAddress);
-        let fromTickerRegistry = await step_instance_fromTR(fromTrAddress);
-        let tickers = await step_get_registered_tickers(fromTickerRegistry, singleTicker);
-        await step_register_tickers(tickers, toSecurityTokenRegistry); 
+        if (typeof tokenAddress === 'undefined') {
+            let fromTickerRegistry = await step_instance_fromTR(fromTrAddress);
+            let tickers = await step_get_registered_tickers(fromTickerRegistry, singleTicker);
+            await step_register_tickers(tickers, toSecurityTokenRegistry); 
+        }
         let fromSecurityTokenRegistry = await step_instance_fromSTR(fromStrAddress);
         let tokens = await step_get_deployed_tokens(fromSecurityTokenRegistry, singleTicker);           
-        await step_launch_STs(tokens, toSecurityTokenRegistry); 
+        await step_launch_STs(tokens, toSecurityTokenRegistry, tokenAddress); 
     } catch (err) {
         console.log(err);
         return;
@@ -259,7 +261,7 @@ async function step_get_deployed_tokens(securityTokenRegistry, singleTicker) {
     return tokens;
 }
 
-async function step_launch_STs(tokens, securityTokenRegistry) {
+async function step_launch_STs(tokens, securityTokenRegistry, tokenAddress) {
     if (tokens.length == 0) {
         console.log(chalk.yellow(`There are no security tokens to migrate!`));
     } else if (readlineSync.keyInYNStrict(`Do you want to migrate ${tokens.length} Security Tokens?`)) {
@@ -275,15 +277,25 @@ async function step_launch_STs(tokens, securityTokenRegistry) {
             console.log(`\n`);
             console.log(`-------- Migrating token No ${++i}--------`);
             console.log(`Token symbol: ${t.ticker}`);
-            console.log(`Token address: ${t.address}`);
+            console.log(`Token old address: ${t.address}`);
             console.log(``);
             try {
                 // Deploying 2.0.0 Token
-                let deployTokenAction = STFactory.methods.deployToken(t.name, t.ticker, 18, t.details, Issuer.address, t.divisble, polymathRegistryAddress)
-                let deployTokenReceipt = await common.sendTransactionWithNonce(Issuer, deployTokenAction, defaultGasPrice, minNonce);
-                minNonce = minNonce + 1;
-                // Instancing Security Token
-                let newTokenAddress = deployTokenReceipt.logs[deployTokenReceipt.logs.length -1].address; //Last log is the ST creation
+                let newTokenAddress;
+                if (tokens.length == 1 && typeof tokenAddress !== 'undefined') {
+                    if (web3.utils.isAddress(tokenAddress)) {
+                        newTokenAddress = tokenAddress;
+                    } else {
+                        console.log(chalk.red('Given tokenAddress is not an address!!'));
+                        process.exit(0);
+                    }
+                } else {
+                    let deployTokenAction = STFactory.methods.deployToken(t.name, t.ticker, 18, t.details, Issuer.address, t.divisble, polymathRegistryAddress)
+                    let deployTokenReceipt = await common.sendTransactionWithNonce(Issuer, deployTokenAction, defaultGasPrice, minNonce);
+                    minNonce = minNonce + 1;
+                    // Instancing Security Token
+                    newTokenAddress = deployTokenReceipt.logs[deployTokenReceipt.logs.length -1].address; //Last log is the ST creation
+                }
                 console.log(chalk.green(`The migrated to 2.0.0 Security Token address is ${newTokenAddress}`));
                 let newTokenABI = abis.securityToken();
                 let newToken = new web3.eth.Contract(newTokenABI, newTokenAddress); 
@@ -424,7 +436,7 @@ async function getBlockfromEtherscan(_blockNumber) {
 }
 
 module.exports = {
-    executeApp: async function(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, remoteNetwork) {
-        return executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, remoteNetwork);
+    executeApp: async function(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, tokenAddress, remoteNetwork) {
+        return executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, tokenAddress, remoteNetwork);
     }
 };

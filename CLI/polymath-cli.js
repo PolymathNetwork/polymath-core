@@ -138,10 +138,11 @@ program
 program
   .command('strMigrator [toStrAddress] [fromTrAddress] [fromStrAddress]')
   .option('-tick, --singleTicker <ticker>', 'It only reads and migrates the ticker and token for given token symbol')
+  .option('-tok, --tokenAddress <tokenAdress>', 'Migrated security token address. It skips all steps until modifySecurityToken')
   .alias('str')
   .description('Runs STR Migrator')
   .action(async function(toStrAddress, fromTrAddress, fromStrAddress, cmd) {
-    await strMigrator.executeApp(toStrAddress, fromTrAddress, fromStrAddress, cmd.singleTicker, program.remoteNode);
+    await strMigrator.executeApp(toStrAddress, fromTrAddress, fromStrAddress, cmd.singleTicker, cmd.tokenAddress, program.remoteNode);
   });
 
 program

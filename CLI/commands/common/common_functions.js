@@ -147,7 +147,6 @@ module.exports = {
         process.exit(0);
       }
     }
-
     if (typeof factor === 'undefined') factor = 1.2;
 
     let block = await web3.eth.getBlock("latest");

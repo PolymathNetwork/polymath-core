@@ -146,10 +146,10 @@ async function step_register_tickers(tickers, securityTokenRegistry) {
             console.log(``);
             try {
                 let modifyTickerAction = securityTokenRegistry.methods.modifyTicker(t.owner, t.ticker, t.name, t.registrationDate, t.expiryDate, false);
-                let receipt = await common.sendTransactionWithNonce(Issuer, modifyTickerAction, defaultGasPrice, minNonce);
+                let receipt = common.sendTransactionWithNonce(Issuer, modifyTickerAction, defaultGasPrice, minNonce);
                 console.log(minNonce);
                 minNonce = minNonce + 1;
-                totalGas = totalGas.add(new web3.utils.BN(receipt.gasUsed));
+                //totalGas = totalGas.add(new web3.utils.BN(receipt.gasUsed));
                 succeed.push(t);
             } catch (error) {
                 failed.push(t);
@@ -303,30 +303,31 @@ async function step_launch_STs(tokens, securityTokenRegistry) {
                         );
                         let modifyWhitelistReceipt = await common.sendTransactionWithNonce(Issuer, modifyWhitelistAction, defaultGasPrice, minNonce);
                         minNonce = minNonce + 1;
-                        totalGas = totalGas.add(new web3.utils.BN(modifyWhitelistReceipt.gasUsed));
+                        //totalGas = totalGas.add(new web3.utils.BN(modifyWhitelistReceipt.gasUsed));
                     }  
                     // Minting tokens
                     for (const mintedEvent of t.mintedEvents) {
                         let mintAction = newToken.methods.mint(mintedEvent.to, new web3.utils.BN(mintedEvent.value));
-                        let mintReceipt = await common.sendTransactionWithNonce(Issuer, mintAction, defaultGasPrice, minNonce);  
+                        let mintReceipt = common.sendTransactionWithNonce(Issuer, mintAction, defaultGasPrice, minNonce);  
                         minNonce = minNonce + 1;
-                        totalGas = totalGas.add(new web3.utils.BN(mintReceipt.gasUsed));
+                        //totalGas = totalGas.add(new web3.utils.BN(mintReceipt.gasUsed));
                     }
                 }
                 
                 // Transferring onweship to the original owner
                 let transferOwnershipAction = newToken.methods.transferOwnership(t.owner);
-                let transferOwnershipReceipt = await common.sendTransactionWithNonce(Issuer, transferOwnershipAction, defaultGasPrice, minNonce);
+                let transferOwnershipReceipt = common.sendTransactionWithNonce(Issuer, transferOwnershipAction, defaultGasPrice, minNonce);
                 minNonce = minNonce + 1;
-                totalGas = totalGas.add(new web3.utils.BN(transferOwnershipReceipt.gasUsed));
+                //totalGas = totalGas.add(new web3.utils.BN(transferOwnershipReceipt.gasUsed));
 
                 // Adding 2.0.0 Security Token to SecurityTokenRegistry
                 let modifySecurityTokenAction = securityTokenRegistry.methods.modifySecurityToken(t.name, t.ticker, t.owner, newTokenAddress, t.details, t.deployedAt);
-                let modifySecurityTokenReceipt = await common.sendTransactionWithNonce(Issuer, modifySecurityTokenAction, defaultGasPrice, minNonce);
+                let modifySecurityTokenReceipt = common.sendTransactionWithNonce(Issuer, modifySecurityTokenAction, defaultGasPrice, minNonce);
                 minNonce = minNonce + 1;
-                totalGas = totalGas.add(new web3.utils.BN(modifySecurityTokenReceipt.gasUsed));
+                //totalGas = totalGas.add(new web3.utils.BN(modifySecurityTokenReceipt.gasUsed));
                 
                 succeed.push(t);
+                console.log('done');
             } catch (error) {
                 failed.push(t);
                 console.log(chalk.red(`Transaction failed!!! `))

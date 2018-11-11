@@ -72,7 +72,7 @@ module.exports = {
 `);
   },
   getNonce: async function(from) {
-    return (await web3.eth.getTransactionCount(from.address));
+    return (await web3.eth.getTransactionCount(from.address, "pending"));
   },
   sendTransaction: async function (from, action, gasPrice, value, factor) {
     let contractRegistry = await connect(action._parent.options.jsonInterface, action._parent._address);
@@ -94,8 +94,12 @@ module.exports = {
     let block = await web3.eth.getBlock("latest");
     let networkGasLimit = block.gasLimit;
 
-    let gas = Math.round(factor * (await action.estimateGas({ from: from.address, value: value})));
-    if (gas > networkGasLimit) gas = networkGasLimit;
+    try {
+      let gas = Math.round(factor * (await action.estimateGas({ from: from.address, value: value})));
+      if (gas > networkGasLimit) gas = networkGasLimit;
+    } catch(exception) {
+      gas = networkGasLimit;
+    }
   
     console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gas} ----`));    
 

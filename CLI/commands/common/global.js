@@ -13,7 +13,7 @@ function getGasPrice (networkId) {
         gasPrice = 50000000000;
         break;
       case 42: //Kovan
-        gasPrice = 50000000000;
+        gasPrice = 5000000000;
         break;
       default:
         throw new Error('Network ID not identified');

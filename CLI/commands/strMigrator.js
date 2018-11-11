@@ -21,6 +21,8 @@ async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTic
     console.log("Issuer Account: " + Issuer.address + "\n");
   
     try {
+        minNonce = await common.getNonce(Issuer);
+        console.log(minNonce);
         let toSecurityTokenRegistry = await step_instance_toSTR(toStrAddress);
         let fromTickerRegistry = await step_instance_fromTR(fromTrAddress);
         let tickers = await step_get_registered_tickers(fromTickerRegistry, singleTicker);
@@ -28,7 +30,6 @@ async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTic
         let fromSecurityTokenRegistry = await step_instance_fromSTR(fromStrAddress);
         let tokens = await step_get_deployed_tokens(fromSecurityTokenRegistry, singleTicker);           
         await step_launch_STs(tokens, toSecurityTokenRegistry); 
-        minNonce = await common.getNonce(Issuer);
     } catch (err) {
         console.log(err);
         return;

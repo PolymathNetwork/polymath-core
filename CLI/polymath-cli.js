@@ -6,6 +6,7 @@ var investor_portal = require('./commands/investor_portal');
 var module_manager = require('./commands/module_manager');
 var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
+var whitelist = require('./commands/whitelist');
 var transfer_ownership = require('./commands/transfer_ownership');
 var dividends_manager = require('./commands/dividends_manager');
 var transfer_manager = require('./commands/transfer_manager');
@@ -101,7 +102,7 @@ program
   .description('Mass-update a whitelist of allowed/known investors')
   .action(async function(tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    shell.exec(`${__dirname}/commands/scripts/script.sh Whitelist ${tokenSymbol} ${batchSize} ${program.remoteNode}`);
+    await whitelist.executeApp(tokenSymbol, batchSize);
   });
 
 program

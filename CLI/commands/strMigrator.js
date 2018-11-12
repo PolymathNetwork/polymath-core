@@ -47,12 +47,13 @@ async function step_instance_toSTR(toStrAddress){
             return;
         }
     } else {
-        _toStrAddress = readlineSync.question('Enter the new SecurityTokenRegistry address to migrate TO: ', {
-            limit: function(input) {
-              return web3.utils.isAddress(input);
-            },
-            limitMessage: "Must be a valid address"
-        }); 
+        // _toStrAddress = readlineSync.question('Enter the new SecurityTokenRegistry address to migrate TO: ', {
+        //     limit: function(input) {
+        //       return web3.utils.isAddress(input);
+        //     },
+        //     limitMessage: "Must be a valid address"
+        // }); 
+        _toStrAddress = "0x240f9f86b1465bf1b8eb29bc88cbf65573dfdd97";
     }
 
     console.log(`Creating SecurityTokenRegistry contract instance of address: ${_toStrAddress}...`);
@@ -73,12 +74,13 @@ async function step_instance_fromTR(fromTrAddress){
             return;
         }
     } else {
-        _fromTrAddress = readlineSync.question('Enter the old TikcerRegistry address to migrate FROM: ', {
-            limit: function(input) {
-              return web3.utils.isAddress(input);
-            },
-            limitMessage: "Must be a valid address"
-        }); 
+        // _fromTrAddress = readlineSync.question('Enter the old TikcerRegistry address to migrate FROM: ', {
+        //     limit: function(input) {
+        //       return web3.utils.isAddress(input);
+        //     },
+        //     limitMessage: "Must be a valid address"
+        // }); 
+        _fromTrAddress = "0xc31714e6759a1ee26db1d06af1ed276340cd4233";
     }
 
     console.log(`Creating TickerRegistry contract instance of address: ${_fromTrAddress}...`);
@@ -136,7 +138,7 @@ async function step_get_registered_tickers(tickerRegistry, singleTicker) {
 async function step_register_tickers(tickers, securityTokenRegistry) {
     if (tickers.length == 0) {
         console.log(chalk.yellow(`There are no tickers to migrate!`));
-    } else if (readlineSync.keyInYNStrict(`Do you want to migrate ${tickers.length} Tickers?`)) {
+} else /*if (readlineSync.keyInYNStrict(`Do you want to migrate ${tickers.length} Tickers?`)) */{
         let i = 0;
         let succeed = [];
         let failed = [];
@@ -148,7 +150,7 @@ async function step_register_tickers(tickers, securityTokenRegistry) {
             console.log(``);
             try {
                 let modifyTickerAction = securityTokenRegistry.methods.modifyTicker(t.owner, t.ticker, t.name, t.registrationDate, t.expiryDate, false);
-                let receipt = common.sendTransactionWithNonce(Issuer, modifyTickerAction, defaultGasPrice, minNonce);
+                let receipt = await common.sendTransactionWithNonce(Issuer, modifyTickerAction, defaultGasPrice, minNonce);
                 console.log(minNonce);
                 minNonce = minNonce + 1;
                 //totalGas = totalGas.add(new web3.utils.BN(receipt.gasUsed));
@@ -174,12 +176,13 @@ async function step_instance_fromSTR(fromStrAddress){
             return;
         }
     } else {
-        _fromStrAddress = readlineSync.question('Enter the old SecurityTokenRegistry address to migrate FROM: ', {
-            limit: function(input) {
-              return web3.utils.isAddress(input);
-            },
-            limitMessage: "Must be a valid address"
-        }); 
+        // _fromStrAddress = readlineSync.question('Enter the old SecurityTokenRegistry address to migrate FROM: ', {
+        //     limit: function(input) {
+        //       return web3.utils.isAddress(input);
+        //     },
+        //     limitMessage: "Must be a valid address"
+        // }); 
+        _fromStrAddress = "0xef58491224958d978facf55d2120c55a24516b98";
     }
 
     console.log(`Creating SecurityTokenRegistry contract instance of address: ${_fromStrAddress}...`);
@@ -264,7 +267,7 @@ async function step_get_deployed_tokens(securityTokenRegistry, singleTicker) {
 async function step_launch_STs(tokens, securityTokenRegistry, tokenAddress) {
     if (tokens.length == 0) {
         console.log(chalk.yellow(`There are no security tokens to migrate!`));
-    } else if (readlineSync.keyInYNStrict(`Do you want to migrate ${tokens.length} Security Tokens?`)) {
+} else /*if (readlineSync.keyInYNStrict(`Do you want to migrate ${tokens.length} Security Tokens?`))*/ {
         let i = 0;
         let succeed = [];
         let failed = [];
@@ -291,7 +294,7 @@ async function step_launch_STs(tokens, securityTokenRegistry, tokenAddress) {
                     }
                 } else {
                     let deployTokenAction = STFactory.methods.deployToken(t.name, t.ticker, 18, t.details, Issuer.address, t.divisble, polymathRegistryAddress)
-                    let deployTokenReceipt = await common.sendTransactionWithNonce(Issuer, deployTokenAction, defaultGasPrice, minNonce);
+                    let deployTokenReceipt = await common.sendTransactionWithNonce(Issuer, deployTokenAction, 25000000000, minNonce);
                     minNonce = minNonce + 1;
                     // Instancing Security Token
                     newTokenAddress = deployTokenReceipt.logs[deployTokenReceipt.logs.length -1].address; //Last log is the ST creation
@@ -321,8 +324,8 @@ async function step_launch_STs(tokens, securityTokenRegistry, tokenAddress) {
                     }  
                     // Minting tokens
                     for (const mintedEvent of t.mintedEvents) {
-                        let mintAction = newToken.methods.mint(mintedEvent.to, new web3.utils.BN(mintedEvent.value));
-                        let mintReceipt = common.sendTransactionWithNonce(Issuer, mintAction, defaultGasPrice, minNonce);  
+                        let mintAction = newToken.methods.mint(mintedEvent.to, new web3.utils.BN(mintedEvent.amount));
+                        let mintReceipt = await common.sendTransactionWithNonce(Issuer, mintAction, defaultGasPrice, minNonce);  
                         minNonce = minNonce + 1;
                         //totalGas = totalGas.add(new web3.utils.BN(mintReceipt.gasUsed));
                     }
@@ -330,13 +333,13 @@ async function step_launch_STs(tokens, securityTokenRegistry, tokenAddress) {
                 
                 // Transferring onweship to the original owner
                 let transferOwnershipAction = newToken.methods.transferOwnership(t.owner);
-                let transferOwnershipReceipt = common.sendTransactionWithNonce(Issuer, transferOwnershipAction, defaultGasPrice, minNonce);
+                let transferOwnershipReceipt = await common.sendTransactionWithNonce(Issuer, transferOwnershipAction, defaultGasPrice, minNonce);
                 minNonce = minNonce + 1;
                 //totalGas = totalGas.add(new web3.utils.BN(transferOwnershipReceipt.gasUsed));
 
                 // Adding 2.0.0 Security Token to SecurityTokenRegistry
                 let modifySecurityTokenAction = securityTokenRegistry.methods.modifySecurityToken(t.name, t.ticker, t.owner, newTokenAddress, t.details, t.deployedAt);
-                let modifySecurityTokenReceipt = common.sendTransactionWithNonce(Issuer, modifySecurityTokenAction, defaultGasPrice, minNonce);
+                let modifySecurityTokenReceipt = await common.sendTransactionWithNonce(Issuer, modifySecurityTokenAction, defaultGasPrice, minNonce);
                 minNonce = minNonce + 1;
                 //totalGas = totalGas.add(new web3.utils.BN(modifySecurityTokenReceipt.gasUsed));
                 

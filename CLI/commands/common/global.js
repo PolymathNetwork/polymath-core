@@ -4,7 +4,7 @@ function getGasPrice (networkId) {
     let gasPrice;
     switch (networkId) {
       case 1: //Mainnet
-        gasPrice = 30000000000;
+        gasPrice = 20000000000;
         break;
       case 3: //Ropsten
         gasPrice = 50000000000;

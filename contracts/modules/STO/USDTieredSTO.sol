@@ -200,7 +200,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
-    function modifyFunding(FundRaiseType[] _fundRaiseTypes) external {
+    function modifyFunding(FundRaiseType[] _fundRaiseTypes) external onlyOwner {
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
         _setFundRaiseType(_fundRaiseTypes);
@@ -209,12 +209,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     function modifyLimits(
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD
-    ) external onlyFactoryOrOwner {
+    ) external onlyOwner {
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
-        minimumInvestmentUSD = _minimumInvestmentUSD;
-        nonAccreditedLimitUSD = _nonAccreditedLimitUSD;
-        emit SetLimits(minimumInvestmentUSD, nonAccreditedLimitUSD);
+        _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
     function modifyTiers(
@@ -222,7 +220,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256[] _ratePerTierDiscountPoly,
         uint256[] _tokensPerTierTotal,
         uint256[] _tokensPerTierDiscountPoly
-    ) external onlyFactoryOrOwner {
+    ) external onlyOwner {
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
@@ -231,7 +229,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     function modifyTimes(
         uint256 _startTime,
         uint256 _endTime
-    ) external onlyFactoryOrOwner {
+    ) external onlyOwner {
         _modifyTimes(_startTime, _endTime);
     }
 
@@ -239,7 +237,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _wallet,
         address _reserveWallet,
         address _usdToken
-    ) external onlyFactoryOrOwner {
+    ) external onlyOwner {
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
         _modifyAddresses(_wallet, _reserveWallet, _usdToken);
@@ -381,16 +379,16 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     // For backwards compatibility
-    function buyWithETH(address _beneficiary) public payable {
+    function buyWithETH(address _beneficiary) external payable {
         buyWithETHRateLimited(_beneficiary, 0);
     }
 
-    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) public {
-        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, 0);
+    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) external {
+        buyWithPOLYRateLimited(_beneficiary, _investedPOLY, 0);
     }
 
-    function buyWithUSD(address _beneficiary, uint256 _investedDAI) public validDAI {
-        _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI, 0);
+    function buyWithUSD(address _beneficiary, uint256 _investedDAI) external {
+        buyWithUSDRateLimited(_beneficiary, _investedDAI, 0);
     }
 
     /**

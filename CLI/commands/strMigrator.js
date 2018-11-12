@@ -151,7 +151,9 @@ async function step_register_tickers(tickers, securityTokenRegistry) {
         let migrateAll = false;
         for (const t of tickers) {
             if (migrateAll || readlineSync.keyInYNStrict(`Do you want to migrate ${t.ticker}?`)) {
-                migrateAll = readlineSync.keyInYNStrict(`Do you want to migrate all tickers from here?`)
+                if (!migrateAll) {
+                    migrateAll = readlineSync.keyInYNStrict(`Do you want to migrate all tickers from here?`)
+                }
                 console.log(`\n`);
                 console.log(`-------- Migrating ticker No ${++i}--------`);
                 console.log(`Ticker: ${t.ticker}`);

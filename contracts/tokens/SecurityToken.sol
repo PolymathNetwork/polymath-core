@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/Math.sol";
-import {IERC20 as IERC20Poly} from "../interfaces/IERC20.sol";
+import "../interfaces/IPoly.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IModuleRegistry.sol";
@@ -377,13 +377,13 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     */
     function changeModuleBudget(address _module, uint256 _change, bool _increase) external onlyOwner {
         require(modulesToData[_module].module != address(0), "Module missing");
-        uint256 currentAllowance = IERC20(polyToken).allowance(address(this), _module);
+        uint256 currentAllowance = IPoly(polyToken).allowance(address(this), _module);
         uint256 newAllowance;
         if (_increase) {
-            require(IERC20Poly(polyToken).increaseApproval(_module, _change), "IncreaseApproval fail");
+            require(IPoly(polyToken).increaseApproval(_module, _change), "IncreaseApproval fail");
             newAllowance = currentAllowance.add(_change);
         } else {
-            require(IERC20Poly(polyToken).decreaseApproval(_module, _change), "Insufficient allowance");
+            require(IPoly(polyToken).decreaseApproval(_module, _change), "Insufficient allowance");
             newAllowance = currentAllowance.sub(_change);
         }
         emit ModuleBudgetChanged(modulesToData[_module].moduleTypes, _module, currentAllowance, newAllowance);

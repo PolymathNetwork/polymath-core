@@ -72,7 +72,7 @@ module.exports = {
 `);
   },
   getNonce: async function(from) {
-    return (await web3.eth.getTransactionCount(from.address));
+    return (await web3.eth.getTransactionCount(from.address, "pending"));
   },
   sendTransaction: async function (from, action, gasPrice, value, factor) {
     let contractRegistry = await connect(action._parent.options.jsonInterface, action._parent._address);
@@ -94,8 +94,12 @@ module.exports = {
     let block = await web3.eth.getBlock("latest");
     let networkGasLimit = block.gasLimit;
 
-    let gas = Math.round(factor * (await action.estimateGas({ from: from.address, value: value})));
-    if (gas > networkGasLimit) gas = networkGasLimit;
+    try {
+      let gas = Math.round(factor * (await action.estimateGas({ from: from.address, value: value})));
+      if (gas > networkGasLimit) gas = networkGasLimit;
+    } catch(exception) {
+      gas = networkGasLimit;
+    }
   
     console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gas} ----`));    
 
@@ -129,7 +133,7 @@ module.exports = {
       );
     });
   },
-  sendTransactionWithNonce: async function (from, action, gasPrice, value, factor, minNonce) {
+  sendTransactionWithNonce: async function (from, action, gasPrice, minNonce, value, factor) {
     let contractRegistry = await connect(action._parent.options.jsonInterface, action._parent._address);
     
     //NOTE this is a condition to verify if the transaction comes from a module or not. 
@@ -143,16 +147,21 @@ module.exports = {
         process.exit(0);
       }
     }
-     if (typeof factor === 'undefined') factor = 1.2;
-     let block = await web3.eth.getBlock("latest");
+    if (typeof factor === 'undefined') factor = 1.2;
+
+    let block = await web3.eth.getBlock("latest");
     let networkGasLimit = block.gasLimit;
-     let gas = Math.round(factor * (await action.estimateGas({ from: from.address, value: value})));
+
+    let gas = Math.round(factor * (await action.estimateGas({ from: from.address, value: value})));
     if (gas > networkGasLimit) gas = networkGasLimit;
   
     console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gas} ----`));    
-     let nonce = await web3.eth.getTransactionCount(from.address);
-    if (nonce < minNonce)
+
+    let nonce = await web3.eth.getTransactionCount(from.address);
+      
+    if (nonce < minNonce) {
       nonce = minNonce;
+    }
     let abi = action.encodeABI();
     let parameter = {
       from: from.address,

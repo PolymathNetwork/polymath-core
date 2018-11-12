@@ -9,7 +9,7 @@ var global = require('./common/global');
 let network;
 let minNonce;
 
-async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, tokenAddress, remoteNetwork) {
+async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, tokenAddress, onlyTickers, remoteNetwork) {
     network = remoteNetwork;
     await global.initialize(remoteNetwork);
 
@@ -25,12 +25,14 @@ async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTic
         let toSecurityTokenRegistry = await step_instance_toSTR(toStrAddress);
         if (typeof tokenAddress === 'undefined') {
             let fromTickerRegistry = await step_instance_fromTR(fromTrAddress);
-            let tickers = await step_get_registered_tickers(fromTickerRegistry, singleTicker);
+            let tickers = await step_get_registered_tickers(fromTickerRegistry, singleTicker, onlyTickers);
             await step_register_tickers(tickers, toSecurityTokenRegistry); 
         }
-        let fromSecurityTokenRegistry = await step_instance_fromSTR(fromStrAddress);
-        let tokens = await step_get_deployed_tokens(fromSecurityTokenRegistry, singleTicker);           
-        await step_launch_STs(tokens, toSecurityTokenRegistry, tokenAddress); 
+        if (typeof onlyTickers === 'undefined') {
+            let fromSecurityTokenRegistry = await step_instance_fromSTR(fromStrAddress);
+            let tokens = await step_get_deployed_tokens(fromSecurityTokenRegistry, singleTicker);           
+            await step_launch_STs(tokens, toSecurityTokenRegistry, tokenAddress); 
+        }
     } catch (err) {
         console.log(err);
         return;
@@ -91,7 +93,7 @@ async function step_instance_fromTR(fromTrAddress){
     return fromTR;
 }
 
-async function step_get_registered_tickers(tickerRegistry, singleTicker) {
+async function step_get_registered_tickers(tickerRegistry, singleTicker, onlyTickers) {
     let tickers = [];
     let expiryTime = await tickerRegistry.methods.expiryLimit().call();
 
@@ -103,30 +105,33 @@ async function step_get_registered_tickers(tickerRegistry, singleTicker) {
             let event = common.getEventFromLogs(tickerRegistry._jsonInterface, [log], 'LogRegisterTicker');
             if (typeof singleTicker === 'undefined' || event._symbol == singleTicker) {
                 let details = await tickerRegistry.methods.getDetails(event._symbol).call();
-                let expiredTicker = details[0] == '0x0000000000000000000000000000000000000000';
-                let _symbol = event._symbol;
-                let _owner = expiredTicker ? event._owner : details[0];
-                let _name = expiredTicker ? event._name : details[2];
-                let _registrationDate = expiredTicker ? event._timestamp : details[1];
                 let _status = details[4];
-                
-                console.log(`------------ Ticker Registered ------------`);
-                console.log(`Ticker: ${_symbol}`);
-                console.log(`Owner: ${_owner}`);
-                console.log(`Token name: ${_name}`);
-                console.log(`Timestamp: ${_registrationDate}`);
-                console.log(`Transaction hash: ${log.transactionHash}`);
-                console.log(`-------------------------------------------`);
-                console.log(`\n`);
-                
-                tickers.push({ 
-                    ticker: _symbol, 
-                    owner: _owner, 
-                    name: _name, 
-                    registrationDate: new web3.utils.BN(_registrationDate), 
-                    expiryDate: new web3.utils.BN(_registrationDate).add(new web3.utils.BN(expiryTime)),
-                    status: _status
-                });
+                if (typeof onlyTickers === 'undefined' || (onlyTickers && !_status)) {
+                    let expiredTicker = details[0] == '0x0000000000000000000000000000000000000000';
+                    let _symbol = event._symbol;
+                    let _owner = expiredTicker ? event._owner : details[0];
+                    let _name = expiredTicker ? event._name : details[2];
+                    let _registrationDate = expiredTicker ? event._timestamp : details[1];
+                    
+                    
+                    console.log(`------------ Ticker Registered ------------`);
+                    console.log(`Ticker: ${_symbol}`);
+                    console.log(`Owner: ${_owner}`);
+                    console.log(`Token name: ${_name}`);
+                    console.log(`Timestamp: ${_registrationDate}`);
+                    console.log(`Transaction hash: ${log.transactionHash}`);
+                    console.log(`-------------------------------------------`);
+                    console.log(`\n`);
+                    
+                    tickers.push({ 
+                        ticker: _symbol, 
+                        owner: _owner, 
+                        name: _name, 
+                        registrationDate: new web3.utils.BN(_registrationDate), 
+                        expiryDate: new web3.utils.BN(_registrationDate).add(new web3.utils.BN(expiryTime)),
+                        status: _status
+                    });
+                }
             }
         }
     }
@@ -134,7 +139,8 @@ async function step_get_registered_tickers(tickerRegistry, singleTicker) {
     console.log(chalk.yellow(`${tickers.length} tickers found!`));
     return tickers;
 }
-
+//0x240f9f86b1465bf1b8eb29bc88cbf65573dfdd97
+//0xc31714e6759a1ee26db1d06af1ed276340cd4233
 async function step_register_tickers(tickers, securityTokenRegistry) {
     if (tickers.length == 0) {
         console.log(chalk.yellow(`There are no tickers to migrate!`));
@@ -439,7 +445,7 @@ async function getBlockfromEtherscan(_blockNumber) {
 }
 
 module.exports = {
-    executeApp: async function(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, tokenAddress, remoteNetwork) {
-        return executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, tokenAddress, remoteNetwork);
+    executeApp: async function(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, tokenAddress, onlyTickers, remoteNetwork) {
+        return executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, tokenAddress, onlyTickers, remoteNetwork);
     }
 };

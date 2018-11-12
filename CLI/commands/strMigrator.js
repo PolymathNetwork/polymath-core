@@ -139,8 +139,7 @@ async function step_get_registered_tickers(tickerRegistry, singleTicker, onlyTic
     console.log(chalk.yellow(`${tickers.length} tickers found!`));
     return tickers;
 }
-//0x240f9f86b1465bf1b8eb29bc88cbf65573dfdd97
-//0xc31714e6759a1ee26db1d06af1ed276340cd4233
+
 async function step_register_tickers(tickers, securityTokenRegistry) {
     if (tickers.length == 0) {
         console.log(chalk.yellow(`There are no tickers to migrate!`));
@@ -149,22 +148,26 @@ async function step_register_tickers(tickers, securityTokenRegistry) {
         let succeed = [];
         let failed = [];
         let totalGas = new web3.utils.BN(0);
+        let migrateAll = false;
         for (const t of tickers) {
-            console.log(`\n`);
-            console.log(`-------- Migrating ticker No ${++i}--------`);
-            console.log(`Ticker: ${t.ticker}`);
-            console.log(``);
-            try {
-                let modifyTickerAction = securityTokenRegistry.methods.modifyTicker(t.owner, t.ticker, t.name, t.registrationDate, t.expiryDate, false);
-                let receipt = await common.sendTransactionWithNonce(Issuer, modifyTickerAction, defaultGasPrice, minNonce);
-                console.log(minNonce);
-                minNonce = minNonce + 1;
-                //totalGas = totalGas.add(new web3.utils.BN(receipt.gasUsed));
-                succeed.push(t);
-            } catch (error) {
-                failed.push(t);
-                console.log(chalk.red(`Transaction failed!!! `))
-                console.log(error);
+            if (migrateAll || readlineSync.keyInYNStrict(`Do you want to migrate ${t.ticker}?`)) {
+                migrateAll = readlineSync.keyInYNStrict(`Do you want to migrate all tickers from here?`)
+                console.log(`\n`);
+                console.log(`-------- Migrating ticker No ${++i}--------`);
+                console.log(`Ticker: ${t.ticker}`);
+                console.log(``);
+                try {
+                    let modifyTickerAction = securityTokenRegistry.methods.modifyTicker(t.owner, t.ticker, t.name, t.registrationDate, t.expiryDate, false);
+                    let receipt = await common.sendTransactionWithNonce(Issuer, modifyTickerAction, defaultGasPrice, minNonce);
+                    console.log(minNonce);
+                    minNonce = minNonce + 1;
+                    //totalGas = totalGas.add(new web3.utils.BN(receipt.gasUsed));
+                    succeed.push(t);
+                } catch (error) {
+                    failed.push(t);
+                    console.log(chalk.red(`Transaction failed!!! `))
+                    console.log(error);
+                }
             }
         }
 

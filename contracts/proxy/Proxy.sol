@@ -25,6 +25,7 @@ contract Proxy {
     * This function will return whatever the implementation call returns
     */
     function _delegate(address implementation) internal {
+        /*solium-disable-next-line security/no-inline-assembly*/
         assembly {
             // Copy msg.data. We take full control of memory in this inline assembly
             // block because it will not return to Solidity code. We overwrite the

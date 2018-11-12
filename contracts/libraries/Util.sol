@@ -6,8 +6,8 @@ pragma solidity ^0.4.24;
 library Util {
 
    /**
-    * @notice changes a string to upper case
-    * @param _base string to change
+    * @notice Changes a string to upper case
+    * @param _base String to change
     */
     function upper(string _base) internal pure returns (string) {
         bytes memory _baseBytes = bytes(_base);
@@ -22,16 +22,16 @@ library Util {
     }
 
     /**
-     * @notice changes the string into bytes32
+     * @notice Changes the string into bytes32
      * @param _source String that need to convert into bytes32
      */
-    /// Notice - Maximum length for _source will be 32 chars otherwise returned bytes32 value will have lossy value.
+    /// Notice - Maximum Length for _source will be 32 chars otherwise returned bytes32 value will have lossy value.
     function stringToBytes32(string memory _source) internal pure returns (bytes32) {
         return bytesToBytes32(bytes(_source), 0);
     }
 
     /**
-     * @notice changes bytes into bytes32
+     * @notice Changes bytes into bytes32
      * @param _b Bytes that need to convert into bytes32
      * @param _offset Offset from which to begin conversion
      */
@@ -67,8 +67,8 @@ library Util {
     }
 
     /**
-     * @notice Get function signature from _data
-     * @param _data passed data
+     * @notice Gets function signature from _data
+     * @param _data Passed data
      * @return bytes4 sig
      */
     function getSig(bytes _data) internal pure returns (bytes4 sig) {

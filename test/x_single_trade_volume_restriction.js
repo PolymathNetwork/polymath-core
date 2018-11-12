@@ -700,17 +700,17 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
   describe("SingleTradeVolumeRestrictionManager Factory test cases", async () => {
 
     it("Should get the exact details of the factory", async () => {
-      assert.equal(await I_SingleTradeVolumeRestrictionManagerFactory.setupCost.call(), 0);
+      assert.equal(await I_SingleTradeVolumeRestrictionManagerFactory.getSetupCost.call(), 0);
       assert.equal((await I_SingleTradeVolumeRestrictionManagerFactory.getTypes.call())[0], 2);
       let name = web3.utils.toUtf8(await I_SingleTradeVolumeRestrictionManagerFactory.getName.call());
       assert.equal(name, "SingleTradeVolumeRestrictionTM", "Wrong Module added");
-      let desc = await I_SingleTradeVolumeRestrictionManagerFactory.getDescription.call();
+      let desc = await I_SingleTradeVolumeRestrictionManagerFactory.description.call();
       assert.equal(desc, "Imposes volume restriction on a single trade", "Wrong Module added");
-      let title = await I_SingleTradeVolumeRestrictionManagerFactory.getTitle.call();
+      let title = await I_SingleTradeVolumeRestrictionManagerFactory.title.call();
       assert.equal(title, "Single Trade Volume Restriction Manager", "Wrong Module added");
       let inst = await I_SingleTradeVolumeRestrictionManagerFactory.getInstructions.call();
       assert.equal(inst, "Allows an issuer to impose volume restriction on a single trade. Init function takes two parameters. First parameter is a bool indicating if restriction is in percentage. The second parameter is the value in percentage or amount of tokens", "Wrong Module added");
-      let version = await I_SingleTradeVolumeRestrictionManagerFactory.getVersion.call();
+      let version = await I_SingleTradeVolumeRestrictionManagerFactory.version.call();
       assert.equal(version, "1.0.0", "Version not correct");
     });
 

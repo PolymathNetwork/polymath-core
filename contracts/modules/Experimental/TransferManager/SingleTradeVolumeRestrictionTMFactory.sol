@@ -1,8 +1,9 @@
 pragma solidity ^0.4.24;
 
-import "./../ModuleFactory.sol";
+import "./../../ModuleFactory.sol";
 import "./SingleTradeVolumeRestrictionTM.sol";
-import "../../libraries/Util.sol";
+import "../../../libraries/Util.sol";
+
 /**
  * @title Factory for deploying SingleTradeVolumeRestrictionManager
  */
@@ -28,7 +29,7 @@ contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
     }
 
     /**
-    * @notice used to launch the Module with the help of factory
+    * @notice Used to launch the Module with the help of factory
     * @return address Contract address of the Module
     */
     function deploy(bytes _data) external returns(address) {
@@ -37,7 +38,9 @@ contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
         SingleTradeVolumeRestrictionTM singleTradeVolumeRestrictionManager = new SingleTradeVolumeRestrictionTM(msg.sender, address(polyToken));
 
         require(Util.getSig(_data) == singleTradeVolumeRestrictionManager.getInitFunction(), "Provided data is not valid");
+        /*solium-disable-next-line security/no-low-level-calls*/
         require(address(singleTradeVolumeRestrictionManager).call(_data), "Unsuccessful call");
+        /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(singleTradeVolumeRestrictionManager), getName(), address(this), msg.sender, setupCost, now);
         return address(singleTradeVolumeRestrictionManager);
     }
@@ -53,52 +56,14 @@ contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
     }
 
     /**
-    * @notice Get the name of the Module
-    * @return bytes32
-    */
-    function getName() public view returns(bytes32) {
-        return name;
-    }
-
-    /**
-    * @notice Get the description of the Module
-    * @return string
-    */
-    function getDescription() external view returns(string) {
-        return description;
-    }
-
-    /**
-    * @notice Get the title of the Module
-    * @return string
-    */
-    function getTitle() external view returns(string) {
-        return title;
-    }
-
-    /**
     * @notice Get the Instructions that help to use the module
     * @return string
     */
     function getInstructions() external view returns(string) {
+        /*solium-disable-next-line max-len*/
         return "Allows an issuer to impose volume restriction on a single trade. Init function takes two parameters. First parameter is a bool indicating if restriction is in percentage. The second parameter is the value in percentage or amount of tokens";
     }
 
-    /**
-    * @notice Get the version of the Module
-    * @return string
-    */
-    function getVersion() external view returns(string) {
-        return version;
-    }
-
-    /**
-    * @notice Get the setup cost of the module
-    * return uint256
-    */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
-    }
     /**
     * @notice Get the tags related to the module factory
     * @return bytes32[]

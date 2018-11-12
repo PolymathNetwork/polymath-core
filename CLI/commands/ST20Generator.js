@@ -1,11 +1,10 @@
-const readlineSync = require('readline-sync');
-const moment = require('moment');
-const chalk = require('chalk');
-const contracts = require('./helpers/contract_addresses');
-const abis = require('./helpers/contract_abis');
-const common = require('./common/common_functions');
-const global = require('./common/global');
-const BigNumber = require('bignumber.js');
+var readlineSync = require('readline-sync');
+var BigNumber = require('bignumber.js');
+var moment = require('moment');
+var chalk = require('chalk');
+var contracts = require('./helpers/contract_addresses');
+var abis = require('./helpers/contract_abis');
+var common = require('./common/common_functions');
 
 ////////////////////////
 let securityTokenRegistryAddress;
@@ -16,9 +15,7 @@ let tokenLaunched;
 let securityTokenRegistry;
 let polyToken;
 
-async function executeApp(_ticker, _transferOwnership, _name, _details, _divisible, _remoteNetwork) {
-  await global.initialize(_remoteNetwork);
-
+async function executeApp(_ticker, _transferOwnership, _name, _details, _divisible) {
   common.logAsciiBull();
   console.log("********************************************");
   console.log("Welcome to the Command-Line ST-20 Generator.");
@@ -80,7 +77,7 @@ async function step_ticker_registration(_ticker) {
       available = true;
       await approvePoly(securityTokenRegistryAddress, regFee);
       let registerTickerAction = securityTokenRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "");
-      await common.sendTransaction(Issuer, registerTickerAction, defaultGasPrice, 0, 1.5);
+      await common.sendTransaction(registerTickerAction, {factor: 1.5});
     } else if (details[0] == Issuer.address) {
       // If it has registration date and its owner is Issuer
       available = true;
@@ -108,7 +105,7 @@ async function step_transfer_ticker_ownership(_transferOwnership) {
 
   if (newOwner) {
     let transferTickerOwnershipAction = securityTokenRegistry.methods.transferTickerOwnership(newOwner, tokenSymbol);
-    let receipt = await common.sendTransaction(Issuer, transferTickerOwnershipAction, defaultGasPrice, 0, 1.5);
+    let receipt = await common.sendTransaction(transferTickerOwnershipAction, {factor: 1.5});
     let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'ChangeTickerOwnership');
     console.log(chalk.green(`Ownership trasferred successfully. The new owner is ${event._newOwner}`));
     process.exit(0);
@@ -148,7 +145,7 @@ async function step_token_deploy(_name, _details, _divisible) {
 
   await approvePoly(securityTokenRegistryAddress, launchFee);
   let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility);
-  let receipt = await common.sendTransaction(Issuer, generateSecurityTokenAction, defaultGasPrice);
+  let receipt = await common.sendTransaction(generateSecurityTokenAction);
   let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'NewSecurityToken');
   console.log(chalk.green(`Security Token has been successfully deployed at address ${event._securityTokenAddress}`));
 }
@@ -193,7 +190,7 @@ async function approvePoly(spender, fee) {
       return true;
     } else {
       let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
-      await common.sendTransaction(Issuer, approveAction, defaultGasPrice);
+      await common.sendTransaction(approveAction);
     }
   } else {
       let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);
@@ -205,7 +202,7 @@ async function approvePoly(spender, fee) {
 }
 
 module.exports = {
-  executeApp: async function(ticker, transferOwnership, name, details, divisible, remoteNode) {
-    return executeApp(ticker, transferOwnership, name, details, divisible, remoteNode);
+  executeApp: async function(ticker, transferOwnership, name, details, divisible) {
+    return executeApp(ticker, transferOwnership, name, details, divisible);
   }
 }

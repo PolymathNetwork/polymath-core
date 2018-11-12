@@ -473,7 +473,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 investedUSD = DecimalMath.mul(_rate, _investmentValue);
         _rate = investedUSD; // Reusing variable to prevent stackoverflow
         // Check for minimum investment
-        require(investedUSD >= minimumInvestmentUSD, "investment < minimumInvestmentUSD");
+        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
 
         // Check for non-accredited cap
         if (!accredited[_beneficiary]) {

@@ -7,6 +7,7 @@ cache:
 matrix:
   fast_finish: true
 before_install:	
+  - export GIT_SSL_NO_VERIFY=1
   - echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum	
   - sudo apt-get -y update	
   - sudo apt-get -y install solc

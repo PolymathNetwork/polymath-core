@@ -1,14 +1,26 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# v1.5.0 - Release Candidate
+# v2.1.0
 
-[__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
+[__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
 
 ## Added
 * Added `getSTODetails` to USDTSTO.
 * Added an Array of Tiers that will hold data about every tier in USDTSTO.
 * Added `buyWithETHRateLimited`, `buyWithPOLYRateLimited` and `buyWithUSDRateLimited` to USDTSTO.
+
+##Changed
+* `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
+
+## Removed
+* Individual mappings for tier data removed in UDSTSTO.
+
+# v1.5.0 - Release Candidate
+
+[__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
+
+## Added
 * Added `getInvestorsAt` which returns the investors (non-zero balances) at a particular checkpoint
 * Added `iterateInvestors` to allow an a subset of `investors` to be returned from the security token in case `investors` is large.
 * `ChangeModuleBudget` in SecurityToken now takes in the change in budget rather than absoulte budget. Added boolean paramter to decide increase/decrease.
@@ -37,7 +49,6 @@ All notable changes to this project will be documented in this file.
 * Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230     
 
 ## Fixed
-* `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
 * 0x0 and duplicate address in exclusions are no longer allowed in dividend modules.
 * All permissions are denied if no permission manager is active.
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
@@ -45,7 +56,6 @@ All notable changes to this project will be documented in this file.
 * Change the function name of `withdraPoly` to `withdrawERC20` and make the function generalize to extract tokens from the ST contract. parmeters are contract address and the value need to extract from the securityToken.          
 
 ## Removed
-* Individual mappings for tier data removed in UDSTSTO.
 * Removed investors list pruning
 * Remove `swarmHash` from the `registerTicker(), addCustomTicker(), generateSecurityToken(), addCustomSecurityToken()` functions of TickerRegistry.sol and SecurityTokenRegistry.sol. #230  
 * Remove `Log` prefix from all the event present in the ecosystem.    

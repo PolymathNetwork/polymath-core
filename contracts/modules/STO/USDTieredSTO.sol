@@ -200,12 +200,21 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
+    /**
+     * @dev Modifies fund raise types 
+     * @param _fundRaiseTypes Array of fund raise types to allow
+     */
     function modifyFunding(FundRaiseType[] _fundRaiseTypes) external onlyOwner {
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
         _setFundRaiseType(_fundRaiseTypes);
     }
 
+    /**
+     * @dev modifies max non accredited invets limit and overall minimum investment limit
+     * @param _nonAccreditedLimitUSD max non accredited invets limit
+     * @param _minimumInvestmentUSD overall minimum investment limit
+     */
     function modifyLimits(
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD
@@ -215,6 +224,13 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
+    /**
+     * @dev modifiers STO tiers. All tiers must be passed, can not edit specific tiers.
+     * @param _ratePerTier Array of rates per tier
+     * @param _ratePerTierDiscountPoly Array of discounted poly rates per tier
+     * @param _tokensPerTierTotal Array of total tokens per tier
+     * @param _tokensPerTierDiscountPoly Array of discounted tokens per tier
+     */
     function modifyTiers(
         uint256[] _ratePerTier,
         uint256[] _ratePerTierDiscountPoly,
@@ -226,6 +242,11 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
     }
 
+    /**
+     * @dev Modifies STO start and end times
+     * @param _startTime start time of sto
+     * @param _endTime end time of sto
+     */
     function modifyTimes(
         uint256 _startTime,
         uint256 _endTime
@@ -233,6 +254,12 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         _modifyTimes(_startTime, _endTime);
     }
 
+    /**
+     * @dev Modifies addresses used as wallet, reserve wallet and usd token
+     * @param _wallet Address of wallet where funds are sent
+     * @param _reserveWallet Address of wallet where unsold tokens are sent
+     * @param _usdToken Address of usd token (DAI)
+     */
     function modifyAddresses(
         address _wallet,
         address _reserveWallet,
@@ -378,7 +405,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         buyWithETHRateLimited(msg.sender, 0);
     }
 
-    // For backwards compatibility
+    // Buy functions without rate restriction 
     function buyWithETH(address _beneficiary) external payable {
         buyWithETHRateLimited(_beneficiary, 0);
     }
@@ -620,6 +647,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         return (tiers[tiers.length - 1].mintedTotal == tiers[tiers.length - 1].tokenTotal);
     }
 
+    /**
+     * @dev returns current conversion rate of funds
+     * @param _fundRaiseType Fund raise type to get rate of
+     */
     function getRate(FundRaiseType _fundRaiseType) public view returns (uint256) {
         if (_fundRaiseType == FundRaiseType.ETH) {
             return IOracle(_getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();

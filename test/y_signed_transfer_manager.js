@@ -259,14 +259,15 @@ contract("SignedTransferManager", accounts => {
                 account_investor1,
                 account_investor2,
                 web3.utils.toWei("1", "ether"),
-                // account_investor4
-                token_owner_pk
+                token_owner
+                // token_owner_pk
             );
 
             console.log("token owner is "+ token_owner);
 
-            console.log(await I_SignedTransferManager.invalidSignature(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, {from: token_owner}));
-            // assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
+            await I_SignedTransferManager.invalidSignature(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, {from: token_owner});
+            console.log("2");
+            assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
         });
 
         it("should not allow transfer if the sig is already used", async () => {
@@ -275,10 +276,10 @@ contract("SignedTransferManager", accounts => {
                 account_investor1,
                 account_investor2,
                 web3.utils.toWei("1", "ether"),
-                account_investor4
+                token_owner
             );
-
-            await catchRevert(I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, true, {from: account_investor4}));
+            // I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, true, {from: token_owner});
+            await catchRevert(I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, true, {from: token_owner}));
         });
 
         it("should allow transfer with valid sig", async () => {

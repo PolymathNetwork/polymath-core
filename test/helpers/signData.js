@@ -17,7 +17,7 @@ function signData (tmAddress, investorAddress, fromTime, toTime, expiryTime, res
 }
 
 // sign data for verify tranfer function
-function signDataVerifyTransfer2 (tmAddress, fromAddress, toAddress, amount, account) {
+function signDataVerifyTransfer (tmAddress, fromAddress, toAddress, amount, account) {
     let packedData = utils
         .solidityKeccak256(
             ["address", "address", "address", "uint256"],
@@ -32,7 +32,7 @@ function signDataVerifyTransfer2 (tmAddress, fromAddress, toAddress, amount, acc
 }
 
 // test
-function signDataVerifyTransfer (tmAddress, fromAddress, toAddress, amount, pk) {
+function signDataVerifyTransfer2 (tmAddress, fromAddress, toAddress, amount, pk) {
     let packedData = utils
         .solidityKeccak256(
             ["address", "address", "address", "uint256"],

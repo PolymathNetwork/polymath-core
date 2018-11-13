@@ -27,8 +27,8 @@ contract VestingEscrowWallet is Ownable {
 
     uint256 public unassignedTokens;
 
-    mapping (address => VestingData) internal schedules;
-    address[] users;
+    mapping (address => VestingData) public schedules;
+    address[] public users;
 
     event AddVestingSchedule(
         address _user,
@@ -41,7 +41,7 @@ contract VestingEscrowWallet is Ownable {
     event RevokeVestingSchedules(address _user, uint256 _timestamp);
     event RevokeVestingSchedule(address _user, uint256 index, uint256 _timestamp);
 
-    constructor(address _tokenAddress, address _treasury) {
+    constructor(address _tokenAddress, address _treasury) public {
         token = IERC20(_tokenAddress);
         treasury = _treasury;
     }
@@ -53,11 +53,11 @@ contract VestingEscrowWallet is Ownable {
         uint256 _vestingFrequency,
         uint256 _startDate
     )
-        public
+        external
         onlyOwner
     {
         //TODO validation
-        VestingSchedule schedule;
+        VestingSchedule memory schedule;
         schedule.numberOfTokens = _numberOfTokens;
         schedule.vestingDuration = _vestingDuration;
         schedule.vestingFrequency = _vestingFrequency;
@@ -72,14 +72,14 @@ contract VestingEscrowWallet is Ownable {
         emit AddVestingSchedule(_user, _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate, now);
     }
 
-    function revokeVestingSchedule(address _user, uint256 index) public onlyOwner {
+    function revokeVestingSchedule(address _user, uint256 index) external onlyOwner {
         //TODO validation
 
         /*solium-disable-next-line security/no-block-members*/
         emit RevokeVestingSchedule(_user, index, now);
     }
 
-    function revokeVestingSchedules(address _user) public onlyOwner {
+    function revokeVestingSchedules(address _user) external onlyOwner {
         //TODO validation
         uint256 index = schedules[_user].index;
         users[index] = users[users.length - 1];
@@ -100,7 +100,7 @@ contract VestingEscrowWallet is Ownable {
         uint256 _vestingFrequency,
         uint256 _startDate
     )
-        public
+        external
         onlyOwner
     {
 

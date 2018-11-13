@@ -30,6 +30,7 @@ const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
 const MockBurnFactory = artifacts.require("./MockBurnFactory.sol");
 const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
+const VestingEscrowWallet = artifacts.require("./VestingEscrowWallet.sol");
 
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
@@ -65,6 +66,7 @@ let I_PolymathRegistry;
 let I_SecurityTokenRegistryProxy;
 let I_STRProxied;
 let I_MRProxied;
+let I_VestingEscrowWallet;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = web3.utils.toWei("250");
@@ -97,7 +99,7 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
 }
 
 
-async function deployPolyRegistryAndPolyToken(account_polymath, token_owner) {
+export async function deployPolyRegistryAndPolyToken(account_polymath, token_owner) {
     // Step 0: Deploy the PolymathRegistry
     I_PolymathRegistry = await PolymathRegistry.new({ from: account_polymath });
 
@@ -422,6 +424,16 @@ export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, 
     return new Array(I_MockWrongTypeBurnFactory);
 }
 
+export async function deployVestingEscrowWallet(accountPolymath, polyToken, treasury) {
+    I_VestingEscrowWallet = await VestingEscrowWallet.new(polyToken, treasury, { from: accountPolymath });
+    assert.notEqual(
+        I_VestingEscrowWallet.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "VestingEscrowWallet contract was not deployed"
+    );
+
+    return new Array(I_VestingEscrowWallet);
+}
 
 
 /// Helper function

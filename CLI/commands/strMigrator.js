@@ -4,14 +4,9 @@ var request = require('request-promise')
 var abis = require('./helpers/contract_abis');
 var contracts = require('./helpers/contract_addresses');
 var common = require('./common/common_functions');
-var global = require('./common/global');
+var gbl = require('./common/global');
 
-let network;
-let minNonce;
-
-async function executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, tokenAddress, onlyTickers, remoteNetwork) {
-    network = remoteNetwork;
-    await global.initialize(remoteNetwork);
+async function executeApp(toStrAddress, fromTrAddress, fromStrAddress) {
 
     common.logAsciiBull();
     console.log("****************************************");
@@ -150,26 +145,19 @@ async function step_register_tickers(tickers, securityTokenRegistry) {
         let totalGas = new web3.utils.BN(0);
         let migrateAll = false;
         for (const t of tickers) {
-            if (migrateAll || readlineSync.keyInYNStrict(`Do you want to migrate ${t.ticker}?`)) {
-                if (!migrateAll) {
-                    migrateAll = readlineSync.keyInYNStrict(`Do you want to migrate all tickers from here?`)
-                }
-                console.log(`\n`);
-                console.log(`-------- Migrating ticker No ${++i}--------`);
-                console.log(`Ticker: ${t.ticker}`);
-                console.log(``);
-                try {
-                    let modifyTickerAction = securityTokenRegistry.methods.modifyTicker(t.owner, t.ticker, t.name, t.registrationDate, t.expiryDate, false);
-                    let receipt = await common.sendTransactionWithNonce(Issuer, modifyTickerAction, defaultGasPrice, minNonce);
-                    console.log(minNonce);
-                    minNonce = minNonce + 1;
-                    //totalGas = totalGas.add(new web3.utils.BN(receipt.gasUsed));
-                    succeed.push(t);
-                } catch (error) {
-                    failed.push(t);
-                    console.log(chalk.red(`Transaction failed!!! `))
-                    console.log(error);
-                }
+            console.log(`\n`);
+            console.log(`-------- Migrating ticker No ${++i}--------`);
+            console.log(`Ticker: ${t.ticker}`);
+            console.log(``);
+            try {
+                let modifyTickerAction = securityTokenRegistry.methods.modifyTicker(t.owner, t.ticker, t.name, t.registrationDate, t.expiryDate, false);
+                let receipt = await common.sendTransaction(modifyTickerAction);
+                totalGas = totalGas.add(new web3.utils.BN(receipt.gasUsed));
+                succeed.push(t);
+            } catch (error) {
+                failed.push(t);
+                console.log(chalk.red(`Transaction failed!!! `))
+                console.log(error);
             }
         }
 
@@ -295,22 +283,10 @@ async function step_launch_STs(tokens, securityTokenRegistry, tokenAddress) {
             console.log(``);
             try {
                 // Deploying 2.0.0 Token
-                let newTokenAddress;
-                if (tokens.length == 1 && typeof tokenAddress !== 'undefined') {
-                    if (web3.utils.isAddress(tokenAddress)) {
-                        newTokenAddress = tokenAddress;
-                    } else {
-                        console.log(chalk.red('Given tokenAddress is not an address!!'));
-                        process.exit(0);
-                    }
-                } else {
-                    let deployTokenAction = STFactory.methods.deployToken(t.name, t.ticker, 18, t.details, Issuer.address, t.divisble, polymathRegistryAddress)
-                    let deployTokenReceipt = await common.sendTransactionWithNonce(Issuer, deployTokenAction, 25000000000, minNonce);
-                    minNonce = minNonce + 1;
-                    // Instancing Security Token
-                    newTokenAddress = deployTokenReceipt.logs[deployTokenReceipt.logs.length -1].address; //Last log is the ST creation
-                }
-                console.log(chalk.green(`The migrated to 2.0.0 Security Token address is ${newTokenAddress}`));
+                let deployTokenAction = STFactory.methods.deployToken(t.name, t.ticker, 18, t.details, Issuer.address, t.divisble, polymathRegistryAddress)
+                let deployTokenReceipt = await common.sendTransaction(deployTokenAction);
+                // Instancing Security Token
+                let newTokenAddress = deployTokenReceipt.logs[deployTokenReceipt.logs.length -1].address; //Last log is the ST creation
                 let newTokenABI = abis.securityToken();
                 let newToken = new web3.eth.Contract(newTokenABI, newTokenAddress); 
 
@@ -329,30 +305,26 @@ async function step_launch_STs(tokens, securityTokenRegistry, tokenAddress) {
                             new web3.utils.BN(gmtEvent._expiryTime), 
                             gmtEvent._canBuyFromSTO
                         );
-                        let modifyWhitelistReceipt = await common.sendTransactionWithNonce(Issuer, modifyWhitelistAction, defaultGasPrice, minNonce);
-                        minNonce = minNonce + 1;
-                        //totalGas = totalGas.add(new web3.utils.BN(modifyWhitelistReceipt.gasUsed));
+                        let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
+                        totalGas = totalGas.add(new web3.utils.BN(modifyWhitelistReceipt.gasUsed));
                     }  
                     // Minting tokens
                     for (const mintedEvent of t.mintedEvents) {
-                        let mintAction = newToken.methods.mint(mintedEvent.to, new web3.utils.BN(mintedEvent.amount));
-                        let mintReceipt = await common.sendTransactionWithNonce(Issuer, mintAction, defaultGasPrice, minNonce);  
-                        minNonce = minNonce + 1;
-                        //totalGas = totalGas.add(new web3.utils.BN(mintReceipt.gasUsed));
+                        let mintAction = newToken.methods.mint(mintedEvent.returnValues.to, new web3.utils.BN(mintedEvent.returnValues.value));
+                        let mintReceipt = await common.sendTransaction(mintAction);  
+                        totalGas = totalGas.add(new web3.utils.BN(mintReceipt.gasUsed));
                     }
                 }
                 
                 // Transferring onweship to the original owner
                 let transferOwnershipAction = newToken.methods.transferOwnership(t.owner);
-                let transferOwnershipReceipt = await common.sendTransactionWithNonce(Issuer, transferOwnershipAction, defaultGasPrice, minNonce);
-                minNonce = minNonce + 1;
-                //totalGas = totalGas.add(new web3.utils.BN(transferOwnershipReceipt.gasUsed));
+                let transferOwnershipReceipt = await common.sendTransaction(transferOwnershipAction);
+                totalGas = totalGas.add(new web3.utils.BN(transferOwnershipReceipt.gasUsed));
 
                 // Adding 2.0.0 Security Token to SecurityTokenRegistry
                 let modifySecurityTokenAction = securityTokenRegistry.methods.modifySecurityToken(t.name, t.ticker, t.owner, newTokenAddress, t.details, t.deployedAt);
-                let modifySecurityTokenReceipt = await common.sendTransactionWithNonce(Issuer, modifySecurityTokenAction, defaultGasPrice, minNonce);
-                minNonce = minNonce + 1;
-                //totalGas = totalGas.add(new web3.utils.BN(modifySecurityTokenReceipt.gasUsed));
+                let modifySecurityTokenReceipt = await common.sendTransaction(modifySecurityTokenAction);
+                totalGas = totalGas.add(new web3.utils.BN(modifySecurityTokenReceipt.gasUsed));
                 
                 succeed.push(t);
                 console.log('done');
@@ -416,7 +388,7 @@ async function getLogsFromEtherscan(_address, _fromBlock, _toBlock, _eventSignat
 }
 
 async function getABIfromEtherscan(_address) {
-    let urlDomain = network == 'kovan' ? 'api-kovan' : 'api';
+    let urlDomain = remoteNetwork == 'kovan' ? 'api-kovan' : 'api';
     const options = {
         url: `https://${urlDomain}.etherscan.io/api`,
         qs: {
@@ -450,7 +422,7 @@ async function getBlockfromEtherscan(_blockNumber) {
 }
 
 module.exports = {
-    executeApp: async function(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, tokenAddress, onlyTickers, remoteNetwork) {
-        return executeApp(toStrAddress, fromTrAddress, fromStrAddress, singleTicker, tokenAddress, onlyTickers, remoteNetwork);
+    executeApp: async function(toStrAddress, fromTrAddress, fromStrAddress) {
+        return executeApp(toStrAddress, fromTrAddress, fromStrAddress);
     }
 };

@@ -2,7 +2,6 @@
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
-var global = require('./common/global');
 
 // Load contract artifacts
 var contracts = require('./helpers/contract_addresses');
@@ -47,8 +46,7 @@ async function setup() {
 }
 
 // Start function
-async function executeApp(remoteNetwork) {
-    await global.initialize(remoteNetwork);
+async function executeApp() {
 
     common.logAsciiBull();
     console.log(chalk.yellow(`******************************************`));
@@ -283,7 +281,7 @@ async function archiveModule() {
     if (index != -1) {
         console.log("\nSelected: ",options[index]);
         let archiveModuleAction = securityToken.methods.archiveModule(modules[index].module.address);
-        await common.sendTransaction(Issuer, archiveModuleAction, defaultGasPrice, 0, 2);
+        await common.sendTransaction(archiveModuleAction, {factor: 2});
         console.log(chalk.green(`\nSuccessfully archived ${modules[index].module.name}.`));
     }
     backToMenu()
@@ -315,7 +313,7 @@ async function unarchiveModule() {
     if (index != -1) {
         console.log("\nSelected: ",options[index]);
         let unarchiveModuleAction = securityToken.methods.unarchiveModule(modules[index].module.address);
-        await common.sendTransaction(Issuer, unarchiveModuleAction, defaultGasPrice, 0, 2);
+        await common.sendTransaction(unarchiveModuleAction, {factor: 2});
         console.log(chalk.green(`\nSuccessfully unarchived ${modules[index].module.name}.`));
     }
     backToMenu()
@@ -348,7 +346,7 @@ async function removeModule() {
     if (index != -1) {
         console.log("\nSelected: ",options[index]);
         let removeModuleAction = securityToken.methods.removeModule(modules[index].module.address);
-        await common.sendTransaction(Issuer, removeModuleAction, defaultGasPrice, 0, 2);
+        await common.sendTransaction(defaultGasPrice, {factor: 2});
         console.log(chalk.green(`\nSuccessfully removed ${modules[index].module.name}.`));
     }
     backToMenu()
@@ -368,7 +366,7 @@ async function whitelist() {
         let investor = readlineSync.question(chalk.yellow(`Enter the address to be whitelisted: `));
         let now = await latestTime();
         let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(investor, now, now, now + 31556952, true);
-        await common.sendTransaction(Issuer, modifyWhitelistAction, defaultGasPrice);
+        await common.sendTransaction(modifyWhitelistAction);
         console.log(chalk.green(`\nWhitelisting successful for ${investor}.`));
     } catch (e) {
         console.log(e);
@@ -390,7 +388,7 @@ async function mintTokens() {
     let _amount = readlineSync.question(chalk.yellow(`Enter the amount of tokens to mint: `));
     try {
         let mintAction = securityToken.methods.mint(_investor, web3.utils.toWei(_amount));
-        await common.sendTransaction(Issuer, mintAction, defaultGasPrice);
+        await common.sendTransaction(mintAction);
         console.log(chalk.green(`\nMinting Successful.`));
     } catch (e) {
         console.log(e);
@@ -411,7 +409,7 @@ async function freezeMinting() {
 
     if (await featureRegistry.methods.getFeatureStatus('freezeMintingAllowed').call()) {
         let freezeMintingAction = securityToken.methods.freezeMinting();
-        await common.sendTransaction(Issuer, freezeMintingAction, defaultGasPrice);
+        await common.sendTransaction(freezeMintingAction);
         console.log(chalk.green(`\nFreeze minting was successful.`));
     } else {
         console.log(chalk.red(`\nFreeze minting is not allowed by Polymath.`));
@@ -441,7 +439,7 @@ async function polyBalance(_user) {
 }
 
 module.exports = {
-    executeApp: async function(remoteNetwork) {
-          return executeApp(remoteNetwork);
+    executeApp: async function() {
+          return executeApp();
       }
 }

@@ -8,6 +8,7 @@ var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
 var whitelist = require('./commands/whitelist');
 var multimint = require('./commands/multi_mint');
+var accredit = require('./commands/accredit');
 var transfer_ownership = require('./commands/transfer_ownership');
 var dividends_manager = require('./commands/dividends_manager');
 var transfer_manager = require('./commands/transfer_manager');
@@ -139,7 +140,7 @@ program
   .description('Runs accredit')
   .action(async function(tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    shell.exec(`${__dirname}/commands/scripts/script.sh Accredit ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
+    await accredit.executeApp(tokenSymbol, batchSize);
   });
 
 program

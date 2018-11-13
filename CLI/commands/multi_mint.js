@@ -84,11 +84,17 @@ async function readCsv() {
 }
 
 async function saveInBlockchain() {
+  let gtmModules;
 
   try {
-    await securityToken.methods.getModulesByType(3).call();
+    gtmModules = await securityToken.methods.getModulesByType(3).call();
   } catch (e) {
     console.log("Minting of tokens is only allowed before the STO get attached", e)
+    process.exit(0)
+  }
+
+  if (!gtmModules.length) {
+    console.log("Minting of tokens is only allowed before the STO get attached")
     process.exit(0)
   }
 

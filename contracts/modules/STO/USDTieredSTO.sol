@@ -192,6 +192,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _reserveWallet,
         address _usdToken
     ) public onlyFactory {
+        require(endTime == 0, "Already configured");
         _modifyTimes(_startTime, _endTime);
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
         // NB - _setFundRaiseType must come before modifyAddresses

@@ -1,23 +1,14 @@
-const duration = {
-  seconds: function (val) { return val; },
-  minutes: function (val) { return val * this.seconds(60); },
-  hours: function (val) { return val * this.minutes(60); },
-  days: function (val) { return val * this.hours(24); },
-  weeks: function (val) { return val * this.days(7); },
-  years: function (val) { return val * this.days(365); },
-};
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
-var global = require('./common/global');
+var gbl = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
 // App flow
 let currentContract = null;
 
-async function executeApp(remoteNetwork) {
-  await global.initialize(remoteNetwork);
+async function executeApp() {
 
   common.logAsciiBull();
   console.log("*********************************************");
@@ -108,8 +99,8 @@ async function strActions() {
         let tickerExpiryDate = readlineSync.question(`Enter the Unix Epoch time on wich the ticker will expire: `);
         let tickerStatus = readlineSync.keyInYNStrict(`Is the token deployed?`);
         let modifyTickerAction = currentContract.methods.modifyTicker(tickerOwner, tickerToModify, tickerSTName, tickerRegistrationDate, tickerExpiryDate, tickerStatus);
-        await common.sendTransaction(Issuer, modifyTickerAction, defaultGasPrice, 0, 1.5);
-        console.log(chalk.green(`Ticker has been updated successfuly`));
+        await common.sendTransaction(modifyTickerAction, {factor: 1.5});
+        console.log(chalk.green(`Ticker has been updated successfully`));
         break;
       case 'Remove Ticker':
         let tickerToRemove = readlineSync.question('Enter the token symbol that you want to remove: ');
@@ -118,8 +109,8 @@ async function strActions() {
           console.log(chalk.yellow(`${ticker} does not exist.`));
         } else {
           let removeTickerAction = currentContract.methods.removeTicker(tickerToRemove);
-          await common.sendTransaction(Issuer, removeTickerAction, defaultGasPrice, 0, 3);
-          console.log(chalk.green(`Ticker has been removed successfuly`));
+          await common.sendTransaction(removeTickerAction, {factor: 3});
+          console.log(chalk.green(`Ticker has been removed successfully`));
         }
         break;
       case 'Modify SecurityToken':
@@ -159,35 +150,35 @@ async function strActions() {
         let tokenDetails = readlineSync.question(`Enter the token details: `);
         let deployedAt = readlineSync.questionInt(`Enter the Unix Epoch timestamp at which security token was deployed: `);
         let modifySTAction = currentContract.methods.modifySecurityToken(name, ticker, owner, stAddress, tokenDetails, deployedAt);
-        await common.sendTransaction(Issuer, modifySTAction, defaultGasPrice, 0, 1.5);
-        console.log(chalk.green(`Security Token has been updated successfuly`));
+        await common.sendTransaction(modifySTAction, {factor: 1.5});
+        console.log(chalk.green(`Security Token has been updated successfully`));
         break;
       case 'Change Expiry Limit':
         let currentExpiryLimit = await currentContract.methods.getExpiryLimit().call();
         console.log(chalk.yellow(`Current expiry limit is ${Math.floor(parseInt(currentExpiryLimit)/60/60/24)} days`));
-        let newExpiryLimit = duration.days(readlineSync.questionInt('Enter a new value in days for expiry limit: '));
+        let newExpiryLimit = gbl.constants.DURATION.days(readlineSync.questionInt('Enter a new value in days for expiry limit: '));
         let changeExpiryLimitAction = currentContract.methods.changeExpiryLimit(newExpiryLimit);
-        let changeExpiryLimitReceipt = await common.sendTransaction(Issuer, changeExpiryLimitAction, defaultGasPrice);
+        let changeExpiryLimitReceipt = await common.sendTransaction(changeExpiryLimitAction);
         let changeExpiryLimitEvent = common.getEventFromLogs(currentContract._jsonInterface, changeExpiryLimitReceipt.logs, 'ChangeExpiryLimit');
-        console.log(chalk.green(`Expiry limit was changed successfuly. New limit is ${Math.floor(parseInt(changeExpiryLimitEvent._newExpiry)/60/60/24)} days\n`));
+        console.log(chalk.green(`Expiry limit was changed successfully. New limit is ${Math.floor(parseInt(changeExpiryLimitEvent._newExpiry)/60/60/24)} days\n`));
         break;
       case 'Change registration fee':
         let currentRegFee = web3.utils.fromWei(await currentContract.methods.getTickerRegistrationFee().call());
         console.log(chalk.yellow(`\nCurrent ticker registration fee is ${currentRegFee} POLY`));
         let newRegFee = web3.utils.toWei(readlineSync.questionInt('Enter a new value in POLY for ticker registration fee: ').toString());
         let changeRegFeeAction = currentContract.methods.changeTickerRegistrationFee(newRegFee);
-        let changeRegFeeReceipt = await common.sendTransaction(Issuer, changeRegFeeAction, defaultGasPrice);
+        let changeRegFeeReceipt = await common.sendTransaction(changeRegFeeAction);
         let changeRegFeeEvent = common.getEventFromLogs(currentContract._jsonInterface, changeRegFeeReceipt.logs, 'ChangeTickerRegistrationFee');
-        console.log(chalk.green(`Fee was changed successfuly. New fee is ${web3.utils.fromWei(changeRegFeeEvent._newFee)} POLY\n`));
+        console.log(chalk.green(`Fee was changed successfully. New fee is ${web3.utils.fromWei(changeRegFeeEvent._newFee)} POLY\n`));
         break;
       case 'Change ST launch fee':
       let currentLaunchFee = web3.utils.fromWei(await currentContract.methods.getSecurityTokenLaunchFee().call());
         console.log(chalk.yellow(`\nCurrent ST launch fee is ${currentLaunchFee} POLY`));
         let newLaunchFee = web3.utils.toWei(readlineSync.questionInt('Enter a new value in POLY for ST launch fee: ').toString());
         let changeLaunchFeeAction = currentContract.methods.changeSecurityLaunchFee(newLaunchFee);
-        let changeLaunchFeeReceipt = await common.sendTransaction(Issuer, changeLaunchFeeAction, defaultGasPrice);
+        let changeLaunchFeeReceipt = await common.sendTransaction(changeLaunchFeeAction);
         let changeLaunchFeeEvent = common.getEventFromLogs(currentContract._jsonInterface, changeLaunchFeeReceipt.logs, 'ChangeSecurityLaunchFee');
-        console.log(chalk.green(`Fee was changed successfuly. New fee is ${web3.utils.fromWei(changeLaunchFeeEvent._newFee)} POLY\n`));
+        console.log(chalk.green(`Fee was changed successfully. New fee is ${web3.utils.fromWei(changeLaunchFeeEvent._newFee)} POLY\n`));
         break;
       case 'CANCEL':
         process.exit(0);
@@ -197,7 +188,7 @@ async function strActions() {
 }
 
 module.exports = {
-  executeApp: async function(remoteNetwork) {
-        return executeApp(remoteNetwork);
+  executeApp: async function() {
+        return executeApp();
     }
 }

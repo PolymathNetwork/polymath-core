@@ -1,8 +1,8 @@
 pragma solidity ^0.4.24;
 
-import "./IBurn.sol";
-import "../Module.sol";
-import "../../interfaces/ISecurityToken.sol";
+import "../../Burn/IBurn.sol";
+import "../../Module.sol";
+import "../../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
@@ -33,17 +33,18 @@ contract TrackedRedemption is IBurn, Module {
     }
 
     /**
-     * @notice Redeem tokens and track redemptions
+     * @notice To redeem tokens and track redemptions
      * @param _value The number of tokens to redeem
      */
     function redeemTokens(uint256 _value) public {
         ISecurityToken(securityToken).burnFromWithData(msg.sender, _value, "");
         redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
+        /*solium-disable-next-line security/no-block-members*/
         emit Redeemed(msg.sender, _value, now);
     }
 
     /**
-     * @notice Return the permissions flag that are associated with CountTransferManager
+     * @notice Returns the permissions flag that are associated with CountTransferManager
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](0);

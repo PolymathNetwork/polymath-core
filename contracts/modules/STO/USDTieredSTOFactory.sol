@@ -23,13 +23,14 @@ contract USDTieredSTOFactory is ModuleFactory {
         version = "1.0.0";
         name = "USDTieredSTO";
         title = "USD Tiered STO";
-        description = "USD Tiered STO";
+        /*solium-disable-next-line max-len*/
+        description = "It allows both accredited and non-accredited investors to contribute into the STO. Non-accredited investors will be capped at a maximum investment limit (as a default or specific to their jurisdiction). Tokens will be sold according to tiers sequentially & each tier has its own price and volume of tokens to sell. Upon receipt of funds (ETH, POLY or DAI), security tokens will automatically transfer to investor’s wallet address";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
@@ -40,10 +41,11 @@ contract USDTieredSTOFactory is ModuleFactory {
         address usdTieredSTO = IUSDTieredSTOProxy(USDTieredSTOProxyAddress).deploySTO(msg.sender, address(polyToken), address(this));
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == IUSDTieredSTOProxy(USDTieredSTOProxyAddress).getInitFunction(usdTieredSTO), "Invalid data");
+        /*solium-disable-next-line security/no-low-level-calls*/
         require(address(usdTieredSTO).call(_data), "Unsuccessfull call");
+        /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(usdTieredSTO, getName(), address(this), msg.sender, setupCost, now);
         return address(usdTieredSTO);
-        // return 0xca35b7d915458ef540ade6068dfe2f44e8fa733c;
     }
 
     /**
@@ -56,42 +58,7 @@ contract USDTieredSTOFactory is ModuleFactory {
     }
 
     /**
-     * @notice Get the name of the Module
-     */
-    function getName() public view returns(bytes32) {
-        return name;
-    }
-
-    /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() external view returns(string) {
-        return description;
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() external view returns(string) {
-        return title;
-    }
-
-    /**
-     * @notice Get the version of the Module
-     */
-    function getVersion() external view returns(string) {
-        return version;
-    }
-
-    /**
-     * @notice Get the setup cost of the module
-     */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
-    }
-
-    /**
-     * @notice Get the Instructions that helped to used the module
+     * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
         return "Initialises a USD tiered STO.";

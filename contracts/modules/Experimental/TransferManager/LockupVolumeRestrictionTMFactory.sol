@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
-import "./VolumeRestrictionTransferManager.sol";
-import "../ModuleFactory.sol";
+import "./../../ModuleFactory.sol";
+import "./LockupVolumeRestrictionTM.sol";
 
 /**
  * @title Factory for deploying ManualApprovalTransferManager module
  */
-contract VolumeRestrictionTransferManagerFactory is ModuleFactory {
+contract LockupVolumeRestrictionTMFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -19,23 +19,24 @@ contract VolumeRestrictionTransferManagerFactory is ModuleFactory {
       ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
-        name = "VolumeRestrictionTransferManager";
-        title = "Volume Restriction Transfer Manager";
+        name = "LockupVolumeRestrictionTM";
+        title = "Lockup Volume Restriction Transfer Manager";
         description = "Manage transfers using lock ups over time";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        address volumeRestrictionTransferManager = new VolumeRestrictionTransferManager(msg.sender, address(polyToken));
-        emit GenerateModuleFromFactory(address(volumeRestrictionTransferManager), getName(), address(this), msg.sender, now);
-        return address(volumeRestrictionTransferManager);
+        LockupVolumeRestrictionTM lockupVolumeRestrictionTransferManager = new LockupVolumeRestrictionTM(msg.sender, address(polyToken));
+        /*solium-disable-next-line security/no-block-members*/
+        emit GenerateModuleFromFactory(address(lockupVolumeRestrictionTransferManager), getName(), address(this), msg.sender, now);
+        return address(lockupVolumeRestrictionTransferManager);
     }
 
     /**
@@ -47,44 +48,9 @@ contract VolumeRestrictionTransferManagerFactory is ModuleFactory {
         res[0] = 2;
         return res;
     }
-
+   
     /**
-     * @notice Get the name of the Module
-     */
-    function getName() public view returns(bytes32) {
-        return name;
-    }
-
-    /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() external view returns(string) {
-        return description;
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() external view returns(string) {
-        return title;
-    }
-
-    /**
-     * @notice Get the version of the Module
-     */
-    function getVersion() external view returns(string) {
-        return version;
-    }
-
-    /**
-     * @notice Get the setup cost of the module
-     */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
-    }
-
-    /**
-     * @notice Get the Instructions that helped to used the module
+     * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
         return "Allows an issuer to set lockup periods for user addresses, with funds distributed over time. Init function takes no parameters.";

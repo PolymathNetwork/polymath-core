@@ -15,3 +15,8 @@ coverageEnv
 /flat
 /tempPoly
 .eslintrc.js
+package-lock.json
+bridge.log
+.node-xml*
+.solcover.js.bk
+allFiredEvents

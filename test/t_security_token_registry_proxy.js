@@ -257,5 +257,13 @@ contract("SecurityTokenRegistryProxy", accounts => {
             assert.equal(await readStorage(c.address, 12), I_SecurityTokenRegistry.address, "Implemnted address is not matched");
             I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
         });
+
+        it("Should get the version", async() => {
+            assert.equal(await I_SecurityTokenRegistryProxy.version.call({ from: account_polymath_new }), "1.2.0");
+        });
+
+        it("Should get the implementation address", async() => {
+            assert.equal(await I_SecurityTokenRegistryProxy.implementation.call({ from: account_polymath_new }), I_SecurityTokenRegistry.address);
+        })
     });
 });

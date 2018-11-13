@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
-import "./WeightedVoteCheckpoint.sol";
-import "../ModuleFactory.sol";
+import "./ScheduledCheckpoint.sol";
+import "../../ModuleFactory.sol";
 
 /**
- * @title Factory for deploying WeightedVoteCheckpoint module
+ * @title Factory for deploying EtherDividendCheckpoint module
  */
-contract WeightedVoteCheckpointFactory is ModuleFactory {
+contract ScheduledCheckpointFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -19,12 +19,11 @@ contract WeightedVoteCheckpointFactory is ModuleFactory {
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
-        name = "WeightedVoteCheckpoint";
-        title = "Weighted Vote Checkpoint";
-        description = "Weighted votes based on token amount";
+        name = "ScheduledCheckpoint";
+        title = "Schedule Checkpoints";
+        description = "Allows you to schedule checkpoints in the future";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-
     }
 
     /**
@@ -32,17 +31,20 @@ contract WeightedVoteCheckpointFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
-        if (setupCost > 0)
+        if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        return address(new WeightedVoteCheckpoint(msg.sender, address(polyToken)));
+        address scheduledCheckpoint = new ScheduledCheckpoint(msg.sender, address(polyToken));
+        emit GenerateModuleFromFactory(scheduledCheckpoint, getName(), address(this), msg.sender, setupCost, now);
+        return scheduledCheckpoint;
     }
 
-     /**
+    /**
      * @notice Type of the Module factory
      */
     function getTypes() external view returns(uint8[]) {
-        uint8[] memory res = new uint8[](1);
+        uint8[] memory res = new uint8[](2);
         res[0] = 4;
+        res[1] = 2;
         return res;
     }
 
@@ -63,7 +65,7 @@ contract WeightedVoteCheckpointFactory is ModuleFactory {
     /**
      * @notice Get the title of the Module
      */
-    function getTitle() external view returns(string) {
+    function getTitle() external  view returns(string) {
         return title;
     }
 
@@ -85,14 +87,16 @@ contract WeightedVoteCheckpointFactory is ModuleFactory {
      * @notice Get the Instructions that helped to used the module
      */
     function getInstructions() external view returns(string) {
-        return "Create a vote which allows token holders to vote on an issue with a weight proportional to their balances at the point the vote is created.";
+        return "Schedule a series of future checkpoints by specifying a start time and interval of each checkpoint";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
     function getTags() external view returns(bytes32[]) {
-        bytes32[] memory availableTags = new bytes32[](0);
+        bytes32[] memory availableTags = new bytes32[](2);
+        availableTags[0] = "Scheduled";
+        availableTags[1] = "Checkpoint";
         return availableTags;
     }
 }

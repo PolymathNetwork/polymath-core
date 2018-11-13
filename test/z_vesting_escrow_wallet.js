@@ -14,9 +14,9 @@ contract('VestingEscrowWallet', accounts => {
     let account_polymath;
     let account_issuer;
     let token_owner;
-    let account_user1;
-    let account_user2;
-    let account_user3;
+    let account_beneficiary1;
+    let account_beneficiary2;
+    let account_beneficiary3;
 
     let message = "Transaction Should Fail!";
 
@@ -32,9 +32,9 @@ contract('VestingEscrowWallet', accounts => {
 
         token_owner = account_issuer;
 
-        account_user1 = accounts[7];
-        account_user2 = accounts[8];
-        account_user3 = accounts[9];
+        account_beneficiary1 = accounts[7];
+        account_beneficiary2 = accounts[8];
+        account_beneficiary3 = accounts[9];
 
         // Step 1: Deploy the PolyToken
         [I_PolymathRegistry, I_PolyToken] = await deployPolyRegistryAndPolyToken(account_polymath, token_owner);
@@ -55,21 +55,26 @@ contract('VestingEscrowWallet', accounts => {
 
     describe("Adding Vesting Schedule", async () => {
 
-        it("Should add Vesting Schedule to the user address", async () => {
-            const tx = await I_VestingEscrowWallet.addVestingSchedule(account_user1, 100000, duration.years(4), duration.years(1), latestTime(), {from: account_polymath});
+        it("Should add Vesting Schedule to the beneficiary address", async () => {
+            let numberOfTokens = 100000;
+            let vestingDuration = duration.years(4);
+            let vestingFrequency = duration.years(1);
+            let startDate = latestTime();
+            const tx = await I_VestingEscrowWallet.addVestingSchedule(
+                account_beneficiary1,
+                numberOfTokens,
+                vestingDuration,
+                vestingFrequency,
+                startDate,
+                {from: account_polymath}
+            );
 
-            console.log("=====================================================");
-            console.log(tx.logs);
-            console.log("=====================================================");
-
-            // assert.equal(tx.logs[2].args._types[0].toNumber(), 4, "ScheduledCheckpoint doesn't get deployed");
-            // assert.equal(tx.logs[2].args._types[1].toNumber(), 2, "ScheduledCheckpoint doesn't get deployed");
-            // assert.equal(
-            //     web3.utils.toAscii(tx.logs[2].args._name)
-            //         .replace(/\u0000/g, ''),
-            //     "ScheduledCheckpoint",
-            //     "ScheduledCheckpoint module was not added"
-            // );
+            let log = tx.logs[0];
+            assert.equal(log.args._beneficiary, account_beneficiary1);
+            assert.equal(log.args._numberOfTokens, numberOfTokens);
+            assert.equal(log.args._vestingDuration, vestingDuration);
+            assert.equal(log.args._vestingFrequency, vestingFrequency);
+            assert.equal(log.args._startDate, startDate);
         });
 
 

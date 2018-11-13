@@ -6,10 +6,6 @@ cache:
   - node_modules
 matrix:
   fast_finish: true
-before_install:	
-  - echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum	
-  - sudo apt-get -y update --allow-unauthenticated
-  - sudo apt-get -y install solc
 before_script:
   - truffle version
   - wget -O node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js

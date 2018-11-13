@@ -3,7 +3,7 @@
 const shell = require('shelljs');
 var faucet = require('./commands/faucet');
 var investor_portal = require('./commands/investor_portal');
-var module_manager = require('./commands/module_manager');
+var token_manager = require('./commands/token_manager');
 var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
 var transfer_ownership = require('./commands/transfer_ownership');
@@ -55,12 +55,12 @@ program
   });
 
 program
-  .command('module_manager')
-  .alias('mm')
-  .description('View modules attached to a token and their status')
+  .command('token_manager')
+  .alias('stm')
+  .description('Manage your Security Tokens, mint tokens, add modules and change config')
   .action(async function() {
     await gbl.initialize(program.remoteNode);
-    await module_manager.executeApp();
+    await token_manager.executeApp();
   });
 
 program

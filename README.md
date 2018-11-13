@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/PolymathNetwork/polymath-core.svg?branch=master)](https://travis-ci.org/PolymathNetwork/polymath-core)
 [![Coverage Status](https://coveralls.io/repos/github/PolymathNetwork/polymath-core/badge.svg?branch=master)](https://coveralls.io/github/PolymathNetwork/polymath-core?branch=master)
 [![Gitter](https://img.shields.io/badge/chat-gitter-green.svg)](https://gitter.im/PolymathNetwork/Lobby)
-[![Telegram](https://img.shields.io/badge/50k+-telegram-blue.svg)](https://gitter.im/PolymathNetwork/Lobby)
+[![Telegram](https://img.shields.io/badge/50k+-telegram-blue.svg)](https://gitter.im/PolymathNetwork/Lobby) [![Greenkeeper badge](https://badges.greenkeeper.io/PolymathNetwork/polymath-core.svg)](https://greenkeeper.io/)
 
 ![Polymath logo](Polymath.png)
 
@@ -170,32 +170,65 @@ node CLI/polymath-cli dividends_manager
 
 # Setting up Polymath Core
 
-### v2.0.0 KOVAN
+### v2.0.0 MAINNET
 
     ----------------------- Polymath Network Smart Contracts: -----------------------
-    PolymathRegistry:                     0xad09dc7939f09601674c69a07132bc642abeeb10
-    SecurityTokenRegistry (Proxy):        0xef600e4904fe0a2f4587ae94bcbed4c9e9aeb37a
-    ModuleRegistry (Proxy):               0xe8e30fd7d65a5e3b1134ce29d3afb49cc27b7086
-    FeatureRegistry:                      0x35a8f211763be879541656d692f057d108eec9aa
+    PolymathRegistry:                     0xdfabf3e4793cd30affb47ab6fa4cf4eef26bbc27
+    SecurityTokenRegistry (Proxy):        0x240f9f86b1465bf1b8eb29bc88cbf65573dfdd97
+    ModuleRegistry (Proxy):               0x4566d68ea96fc2213f2446f0dd0f482146cee96d
+    FeatureRegistry:                      0xa3eacb03622bf1513880892b7270d965f693ffb5
+
+    ETHOracle:                            0x60055e9a93aae267da5a052e95846fa9469c0e7a
+    POLYOracle:                           0x52cb4616E191Ff664B0bff247469ce7b74579D1B
+
+    STFactory:                            0x47da34f192d3fd946fd6ce7494e9eedf171a1208
+    GeneralTransferManagerFactory:        0xdc95598ef2bbfdb66d02d5f3eea98ea39fbc8b26
+    GeneralPermissionManagerFactory:      0xf0aa1856360277c60052d6095c5b787b01388cdd
+
+    CappedSTOFactory:                     0x77d89663e8819023a87bfe2bc9baaa6922c0e57c
+    USDTieredSTOFactory:                  0x5a3a30bddae1f857a19b1aed93b5cdb3c3da809a
+    USDTieredSTOProxyFactory:             0x4965930872da851dc81275b142920de3c976de74
+
+    CountTransferManagerFactory:          0xd9fd7e34d6e2c47a69e02131cf8554d52c3445d5
+    PercentageTransferManagerFactory:     0xe6267a9c0a227d21c95b782b1bd32bb41fc3b43b
+    ManualApprovalTransferManagerFactory: 0xda89fe5b254c04e2ee10d5acb24ed72f1d60ceed
+    EtherDividendCheckpointFactory:       0x968c74c52f15b2de323eca8c677f6c9266bfefd6
+    ERC20DividendCheckpointFactory:       0x82f9f1ab41bacb1433c79492e54bf13bccd7f9ae
+    ---------------------------------------------------------------------------------
+    
+New SecurityTokenRegistry 0x538136ed73011a766bf0a126a27300c3a7a2e6a6
+(fixed bug with getTickersByOwner())
+
+
+### v2.0.0 KOVAN
+
+New Kovan PolyTokenFaucet: 0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792
+
+    ----------------------- Polymath Network Smart Contracts: -----------------------
+    PolymathRegistry:                     0x5b215a7d39ee305ad28da29bf2f0425c6c2a00b3
+    SecurityTokenRegistry (Proxy):        0x91110c2f67e2881a8540417be9eadf5bc9f2f248
+    ModuleRegistry (Proxy):               0xde6d19d7a68d453244227b6ccc5d8e6c2314627a
+    FeatureRegistry:                      0x8967a7cfc4b455398be2356cd05cd43b7a39697e
 
     ETHOracle:                            0xCE5551FC9d43E9D2CC255139169FC889352405C8
     POLYOracle:                           0x461d98EF2A0c7Ac1416EF065840fF5d4C946206C
 
-    STFactory:                            0x1f08b1473fbb5bfc2bbaea99520291b6120be529
-    GeneralTransferManagerFactory:        0xc100ec8f8e397b426a52a5c7acc02892e1d92a53
-    GeneralPermissionManagerFactory:      0x96d7d693edd4a2ae773e4dd9739d997f0c38738f
+    STFactory:                            0x22f56100c6f18b656dbf1b156334206326fc672a
+    GeneralTransferManagerFactory:        0x650e9507e983077d6f822472a7dcc37626d55c7f
+    GeneralPermissionManagerFactory:      0xbf0bd6305b523ce055baa6dfaa9676d6b9e6090b
 
-    CappedSTOFactory:                     0xfde869904bbc1e881601b2ebde4a77ba3808dfad
-    USDTieredSTOFactory:                  0x01c17f387224148931ce03788e61836e7fe5d753
-    USDTieredSTOProxyFactory:             0x63d0371a3dfa419a50670770b55618f6b5269057
+    CappedSTOFactory:                     0xa4a24780b93a378eb25ec4bfbf93bc8e79d7eeeb
+    USDTieredSTOFactory:                  0x9106d7fbbd2996ef787913876341d0070cbdfc95
+    USDTieredSTOProxyFactory:             0xb004ff6893b95dc8a19b9e09b2920a44a609bae3
 
-    CountTransferManagerFactory:          0x6691d4e4f8e48c7a3df04c25088169cb101b2882
-    PercentageTransferManagerFactory:     0x62dd693e8864874d3d806286983e9da41cd5a035
-    ManualApprovalTransferManagerFactory: 0x20ba9fd6907ff42f033df5cfdbaced6426b5e682
-    EtherDividendCheckpointFactory:       0xceba16202ce878d1c01a1f5bf3f219b58d712d5f
-    ERC20DividendCheckpointFactory:       0x5c0051ffdc9655ae7b87a8a79542178be2e973e4
+    CountTransferManagerFactory:          0xc7cf0c1ddc85c18672951f9bfeb7163ecc8f0e2f
+    PercentageTransferManagerFactory:     0xfea5fcb254bcb4ada0f86903ff822d6372325cb1
+    ManualApprovalTransferManagerFactory: 0x8e96e7199b9ba096d666033f058ebb0050786baf
+    EtherDividendCheckpointFactory:       0x18ae137fc6581e121f3d37ed85c423dbc3c9b964
+    ERC20DividendCheckpointFactory:       0x8c724a1504643e02bb02b23cdd414da637872c80
     ---------------------------------------------------------------------------------
     
+
 
 
 ## Mainnet

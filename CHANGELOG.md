@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# v2.1.0
+# v2.1.0 - Release Candidate
 
 [__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
 
@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file.
 ## Removed
 * Individual mappings for tier data removed in UDSTSTO.
 
-# v1.5.0 - Release Candidate
+# v1.5.0
 
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
@@ -63,7 +63,7 @@ All notable changes to this project will be documented in this file.
 
 ======
 
-# v1.4.1 - Release Candidate
+# v1.4.1 
 
 [__1.4.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 
@@ -87,7 +87,7 @@ All notable changes to this project will be documented in this file.
 * Fix #238: make beneficial investments optionally supported (default to not
 allowed)
 
-# v1.4.0 - Release candidate
+# v1.4.0 
 
 [__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 

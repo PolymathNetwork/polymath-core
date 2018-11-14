@@ -65,7 +65,6 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     /** @notice Used to verify the transfer transaction and prevent locked up tokens from being transferred
      * @param _from Address of the sender
      * @param _amount The amount of tokens to transfer
-     * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
      */
     function verifyTransfer(address  _from, address /* _to*/, uint256  _amount, bytes /* _data */, bool /*_isTransfer*/) public returns(Result) {
         // only attempt to verify the transfer if the token is unpaused, this isn't a mint txn, and there exists a lockup for this user
@@ -136,7 +135,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
             "Input array length mismatch"
         );
 
-        for (uint i = 0; i < _userAddresses.length; i++) {
+        for (uint256 i = 0; i < _userAddresses.length; i++) {
             addLockUp(_userAddresses[i], _lockupAmounts[i], _startTimes[i], _lockUpPeriodsSeconds[i], _releaseFrequenciesSeconds[i]);
         }
 
@@ -172,7 +171,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
      */
     function removeLockUpMulti(address[] _userAddresses, uint256[] _lockupIndexes) external withPerm(ADMIN) {
         require(_userAddresses.length == _lockupIndexes.length, "Array length mismatch");
-        for (uint i = 0; i < _userAddresses.length; i++) {
+        for (uint256 i = 0; i < _userAddresses.length; i++) {
             removeLockUp(_userAddresses[i], _lockupIndexes[i]);
         }
     }
@@ -274,7 +273,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
      * @notice Get the length of the lockups array for a specific user address
      * @param _userAddress Address of the user whose tokens should be locked up
      */
-    function getLockUpsLength(address _userAddress) public view returns (uint) {
+    function getLockUpsLength(address _userAddress) public view returns (uint256) {
         return lockUps[_userAddress].length;
     }
 
@@ -283,7 +282,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
      * @param _userAddress Address of the user whose tokens should be locked up
      * @param _lockUpIndex The index of the LockUp to edit for the given userAddress
      */
-    function getLockUp( address _userAddress, uint _lockUpIndex) public view returns (
+    function getLockUp(address _userAddress, uint256 _lockUpIndex) public view returns (
         uint256 lockupAmount,
         uint256 startTime,
         uint256 lockUpPeriodSeconds,
@@ -327,15 +326,22 @@ contract LockupVolumeRestrictionTM is ITransferManager {
      * @notice Provide the unlock amount for the given lockup for a particular user
      */
     function _getUnlockedAmountForLockup(LockUp[] userLockup, uint256 _lockupIndex) internal view returns (uint256) {
-            // Calculate the no. of periods for a lockup 
-            uint256 noOfPeriods = (userLockup[_lockupIndex].lockUpPeriodSeconds).div(userLockup[_lockupIndex].releaseFrequencySeconds);
-            // Calculate the transaction time lies in which period
-            uint256 elapsedPeriod = (now.sub(userLockup[_lockupIndex].startTime)).div(userLockup[_lockupIndex].releaseFrequencySeconds);
-            // Calculate the allowed unlocked amount per period
-            uint256 amountPerPeriod = (userLockup[_lockupIndex].lockupAmount).div(noOfPeriods);
-            // Find out the unlocked amount for a given lockup
-            uint256 unLockedAmount = elapsedPeriod.mul(amountPerPeriod);
-            return unLockedAmount;
+            /*solium-disable-next-line security/no-block-members*/
+            if (userLockup[_lockupIndex].startTime > now) {
+                return 0;
+            } else {
+                // Calculate the no. of periods for a lockup 
+                uint256 noOfPeriods = (userLockup[_lockupIndex].lockUpPeriodSeconds).div(userLockup[_lockupIndex].releaseFrequencySeconds);
+                // Calculate the transaction time lies in which period
+                /*solium-disable-next-line security/no-block-members*/
+                uint256 elapsedPeriod = (now.sub(userLockup[_lockupIndex].startTime)).div(userLockup[_lockupIndex].releaseFrequencySeconds);
+                // Calculate the allowed unlocked amount per period
+                uint256 amountPerPeriod = (userLockup[_lockupIndex].lockupAmount).div(noOfPeriods);
+                // Find out the unlocked amount for a given lockup
+                uint256 unLockedAmount = elapsedPeriod.mul(amountPerPeriod);
+                return unLockedAmount;
+            }
+            
     }
 
     /**
@@ -357,6 +363,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         require(_userAddress != address(0), "Invalid address");
         require(_lockUpPeriodSeconds != 0, "lockUpPeriodSeconds cannot be zero");
         require(_releaseFrequencySeconds != 0, "releaseFrequencySeconds cannot be zero");
+        require(_lockupAmount != 0, "lockupAmount cannot be zero");
 
         // check that the total amount to be released isn't too granular
         require(

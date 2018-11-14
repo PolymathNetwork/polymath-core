@@ -15,11 +15,13 @@ contract VestingEscrowWallet is Ownable {
         uint256 vestingDuration;
         uint256 vestingFrequency;
         uint256 startDate;
+        uint256 nextDate;
     }
 
     struct VestingData {
-        VestingSchedule[] schedules;
         uint256 index;
+        VestingSchedule[] schedules;
+        uint256 availableTokens;
     }
 
     IERC20 public token;
@@ -64,6 +66,7 @@ contract VestingEscrowWallet is Ownable {
         schedule.vestingDuration = _vestingDuration;
         schedule.vestingFrequency = _vestingFrequency;
         schedule.startDate = _startDate;
+        schedule.nextDate = _startDate + _vestingFrequency;
         //add beneficiary to the schedule list only if adding first schedule
         if (schedules[_beneficiary].schedules.length == 0) {
             schedules[_beneficiary].index = beneficiaries.length;
@@ -77,10 +80,10 @@ contract VestingEscrowWallet is Ownable {
     function revokeVestingSchedule(address _beneficiary, uint256 index) external onlyOwner {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         require(index < schedules[_beneficiary].schedules.length, "Schedule not found");
-        VestingSchedule[] storage vestingSchedule = schedules[_beneficiary].schedules;
-        vestingSchedule[index] = vestingSchedule[vestingSchedule.length - 1];
-        vestingSchedule.length--;
-        if (vestingSchedule.length == 0) {
+        VestingSchedule[] storage schedule = schedules[_beneficiary].schedules;
+        schedule[index] = schedule[schedule.length - 1];
+        schedule.length--;
+        if (schedule.length == 0) {
             _revokeVestingSchedules(_beneficiary);
         }
         /*solium-disable-next-line security/no-block-members*/
@@ -89,6 +92,7 @@ contract VestingEscrowWallet is Ownable {
 
     function revokeVestingSchedules(address _beneficiary) external onlyOwner {
         require(_beneficiary != address(0), "Invalid beneficiary address");
+        delete schedules[_beneficiary].schedules;
         _revokeVestingSchedules(_beneficiary);
         /*solium-disable-next-line security/no-block-members*/
         emit RevokeVestingSchedules(_beneficiary, now);
@@ -97,11 +101,12 @@ contract VestingEscrowWallet is Ownable {
     function getVestingSchedule(address _beneficiary, uint256 index) external onlyOwner returns(uint256, uint256, uint256, uint256) {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         require(index < schedules[_beneficiary].schedules.length, "Schedule not found");
+        VestingSchedule schedule = schedules[_beneficiary].schedules[index];
         return (
-            schedules[_beneficiary].schedules[index].numberOfTokens,
-            schedules[_beneficiary].schedules[index].vestingDuration,
-            schedules[_beneficiary].schedules[index].vestingFrequency,
-            schedules[_beneficiary].schedules[index].startDate
+            schedule.numberOfTokens,
+            schedule.vestingDuration,
+            schedule.vestingFrequency,
+            schedule.startDate
         );
     }
 
@@ -125,15 +130,31 @@ contract VestingEscrowWallet is Ownable {
     }
 
 
+    function _update(address _beneficiary) internal {
+        VestingData data = schedules[_beneficiary];
+        for (uint256 i = 0; i < data.schedules.length; i++) {
+            VestingSchedule schedule = data.schedules[i];
+            if (schedule.nextDate <= now) {
+                schedule.nextDate = schedule.nextDate.add(schedule.vestingFrequency);
+
+            }
+        }
+    }
 
     function _revokeVestingSchedules(address _beneficiary) private {
-        uint256 index = schedules[_beneficiary].index;
-        beneficiaries[index] = beneficiaries[beneficiaries.length - 1];
-        beneficiaries.length--;
-        if (index != beneficiaries.length) {
-            schedules[beneficiaries[index]].index = index;
+        if (_canBeRemoved(_beneficiary)) {
+            uint256 index = schedules[_beneficiary].index;
+            beneficiaries[index] = beneficiaries[beneficiaries.length - 1];
+            beneficiaries.length--;
+            if (index != beneficiaries.length) {
+                schedules[beneficiaries[index]].index = index;
+            }
+            delete schedules[_beneficiary];
         }
-        delete schedules[_beneficiary];
+    }
+
+    function _canBeRemoved(address _beneficiary) private returns(bool) {
+        return (schedules[_beneficiary].availableTokens == 0);
     }
 
 }

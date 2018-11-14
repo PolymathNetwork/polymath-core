@@ -427,14 +427,13 @@ contract("CappedSTO", accounts => {
             assert.isFalse(await I_CappedSTO_Array_ETH[0].paused.call());
         });
 
-        it("Should buy the tokens -- Failed due to wrong granularity", async () => {
-            await catchRevert(
+        it("Should buy the granular unit tokens and refund pending amount", async () => {
+            
                 web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
-                    value: web3.utils.toWei("0.1111", "ether")
-                })
-            );
+                    value: web3.utils.toWei("1.1", "ether")
+                });
         });
 
         it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async () => {
@@ -456,7 +455,7 @@ contract("CappedSTO", accounts => {
                 from: account_investor2,
                 to: I_CappedSTO_Array_ETH[0].address,
                 gas: 2100000,
-                value: web3.utils.toWei("9", "ether")
+                value: web3.utils.toWei("8", "ether")
             });
 
             assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 10);

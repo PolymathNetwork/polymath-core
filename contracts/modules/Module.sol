@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "../interfaces/IModule.sol";
 import "../interfaces/ISecurityToken.sol";
-import "../interfaces/IERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /**

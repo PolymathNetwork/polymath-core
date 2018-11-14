@@ -1,15 +1,25 @@
 // <ORACLIZE_API>
+// Release targetted at solc 0.4.25 to silence compiler warning/error messages, compatible down to 0.4.22
 /*
 Copyright (c) 2015-2016 Oraclize SRL
 Copyright (c) 2016 Oraclize LTD
+
+
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
+
+
+
 The above copyright notice and this permission notice shall be included in
 all copies or substantial portions of the Software.
+
+
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
@@ -19,9 +29,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 */
 
-// This api is currently targeted at 0.4.18, please import oraclizeAPI_pre0.4.sol or oraclizeAPI_0.4 where necessary
+// This api is currently targeted at 0.4.22 to 0.4.25 (stable builds), please import oraclizeAPI_pre0.4.sol or oraclizeAPI_0.4 where necessary
 /* solium-disable */
-pragma solidity >=0.4.18;// Incompatible compiler version... please select one stated within pragma solidity or use different oraclizeAPI version
+pragma solidity >=0.4.22;// Incompatible compiler version... please select one stated within pragma solidity or use different oraclizeAPI version
 
 contract OraclizeI {
     address public cbAddress;
@@ -44,17 +54,23 @@ contract OraclizeAddrResolverI {
 
 /*
 Begin solidity-cborutils
+
 https://github.com/smartcontractkit/solidity-cborutils
+
 MIT License
+
 Copyright (c) 2018 SmartContract ChainLink, Ltd.
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
+
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -346,7 +362,11 @@ contract usingOraclize {
     }
     function __callback(bytes32 myid, string result, bytes proof) public {
       return;
+      // Following should never be reached with a preceding return, however
+      // this is just a placeholder function, ideally meant to be defined in
+      // child contract when proofs are used
       myid; result; proof; // Silence compiler warnings
+      oraclize = OraclizeI(0); // Additional compiler silence about making function pure/view. 
     }
 
     function oraclize_getPrice(string datasource) oraclizeAPI internal returns (uint){
@@ -744,7 +764,7 @@ contract usingOraclize {
         return oraclize.randomDS_getSessionPubKeyHash();
     }
 
-    function getCodeSize(address _addr) constant internal returns(uint _size) {
+    function getCodeSize(address _addr) view internal returns(uint _size) {
         assembly {
             _size := extcodesize(_addr)
         }
@@ -963,7 +983,7 @@ contract usingOraclize {
 
         }
 
-        oraclize_randomDS_setCommitment(queryId, keccak256(delay_bytes8_left, args[1], sha256(args[0]), args[2]));
+        oraclize_randomDS_setCommitment(queryId, keccak256(abi.encodePacked(delay_bytes8_left, args[1], sha256(args[0]), args[2])));
         return queryId;
     }
 
@@ -1075,7 +1095,7 @@ contract usingOraclize {
         uint ledgerProofLength = 3+65+(uint(proof[3+65+1])+2)+32;
         bytes memory keyhash = new bytes(32);
         copyBytes(proof, ledgerProofLength, 32, keyhash, 0);
-        if (!(keccak256(keyhash) == keccak256(sha256(context_name, queryId)))) return false;
+        if (!(keccak256(keyhash) == keccak256(abi.encodePacked(sha256(abi.encodePacked(context_name, queryId)))))) return false;
 
         bytes memory sig1 = new bytes(uint(proof[ledgerProofLength+(32+8+1+32)+1])+2);
         copyBytes(proof, ledgerProofLength+(32+8+1+32), sig1.length, sig1, 0);
@@ -1093,7 +1113,7 @@ contract usingOraclize {
         copyBytes(proof, sig2offset-64, 64, sessionPubkey, 0);
 
         bytes32 sessionPubkeyHash = sha256(sessionPubkey);
-        if (oraclize_randomDS_args[queryId] == keccak256(commitmentSlice1, sessionPubkeyHash)){ //unonce, nbytes and sessionKeyHash match
+        if (oraclize_randomDS_args[queryId] == keccak256(abi.encodePacked(commitmentSlice1, sessionPubkeyHash))){ //unonce, nbytes and sessionKeyHash match
             delete oraclize_randomDS_args[queryId];
         } else return false;
 
@@ -1212,3 +1232,4 @@ contract usingOraclize {
     }
 
 }
+// </ORACLIZE_API>

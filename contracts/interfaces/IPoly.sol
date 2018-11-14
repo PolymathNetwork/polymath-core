@@ -4,7 +4,7 @@ pragma solidity ^0.4.24;
  * @title ERC20 interface
  * @dev see https://github.com/ethereum/EIPs/issues/20
  */
-interface IERC20 {
+interface IPoly {
     function decimals() external view returns (uint8);
     function totalSupply() external view returns (uint256);
     function balanceOf(address _owner) external view returns (uint256);

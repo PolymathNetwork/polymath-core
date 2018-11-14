@@ -269,9 +269,9 @@ contract("USDTieredSTO", accounts => {
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
             let _blockNo = latestBlock();
             let tx = await I_STRProxied.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, { from: ISSUER });
-            assert.equal(tx.logs[1].args._ticker, SYMBOL, "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[2].args._ticker, SYMBOL, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 

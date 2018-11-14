@@ -30,7 +30,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
      */
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address generalTransferManager = new GeneralTransferManager(msg.sender, address(polyToken));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(generalTransferManager), getName(), address(this), msg.sender, setupCost, now);

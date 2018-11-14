@@ -35,7 +35,7 @@ contract USDTieredSTOFactory is ModuleFactory {
      */
     function deploy(bytes _data) external returns(address) {
         if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Sufficent Allowance is not provided");
         require(USDTieredSTOProxyAddress != address(0), "Proxy contract should be pre-set");
         //Check valid bytes - can only call module init function
         address usdTieredSTO = IUSDTieredSTOProxy(USDTieredSTOProxyAddress).deploySTO(msg.sender, address(polyToken), address(this));

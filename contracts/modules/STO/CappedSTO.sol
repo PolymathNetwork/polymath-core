@@ -2,7 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./ISTO.sol";
 import "../../interfaces/ISecurityToken.sol";
-import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
+import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**

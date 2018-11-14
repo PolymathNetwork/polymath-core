@@ -32,7 +32,7 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
      */
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "insufficent allowance");
+            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "insufficent allowance");
         address erc20DividendCheckpoint = new ERC20DividendCheckpoint(msg.sender, address(polyToken));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(erc20DividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);

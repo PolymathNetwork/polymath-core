@@ -1,11 +1,11 @@
 pragma solidity ^0.4.24;
 
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IModuleRegistry.sol";
 import "./interfaces/IModuleFactory.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
 import "./interfaces/IPolymathRegistry.sol";
 import "./interfaces/IFeatureRegistry.sol";
-import "./interfaces/IERC20.sol";
 import "./libraries/VersionUtils.sol";
 import "./storage/EternalStorage.sol";
 import "./libraries/Encoder.sol";

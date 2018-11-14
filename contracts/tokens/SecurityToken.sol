@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/Math.sol";
-import "../interfaces/IERC20.sol";
+import "../interfaces/IPoly.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IModuleRegistry.sol";
@@ -9,9 +9,9 @@ import "../interfaces/IFeatureRegistry.sol";
 import "../modules/TransferManager/ITransferManager.sol";
 import "../RegistryUpdater.sol";
 import "../libraries/Util.sol";
-import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
+import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "../libraries/TokenLib.sol";
 
 /**
@@ -24,7 +24,7 @@ import "../libraries/TokenLib.sol";
 * @notice - ST does not inherit from ISecurityToken due to:
 * @notice - https://github.com/ethereum/solidity/issues/4847
 */
-contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, RegistryUpdater {
+contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
     TokenLib.InvestorDataStorage investorData;
@@ -153,7 +153,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
 
     // Require msg.sender to be the specified module type or the owner of the token
     modifier onlyModuleOrOwner(uint8 _type) {
-        if (msg.sender == owner) {
+        if (msg.sender == owner()) {
             _;
         } else {
             require(_isModule(msg.sender, _type));
@@ -203,7 +203,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         address _polymathRegistry
     )
     public
-    DetailedERC20(_name, _symbol, _decimals)
+    ERC20Detailed(_name, _symbol, _decimals)
     RegistryUpdater(_polymathRegistry)
     {
         //When it is created, the owner is the STR
@@ -365,7 +365,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     function withdrawERC20(address _tokenContract, uint256 _value) external onlyOwner {
         require(_tokenContract != address(0));
         IERC20 token = IERC20(_tokenContract);
-        require(token.transfer(owner, _value));
+        require(token.transfer(owner(), _value));
     }
 
     /**
@@ -377,13 +377,13 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
     */
     function changeModuleBudget(address _module, uint256 _change, bool _increase) external onlyOwner {
         require(modulesToData[_module].module != address(0), "Module missing");
-        uint256 currentAllowance = IERC20(polyToken).allowance(address(this), _module);
+        uint256 currentAllowance = IPoly(polyToken).allowance(address(this), _module);
         uint256 newAllowance;
         if (_increase) {
-            require(IERC20(polyToken).increaseApproval(_module, _change), "IncreaseApproval fail");
+            require(IPoly(polyToken).increaseApproval(_module, _change), "IncreaseApproval fail");
             newAllowance = currentAllowance.add(_change);
         } else {
-            require(IERC20(polyToken).decreaseApproval(_module, _change), "Insufficient allowance");
+            require(IPoly(polyToken).decreaseApproval(_module, _change), "Insufficient allowance");
             newAllowance = currentAllowance.sub(_change);
         }
         emit ModuleBudgetChanged(modulesToData[_module].moduleTypes, _module, currentAllowance, newAllowance);
@@ -678,13 +678,10 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         uint256 _value,
         bytes _data
         ) public onlyModuleOrOwner(MINT_KEY) isMintingAllowed() returns (bool success) {
-        require(_investor != address(0), "Investor is 0");
         require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
         _adjustTotalSupplyCheckpoints();
-        totalSupply_ = totalSupply_.add(_value);
-        balances[_investor] = balances[_investor].add(_value);
+        _mint(_investor, _value);
         emit Minted(_investor, _value);
-        emit Transfer(address(0), _investor, _value);
         return true;
     }
 
@@ -720,14 +717,11 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
         return false;
     }
 
-    function _burn(address _from, uint256 _value, bytes _data) internal returns(bool) {
-        require(_value <= balances[_from], "Value too high");
+    function _checkAndBurn(address _from, uint256 _value, bytes _data) internal returns(bool) {
         bool verified = _updateTransfer(_from, address(0), _value, _data);
         _adjustTotalSupplyCheckpoints();
-        balances[_from] = balances[_from].sub(_value);
-        totalSupply_ = totalSupply_.sub(_value);
+        _burn(_from, _value);
         emit Burnt(_from, _value);
-        emit Transfer(_from, address(0), _value);
         return verified;
     }
 
@@ -737,7 +731,15 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _data data to indicate validation
      */
     function burnWithData(uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
-        require(_burn(msg.sender, _value, _data), "Burn invalid");
+        require(_checkAndBurn(msg.sender, _value, _data), "Burn invalid");
+    }
+
+    function _checkAndBurnFrom(address _from, uint256 _value, bytes _data) internal returns(bool) {
+        bool verified = _updateTransfer(_from, address(0), _value, _data);
+        _adjustTotalSupplyCheckpoints();
+        _burnFrom(_from, _value);
+        emit Burnt(_from, _value);
+        return verified;
     }
 
     /**
@@ -747,9 +749,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _data data to indicate validation
      */
     function burnFromWithData(address _from, uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
-        require(_value <= allowed[_from][msg.sender], "Value too high");
-        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
-        require(_burn(_from, _value, _data), "Burn invalid");
+        require(_checkAndBurnFrom(_from, _value, _data), "Burn invalid");
     }
 
     /**
@@ -825,13 +825,9 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _log data attached to the transfer by controller to emit in event
      */
     function forceTransfer(address _from, address _to, uint256 _value, bytes _data, bytes _log) public onlyController {
-        require(_to != address(0));
-        require(_value <= balances[_from]);
         bool verified = _updateTransfer(_from, _to, _value, _data);
-        balances[_from] = balances[_from].sub(_value);
-        balances[_to] = balances[_to].add(_value);
+        _transfer(_from, _to, _value);
         emit ForceTransfer(msg.sender, _from, _to, _value, verified, _log);
-        emit Transfer(_from, _to, _value);
     }
 
     /**
@@ -842,7 +838,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @param _log data attached to the transfer by controller to emit in event
      */
     function forceBurn(address _from, uint256 _value, bytes _data, bytes _log) public onlyController {
-        bool verified = _burn(_from, _value, _data);
+        bool verified = _checkAndBurn(_from, _value, _data);
         emit ForceBurn(msg.sender, _from, _value, verified, _log);
     }
 

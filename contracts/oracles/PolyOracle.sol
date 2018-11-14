@@ -33,7 +33,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     event StalePriceUpdate(bytes32 _queryId, uint256 _time, string _result);
 
     modifier isAdminOrOwner {
-        require(admin[msg.sender] || msg.sender == owner, "Address is not admin or owner");
+        require(admin[msg.sender] || msg.sender == owner(), "Address is not admin or owner");
         _;
     }
 

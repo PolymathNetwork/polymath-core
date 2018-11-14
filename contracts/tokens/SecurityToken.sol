@@ -717,7 +717,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         return false;
     }
 
-    function _burn(address _from, uint256 _value, bytes _data) internal returns(bool) {
+    function _checkAndBurn(address _from, uint256 _value, bytes _data) internal returns(bool) {
         bool verified = _updateTransfer(_from, address(0), _value, _data);
         _adjustTotalSupplyCheckpoints();
         _burn(_from, _value);
@@ -731,11 +731,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      */
     function burnWithData(uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
-        require(_burn(msg.sender, _value, _data), "Burn invalid");
+        require(_checkAndBurn(msg.sender, _value, _data), "Burn invalid");
     }
 
-    function _burnFrom(address _from, uint256 _value, bytes _data) internal returns(bool) {
-        require(_value <= balanceOf(_from), "Value too high");
+    function _checkAndBurnFrom(address _from, uint256 _value, bytes _data) internal returns(bool) {
         bool verified = _updateTransfer(_from, address(0), _value, _data);
         _adjustTotalSupplyCheckpoints();
         _burnFrom(_from, _value);
@@ -750,7 +749,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      */
     function burnFromWithData(address _from, uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
-        require(_burnFrom(_from, _value, _data), "Burn invalid");
+        require(_checkAndBurnFrom(_from, _value, _data), "Burn invalid");
     }
 
     /**
@@ -839,7 +838,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _log data attached to the transfer by controller to emit in event
      */
     function forceBurn(address _from, uint256 _value, bytes _data, bytes _log) public onlyController {
-        bool verified = _burn(_from, _value, _data);
+        bool verified = _checkAndBurn(_from, _value, _data);
         emit ForceBurn(msg.sender, _from, _value, verified, _log);
     }
 

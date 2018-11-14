@@ -5,6 +5,7 @@ var faucet = require('./commands/faucet');
 var investor_portal = require('./commands/investor_portal');
 var token_manager = require('./commands/token_manager');
 var st20generator = require('./commands/ST20Generator');
+var sto_manager = require('./commands/sto_manager');
 var transfer = require('./commands/transfer');
 var transfer_ownership = require('./commands/transfer_ownership');
 var dividends_manager = require('./commands/dividends_manager');
@@ -34,6 +35,15 @@ program
   .action(async function(cmd) {
     await gbl.initialize(program.remoteNode);
     await st20generator.executeApp(cmd.ticker, cmd.transferOwnership, cmd.tokenName, cmd.details, cmd.divisible);
+  });
+
+program
+  .command('sto_manager')
+  .alias('sto')
+  .description('Wizard-like script that will guide technical users in the creation of an STO')
+  .action(async function() {
+    await gbl.initialize(program.remoteNode);
+    await sto_manager.executeApp();
   });
 
 program

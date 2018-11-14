@@ -8,6 +8,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 /**
  * @title Wallet for core vesting escrow functionality
  */
+//TODO remove vesting from methods, events, variables
 contract VestingEscrowWallet is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
@@ -29,15 +30,22 @@ contract VestingEscrowWallet is Ownable {
         uint256 claimedTokens;
     }
 
+    struct VestingTemplate {
+        uint256 numberOfTokens;
+        uint256 vestingDuration;
+        uint256 vestingFrequency;
+    }
+
     enum State {STARTED, COMPLETED}
 
     ERC20 public token;
     address public treasury;
-
     uint256 public unassignedTokens;
 
     mapping (address => VestingData) public vestingData;
     address[] public beneficiaries;
+
+    VestingTemplate[] public templates;
 
     event AddVestingSchedule(
         address _beneficiary,
@@ -61,6 +69,8 @@ contract VestingEscrowWallet is Ownable {
     event DepositTokens(uint256 _numberOfTokens, uint256 _timestamp);
     event SendToTreasury(uint256 _numberOfTokens, uint256 _timestamp);
     event SendTokens(address _beneficiary, uint256 _numberOfTokens, uint256 _timestamp);
+    event AddVestingTemplate(uint256 _numberOfTokens, uint256 _vestingDuration, uint256 _vestingFrequency, uint256 _timestamp);
+    event RemoveVestingTemplate(uint256 _index, uint256 _timestamp);
 
     constructor(address _tokenAddress, address _treasury) public {
         token = ERC20(_tokenAddress);
@@ -93,6 +103,25 @@ contract VestingEscrowWallet is Ownable {
         _sendTokens(msg.sender);
     }
 
+    function addVestingTemplate(uint256 _numberOfTokens, uint256 _vestingDuration, uint256 _vestingFrequency) external onlyOwner {
+        _validateTemplate(_numberOfTokens, _vestingDuration, _vestingFrequency);
+        VestingTemplate memory template;
+        template.numberOfTokens = _numberOfTokens;
+        template.vestingDuration = _vestingDuration;
+        template.vestingFrequency = _vestingFrequency;
+        templates.push(template);
+        /*solium-disable-next-line security/no-block-members*/
+        emit AddVestingTemplate(_numberOfTokens, _vestingDuration, _vestingFrequency, now);
+    }
+
+    function removeVestingTemplate(uint256 _index) external onlyOwner {
+        require(_index < templates.length, "Template not found");
+        templates[_index] = templates[templates.length - 1];
+        templates.length--;
+        /*solium-disable-next-line security/no-block-members*/
+        emit RemoveVestingTemplate(_index, now);
+    }
+
     function addVestingSchedule(
         address _beneficiary,
         uint256 _numberOfTokens,
@@ -123,6 +152,12 @@ contract VestingEscrowWallet is Ownable {
         vestingData[_beneficiary].schedules.push(schedule);
         /*solium-disable-next-line security/no-block-members*/
         emit AddVestingSchedule(_beneficiary, _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate, now);
+    }
+
+    function addVestingScheduleFromTemplate(address _beneficiary, uint256 _index, uint256 _startDate) public onlyOwner {
+        require(_index < templates.length, "Template not found");
+        VestingTemplate template = templates[_index];
+        addVestingSchedule(_beneficiary, template.numberOfTokens, template.vestingDuration, template.vestingFrequency, _startDate);
     }
 
     function editVestingSchedule(
@@ -214,34 +249,25 @@ contract VestingEscrowWallet is Ownable {
         }
     }
 
+    function batchAddVestingScheduleFromTemplate(address[] _beneficiaries, uint256 _index, uint256 _startDate) public onlyOwner {
+        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+            addVestingScheduleFromTemplate(_beneficiaries[i], _index, _startDate);
+        }
+    }
+
     function batchRevokeVestingSchedules(address[] _beneficiaries) external onlyOwner {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             revokeVestingSchedules(_beneficiaries[i]);
         }
     }
 
-    function batchEditVestingSchedule(
-        address[] _beneficiaries,
-        uint256 _index,
-        uint256 _numberOfTokens,
-        uint256 _vestingDuration,
-        uint256 _vestingFrequency,
-        uint256 _startDate
-    )
-        external
-        onlyOwner
-    {
-        //TODO implement
+    function _validateSchedule(address _beneficiary, uint256 _numberOfTokens, uint256 _vestingDuration, uint256 _vestingFrequency, uint256 _startDate) {
+        require(_beneficiary != address(0), "Invalid beneficiary address");
+        _validateTemplate(_numberOfTokens, _vestingDuration, _vestingFrequency);
+        require(_startDate < now, "Start date shouldn't be in the past");
     }
 
-    function _validateSchedule(
-        address _beneficiary,
-        uint256 _numberOfTokens,
-        uint256 _vestingDuration,
-        uint256 _vestingFrequency,
-        uint256 _startDate)
-    {
-        require(_beneficiary != address(0), "Invalid beneficiary address");
+    function _validateTemplate(uint256 _numberOfTokens, uint256 _vestingDuration, uint256 _vestingFrequency) {
         require(_numberOfTokens > 0, "Number of tokens should be greater than zero");
         require(_vestingDuration % _vestingFrequency == 0, "Duration should be divided entirely by frequency");
         uint256 periodCount = _vestingDuration.div(_vestingFrequency);

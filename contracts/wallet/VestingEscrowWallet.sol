@@ -2,8 +2,7 @@ pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-//TODO ?
-import "../interfaces/IERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 
 /**
@@ -11,7 +10,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
  */
 contract VestingEscrowWallet is Ownable {
     using SafeMath for uint256;
-    using SafeERC20 for ERC20Basic;
+    using SafeERC20 for ERC20;
 
     struct VestingSchedule {
         uint256 numberOfTokens;
@@ -32,7 +31,7 @@ contract VestingEscrowWallet is Ownable {
 
     enum State {STARTED, COMPLETED}
 
-    IERC20 public token;
+    ERC20 public token;
     address public treasury;
 
     uint256 public unassignedTokens;
@@ -51,9 +50,33 @@ contract VestingEscrowWallet is Ownable {
     event RevokeVestingSchedules(address _beneficiary, uint256 _timestamp);
     event RevokeVestingSchedule(address _beneficiary, uint256 index, uint256 _timestamp);
 
+    //TODO add events
+
     constructor(address _tokenAddress, address _treasury) public {
-        token = IERC20(_tokenAddress);
+        token = ERC20(_tokenAddress);
         treasury = _treasury;
+    }
+
+    function depositTokens(uint256 _numberOfTokens) external onlyOwner {
+        require(_numberOfTokens > 0, "Number of tokens should be greater than zero");
+        token.safeTransferFrom(treasury, this, _numberOfTokens);
+        unassignedTokens = unassignedTokens.add(_numberOfTokens);
+    }
+
+    function sendToTreasury() external onlyOwner {
+        uint256 amount = unassignedTokens;
+        unassignedTokens = 0;
+        token.safeTransfer(treasury, amount);
+    }
+
+    function sendAvailableTokens(address _beneficiary) external onlyOwner {
+        _update(_beneficiary);
+        _sendTokens(_beneficiary);
+    }
+
+    function withdrawAvailableTokens() external {
+        _update(msg.sender);
+        _sendTokens(msg.sender);
     }
 
     function addVestingSchedule(
@@ -153,7 +176,14 @@ contract VestingEscrowWallet is Ownable {
     }
 
 
-
+    function _sendTokens(address _beneficiary) private {
+        VestingData data = vestingData[_beneficiary];
+        uint256 amount = data.availableTokens;
+        require(amount > 0, "Beneficiary doesn't have available tokens");
+        data.availableTokens = 0;
+        data.claimedTokens = data.claimedTokens.add(amount);
+        token.safeTransfer(_beneficiary, amount);
+    }
 
     function _update(address _beneficiary) internal {
         VestingData data = vestingData[_beneficiary];
@@ -165,13 +195,18 @@ contract VestingEscrowWallet is Ownable {
                 uint256 numberOfTokens = schedule.numberOfTokens.div(periodCount);
                 data.availableTokens = data.availableTokens.add(numberOfTokens);
                 schedule.lockedTokens = schedule.lockedTokens.sub(numberOfTokens);
-
                 if (schedule.nextDate == schedule.startDate.add(schedule.vestingDuration)) {
                     schedule.state = State.COMPLETED;
                 } else {
                     schedule.nextDate = schedule.nextDate.add(schedule.vestingFrequency);
                 }
             }
+        }
+    }
+
+    function _updateAll() internal {
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            _update(beneficiaries[i]);
         }
     }
 

@@ -1,35 +1,43 @@
 pragma solidity ^0.4.24;
 
-import "../../node_modules/openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import "../../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+//TODO ?
 import "../interfaces/IERC20.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 
 /**
  * @title Wallet for core vesting escrow functionality
  */
 contract VestingEscrowWallet is Ownable {
     using SafeMath for uint256;
+    using SafeERC20 for ERC20Basic;
 
     struct VestingSchedule {
         uint256 numberOfTokens;
+        uint256 lockedTokens;
         uint256 vestingDuration;
         uint256 vestingFrequency;
         uint256 startDate;
         uint256 nextDate;
+        State state;
     }
 
     struct VestingData {
         uint256 index;
         VestingSchedule[] schedules;
         uint256 availableTokens;
+        uint256 claimedTokens;
     }
+
+    enum State {STARTED, COMPLETED}
 
     IERC20 public token;
     address public treasury;
 
     uint256 public unassignedTokens;
 
-    mapping (address => VestingData) public schedules;
+    mapping (address => VestingData) public vestingData;
     address[] public beneficiaries;
 
     event AddVestingSchedule(
@@ -59,31 +67,39 @@ contract VestingEscrowWallet is Ownable {
         onlyOwner
     {
         require(_beneficiary != address(0), "Invalid beneficiary address");
-        //TODO validation
+        require(_numberOfTokens > 0, "Number of tokens should be greater than zero");
+        require(_vestingDuration % _vestingFrequency == 0, "Duration should be divided entirely by frequency");
+        uint256 periodCount = _vestingDuration.div(_vestingFrequency);
+        require(_numberOfTokens % periodCount == 0, "Number of tokens should be divided entirely by period count");
+        require(_numberOfTokens <= unassignedTokens, "Wallet doesn't contain enough unassigned tokens");
 
         VestingSchedule memory schedule;
+        unassignedTokens = unassignedTokens.sub(_numberOfTokens);
         schedule.numberOfTokens = _numberOfTokens;
+        schedule.lockedTokens = _numberOfTokens;
         schedule.vestingDuration = _vestingDuration;
         schedule.vestingFrequency = _vestingFrequency;
         schedule.startDate = _startDate;
-        schedule.nextDate = _startDate + _vestingFrequency;
+        schedule.nextDate = _startDate.add(schedule.vestingFrequency);
+        schedule.state = State.STARTED;
         //add beneficiary to the schedule list only if adding first schedule
-        if (schedules[_beneficiary].schedules.length == 0) {
-            schedules[_beneficiary].index = beneficiaries.length;
+        if (vestingData[_beneficiary].schedules.length == 0) {
+            vestingData[_beneficiary].index = beneficiaries.length;
             beneficiaries.push(_beneficiary);
         }
-        schedules[_beneficiary].schedules.push(schedule);
+        vestingData[_beneficiary].schedules.push(schedule);
         /*solium-disable-next-line security/no-block-members*/
         emit AddVestingSchedule(_beneficiary, _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate, now);
     }
 
     function revokeVestingSchedule(address _beneficiary, uint256 index) external onlyOwner {
         require(_beneficiary != address(0), "Invalid beneficiary address");
-        require(index < schedules[_beneficiary].schedules.length, "Schedule not found");
-        VestingSchedule[] storage schedule = schedules[_beneficiary].schedules;
-        schedule[index] = schedule[schedule.length - 1];
-        schedule.length--;
-        if (schedule.length == 0) {
+        require(index < vestingData[_beneficiary].schedules.length, "Schedule not found");
+        VestingSchedule[] storage schedules = vestingData[_beneficiary].schedules;
+        unassignedTokens = unassignedTokens.add(schedules[index].lockedTokens);
+        schedules[index] = schedules[schedules.length - 1];
+        schedules.length--;
+        if (schedules.length == 0) {
             _revokeVestingSchedules(_beneficiary);
         }
         /*solium-disable-next-line security/no-block-members*/
@@ -92,32 +108,39 @@ contract VestingEscrowWallet is Ownable {
 
     function revokeVestingSchedules(address _beneficiary) external onlyOwner {
         require(_beneficiary != address(0), "Invalid beneficiary address");
-        delete schedules[_beneficiary].schedules;
+        VestingData data = vestingData[_beneficiary];
+        for (uint256 i = 0; i < data.schedules.length; i++) {
+            unassignedTokens = unassignedTokens.add(data.schedules[i].lockedTokens);
+        }
+        delete vestingData[_beneficiary].schedules;
         _revokeVestingSchedules(_beneficiary);
         /*solium-disable-next-line security/no-block-members*/
         emit RevokeVestingSchedules(_beneficiary, now);
     }
 
-    function getVestingSchedule(address _beneficiary, uint256 index) external onlyOwner returns(uint256, uint256, uint256, uint256) {
+    function getVestingSchedule(address _beneficiary, uint256 _index) external onlyOwner returns(uint256, uint256, uint256, uint256, uint256, uint256, State) {
         require(_beneficiary != address(0), "Invalid beneficiary address");
-        require(index < schedules[_beneficiary].schedules.length, "Schedule not found");
-        VestingSchedule schedule = schedules[_beneficiary].schedules[index];
+        require(_index < vestingData[_beneficiary].schedules.length, "Schedule not found");
+        VestingSchedule schedule = vestingData[_beneficiary].schedules[_index];
         return (
             schedule.numberOfTokens,
+            schedule.lockedTokens,
             schedule.vestingDuration,
             schedule.vestingFrequency,
-            schedule.startDate
+            schedule.startDate,
+            schedule.nextDate,
+            schedule.state
         );
     }
 
-    function getVestingScheduleCount(address _beneficiary, uint256 index) external onlyOwner returns(uint256) {
+    function getVestingScheduleCount(address _beneficiary) external onlyOwner returns(uint256) {
         require(_beneficiary != address(0), "Invalid beneficiary address");
-        return schedules[_beneficiary].schedules.length;
+        return vestingData[_beneficiary].schedules.length;
     }
 
     function editVestingSchedule(
         address _beneficiary,
-        uint256 index,
+        uint256 _index,
         uint256 _numberOfTokens,
         uint256 _vestingDuration,
         uint256 _vestingFrequency,
@@ -130,31 +153,42 @@ contract VestingEscrowWallet is Ownable {
     }
 
 
+
+
     function _update(address _beneficiary) internal {
-        VestingData data = schedules[_beneficiary];
+        VestingData data = vestingData[_beneficiary];
         for (uint256 i = 0; i < data.schedules.length; i++) {
             VestingSchedule schedule = data.schedules[i];
-            if (schedule.nextDate <= now) {
-                schedule.nextDate = schedule.nextDate.add(schedule.vestingFrequency);
+            /*solium-disable-next-line security/no-block-members*/
+            if (schedule.state == State.STARTED && schedule.nextDate <= now) {
+                uint256 periodCount = schedule.vestingDuration.div(schedule.vestingFrequency);
+                uint256 numberOfTokens = schedule.numberOfTokens.div(periodCount);
+                data.availableTokens = data.availableTokens.add(numberOfTokens);
+                schedule.lockedTokens = schedule.lockedTokens.sub(numberOfTokens);
 
+                if (schedule.nextDate == schedule.startDate.add(schedule.vestingDuration)) {
+                    schedule.state = State.COMPLETED;
+                } else {
+                    schedule.nextDate = schedule.nextDate.add(schedule.vestingFrequency);
+                }
             }
         }
     }
 
     function _revokeVestingSchedules(address _beneficiary) private {
         if (_canBeRemoved(_beneficiary)) {
-            uint256 index = schedules[_beneficiary].index;
+            uint256 index = vestingData[_beneficiary].index;
             beneficiaries[index] = beneficiaries[beneficiaries.length - 1];
             beneficiaries.length--;
             if (index != beneficiaries.length) {
-                schedules[beneficiaries[index]].index = index;
+                vestingData[beneficiaries[index]].index = index;
             }
-            delete schedules[_beneficiary];
+            delete vestingData[_beneficiary];
         }
     }
 
     function _canBeRemoved(address _beneficiary) private returns(bool) {
-        return (schedules[_beneficiary].availableTokens == 0);
+        return (vestingData[_beneficiary].availableTokens == 0);
     }
 
 }

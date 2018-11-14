@@ -252,6 +252,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _startTime,
         uint256 _endTime
     ) external onlyOwner {
+        /*solium-disable-next-line security/no-block-members*/
+        require(now < startTime, "STO already started");
         _modifyTimes(_startTime, _endTime);
     }
 

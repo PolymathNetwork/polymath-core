@@ -47,10 +47,20 @@ contract VestingEscrowWallet is Ownable {
         uint256 _startDate,
         uint256 _timestamp
     );
+    event EditVestingSchedule(
+        address _beneficiary,
+        uint256 _index,
+        uint256 _numberOfTokens,
+        uint256 _vestingDuration,
+        uint256 _vestingFrequency,
+        uint256 _startDate,
+        uint256 _timestamp
+    );
     event RevokeVestingSchedules(address _beneficiary, uint256 _timestamp);
-    event RevokeVestingSchedule(address _beneficiary, uint256 index, uint256 _timestamp);
-
-    //TODO add events
+    event RevokeVestingSchedule(address _beneficiary, uint256 _index, uint256 _timestamp);
+    event DepositTokens(uint256 _numberOfTokens, uint256 _timestamp);
+    event SendToTreasury(uint256 _numberOfTokens, uint256 _timestamp);
+    event SendTokens(address _beneficiary, uint256 _numberOfTokens, uint256 _timestamp);
 
     constructor(address _tokenAddress, address _treasury) public {
         token = ERC20(_tokenAddress);
@@ -61,15 +71,19 @@ contract VestingEscrowWallet is Ownable {
         require(_numberOfTokens > 0, "Number of tokens should be greater than zero");
         token.safeTransferFrom(treasury, this, _numberOfTokens);
         unassignedTokens = unassignedTokens.add(_numberOfTokens);
+        /*solium-disable-next-line security/no-block-members*/
+        emit DepositTokens(_numberOfTokens, now);
     }
 
     function sendToTreasury() external onlyOwner {
         uint256 amount = unassignedTokens;
         unassignedTokens = 0;
         token.safeTransfer(treasury, amount);
+        /*solium-disable-next-line security/no-block-members*/
+        emit SendToTreasury(amount, now);
     }
 
-    function sendAvailableTokens(address _beneficiary) external onlyOwner {
+    function sendAvailableTokens(address _beneficiary) public onlyOwner {
         _update(_beneficiary);
         _sendTokens(_beneficiary);
     }
@@ -86,14 +100,10 @@ contract VestingEscrowWallet is Ownable {
         uint256 _vestingFrequency,
         uint256 _startDate
     )
-        external
+        public
         onlyOwner
     {
-        require(_beneficiary != address(0), "Invalid beneficiary address");
-        require(_numberOfTokens > 0, "Number of tokens should be greater than zero");
-        require(_vestingDuration % _vestingFrequency == 0, "Duration should be divided entirely by frequency");
-        uint256 periodCount = _vestingDuration.div(_vestingFrequency);
-        require(_numberOfTokens % periodCount == 0, "Number of tokens should be divided entirely by period count");
+        _validateSchedule(_beneficiary, _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate);
         require(_numberOfTokens <= unassignedTokens, "Wallet doesn't contain enough unassigned tokens");
 
         VestingSchedule memory schedule;
@@ -115,21 +125,43 @@ contract VestingEscrowWallet is Ownable {
         emit AddVestingSchedule(_beneficiary, _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate, now);
     }
 
-    function revokeVestingSchedule(address _beneficiary, uint256 index) external onlyOwner {
+    function editVestingSchedule(
+        address _beneficiary,
+        uint256 _index,
+        uint256 _numberOfTokens,
+        uint256 _vestingDuration,
+        uint256 _vestingFrequency,
+        uint256 _startDate
+    )
+        external
+        onlyOwner
+    {
+        _validateSchedule(_beneficiary, _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate);
+        require(_index < vestingData[_beneficiary].schedules.length, "Schedule not found");
+//        require(_numberOfTokens <= unassignedTokens, "Wallet doesn't contain enough unassigned tokens");
+
+        VestingSchedule storage schedule = vestingData[_beneficiary].schedules[_index];
+
+        //TODO implement
+
+        emit EditVestingSchedule(_beneficiary, _index, _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate, now);
+    }
+
+    function revokeVestingSchedule(address _beneficiary, uint256 _index) external onlyOwner {
         require(_beneficiary != address(0), "Invalid beneficiary address");
-        require(index < vestingData[_beneficiary].schedules.length, "Schedule not found");
+        require(_index < vestingData[_beneficiary].schedules.length, "Schedule not found");
         VestingSchedule[] storage schedules = vestingData[_beneficiary].schedules;
-        unassignedTokens = unassignedTokens.add(schedules[index].lockedTokens);
-        schedules[index] = schedules[schedules.length - 1];
+        unassignedTokens = unassignedTokens.add(schedules[_index].lockedTokens);
+        schedules[_index] = schedules[schedules.length - 1];
         schedules.length--;
         if (schedules.length == 0) {
             _revokeVestingSchedules(_beneficiary);
         }
         /*solium-disable-next-line security/no-block-members*/
-        emit RevokeVestingSchedule(_beneficiary, index, now);
+        emit RevokeVestingSchedule(_beneficiary, _index, now);
     }
 
-    function revokeVestingSchedules(address _beneficiary) external onlyOwner {
+    function revokeVestingSchedules(address _beneficiary) public onlyOwner {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         VestingData data = vestingData[_beneficiary];
         for (uint256 i = 0; i < data.schedules.length; i++) {
@@ -161,8 +193,35 @@ contract VestingEscrowWallet is Ownable {
         return vestingData[_beneficiary].schedules.length;
     }
 
-    function editVestingSchedule(
-        address _beneficiary,
+    function batchSendAvailableTokens(address[] _beneficiaries) external onlyOwner {
+        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+            sendAvailableTokens(_beneficiaries[i]);
+        }
+    }
+
+    function batchAddVestingSchedule(
+        address[] _beneficiaries,
+        uint256 _numberOfTokens,
+        uint256 _vestingDuration,
+        uint256 _vestingFrequency,
+        uint256 _startDate
+    )
+        external
+        onlyOwner
+    {
+        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+            addVestingSchedule(_beneficiaries[i], _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate);
+        }
+    }
+
+    function batchRevokeVestingSchedules(address[] _beneficiaries) external onlyOwner {
+        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+            revokeVestingSchedules(_beneficiaries[i]);
+        }
+    }
+
+    function batchEditVestingSchedule(
+        address[] _beneficiaries,
         uint256 _index,
         uint256 _numberOfTokens,
         uint256 _vestingDuration,
@@ -175,6 +234,19 @@ contract VestingEscrowWallet is Ownable {
         //TODO implement
     }
 
+    function _validateSchedule(
+        address _beneficiary,
+        uint256 _numberOfTokens,
+        uint256 _vestingDuration,
+        uint256 _vestingFrequency,
+        uint256 _startDate)
+    {
+        require(_beneficiary != address(0), "Invalid beneficiary address");
+        require(_numberOfTokens > 0, "Number of tokens should be greater than zero");
+        require(_vestingDuration % _vestingFrequency == 0, "Duration should be divided entirely by frequency");
+        uint256 periodCount = _vestingDuration.div(_vestingFrequency);
+        require(_numberOfTokens % periodCount == 0, "Number of tokens should be divided entirely by period count");
+    }
 
     function _sendTokens(address _beneficiary) private {
         VestingData data = vestingData[_beneficiary];
@@ -183,9 +255,11 @@ contract VestingEscrowWallet is Ownable {
         data.availableTokens = 0;
         data.claimedTokens = data.claimedTokens.add(amount);
         token.safeTransfer(_beneficiary, amount);
+        /*solium-disable-next-line security/no-block-members*/
+        emit SendTokens(_beneficiary, amount, now);
     }
 
-    function _update(address _beneficiary) internal {
+    function _update(address _beneficiary) private {
         VestingData data = vestingData[_beneficiary];
         for (uint256 i = 0; i < data.schedules.length; i++) {
             VestingSchedule schedule = data.schedules[i];
@@ -204,7 +278,7 @@ contract VestingEscrowWallet is Ownable {
         }
     }
 
-    function _updateAll() internal {
+    function _updateAll() private {
         for (uint256 i = 0; i < beneficiaries.length; i++) {
             _update(beneficiaries[i]);
         }

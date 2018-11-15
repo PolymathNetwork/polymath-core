@@ -338,16 +338,6 @@ contract("CappedSTO", accounts => {
             );
         });
 
-        it("Should buy the tokens -- Failed due to wrong granularity", async () => {
-            await catchRevert(
-                web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_CappedSTO_Array_ETH[0].address,
-                    value: web3.utils.toWei("0.1111", "ether")
-                })
-            );
-        });
-
         it("Should Buy the tokens", async () => {
             blockNo = latestBlock();
             fromTime = latestTime();
@@ -428,15 +418,7 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should buy the granular unit tokens and refund pending amount", async () => {
-            
-                web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_CappedSTO_Array_ETH[0].address,
-                    value: web3.utils.toWei("1.1", "ether")
-                });
-        });
-
-        it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async () => {
+            await I_SecurityToken_ETH.changeGranularity(10 ** 21, {from: token_owner});
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
                 fromTime,
@@ -447,8 +429,19 @@ contract("CappedSTO", accounts => {
                     from: account_issuer
                 }
             );
-
             assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
+            const initBalance = BigNumber(await web3.eth.getBalance(account_investor2));
+            tx = await I_CappedSTO_Array_ETH[0].buyTokens(account_investor2, {from: account_investor2, value: web3.utils.toWei("1.5", "ether"), gasPrice: 1});
+            const finalBalance = BigNumber(await web3.eth.getBalance(account_investor2));
+            assert.equal(finalBalance.add(BigNumber(tx.receipt.gasUsed)).add(web3.utils.toWei("1", "ether")).toNumber(), initBalance.toNumber());
+            await I_SecurityToken_ETH.changeGranularity(1, {from: token_owner});
+            assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 2);
+
+            assert.equal((await I_SecurityToken_ETH.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1000);
+        });
+
+        it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async () => {
+            
 
             // Fallback transaction
             await web3.eth.sendTransaction({
@@ -792,8 +785,8 @@ contract("CappedSTO", accounts => {
                 await I_CappedSTO_Array_POLY[0].unpause({ from: account_issuer });
             });
 
-
-            it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async () => {
+            it("Should buy the granular unit tokens and charge only required POLY", async () => {
+                await I_SecurityToken_POLY.changeGranularity(10 ** 22, {from: token_owner});
                 let tx = await I_GeneralTransferManager.modifyWhitelist(
                     account_investor2,
                     P_fromTime,
@@ -805,15 +798,25 @@ contract("CappedSTO", accounts => {
                         gas: 500000
                     }
                 );
-
+                console.log((await I_SecurityToken_POLY.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber());
                 assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
-
                 await I_PolyToken.getTokens(10000 * Math.pow(10, 18), account_investor2);
-
                 await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, 9000 * Math.pow(10, 18), { from: account_investor2 });
+                const initRaised = (await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new BigNumber(10).pow(18)).toNumber();
+                tx = await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(3000 * Math.pow(10, 18), { from: account_investor2 });
+                await I_SecurityToken_POLY.changeGranularity(1, {from: token_owner});
+                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new BigNumber(10).pow(18)).toNumber(), initRaised + 2000); //2000 this call, 1000 earlier
+                assert.equal((await I_PolyToken.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 8000);
+                assert.equal(
+                    (await I_SecurityToken_POLY.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                    10000
+                );
+            });
 
+
+            it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async () => {
                 // buyTokensWithPoly transaction
-                await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(9000 * Math.pow(10, 18), { from: account_investor2 });
+                await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(7000 * Math.pow(10, 18), { from: account_investor2 });
 
                 assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 10000);
 

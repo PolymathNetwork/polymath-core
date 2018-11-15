@@ -12,6 +12,7 @@ let BATCH_SIZE = 75;
 let securityToken;
 let affiliatesFailedArray = new Array();
 let affiliatesKYCInvalidArray = new Array();
+let tokenDivisible;
 
 async function startScript(tokenSymbol, batchSize) {
   if (batchSize) {
@@ -22,6 +23,7 @@ async function startScript(tokenSymbol, batchSize) {
 
   let STAddress = await checkST(tokenSymbol);
   securityToken = new web3.eth.Contract(abis.securityToken(), STAddress);
+  tokenDivisible = await securityToken.methods.granularity().call() == 1;
   
   await readCsv();
 };
@@ -80,7 +82,7 @@ async function readCsv() {
 
 async function saveInBlockchain() {
   let gtmModules = await securityToken.methods.getModulesByType(3).call();
-  
+
   if (gtmModules.length > 0) {
     console.log("Minting of tokens is only allowed before the STO get attached");
     process.exit(0);
@@ -235,11 +237,15 @@ function multimint_processing(csv_line) {
 }
 
 function isValidToken(token) {
-  var tokenAmount = parseInt(token);
-  if ((tokenAmount % 1 == 0)) {
-    return tokenAmount;
+  var tokenAmount = parseFloat(token);
+  if (tokenDivisible) {
+    return tokenAmount
+  } else {
+    if ((tokenAmount % 1 == 0)) {
+      return tokenAmount;
+    }
+    return false
   }
-  return false;
 }
 
 module.exports = {

@@ -1,6 +1,5 @@
 var common = require('./common/common_functions');
-var fs = require('fs');
-var csv = require('fast-csv');
+var csv = require('./common/csv_sync');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 var BigNumber = require('bignumber.js');
@@ -18,7 +17,7 @@ async function startScript(tokenSymbol, batchSize) {
     BATCH_SIZE = batchSize;
   }
 
-  common.logAsciiBull();
+  //common.logAsciiBull();
 
   let STAddress = await checkST(tokenSymbol);
   securityToken = new web3.eth.Contract(abis.securityToken(), STAddress);
@@ -51,35 +50,32 @@ async function STConnect() {
 }
 
 async function readCsv() {
-  var CSV_STRING = fs.readFileSync("./CLI/data/whitelist_data.csv").toString();
+  var CSV_STRING = csv('./CLI/data/whitelist_data.csv');
   let i = 0;
 
-  csv.fromString(CSV_STRING)
-    .on("data", (data) => {
-      let data_processed = whitelist_processing(data);
-      fullFileData.push(data_processed[1]);
+  CSV_STRING.forEach(line => {
+    let data_processed = whitelist_processing(line);
+    fullFileData.push(data_processed[1]);
 
-      if (data_processed[0]) {
-        allocData.push(data_processed[1]);
-        i++;
-        if (i >= BATCH_SIZE) {
-          distribData.push(allocData);
-          allocData = [];
-          i = 0;
-        }
-      } else {
-        badData.push(data_processed[1]);
+    if (data_processed[0]) {
+      allocData.push(data_processed[1]);
+      i++;
+      if (i >= BATCH_SIZE) {
+        distribData.push(allocData);
+        allocData = [];
+        i = 0;
       }
+    } else {
+      badData.push(data_processed[1]);
+    }
+  });
 
-    })
-    .on("end", async () => {
-      distribData.push(allocData);
-      allocData = [];
+  distribData.push(allocData);
+  allocData = [];
 
-      await saveInBlockchain();
-      await finalResults();
-      return;
-    });
+  await saveInBlockchain();
+  await finalResults();
+
 }
 
 async function saveInBlockchain() {
@@ -112,7 +108,7 @@ async function saveInBlockchain() {
         canBuyFromSTOArray.push(distribData[i][j][4])
       }
 
-      let modifyWhitelistMultiAction = generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray);
+      let modifyWhitelistMultiAction = await generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray);
       let tx = await common.sendTransaction(modifyWhitelistMultiAction);
       console.log(`Batch ${i} - Attempting to modifyWhitelist accounts:\n\n`, investorArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");

@@ -1,6 +1,5 @@
 var common = require('./common/common_functions');
-var fs = require('fs');
-var csv = require('fast-csv');
+var csv = require('./common/csv_sync');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 var BigNumber = require('bignumber.js');
@@ -18,7 +17,7 @@ async function startScript(tokenSymbol, batchSize) {
     BATCH_SIZE = batchSize;
   }
 
-  common.logAsciiBull();
+  //common.logAsciiBull();
 
   let STAddress = await checkST(tokenSymbol);
   securityToken = new web3.eth.Contract(abis.securityToken(), STAddress);
@@ -51,34 +50,30 @@ async function STConnect() {
 }
 
 async function readCsv() {
-  var CSV_STRING = fs.readFileSync("./CLI/data/accredited_data.csv").toString();
+  var CSV_STRING = csv('./CLI/data/accredited_data.csv');
   let i = 0;
 
-  csv.fromString(CSV_STRING)
-    .on("data", (data) => {
-      let data_processed = accredit_processing(data);
-      fullFileData.push(data_processed[1]);
+  CSV_STRING.forEach(line => {
+    let data_processed = accredit_processing(line);
+    fullFileData.push(data_processed[1]);
 
-      if (data_processed[0]) {
-        allocData.push(data_processed[1]);
-        i++;
-        if (i >= BATCH_SIZE) {
-          distribData.push(allocData);
-          allocData = [];
-          i = 0;
-        }
-      } else {
-        badData.push(data_processed[1]);
+    if (data_processed[0]) {
+      allocData.push(data_processed[1]);
+      i++;
+      if (i >= BATCH_SIZE) {
+        distribData.push(allocData);
+        allocData = [];
+        i = 0;
       }
+    } else {
+      badData.push(data_processed[1]);
+    }
+  });
 
-    })
-    .on("end", async () => {
-      distribData.push(allocData);
-      allocData = [];
+  distribData.push(allocData);
+  allocData = [];
 
-      await saveInBlockchain();
-      return;
-    });
+  await saveInBlockchain();
 }
 
 async function saveInBlockchain() {
@@ -116,7 +111,7 @@ async function saveInBlockchain() {
             isAccreditedArray.push(distribData[i][j][1])
           }
     
-          let changeAccreditedAction = usdTieredSTO.methods.changeAccredited(investorArray, isAccreditedArray);
+          let changeAccreditedAction = await usdTieredSTO.methods.changeAccredited(investorArray, isAccreditedArray);
           let tx = await common.sendTransaction(changeAccreditedAction);
           console.log(`Batch ${i} - Attempting to change accredited accounts:\n\n`, investorArray, "\n\n");
           console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");

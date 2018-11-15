@@ -2,11 +2,14 @@ var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js');
 var moment = require('moment');
 var chalk = require('chalk');
-const shell = require('shelljs');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 var common = require('./common/common_functions');
 var gbl = require('./common/global');
+var whitelist = require('./whitelist');
+var multi_mint = require('./multi_mint');
+var accredit = require('./accredit');
+var changeNonAccreditedLimit = require('./changeNonAccreditedLimit');
 
 let securityTokenRegistryAddress;
 
@@ -241,12 +244,11 @@ async function step_Wallet_Issuance(){
 }
 
 async function multi_mint_tokens() {
-  //await whitelist.startWhitelisting(tokenSymbol);
-  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75 ${remoteNetwork}`);
+  await whitelist.executeApp(tokenSymbol, 75);
   console.log(chalk.green(`\nCongrats! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
 
-  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${remoteNetwork}`);
+  await multi_mint.executeApp(tokenSymbol, 75);
   console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transferred to token holders`));
 }
 
@@ -1003,7 +1005,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(changeAccreditedAction);
           break;
         case 2:
-          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${remoteNetwork}`);
+          await accredit.executeApp(tokenSymbol, 75);
           break;
         case 3:
           let account = readlineSync.question('Enter the address to change non accredited limit: ');
@@ -1015,7 +1017,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(changeNonAccreditedLimitAction);
           break;
         case 4:
-          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${remoteNetwork}`);
+          await changeNonAccreditedLimit.executeApp(tokenSymbol, 75);
           break;
         case 5:
           await modfifyTimes();

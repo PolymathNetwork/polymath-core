@@ -1,6 +1,5 @@
 var common = require('./common/common_functions');
-var fs = require('fs');
-var csv = require('fast-csv');
+var csv = require('./common/csv_sync');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 var BigNumber = require('bignumber.js');
@@ -19,7 +18,7 @@ async function startScript(tokenSymbol, batchSize) {
     BATCH_SIZE = batchSize;
   }
 
-  common.logAsciiBull();
+  //common.logAsciiBull();
 
   let STAddress = await checkST(tokenSymbol);
   securityToken = new web3.eth.Contract(abis.securityToken(), STAddress);
@@ -52,50 +51,39 @@ async function STConnect() {
 }
 
 async function readCsv() {
-  var CSV_STRING = fs.readFileSync("./CLI/data/multi_mint_data.csv").toString();
+  var CSV_STRING = csv('./CLI/data/multi_mint_data.csv');
   let i = 0;
 
-  csv.fromString(CSV_STRING)
-    .on("data", (data) => {
-      let data_processed = multimint_processing(data);
-      fullFileData.push(data_processed[1]);
+  CSV_STRING.forEach(line => {
+    let data_processed = multimint_processing(line);
+    fullFileData.push(data_processed[1]);
 
-      if (data_processed[0]) {
-        allocData.push(data_processed[1]);
-        i++;
-        if (i >= BATCH_SIZE) {
-          distribData.push(allocData);
-          allocData = [];
-          i = 0;
-        }
-      } else {
-        badData.push(data_processed[1]);
+    if (data_processed[0]) {
+      allocData.push(data_processed[1]);
+      i++;
+      if (i >= BATCH_SIZE) {
+        distribData.push(allocData);
+        allocData = [];
+        i = 0;
       }
+    } else {
+      badData.push(data_processed[1]);
+    }
+  });
 
-    })
-    .on("end", async () => {
-      distribData.push(allocData);
-      allocData = [];
+  distribData.push(allocData);
+  allocData = [];
 
-      await saveInBlockchain();
-      await finalResults();
-      return;
-    });
+  await saveInBlockchain();
+  await finalResults();
 }
 
 async function saveInBlockchain() {
-  let gtmModules;
-
-  try {
-    gtmModules = await securityToken.methods.getModulesByType(3).call();
-  } catch (e) {
-    console.log("Minting of tokens is only allowed before the STO get attached", e)
-    process.exit(0)
-  }
-
-  if (!gtmModules.length) {
-    console.log("Minting of tokens is only allowed before the STO get attached")
-    process.exit(0)
+  let gtmModules = await securityToken.methods.getModulesByType(3).call();
+  
+  if (gtmModules.length > 0) {
+    console.log("Minting of tokens is only allowed before the STO get attached");
+    process.exit(0);
   }
 
   console.log(`
@@ -128,7 +116,7 @@ async function saveInBlockchain() {
         }
       }
 
-      let mintMultiAction = securityToken.methods.mintMulti(affiliatesVerifiedArray, tokensVerifiedArray);
+      let mintMultiAction = await securityToken.methods.mintMulti(affiliatesVerifiedArray, tokensVerifiedArray);
       let tx = await common.sendTransaction(mintMultiAction);
       console.log(`Batch ${i} - Attempting to send the Minted tokens to affiliates accounts:\n\n`, affiliatesVerifiedArray, "\n\n");
       console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");

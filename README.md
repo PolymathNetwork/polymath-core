@@ -59,6 +59,19 @@ The security token registry keeps track of deployed STs on the Polymath Platform
 ### ModuleRegistry
 Modules allow custom add-in functionality in the issuance process and beyond. The module registry keeps track of modules added by Polymath or any other users. Modules can only be attached to STs if Polymath has previously verified them. If not, the only user able to utilize a module is its owner, and they should be using it "at their own risk".
 
+## CLI and CLI Documentation 
+
+The CLI is for users that want to easily walkthrough all the details of an STO issuance. The CLI documentation is located on our [Github Wiki](https://github.com/PolymathNetwork/polymath-core/wiki). You can easily navigate through it with the sidebar directory in order to run the CLI and set up and test the following: 
+
+1. Prerequisite Instructions / Deploy and setup the Polymath contracts
+2. Launch the CLI on Ganache
+3. Use the Faucet to get POLY
+4. Deploy a token + Launch a USDTieredSTO
+5. Whitelist investors
+6. Work with the Dividends module
+7. Using other CLI features
+
+
 # Setting up Polymath Core
 
 ### v2.0.0 MAINNET

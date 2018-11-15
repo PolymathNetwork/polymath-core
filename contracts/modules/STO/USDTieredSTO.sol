@@ -22,7 +22,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 rate;
 
         // How many token units a buyer gets per USD in this tier (multiplied by 10**18) when investing in POLY up to tokensDiscountPoly
-        uint256 rateDiscountPoly; 
+        uint256 rateDiscountPoly;
 
         // How many tokens are available in this tier (relative to totalSupply)
         uint256 tokenTotal;
@@ -202,7 +202,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     /**
-     * @dev Modifies fund raise types 
+     * @dev Modifies fund raise types
      * @param _fundRaiseTypes Array of fund raise types to allow
      */
     function modifyFunding(FundRaiseType[] _fundRaiseTypes) external onlyOwner {
@@ -291,7 +291,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(_tokensPerTierTotal.length > 0, "No tiers provided");
         require(_ratePerTier.length == _tokensPerTierTotal.length &&
             _ratePerTierDiscountPoly.length == _tokensPerTierTotal.length &&
-            _tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length, 
+            _tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length,
             "Tier data length mismatch"
         );
         delete tiers;
@@ -408,7 +408,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         buyWithETHRateLimited(msg.sender, 0);
     }
 
-    // Buy functions without rate restriction 
+    // Buy functions without rate restriction
     function buyWithETH(address _beneficiary) external payable {
         buyWithETHRateLimited(_beneficiary, 0);
     }
@@ -448,7 +448,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _minTokens Minumum number of tokens to buy or else revert
       */
     function buyWithPOLYRateLimited(address _beneficiary, uint256 _investedPOLY, uint256 _minTokens) public validPOLY {
-        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, _minTokens);        
+        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, _minTokens);
     }
 
     /**
@@ -529,7 +529,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
                 if (!gotoNextTier)
                     break;
             }
-            
+
         }
 
         // Modify storage
@@ -544,7 +544,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             spentValue = 0;
         } else {
             //_rate is actually OriginalUSD. Reusing variable to prevent stackoverflow
-            spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, _rate), _investmentValue); 
+            spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, _rate), _investmentValue);
         }
 
         // Return calculated amounts
@@ -556,7 +556,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _tier,
         uint256 _investedUSD,
         FundRaiseType _fundRaiseType
-    ) 
+    )
         internal
         returns(uint256 spentUSD, bool gotoNextTier)
      {
@@ -712,7 +712,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     /**
-     * @notice Return the total no. of tokens sold for ETH
+     * @notice Return the total no. of tokens sold for the given fund raise type
+     * param _fundRaiseType The fund raising currency (e.g. ETH, POLY, DAI) to calculate sold tokens for
      * @return uint256 Total number of tokens sold for ETH
      */
     function getTokensSoldFor(FundRaiseType _fundRaiseType) public view returns (uint256) {
@@ -720,6 +721,20 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         for (uint256 i = 0; i < tiers.length; i++) {
             tokensSold = tokensSold.add(tiers[i].minted[uint8(_fundRaiseType)]);
         }
+        return tokensSold;
+    }
+
+    /**
+     * @notice Return the total no. of tokens sold in a given tier
+     * param _tier The tier to calculate sold tokens for
+     * @return uint256 Total number of tokens sold in the tier
+     */
+    function getTokensSoldByTier(uint256 _tier) public view returns (uint256) {
+        require(_tier < tiers.length, "Incorrect tier");
+        uint256 tokensSold;
+        tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.ETH)]);
+        tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.POLY)]);
+        tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.DAI)]);
         return tokensSold;
     }
 
@@ -748,7 +763,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return Array Rate at which tokens are sold at different tiers
      * @return Amount of funds raised
      * @return Number of individual investors this STO have.
-     * @return Amount of tokens sold. 
+     * @return Amount of tokens sold.
      * @return Array of bools to show if funding is allowed in ETH, POLY, DAI respectively
      */
     function getSTODetails() public view returns(uint256, uint256, uint256, uint256[], uint256[], uint256, uint256, uint256, bool[]) {

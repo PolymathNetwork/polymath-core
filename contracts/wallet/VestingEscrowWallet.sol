@@ -8,6 +8,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 /**
  * @title Wallet for core vesting escrow functionality
  */
+//TODO add docs for public, external methods
 //TODO remove vesting from methods, events, variables
 contract VestingEscrowWallet is Ownable {
     using SafeMath for uint256;
@@ -18,8 +19,8 @@ contract VestingEscrowWallet is Ownable {
         uint256 lockedTokens;
         uint256 vestingDuration;
         uint256 vestingFrequency;
-        uint256 startDate;
-        uint256 nextDate;
+        uint256 startTime;
+        uint256 nextTime;
         State state;
     }
 
@@ -52,7 +53,7 @@ contract VestingEscrowWallet is Ownable {
         uint256 _numberOfTokens,
         uint256 _vestingDuration,
         uint256 _vestingFrequency,
-        uint256 _startDate,
+        uint256 _startTime,
         uint256 _timestamp
     );
     event EditVestingSchedule(
@@ -61,7 +62,7 @@ contract VestingEscrowWallet is Ownable {
         uint256 _numberOfTokens,
         uint256 _vestingDuration,
         uint256 _vestingFrequency,
-        uint256 _startDate,
+        uint256 _startTime,
         uint256 _timestamp
     );
     event RevokeVestingSchedules(address _beneficiary, uint256 _timestamp);
@@ -127,12 +128,12 @@ contract VestingEscrowWallet is Ownable {
         uint256 _numberOfTokens,
         uint256 _vestingDuration,
         uint256 _vestingFrequency,
-        uint256 _startDate
+        uint256 _startTime
     )
         public
         onlyOwner
     {
-        _validateSchedule(_beneficiary, _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate);
+        _validateSchedule(_beneficiary, _numberOfTokens, _vestingDuration, _vestingFrequency, _startTime);
         require(_numberOfTokens <= unassignedTokens, "Wallet doesn't contain enough unassigned tokens");
 
         VestingSchedule memory schedule;
@@ -141,8 +142,8 @@ contract VestingEscrowWallet is Ownable {
         schedule.lockedTokens = _numberOfTokens;
         schedule.vestingDuration = _vestingDuration;
         schedule.vestingFrequency = _vestingFrequency;
-        schedule.startDate = _startDate;
-        schedule.nextDate = _startDate.add(schedule.vestingFrequency);
+        schedule.startTime = _startTime;
+        schedule.nextTime = _startTime.add(schedule.vestingFrequency);
         schedule.state = State.STARTED;
         //add beneficiary to the schedule list only if adding first schedule
         if (vestingData[_beneficiary].schedules.length == 0) {
@@ -151,13 +152,13 @@ contract VestingEscrowWallet is Ownable {
         }
         vestingData[_beneficiary].schedules.push(schedule);
         /*solium-disable-next-line security/no-block-members*/
-        emit AddVestingSchedule(_beneficiary, _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate, now);
+        emit AddVestingSchedule(_beneficiary, _numberOfTokens, _vestingDuration, _vestingFrequency, _startTime, now);
     }
 
-    function addVestingScheduleFromTemplate(address _beneficiary, uint256 _index, uint256 _startDate) public onlyOwner {
+    function addVestingScheduleFromTemplate(address _beneficiary, uint256 _index, uint256 _startTime) public onlyOwner {
         require(_index < templates.length, "Template not found");
         VestingTemplate template = templates[_index];
-        addVestingSchedule(_beneficiary, template.numberOfTokens, template.vestingDuration, template.vestingFrequency, _startDate);
+        addVestingSchedule(_beneficiary, template.numberOfTokens, template.vestingDuration, template.vestingFrequency, _startTime);
     }
 
     function editVestingSchedule(
@@ -166,12 +167,12 @@ contract VestingEscrowWallet is Ownable {
         uint256 _numberOfTokens,
         uint256 _vestingDuration,
         uint256 _vestingFrequency,
-        uint256 _startDate
+        uint256 _startTime
     )
         external
         onlyOwner
     {
-        _validateSchedule(_beneficiary, _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate);
+        _validateSchedule(_beneficiary, _numberOfTokens, _vestingDuration, _vestingFrequency, _startTime);
         require(_index < vestingData[_beneficiary].schedules.length, "Schedule not found");
 //        require(_numberOfTokens <= unassignedTokens, "Wallet doesn't contain enough unassigned tokens");
 
@@ -179,7 +180,7 @@ contract VestingEscrowWallet is Ownable {
 
         //TODO implement
 
-        emit EditVestingSchedule(_beneficiary, _index, _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate, now);
+        emit EditVestingSchedule(_beneficiary, _index, _numberOfTokens, _vestingDuration, _vestingFrequency, _startTime, now);
     }
 
     function revokeVestingSchedule(address _beneficiary, uint256 _index) external onlyOwner {
@@ -217,8 +218,8 @@ contract VestingEscrowWallet is Ownable {
             schedule.lockedTokens,
             schedule.vestingDuration,
             schedule.vestingFrequency,
-            schedule.startDate,
-            schedule.nextDate,
+            schedule.startTime,
+            schedule.nextTime,
             schedule.state
         );
     }
@@ -239,19 +240,19 @@ contract VestingEscrowWallet is Ownable {
         uint256 _numberOfTokens,
         uint256 _vestingDuration,
         uint256 _vestingFrequency,
-        uint256 _startDate
+        uint256 _startTime
     )
         external
         onlyOwner
     {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            addVestingSchedule(_beneficiaries[i], _numberOfTokens, _vestingDuration, _vestingFrequency, _startDate);
+            addVestingSchedule(_beneficiaries[i], _numberOfTokens, _vestingDuration, _vestingFrequency, _startTime);
         }
     }
 
-    function batchAddVestingScheduleFromTemplate(address[] _beneficiaries, uint256 _index, uint256 _startDate) public onlyOwner {
+    function batchAddVestingScheduleFromTemplate(address[] _beneficiaries, uint256 _index, uint256 _startTime) public onlyOwner {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            addVestingScheduleFromTemplate(_beneficiaries[i], _index, _startDate);
+            addVestingScheduleFromTemplate(_beneficiaries[i], _index, _startTime);
         }
     }
 
@@ -261,10 +262,10 @@ contract VestingEscrowWallet is Ownable {
         }
     }
 
-    function _validateSchedule(address _beneficiary, uint256 _numberOfTokens, uint256 _vestingDuration, uint256 _vestingFrequency, uint256 _startDate) {
+    function _validateSchedule(address _beneficiary, uint256 _numberOfTokens, uint256 _vestingDuration, uint256 _vestingFrequency, uint256 _startTime) {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         _validateTemplate(_numberOfTokens, _vestingDuration, _vestingFrequency);
-        require(_startDate < now, "Start date shouldn't be in the past");
+        require(_startTime < now, "Start date shouldn't be in the past");
     }
 
     function _validateTemplate(uint256 _numberOfTokens, uint256 _vestingDuration, uint256 _vestingFrequency) {
@@ -290,15 +291,15 @@ contract VestingEscrowWallet is Ownable {
         for (uint256 i = 0; i < data.schedules.length; i++) {
             VestingSchedule schedule = data.schedules[i];
             /*solium-disable-next-line security/no-block-members*/
-            if (schedule.state == State.STARTED && schedule.nextDate <= now) {
+            if (schedule.state == State.STARTED && schedule.nextTime <= now) {
                 uint256 periodCount = schedule.vestingDuration.div(schedule.vestingFrequency);
                 uint256 numberOfTokens = schedule.numberOfTokens.div(periodCount);
                 data.availableTokens = data.availableTokens.add(numberOfTokens);
                 schedule.lockedTokens = schedule.lockedTokens.sub(numberOfTokens);
-                if (schedule.nextDate == schedule.startDate.add(schedule.vestingDuration)) {
+                if (schedule.nextTime == schedule.startTime.add(schedule.vestingDuration)) {
                     schedule.state = State.COMPLETED;
                 } else {
-                    schedule.nextDate = schedule.nextDate.add(schedule.vestingFrequency);
+                    schedule.nextTime = schedule.nextTime.add(schedule.vestingFrequency);
                 }
             }
         }

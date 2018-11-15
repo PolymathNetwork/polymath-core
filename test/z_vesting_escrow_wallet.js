@@ -1,6 +1,6 @@
 import {deployPolyRegistryAndPolyToken, deployVestingEscrowWallet} from "./helpers/createInstances";
 import latestTime from "./helpers/latestTime";
-import {duration} from "./helpers/utils";
+import {duration as durationUtil} from "./helpers/utils";
 
 const VestingEscrowWallet = artifacts.require('./VestingEscrowWallet.sol');
 
@@ -57,24 +57,17 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should add Vesting Schedule to the beneficiary address", async () => {
             let numberOfTokens = 100000;
-            let vestingDuration = duration.years(4);
-            let vestingFrequency = duration.years(1);
-            let startDate = latestTime();
-            const tx = await I_VestingEscrowWallet.addVestingSchedule(
-                account_beneficiary1,
-                numberOfTokens,
-                vestingDuration,
-                vestingFrequency,
-                startDate,
-                {from: account_polymath}
-            );
+            let duration = durationUtil.years(4);
+            let frequency = durationUtil.years(1);
+            let startTime = latestTime() + durationUtil.days(1);
+            const tx = await I_VestingEscrowWallet.addSchedule(account_beneficiary1, numberOfTokens, duration, frequency, startTime, {from: account_polymath});
 
             let log = tx.logs[0];
             assert.equal(log.args._beneficiary, account_beneficiary1);
             assert.equal(log.args._numberOfTokens, numberOfTokens);
-            assert.equal(log.args._vestingDuration, vestingDuration);
-            assert.equal(log.args._vestingFrequency, vestingFrequency);
-            assert.equal(log.args._startDate, startDate);
+            assert.equal(log.args._duration, duration);
+            assert.equal(log.args._frequency, frequency);
+            assert.equal(log.args._startTime, startTime);
         });
 
 

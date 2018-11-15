@@ -37,7 +37,7 @@ contract VestingEscrowWallet is Ownable {
         uint256 vestingFrequency;
     }
 
-    enum State {STARTED, COMPLETED}
+    enum State {CREATED, STARTED, COMPLETED}
 
     ERC20 public token;
     address public treasury;
@@ -144,7 +144,7 @@ contract VestingEscrowWallet is Ownable {
         schedule.vestingFrequency = _vestingFrequency;
         schedule.startTime = _startTime;
         schedule.nextTime = _startTime.add(schedule.vestingFrequency);
-        schedule.state = State.STARTED;
+        schedule.state = State.CREATED;
         //add beneficiary to the schedule list only if adding first schedule
         if (vestingData[_beneficiary].schedules.length == 0) {
             vestingData[_beneficiary].index = beneficiaries.length;
@@ -169,17 +169,26 @@ contract VestingEscrowWallet is Ownable {
         uint256 _vestingFrequency,
         uint256 _startTime
     )
-        external
+        public
         onlyOwner
     {
         _validateSchedule(_beneficiary, _numberOfTokens, _vestingDuration, _vestingFrequency, _startTime);
         require(_index < vestingData[_beneficiary].schedules.length, "Schedule not found");
-//        require(_numberOfTokens <= unassignedTokens, "Wallet doesn't contain enough unassigned tokens");
-
         VestingSchedule storage schedule = vestingData[_beneficiary].schedules[_index];
-
-        //TODO implement
-
+        /*solium-disable-next-line security/no-block-members*/
+        require(schedule.startTime < now, "It's not possible to edit the started schedule");
+        if (_numberOfTokens <= schedule.lockedTokens) {
+            unassignedTokens = unassignedTokens.add(schedule.lockedTokens - _numberOfTokens);
+        } else {
+            require((_numberOfTokens - schedule.lockedTokens) <= unassignedTokens, "Wallet doesn't contain enough unassigned tokens");
+            unassignedTokens = unassignedTokens.sub(_numberOfTokens - schedule.lockedTokens);
+        }
+        schedule.numberOfTokens = _numberOfTokens;
+        schedule.lockedTokens = _numberOfTokens;
+        schedule.vestingDuration = _vestingDuration;
+        schedule.vestingFrequency = _vestingFrequency;
+        schedule.startTime = _startTime;
+        schedule.nextTime = _startTime.add(schedule.vestingFrequency);
         emit EditVestingSchedule(_beneficiary, _index, _numberOfTokens, _vestingDuration, _vestingFrequency, _startTime, now);
     }
 
@@ -262,6 +271,23 @@ contract VestingEscrowWallet is Ownable {
         }
     }
 
+    function batchEditVestingSchedule(
+        address[] _beneficiaries,
+        uint256[] _indexes,
+        uint256 _numberOfTokens,
+        uint256 _vestingDuration,
+        uint256 _vestingFrequency,
+        uint256 _startTime
+    )
+        external
+        onlyOwner
+    {
+        require(_beneficiaries.length == _indexes.length, "Beneficiaries array and indexes array should have the same length");
+        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+            editVestingSchedule(_beneficiaries[i], _indexes[i], _numberOfTokens, _vestingDuration, _vestingFrequency, _startTime);
+        }
+    }
+
     function _validateSchedule(address _beneficiary, uint256 _numberOfTokens, uint256 _vestingDuration, uint256 _vestingFrequency, uint256 _startTime) {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         _validateTemplate(_numberOfTokens, _vestingDuration, _vestingFrequency);
@@ -291,7 +317,7 @@ contract VestingEscrowWallet is Ownable {
         for (uint256 i = 0; i < data.schedules.length; i++) {
             VestingSchedule schedule = data.schedules[i];
             /*solium-disable-next-line security/no-block-members*/
-            if (schedule.state == State.STARTED && schedule.nextTime <= now) {
+            if (schedule.state != State.COMPLETED && schedule.nextTime <= now) {
                 uint256 periodCount = schedule.vestingDuration.div(schedule.vestingFrequency);
                 uint256 numberOfTokens = schedule.numberOfTokens.div(periodCount);
                 data.availableTokens = data.availableTokens.add(numberOfTokens);
@@ -299,6 +325,7 @@ contract VestingEscrowWallet is Ownable {
                 if (schedule.nextTime == schedule.startTime.add(schedule.vestingDuration)) {
                     schedule.state = State.COMPLETED;
                 } else {
+                    schedule.state = State.STARTED;
                     schedule.nextTime = schedule.nextTime.add(schedule.vestingFrequency);
                 }
             }

@@ -122,6 +122,10 @@ contract VestingEscrowWallet is Ownable {
         emit RemoveTemplate(_index, now);
     }
 
+    function getTemplateCount() external onlyOwner returns(uint256) {
+        return templates.length;
+    }
+
     function addSchedule(
         address _beneficiary,
         uint256 _numberOfTokens,
@@ -175,7 +179,7 @@ contract VestingEscrowWallet is Ownable {
         require(_index < dataMap[_beneficiary].schedules.length, "Schedule not found");
         Schedule storage schedule = dataMap[_beneficiary].schedules[_index];
         /*solium-disable-next-line security/no-block-members*/
-        require(schedule.startTime < now, "It's not possible to edit the started schedule");
+        require(now < schedule.startTime, "It's not possible to edit the started schedule");
         if (_numberOfTokens <= schedule.lockedTokens) {
             unassignedTokens = unassignedTokens.add(schedule.lockedTokens - _numberOfTokens);
         } else {
@@ -217,7 +221,7 @@ contract VestingEscrowWallet is Ownable {
         emit RevokeSchedules(_beneficiary, now);
     }
 
-    function getSchedule(address _beneficiary, uint256 _index) external view onlyOwner returns(uint256, uint256, uint256, uint256, uint256, uint256, State) {
+    function getSchedule(address _beneficiary, uint256 _index) external view returns(uint256, uint256, uint256, uint256, uint256, uint256, State) {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         require(_index < dataMap[_beneficiary].schedules.length, "Schedule not found");
         Schedule storage schedule = dataMap[_beneficiary].schedules[_index];
@@ -232,9 +236,14 @@ contract VestingEscrowWallet is Ownable {
         );
     }
 
-    function getScheduleCount(address _beneficiary) external view onlyOwner returns(uint256) {
+    function getScheduleCount(address _beneficiary) external view returns(uint256) {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         return dataMap[_beneficiary].schedules.length;
+    }
+
+    function getAvailableTokens(address _beneficiary) external view returns(uint256) {
+        require(_beneficiary != address(0), "Invalid beneficiary address");
+        return dataMap[_beneficiary].availableTokens;
     }
 
     function batchSendAvailableTokens(address[] _beneficiaries) external onlyOwner {
@@ -290,7 +299,7 @@ contract VestingEscrowWallet is Ownable {
     function _validateSchedule(address _beneficiary, uint256 _numberOfTokens, uint256 _duration, uint256 _frequency, uint256 _startTime) private view {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         _validateTemplate(_numberOfTokens, _duration, _frequency);
-        require(_startTime > now, "Start date shouldn't be in the past");
+        require(now < _startTime, "Start date shouldn't be in the past");
     }
 
     function _validateTemplate(uint256 _numberOfTokens, uint256 _duration, uint256 _frequency) private pure {

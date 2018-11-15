@@ -424,8 +424,8 @@ export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, 
     return new Array(I_MockWrongTypeBurnFactory);
 }
 
-export async function deployVestingEscrowWallet(accountPolymath, polyToken, treasury) {
-    I_VestingEscrowWallet = await VestingEscrowWallet.new(polyToken, treasury, { from: accountPolymath });
+export async function deployVestingEscrowWallet(accountOwner, polyToken, treasury) {
+    I_VestingEscrowWallet = await VestingEscrowWallet.new(polyToken, treasury, { from: accountOwner });
     assert.notEqual(
         I_VestingEscrowWallet.address.valueOf(),
         "0x0000000000000000000000000000000000000000",

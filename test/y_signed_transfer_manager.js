@@ -291,7 +291,7 @@ contract("SignedTransferManager", accounts => {
                 account_investor3
             );
            
-            await I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, true, {from: account_investor3});
+            await I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, false, {from: account_investor3});
             assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
         });
 

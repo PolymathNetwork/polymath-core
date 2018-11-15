@@ -76,18 +76,22 @@ contract SignedTransferManager is ITransferManager {
     */
     function verifyTransfer(address _from, address _to, uint256 _amount, bytes _data , bool _isTransfer) public returns(Result) {
         if (!paused) {
+
+            require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
             
             require(invalidSignatures[_data] != true, "Invalid signature - signature is either used or deemed as invalid");
             bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
-            bytes32 _hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-            address signer = _recoverSignerAdd(_hash, _data);
+            bytes32 prependedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
+            address signer = _recoverSignerAdd(prependedHash, _data);
+            
             require(signers[signer] == true, "Invalid signature - signer is not on the list");
             
-            if(_isTransfer == true){
-                 invalidSignatures[_data] = true;
+            if (signers[signer] != true){
+                return Result.NA;
+            } else {
+                invalidSignatures[_data] = true;
+                return Result.VALID;
             }
-
-            return Result.VALID;
         }
         return Result.NA;
     }
@@ -106,29 +110,14 @@ contract SignedTransferManager is ITransferManager {
         require(invalidSignatures[_data] != true, "This signature is invalid.");
 
         bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
-        bytes32 _hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
+        bytes32 prependedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
 
         // return signer;
-        require(_recoverSignerAdd(_hash,_data) == msg.sender, "Incorrect Signer for this signature");
+        require(_recoverSignerAdd(prependedHash,_data) == msg.sender, "Incorrect Signer for this signature");
 
         invalidSignatures[_data] = true;
         emit InvalidSignature(_data);
     }
-
-    // function invalidSignature(address _from, address _to, uint256 _amount, bytes _data) public view returns(address) {
-    //     require(signers[msg.sender] == true, "Only signer is allowed to invalid signature.");
-    //     require(invalidSignatures[_data] != true, "This signature is invalid.");
-
-    //     // we have to double hash due to our web3 default hash once
-    //     bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
-    //     bytes32 _hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-
-    //     // return _recoverSignerAdd(_hash,_data);
-    //     require(_recoverSignerAdd(_hash,_data) == msg.sender, "Incorrect Signer for this signature");
-
-    //     invalidSignatures[_data] = true;
-    //     emit InvalidSignature(_data);
-    // }
 
     /**
      * @notice used to recover signers' add from signature

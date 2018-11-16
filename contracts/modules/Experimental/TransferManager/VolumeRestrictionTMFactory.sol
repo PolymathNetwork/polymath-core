@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./VolumeRestrictionTM.sol";
-import "../ModuleFactory.sol";
+import "../../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying VolumeRestrictionTM module

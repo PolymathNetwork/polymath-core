@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 * Added `getSTODetails` to USDTSTO.
 * Added an Array of Tiers that will hold data about every tier in USDTSTO.
 * Added `buyWithETHRateLimited`, `buyWithPOLYRateLimited` and `buyWithUSDRateLimited` to USDTSTO.
+* Added `getTokensSoldByTier` to return sold (not minted during finalisation) tokens in each tier.
 
 ##Changed
 * `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
@@ -63,7 +64,7 @@ All notable changes to this project will be documented in this file.
 
 ======
 
-# v1.4.1 
+# v1.4.1
 
 [__1.4.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 
@@ -87,7 +88,7 @@ All notable changes to this project will be documented in this file.
 * Fix #238: make beneficial investments optionally supported (default to not
 allowed)
 
-# v1.4.0 
+# v1.4.0
 
 [__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 

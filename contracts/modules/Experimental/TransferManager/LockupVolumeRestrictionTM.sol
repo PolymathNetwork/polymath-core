@@ -90,7 +90,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint256 _lockUpPeriodSeconds,
         uint256 _releaseFrequencySeconds
     ) 
-        public 
+        external 
         withPerm(ADMIN)
     {   
        _addLockUp(
@@ -139,7 +139,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
      * @param _userAddress Address of the user whose tokens are locked up
      * @param _lockupIndex Index of the lockup need to be removed.
      */
-    function removeLockUp(address _userAddress, uint256 _lockupIndex) public withPerm(ADMIN) {
+    function removeLockUp(address _userAddress, uint256 _lockupIndex) external withPerm(ADMIN) {
         _removeLockUp(_userAddress, _lockupIndex);
     }
 
@@ -172,7 +172,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint256 _releaseFrequencySeconds,
         uint256 _lockupIndex
     ) 
-        public 
+        external 
         withPerm(ADMIN) 
     {
         _modifyLockUp(
@@ -201,7 +201,10 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint256[] _lockUpPeriodsSeconds,
         uint256[] _releaseFrequenciesSeconds,
         uint256[] _lockupIndexes
-    ) public withPerm(ADMIN) {
+    ) 
+        external 
+        withPerm(ADMIN)
+    {
         require(
             _userAddresses.length == _lockUpPeriodsSeconds.length && /*solium-disable-line operator-whitespace*/
             _userAddresses.length == _releaseFrequenciesSeconds.length && /*solium-disable-line operator-whitespace*/

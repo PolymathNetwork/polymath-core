@@ -83,13 +83,13 @@ contract SignedTransferManager is ITransferManager {
             bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
             bytes32 prependedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
             address signer = _recoverSignerAdd(prependedHash, _data);
-            
-            require(signers[signer] == true, "Invalid signature - signer is not on the list");
-            
+         
             if (signers[signer] != true){
                 return Result.NA;
-            } else {
+            } else if(_isTransfer == true) {
                 invalidSignatures[_data] = true;
+                return Result.VALID;
+            } else {
                 return Result.VALID;
             }
         }

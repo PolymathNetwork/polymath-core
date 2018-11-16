@@ -122,7 +122,7 @@ contract VestingEscrowWallet is Ownable {
         emit RemoveTemplate(_index, now);
     }
 
-    function getTemplateCount() external onlyOwner returns(uint256) {
+    function getTemplateCount() external view onlyOwner returns(uint256) {
         return templates.length;
     }
 

@@ -93,20 +93,13 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         public 
         withPerm(ADMIN)
     {   
-        /*solium-disable-next-line security/no-block-members*/
-        require(_startTime >= now, "start time is in past");
-        _checkLockUpParams(_userAddress, _lockupAmount, _lockUpPeriodSeconds, _releaseFrequencySeconds);
-
-        lockUps[_userAddress].push(LockUp(_lockupAmount, _startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds));
-
-        emit AddNewLockUp(
+       _addLockUp(
             _userAddress,
             _lockupAmount,
             _startTime,
             _lockUpPeriodSeconds,
-            _releaseFrequencySeconds,
-            lockUps[_userAddress].length -1
-        );
+            _releaseFrequencySeconds
+        ); 
     }
 
     /**
@@ -136,7 +129,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         );
 
         for (uint256 i = 0; i < _userAddresses.length; i++) {
-            addLockUp(_userAddresses[i], _lockupAmounts[i], _startTimes[i], _lockUpPeriodsSeconds[i], _releaseFrequenciesSeconds[i]);
+            _addLockUp(_userAddresses[i], _lockupAmounts[i], _startTimes[i], _lockUpPeriodsSeconds[i], _releaseFrequenciesSeconds[i]);
         }
 
     }
@@ -147,21 +140,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
      * @param _lockupIndex Index of the lockup need to be removed.
      */
     function removeLockUp(address _userAddress, uint256 _lockupIndex) public withPerm(ADMIN) {
-        require(lockUps[_userAddress].length > _lockupIndex, "Invalid index");
-        LockUp[] storage userLockup = lockUps[_userAddress];
-
-        emit RemoveLockUp(
-            _userAddress,
-            _lockupIndex
-        );
-
-        if (_lockupIndex != userLockup.length - 1) {
-            // move the last element in the array into the index that is desired to be removed.
-            userLockup[_lockupIndex] = userLockup[userLockup.length - 1];
-            /*solium-disable-next-line security/no-block-members*/
-            emit ChangeLockupIndex(_userAddress, userLockup.length - 1, _lockupIndex, now);
-        }
-        userLockup.length--;
+        _removeLockUp(_userAddress, _lockupIndex);
     }
 
     /**
@@ -172,7 +151,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     function removeLockUpMulti(address[] _userAddresses, uint256[] _lockupIndexes) external withPerm(ADMIN) {
         require(_userAddresses.length == _lockupIndexes.length, "Array length mismatch");
         for (uint256 i = 0; i < _userAddresses.length; i++) {
-            removeLockUp(_userAddresses[i], _lockupIndexes[i]);
+            _removeLockUp(_userAddresses[i], _lockupIndexes[i]);
         }
     }
 
@@ -196,33 +175,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         public 
         withPerm(ADMIN) 
     {
-        require(lockUps[_userAddress].length > _lockupIndex, "Invalid index");
-        
-        // Get the lockup from the master list and edit it
-        LockUp[] storage userLockup = lockUps[_userAddress];
-        // If _startTime is equal to the previous startTime then it only allow to modify 
-        // when there is no tokens gets unlocked from the lockup 
-        if (_startTime == userLockup[_lockupIndex].startTime) {
-            require(_getUnlockedAmountForLockup(userLockup, _lockupIndex) == uint256(0));
-        } else {
-            /*solium-disable-next-line security/no-block-members*/
-            require(_startTime >= now, "start time is in past");
-        }
-        _checkLockUpParams(
-            _userAddress,
-            _lockupAmount,
-            _lockUpPeriodSeconds,
-            _releaseFrequencySeconds
-        );
-
-        userLockup[_lockupIndex] =  LockUp(
-            _lockupAmount,
-            _startTime,
-            _lockUpPeriodSeconds,
-            _releaseFrequencySeconds
-        );
-        
-        emit ModifyLockUp(
+        _modifyLockUp(
             _userAddress,
             _lockupAmount,
             _startTime,
@@ -258,7 +211,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
             "Input array length mismatch"
         );
         for (uint256 i = 0; i < _userAddresses.length; i++) {
-            modifyLockUp(
+            _modifyLockUp(
                 _userAddresses[i],
                 _lockupAmounts[i],
                 _startTimes[i],
@@ -301,11 +254,12 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-     * @notice Checks whether the transfer is allowed
-     * @param _userAddress Address of the user whose lock ups should be checked
-     * @param _amount Amount of tokens that need to transact
+     * @notice Use to get the total locked tokens for a given user
+     * @param _userAddress Address of the user
+     * @return uint256 Total locked tokens amount
      */
-    function _checkIfValidTransfer(address _userAddress, uint256 _amount) internal view returns (Result) {
+    function getLockedTokenToUser(address _userAddress) public view returns(uint256) {
+        require(_userAddress != address(0), "Invalid address");
         LockUp[] memory userLockup = lockUps[_userAddress];
         uint256 totalRemainingLockedAmount = 0;
         for (uint256 i = 0; i < userLockup.length; i++) {
@@ -314,10 +268,109 @@ contract LockupVolumeRestrictionTM is ITransferManager {
             // aggregating all the remaining locked amount for all the lockups for a given address
             totalRemainingLockedAmount = totalRemainingLockedAmount.add(remainingLockedAmount);
         }
+        return totalRemainingLockedAmount;
+    }
+
+    function _modifyLockUp(
+        address _userAddress,
+        uint256 _lockupAmount,
+        uint256 _startTime,
+        uint256 _lockUpPeriodSeconds,
+        uint256 _releaseFrequencySeconds,
+        uint256 _lockupIndex
+    )
+        internal
+    {
+        require(lockUps[_userAddress].length > _lockupIndex, "Invalid index");
+        
+        // Get the lockup from the master list and edit it
+        LockUp[] storage userLockup = lockUps[_userAddress];
+        // If _startTime is equal to the previous startTime then it only allow to modify 
+        // when there is no tokens gets unlocked from the lockup 
+        if (_startTime == userLockup[_lockupIndex].startTime) {
+            require(_getUnlockedAmountForLockup(userLockup, _lockupIndex) == uint256(0));
+        } else {
+            /*solium-disable-next-line security/no-block-members*/
+            require(_startTime >= now, "start time is in past");
+        }
+        _checkLockUpParams(
+            _userAddress,
+            _lockupAmount,
+            _lockUpPeriodSeconds,
+            _releaseFrequencySeconds
+        );
+
+        userLockup[_lockupIndex] =  LockUp(
+            _lockupAmount,
+            _startTime,
+            _lockUpPeriodSeconds,
+            _releaseFrequencySeconds
+        );
+        
+        emit ModifyLockUp(
+            _userAddress,
+            _lockupAmount,
+            _startTime,
+            _lockUpPeriodSeconds,
+            _releaseFrequencySeconds,
+            _lockupIndex
+        );
+    }
+
+    function _removeLockUp(address _userAddress, uint256 _lockupIndex) internal {
+        require(lockUps[_userAddress].length > _lockupIndex, "Invalid index");
+        LockUp[] storage userLockup = lockUps[_userAddress];
+
+        emit RemoveLockUp(
+            _userAddress,
+            _lockupIndex
+        );
+
+        if (_lockupIndex != userLockup.length - 1) {
+            // move the last element in the array into the index that is desired to be removed.
+            userLockup[_lockupIndex] = userLockup[userLockup.length - 1];
+            /*solium-disable-next-line security/no-block-members*/
+            emit ChangeLockupIndex(_userAddress, userLockup.length - 1, _lockupIndex, now);
+        }
+        userLockup.length--;
+    }
+
+    function _addLockUp(
+        address _userAddress,
+        uint256 _lockupAmount,
+        uint256 _startTime,
+        uint256 _lockUpPeriodSeconds,
+        uint256 _releaseFrequencySeconds
+    ) 
+        internal 
+    {   
+        /*solium-disable-next-line security/no-block-members*/
+        require(_startTime >= now, "start time is in past");
+        _checkLockUpParams(_userAddress, _lockupAmount, _lockUpPeriodSeconds, _releaseFrequencySeconds);
+
+        lockUps[_userAddress].push(LockUp(_lockupAmount, _startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds));
+
+        emit AddNewLockUp(
+            _userAddress,
+            _lockupAmount,
+            _startTime,
+            _lockUpPeriodSeconds,
+            _releaseFrequencySeconds,
+            lockUps[_userAddress].length -1
+        );
+    }
+
+    /**
+     * @notice Checks whether the transfer is allowed
+     * @param _userAddress Address of the user whose lock ups should be checked
+     * @param _amount Amount of tokens that need to transact
+     */
+    function _checkIfValidTransfer(address _userAddress, uint256 _amount) internal view returns (Result) {
+        uint256 totalRemainingLockedAmount = getLockedTokenToUser(_userAddress);
         // Present balance of the user
         uint256 currentBalance = ISecurityToken(securityToken).balanceOf(_userAddress);
         if ((currentBalance.sub(_amount)) >= totalRemainingLockedAmount) {
-            return Result.VALID;
+            return Result.NA;
         }
         return Result.INVALID;
     }
@@ -380,6 +433,10 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         // make sure the amount to be released per period is not too granular for the token
         uint256 totalPeriods = _lockUpPeriodSeconds.div(_releaseFrequencySeconds);
         uint256 amountPerPeriod = _lockupAmount.div(totalPeriods);
+        require(
+            amountPerPeriod.mul(totalPeriods) == _lockupAmount,
+            "lockup amount should be completely divisible by the amount per period"
+        );
         require(
             amountPerPeriod % ISecurityToken(securityToken).granularity() == 0,
             "The amount to be released per period is more granular than allowed by the token"

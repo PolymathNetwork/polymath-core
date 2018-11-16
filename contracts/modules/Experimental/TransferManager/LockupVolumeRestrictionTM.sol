@@ -202,7 +202,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint256[] _releaseFrequenciesSeconds,
         uint256[] _lockupIndexes
     ) 
-        external 
+        public 
         withPerm(ADMIN)
     {
         require(

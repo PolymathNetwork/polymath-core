@@ -993,6 +993,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should get the tickers by owner", async () => {
             let tickersList = await I_STRProxied.getTickersByOwner.call(token_owner);
+            console.log(tickersList);
             assert.equal(tickersList.length, 4);
             let tickersListArray = await I_STRProxied.getTickersByOwner.call(account_temp);
             console.log(tickersListArray);

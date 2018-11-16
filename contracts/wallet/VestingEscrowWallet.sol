@@ -94,12 +94,10 @@ contract VestingEscrowWallet is Ownable {
     }
 
     function sendAvailableTokens(address _beneficiary) public onlyOwner {
-        _update(_beneficiary);
         _sendTokens(_beneficiary);
     }
 
     function withdrawAvailableTokens() external {
-        _update(msg.sender);
         _sendTokens(msg.sender);
     }
 
@@ -320,6 +318,10 @@ contract VestingEscrowWallet is Ownable {
         emit SendTokens(_beneficiary, amount, now);
     }
 
+    function update(address _beneficiary) external onlyOwner {
+        _update(_beneficiary);
+    }
+
     function _update(address _beneficiary) private {
         Data storage data = dataMap[_beneficiary];
         for (uint256 i = 0; i < data.schedules.length; i++) {
@@ -338,6 +340,10 @@ contract VestingEscrowWallet is Ownable {
                 }
             }
         }
+    }
+
+    function updateAll() external onlyOwner {
+        _updateAll();
     }
 
     function _updateAll() private {

@@ -78,6 +78,7 @@ contract SignedTransferManager is ITransferManager {
         if (!paused) {
 
             require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
+            require(_data.length != 0, "Invalid data input");
             
             require(invalidSignatures[_data] != true, "Invalid signature - signature is either used or deemed as invalid");
             bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));

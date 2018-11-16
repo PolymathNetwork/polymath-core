@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file.
 * Added `getSTODetails` to USDTSTO.
 * Added an Array of Tiers that will hold data about every tier in USDTSTO.
 * Added `buyWithETHRateLimited`, `buyWithPOLYRateLimited` and `buyWithUSDRateLimited` to USDTSTO.
-* Added `getTokensSoldByTier` to return sold (not minted during finalisation) tokens in each tier.
+* Added `getTokensSoldByTier` to return sold (not minted during finalisation) tokens in each tier to USDTSTO.
 
 ##Changed
 * `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.

@@ -25,6 +25,9 @@ contract('VestingEscrowWallet', accounts => {
     let account_beneficiary1;
     let account_beneficiary2;
     let account_beneficiary3;
+    let account_beneficiary4;
+
+    let beneficiaries;
 
     let message = "Transaction Should Fail!";
 
@@ -39,9 +42,16 @@ contract('VestingEscrowWallet', accounts => {
         wallet_owner = accounts[1];
         account_treasury = accounts[2];
 
-        account_beneficiary1 = accounts[7];
-        account_beneficiary2 = accounts[8];
-        account_beneficiary3 = accounts[9];
+        account_beneficiary1 = accounts[6];
+        account_beneficiary2 = accounts[7];
+        account_beneficiary3 = accounts[8];
+        account_beneficiary4 = accounts[9];
+
+        beneficiaries = [
+            account_beneficiary1,
+            account_beneficiary2,
+            account_beneficiary3
+        ];
 
         // Step 1: Deploy the PolyToken
         [I_PolymathRegistry, I_PolyToken] = await deployPolyRegistryAndPolyToken(account_polymath, account_treasury);
@@ -230,7 +240,7 @@ contract('VestingEscrowWallet', accounts => {
             checkSchedule(schedule, numberOfTokens, numberOfTokens, duration, frequency, startTime, startTime + frequency, CREATED);
         });
 
-        it("Should edit Vesting Schedule to the beneficiary address", async () => {
+        it("Should edit Vesting Schedule for the beneficiary's address", async () => {
             let numberOfTokens = schedules[1].numberOfTokens;
             let duration = schedules[1].duration;
             let frequency = schedules[1].frequency;
@@ -262,6 +272,7 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should revoke Vesting Schedule from the beneficiary address", async () => {
             const tx = await I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, 0, {from: wallet_owner});
+            await I_VestingEscrowWallet.sendToTreasury({from: wallet_owner});
 
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary1);
             assert.equal(tx.logs[0].args._index, 0);
@@ -294,6 +305,7 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should revoke Vesting Schedule from the beneficiary address", async () => {
             const tx = await I_VestingEscrowWallet.revokeSchedule(account_beneficiary2, 1, {from: wallet_owner});
+            await I_VestingEscrowWallet.sendToTreasury({from: wallet_owner});
 
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary2);
             assert.equal(tx.logs[0].args._index, 1);
@@ -308,6 +320,7 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should revoke 2 Vesting Schedules from the beneficiary address", async () => {
             const tx = await I_VestingEscrowWallet.revokeSchedules(account_beneficiary2, {from: wallet_owner});
+            await I_VestingEscrowWallet.sendToTreasury({from: wallet_owner});
 
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary2);
 
@@ -334,7 +347,7 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(tx.logs[0].args._index, 1);
         });
 
-        it("Should add Vesting Schedule from Template", async () => {
+        it("Should add Vesting Schedule from template", async () => {
             let numberOfTokens = schedules[2].numberOfTokens;
             let duration = schedules[2].duration;
             let frequency = schedules[2].frequency;
@@ -353,6 +366,7 @@ contract('VestingEscrowWallet', accounts => {
             checkSchedule(schedule, numberOfTokens, numberOfTokens, duration, frequency, startTime, startTime + frequency, CREATED);
 
             await I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, 0, {from: wallet_owner});
+            await I_VestingEscrowWallet.sendToTreasury({from: wallet_owner});
         });
 
         it("Should remove 2 Templates", async () => {
@@ -361,6 +375,128 @@ contract('VestingEscrowWallet', accounts => {
 
             let templateCount = await I_VestingEscrowWallet.getTemplateCount.call({from: wallet_owner});
             assert.equal(templateCount, 0);
+        });
+
+    });
+
+    describe("Tests for batch operations", async () => {
+
+        it("Should add schedules for 3 beneficiaries", async () => {
+            let numberOfTokens = 30000;
+            let duration = durationUtil.weeks(4);
+            let frequency = durationUtil.weeks(1);
+            let startTime = latestTime() + durationUtil.seconds(100);
+
+            let totalNumberOfTokens = numberOfTokens * 3;
+            await I_PolyToken.approve(I_VestingEscrowWallet.address, totalNumberOfTokens, {from: account_treasury});
+            await I_VestingEscrowWallet.depositTokens(totalNumberOfTokens, {from: wallet_owner});
+
+            let tx = await I_VestingEscrowWallet.batchAddSchedule(beneficiaries, numberOfTokens, duration, frequency, startTime, {from: wallet_owner});
+
+            for (let i = 0; i < beneficiaries.length; i++) {
+                let log = tx.logs[i];
+                let beneficiary = beneficiaries[i];
+                checkScheduleLog(log, beneficiary, numberOfTokens, duration, frequency, startTime);
+
+                let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(beneficiary);
+                assert.equal(scheduleCount, 1);
+
+                let schedule = await I_VestingEscrowWallet.getSchedule.call(beneficiary, 0);
+                checkSchedule(schedule, numberOfTokens, numberOfTokens, duration, frequency, startTime, startTime + frequency, CREATED);
+            }
+        });
+
+        it("Should edit Vesting Schedule for 3 beneficiary's addresses", async () => {
+            let numberOfTokens = 25000;
+            let duration = durationUtil.seconds(50);
+            let frequency = durationUtil.seconds(10);
+            let timeShift = durationUtil.seconds(100);
+            let startTime = latestTime() + timeShift;
+
+            let indexes = [0, 0, 0];
+            const tx = await I_VestingEscrowWallet.batchEditSchedule(beneficiaries, indexes, numberOfTokens, duration, frequency, startTime, {from: wallet_owner});
+            await increaseTime(timeShift + frequency);
+
+            for (let i = 0; i < beneficiaries.length; i++) {
+                let log = tx.logs[i];
+                let beneficiary = beneficiaries[i];
+                checkScheduleLog(log, beneficiary, numberOfTokens, duration, frequency, startTime);
+
+                let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(beneficiary);
+                assert.equal(scheduleCount, 1);
+
+                let schedule = await I_VestingEscrowWallet.getSchedule.call(beneficiary, 0);
+                checkSchedule(schedule, numberOfTokens, numberOfTokens, duration, frequency, startTime, startTime + frequency, CREATED);
+            }
+
+            let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
+            assert.equal(unassignedTokens.toNumber(), 5000 * beneficiaries.length);
+        });
+
+        it("Should send available tokens to the beneficiaries addresses", async () => {
+            for (let i = 0; i < beneficiaries.length; i++) {
+                let beneficiary = beneficiaries[i];
+                await I_VestingEscrowWallet.update(beneficiary, {from: wallet_owner});
+            }
+
+            const tx = await I_VestingEscrowWallet.batchSendAvailableTokens(beneficiaries, {from: wallet_owner});
+
+            for (let i = 0; i < beneficiaries.length; i++) {
+                let log = tx.logs[i];
+                let beneficiary = beneficiaries[i];
+                assert.equal(log.args._beneficiary, beneficiary);
+                assert.equal(log.args._numberOfTokens.toNumber(), 5000);
+
+                let balance = await I_PolyToken.balanceOf.call(beneficiary);
+                assert.equal(balance.toNumber(), 5000);
+
+                await I_PolyToken.transfer(account_treasury, balance, {from: beneficiary});
+                await I_VestingEscrowWallet.revokeSchedules(beneficiary, {from: wallet_owner});
+                await I_VestingEscrowWallet.sendToTreasury({from: wallet_owner});
+            }
+        });
+
+        it("Should add schedules from template for 3 beneficiaries", async () => {
+            let numberOfTokens = 18000;
+            let duration = durationUtil.weeks(3);
+            let frequency = durationUtil.weeks(1);
+            let startTime = latestTime() + durationUtil.seconds(100);
+
+            let totalNumberOfTokens = numberOfTokens * 3;
+            await I_PolyToken.approve(I_VestingEscrowWallet.address, totalNumberOfTokens, {from: account_treasury});
+            await I_VestingEscrowWallet.depositTokens(totalNumberOfTokens, {from: wallet_owner});
+            await I_VestingEscrowWallet.addTemplate(numberOfTokens, duration, frequency, {from: wallet_owner});
+
+            let tx = await I_VestingEscrowWallet.batchAddScheduleFromTemplate(beneficiaries, 0, startTime, {from: wallet_owner});
+            await I_VestingEscrowWallet.removeTemplate(0, {from: wallet_owner});
+
+            for (let i = 0; i < beneficiaries.length; i++) {
+                let log = tx.logs[i];
+                let beneficiary = beneficiaries[i];
+                checkScheduleLog(log, beneficiary, numberOfTokens, duration, frequency, startTime);
+
+                let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(beneficiary);
+                assert.equal(scheduleCount, 1);
+
+                let schedule = await I_VestingEscrowWallet.getSchedule.call(beneficiary, 0);
+                checkSchedule(schedule, numberOfTokens, numberOfTokens, duration, frequency, startTime, startTime + frequency, CREATED);
+            }
+
+        });
+
+        it("Should revoke Vesting Schedule from the 3 beneficiary's addresses", async () => {
+            const tx = await I_VestingEscrowWallet.batchRevokeSchedules(beneficiaries, {from: wallet_owner});
+
+            for (let i = 0; i < beneficiaries.length; i++) {
+                let log = tx.logs[i];
+                let beneficiary = beneficiaries[i];
+                assert.equal(log.args._beneficiary, beneficiary);
+
+                let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(beneficiary);
+                assert.equal(scheduleCount, 0);
+            }
+
+            await I_VestingEscrowWallet.sendToTreasury({from: wallet_owner});
         });
 
     });

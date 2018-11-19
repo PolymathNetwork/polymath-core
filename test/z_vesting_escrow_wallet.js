@@ -10,7 +10,6 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));// Hardcoded development port
 
-//TODO check withdraw with 3 schedules and few passed steps for beneficiary
 //TODO tests for batch operations
 //TODO negative cases
 contract('VestingEscrowWallet', accounts => {
@@ -124,11 +123,57 @@ contract('VestingEscrowWallet', accounts => {
             await I_VestingEscrowWallet.depositTokens(numberOfTokens, {from: wallet_owner});
             await I_VestingEscrowWallet.addSchedule(account_beneficiary3, numberOfTokens, duration, frequency, startTime, {from: wallet_owner});
             await increaseTime(timeShift + frequency * 3);
-            await I_VestingEscrowWallet.update(account_beneficiary3, {from: wallet_owner});
-            await I_VestingEscrowWallet.update(account_beneficiary3, {from: wallet_owner});
-            await I_VestingEscrowWallet.update(account_beneficiary3, {from: wallet_owner});
-            await I_VestingEscrowWallet.update(account_beneficiary3, {from: wallet_owner});
+            for (let i = 0; i < 4; i++) {
+                await I_VestingEscrowWallet.update(account_beneficiary3, {from: wallet_owner});
+            }
 
+            const tx = await I_VestingEscrowWallet.withdrawAvailableTokens({from: account_beneficiary3});
+            assert.equal(tx.logs[0].args._beneficiary, account_beneficiary3);
+            assert.equal(tx.logs[0].args._numberOfTokens.toNumber(), numberOfTokens);
+
+            let balance = await I_PolyToken.balanceOf.call(account_beneficiary3);
+            assert.equal(balance.toNumber(), numberOfTokens);
+
+            await I_PolyToken.transfer(account_treasury, balance, {from: account_beneficiary3});
+            await I_VestingEscrowWallet.revokeSchedules(account_beneficiary3, {from: wallet_owner});
+            await I_VestingEscrowWallet.sendToTreasury({from: wallet_owner});
+        });
+
+        it("Should withdraw available tokens by 3 schedules to the beneficiary address", async () => {
+            let schedules = [
+                {
+                    numberOfTokens: 100000,
+                    duration: durationUtil.seconds(4),
+                    frequency: durationUtil.seconds(1)
+                },
+                {
+                    numberOfTokens: 30000,
+                    duration: durationUtil.seconds(6),
+                    frequency: durationUtil.seconds(1)
+                },
+                {
+                    numberOfTokens: 2000,
+                    duration: durationUtil.seconds(10),
+                    frequency: durationUtil.seconds(1)
+                }
+            ];
+
+            let totalNumberOfTokens = getTotalNumberOfTokens(schedules);
+            await I_PolyToken.approve(I_VestingEscrowWallet.address, totalNumberOfTokens, {from: account_treasury});
+            await I_VestingEscrowWallet.depositTokens(totalNumberOfTokens, {from: wallet_owner});
+            for (let i = 0; i < schedules.length; i++) {
+                let numberOfTokens = schedules[i].numberOfTokens;
+                let duration = schedules[i].duration;
+                let frequency = schedules[i].frequency;
+                let startTime = latestTime() + durationUtil.seconds(100);
+                await I_VestingEscrowWallet.addSchedule(account_beneficiary3, numberOfTokens, duration, frequency, startTime, {from: wallet_owner});
+            }
+            await increaseTime(durationUtil.minutes(5));
+            let stepCount = 4;
+            for (let i = 0; i < stepCount; i++) {
+                await I_VestingEscrowWallet.update(account_beneficiary3, {from: wallet_owner});
+            }
+            let numberOfTokens = 100000 + (30000 / 6 * stepCount) + (2000 / 10 * stepCount);
             const tx = await I_VestingEscrowWallet.withdrawAvailableTokens({from: account_beneficiary3});
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary3);
             assert.equal(tx.logs[0].args._numberOfTokens.toNumber(), numberOfTokens);

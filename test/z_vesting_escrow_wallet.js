@@ -10,7 +10,6 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));// Hardcoded development port
 
-//TODO negative cases
 contract('VestingEscrowWallet', accounts => {
 
     const CREATED = 0;
@@ -68,7 +67,7 @@ contract('VestingEscrowWallet', accounts => {
         -----------------------------------------------------------------------------
         `);
     });
-
+/*
     describe("Depositing and withdrawing tokens", async () => {
 
         it("Should fail to deposit zero amount of tokens", async () => {
@@ -77,7 +76,7 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
-        it("Should deposit tokens for new Vesting Schedules", async () => {
+        it("Should deposit tokens for new vesting schedules", async () => {
             let numberOfTokens = 25000;
             await I_PolyToken.approve(I_VestingEscrowWallet.address, numberOfTokens, { from: account_treasury });
             const tx = await I_VestingEscrowWallet.depositTokens(numberOfTokens, {from: wallet_owner});
@@ -132,7 +131,7 @@ contract('VestingEscrowWallet', accounts => {
             await I_PolyToken.transfer(account_treasury, balance, {from: account_beneficiary3});
         });
 
-        it("Should fail to edit Vesting Schedule -- fail because schedule already started", async () => {
+        it("Should fail to edit vesting schedule -- fail because schedule already started", async () => {
             let numberOfTokens = 75000;
             let duration = durationUtil.seconds(30);
             let frequency = durationUtil.seconds(10);
@@ -220,8 +219,8 @@ contract('VestingEscrowWallet', accounts => {
         });
 
     });
-
-    describe("Adding, Editing and Revoking Vesting Schedule", async () => {
+*/
+    describe("Adding, editing and revoking vesting schedule", async () => {
 
         let schedules = [
             {
@@ -244,55 +243,55 @@ contract('VestingEscrowWallet', accounts => {
             }
         ];
 
-        it("Should fail to add Vesting Schedule to the beneficiary address -- fail because not enough unassigned tokens", async () => {
+        it("Should fail to add vesting schedule to the beneficiary address -- fail because not enough unassigned tokens", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.addSchedule(account_beneficiary1, 100000, 4, 1, latestTime() + durationUtil.days(1), {from: wallet_owner})
             );
         });
 
-        it("Should fail to add Vesting Schedule to the beneficiary address -- fail because address in invalid", async () => {
+        it("Should fail to add vesting schedule to the beneficiary address -- fail because address in invalid", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.addSchedule(0, 100000, 4, 1, latestTime() + durationUtil.days(1), {from: wallet_owner})
             );
         });
 
-        it("Should fail to add Vesting Schedule to the beneficiary address -- fail because start date in the past", async () => {
+        it("Should fail to add vesting schedule to the beneficiary address -- fail because start date in the past", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.addSchedule(account_beneficiary1, 100000, 4, 1, latestTime() - durationUtil.days(1), {from: wallet_owner})
             );
         });
 
-        it("Should fail to add Vesting Schedule to the beneficiary address -- fail because number of tokens is 0", async () => {
+        it("Should fail to add vesting schedule to the beneficiary address -- fail because number of tokens is 0", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.addSchedule(account_beneficiary1, 0, 4, 1, latestTime() + durationUtil.days(1), {from: wallet_owner})
             );
         });
 
-        it("Should fail to add Vesting Schedule to the beneficiary address -- fail because duration can't be divided entirely by frequency", async () => {
+        it("Should fail to add vesting schedule to the beneficiary address -- fail because duration can't be divided entirely by frequency", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.addSchedule(account_beneficiary1, 100000, 4, 3, latestTime() + durationUtil.days(1), {from: wallet_owner})
             );
         });
 
-        it("Should fail to add Vesting Schedule to the beneficiary address -- fail because number of tokens can't be divided entirely by period count", async () => {
+        it("Should fail to add vesting schedule to the beneficiary address -- fail because number of tokens can't be divided entirely by period count", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.addSchedule(account_beneficiary1, 5, 4, 1, latestTime() + durationUtil.days(1), {from: wallet_owner})
             );
         });
 
-        it("Should fail to get Vesting Schedule -- fail because address is invalid", async () => {
+        it("Should fail to get vesting schedule -- fail because address is invalid", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.getSchedule(0, 0)
             );
         });
 
-        it("Should fail to get Vesting Schedule -- fail because schedule not found", async () => {
+        it("Should fail to get vesting schedule -- fail because schedule not found", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.getSchedule(account_beneficiary1, 0)
             );
         });
 
-        it("Should fail to get count of Vesting Schedule -- fail because address is invalid", async () => {
+        it("Should fail to get count of vesting schedule -- fail because address is invalid", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.getScheduleCount(0)
             );
@@ -304,12 +303,12 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
-        it("Should add Vesting Schedule to the beneficiary address", async () => {
+        it("Should add vesting schedule to the beneficiary address", async () => {
             let numberOfTokens = schedules[0].numberOfTokens;
             let duration = schedules[0].duration;
             let frequency = schedules[0].frequency;
             let startTime = schedules[0].startTime;
-            await I_PolyToken.approve(I_VestingEscrowWallet.address, numberOfTokens, { from: account_treasury });
+            await I_PolyToken.approve(I_VestingEscrowWallet.address, numberOfTokens, {from: account_treasury});
             await I_VestingEscrowWallet.depositTokens(numberOfTokens, {from: wallet_owner});
             const tx = await I_VestingEscrowWallet.addSchedule(account_beneficiary1, numberOfTokens, duration, frequency, startTime, {from: wallet_owner});
 
@@ -323,7 +322,7 @@ contract('VestingEscrowWallet', accounts => {
             checkSchedule(schedule, numberOfTokens, numberOfTokens, duration, frequency, startTime, startTime + frequency, CREATED);
         });
 
-        it("Should fail to edit Vesting Schedule -- fail because schedule not found", async () => {
+        it("Should fail to edit vesting schedule -- fail because schedule not found", async () => {
             let numberOfTokens = schedules[0].numberOfTokens;
             let duration = schedules[0].duration;
             let frequency = schedules[0].frequency;
@@ -333,7 +332,7 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
-        it("Should fail to edit Vesting Schedule -- fail because not enough unassigned tokens", async () => {
+        it("Should fail to edit vesting schedule -- fail because not enough unassigned tokens", async () => {
             let numberOfTokens = schedules[0].numberOfTokens * 2;
             let duration = schedules[0].duration;
             let frequency = schedules[0].frequency;
@@ -343,7 +342,7 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
-        it("Should edit Vesting Schedule for the beneficiary's address", async () => {
+        it("Should edit vesting schedule for the beneficiary's address", async () => {
             let numberOfTokens = schedules[1].numberOfTokens;
             let duration = schedules[1].duration;
             let frequency = schedules[1].frequency;
@@ -363,7 +362,7 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(unassignedTokens.toNumber(), schedules[0].numberOfTokens - schedules[1].numberOfTokens);
         });
 
-        it("Should fail edit Vesting Schedule to the beneficiary address", async () => {
+        it("Should fail edit vesting schedule to the beneficiary address", async () => {
             let numberOfTokens = schedules[0].numberOfTokens + schedules[1].numberOfTokens;
             let duration = schedules[0].duration;
             let frequency = schedules[0].frequency;
@@ -373,19 +372,19 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
-        it("Should fail to revoke Vesting Schedule -- fail because address is invalid", async () => {
+        it("Should fail to revoke vesting schedule -- fail because address is invalid", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.revokeSchedule(0, 0, {from: wallet_owner})
             );
         });
 
-        it("Should fail to revoke Vesting Schedule -- fail because schedule not found", async () => {
+        it("Should fail to revoke vesting schedule -- fail because schedule not found", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, 1, {from: wallet_owner})
             );
         });
 
-        it("Should revoke Vesting Schedule from the beneficiary address", async () => {
+        it("Should revoke vesting schedule from the beneficiary address", async () => {
             const tx = await I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, 0, {from: wallet_owner});
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_owner});
 
@@ -396,13 +395,13 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(scheduleCount, 0);
         });
 
-        it("Should fail to revoke Vesting Schedules -- fail because address is invalid", async () => {
+        it("Should fail to revoke vesting schedules -- fail because address is invalid", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.revokeSchedules(0, {from: wallet_owner})
             );
         });
 
-        it("Should add 3 Vesting Schedules to the beneficiary address", async () => {
+        it("Should add 3 vesting schedules to the beneficiary address", async () => {
             let totalNumberOfTokens = getTotalNumberOfTokens(schedules);
             await I_PolyToken.approve(I_VestingEscrowWallet.address, totalNumberOfTokens, {from: account_treasury});
             await I_VestingEscrowWallet.depositTokens(totalNumberOfTokens, {from: wallet_owner});
@@ -424,7 +423,7 @@ contract('VestingEscrowWallet', accounts => {
             }
         });
 
-        it("Should revoke Vesting Schedule from the beneficiary address", async () => {
+        it("Should revoke vesting schedule from the beneficiary address", async () => {
             const tx = await I_VestingEscrowWallet.revokeSchedule(account_beneficiary2, 1, {from: wallet_owner});
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_owner});
 
@@ -436,10 +435,10 @@ contract('VestingEscrowWallet', accounts => {
 
             let schedule = await I_VestingEscrowWallet.getSchedule.call(account_beneficiary2, 1);
             checkSchedule(schedule, schedules[2].numberOfTokens, schedules[2].numberOfTokens, schedules[2].duration, schedules[2].frequency,
-                          schedules[2].startTime, schedules[2].startTime + schedules[2].frequency, CREATED);
+                schedules[2].startTime, schedules[2].startTime + schedules[2].frequency, CREATED);
         });
 
-        it("Should revoke 2 Vesting Schedules from the beneficiary address", async () => {
+        it("Should revoke 2 vesting schedules from the beneficiary address", async () => {
             const tx = await I_VestingEscrowWallet.revokeSchedules(account_beneficiary2, {from: wallet_owner});
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_owner});
 
@@ -448,6 +447,31 @@ contract('VestingEscrowWallet', accounts => {
             let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(account_beneficiary2);
             assert.equal(scheduleCount, 0);
         });
+
+    });
+
+    describe("Adding, using and removing templates", async () => {
+
+        let schedules = [
+            {
+                numberOfTokens: 100000,
+                duration: durationUtil.years(4),
+                frequency: durationUtil.years(1),
+                startTime: latestTime() + durationUtil.days(1)
+            },
+            {
+                numberOfTokens: 30000,
+                duration: durationUtil.weeks(6),
+                frequency: durationUtil.weeks(1),
+                startTime: latestTime() + durationUtil.days(2)
+            },
+            {
+                numberOfTokens: 2000,
+                duration: durationUtil.days(10),
+                frequency: durationUtil.days(2),
+                startTime: latestTime() + durationUtil.days(3)
+            }
+        ];
 
         it("Should add 3 Templates", async () => {
             for (let i = 0; i < schedules.length; i++) {
@@ -468,14 +492,14 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(tx.logs[0].args._index, 1);
         });
 
-        it("Should fail to add Vesting Schedule from template -- fail because template not found", async () => {
+        it("Should fail to add vesting schedule from template -- fail because template not found", async () => {
             let startTime = schedules[2].startTime;
             await catchRevert(
                 I_VestingEscrowWallet.addScheduleFromTemplate(account_beneficiary1, 1, startTime, {from: wallet_owner})
             );
         });
 
-        it("Should add Vesting Schedule from template", async () => {
+        it("Should add vesting schedule from template", async () => {
             let numberOfTokens = schedules[2].numberOfTokens;
             let duration = schedules[2].duration;
             let frequency = schedules[2].frequency;
@@ -540,7 +564,7 @@ contract('VestingEscrowWallet', accounts => {
             }
         });
 
-        it("Should edit Vesting Schedule for 3 beneficiary's addresses", async () => {
+        it("Should edit vesting schedule for 3 beneficiary's addresses", async () => {
             let numberOfTokens = 25000;
             let duration = durationUtil.seconds(50);
             let frequency = durationUtil.seconds(10);
@@ -553,7 +577,7 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
-        it("Should edit Vesting Schedule for 3 beneficiary's addresses", async () => {
+        it("Should edit vesting schedule for 3 beneficiary's addresses", async () => {
             let numberOfTokens = 25000;
             let duration = durationUtil.seconds(50);
             let frequency = durationUtil.seconds(10);
@@ -631,7 +655,7 @@ contract('VestingEscrowWallet', accounts => {
 
         });
 
-        it("Should revoke Vesting Schedule from the 3 beneficiary's addresses", async () => {
+        it("Should revoke vesting schedule from the 3 beneficiary's addresses", async () => {
             const tx = await I_VestingEscrowWallet.batchRevokeSchedules(beneficiaries, {from: wallet_owner});
 
             for (let i = 0; i < beneficiaries.length; i++) {

@@ -8,7 +8,6 @@ import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 /**
  * @title Wallet for core vesting escrow functionality
  */
-//TODO add docs for public, external methods
 contract VestingEscrowWallet is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
@@ -77,6 +76,9 @@ contract VestingEscrowWallet is Ownable {
         treasury = _treasury;
     }
 
+    /**
+     * @notice Used to deposit tokens from treasury
+     */
     function depositTokens(uint256 _numberOfTokens) external onlyOwner {
         require(_numberOfTokens > 0, "Number of tokens should be greater than zero");
         token.safeTransferFrom(treasury, this, _numberOfTokens);
@@ -85,6 +87,9 @@ contract VestingEscrowWallet is Ownable {
         emit DepositTokens(_numberOfTokens, now);
     }
 
+    /**
+     * @notice Sends unassigned tokens to treasury
+     */
     function sendToTreasury() external onlyOwner {
         uint256 amount = unassignedTokens;
         unassignedTokens = 0;
@@ -93,14 +98,27 @@ contract VestingEscrowWallet is Ownable {
         emit SendToTreasury(amount, now);
     }
 
+    /**
+     * @notice Sends available tokens to beneficiary
+     * @param _beneficiary beneficiary's address
+     */
     function sendAvailableTokens(address _beneficiary) public onlyOwner {
         _sendTokens(_beneficiary);
     }
 
+    /**
+     * @notice Used to withdraw available tokens by beneficiary
+     */
     function withdrawAvailableTokens() external {
         _sendTokens(msg.sender);
     }
 
+    /**
+     * @notice Add template
+     * @param _numberOfTokens number of tokens
+     * @param _duration vesting duration
+     * @param _frequency vesting frequency
+     */
     function addTemplate(uint256 _numberOfTokens, uint256 _duration, uint256 _frequency) external onlyOwner {
         _validateTemplate(_numberOfTokens, _duration, _frequency);
         Template memory template;
@@ -112,6 +130,10 @@ contract VestingEscrowWallet is Ownable {
         emit AddTemplate(_numberOfTokens, _duration, _frequency, now);
     }
 
+    /**
+     * @notice Removes template
+     * @param _index index of the template
+     */
     function removeTemplate(uint256 _index) external onlyOwner {
         require(_index < templates.length, "Template not found");
         templates[_index] = templates[templates.length - 1];
@@ -120,10 +142,22 @@ contract VestingEscrowWallet is Ownable {
         emit RemoveTemplate(_index, now);
     }
 
+    /**
+     * @notice Returns count of templates
+     * @return count of templates
+     */
     function getTemplateCount() external view onlyOwner returns(uint256) {
         return templates.length;
     }
 
+    /**
+     * @notice Adds vesting schedules for each of beneficiary
+     * @param _beneficiary beneficiary's addresses
+     * @param _numberOfTokens number of tokens
+     * @param _duration vesting duration
+     * @param _frequency vesting frequency
+     * @param _startTime vesting start time
+     */
     function addSchedule(
         address _beneficiary,
         uint256 _numberOfTokens,
@@ -156,12 +190,27 @@ contract VestingEscrowWallet is Ownable {
         emit AddSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime, now);
     }
 
+    /**
+     * @notice Adds vesting schedules from template for each of beneficiary
+     * @param _beneficiary beneficiary's addresses
+     * @param _index index of the template
+     * @param _startTime vesting start time
+     */
     function addScheduleFromTemplate(address _beneficiary, uint256 _index, uint256 _startTime) public onlyOwner {
         require(_index < templates.length, "Template not found");
         Template storage template = templates[_index];
         addSchedule(_beneficiary, template.numberOfTokens, template.duration, template.frequency, _startTime);
     }
 
+    /**
+     * @notice Edits vesting schedules for each of beneficiary
+     * @param _beneficiary beneficiary's addresses
+     * @param _index index of schedule
+     * @param _numberOfTokens number of tokens
+     * @param _duration vesting duration
+     * @param _frequency vesting frequency
+     * @param _startTime vesting start time
+     */
     function editSchedule(
         address _beneficiary,
         uint256 _index,
@@ -193,6 +242,11 @@ contract VestingEscrowWallet is Ownable {
         emit EditSchedule(_beneficiary, _index, _numberOfTokens, _duration, _frequency, _startTime, now);
     }
 
+    /**
+     * @notice Revokes beneficiary's schedule
+     * @param _beneficiary beneficiary's address
+     * @param _index index of the schedule
+     */
     function revokeSchedule(address _beneficiary, uint256 _index) external onlyOwner {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         require(_index < dataMap[_beneficiary].schedules.length, "Schedule not found");
@@ -207,6 +261,11 @@ contract VestingEscrowWallet is Ownable {
         emit RevokeSchedule(_beneficiary, _index, now);
     }
 
+
+    /**
+     * @notice Revokes all beneficiary's schedules
+     * @param _beneficiary beneficiary's address
+     */
     function revokeSchedules(address _beneficiary) public onlyOwner {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         Data storage data = dataMap[_beneficiary];
@@ -219,6 +278,12 @@ contract VestingEscrowWallet is Ownable {
         emit RevokeSchedules(_beneficiary, now);
     }
 
+    /**
+     * @notice Returns beneficiary's schedule
+     * @param _beneficiary beneficiary's address
+     * @param _index index of the schedule
+     * @return beneficiary's schedule
+     */
     function getSchedule(address _beneficiary, uint256 _index) external view returns(uint256, uint256, uint256, uint256, uint256, uint256, State) {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         require(_index < dataMap[_beneficiary].schedules.length, "Schedule not found");
@@ -234,22 +299,44 @@ contract VestingEscrowWallet is Ownable {
         );
     }
 
+    /**
+     * @notice Returns count of beneficiary's schedules
+     * @param _beneficiary beneficiary's address
+     * @return count of beneficiary's schedules
+     */
     function getScheduleCount(address _beneficiary) external view returns(uint256) {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         return dataMap[_beneficiary].schedules.length;
     }
 
+    /**
+     * @notice Returns available tokens for beneficiary
+     * @param _beneficiary beneficiary's address
+     * @return available tokens for beneficiary
+     */
     function getAvailableTokens(address _beneficiary) external view returns(uint256) {
         require(_beneficiary != address(0), "Invalid beneficiary address");
         return dataMap[_beneficiary].availableTokens;
     }
 
+    /**
+     * @notice Used to bulk send available tokens for each of beneficiaries
+     * @param _beneficiaries array of beneficiary's addresses
+     */
     function batchSendAvailableTokens(address[] _beneficiaries) external onlyOwner {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             sendAvailableTokens(_beneficiaries[i]);
         }
     }
 
+    /**
+     * @notice Used to bulk add vesting schedules for each of beneficiaries
+     * @param _beneficiaries array of beneficiary's addresses
+     * @param _numberOfTokens number of tokens
+     * @param _duration vesting duration
+     * @param _frequency vesting frequency
+     * @param _startTime vesting start time
+     */
     function batchAddSchedule(
         address[] _beneficiaries,
         uint256 _numberOfTokens,
@@ -265,18 +352,37 @@ contract VestingEscrowWallet is Ownable {
         }
     }
 
+    /**
+     * @notice Used to bulk add vesting schedules from template for each of beneficiaries
+     * @param _beneficiaries array of beneficiary's addresses
+     * @param _index index of the template
+     * @param _startTime vesting start time
+     */
     function batchAddScheduleFromTemplate(address[] _beneficiaries, uint256 _index, uint256 _startTime) public onlyOwner {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             addScheduleFromTemplate(_beneficiaries[i], _index, _startTime);
         }
     }
 
+    /**
+     * @notice Used to bulk revoke vesting schedules for each of beneficiaries
+     * @param _beneficiaries array of beneficiary's addresses
+     */
     function batchRevokeSchedules(address[] _beneficiaries) external onlyOwner {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             revokeSchedules(_beneficiaries[i]);
         }
     }
 
+    /**
+     * @notice Used to bulk edit vesting schedules for each of beneficiaries
+     * @param _beneficiaries array of beneficiary's addresses
+     * @param _indexes array of beneficiary's indexes of schedule
+     * @param _numberOfTokens number of tokens
+     * @param _duration vesting duration
+     * @param _frequency vesting frequency
+     * @param _startTime vesting start time
+     */
     function batchEditSchedule(
         address[] _beneficiaries,
         uint256[] _indexes,
@@ -318,6 +424,10 @@ contract VestingEscrowWallet is Ownable {
         emit SendTokens(_beneficiary, amount, now);
     }
 
+    /**
+     * @notice manually triggers update outside for beneficiary's schedule (can be used to reduce user gas costs)
+     * @param _beneficiary beneficiary's address of the schedule
+     */
     function update(address _beneficiary) external onlyOwner {
         _update(_beneficiary);
     }
@@ -342,6 +452,9 @@ contract VestingEscrowWallet is Ownable {
         }
     }
 
+    /**
+     * @notice manually triggers update outside for all schedules (can be used to reduce user gas costs)
+     */
     function updateAll() external onlyOwner {
         _updateAll();
     }

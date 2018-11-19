@@ -1,81 +1,62 @@
 var common = require('./common/common_functions');
-var csv = require('./common/csv_sync');
-var contracts = require('./helpers/contract_addresses');
+var csv_shared = require('./common/csv_shared');
 var abis = require('./helpers/contract_abis');
 var BigNumber = require('bignumber.js');
 
 let distribData = new Array();
-let allocData = new Array();
 let fullFileData = new Array();
 let badData = new Array();
-let BATCH_SIZE = 70;
+
 let securityToken;
 let generalTransferManager;
 
 async function startScript(tokenSymbol, batchSize) {
-  if (batchSize) {
-    BATCH_SIZE = batchSize;
-  }
+  securityToken = await csv_shared.start(tokenSymbol, batchSize);
 
-  //common.logAsciiBull();
-
-  let STAddress = await checkST(tokenSymbol);
-  securityToken = new web3.eth.Contract(abis.securityToken(), STAddress);
-  
-  await readCsv();
-};
-
-async function checkST(tokenSymbol) {
-  let securityTokenRegistry = await STConnect();
-
-  return await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call({}, function (error, result) {
-    if (result != "0x0000000000000000000000000000000000000000") {
-      return result
-    } else {
-      console.log("Token doesn't exist")
-      process.exit(0)
-    }
-  });
-}
-
-async function STConnect() {
-  try {
-    let STRegistryAddress = await contracts.securityTokenRegistry();
-    let STRegistry = new web3.eth.Contract(abis.securityTokenRegistry(), STRegistryAddress);
-    return STRegistry;
-  } catch (err) {
-    console.log("There was a problem getting the contracts. Make sure they are deployed to the selected network.");
-    process.exit(0);
-  }
-}
-
-async function readCsv() {
-  var CSV_STRING = csv('./CLI/data/whitelist_data.csv');
-  let i = 0;
-
-  CSV_STRING.forEach(line => {
-    let data_processed = whitelist_processing(line);
-    fullFileData.push(data_processed[1]);
-
-    if (data_processed[0]) {
-      allocData.push(data_processed[1]);
-      i++;
-      if (i >= BATCH_SIZE) {
-        distribData.push(allocData);
-        allocData = [];
-        i = 0;
-      }
-    } else {
-      badData.push(data_processed[1]);
-    }
-  });
-
-  distribData.push(allocData);
-  allocData = [];
+  let result_processing = await csv_shared.read('./CLI/data/whitelist_data.csv', whitelist_processing);
+  distribData = result_processing.distribData;
+  fullFileData = result_processing.fullFileData;
+  badData = result_processing.badData;
 
   await saveInBlockchain();
   await finalResults();
+};
 
+function whitelist_processing(csv_line) {
+  let isAddress = web3.utils.isAddress(csv_line[0]);
+  let sellValid = isValidDate(csv_line[1])
+  let buyValid = isValidDate(csv_line[2])
+  let kycExpiryDate = isValidDate(csv_line[3])
+  let canBuyFromSTO = (typeof JSON.parse(csv_line[4].toLowerCase())) == "boolean" ? JSON.parse(csv_line[4].toLowerCase()) : "not-valid";
+
+  if (isAddress &&
+      sellValid &&
+      buyValid &&
+      kycExpiryDate &&
+      (canBuyFromSTO != "not-valid")) {
+    return [true, new Array(web3.utils.toChecksumAddress(csv_line[0]), sellValid, buyValid, kycExpiryDate, canBuyFromSTO)]
+  } else {
+    return [false, new Array(csv_line[0], sellValid, buyValid, kycExpiryDate, canBuyFromSTO)]
+  }
+}
+
+function isValidDate(date) {
+  var matches = /^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/.exec(date);
+  if (matches == null) return false;
+  var d = matches[2];
+  var m = matches[1] - 1;
+  var y = matches[3];
+  var composedDate = new Date(y, m, d);
+  var timestampDate = composedDate.getTime()
+
+  // For some reason these timestamps are being recorded +4 hours UTC
+  if (composedDate.getDate() == d &&
+      composedDate.getMonth() == m &&
+      composedDate.getFullYear() == y) {
+    return timestampDate / 1000
+  } else {
+    return false
+  }
 }
 
 async function saveInBlockchain() {
@@ -192,47 +173,6 @@ async function finalResults() {
     console.log("************************************************************************************************");
   }
 
-}
-
-function whitelist_processing(csv_line) {
-  let isAddress = web3.utils.isAddress(csv_line[0]);
-  let sellValid = isValidDate(csv_line[1])
-  let buyValid = isValidDate(csv_line[2])
-  let kycExpiryDate = isValidDate(csv_line[3])
-  let canBuyFromSTO = (typeof JSON.parse(csv_line[4].toLowerCase())) == "boolean" ? JSON.parse(csv_line[4].toLowerCase()) : "not-valid";
-
-  if (isAddress &&
-      sellValid &&
-      buyValid &&
-      kycExpiryDate &&
-      (canBuyFromSTO != "not-valid")) {
-
-    return [true, new Array(web3.utils.toChecksumAddress(csv_line[0]), sellValid, buyValid, kycExpiryDate, canBuyFromSTO)]
-
-  } else {
-
-    return [false, new Array(csv_line[0], sellValid, buyValid, kycExpiryDate, canBuyFromSTO)]
-  
-  }
-}
-
-function isValidDate(date) {
-  var matches = /^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/.exec(date);
-  if (matches == null) return false;
-  var d = matches[2];
-  var m = matches[1] - 1;
-  var y = matches[3];
-  var composedDate = new Date(y, m, d);
-  var timestampDate = composedDate.getTime()
-
-  // For some reason these timestamps are being recorded +4 hours UTC
-  if (composedDate.getDate() == d &&
-      composedDate.getMonth() == m &&
-      composedDate.getFullYear() == y) {
-    return timestampDate / 1000
-  } else {
-    return false
-  }
 }
 
 module.exports = {

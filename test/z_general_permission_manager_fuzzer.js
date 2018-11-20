@@ -249,17 +249,15 @@ contract('GeneralPermissionManager', accounts => {
 
         it("should pass fuzz test for changeIssuanceAddress(), changeSigningAddress() ", async () => {
 
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
             for (var i = 2; i < testRepeat; i++) {
                 var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) { j = 2 };
+                if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+                
+                // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
                 }
-
-                // // remove all existing permissions on account before test
-                // for ( var a = 0; a < perms.length; a++) {
-                //     await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, perms[a], false, { from: token_owner });
-                // }
 
                 // target permission should alaways be false for each test before assigning
                 if (await I_GeneralPermissionManager.checkPermission(accounts[j], I_GeneralTransferManager.address, 'FLAGS') === true) {
@@ -268,6 +266,7 @@ contract('GeneralPermissionManager', accounts => {
                     await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, 'WHITELIST', false, { from: token_owner });
                 }
 
+                // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
                 let fromTime = latestTime();
                 let toTime = latestTime() + duration.days(20);
@@ -341,11 +340,13 @@ contract('GeneralPermissionManager', accounts => {
         });
 
         it("should pass fuzz test for changeHolderCount()", async () => {
-
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
 	        for (var i = 2; i < testRepeat; i++) {
 	        	var j = Math.floor(Math.random() * 10);
-	        	if (j === 1 || j === 0) { j = 2 };
-	        	if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
+	        	if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+	        	
+                // add account as a Delegate if it is not
+                if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
 	        		await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
 	        	}
 
@@ -354,7 +355,8 @@ contract('GeneralPermissionManager', accounts => {
                     await I_GeneralPermissionManager.changePermission(accounts[j], I_CountTransferManager.address, 'ADMIN', false, { from: token_owner }); 
                 }
 
-	        	let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
+	        	// assign a random perm
+                let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
 	        	await I_GeneralPermissionManager.changePermission(accounts[j], I_CountTransferManager.address, randomPerms, true, { from: token_owner });          		
                 if (randomPerms === 'ADMIN') {
                     // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should pass");
@@ -370,7 +372,7 @@ contract('GeneralPermissionManager', accounts => {
         });
 	});
 
-    // lock up volume TM needs code change, not testing now
+    // lock up volume TM needs code change, not testing now but keeping the code for future testing
     // describe("fuzz test for lockup volume restriction transfer manager", async () => {
 
     //     it("Should Buy some tokens", async() => {
@@ -436,11 +438,13 @@ contract('GeneralPermissionManager', accounts => {
     //     it("should pass fuzz test for addLockUp()", async () => {
     //         let balance = await I_SecurityToken.balanceOf(account_investor2);
     //         // await I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 12, 4, 0, balance, { from: token_owner });
-
+               // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
     //         for (var i = 2; i < testRepeat; i++) {
     //             var j = Math.floor(Math.random() * 10);
-    //             if (j === 1 || j === 0) { j = 2 };
-    //             if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
+    //             if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+    
+    // add account as a Delegate if it is not//             
+    // if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
     //                 await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
     //             }
 
@@ -449,7 +453,8 @@ contract('GeneralPermissionManager', accounts => {
     //                 await I_GeneralPermissionManager.changePermission(accounts[j], I_VolumeRestrictionTransferManager.address, 'ADMIN', false, { from: token_owner });
     //             }
 
-    //             let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
+    // assign a random perm//             
+    // let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
     //             await I_GeneralPermissionManager.changePermission(accounts[j], I_VolumeRestrictionTransferManager.address, randomPerms, true, { from: token_owner });  
 
     //             if (randomPerms === 'ADMIN') {
@@ -466,11 +471,13 @@ contract('GeneralPermissionManager', accounts => {
 
     //     it("should pass fuzz test for remove lock up", async () => {
     //         let balance = await I_SecurityToken.balanceOf(account_investor2);
-    //         console.log("1");
+    //         // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accountsconsole.log("1");
     //         for (var i = 2; i < testRepeat; i++) {
     //             var j = Math.floor(Math.random() * 10);
-    //             if (j === 1 || j === 0) { j = 2 };
-    //             if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
+    //             if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+    
+    // add account as a Delegate if it is not//             
+    // if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
     //                 await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
     //             }
 
@@ -479,7 +486,8 @@ contract('GeneralPermissionManager', accounts => {
     //                 await I_GeneralPermissionManager.changePermission(accounts[j], I_VolumeRestrictionTransferManager.address, 'ADMIN', false, { from: token_owner });
     //             }
 
-    //             let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
+    // assign a random perm//             
+    // let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
     //             await I_GeneralPermissionManager.changePermission(accounts[j], I_VolumeRestrictionTransferManager.address, randomPerms, true, { from: token_owner });  
 
     //             // if lockup count is 0, add a lockup.
@@ -509,11 +517,13 @@ contract('GeneralPermissionManager', accounts => {
 
     //     it("should pass fuzz test for add multiple lock ups", async () => {
 
-    //         // add mutiple lock ups at once
+    //         // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts// add mutiple lock ups at once
     //         for (var i = 2; i < testRepeat; i++) {
     //             var j = Math.floor(Math.random() * 10);
-    //             if (j === 1 || j === 0) { j = 2 };
-    //             if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
+    //             if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+    
+    // add account as a Delegate if it is not//             
+    // if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
     //                 await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
     //             }
 
@@ -522,7 +532,8 @@ contract('GeneralPermissionManager', accounts => {
     //                 await I_GeneralPermissionManager.changePermission(accounts[j], I_VolumeRestrictionTransferManager.address, 'ADMIN', false, { from: token_owner });
     //             }
 
-    //             let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
+    // assign a random perm//             
+    // let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
     //             await I_GeneralPermissionManager.changePermission(accounts[j], I_VolumeRestrictionTransferManager.address, randomPerms, true, { from: token_owner }); 
 
     //              // check current lockup count before adding multiple
@@ -596,21 +607,16 @@ contract('GeneralPermissionManager', accounts => {
          it("Should successfully attach the percentage transfer manager with the security token", async () => {
             console.log("1");
             const tx = await I_SecurityToken.addModule(I_PercentageTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
-            // assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "VolumeRestrictionTransferManager doesn't get deployed");
-            // assert.equal(
-            //     web3.utils.toAscii(tx.logs[2].args._name)
-            //     .replace(/\u0000/g, ''),
-            //     "LockupVolumeRestrictionTM",
-            //     "VolumeRestrictionTransferManager module was not added"
-            // );
             I_PercentageTransferManager = PercentageTransferManager.at(tx.logs[2].args._module);
         });
 
         it("should pass fuzz test for modifyWhitelist with perm WHITELIST", async () => {
-
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
             for (var i = 2; i < testRepeat; i++) {
                 var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) { j = 2 };
+                if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+                
+                // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
                 }
@@ -620,6 +626,7 @@ contract('GeneralPermissionManager', accounts => {
                     await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, 'WHITELIST', false, { from: token_owner });
                 }
 
+                // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, randomPerms, true, { from: token_owner });  
 
@@ -637,10 +644,12 @@ contract('GeneralPermissionManager', accounts => {
         });
 
         it("should pass fuzz test for modifyWhitelistMulti with perm WHITELIST", async () => {
-        
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
            for (var i = 2; i < testRepeat; i++) {
                 var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) { j = 2 };
+                if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+                
+                // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
                 }
@@ -650,6 +659,7 @@ contract('GeneralPermissionManager', accounts => {
                     await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, 'WHITELIST', false, { from: token_owner });
                 }
 
+                // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, randomPerms, true, { from: token_owner });  
  
@@ -669,11 +679,13 @@ contract('GeneralPermissionManager', accounts => {
         it("should pass fuzz test for setAllowPrimaryIssuance with perm ADMIN", async () => {
 
              // let snapId = await takeSnapshot();
-
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
              for (var i = 2; i < testRepeat; i++) {
 
                 var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) { j = 2 };
+                if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+                
+                // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
                 }
@@ -683,6 +695,7 @@ contract('GeneralPermissionManager', accounts => {
                     await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, 'ADMIN', false, { from: token_owner });
                 }
 
+                // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, randomPerms, true, { from: token_owner });  
 
@@ -724,22 +737,11 @@ contract('GeneralPermissionManager', accounts => {
             );
             P_SingleTradeVolumeRestrictionManager = SingleTradeVolumeRestrictionManager.at(tx.logs[3].args._module);
 
-
-            console.log("1");
             managerArgs = encodeModuleCall(STVRParameters, [false, (7 * Math.pow(10, 16)).toString(), false])
 
-            console.log("1.1");
             let tx2 = await I_SecurityToken.addModule(I_SingleTradeVolumeRestrictionManagerFactory.address, managerArgs, 0, 0, { from: token_owner });
-            console.log("1.2");
-            // assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "TransferManager doesn't get deployed");
-            // assert.equal(
-            // web3.utils.toAscii(tx.logs[2].args._name)
-            // .replace(/\u0000/g, ''),
-            // "SingleTradeVolumeRestrictionTM",
-            // "SingleTradeVolumeRestriction module was not added"
-            // );
+
             I_SingleTradeVolumeRestrictionManager = SingleTradeVolumeRestrictionManager.at(tx2.logs[2].args._module);
-            console.log("2");
 
             managerArgs = encodeModuleCall(STVRParameters, [true, 90, false]);
             let tx3 = await I_SecurityToken.addModule(I_SingleTradeVolumeRestrictionManagerFactory.address, managerArgs, 0, 0, {
@@ -747,18 +749,19 @@ contract('GeneralPermissionManager', accounts => {
             });
 
             I_SingleTradeVolumeRestrictionPercentageManager = SingleTradeVolumeRestrictionManager.at(tx3.logs[2].args._module);
-            console.log("3");
         });
 
         it("should pass fuzz test for setAllowPrimaryIssuance with perm ADMIN", async () => {
-           
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
             for (var i = 2; i < testRepeat; i++) {
 
                 let snapId = await takeSnapshot();
 
 
                 var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) { j = 2 };
+                if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+                
+                // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
                 }
@@ -768,6 +771,7 @@ contract('GeneralPermissionManager', accounts => {
                     await I_GeneralPermissionManager.changePermission(accounts[j], I_SingleTradeVolumeRestrictionManager.address, 'ADMIN', false, { from: token_owner });
                 }
 
+                // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_SingleTradeVolumeRestrictionManager.address, randomPerms, true, { from: token_owner });  
                
@@ -787,31 +791,16 @@ contract('GeneralPermissionManager', accounts => {
 
         it("should pass fuzz test for changeTransferLimitToTokens & changeGlobalLimitInTokens with perm ADMIN", async () => {
 
-            // await I_GeneralPermissionManager.changePermission(accounts[3], I_SingleTradeVolumeRestrictionManager.address, "ADMIN", true, { from: token_owner });  
-            
-            // console.log("1");
-            // let tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeTransferLimitToTokens(1, {
-            // from: accounts[3]
-            // });
-            // console.log("2");
-            // assert.equal(await I_SingleTradeVolumeRestrictionPercentageManager.isTransferLimitInPercentage(), false, "Error Changing");
-            // assert.equal(tx.logs[0].args._amount.toNumber(), 1, "Transfer limit not changed");
-            // console.log("3");
-            // //test set global limit in tokens
-            // tx = await I_SingleTradeVolumeRestrictionManager.changeGlobalLimitInTokens(10, {
-            // from: token_owner
-            // });
-            // console.log("4");
-            // assert.equal(tx.logs[0].args._amount, 10, "Global Limit not set");
-            // console.log("5");
             let tx;
-
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
             for (var i = 2; i < testRepeat; i++) {
 
                 let snapId = await takeSnapshot();
 
                 var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) { j = 2 };
+                if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+                
+                // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
                 }
@@ -821,6 +810,7 @@ contract('GeneralPermissionManager', accounts => {
                     await I_GeneralPermissionManager.changePermission(accounts[j], I_SingleTradeVolumeRestrictionPercentageManager.address, 'ADMIN', false, { from: token_owner });
                 }
 
+                // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_SingleTradeVolumeRestrictionPercentageManager.address, randomPerms, true, { from: token_owner });  
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_SingleTradeVolumeRestrictionManager.address, randomPerms, true, { from: token_owner });  
@@ -853,19 +843,7 @@ contract('GeneralPermissionManager', accounts => {
 
         it("should pass fuzz test for changeTransferLimitToPercentage & changeGlobalLimitInPercentage with perm ADMIN", async () => {
        
-            // // console.log("1");
-            // // console.log("current limit in percentage is "+ await I_SingleTradeVolumeRestrictionPercentageManager.isTransferLimitInPercentage({from: token_owner }));
-            // tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeTransferLimitToPercentage(1, {
-            // from: token_owner
-            // });
-            // assert.ok(await I_SingleTradeVolumeRestrictionPercentageManager.isTransferLimitInPercentage(), "Error Changing");
-            // assert.equal(tx.logs[0].args._percentage.toNumber(), 1, "Transfer limit not changed");
-            // console.log("2");
-            // // changeGlobalLimitInPercentage
-            // tx = await I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInPercentage(40, { from: token_owner });
-            // assert.equal(tx.logs[0].args._percentage, 40, "Global Limit not set");
-            // console.log("3");
-
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
             for (var i = 2; i < testRepeat; i++) {
 
                 let snapId = await takeSnapshot();
@@ -875,7 +853,9 @@ contract('GeneralPermissionManager', accounts => {
                 tx = await I_SingleTradeVolumeRestrictionManager.changeGlobalLimitInTokens(10, { from: token_owner });
 
                 var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) { j = 2 };
+                if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+                
+                // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
                 }
@@ -885,6 +865,7 @@ contract('GeneralPermissionManager', accounts => {
                     await I_GeneralPermissionManager.changePermission(accounts[j], I_SingleTradeVolumeRestrictionPercentageManager.address, 'ADMIN', false, { from: token_owner });
                 }
 
+                // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_SingleTradeVolumeRestrictionPercentageManager.address, randomPerms, true, { from: token_owner });  
              
@@ -913,32 +894,7 @@ contract('GeneralPermissionManager', accounts => {
 
         it("should pass fuzz test for addExemptWallet,  removeExemptWallet, setTransferLimitInTokens, removeTransferLimitInTokens with perm ADMIN", async () => {
 
-            // //add
-            // let tx = await I_SingleTradeVolumeRestrictionManager.addExemptWallet(accounts[5], {
-            // from: token_owner
-            // });
-            // assert.equal(tx.logs[0].args._wallet, accounts[5], "Wrong wallet added as exempt");
-
-            // //remove
-            // tx = await I_SingleTradeVolumeRestrictionManager.removeExemptWallet(accounts[5], { from: token_owner });
-            // assert.equal(tx.logs[0].args._wallet, accounts[5], "Wrong wallet removed from exempt");
-
-            // //set transfer limit in tokens
-            // tx = await I_SingleTradeVolumeRestrictionManager.setTransferLimitInTokens(accounts[4], 100, {
-            // from: token_owner
-            // });
-            // assert.equal(tx.logs[0].args._wallet, accounts[4]);
-            // assert.equal(tx.logs[0].args._amount, 100);
-
-            // tx = await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentage(accounts[4], 50, { from: token_owner });
-            // assert.equal(tx.logs[0].args._wallet, accounts[4], "Wrong wallet added to transfer limits");
-            // assert.equal(tx.logs[0].args._percentage, 50, "Wrong percentage set");
-
-            // tx = await I_SingleTradeVolumeRestrictionManager.removeTransferLimitInTokens(accounts[4], {
-            // from: token_owner
-            // });
-            // assert.equal(tx.logs[0].args._wallet, accounts[4], "Wrong wallet removed");
-
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
             for (var i = 2; i < testRepeat; i++) {
 
                 let snapId = await takeSnapshot();
@@ -948,7 +904,9 @@ contract('GeneralPermissionManager', accounts => {
                 tx = await I_SingleTradeVolumeRestrictionManager.changeGlobalLimitInTokens(10, { from: token_owner});
 
                 var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) { j = 2 };
+                if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+                
+                // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
                 }
@@ -958,6 +916,7 @@ contract('GeneralPermissionManager', accounts => {
                     await I_GeneralPermissionManager.changePermission(accounts[j], I_SingleTradeVolumeRestrictionManager.address, 'ADMIN', false, { from: token_owner });
                 }
 
+                // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_SingleTradeVolumeRestrictionManager.address, randomPerms, true, { from: token_owner });  
             
@@ -1015,87 +974,16 @@ contract('GeneralPermissionManager', accounts => {
             let tokenLimits = [1, 2, 3];
             let percentageLimits = [5, 6, 7];
 
-            // // add exempt wallet multi
-            // let tx = await P_SingleTradeVolumeRestrictionManager.addExemptWalletMulti(wallets, {
-            // from: token_owner
-            // });
-            // let logs = tx.logs.filter(log => log.event === 'ExemptWalletAdded');
-            // assert.equal(logs.length, wallets.length, "Batch Exempt wallets not added");
-            // for (let i = 0; i < logs.length; i++) {
-            // assert.equal(logs[i].args._wallet, wallets[i], "Wallet not added as exempt wallet");
-            // }
-
-            // console.log("1");
-
-            // // remove exempt wallet multi
-            // tx = await P_SingleTradeVolumeRestrictionManager.removeExemptWalletMulti(wallets, {
-            // from: token_owner
-            // })
-            // logs = tx.logs.filter(log => log.event === 'ExemptWalletRemoved');
-            // assert.equal(logs.length, wallets.length, "Batch Exempt wallets not removed");
-
-            // for (let i = 0; i < logs.length; i++) {
-            // assert.equal(logs[i].args._wallet, wallets[i], "Wallet not added as exempt wallet");
-            // }
-
-            //            console.log("2");
-
-            // tx = await P_SingleTradeVolumeRestrictionManager.setTransferLimitInTokensMulti(wallets, tokenLimits, {
-            // from: token_owner
-            // });
-            // logs = tx.logs.filter(log => log.event == 'TransferLimitInTokensSet');
-            
-            // assert.equal(wallets.length, logs.length, "Transfer limit not set");
-            
-            // for (let i = 0; i < wallets.length; i++) {
-            // assert.equal(logs[i].args._wallet, wallets[i], "transfer limit not set for wallet");
-            // assert.equal(logs[i].args._amount.toNumber(), tokenLimits[i]);
-            // }
-            // console.log("3");
-
-            // tx = await P_SingleTradeVolumeRestrictionManager.removeTransferLimitInTokensMulti(wallets, {
-            // from: token_owner
-            // });
-            // logs = tx.logs.filter(log => log.event === 'TransferLimitInTokensRemoved');
-            // assert.equal(logs.length, wallets.length, "Transfer limit not removed");
-
-            // for (let i = 0; i < wallets.length; i++) {
-            // assert.equal(logs[i].args._wallet, wallets[i], "transfer limit not removed for wallet");
-            // }
-            // console.log("4");
-
-            // console.log("transfer limit in percentage needs to be true to pass --> " + await I_SingleTradeVolumeRestrictionPercentageManager.isTransferLimitInPercentage({from: token_owner}));
-
-            // tx = await I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentageMulti(wallets, percentageLimits, {
-            // from: token_owner
-            // });
-            // logs = tx.logs.filter(log => log.event == 'TransferLimitInPercentageSet');
-            // assert.equal(logs.length, wallets.length, "transfer limits not set for wallets");
-
-            // for (let i = 0; i < wallets.length; i++) {
-            // assert.equal(logs[i].args._wallet, wallets[i], "Transfer limit not set for wallet");
-            // assert.equal(logs[i].args._percentage.toNumber(), percentageLimits[i]);
-            // }
-            // console.log("5");
-    
-            // tx = await I_SingleTradeVolumeRestrictionPercentageManager.removeTransferLimitInPercentageMulti(wallets, {
-            // from: token_owner
-            // });
-            // logs = tx.logs.filter(log => log.event == 'TransferLimitInPercentageRemoved');
-            // assert.equal(logs.length, wallets.length, "transfer limits not set for wallets");
-
-            // for (let i = 0; i < wallets.length; i++) {
-            // assert.equal(logs[i].args._wallet, wallets[i], "Transfer limit not set for wallet");
-            // }
-            // console.log("6");
-
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
             for (var i = 2; i < testRepeat; i++) {
 
                 let snapId = await takeSnapshot();
 
                 console.log("0.1");
                 var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) { j = 2 };
+                if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+                
+                // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
                 }
@@ -1109,6 +997,7 @@ contract('GeneralPermissionManager', accounts => {
 
                 console.log("0.3");
 
+                // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_SingleTradeVolumeRestrictionManager.address, randomPerms, true, { from: token_owner });
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_SingleTradeVolumeRestrictionPercentageManager.address, randomPerms, true, { from: token_owner });  
@@ -1214,40 +1103,6 @@ contract('GeneralPermissionManager', accounts => {
 
     describe("fuzz test for manual approval transfer manager", async () => {
 
-        // it("Should Buy the tokens", async () => {
-        //     // Add the Investor in to the whitelist
-
-        //     await I_GeneralTransferManager.changeIssuanceAddress("0x0000000000000000000000000000000000000000", { from: token_owner });
-
-        //     let tx = await I_GeneralTransferManager.modifyWhitelist(
-        //         account_investor1,
-        //         latestTime(),
-        //         latestTime(),
-        //         latestTime() + duration.days(10),
-        //         true,
-        //         {
-        //             from: account_issuer,
-        //             gas: 6000000
-        //         }
-        //     );
-
-        //     assert.equal(
-        //         tx.logs[0].args._investor.toLowerCase(),
-        //         account_investor1.toLowerCase(),
-        //         "Failed in adding the investor in whitelist"
-        //     );
-
-        //     // Jump time
-        //     await increaseTime(5000);
-
-        //     console.log("1");
-
-        //     // Mint some tokens
-        //     await I_SecurityToken.mint(account_investor1, web3.utils.toWei("4", "ether"), { from: token_owner });
-        //     console.log("2");
-        //     assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("4", "ether"));
-        // });
-
         it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "ManualApprovalTransferManager doesn't get deployed");
@@ -1261,38 +1116,17 @@ contract('GeneralPermissionManager', accounts => {
 
         it("should pass fuzz test for addManualApproval & revokeManualApproval with perm TRANSFER_APPROVAL", async () => {
             
-            // console.log("1");
-            // await I_ManualApprovalTransferManager.addManualApproval(
-            //     account_investor1,
-            //     account_investor4,
-            //     web3.utils.toWei("2", "ether"),
-            //     latestTime() + duration.days(1),
-            //     { from: token_owner }
-            // );
-            // console.log("2");
-            // let tx = await I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, account_investor4, {
-            //     from: token_owner
-            // });
-            // assert.equal(tx.logs[0].args._from, account_investor1);
-            // assert.equal(tx.logs[0].args._to, account_investor4);
-            // assert.equal(tx.logs[0].args._addedBy, token_owner);
-            // await I_ManualApprovalTransferManager.addManualApproval(
-            //     account_investor1,
-            //     account_investor4,
-            //     web3.utils.toWei("2", "ether"),
-            //     latestTime() + duration.days(1),
-            //     { from: token_owner }
-            // );
-            // console.log("3");
             let tx;
-
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
             for (var i = 2; i < testRepeat; i++) {
 
                 let snapId = await takeSnapshot();
 
                
                 var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) { j = 2 };
+                if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+                
+                // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
                 }
@@ -1302,6 +1136,7 @@ contract('GeneralPermissionManager', accounts => {
                     await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, 'TRANSFER_APPROVAL', false, { from: token_owner });
                 }
 
+                // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, randomPerms, true, { from: token_owner });  
             
@@ -1369,13 +1204,15 @@ contract('GeneralPermissionManager', accounts => {
             await I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, account_investor2, { from: token_owner });
             console.log("3");
 
-
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
             for (var i = 2; i < testRepeat; i++) {
 
                 let snapId = await takeSnapshot();
          
                 var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) { j = 2 };
+                if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
+                
+                // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
                 }
@@ -1385,6 +1222,7 @@ contract('GeneralPermissionManager', accounts => {
                     await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, 'TRANSFER_APPROVAL', false, { from: token_owner });
                 }
 
+                // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, randomPerms, true, { from: token_owner });  
             

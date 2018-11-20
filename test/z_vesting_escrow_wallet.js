@@ -1,4 +1,4 @@
-import {deployPolyRegistryAndPolyToken, deployVestingEscrowWallet} from "./helpers/createInstances";
+import {deployVestingEscrowWalletAndVerifyed, setUpPolymathNetwork} from "./helpers/createInstances";
 import latestTime from "./helpers/latestTime";
 import {duration as durationUtil} from "./helpers/utils";
 import {catchRevert} from "./helpers/exceptions";
@@ -13,8 +13,6 @@ const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 contract('VestingEscrowWallet', accounts => {
 
     const CREATED = 0;
-    const STARTED = 1;
-    const COMPLETED = 2;
 
     // Accounts Variable declaration
     let account_polymath;
@@ -30,9 +28,38 @@ contract('VestingEscrowWallet', accounts => {
     let message = "Transaction Should Fail!";
 
     // Contract Instance Declaration
+    let I_SecurityTokenRegistryProxy;
+    let I_GeneralTransferManagerFactory;
+    let I_ScheduledCheckpointFactory;
+    let I_GeneralPermissionManager;
+    let I_ScheduledCheckpoint;
+    let I_GeneralTransferManager;
+    let I_ModuleRegistryProxy;
+    let I_ModuleRegistry;
+    let I_FeatureRegistry;
+    let I_SecurityTokenRegistry;
+    let I_STRProxied;
+    let I_MRProxied;
+    let I_STFactory;
+    let I_SecurityToken;
     let I_VestingEscrowWallet;
     let I_PolyToken;
     let I_PolymathRegistry;
+
+    // SecurityToken Details
+    const name = "Team";
+    const symbol = "sap";
+    const tokenDetails = "This is equity type of issuance";
+    const decimals = 18;
+    const contact = "team@polymath.network";
+
+    // Module key
+    const delegateManagerKey = 1;
+    const transferManagerKey = 2;
+    const stoKey = 3;
+
+    // Initial fee for ticker registry and security token registry
+    const initRegFee = web3.utils.toWei("250");
 
     before(async () => {
         // Accounts setup
@@ -51,19 +78,38 @@ contract('VestingEscrowWallet', accounts => {
             account_beneficiary3
         ];
 
-        // Step 1: Deploy the PolyToken
-        [I_PolymathRegistry, I_PolyToken] = await deployPolyRegistryAndPolyToken(account_polymath, account_treasury);
+        // Step 1: Deploy the genral PM ecosystem
+        let instances = await setUpPolymathNetwork(account_polymath, wallet_owner);
+
+        [
+            I_PolymathRegistry,
+            I_PolyToken,
+            I_FeatureRegistry,
+            I_ModuleRegistry,
+            I_ModuleRegistryProxy,
+            I_MRProxied,
+            I_GeneralTransferManagerFactory,
+            I_STFactory,
+            I_SecurityTokenRegistry,
+            I_SecurityTokenRegistryProxy,
+            I_STRProxied
+        ] = instances;
 
         // STEP 2: Deploy the VestingEscrowWallet
-        [I_VestingEscrowWallet] = await deployVestingEscrowWallet(wallet_owner, I_PolyToken.address, account_treasury);
+        [I_VestingEscrowWalletFactory] = await deployVestingEscrowWalletAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
 
         // Printing all the contract addresses
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
         PolymathRegistry:                  ${I_PolymathRegistry.address}
-        PolyToken:                         ${I_PolyToken.address}
+        SecurityTokenRegistryProxy:        ${I_SecurityTokenRegistryProxy.address}
+        SecurityTokenRegistry:             ${I_SecurityTokenRegistry.address}
+        ModuleRegistry:                    ${I_ModuleRegistry.address}
+        ModuleRegistryProxy:               ${I_ModuleRegistryProxy.address}
+        FeatureRegistry:                   ${I_FeatureRegistry.address}
 
-        VestingEscrowWalle:                ${I_VestingEscrowWallet.address}
+        STFactory:                         ${I_STFactory.address}
+        GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
         -----------------------------------------------------------------------------
         `);
     });

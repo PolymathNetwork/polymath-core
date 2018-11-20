@@ -30,7 +30,7 @@ const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
 const MockBurnFactory = artifacts.require("./MockBurnFactory.sol");
 const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
-const VestingEscrowWallet = artifacts.require("./VestingEscrowWallet.sol");
+const VestingEscrowWalletFactory = artifacts.require("./VestingEscrowWalletFactory.sol");
 
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
@@ -51,6 +51,7 @@ let I_CountTransferManagerFactory;
 let I_ERC20DividendCheckpointFactory;
 let I_GeneralPermissionManagerFactory;
 let I_GeneralTransferManagerFactory;
+let I_VestingEscrowWalletFactory;
 let I_GeneralTransferManager;
 let I_ModuleRegistryProxy;
 let I_PreSaleSTOFactory;
@@ -66,7 +67,6 @@ let I_PolymathRegistry;
 let I_SecurityTokenRegistryProxy;
 let I_STRProxied;
 let I_MRProxied;
-let I_VestingEscrowWallet;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = web3.utils.toWei("250");
@@ -397,6 +397,18 @@ export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstan
     return new Array(I_TrackedRedemptionFactory);
 }
 
+export async function deployVestingEscrowWalletAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_VestingEscrowWalletFactory = await VestingEscrowWalletFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+
+    assert.notEqual(
+        I_VestingEscrowWalletFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "VestingEscrowWalletFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_VestingEscrowWalletFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_VestingEscrowWalletFactory);
+}
 
 export async function deployMockRedemptionAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
     I_MockBurnFactory = await MockBurnFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
@@ -423,18 +435,6 @@ export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, 
     await registerAndVerifyByMR(I_MockWrongTypeBurnFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_MockWrongTypeBurnFactory);
 }
-
-export async function deployVestingEscrowWallet(accountOwner, polyToken, treasury) {
-    I_VestingEscrowWallet = await VestingEscrowWallet.new(polyToken, treasury, { from: accountOwner });
-    assert.notEqual(
-        I_VestingEscrowWallet.address.valueOf(),
-        "0x0000000000000000000000000000000000000000",
-        "VestingEscrowWallet contract was not deployed"
-    );
-
-    return new Array(I_VestingEscrowWallet);
-}
-
 
 /// Helper function
 function mergeReturn(returnData) {

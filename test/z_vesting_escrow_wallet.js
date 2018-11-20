@@ -1,9 +1,12 @@
 import {deployVestingEscrowWalletAndVerifyed, setUpPolymathNetwork} from "./helpers/createInstances";
 import latestTime from "./helpers/latestTime";
-import {duration as durationUtil} from "./helpers/utils";
+import {duration as durationUtil, latestBlock, promisifyLogWatch} from "./helpers/utils";
 import {catchRevert} from "./helpers/exceptions";
 import {increaseTime} from "./helpers/time";
+import {encodeModuleCall} from "./helpers/encodeCall";
 
+const SecurityToken = artifacts.require('./SecurityToken.sol');
+const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const VestingEscrowWallet = artifacts.require('./VestingEscrowWallet.sol');
 
 const Web3 = require('web3');
@@ -17,6 +20,7 @@ contract('VestingEscrowWallet', accounts => {
     // Accounts Variable declaration
     let account_polymath;
     let wallet_owner;
+    let token_owner;
     let account_treasury;
     let account_beneficiary1;
     let account_beneficiary2;
@@ -30,9 +34,9 @@ contract('VestingEscrowWallet', accounts => {
     // Contract Instance Declaration
     let I_SecurityTokenRegistryProxy;
     let I_GeneralTransferManagerFactory;
-    let I_ScheduledCheckpointFactory;
+    let I_VestingEscrowWalletFactory;
     let I_GeneralPermissionManager;
-    let I_ScheduledCheckpoint;
+    let I_VestingEscrowWallet;
     let I_GeneralTransferManager;
     let I_ModuleRegistryProxy;
     let I_ModuleRegistry;
@@ -42,7 +46,6 @@ contract('VestingEscrowWallet', accounts => {
     let I_MRProxied;
     let I_STFactory;
     let I_SecurityToken;
-    let I_VestingEscrowWallet;
     let I_PolyToken;
     let I_PolymathRegistry;
 
@@ -65,6 +68,7 @@ contract('VestingEscrowWallet', accounts => {
         // Accounts setup
         account_polymath = accounts[0];
         wallet_owner = accounts[1];
+        token_owner = wallet_owner;
         account_treasury = accounts[2];
 
         account_beneficiary1 = accounts[6];
@@ -112,6 +116,63 @@ contract('VestingEscrowWallet', accounts => {
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
         -----------------------------------------------------------------------------
         `);
+    });
+
+    describe("Generate the SecurityToken", async() => {
+
+        it("Should register the ticker before the generation of the security token", async () => {
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from : token_owner });
+            assert.equal(tx.logs[0].args._owner, token_owner);
+            assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
+        });
+
+        it("Should generate the new security token with the same symbol as registered above", async () => {
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let _blockNo = latestBlock();
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
+
+            // Verify the successful generation of the security token
+            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+
+            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+
+            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
+
+            // Verify that GeneralTransferManager module get added successfully or not
+            assert.equal(log.args._types[0].toNumber(), 2);
+            assert.equal(
+                web3.utils.toAscii(log.args._name)
+                    .replace(/\u0000/g, ''),
+                "GeneralTransferManager"
+            );
+        });
+
+        it("Should intialize the auto attached modules", async () => {
+            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+
+        });
+
+        it("Should successfully attach the VestingEscrowWallet with the security token", async () => {
+            let bytesData = encodeModuleCall(
+                ["address"],
+                [account_treasury]
+            );
+
+            await I_SecurityToken.changeGranularity(1, {from: token_owner});
+            const tx = await I_SecurityToken.addModule(I_VestingEscrowWalletFactory.address, bytesData, 0, 0, { from: token_owner });
+
+            assert.equal(tx.logs[2].args._types[0].toNumber(), 6, "VestingEscrowWallet doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name)
+                    .replace(/\u0000/g, ''),
+                "VestingEscrowWallet",
+                "VestingEscrowWallet module was not added"
+            );
+            I_VestingEscrowWallet = VestingEscrowWallet.at(tx.logs[2].args._module);
+        });
+
     });
 
     describe("Depositing and withdrawing tokens", async () => {

@@ -487,18 +487,19 @@ contract VestingEscrowWallet is IWallet {
         }
     }
 
-    /**
-     * @notice manually triggers update outside for all schedules (can be used to reduce user gas costs)
-     */
-    function updateAll() external withPerm(ADMIN) {
-        _updateAll();
-    }
-
-    function _updateAll() private {
-        for (uint256 i = 0; i < beneficiaries.length; i++) {
-            _update(beneficiaries[i]);
-        }
-    }
+    //TODO temporally for decreasing contract size
+//    /**
+//     * @notice manually triggers update outside for all schedules (can be used to reduce user gas costs)
+//     */
+//    function updateAll() external withPerm(ADMIN) {
+//        _updateAll();
+//    }
+//
+//    function _updateAll() private {
+//        for (uint256 i = 0; i < beneficiaries.length; i++) {
+//            _update(beneficiaries[i]);
+//        }
+//    }
 
     function _revokeSchedules(address _beneficiary) private {
         if (_canBeRemoved(_beneficiary)) {

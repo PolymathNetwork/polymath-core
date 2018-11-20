@@ -67,7 +67,7 @@ contract('VestingEscrowWallet', accounts => {
         -----------------------------------------------------------------------------
         `);
     });
-/*
+
     describe("Depositing and withdrawing tokens", async () => {
 
         it("Should fail to deposit zero amount of tokens", async () => {
@@ -174,11 +174,6 @@ contract('VestingEscrowWallet', accounts => {
         it("Should withdraw available tokens by 3 schedules to the beneficiary address", async () => {
             let schedules = [
                 {
-                    numberOfTokens: 100000,
-                    duration: durationUtil.seconds(4),
-                    frequency: durationUtil.seconds(1)
-                },
-                {
                     numberOfTokens: 30000,
                     duration: durationUtil.seconds(6),
                     frequency: durationUtil.seconds(1)
@@ -205,7 +200,7 @@ contract('VestingEscrowWallet', accounts => {
             for (let i = 0; i < stepCount; i++) {
                 await I_VestingEscrowWallet.update(account_beneficiary3, {from: wallet_owner});
             }
-            let numberOfTokens = 100000 + (30000 / 6 * stepCount) + (2000 / 10 * stepCount);
+            let numberOfTokens = (30000 / 6 * stepCount) + (2000 / 10 * stepCount);
             const tx = await I_VestingEscrowWallet.withdrawAvailableTokens({from: account_beneficiary3});
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary3);
             assert.equal(tx.logs[0].args._numberOfTokens.toNumber(), numberOfTokens);
@@ -219,7 +214,7 @@ contract('VestingEscrowWallet', accounts => {
         });
 
     });
-*/
+
     describe("Adding, editing and revoking vesting schedule", async () => {
 
         let schedules = [

@@ -32,23 +32,6 @@ function signDataVerifyTransfer (tmAddress, fromAddress, toAddress, amount, acco
     return web3.eth.sign(account, packedData);
 }
 
-// test
-function signDataVerifyTransfer2 (tmAddress, fromAddress, toAddress, amount, pk) {
-    let packedData = utils
-        .solidityKeccak256(
-            ["address", "address", "address", "uint256"],
-            [tmAddress, fromAddress, toAddress, amount]
-        )
-        .slice(2);
-    packedData = new Buffer(packedData, "hex");
-    packedData = Buffer.concat([new Buffer(`\x19Ethereum Signed Message:\n${packedData.length.toString()}`), packedData]);
-    packedData = web3.sha3(`0x${packedData.toString("hex")}`, { encoding: "hex" });
-
-    let wallet = new ethers.Wallet(pk.indexOf('0x') === 0 ? pk : '0x' + pk);
-
-    return wallet.signMessage(packedData);
-}
-
 module.exports = {
     signData, signDataVerifyTransfer
 };

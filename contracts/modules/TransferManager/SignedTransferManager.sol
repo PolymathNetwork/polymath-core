@@ -77,14 +77,24 @@ contract SignedTransferManager is ITransferManager {
     function verifyTransfer(address _from, address _to, uint256 _amount, bytes _data , bool _isTransfer) public returns(Result) {
         if (!paused) {
 
-            require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
+            // not using require to avoid revert in this function
+
+            if (_isTransfer != false || msg.sender != securityToken){
+                return Result.INVALID;  //Sender is not the owner
+            }
+
+            if(_data.length == 0){
+                return Result.INVALID;  // data input check
+            }
             
             require(invalidSignatures[_data] != true, "Invalid signature - signature is either used or deemed as invalid");
             bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
             bytes32 prependedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
             address signer = _recoverSignerAdd(prependedHash, _data);
-            
-            require(signers[signer] == true, "Invalid signature - signer is not on the list");
+
+            if (signers[signer] == false) {
+                return Result.INVALID; //Invalid signature - signer is not on the list
+            }
             
             if (signers[signer] != true){
                 return Result.NA;

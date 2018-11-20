@@ -106,7 +106,7 @@ contract VestingEscrowWallet is IWallet {
      * @notice Used to deposit tokens from treasury
      */
     function depositTokens(uint256 _numberOfTokens) external withPerm(ADMIN) {
-        require(_numberOfTokens > 0, "Number of tokens should be greater than zero");
+        require(_numberOfTokens > 0, "Should be greater than zero");
         token.safeTransferFrom(treasury, this, _numberOfTokens);
         unassignedTokens = unassignedTokens.add(_numberOfTokens);
         /*solium-disable-next-line security/no-block-members*/
@@ -195,7 +195,7 @@ contract VestingEscrowWallet is IWallet {
         withPerm(ADMIN)
     {
         _validateSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime);
-        require(_numberOfTokens <= unassignedTokens, "Wallet doesn't contain enough unassigned tokens");
+        require(_numberOfTokens <= unassignedTokens, "Not enough tokens");
 
         Schedule memory schedule;
         unassignedTokens = unassignedTokens.sub(_numberOfTokens);
@@ -252,11 +252,11 @@ contract VestingEscrowWallet is IWallet {
         require(_index < dataMap[_beneficiary].schedules.length, "Schedule not found");
         Schedule storage schedule = dataMap[_beneficiary].schedules[_index];
         /*solium-disable-next-line security/no-block-members*/
-        require(now < schedule.startTime, "It's not possible to edit the started schedule");
+        require(now < schedule.startTime, "Schedule started");
         if (_numberOfTokens <= schedule.lockedTokens) {
             unassignedTokens = unassignedTokens.add(schedule.lockedTokens - _numberOfTokens);
         } else {
-            require((_numberOfTokens - schedule.lockedTokens) <= unassignedTokens, "Wallet doesn't contain enough unassigned tokens");
+            require((_numberOfTokens - schedule.lockedTokens) <= unassignedTokens, "Not enough tokens");
             unassignedTokens = unassignedTokens.sub(_numberOfTokens - schedule.lockedTokens);
         }
         schedule.numberOfTokens = _numberOfTokens;
@@ -293,7 +293,7 @@ contract VestingEscrowWallet is IWallet {
      * @param _beneficiary beneficiary's address
      */
     function revokeSchedules(address _beneficiary) public withPerm(ADMIN) {
-        require(_beneficiary != address(0), "Invalid beneficiary address");
+        require(_beneficiary != address(0), "Invalid address");
         Data storage data = dataMap[_beneficiary];
         for (uint256 i = 0; i < data.schedules.length; i++) {
             unassignedTokens = unassignedTokens.add(data.schedules[i].lockedTokens);
@@ -311,7 +311,7 @@ contract VestingEscrowWallet is IWallet {
      * @return beneficiary's schedule
      */
     function getSchedule(address _beneficiary, uint256 _index) external view returns(uint256, uint256, uint256, uint256, uint256, uint256, State) {
-        require(_beneficiary != address(0), "Invalid beneficiary address");
+        require(_beneficiary != address(0), "Invalid address");
         require(_index < dataMap[_beneficiary].schedules.length, "Schedule not found");
         Schedule storage schedule = dataMap[_beneficiary].schedules[_index];
         return (
@@ -331,7 +331,7 @@ contract VestingEscrowWallet is IWallet {
      * @return count of beneficiary's schedules
      */
     function getScheduleCount(address _beneficiary) external view returns(uint256) {
-        require(_beneficiary != address(0), "Invalid beneficiary address");
+        require(_beneficiary != address(0), "Invalid address");
         return dataMap[_beneficiary].schedules.length;
     }
 
@@ -341,7 +341,7 @@ contract VestingEscrowWallet is IWallet {
      * @return available tokens for beneficiary
      */
     function getAvailableTokens(address _beneficiary) external view returns(uint256) {
-        require(_beneficiary != address(0), "Invalid beneficiary address");
+        require(_beneficiary != address(0), "Invalid address");
         return dataMap[_beneficiary].availableTokens;
     }
 
@@ -420,7 +420,7 @@ contract VestingEscrowWallet is IWallet {
         external
         withPerm(ADMIN)
     {
-        require(_beneficiaries.length == _indexes.length, "Beneficiaries array and indexes array should have the same length");
+        require(_beneficiaries.length == _indexes.length, "Arrays sizes mismatch");
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             editSchedule(_beneficiaries[i], _indexes[i], _numberOfTokens, _duration, _frequency, _startTime);
         }
@@ -436,22 +436,22 @@ contract VestingEscrowWallet is IWallet {
         private
         view
     {
-        require(_beneficiary != address(0), "Invalid beneficiary address");
+        require(_beneficiary != address(0), "Invalid address");
         _validateTemplate(_numberOfTokens, _duration, _frequency);
-        require(now < _startTime, "Start date shouldn't be in the past");
+        require(now < _startTime, "Date in the past");
     }
 
     function _validateTemplate(uint256 _numberOfTokens, uint256 _duration, uint256 _frequency) private pure {
-        require(_numberOfTokens > 0, "Number of tokens should be greater than zero");
-        require(_duration % _frequency == 0, "Duration should be divided entirely by frequency");
+        require(_numberOfTokens > 0, "Zero amount");
+        require(_duration % _frequency == 0, "Duration and frequency mismatch");
         uint256 periodCount = _duration.div(_frequency);
-        require(_numberOfTokens % periodCount == 0, "Number of tokens should be divided entirely by period count");
+        require(_numberOfTokens % periodCount == 0, "Tokens and periods mismatch");
     }
 
     function _sendTokens(address _beneficiary) private {
         Data storage data = dataMap[_beneficiary];
         uint256 amount = data.availableTokens;
-        require(amount > 0, "Beneficiary doesn't have available tokens");
+        require(amount > 0, "No tokens");
         data.availableTokens = 0;
         data.claimedTokens = data.claimedTokens.add(amount);
         token.safeTransfer(_beneficiary, amount);

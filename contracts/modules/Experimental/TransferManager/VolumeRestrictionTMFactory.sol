@@ -17,7 +17,7 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
         version = "1.0.0";
         name = "VolumeRestrictionTM";
         title = "Volume Restriction Transfer Manager";
-        description = "Manage transfers based on the volume of tokens that transact";
+        description = "Manage transfers based on the volume of tokens that needs to be transact";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }

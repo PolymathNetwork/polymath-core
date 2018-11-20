@@ -1,6 +1,6 @@
 {
   "name": "polymath-core",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "description": "Polymath Network Core Smart Contracts",
   "main": "truffle.js",
   "directories": {
@@ -29,8 +29,9 @@
     "flatten-mocks": "sol-merger './contracts/mocks/*.sol' ./flat/mocks",
     "flatten-oracles": "sol-merger './contracts/oracles/*.sol' ./flat/oracles",
     "flatten-proxies": "sol-merger './contracts/proxy/*.sol' ./flat/proxy",
+    "flatten-proxyFactories": "sol-merger './contracts/modules/STO/ProxyFactory/*.sol' ./flat/modules/STO/proxy",
     "flatten": "sol-merger './contracts/*.sol' ./flat",
-    "flatten-all": "npm run flatten-modules && npm run flatten-token && npm run flatten-mocks && npm run flatten-oracles && npm run flatten-proxies && npm run flatten",
+    "flatten-all": "npm run flatten-modules && npm run flatten-token && npm run flatten-mocks && npm run flatten-oracles && npm run flatten-proxies && npm run flatten && npm run flatten-proxyFactories",
     "ethereum-bridge": "node_modules/.bin/ethereum-bridge -H localhost:8545 -a 9 --dev",
     "st20generator": "node demo/ST20Generator",
     "pretty": "prettier --write --print-width 140 --tab-width 4 \"**/*.js\""

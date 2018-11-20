@@ -93,13 +93,8 @@ module.exports = {
 
     let block = await web3.eth.getBlock("latest");
     let networkGasLimit = block.gasLimit;
-
-    try {
-      let gas = Math.round(factor * (await action.estimateGas({ from: from.address, value: value})));
-      if (gas > networkGasLimit) gas = networkGasLimit;
-    } catch(exception) {
-      gas = networkGasLimit;
-    }
+    let gas = Math.round(factor * (await action.estimateGas({ from: from.address, value: value})));
+    if (gas > networkGasLimit) gas = networkGasLimit;
   
     console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gas} ----`));    
 

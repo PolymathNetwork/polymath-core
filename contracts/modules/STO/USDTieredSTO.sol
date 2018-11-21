@@ -493,6 +493,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         whenNotPaused
         returns(uint256 spentUSD, uint256 spentValue)
     {
+        if (!allowBeneficialInvestments) {
+            require(_beneficiary == msg.sender, "Beneficiary != funder");
+        }
+        
         uint256 originalUSD = DecimalMath.mul(_rate, _investmentValue);
         uint256 allowedUSD = _buyTokensChecks(_beneficiary, _investmentValue, originalUSD);
 
@@ -571,10 +575,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         view
         returns(uint256 netInvestedUSD)
     {
-        if (!allowBeneficialInvestments) {
-            require(_beneficiary == msg.sender, "Beneficiary != funder");
-        }
-
         require(isOpen(), "STO not open");
         require(_investmentValue > 0, "No funds were sent");
 

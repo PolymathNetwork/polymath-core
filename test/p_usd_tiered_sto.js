@@ -3790,6 +3790,8 @@ contract("USDTieredSTO", accounts => {
             let init_WalletETHBal = BigNumber(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
+            let tokensToMint = (await I_USDTieredSTO_Array[stoId].buyTokensView(ACCREDITED1, investment_POLY,POLY))[2];
+
             // Buy With POLY
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, {
                 from: ACCREDITED1,
@@ -3817,6 +3819,11 @@ contract("USDTieredSTO", accounts => {
                     .sub(refund_Tokens)
                     .toNumber(),
                 "Token Supply not changed as expected"
+            );
+            assert.equal(
+                tokensToMint.toNumber(),
+                investment_Tokens.sub(refund_Tokens).toNumber(),
+                "View function returned incorrect data"
             );
             assert.equal(
                 final_InvestorTokenBal.toNumber(),
@@ -4474,6 +4481,18 @@ contract("USDTieredSTO", accounts => {
                     (await I_USDTieredSTO_Array[0].fundsRaisedUSD()).toNumber(),
                     "fundsRaisedUSD not changed as expected"
                 );
+            });
+            
+            it("should return minted tokens in a tier", async () => {
+                let totalMinted = (await I_USDTieredSTO_Array[0].getTokensSoldByTier.call(0)).toNumber();
+                let individualMinted = await I_USDTieredSTO_Array[0].getTokensMintedByTier.call(0);
+                assert.equal(totalMinted, individualMinted[0].add(individualMinted[1]).add(individualMinted[2]).toNumber());
+            });
+
+            it("should return correct tokens sold in token details", async () => {
+                let tokensSold = (await I_USDTieredSTO_Array[0].getTokensSold.call()).toNumber();
+                let tokenDetails = await I_USDTieredSTO_Array[0].getSTODetails.call();
+                assert.equal(tokensSold, tokenDetails[7].toNumber());
             });
         });
 

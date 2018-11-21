@@ -81,6 +81,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         account_investor1 = accounts[8];
         account_investor2 = accounts[9];
+        account_investor3 = accounts[4];
         account_delegate = accounts[7];
         account_delegate2 = accounts[6];
         account_delegate3 = accounts[5];
@@ -157,7 +158,83 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
     describe("Attach the VRTM", async() => {
         it("Deploy the VRTM and attach with the ST", async()=> {
+            let tx = await I_SecurityToken.addModule(I_VolumeRestrictionTMFactory.address, 0, 0, 0, {from: token_owner });
+            assert.equal(tx.logs[2].args._moduleFactory, I_VolumeRestrictionTMFactory.address);
+            assert.equal(
+                web3.utils.toUtf8(tx.logs[2].args._name),
+                "VolumeRestrictionTM",
+                "VolumeRestrictionTMFactory doesn not added");
+            I_VolumeRestrictionTM = VolumeRestrictionTM.at(tx.logs[2].args._module);
+        });
 
-        })
+        it("Transfer some tokens to different account", async() => {
+            // Add tokens in to the whitelist
+            await I_GeneralTransferManager.modifyWhitelistMulti(
+                    [account_investor1, account_investor2, account_investor3],
+                    [latestTime(), latestTime(), latestTime()],
+                    [latestTime(), latestTime(), latestTime()],
+                    [latestTime() + duration.days(30), latestTime() + duration.days(30), latestTime() + duration.days(30)],
+                    [true, true, true],
+                    {
+                        from: token_owner
+                    }
+            );
+
+            // Mint some tokens and transferred to whitelisted addresses
+            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("40", "ether"), {from: token_owner});
+            await I_SecurityToken.mint(account_investor2, web3.utils.toWei("30", "ether"), {from: token_owner});
+            
+            // Check the balance of the investors 
+            let bal1 = await I_SecurityToken.balanceOf.call(account_investor1);
+            let bal2 = await I_SecurityToken.balanceOf.call(account_investor2);
+            // Verifying the balances
+            assert.equal(web3.utils.fromWei((bal1.toNumber()).toString()), 40);
+            assert.equal(web3.utils.fromWei((bal2.toNumber()).toString()), 30);
+
+        });
+
+        it("Should transfer the tokens freely without any restriction", async() => {
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('5', 'ether'), { from: account_investor1 });
+            let bal1 = await I_SecurityToken.balanceOf.call(account_investor3);
+             // Verifying the balances
+             assert.equal(web3.utils.fromWei((bal1.toNumber()).toString()), 5);
+        });
+    })
+
+    describe("Test for the addIndividualRestriction", async() => {
+
+        it("Should add the restriction succesfully", async() => {
+            let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    web3.utils.toWei("5"),
+                    0,
+                    latestTime() + duration.seconds(2),
+                    3,
+                    latestTime() + duration.days(10),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                );
+            
+            assert.equal(tx.logs[0].args._holder, account_investor1);
+            assert.equal(tx.logs[0].args._typeOfRestriction, 0);
+            console.log(await I_VolumeRestrictionTM.individualRestriction.call(account_investor1));
+        });
+
+        // it("Should not successfully transact the tokens -- failed because volume is above the limit", async() => {
+        //     await catchRevert(
+        //         I_SecurityToken.transfer(account_investor3, web3.utils.toWei("6"), { from: account_investor1})
+        //     );
+        // });
+
+        // it("Should successfully transact the tokens after 1 and half days", async() => {
+        //     await increaseTime(duration.days(1.5));
+        //     await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("1"), {from: account_investor1});
+        //     // Check the balance of the investors 
+        //     let bal1 = await I_SecurityToken.balanceOf.call(account_investor1);
+        //     // Verifying the balances
+        //     assert.equal(web3.utils.fromWei((bal1.toNumber()).toString()), 34);
+        // });
     })
 });

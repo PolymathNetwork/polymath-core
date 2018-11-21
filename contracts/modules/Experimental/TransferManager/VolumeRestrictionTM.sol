@@ -33,7 +33,7 @@ contract VolumeRestrictionTM is ITransferManager {
 
     VolumeRestriction globalRestriction;
 
-    mapping(address => VolumeRestriction) internal individualRestriction;
+    mapping(address => VolumeRestriction) public individualRestriction;
     // Storing _from => day's timestamp => total amount transact in a day
     mapping(address => mapping(uint256 => uint256)) internal bucket;
     // Storing the information that used to validate the transaction
@@ -114,10 +114,27 @@ contract VolumeRestrictionTM is ITransferManager {
     function _checkRestriction(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {
         if (individualRestriction[_from].endTime >= now && individualRestriction[_from].startTime <= now) {
             BucketDetails memory _bucketDetails = bucketToUser[_from];
+            uint256 _diffDays;
             if (_bucketDetails.timestamps[0] == 0) {
-                return _individualBucketCheck(individualRestriction[_from].startTime, now, _from,individualRestriction[_from], _amount);
+                _diffDays = BokkyPooBahsDateTimeLibrary.diffDays(individualRestriction[_from].startTime, now);
+                return _individualBucketCheck(
+                    individualRestriction[_from].startTime,
+                    _diffDays,
+                    _from,
+                    individualRestriction[_from],
+                    _amount,
+                    _isTransfer
+                );
             } else {
-                return _individualBucketCheck(_bucketDetails.timestamps[_bucketDetails.latestTimestampIndex], now, _from, individualRestriction[_from], _amount);
+                _diffDays = BokkyPooBahsDateTimeLibrary.diffDays(_bucketDetails.timestamps[_bucketDetails.latestTimestampIndex], now);
+                return _individualBucketCheck(
+                    _bucketDetails.timestamps[_bucketDetails.latestTimestampIndex],
+                    _diffDays,
+                    _from,
+                    individualRestriction[_from],
+                    _amount,
+                    _isTransfer
+                );
             }
         } else if (now <= globalRestriction.endTime && now >= globalRestriction.startTime) {
             // TODO: Add the global bucket check
@@ -136,28 +153,31 @@ contract VolumeRestrictionTM is ITransferManager {
     }
 
     function _individualBucketCheck(
-        uint256 _fromTimestamp,
-        uint256 _toTimestamp,
+        uint256 _fromTime,
+        uint256 _diffDays,
         address _from,
-        VolumeRestriction storage _restriction,
-        uint256 _amount
+        VolumeRestriction _restriction,
+        uint256 _amount,
+        bool _isTransfer 
     ) 
         internal
         returns (Result)
     {
-        uint256 _diffDays = BokkyPooBahsDateTimeLibrary.diffDays(_fromTimestamp, _toTimestamp);
+        BucketDetails memory _bucketDetails = bucketToUser[_from];
+        uint256[] memory passedTimestamps = new uint256[](_diffDays);
+        uint256[] memory counters = new uint256[](_diffDays);
+        // using the existing memory variable instead of creating new one (avoiding stack too deep error)
+        // uint256 counter = _bucketDetails.latestTimestampIndex;
         uint256 i = 0;
-        BucketDetails storage _bucketDetails = bucketToUser[_from];
-        uint256 counter = _bucketDetails.latestTimestampIndex;
-        uint256 tempTimeStamp = 0;
+        bool valid;
         for (i = 1; i <= _diffDays; i++) {
             // calculating the timestamp that will used as an index of the next bucket
             // i.e buckets period will be look like this T1 to T2-1, T2 to T3-1 .... 
             // where T1,T2,T3 are timestamps having 24 hrs difference
-            tempTimeStamp = _fromTimestamp.add((i - 1) * 1 days);
+            _fromTime = _fromTime.add(1 days);
              // Creating the round array
-            if (counter > _restriction.rollingPeriodInDays -1) {
-                    counter = 0;
+            if (_bucketDetails.latestTimestampIndex > _restriction.rollingPeriodInDays -1) {
+                    _bucketDetails.latestTimestampIndex = 0;
             }
             // This condition is to check whether the first rolling period is covered or not
             // if not then it continues and adding 0 value into sumOfLastPeriod without subtracting
@@ -165,33 +185,42 @@ contract VolumeRestrictionTM is ITransferManager {
             if (_bucketDetails.daysCovered <= _restriction.rollingPeriodInDays) {
                 _bucketDetails.daysCovered++;
             } else {
-                // temporarily storing the preious value of timestamp at the "counter" index 
-                uint256 _previousTimestamp = _bucketDetails.timestamps[counter];
+                // temporarily storing the previous value of timestamp at the "_bucketDetails.latestTimestampIndex" index 
+                uint256 _previousTimestamp = _bucketDetails.timestamps[_bucketDetails.latestTimestampIndex];
                 // Subtracting the former value(Sum of all the txn amount of that day) from the sumOfLastPeriod
                 _bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.sub(bucket[_from][_previousTimestamp]);
             }
-            // Adding the last amount that is transacted on the tempTimeStamp
+            // Adding the last amount that is transacted on the _fromTime
             _bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.add(uint256(0));
             // Storing the passed timestamp in the array 
-            _bucketDetails.timestamps[counter] =  tempTimeStamp;
-            // Assigning the sum of transacted amount on the passed day
-            bucket[_from][tempTimeStamp] = 0;
-            counter ++; 
+            _bucketDetails.timestamps[_bucketDetails.latestTimestampIndex] =  _fromTime;
+            // Storing all those timestamps whose total transacted value is 0
+            passedTimestamps[i] = _fromTime;
+            counters[i] = _bucketDetails.latestTimestampIndex;
+            _bucketDetails.latestTimestampIndex ++; 
         }
-        bool valid;
         if (_restriction.typeOfRestriction == RestrictionType.Variable) {
             uint256 _allowedAmount = (_restriction.allowedTokens.mul(ISecurityToken(securityToken).totalSupply()))/ 10 ** 18;
             valid = _checkValidAmountToTransact(_bucketDetails.sumOfLastPeriod, _amount, _allowedAmount);
         } else {
             valid = _checkValidAmountToTransact(_bucketDetails.sumOfLastPeriod, _amount, _restriction.allowedTokens);
         }
-        // Storing the index of the latest timestamp from the array of timestamp that is being processed
-        _bucketDetails.latestTimestampIndex = counter;
         if (!valid) {
             return Result.INVALID;
         } else {
-            _bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod + _amount;
-            bucket[_from][_bucketDetails.timestamps[counter]] = bucket[_from][_bucketDetails.timestamps[counter]].add(_amount);
+            if (_isTransfer) {
+                for (i = 0; i < passedTimestamps.length; i++) {
+                    // Assigning the sum of transacted amount on the passed day
+                    bucket[_from][passedTimestamps[i]] = 0;
+                    // To save gas by not assigning a memory timestamp array to storage timestamp array.
+                    bucketToUser[_from].timestamps[counters[i]] = _bucketDetails.timestamps[counters[i]];
+                }
+                bucketToUser[_from].sumOfLastPeriod = _bucketDetails.sumOfLastPeriod + _amount;
+                bucketToUser[_from].daysCovered = _bucketDetails.daysCovered;
+                // Storing the index of the latest timestamp from the array of timestamp that is being processed
+                bucketToUser[_from].latestTimestampIndex = _bucketDetails.latestTimestampIndex;
+                bucket[_from][_bucketDetails.timestamps[_bucketDetails.latestTimestampIndex]] = bucket[_from][_bucketDetails.timestamps[_bucketDetails.latestTimestampIndex]].add(_amount);
+            }
             return Result.NA;
         }
         
@@ -540,7 +569,7 @@ contract VolumeRestrictionTM is ITransferManager {
             );
         }
         require(_startTime > 0 && _endTime > _startTime);
-        require(_rollingPeriodDays >= 1);
+        require(_rollingPeriodDays >= 1 && _rollingPeriodDays <= 365);
         require(BokkyPooBahsDateTimeLibrary.diffDays(_startTime, _endTime) >= _rollingPeriodDays);
     }   
 
@@ -563,7 +592,7 @@ contract VolumeRestrictionTM is ITransferManager {
             _endTimes.length == _restrictionTypes.length,
             "Array length mismatch"
         );
-    } 
+    }
 
     /**
      * @notice This function returns the signature of configure function

@@ -645,6 +645,13 @@ contract("ModuleRegistry", accounts => {
                     assert.equal(tx.logs[0].args.previousOwner, account_polymath);
                     assert.equal(tx.logs[0].args.newOwner, account_temp);
                 });
+
+                it("New owner has authorisation", async() => {
+                    let tx = await I_MRProxied.transferOwnership(account_polymath, { from: account_temp });
+                    assert.equal(tx.logs[0].args.previousOwner, account_temp);
+                    assert.equal(tx.logs[0].args.newOwner, account_polymath);
+                });
+
             })
         });
     });

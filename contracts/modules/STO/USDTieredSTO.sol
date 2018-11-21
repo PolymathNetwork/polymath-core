@@ -493,8 +493,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         whenNotPaused
         returns(uint256 spentUSD, uint256 spentValue)
     {
-        uint256 investedUSD = DecimalMath.mul(_rate, _investmentValue);
-        investedUSD = _buyTokensChecks(_beneficiary, _investmentValue, investedUSD);
+        uint256 originalUSD = DecimalMath.mul(_rate, _investmentValue);
+        uint256 allowedUSD = _buyTokensChecks(_beneficiary, _investmentValue, originalUSD);
 
         for (uint256 i = currentTier; i < tiers.length; i++) {
             bool gotoNextTier;
@@ -504,7 +504,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
                 currentTier = i;
             // If there are tokens remaining, process investment
             if (tiers[i].mintedTotal < tiers[i].tokenTotal) {
-                (tempSpentUSD, gotoNextTier) = _calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), _fundRaiseType);
+                (tempSpentUSD, gotoNextTier) = _calculateTier(_beneficiary, i, allowedUSD.sub(spentUSD), _fundRaiseType);
                 spentUSD = spentUSD.add(tempSpentUSD);
                 // If all funds have been spent, exit the loop
                 if (!gotoNextTier)
@@ -520,7 +520,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
         }
 
-        spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, investedUSD), _investmentValue);
+        spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, originalUSD), _investmentValue);
     }
 
     /**
@@ -540,8 +540,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     {
         require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.DAI, "Invalid raise type");
         uint256 rate = getRate(_fundRaiseType);
-        uint256 investedUSD = DecimalMath.mul(rate, _investmentValue);
-        investedUSD = _buyTokensChecks(_beneficiary, _investmentValue, investedUSD);
+        uint256 originalUSD = DecimalMath.mul(rate, _investmentValue);
+        uint256 allowedUSD = _buyTokensChecks(_beneficiary, _investmentValue, originalUSD);
 
         // Iterate over each tier and process payment
         for (uint256 i = currentTier; i < tiers.length; i++) {
@@ -550,7 +550,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             uint256 tempTokensMinted;
             // If there are tokens remaining, process investment
             if (tiers[i].mintedTotal < tiers[i].tokenTotal) {
-                (tempSpentUSD, gotoNextTier, tempTokensMinted) = _calculateTierView(i, investedUSD.sub(spentUSD), _fundRaiseType);
+                (tempSpentUSD, gotoNextTier, tempTokensMinted) = _calculateTierView(i, allowedUSD.sub(spentUSD), _fundRaiseType);
                 spentUSD = spentUSD.add(tempSpentUSD);
                 tokensMinted = tokensMinted.add(tempTokensMinted);
                 // If all funds have been spent, exit the loop
@@ -559,7 +559,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             }
         }
 
-        spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, investedUSD), _investmentValue);
+        spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, originalUSD), _investmentValue);
     }
 
     function _buyTokensChecks(

@@ -260,16 +260,18 @@ contract("SignedTransferManager", accounts => {
 
             const sig = signDataVerifyTransfer(
                 I_SignedTransferManager.address,
-                token_owner,
+                account_investor1,
                 account_investor2,
-                web3.utils.toWei("0.5", "ether"),
+                web3.utils.toWei("0.05", "ether"),
                 token_owner
             );
 
             // let tx = await I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, false, {from: token_owner});
-            console.log("owner balance is" + await web3.eth.getBalance(token_owner));
+            console.log("owner token balance is " + (await I_SecurityToken.balanceOf(account_investor1)).toNumber());
+            console.log("is this sig invalid?"+ await I_SignedTransferManager.checkSignatureIsInvalid(sig));
+            
             // test call security token transfer function
-            let tx = await I_SecurityToken.transferWithData(account_investor2, web3.utils.toWei("0.5", "ether"), sig, {from: token_owner});
+            let tx = await I_SecurityToken.transferWithData(account_investor2, web3.utils.toWei("0.05", "ether"), sig, {from: account_investor1});
             console.log("3");
             assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
         });

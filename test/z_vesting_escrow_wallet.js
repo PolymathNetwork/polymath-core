@@ -741,10 +741,7 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should send available tokens to the beneficiaries addresses", async () => {
-            for (let i = 0; i < beneficiaries.length; i++) {
-                let beneficiary = beneficiaries[i];
-                await I_VestingEscrowWallet.update(beneficiary, {from: wallet_admin});
-            }
+            await I_VestingEscrowWallet.updateAll({from: wallet_admin});
 
             const tx = await I_VestingEscrowWallet.batchSendAvailableTokens(beneficiaries, {from: wallet_admin});
 
@@ -783,7 +780,7 @@ contract('VestingEscrowWallet', accounts => {
                 checkScheduleLog(log, beneficiary, numberOfTokens, duration, frequency, startTime);
 
                 let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(beneficiary);
-                assert.equal(scheduleCount, 1);
+                assert.equal(scheduleCount.toNumber(), 1);
 
                 let schedule = await I_VestingEscrowWallet.getSchedule.call(beneficiary, 0);
                 checkSchedule(schedule, numberOfTokens, numberOfTokens, duration, frequency, startTime, startTime + frequency, CREATED);

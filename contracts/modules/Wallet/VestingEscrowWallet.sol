@@ -274,7 +274,7 @@ contract VestingEscrowWallet is IWallet {
      * @param _index index of the schedule
      */
     function revokeSchedule(address _beneficiary, uint256 _index) external withPerm(ADMIN) {
-        require(_beneficiary != address(0), "Invalid beneficiary address");
+        require(_beneficiary != address(0), "Invalid address");
         require(_index < dataMap[_beneficiary].schedules.length, "Schedule not found");
         Schedule[] storage schedules = dataMap[_beneficiary].schedules;
         unassignedTokens = unassignedTokens.add(schedules[_index].lockedTokens);
@@ -341,7 +341,7 @@ contract VestingEscrowWallet is IWallet {
      * @return available tokens for beneficiary
      */
     function getAvailableTokens(address _beneficiary) external view returns(uint256) {
-        require(_beneficiary != address(0), "Invalid address");
+        require(_beneficiary != address(0));
         return dataMap[_beneficiary].availableTokens;
     }
 
@@ -451,7 +451,7 @@ contract VestingEscrowWallet is IWallet {
     function _sendTokens(address _beneficiary) private {
         Data storage data = dataMap[_beneficiary];
         uint256 amount = data.availableTokens;
-        require(amount > 0, "No tokens");
+        require(amount > 0, "No available tokens");
         data.availableTokens = 0;
         data.claimedTokens = data.claimedTokens.add(amount);
         token.safeTransfer(_beneficiary, amount);
@@ -487,22 +487,22 @@ contract VestingEscrowWallet is IWallet {
         }
     }
 
-    //TODO temporally for decreasing contract size
-//    /**
-//     * @notice manually triggers update outside for all schedules (can be used to reduce user gas costs)
-//     */
-//    function updateAll() external withPerm(ADMIN) {
-//        _updateAll();
-//    }
-//
-//    function _updateAll() private {
-//        for (uint256 i = 0; i < beneficiaries.length; i++) {
-//            _update(beneficiaries[i]);
-//        }
-//    }
+    /**
+     * @notice manually triggers update outside for all schedules (can be used to reduce user gas costs)
+     */
+    function updateAll() external withPerm(ADMIN) {
+        _updateAll();
+    }
+
+    function _updateAll() private {
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            _update(beneficiaries[i]);
+        }
+    }
 
     function _revokeSchedules(address _beneficiary) private {
-        if (_canBeRemoved(_beneficiary)) {
+        //can be removed
+        if (dataMap[_beneficiary].availableTokens == 0) {
             uint256 index = dataMap[_beneficiary].index;
             beneficiaries[index] = beneficiaries[beneficiaries.length - 1];
             beneficiaries.length--;
@@ -511,10 +511,6 @@ contract VestingEscrowWallet is IWallet {
             }
             delete dataMap[_beneficiary];
         }
-    }
-
-    function _canBeRemoved(address _beneficiary) private view returns(bool) {
-        return (dataMap[_beneficiary].availableTokens == 0);
     }
 
     /**

@@ -262,7 +262,7 @@ contract("SignedTransferManager", accounts => {
                 I_SignedTransferManager.address,
                 account_investor1,
                 account_investor2,
-                web3.utils.toWei("0.05", "ether"),
+                web3.utils.toWei("1", "ether"),
                 token_owner
             );
 
@@ -271,7 +271,7 @@ contract("SignedTransferManager", accounts => {
             console.log("is this sig invalid?"+ await I_SignedTransferManager.checkSignatureIsInvalid(sig));
             
             // test call security token transfer function
-            let tx = await I_SecurityToken.transferWithData(account_investor2, web3.utils.toWei("0.05", "ether"), sig, {from: account_investor1});
+            let tx = await I_SecurityToken.transferWithData(account_investor2, web3.utils.toWei("1", "ether"), sig, {from: account_investor1});
             console.log("3");
             assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
         });

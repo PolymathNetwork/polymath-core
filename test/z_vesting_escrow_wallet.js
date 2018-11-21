@@ -1,7 +1,7 @@
 import {setUpPolymathNetwork, deployGPMAndVerifyed, deployVestingEscrowWalletAndVerifyed} from "./helpers/createInstances";
 import latestTime from "./helpers/latestTime";
 import {duration as durationUtil, latestBlock, promisifyLogWatch} from "./helpers/utils";
-import {catchRevert} from "./helpers/exceptions";
+import {catchRevert, catchPermission} from "./helpers/exceptions";
 import {increaseTime} from "./helpers/time";
 import {encodeModuleCall} from "./helpers/encodeCall";
 
@@ -174,8 +174,8 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should successfully attach the VestingEscrowWallet with the security token", async () => {
             let bytesData = encodeModuleCall(
-                ["address"],
-                [token_owner]
+                ["address", "address"],
+                [token_owner, I_PolyToken.address]
             );
 
             await I_SecurityToken.changeGranularity(1, {from: token_owner});
@@ -801,6 +801,118 @@ contract('VestingEscrowWallet', accounts => {
             }
 
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
+        });
+
+    });
+
+    describe("Check permissions", async () => {
+
+        it("Should not be able to deposit", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.depositTokens(25000, {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to withdraw tokens to a treasury", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.sendToTreasury({from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to send available tokens", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.sendAvailableTokens(account_beneficiary3, {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to add template", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.addTemplate(25000, 4, 1, {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to remove template", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.removeTemplate(0, {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to get template count", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.getTemplateCount({from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to add schedule", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.addSchedule(account_beneficiary1, 10000, 4, 1, latestTime(), {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to add schedule from template", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.addScheduleFromTemplate(account_beneficiary1, 0, latestTime(), {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to edit schedule", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.editSchedule(account_beneficiary1, 0, 10000, 4, 1, latestTime(), {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to revoke schedule", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, 0, {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to revoke schedules", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.revokeSchedules(account_beneficiary1, {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to send available tokens to the beneficiaries", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.batchSendAvailableTokens([account_beneficiary1], {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to add schedules to the beneficiaries", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.batchAddSchedule([account_beneficiary1], 10000, 4, 1, latestTime(), {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to add schedules from template to the beneficiaries", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.batchAddScheduleFromTemplate([account_beneficiary1], 0, latestTime(), {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to revoke schedules of the beneficiaries", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.batchRevokeSchedules([account_beneficiary1], {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able to edit schedules for the beneficiaries", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.batchEditSchedule([account_beneficiary1], [0], 10000, 4, 1, latestTime(), {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able update schedule", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.update(account_beneficiary1, {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able update all schedules", async () => {
+            await catchPermission(
+                I_VestingEscrowWallet.updateAll({from: account_beneficiary1})
+            );
         });
 
     });

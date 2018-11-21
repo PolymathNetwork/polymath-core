@@ -83,23 +83,23 @@ contract VestingEscrowWallet is IWallet {
     public
     Module(_securityToken, _polyAddress)
     {
-        token = ERC20(_polyAddress);
     }
 
     /**
      * @notice Function used to initialize the different variables
      * @param _treasury Address of the treasury
      */
-    function configure(address _treasury) public onlyFactory {
+    function configure(address _treasury, address _token) public onlyFactory {
         require(_treasury != address(0), "Invalid address");
         treasury = _treasury;
+        token = ERC20(_token);
     }
 
     /**
      * @notice This function returns the signature of the configure function
      */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(address)"));
+        return bytes4(keccak256("configure(address,address)"));
     }
 
     /**

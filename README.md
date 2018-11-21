@@ -95,7 +95,11 @@ The CLI is for users that want to easily walkthrough all the details of an STO i
 | Count Transfer Manager Factory:                               | [0xd9fd7e34d6e2c47a69e02131cf8554d52c3445d5](https://etherscan.io/address/0xd9fd7e34d6e2c47a69e02131cf8554d52c3445d5)                                              |
 | Percentage Transfer Manager Factory:                             | [0xe6267a9c0a227d21c95b782b1bd32bb41fc3b43b](https://etherscan.io/address/0xe6267a9c0a227d21c95b782b1bd32bb41fc3b43b)                                              |
 | Manual Approval Transfer Manager Factory:                        | [0xda89fe5b254c04e2ee10d5acb24ed72f1d60ceed](https://etherscan.io/address/0xe6267a9c0a227d21c95b782b1bd32bb41fc3b43b)                                              |
+New SecurityTokenRegistry (2.0.1): 0x538136ed73011a766bf0a126a27300c3a7a2e6a6
+(fixed bug with getTickersByOwner())
 
+New ModuleRegistry (2.0.1): 0xbc18f144ccf87f2d98e6fa0661799fcdc3170119
+(fixed bug with missing transferOwnership function)
 
 ## KOVAN
 

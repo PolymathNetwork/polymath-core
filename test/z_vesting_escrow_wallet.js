@@ -207,6 +207,18 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(tx.logs[0].args._delegate, wallet_admin);
         });
 
+        it("Should get the permission", async () => {
+            let perm = await I_VestingEscrowWallet.getPermissions.call();
+            assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "ADMIN");
+        });
+
+        it("Should get the tags of the factory", async () => {
+            let tags = await I_VestingEscrowWalletFactory.getTags.call();
+            assert.equal(tags.length, 2);
+            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Vested Wallet");
+            assert.equal(web3.utils.toAscii(tags[1]).replace(/\u0000/g, ""), "Escrow");
+        });
+
     });
 
     describe("Depositing and withdrawing tokens", async () => {
@@ -834,12 +846,6 @@ contract('VestingEscrowWallet', accounts => {
         it("Should not be able to remove template", async () => {
             await catchPermission(
                 I_VestingEscrowWallet.removeTemplate(0, {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to get template count", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.getTemplateCount({from: account_beneficiary1})
             );
         });
 

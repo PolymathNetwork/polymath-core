@@ -50,29 +50,27 @@ contract VestingEscrowWallet is IWallet {
     Template[] public templates;
 
     event AddSchedule(
-        address _beneficiary,
+        address indexed _beneficiary,
         uint256 _numberOfTokens,
         uint256 _duration,
         uint256 _frequency,
-        uint256 _startTime,
-        uint256 _timestamp
+        uint256 _startTime
     );
     event EditSchedule(
-        address _beneficiary,
+        address indexed _beneficiary,
         uint256 _index,
         uint256 _numberOfTokens,
         uint256 _duration,
         uint256 _frequency,
-        uint256 _startTime,
-        uint256 _timestamp
+        uint256 _startTime
     );
-    event RevokeSchedules(address _beneficiary, uint256 _timestamp);
-    event RevokeSchedule(address _beneficiary, uint256 _index, uint256 _timestamp);
-    event DepositTokens(uint256 _numberOfTokens, uint256 _timestamp);
-    event SendToTreasury(uint256 _numberOfTokens, uint256 _timestamp);
-    event SendTokens(address _beneficiary, uint256 _numberOfTokens, uint256 _timestamp);
-    event AddTemplate(uint256 _numberOfTokens, uint256 _duration, uint256 _frequency, uint256 _timestamp);
-    event RemoveTemplate(uint256 _index, uint256 _timestamp);
+    event RevokeSchedules(address indexed _beneficiary);
+    event RevokeSchedule(address indexed _beneficiary, uint256 _index);
+    event DepositTokens(uint256 _numberOfTokens);
+    event SendToTreasury(uint256 _numberOfTokens);
+    event SendTokens(address indexed _beneficiary, uint256 _numberOfTokens);
+    event AddTemplate(uint256 _numberOfTokens, uint256 _duration, uint256 _frequency, uint256 _index);
+    event RemoveTemplate(uint256 _index);
 
     /**
      * @notice Constructor
@@ -109,8 +107,7 @@ contract VestingEscrowWallet is IWallet {
         require(_numberOfTokens > 0, "Should be greater than zero");
         token.safeTransferFrom(treasury, this, _numberOfTokens);
         unassignedTokens = unassignedTokens.add(_numberOfTokens);
-        /*solium-disable-next-line security/no-block-members*/
-        emit DepositTokens(_numberOfTokens, now);
+        emit DepositTokens(_numberOfTokens);
     }
 
     /**
@@ -120,8 +117,7 @@ contract VestingEscrowWallet is IWallet {
         uint256 amount = unassignedTokens;
         unassignedTokens = 0;
         token.safeTransfer(treasury, amount);
-        /*solium-disable-next-line security/no-block-members*/
-        emit SendToTreasury(amount, now);
+        emit SendToTreasury(amount);
     }
 
     /**
@@ -152,8 +148,7 @@ contract VestingEscrowWallet is IWallet {
         template.duration = _duration;
         template.frequency = _frequency;
         templates.push(template);
-        /*solium-disable-next-line security/no-block-members*/
-        emit AddTemplate(_numberOfTokens, _duration, _frequency, now);
+        emit AddTemplate(_numberOfTokens, _duration, _frequency, templates.length - 1);
     }
 
     /**
@@ -162,17 +157,18 @@ contract VestingEscrowWallet is IWallet {
      */
     function removeTemplate(uint256 _index) external withPerm(ADMIN) {
         require(_index < templates.length, "Template not found");
-        templates[_index] = templates[templates.length - 1];
+        if (_index != templates.length - 1) {
+            templates[_index] = templates[templates.length - 1];
+        }
         templates.length--;
-        /*solium-disable-next-line security/no-block-members*/
-        emit RemoveTemplate(_index, now);
+        emit RemoveTemplate(_index);
     }
 
     /**
      * @notice Returns count of templates
      * @return count of templates
      */
-    function getTemplateCount() external view withPerm(ADMIN) returns(uint256) {
+    function getTemplateCount() external view returns(uint256) {
         return templates.length;
     }
 
@@ -212,8 +208,7 @@ contract VestingEscrowWallet is IWallet {
             beneficiaries.push(_beneficiary);
         }
         dataMap[_beneficiary].schedules.push(schedule);
-        /*solium-disable-next-line security/no-block-members*/
-        emit AddSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime, now);
+        emit AddSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime);
     }
 
     /**
@@ -224,7 +219,7 @@ contract VestingEscrowWallet is IWallet {
      */
     function addScheduleFromTemplate(address _beneficiary, uint256 _index, uint256 _startTime) public withPerm(ADMIN) {
         require(_index < templates.length, "Template not found");
-        Template storage template = templates[_index];
+        Template memory template = templates[_index];
         addSchedule(_beneficiary, template.numberOfTokens, template.duration, template.frequency, _startTime);
     }
 
@@ -265,7 +260,7 @@ contract VestingEscrowWallet is IWallet {
         schedule.frequency = _frequency;
         schedule.startTime = _startTime;
         schedule.nextTime = _startTime.add(schedule.frequency);
-        emit EditSchedule(_beneficiary, _index, _numberOfTokens, _duration, _frequency, _startTime, now);
+        emit EditSchedule(_beneficiary, _index, _numberOfTokens, _duration, _frequency, _startTime);
     }
 
     /**
@@ -283,8 +278,7 @@ contract VestingEscrowWallet is IWallet {
         if (schedules.length == 0) {
             _revokeSchedules(_beneficiary);
         }
-        /*solium-disable-next-line security/no-block-members*/
-        emit RevokeSchedule(_beneficiary, _index, now);
+        emit RevokeSchedule(_beneficiary, _index);
     }
 
 
@@ -300,8 +294,7 @@ contract VestingEscrowWallet is IWallet {
         }
         delete dataMap[_beneficiary].schedules;
         _revokeSchedules(_beneficiary);
-        /*solium-disable-next-line security/no-block-members*/
-        emit RevokeSchedules(_beneficiary, now);
+        emit RevokeSchedules(_beneficiary);
     }
 
     /**
@@ -384,7 +377,7 @@ contract VestingEscrowWallet is IWallet {
      * @param _index index of the template
      * @param _startTime vesting start time
      */
-    function batchAddScheduleFromTemplate(address[] _beneficiaries, uint256 _index, uint256 _startTime) public withPerm(ADMIN) {
+    function batchAddScheduleFromTemplate(address[] _beneficiaries, uint256 _index, uint256 _startTime) external withPerm(ADMIN) {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             addScheduleFromTemplate(_beneficiaries[i], _index, _startTime);
         }
@@ -455,8 +448,7 @@ contract VestingEscrowWallet is IWallet {
         data.availableTokens = 0;
         data.claimedTokens = data.claimedTokens.add(amount);
         token.safeTransfer(_beneficiary, amount);
-        /*solium-disable-next-line security/no-block-members*/
-        emit SendTokens(_beneficiary, amount, now);
+        emit SendTokens(_beneficiary, amount);
     }
 
     /**

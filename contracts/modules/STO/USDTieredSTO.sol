@@ -491,45 +491,25 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         internal
         nonReentrant
         whenNotPaused
-        returns(uint256, uint256)
+        returns(uint256 spentUSD, uint256 spentValue)
     {
-        if (!allowBeneficialInvestments) {
-            require(_beneficiary == msg.sender, "Beneficiary != funder");
-        }
-
-        require(isOpen(), "STO not open");
-        require(_investmentValue > 0, "No funds were sent");
-
         uint256 investedUSD = DecimalMath.mul(_rate, _investmentValue);
-        _rate = investedUSD; // Reusing variable to prevent stackoverflow
-        // Check for minimum investment
-        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
+        investedUSD = _buyTokensChecks(_beneficiary, _investmentValue, investedUSD);
 
-        // Check for non-accredited cap
-        if (!accredited[_beneficiary]) {
-            uint256 investorLimitUSD = (nonAccreditedLimitUSDOverride[_beneficiary] == 0) ? nonAccreditedLimitUSD : nonAccreditedLimitUSDOverride[_beneficiary];
-            require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Over Non-accredited investor limit");
-            if (investedUSD.add(investorInvestedUSD[_beneficiary]) > investorLimitUSD)
-                investedUSD = investorLimitUSD.sub(investorInvestedUSD[_beneficiary]);
-        }
-        uint256 spentUSD;
-        uint256 spentValue;
-        // Iterate over each tier and process payment
         for (uint256 i = currentTier; i < tiers.length; i++) {
             bool gotoNextTier;
+            uint256 tempSpentUSD;
             // Update current tier if needed
             if (currentTier != i)
                 currentTier = i;
             // If there are tokens remaining, process investment
             if (tiers[i].mintedTotal < tiers[i].tokenTotal) {
-                //spentValue used as temp variable here to prevent stackoverflow
-                (spentValue, gotoNextTier) = _calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), _fundRaiseType);
-                spentUSD = spentUSD.add(spentValue);
+                (tempSpentUSD, gotoNextTier) = _calculateTier(_beneficiary, i, investedUSD.sub(spentUSD), _fundRaiseType);
+                spentUSD = spentUSD.add(tempSpentUSD);
                 // If all funds have been spent, exit the loop
                 if (!gotoNextTier)
                     break;
             }
-
         }
 
         // Modify storage
@@ -540,15 +520,74 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
         }
 
-        if (spentUSD == 0) {
-            spentValue = 0;
-        } else {
-            //_rate is actually OriginalUSD. Reusing variable to prevent stackoverflow
-            spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, _rate), _investmentValue);
+        spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, investedUSD), _investmentValue);
+    }
+
+    /**
+      * @notice Getter function for buyer to calculate how many tokens will they get
+      * @param _beneficiary Address where security tokens are to be sent
+      * @param _investmentValue Amount of POLY, ETH or DAI invested
+      * @param _fundRaiseType Fund raise type (POLY, ETH, DAI)
+      */
+    function buyTokensView(
+        address _beneficiary,
+        uint256 _investmentValue,
+        FundRaiseType _fundRaiseType
+    )
+        public
+        view
+        returns(uint256 spentUSD, uint256 spentValue, uint256 tokensMinted)
+    {
+        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.DAI, "Invalid raise type");
+        uint256 rate = getRate(_fundRaiseType);
+        uint256 investedUSD = DecimalMath.mul(rate, _investmentValue);
+        investedUSD = _buyTokensChecks(_beneficiary, _investmentValue, investedUSD);
+
+        // Iterate over each tier and process payment
+        for (uint256 i = currentTier; i < tiers.length; i++) {
+            bool gotoNextTier;
+            uint256 tempSpentUSD;
+            uint256 tempTokensMinted;
+            // If there are tokens remaining, process investment
+            if (tiers[i].mintedTotal < tiers[i].tokenTotal) {
+                (tempSpentUSD, gotoNextTier, tempTokensMinted) = _calculateTierView(i, investedUSD.sub(spentUSD), _fundRaiseType);
+                spentUSD = spentUSD.add(tempSpentUSD);
+                tokensMinted = tokensMinted.add(tempTokensMinted);
+                // If all funds have been spent, exit the loop
+                if (!gotoNextTier)
+                    break;
+            }
         }
 
-        // Return calculated amounts
-        return (spentUSD, spentValue);
+        spentValue = DecimalMath.mul(DecimalMath.div(spentUSD, investedUSD), _investmentValue);
+    }
+
+    function _buyTokensChecks(
+        address _beneficiary,
+        uint256 _investmentValue,
+        uint256 investedUSD
+    )
+        internal
+        view
+        returns(uint256 netInvestedUSD)
+    {
+        if (!allowBeneficialInvestments) {
+            require(_beneficiary == msg.sender, "Beneficiary != funder");
+        }
+
+        require(isOpen(), "STO not open");
+        require(_investmentValue > 0, "No funds were sent");
+
+        // Check for minimum investment
+        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
+        netInvestedUSD = investedUSD;
+        // Check for non-accredited cap
+        if (!accredited[_beneficiary]) {
+            uint256 investorLimitUSD = (nonAccreditedLimitUSDOverride[_beneficiary] == 0) ? nonAccreditedLimitUSD : nonAccreditedLimitUSDOverride[_beneficiary];
+            require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Over Non-accredited investor limit");
+            if (investedUSD.add(investorInvestedUSD[_beneficiary]) > investorLimitUSD)
+                netInvestedUSD = investorLimitUSD.sub(investorInvestedUSD[_beneficiary]);
+        }
     }
 
     function _calculateTier(
@@ -587,6 +626,37 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         }
     }
 
+    function _calculateTierView(
+        uint256 _tier,
+        uint256 _investedUSD,
+        FundRaiseType _fundRaiseType
+    )
+        internal
+        view
+        returns(uint256 spentUSD, bool gotoNextTier, uint256 tokensMinted)
+    {
+        // First purchase any discounted tokens if POLY investment
+        uint256 tierSpentUSD;
+        uint256 tierPurchasedTokens;
+        Tier storage tierData = tiers[_tier];
+        // Check whether there are any remaining discounted tokens
+        if ((_fundRaiseType == FundRaiseType.POLY) && (tierData.tokensDiscountPoly > tierData.mintedDiscountPoly)) {
+            uint256 discountRemaining = tierData.tokensDiscountPoly.sub(tierData.mintedDiscountPoly);
+            uint256 totalRemaining = tierData.tokenTotal.sub(tierData.mintedTotal);
+            if (totalRemaining < discountRemaining)
+                (spentUSD, tokensMinted, gotoNextTier) = _purchaseTierAmount(tierData.rateDiscountPoly, totalRemaining, _investedUSD);
+            else
+                (spentUSD, tokensMinted, gotoNextTier) = _purchaseTierAmount(tierData.rateDiscountPoly, discountRemaining, _investedUSD);
+            _investedUSD = _investedUSD.sub(spentUSD);
+        }
+        // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
+        if ((_investedUSD > 0) && (tierData.tokenTotal.sub(tierData.mintedTotal.add(tokensMinted)) > 0)) {
+            (tierSpentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTierAmount(tierData.rate, tierData.tokenTotal.sub(tierData.mintedTotal), _investedUSD);
+            spentUSD = spentUSD.add(tierSpentUSD);
+            tokensMinted = tokensMinted.add(tierPurchasedTokens);
+        }
+    }
+
     function _purchaseTier(
         address _beneficiary,
         uint256 _tierPrice,
@@ -595,6 +665,20 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _tier
     )
         internal
+        returns(uint256 spentUSD, uint256 purchasedTokens, bool gotoNextTier)
+    {
+        (spentUSD, purchasedTokens, gotoNextTier) = _purchaseTierAmount(_tierPrice, _tierRemaining, _investedUSD);
+        require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
+        emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
+    }
+
+    function _purchaseTierAmount(
+        uint256 _tierPrice,
+        uint256 _tierRemaining,
+        uint256 _investedUSD
+    )
+        internal
+        view
         returns(uint256 spentUSD, uint256 purchasedTokens, bool gotoNextTier)
     {
         uint256 maximumTokens = DecimalMath.div(_investedUSD, _tierPrice);
@@ -613,8 +697,6 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             spentUSD = DecimalMath.mul(maximumTokens, _tierPrice);
             purchasedTokens = maximumTokens;
         }
-        require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
-        emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
     }
 
     /////////////
@@ -722,6 +804,20 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             tokensSold = tokensSold.add(tiers[i].minted[uint8(_fundRaiseType)]);
         }
         return tokensSold;
+    }
+
+    /**
+     * @notice Return array of minted tokens in each fund raise type for given tier
+     * param _tier The tier to return minted tokens for
+     * @return uint256[] array of minted tokens in each fund raise type
+     */
+    function getTokensMintedByTier(uint256 _tier) public view returns (uint256[]) {
+        require(_tier < tiers.length, "Invalid tier");
+        uint256[] memory tokensMinted = new uint256[](3);
+        tokensMinted[0] = tiers[_tier].minted[uint8(FundRaiseType.ETH)];
+        tokensMinted[1] = tiers[_tier].minted[uint8(FundRaiseType.POLY)];
+        tokensMinted[2] = tiers[_tier].minted[uint8(FundRaiseType.DAI)];
+        return tokensMinted;
     }
 
     /**

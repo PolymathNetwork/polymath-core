@@ -542,7 +542,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         view
         returns(uint256 spentUSD, uint256 spentValue, uint256 tokensMinted)
     {
-        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.DAI, "Invalid raise type");
+        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.DAI || _fundRaiseType == FundRaiseType.ETH, "Invalid raise type");
         uint256 rate = getRate(_fundRaiseType);
         uint256 originalUSD = DecimalMath.mul(rate, _investmentValue);
         uint256 allowedUSD = _buyTokensChecks(_beneficiary, _investmentValue, originalUSD);

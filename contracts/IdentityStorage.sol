@@ -4,7 +4,7 @@ pragma solidity ^0.4.24;
 import "./interfaces/ISecurityToken.sol";
 
 contract IdentityStorage /*is IERCiota*/ {
-	mapping (bytes32 => uint256) public uintData;
+    mapping (bytes32 => uint256) public uintData;
     mapping (bytes32 => bytes32) public bytes32Data; //Optional
     mapping (bytes32 => address) public addressData;
     mapping (bytes32 => string) public stringData; //Optional
@@ -60,21 +60,21 @@ contract IdentityStorage /*is IERCiota*/ {
         _;
     }
 
-	function setIdentity(address _investor, uint256 _identity) public canSetIdentity {
-	    require(_investor != address(0));
-	    require(identityId[_investor] == 0);
-	    if(_identity == 0) {
-	    	identityId[_investor] = totalIdentities;
-	    	identityAddresses[totalIdentities].push(_investor);
-	    	totalIdentities++;
-	    } else {
-	    	require(identityId[_investor] == 0 && _identity < totalIdentities);
-	    	identityId[_investor] = _identity;
-	    	identityAddresses[_identity].push(_investor);
-	    }
-	}
+    function setIdentity(address _investor, uint256 _identity) public canSetIdentity {
+        require(_investor != address(0));
+        require(identityId[_investor] == 0);
+        if(_identity == 0) {
+            identityId[_investor] = totalIdentities;
+            identityAddresses[totalIdentities].push(_investor);
+            totalIdentities++;
+        } else {
+            require(identityId[_investor] == 0 && _identity < totalIdentities);
+            identityId[_investor] = _identity;
+            identityAddresses[_identity].push(_investor);
+        }
+    }
 
-	function setData(bytes32 _key, bool _data) public canSetData {
+    function setData(bytes32 _key, bool _data) public canSetData {
         require(_key != bytes32(0), "Missing key");
         boolData[_key] = _data;
     }

@@ -77,11 +77,9 @@ contract SignedTransferManager is ITransferManager {
     function verifyTransfer(address _from, address _to, uint256 _amount, bytes _data , bool _isTransfer) public returns(Result) {
         if (!paused) {
 
-            // not using require to avoid revert in this function
+            require (_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
 
-            if (_isTransfer != false || msg.sender != securityToken){
-                return Result.INVALID;  //Sender is not the owner
-            }
+            // not using require to avoid revert in this function
 
             if(_data.length == 0){
                 return Result.INVALID;  // data input check

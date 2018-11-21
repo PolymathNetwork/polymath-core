@@ -68,8 +68,8 @@ contract('VestingEscrowWallet', accounts => {
         // Accounts setup
         account_polymath = accounts[0];
         wallet_owner = accounts[1];
-        token_owner = wallet_owner;
-        account_treasury = accounts[2];
+        token_owner = accounts[1];
+        account_treasury = accounts[1];
 
         account_beneficiary1 = accounts[6];
         account_beneficiary2 = accounts[7];
@@ -83,7 +83,7 @@ contract('VestingEscrowWallet', accounts => {
         ];
 
         // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, wallet_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
         [
             I_PolymathRegistry,
@@ -114,6 +114,8 @@ contract('VestingEscrowWallet', accounts => {
 
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
+        
+        I_VestingEscrowWalletFactory:      ${I_VestingEscrowWalletFactory.address}
         -----------------------------------------------------------------------------
         `);
     });

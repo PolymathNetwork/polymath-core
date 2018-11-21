@@ -58,7 +58,7 @@ contract SignedTransferManager is ITransferManager {
     */
     function updateSigners(address[] _signers, bool[] _signersStats) public withPerm(ADMIN) {
         require(_signers.length == _signersStats.length, "input array length does not match");
-        for(uint8 i=0; i<_signers.length; i++){
+        for(uint256 i=0; i<_signers.length; i++){
             signers[_signers[i]] = _signersStats[i]; 
         }
         emit UpdateSigners(_signers, _signersStats);
@@ -90,14 +90,12 @@ contract SignedTransferManager is ITransferManager {
             bytes32 prependedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
             address signer = _recoverSignerAdd(prependedHash, _data);
 
-            if (signers[signer] == false) {
-                return Result.INVALID; //Invalid signature - signer is not on the list
-            }
-            
             if (signers[signer] != true){
                 return Result.NA;
-            } else {
+            } else if(_isTransfer == true) {
                 invalidSignatures[_data] = true;
+                return Result.VALID;
+            } else {
                 return Result.VALID;
             }
         }

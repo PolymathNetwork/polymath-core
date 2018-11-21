@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./SecurityToken.sol";
+import "../IdentityStorage.sol";
 import "../interfaces/ISTFactory.sol";
 
 /**
@@ -25,7 +26,8 @@ contract STFactory is ISTFactory {
         string _tokenDetails,
         address _issuer,
         bool _divisible,
-        address _polymathRegistry
+        address _polymathRegistry,
+        address _identityStorage
         ) external returns (address) {
         address newSecurityTokenAddress = new SecurityToken(
             _name,
@@ -33,7 +35,8 @@ contract STFactory is ISTFactory {
             _decimals,
             _divisible ? 1 : uint256(10)**_decimals,
             _tokenDetails,
-            _polymathRegistry
+            _polymathRegistry,
+            IdentityStorage(_identityStorage)
         );
         SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, 0);
         SecurityToken(newSecurityTokenAddress).transferOwnership(_issuer);

@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/Math.sol";
+import "../IdentityStorage.sol";
 import "../interfaces/IPoly.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
@@ -46,6 +47,9 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     uint8 constant MINT_KEY = 3;
     uint8 constant CHECKPOINT_KEY = 4;
     uint8 constant BURN_KEY = 5;
+    uint8 constant DATA_KEY = 10;
+
+    IdentityStorage public identityStorage;
 
     uint256 public granularity;
 
@@ -134,7 +138,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     );
     event DisableController(uint256 _timestamp);
 
-    function _isModule(address _module, uint8 _type) internal view returns (bool) {
+    function isModule(address _module, uint8 _type) public view returns (bool) {
         require(modulesToData[_module].module == _module, "Wrong address");
         require(!modulesToData[_module].isArchived, "Module archived");
         for (uint256 i = 0; i < modulesToData[_module].moduleTypes.length; i++) {
@@ -147,7 +151,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
 
     // Require msg.sender to be the specified module type
     modifier onlyModule(uint8 _type) {
-        require(_isModule(msg.sender, _type));
+        require(isModule(msg.sender, _type));
         _;
     }
 
@@ -156,7 +160,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         if (msg.sender == owner()) {
             _;
         } else {
-            require(_isModule(msg.sender, _type));
+            require(isModule(msg.sender, _type));
             _;
         }
     }
@@ -200,7 +204,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint8 _decimals,
         uint256 _granularity,
         string _tokenDetails,
-        address _polymathRegistry
+        address _polymathRegistry,
+        IdentityStorage _identityStorage
     )
     public
     ERC20Detailed(_name, _symbol, _decimals)
@@ -208,6 +213,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     {
         //When it is created, the owner is the STR
         updateFromRegistry();
+        identityStorage = _identityStorage;
         tokenDetails = _tokenDetails;
         granularity = _granularity;
         securityTokenVersion = SemanticVersion(2,0,0);
@@ -611,6 +617,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
             bool isForceValid = false;
             bool unarchived = false;
             address module;
+
             for (uint256 i = 0; i < modules[TRANSFER_KEY].length; i++) {
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {

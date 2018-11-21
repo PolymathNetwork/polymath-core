@@ -7,6 +7,7 @@ interface ISecurityToken {
 
     // Standard ERC20 interface
     function decimals() external view returns (uint8);
+    function identityStorage() external view returns (address);
     function totalSupply() external view returns (uint256);
     function balanceOf(address _owner) external view returns (uint256);
     function allowance(address _owner, address _spender) external view returns (uint256);
@@ -20,6 +21,8 @@ interface ISecurityToken {
 
     //transfer, transferFrom must respect the result of verifyTransfer
     function verifyTransfer(address _from, address _to, uint256 _value) external returns (bool success);
+
+    function isModule(address _module, uint8 _type) external view returns (bool);
 
     /**
      * @notice Mints new tokens and assigns them to the target _investor.

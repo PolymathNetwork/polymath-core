@@ -16,6 +16,7 @@ library TokenLib {
         uint8[] moduleTypes;
         uint256[] moduleIndexes;
         uint256 nameIndex;
+        bytes32 label;
     }
 
     // Structures to maintain checkpoints of balances for governance / dividends

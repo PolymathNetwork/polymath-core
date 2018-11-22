@@ -409,7 +409,7 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Use 100% of issuance approval", async () => {
             await I_SecurityToken.mint(account_investor5, web3.utils.toWei("2", "ether"), { from: token_owner });
-            assert.equal((await I_SecurityToken.balanceOf(account_investor5)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor5)).toNumber(), web3.utils.toWei("2", "ether"));
         });
 
         it("Check verifyTransfer without actually transferring", async () => {

@@ -98,11 +98,10 @@ contract VolumeRestrictionTM is ITransferManager {
      * @notice Used to verify the transfer/transferFrom transaction and prevent tranaction
      * whose volume of tokens will voilate the maximum volume transfer restriction
      * @param _from Address of the sender
-     * @param _to Address of the reciever
      * @param _amount The amount of tokens to transfer
      * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
      */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /*_data*/, bool _isTransfer) public returns (Result) {
+    function verifyTransfer(address _from, address /*_to */, uint256 _amount, bytes /*_data*/, bool _isTransfer) public returns (Result) {
         if (!paused && _from != address(0) && !exemptList[_from]) {
             require(msg.sender == securityToken || !_isTransfer);
             return _checkRestriction(_from, _amount, _isTransfer);
@@ -169,73 +168,89 @@ contract VolumeRestrictionTM is ITransferManager {
         // using the existing memory variable instead of creating new one (avoiding stack too deep error)
         // uint256 counter = _bucketDetails.latestTimestampIndex;
         uint256 i = 0;
-        bool valid;
-        for (i = 1; i <= _diffDays; i++) {
-            // calculating the timestamp that will used as an index of the next bucket
-            // i.e buckets period will be look like this T1 to T2-1, T2 to T3-1 .... 
-            // where T1,T2,T3 are timestamps having 24 hrs difference
-            _fromTime = _fromTime.add(1 days);
-             // Creating the round array
-            if (_bucketDetails.latestTimestampIndex > _restriction.rollingPeriodInDays -1) {
-                    _bucketDetails.latestTimestampIndex = 0;
-            }
-            // This condition is to check whether the first rolling period is covered or not
-            // if not then it continues and adding 0 value into sumOfLastPeriod without subtracting
-            // the earlier value at that index
-            if (_bucketDetails.daysCovered <= _restriction.rollingPeriodInDays) {
-                _bucketDetails.daysCovered++;
-            } else {
-                // temporarily storing the previous value of timestamp at the "_bucketDetails.latestTimestampIndex" index 
-                uint256 _previousTimestamp = _bucketDetails.timestamps[_bucketDetails.latestTimestampIndex];
-                // Subtracting the former value(Sum of all the txn amount of that day) from the sumOfLastPeriod
-                _bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.sub(bucket[_from][_previousTimestamp]);
-            }
-            // Adding the last amount that is transacted on the _fromTime
-            _bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.add(uint256(0));
-            // Storing the passed timestamp in the array 
-            _bucketDetails.timestamps[_bucketDetails.latestTimestampIndex] =  _fromTime;
-            // Storing all those timestamps whose total transacted value is 0
-            passedTimestamps[i] = _fromTime;
-            counters[i] = _bucketDetails.latestTimestampIndex;
-            _bucketDetails.latestTimestampIndex ++; 
-        }
-        if (_restriction.typeOfRestriction == RestrictionType.Variable) {
-            uint256 _allowedAmount = (_restriction.allowedTokens.mul(ISecurityToken(securityToken).totalSupply()))/ 10 ** 18;
-            valid = _checkValidAmountToTransact(_bucketDetails.sumOfLastPeriod, _amount, _allowedAmount);
-        } else {
-            valid = _checkValidAmountToTransact(_bucketDetails.sumOfLastPeriod, _amount, _restriction.allowedTokens);
-        }
-        if (!valid) {
-            return Result.INVALID;
-        } else {
-            if (_isTransfer) {
-                for (i = 0; i < passedTimestamps.length; i++) {
-                    // Assigning the sum of transacted amount on the passed day
-                    bucket[_from][passedTimestamps[i]] = 0;
-                    // To save gas by not assigning a memory timestamp array to storage timestamp array.
-                    bucketToUser[_from].timestamps[counters[i]] = _bucketDetails.timestamps[counters[i]];
+        if (_diffDays != 0) {
+            for (i = 0; i < _diffDays; i++) {
+                // calculating the timestamp that will used as an index of the next bucket
+                // i.e buckets period will be look like this T1 to T2-1, T2 to T3-1 .... 
+                // where T1,T2,T3 are timestamps having 24 hrs difference
+                _fromTime = _fromTime.add(1 days);
+                // Creating the round array
+                if (_bucketDetails.latestTimestampIndex == _restriction.rollingPeriodInDays -1) {
+                        _bucketDetails.latestTimestampIndex = 0;
                 }
-                bucketToUser[_from].sumOfLastPeriod = _bucketDetails.sumOfLastPeriod + _amount;
-                bucketToUser[_from].daysCovered = _bucketDetails.daysCovered;
-                // Storing the index of the latest timestamp from the array of timestamp that is being processed
-                bucketToUser[_from].latestTimestampIndex = _bucketDetails.latestTimestampIndex;
-                bucket[_from][_bucketDetails.timestamps[_bucketDetails.latestTimestampIndex]] = bucket[_from][_bucketDetails.timestamps[_bucketDetails.latestTimestampIndex]].add(_amount);
+                // This condition is to check whether the first rolling period is covered or not
+                // if not then it continues and adding 0 value into sumOfLastPeriod without subtracting
+                // the earlier value at that index
+                if (_bucketDetails.daysCovered < _restriction.rollingPeriodInDays -1) {
+                    _bucketDetails.daysCovered++;
+                } else {
+                    // temporarily storing the previous value of timestamp at the "_bucketDetails.latestTimestampIndex" index 
+                    uint256 _previousTimestamp = _bucketDetails.timestamps[_bucketDetails.latestTimestampIndex];
+                    // Subtracting the former value(Sum of all the txn amount of that day) from the sumOfLastPeriod
+                    _bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.sub(bucket[_from][_previousTimestamp]);
+                }
+                // Adding the last amount that is transacted on the _fromTime
+                //_bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.add(uint256(0));
+                // increasing the value of latest timestamp Index
+                _bucketDetails.latestTimestampIndex++;
+                // Storing the passed timestamp in the array 
+                _bucketDetails.timestamps[_bucketDetails.latestTimestampIndex] =  _fromTime;
+                // Storing all those timestamps whose total transacted value is 0
+                passedTimestamps[i] = _fromTime;
+                counters[i] = _bucketDetails.latestTimestampIndex;
+            }
+        } 
+        if (_checkValidAmountToTransact(_bucketDetails.sumOfLastPeriod, _amount, _restriction)) {
+            if (_isTransfer) {
+                _updateStorage(passedTimestamps, counters, _from, _fromTime, _diffDays, _amount, _bucketDetails);
             }
             return Result.NA;
-        }
+        } 
         
+        return Result.INVALID;
+        
+    }
+    event LogA(uint256 _sum, uint256 _amount, uint256 _allowedAmount);
+    function _updateStorage(uint256[] passedTimestamps, uint256[] counters, address _from, uint256 _fromTime, uint256 _diffDays, uint256 _amount, BucketDetails _bucketDetails) internal {
+        if (_diffDays != 0) {
+            for (uint256 i = 0; i < passedTimestamps.length; i++) {
+                // Assigning the sum of transacted amount on the passed day
+                bucket[_from][passedTimestamps[i]] = 0;
+                // To save gas by not assigning a memory timestamp array to storage timestamp array.
+                bucketToUser[_from].timestamps[counters[i]] = _bucketDetails.timestamps[counters[i]];
+            }
+            bucketToUser[_from].daysCovered = _bucketDetails.daysCovered;
+            // Storing the index of the latest timestamp from the array of timestamp that is being processed
+            bucketToUser[_from].latestTimestampIndex = _bucketDetails.latestTimestampIndex;
+        }
+        // This condition is the works only when the transaction performed just after the startTime (_diffDays == 0)
+        if (_bucketDetails.timestamps[0] == 0) {
+            bucketToUser[_from].timestamps[_bucketDetails.latestTimestampIndex] = _fromTime;
+        }
+        bucketToUser[_from].sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.add(_amount);
+        // Re-using the local variable to avoid stack too deep error
+        _fromTime = bucketToUser[_from].timestamps[_bucketDetails.latestTimestampIndex];
+        bucket[_from][_fromTime] = bucket[_from][_fromTime].add(_amount);
     }
 
     function _checkValidAmountToTransact(
         uint256 _sumOfLastPeriod,
         uint256 _amountToTransact,
-        uint256 _allowedTokens
+        VolumeRestriction _restriction
     ) 
         internal
-        pure
+        view
         returns (bool)
-    {
-        if (_allowedTokens >= _sumOfLastPeriod.add(_amountToTransact)) {
+    {    
+        uint256 _allowedAmount = 0;
+        if (_restriction.typeOfRestriction == RestrictionType.Variable) {
+            _allowedAmount = (_restriction.allowedTokens.mul(ISecurityToken(securityToken).totalSupply()))/ 10 ** 18;
+        } else {
+            _allowedAmount = _restriction.allowedTokens;
+        }
+        emit LogA(_sumOfLastPeriod, _amountToTransact, _allowedAmount);
+        // Validation on the amount to transact
+        if (_allowedAmount >= _sumOfLastPeriod.add(_amountToTransact)) {
             return true;
         } else {
             return false;
@@ -592,6 +607,19 @@ contract VolumeRestrictionTM is ITransferManager {
             _endTimes.length == _restrictionTypes.length,
             "Array length mismatch"
         );
+    }
+
+    function getBucketDetailsToUser(address _user) external view returns(uint256[], uint256, uint256, uint256) {
+        return(
+            bucketToUser[_user].timestamps,
+            bucketToUser[_user].sumOfLastPeriod,
+            bucketToUser[_user].daysCovered,
+            bucketToUser[_user].latestTimestampIndex
+        );
+    }
+
+    function getTotalTradeByuser(address _user, uint256 _at) external view returns(uint256) {
+        return bucket[_user][_at];
     }
 
     /**

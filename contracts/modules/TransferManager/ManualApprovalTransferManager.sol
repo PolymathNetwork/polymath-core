@@ -113,7 +113,6 @@ contract ManualApprovalTransferManager is ITransferManager {
     * @param _expiryTime is the time until which the transfer is allowed
     */
     function addManualApproval(address _from, address _to, uint256 _allowance, uint256 _expiryTime) public withPerm(TRANSFER_APPROVAL) {
-        require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         /*solium-disable-next-line security/no-block-members*/
         require(_expiryTime > now, "Invalid expiry time");
@@ -129,7 +128,6 @@ contract ManualApprovalTransferManager is ITransferManager {
     * @param _expiryTime is the time until which the transfer is blocked
     */
     function addManualBlocking(address _from, address _to, uint256 _expiryTime) public withPerm(TRANSFER_APPROVAL) {
-        require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         /*solium-disable-next-line security/no-block-members*/
         require(_expiryTime > now, "Invalid expiry time");
@@ -144,7 +142,6 @@ contract ManualApprovalTransferManager is ITransferManager {
     * @param _to is the address to which transfers are approved
     */
     function revokeManualApproval(address _from, address _to) public withPerm(TRANSFER_APPROVAL) {
-        require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         delete manualApprovals[_from][_to];
         emit RevokeManualApproval(_from, _to, msg.sender);
@@ -156,7 +153,6 @@ contract ManualApprovalTransferManager is ITransferManager {
     * @param _to is the address to which transfers are approved
     */
     function revokeManualBlocking(address _from, address _to) public withPerm(TRANSFER_APPROVAL) {
-        require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         delete manualBlockings[_from][_to];
         emit RevokeManualBlocking(_from, _to, msg.sender);

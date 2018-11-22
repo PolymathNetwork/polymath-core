@@ -484,7 +484,7 @@ async function investUsdTieredSTO(currency, amount) {
 
     let tokensToBuy = await currentSTO.methods.buyTokensView(User.address, costWei, gbl.constants.FUND_RAISE_TYPES[raiseType]).call();
     let minTokenToBuy = tokensToBuy.tokensMinted;
-    console.log(chalk.yellow(`You are going to spent ${web3.utils.fromWei(tokensToBuy.spentValue)} ${raiseType} (${web3.utils.fromWei(tokensToBuy.spentUSD)} USD) to buy ${web3.utils.fromWei(minTokenToBuy)} ${STSymbol} approx.`));
+    console.log(chalk.yellow(`You are going to spend ${web3.utils.fromWei(tokensToBuy.spentValue)} ${raiseType} (${web3.utils.fromWei(tokensToBuy.spentUSD)} USD) to buy ${web3.utils.fromWei(minTokenToBuy)} ${STSymbol} approx.`));
     console.log(chalk.yellow(`Due to ${raiseType} price changes and network delays, it is possible that the final amount of purchased tokens is lower.`));
     if (typeof amount !== 'undefined' || !readlineSync.keyInYNStrict(`Do you want the transaction to fail if this happens?`)) {
         minTokenToBuy = 0;

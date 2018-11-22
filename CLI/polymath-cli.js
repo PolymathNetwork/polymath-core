@@ -39,11 +39,18 @@ program
 
 program
   .command('sto_manager')
+  .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage modules')
+  .option('-l, --launch <configFilePath>', 'Uses configuration file to configure and launch a STO')
   .alias('sto')
   .description('Wizard-like script that will guide technical users in the creation of an STO')
-  .action(async function() {
+  .action(async function(cmd) {
     await gbl.initialize(program.remoteNode);
-    await sto_manager.executeApp();
+    if (cmd.launch) {
+      let config = yaml.safeLoad(fs.readFileSync(`${__dirname}/${cmd.launch}`, 'utf8'));
+      await sto_manager.addSTOModule(cmd.securityToken, config)
+    } else {
+      await sto_manager.executeApp(cmd.securityToken);
+    }
   });
 
 program

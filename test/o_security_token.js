@@ -296,7 +296,8 @@ contract("SecurityToken", accounts => {
             );
         });
 
-        it("Should successfully attach the STO factory with the security token", async () => {
+        it("Should successfully add module with label", async () => {
+            let snapId = await takeSnapshot();
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
@@ -304,14 +305,18 @@ contract("SecurityToken", accounts => {
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner });
 
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModuleWithLabel(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, "stofactory", { from: token_owner });
 
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
+            console.log("module label is .. "+ web3.utils.toAscii(tx.logs[3].args._label));
+            assert(web3.utils.toAscii(tx.logs[3].args._label), "stofactory", "label doesnt match" );
             I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
+            await revertToSnapshot(snapId);
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
+            
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);

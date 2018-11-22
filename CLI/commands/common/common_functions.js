@@ -50,7 +50,7 @@ async function checkPermissions(action) {
   //NOTE this is a condition to verify if the transaction comes from a module or not. 
   if (contractRegistry.methods.hasOwnProperty('factory')) {
     let moduleAddress = await contractRegistry.methods.factory().call();
-    let moduleRegistry = await connect(abis.moduleFactory(), moduleAddress)
+    let moduleRegistry = await connect(abis.moduleFactory(), moduleAddress);
     let parentModule = await moduleRegistry.methods.getName().call();
     let result = await checkPermission(web3.utils.hexToUtf8(parentModule), action._method.name, contractRegistry);
     if (!result) {
@@ -58,6 +58,7 @@ async function checkPermissions(action) {
       process.exit(0);
     }
   }
+  return
 }
 
 module.exports = {

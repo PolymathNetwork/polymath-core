@@ -230,28 +230,14 @@ contract("SignedTransferManager", accounts => {
                 I_SignedTransferManager.address,
                 account_investor1,
                 account_investor2,
-                web3.utils.toWei("1", "ether"),
+                web3.utils.toWei("2", "ether"),
                 token_owner
             );
 
             console.log("token owner is "+ token_owner);
 
-            await I_SignedTransferManager.invalidSignature(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, {from: token_owner});
+            await I_SignedTransferManager.invalidSignature(account_investor1, account_investor2, web3.utils.toWei("2", "ether"), sig, {from: token_owner});
             assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
-        });
-
-        it("should not allow transfer if the sig is already used", async () => {
-           const sig = signDataVerifyTransfer(
-                I_SignedTransferManager.address,
-                account_investor1,
-                account_investor2,
-                web3.utils.toWei("1", "ether"),
-                token_owner
-            );
-
-            console.log("2");
-
-            await catchRevert (I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, false, {from: token_owner}));
         });
 
         it("should allow transfer with valid sig", async () => {
@@ -274,6 +260,20 @@ contract("SignedTransferManager", accounts => {
             let tx = await I_SecurityToken.transferWithData(account_investor2, web3.utils.toWei("1", "ether"), sig, {from: account_investor1});
             console.log("3");
             assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
+        });
+
+        it("should not allow transfer if the sig is already used", async () => {
+            const sig = signDataVerifyTransfer(
+                 I_SignedTransferManager.address,
+                 account_investor1,
+                 account_investor2,
+                 web3.utils.toWei("1", "ether"),
+                 token_owner
+             );
+ 
+             console.log("2");
+ 
+             await catchRevert (I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, false, {from: token_owner}));
         });
 
         it("should not allow transfer if the signer is not on the signer list", async () => {

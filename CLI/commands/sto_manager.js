@@ -246,38 +246,22 @@ async function cappedSTO_launch(stoConfig) {
   if (cappedSTOconfig.startTime == "") cappedSTOconfig.startTime = oneMinuteFromNow;
   if (cappedSTOconfig.endTime == "") cappedSTOconfig.endTime = oneMonthFromNow;
 
-  let bytesSTO = web3.eth.abi.encodeFunctionCall( {
-    name: 'configure',
-    type: 'function',
-    inputs: [
-      {
-        type: 'uint256',
-        name: '_startTime'
-      },{
-        type: 'uint256',
-        name: '_endTime'
-      },{
-        type: 'uint256',
-        name: '_cap'
-      },{
-        type: 'uint256',
-        name: '_rate'
-      },{
-        type: 'uint8[]',
-        name: '_fundRaiseTypes'
-      },{
-        type: 'address',
-        name: '_fundsReceiver'
-      }
-    ]
-  }, [cappedSTOconfig.startTime, cappedSTOconfig.endTime, web3.utils.toWei(cappedSTOconfig.cap.toString()), cappedSTOconfig.rate, cappedSTOconfig.raiseType, cappedSTOconfig.wallet]);
+  let cappedSTOABI = abis.cappedSTO();
+  let configureFunction = cappedSTOABI.find(o => o.name === 'configure' && o.type === 'function');
+  let bytesSTO = web3.eth.abi.encodeFunctionCall( configureFunction,
+    [ cappedSTOconfig.startTime, 
+      cappedSTOconfig.endTime, 
+      web3.utils.toWei(cappedSTOconfig.cap.toString()), 
+      cappedSTOconfig.rate, 
+      cappedSTOconfig.raiseType, 
+      cappedSTOconfig.wallet ]
+  );
 
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, stoFee, 0);
   let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
 
-  let cappedSTOABI = abis.cappedSTO();
   let cappedSTO = new web3.eth.Contract(cappedSTOABI, event._module);
   cappedSTO.setProvider(web3.currentProvider);
 
@@ -546,68 +530,29 @@ async function usdTieredSTO_launch(stoConfig) {
   let tiers = useConfigFile ? stoConfig.tiers : tiersConfigUSDTieredSTO(funding.raiseType.includes(gbl.constants.FUND_RAISE_TYPES.POLY));
   let limits = useConfigFile ? stoConfig.limits : limitsConfigUSDTieredSTO();
   let times = timesConfigUSDTieredSTO(stoConfig);
-  let bytesSTO = web3.eth.abi.encodeFunctionCall( {
-    name: 'configure',
-    type: 'function',
-    inputs: [
-      {
-        type: 'uint256',
-        name: '_startTime'
-      },{
-        type: 'uint256',
-        name: '_endTime'
-      },{
-        type: 'uint256[]',
-        name: '_ratePerTier'
-      },{
-        type: 'uint256[]',
-        name: '_ratePerTierDiscountPoly'
-      },{
-        type: 'uint256[]',
-        name: '_tokensPerTier'
-      },{
-        type: 'uint256[]',
-        name: '_tokensPerTierDiscountPoly'
-      },{
-        type: 'uint256',
-        name: '_nonAccreditedLimitUSD'
-      },{
-        type: 'uint256',
-        name: '_minimumInvestmentUSD'
-      },{
-        type: 'uint8[]',
-        name: '_fundRaiseTypes'
-      },{
-        type: 'address',
-        name: '_wallet'
-      },{
-        type: 'address',
-        name: '_reserveWallet'
-      },{
-        type: 'address',
-        name: '_usdToken'
-      }
-    ]
-  }, [times.startTime,
-    times.endTime,
-    tiers.ratePerTier.map(r => web3.utils.toWei(r.toString())),
-    tiers.ratePerTierDiscountPoly.map(rd => web3.utils.toWei(rd.toString())),
-    tiers.tokensPerTier.map(t => web3.utils.toWei(t.toString())),
-    tiers.tokensPerTierDiscountPoly.map(td => web3.utils.toWei(td.toString())),
-    web3.utils.toWei(limits.nonAccreditedLimitUSD.toString()),
-    web3.utils.toWei(limits.minimumInvestmentUSD.toString()),
-    funding.raiseType,
-    addresses.wallet,
-    addresses.reserveWallet,
-    addresses.usdToken
-  ]);
+
+  let usdTieredSTOABI = abis.usdTieredSTO();
+  let configureFunction = usdTieredSTOABI.find(o => o.name === 'configure' && o.type === 'function');
+  let bytesSTO = web3.eth.abi.encodeFunctionCall( configureFunction, 
+    [ times.startTime,
+      times.endTime,
+      tiers.ratePerTier.map(r => web3.utils.toWei(r.toString())),
+      tiers.ratePerTierDiscountPoly.map(rd => web3.utils.toWei(rd.toString())),
+      tiers.tokensPerTier.map(t => web3.utils.toWei(t.toString())),
+      tiers.tokensPerTierDiscountPoly.map(td => web3.utils.toWei(td.toString())),
+      web3.utils.toWei(limits.nonAccreditedLimitUSD.toString()),
+      web3.utils.toWei(limits.minimumInvestmentUSD.toString()),
+      funding.raiseType,
+      addresses.wallet,
+      addresses.reserveWallet,
+      addresses.usdToken ]
+  );
 
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, stoFee, 0);
   let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
 
-  let usdTieredSTOABI = abis.usdTieredSTO();
   let usdTieredSTO = new web3.eth.Contract(usdTieredSTOABI, event._module);
   usdTieredSTO.setProvider(web3.currentProvider);
 

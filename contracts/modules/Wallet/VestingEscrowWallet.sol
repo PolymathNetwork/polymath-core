@@ -11,7 +11,6 @@ import "./IWallet.sol";
  */
 contract VestingEscrowWallet is IWallet {
     using SafeMath for uint256;
-    using SafeERC20 for ERC20;
 
     bytes32 public constant ADMIN = "ADMIN";
 
@@ -40,7 +39,6 @@ contract VestingEscrowWallet is IWallet {
 
     enum State {CREATED, STARTED, COMPLETED}
 
-    ERC20 public token;
     address public treasury;
     uint256 public unassignedTokens;
 
@@ -87,17 +85,16 @@ contract VestingEscrowWallet is IWallet {
      * @notice Function used to initialize the different variables
      * @param _treasury Address of the treasury
      */
-    function configure(address _treasury, address _token) public onlyFactory {
+    function configure(address _treasury) public onlyFactory {
         require(_treasury != address(0), "Invalid address");
         treasury = _treasury;
-        token = ERC20(_token);
     }
 
     /**
      * @notice This function returns the signature of the configure function
      */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(address,address)"));
+        return bytes4(keccak256("configure(address)"));
     }
 
     /**
@@ -109,7 +106,7 @@ contract VestingEscrowWallet is IWallet {
 
     function _depositTokens(uint256 _numberOfTokens) internal {
         require(_numberOfTokens > 0, "Should be greater than zero");
-        token.safeTransferFrom(treasury, this, _numberOfTokens);
+        ISecurityToken(securityToken).transferFrom(treasury, this, _numberOfTokens);
         unassignedTokens = unassignedTokens.add(_numberOfTokens);
         emit DepositTokens(_numberOfTokens);
     }
@@ -120,7 +117,7 @@ contract VestingEscrowWallet is IWallet {
     function sendToTreasury() external withPerm(ADMIN) {
         uint256 amount = unassignedTokens;
         unassignedTokens = 0;
-        token.safeTransfer(treasury, amount);
+        ISecurityToken(securityToken).transfer(treasury, amount);
         emit SendToTreasury(amount);
     }
 
@@ -446,7 +443,7 @@ contract VestingEscrowWallet is IWallet {
         require(amount > 0, "No available tokens");
         data.availableTokens = 0;
         data.claimedTokens = data.claimedTokens.add(amount);
-        token.safeTransfer(_beneficiary, amount);
+        ISecurityToken(securityToken).transfer(_beneficiary, amount);
         emit SendTokens(_beneficiary, amount);
     }
 

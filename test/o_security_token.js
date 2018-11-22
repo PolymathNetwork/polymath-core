@@ -310,7 +310,7 @@ contract("SecurityToken", accounts => {
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
             console.log("module label is .. "+ web3.utils.toAscii(tx.logs[3].args._label));
-            assert(web3.utils.toAscii(tx.logs[3].args._label), "stofactory", "label doesnt match" );
+            assert(web3.utils.toAscii(tx.logs[3].args._glabel), "stofactory", "label doesnt match" );
             I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });

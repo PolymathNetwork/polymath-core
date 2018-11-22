@@ -1,5 +1,4 @@
 var readlineSync = require('readline-sync');
-var BigNumber = require('bignumber.js');
 var chalk = require('chalk');
 const shell = require('shelljs');
 var contracts = require('./helpers/contract_addresses');
@@ -196,27 +195,27 @@ async function cappedSTO_launch(stoConfig) {
   let cappedSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.STO, "CappedSTO");
   let cappedSTOFactory = new web3.eth.Contract(cappedSTOFactoryABI, cappedSTOFactoryAddress);
   cappedSTOFactory.setProvider(web3.currentProvider);
-  let stoFee = await cappedSTOFactory.methods.getSetupCost().call();
+  let stoFee = new web3.utils.BN(await cappedSTOFactory.methods.getSetupCost().call());
 
-  let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call();
-  if (parseInt(contractBalance) < parseInt(stoFee)) {
-    let transferAmount = parseInt(stoFee) - parseInt(contractBalance);
-    let ownerBalance = await polyToken.methods.balanceOf(Issuer.address).call();
-    if (parseInt(ownerBalance) < transferAmount) {
+  let contractBalance = new web3.utils.BN(await polyToken.methods.balanceOf(securityToken._address).call());
+  if (contractBalance.lt(stoFee)) {
+    let transferAmount = stoFee.sub(contractBalance);
+    let ownerBalance = new web3.utils.BN(await polyToken.methods.balanceOf(Issuer.address).call());
+    if (ownerBalance.lt(transferAmount)) {
       console.log(chalk.red(`\n**************************************************************************************************************************************************`));
-      console.log(chalk.red(`Not enough balance to pay the CappedSTO fee, Requires ${(new BigNumber(transferAmount).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(ownerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
+      console.log(chalk.red(`Not enough balance to pay the CappedSTO fee, Requires ${web3.utils.fromWei(transferAmount)} POLY but have ${web3.utils.fromWei(ownerBalance)} POLY. Access POLY faucet to get the POLY to complete this txn`));
       console.log(chalk.red(`**************************************************************************************************************************************************\n`));
       return;
     } else {
-      let transferAction = polyToken.methods.transfer(securityToken._address, new BigNumber(transferAmount));
+      let transferAction = polyToken.methods.transfer(securityToken._address, transferAmount);
       let receipt = await common.sendTransaction(transferAction, {factor: 2});
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }
   }
 
-  let oneMinuteFromNow = BigNumber((Math.floor(Date.now() / 1000) + 60));
-  let oneMonthFromNow = BigNumber((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
+  let oneMinuteFromNow = new web3.utils.BN((Math.floor(Date.now() / 1000) + 60));
+  let oneMonthFromNow = new web3.utils.BN((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
 
   let cappedSTOconfig = {};
   let useConfigFile = typeof stoConfig !== 'undefined';
@@ -226,12 +225,12 @@ async function cappedSTO_launch(stoConfig) {
 
     cappedSTOconfig.raiseType = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise or leave empty for Ether raise (E): ');
     if (cappedSTOconfig.raiseType.toUpperCase() == 'P' ) {
-      cappedSTOconfig.raiseType = [1];
+      cappedSTOconfig.raiseType = [gbl.constants.FUND_RAISE_TYPES.POLY];
     } else {
-      cappedSTOconfig.raiseType = [0];
+      cappedSTOconfig.raiseType = [gbl.constants.FUND_RAISE_TYPES.ETH];
     }
 
-    cappedSTOconfig.rate = readlineSync.question(`Enter the rate (1 ${(cappedSTOconfig.raiseType == 1 ? 'POLY' : 'ETH')} = X ${tokenSymbol}) for the STO (1000): `);
+    cappedSTOconfig.rate = readlineSync.question(`Enter the rate (1 ${cappedSTOconfig.raiseType == gbl.constants.FUND_RAISE_TYPES.POLY ? 'POLY' : 'ETH'} = X ${tokenSymbol}) for the STO (1000): `);
     if (cappedSTOconfig.rate == "") cappedSTOconfig.rate = 1000;
 
     cappedSTOconfig.wallet = readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer.address + '): ');
@@ -273,7 +272,7 @@ async function cappedSTO_launch(stoConfig) {
     ]
   }, [cappedSTOconfig.startTime, cappedSTOconfig.endTime, web3.utils.toWei(cappedSTOconfig.cap.toString()), cappedSTOconfig.rate, cappedSTOconfig.raiseType, cappedSTOconfig.wallet]);
 
-  let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
+  let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, stoFee, 0);
   let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
@@ -289,27 +288,14 @@ async function cappedSTO_status(currentSTO) {
   let displayStartTime = await currentSTO.methods.startTime().call();
   let displayEndTime = await currentSTO.methods.endTime().call();
   let displayRate = await currentSTO.methods.rate().call();
-  let displayCap = await currentSTO.methods.cap().call();
+  let displayCap = new web3.utils.BN(await currentSTO.methods.cap().call());
   let displayWallet = await currentSTO.methods.wallet().call();
-  let displayRaiseType;
-  let displayFundsRaised;
-  let displayWalletBalance;
-  let raiseType = await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.ETH).call();
-  if (raiseType) {
-    displayRaiseType = 'ETH';
-    displayFundsRaised = await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES.ETH).call();
-    displayWalletBalance = web3.utils.fromWei(await web3.eth.getBalance(displayWallet));
-  } else {
-    displayRaiseType = 'POLY';
-    displayFundsRaised = await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES.POLY).call();
-    displayWalletBalance = web3.utils.fromWei(await getBalance(displayWallet, 'POLY'));
-  }
-  let displayTokensSold = await currentSTO.methods.totalTokensSold().call();
+  let displayRaiseType = await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.ETH).call() ? 'ETH' : 'POLY';
+  let displayFundsRaised = await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES[displayRaiseType]).call();
+  let displayWalletBalance = web3.utils.fromWei(await getBalance(displayWallet, gbl.constants.FUND_RAISE_TYPES[displayRaiseType]));
+  let displayTokensSold = new web3.utils.BN(await currentSTO.methods.totalTokensSold().call());
   let displayInvestorCount = await currentSTO.methods.investorCount().call();
   let displayTokenSymbol = await securityToken.methods.symbol().call();
-
-  let formattedCap = BigNumber(web3.utils.fromWei(displayCap));
-  let formattedSold = BigNumber(web3.utils.fromWei(displayTokensSold));
 
   let now = Math.floor(Date.now()/1000);
   let timeTitle;
@@ -339,11 +325,11 @@ async function cappedSTO_status(currentSTO) {
   - ${timeTitle}    ${timeRemaining}
   - Funds raised:      ${web3.utils.fromWei(displayFundsRaised)} ${displayRaiseType}
   - Tokens sold:       ${web3.utils.fromWei(displayTokensSold)} ${displayTokenSymbol.toUpperCase()}
-  - Tokens remaining:  ${formattedCap.minus(formattedSold).toNumber()} ${displayTokenSymbol.toUpperCase()}
+  - Tokens remaining:  ${web3.utils.fromWei(displayCap.sub(displayTokensSold))} ${displayTokenSymbol.toUpperCase()}
   - Investor count:    ${displayInvestorCount}
   `);
 
-  console.log(chalk.green(`\n${(web3.utils.fromWei(await getBalance(Issuer.address, 'POLY')))} POLY balance remaining at issuer address ${Issuer.address}`));
+  console.log(chalk.green(`\n${(web3.utils.fromWei(await getBalance(Issuer.address, gbl.constants.FUND_RAISE_TYPES.POLY)))} POLY balance remaining at issuer address ${Issuer.address}`));
 }
 
 ////////////////////
@@ -476,7 +462,7 @@ function limitsConfigUSDTieredSTO() {
   let defaultMinimumInvestment = 5;
   limits.minimumInvestmentUSD = readlineSync.question(`What is the minimum investment in USD? (${defaultMinimumInvestment}): `, {
     limit: function(input) {
-      return parseInt(input) > 0;
+      return parseFloat(input) > 0;
     },
     limitMessage: "Must be greater than zero",
     defaultInput: defaultMinimumInvestment
@@ -535,11 +521,11 @@ async function usdTieredSTO_launch(stoConfig) {
   let usdTieredSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.STO, 'USDTieredSTO');
   let usdTieredSTOFactory = new web3.eth.Contract(usdTieredSTOFactoryABI, usdTieredSTOFactoryAddress);
   usdTieredSTOFactory.setProvider(web3.currentProvider);
-  let stoFee = await usdTieredSTOFactory.methods.getSetupCost().call();
+  let stoFee = new web3.utils.BN(await usdTieredSTOFactory.methods.getSetupCost().call());
 
-  let contractBalance = await polyToken.methods.balanceOf(securityToken._address).call();
-  if (new web3.utils.BN(contractBalance).lt(new web3.utils.BN(stoFee))) {
-    let transferAmount = (new web3.utils.BN(stoFee)).sub(new web3.utils.BN(contractBalance));
+  let contractBalance = new web3.utils.BN(await polyToken.methods.balanceOf(securityToken._address).call());
+  if (contractBalance.lt(stoFee)) {
+    let transferAmount = stoFee.sub(contractBalance);
     let ownerBalance = new web3.utils.BN(await polyToken.methods.balanceOf(Issuer.address).call());
     if (ownerBalance.lt(transferAmount)) {
       console.log(chalk.red(`\n**************************************************************************************************************************************************`));
@@ -616,7 +602,7 @@ async function usdTieredSTO_launch(stoConfig) {
     addresses.usdToken
   ]);
 
-  let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, new BigNumber(stoFee).times(new BigNumber(10).pow(18)), 0);
+  let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, stoFee, 0);
   let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
@@ -697,13 +683,13 @@ async function usdTieredSTO_status(currentSTO) {
   let displayFundsRaisedPerType = '';
   let displayTokensSoldPerType = '';
   for (const type of raiseTypes) {
-    let balance = await getBalance(displayWallet, type);
+    let balance = await getBalance(displayWallet, gbl.constants.FUND_RAISE_TYPES[type]);
     let walletBalance = web3.utils.fromWei(balance);
     let walletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
     displayWalletBalancePerType += `
       Balance ${type}:\t\t ${walletBalance} ${type} (${walletBalanceUSD} USD)`;
     
-    balance = await getBalance(displayReserveWallet, type);
+    balance = await getBalance(displayReserveWallet, gbl.constants.FUND_RAISE_TYPES[type]);
     let reserveWalletBalance = web3.utils.fromWei(balance);
     let reserveWalletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
     displayReserveWalletBalancePerType += `
@@ -764,7 +750,7 @@ async function usdTieredSTO_status(currentSTO) {
       USD:                       ${displayFundsRaisedUSD} USD
   `);
 
-  console.log(chalk.green(`\n${(web3.utils.fromWei(await getBalance(Issuer.address, 'POLY')))} POLY balance remaining at issuer address ${Issuer.address}`));
+  console.log(chalk.green(`\n${(web3.utils.fromWei(await getBalance(Issuer.address, gbl.constants.FUND_RAISE_TYPES.POLY)))} POLY balance remaining at issuer address ${Issuer.address}`));
 }
 
 async function usdTieredSTO_configure(currentSTO) {
@@ -889,11 +875,11 @@ async function modfifyTiers(currentSTO) {
 //////////////////////
 async function getBalance(from, type) {
   switch (type) {
-    case 'ETH':
+    case gbl.constants.FUND_RAISE_TYPES.ETH:
       return await web3.eth.getBalance(from);
-    case 'POLY':
+    case gbl.constants.FUND_RAISE_TYPES.POLY:
       return await polyToken.methods.balanceOf(from).call();
-    case 'DAI':
+    case gbl.constants.FUND_RAISE_TYPES.DAI:
       return await usdToken.methods.balanceOf(from).call();
   }
 }

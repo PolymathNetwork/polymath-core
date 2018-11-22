@@ -1,7 +1,8 @@
 // Libraries for terminal prompts
 const readlineSync = require('readline-sync');
 const chalk = require('chalk');
-const shell = require('shelljs');
+var whitelist = require('./whitelist');
+var multimint = require('./multi_mint');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
 
@@ -56,7 +57,7 @@ async function executeApp() {
       allModules = await getAllModules();
       await displayTokenData();
       await displayModules();
-      selectAction();
+      await selectAction();
     }
 };
 
@@ -375,11 +376,11 @@ async function mintToSingleAddress(_investor, _amount) {
 async function multi_mint_tokens() {
   let tokenSymbol = await securityToken.methods.symbol().call();
 
-  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75 ${remoteNetwork}`);
+  await whitelist.executeApp(tokenSymbol, 75);
   console.log(chalk.green(`\nCongratulations! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
 
-  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${remoteNetwork}`);
+  await multimint.executeApp(tokenSymbol, 75);
   console.log(chalk.green(`\nCongratulations! Tokens get successfully Minted and transferred to token holders`));
 }
 ///

@@ -1,149 +1,94 @@
-var fs = require('fs');
-var csv = require('fast-csv');
-var BigNumber = require('bignumber.js');
-var chalk = require('chalk');
 var common = require('./common/common_functions');
-var global = require('./common/global');
-var contracts = require('./helpers/contract_addresses');
-var abis = require('./helpers/contract_abis')
+var csv_shared = require('./common/csv_shared');
+var abis = require('./helpers/contract_abis');
+var BigNumber = require('bignumber.js');
 
-/////////////////////////////ARTIFACTS//////////////////////////////////////////
-let securityTokenRegistry;
-let securityToken;
-let usdTieredSTO;
-
-////////////////////////////USER INPUTS//////////////////////////////////////////
-let tokenSymbol = process.argv.slice(2)[0]; //token symbol
-let BATCH_SIZE = process.argv.slice(2)[1]; //batch size
-if (!BATCH_SIZE) BATCH_SIZE = 75;
-let remoteNetwork = process.argv.slice(2)[2];
-
-/////////////////////////GLOBAL VARS//////////////////////////////////////////
-//distribData is an array of batches. i.e. if there are 200 entries, with batch sizes of 75, we get [[75],[75],[50]]
 let distribData = new Array();
-//allocData is a temporary array that stores up to the batch size,
-//then gets push into distribData, then gets set to 0 to start another batch
-let allocData = new Array();
-//full file data is a single array that contains all arrays. i.e. if there are 200 entries we get [[200]]
 let fullFileData = new Array();
-//baa data is an array that contains invalid entries
 let badData = new Array();
 
-//////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
-startScript();
+let securityToken;
 
-async function startScript() {
-  if (remoteNetwork == 'undefined') remoteNetwork = undefined;
-  await global.initialize(remoteNetwork);
+async function startScript(tokenSymbol, batchSize) {
+  securityToken = await csv_shared.start(tokenSymbol, batchSize);
 
-  try {
-    let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
-    securityTokenRegistry.setProvider(web3.currentProvider);
-    console.log("Processing investor CSV upload. Batch size is " + BATCH_SIZE + " accounts per transaction");
-    readFile();
-  } catch (err) {
-    console.log(err)
-    console.log('\x1b[31m%s\x1b[0m', "There was a problem getting the contracts. Make sure they are deployed to the selected network.");
-    return;
+  let result_processing = await csv_shared.read('./CLI/data/nonAccreditedLimits_data.csv', nonAccredited_processing);
+  distribData = result_processing.distribData;
+  fullFileData = result_processing.fullFileData;
+  badData = result_processing.badData;
+  
+  await saveInBlockchain();
+}
+
+function nonAccredited_processing(csv_line) {
+  let isAddress = web3.utils.isAddress(csv_line[0]);
+  let isNumber = !isNaN(csv_line[1]);
+
+  if (isAddress && isNumber) {
+    return [true, new Array(web3.utils.toChecksumAddress(csv_line[0]), csv_line[1])]
+  } else {
+    return [false, new Array(csv_line[0], csv_line[1])]
   }
 }
 
-///////////////////////////FUNCTION READING THE CSV FILE
-function readFile() {
-  var stream = fs.createReadStream("./CLI/data/nonAccreditedLimits_data.csv");
+async function saveInBlockchain() {
+  let gtmModules;
+  try {
+    gtmModules = await securityToken.methods.getModulesByName(web3.utils.toHex('USDTieredSTO')).call();
+  } catch (e) {
+    console.log("Please attach USDTieredSTO module before launch this action.", e)
+    process.exit(0)
+  }
 
-  let index = 0;
+  if (!gtmModules.length) {
+    console.log("Please attach USDTieredSTO module before launch this action.")
+    process.exit(0)
+  }
+
+  let usdTieredSTO = new web3.eth.Contract(abis.usdTieredSTO(), gtmModules[0]);
+
   console.log(`
-    --------------------------------------------
-    ----------- Parsing the csv file -----------
-    --------------------------------------------
+    --------------------------------------------------------------
+    ----- Sending non accredited limit changes to blockchain -----
+    --------------------------------------------------------------
   `);
 
-  var csvStream = csv()
-    .on("data", function (data) {
-      let isAddress = web3.utils.isAddress(data[0]);
-      let isNumber = !isNaN(data[1]);
+  for (let i = 0; i < distribData.length; i++) {
+    try {
 
-      if (isAddress && isNumber) {
-        let userArray = new Array();
-        let checksummedAddress = web3.utils.toChecksumAddress(data[0]);
-
-        userArray.push(checksummedAddress);
-        userArray.push(data[1]);
-
-        allocData.push(userArray);
-        fullFileData.push(userArray);
-        
-        index++;
-        if (index >= BATCH_SIZE) {
-          distribData.push(allocData);
-          allocData = [];
-          index = 0;
-        }
-      } else {
-        let userArray = new Array()
-        userArray.push(data[0]);
-        userArray.push(data[1]);
-
-        badData.push(userArray);
-        fullFileData.push(userArray)
-      }
-    })
-    .on("end", function () {
-      //Add last remainder batch
-      distribData.push(allocData);
-      allocData = [];
-
-      changeNonAccreditedLimit();
-    });
-
-  stream.pipe(csvStream);
-}
-
-// MAIN FUNCTION COMMUNICATING TO BLOCKCHAIN
-async function changeNonAccreditedLimit() {
-  // Let's check if token has already been deployed, if it has, skip to STO
-  let tokenDeployedAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
-  if (tokenDeployedAddress != "0x0000000000000000000000000000000000000000") {
-    let securityTokenABI = abis.securityToken();
-    securityToken = new web3.eth.Contract(securityTokenABI, tokenDeployedAddress);
-    let result = await securityToken.methods.getModulesByName(web3.utils.toHex('USDTieredSTO')).call();
-    if (result.length > 0) {
-      let usdTieredSTOABI = abis.usdTieredSTO();
-      usdTieredSTO = new web3.eth.Contract(usdTieredSTOABI, result[0]);
-      console.log(`
---------------------------------------------------------------
------ Sending non accredited limit changes to blockchain -----
---------------------------------------------------------------
-      `);
-      //this for loop will do the batches, so it should run 75, 75, 50 with 200
+      // Splitting the user arrays to be organized by input
       for (let i = 0; i < distribData.length; i++) {
         try {
-          let investorArray = [];
-          let limitArray = [];
+          let investorArray = [], limitArray = [];
     
-          //splitting the user arrays to be organized by input
           for (let j = 0; j < distribData[i].length; j++) {
             investorArray.push(distribData[i][j][0]);
             limitArray.push(web3.utils.toWei(distribData[i][j][1].toString()));
           }
-    
-          let changeNonAccreditedLimitAction = usdTieredSTO.methods.changeNonAccreditedLimit(investorArray, limitArray);
-          let r = await common.sendTransaction(changeNonAccreditedLimitAction);
+
+          let changeNonAccreditedLimitAction = await usdTieredSTO.methods.changeNonAccreditedLimit(investorArray, limitArray);
+          let tx = await common.sendTransaction(changeNonAccreditedLimitAction);
           console.log(`Batch ${i} - Attempting to change non accredited limits to accounts:\n\n`, investorArray, "\n\n");
           console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
-          console.log("Change accredited transaction was successful.", r.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(r.gasUsed * defaultGasPrice).toString()), "Ether");
+          console.log("Change accredited transaction was successful.", tx.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(tx.gasUsed * defaultGasPrice).toString()), "Ether");
           console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
+    
         } catch (err) {
           console.log("ERROR:", err);
         }
       }
-    } else {
-      console.log(chalk.red(`There is no STO module attached to the ${tokenSymbol.toUpperCase()} Token. No further actions can be taken.`));
-    } 
-  } else {
-    console.log(chalk.red(`Token symbol provided is not a registered Security Token.`));
+
+    } catch (err) {
+      console.log("ERROR", err)
+      process.exit(0)
+    }
+  }
+
+  return;
+}
+
+module.exports = {
+  executeApp: async (tokenSymbol, batchSize) => {
+    return startScript(tokenSymbol, batchSize);
   }
 }

@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 
-const shell = require('shelljs');
 var faucet = require('./commands/faucet');
 var investor_portal = require('./commands/investor_portal');
 var token_manager = require('./commands/token_manager');
 var st20generator = require('./commands/ST20Generator');
 var sto_manager = require('./commands/sto_manager');
 var transfer = require('./commands/transfer');
+var whitelist = require('./commands/whitelist');
+var multimint = require('./commands/multi_mint');
+var accredit = require('./commands/accredit');
+var changeNonAccreditedLimit = require('./commands/changeNonAccreditedLimit');
 var transfer_ownership = require('./commands/transfer_ownership');
 var dividends_manager = require('./commands/dividends_manager');
 var transfer_manager = require('./commands/transfer_manager');
@@ -86,7 +89,7 @@ program
   .description('Distribute tokens to previously whitelisted investors')
   .action(async function(tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    shell.exec(`${__dirname}/commands/scripts/script.sh Multimint ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
+    await multimint.executeApp(tokenSymbol, batchSize);
   });
 
 program
@@ -113,7 +116,7 @@ program
   .description('Mass-update a whitelist of allowed/known investors')
   .action(async function(tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    shell.exec(`${__dirname}/commands/scripts/script.sh Whitelist ${tokenSymbol} ${batchSize} ${program.remoteNode}`);
+    await whitelist.executeApp(tokenSymbol, batchSize);
   });
 
 program
@@ -149,7 +152,7 @@ program
   .description('Runs accredit')
   .action(async function(tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    shell.exec(`${__dirname}/commands/scripts/script.sh Accredit ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
+    await accredit.executeApp(tokenSymbol, batchSize);
   });
 
 program
@@ -158,7 +161,7 @@ program
   .description('Runs changeNonAccreditedLimit')
   .action(async function(tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    shell.exec(`${__dirname}/commands/scripts/script.sh NonAccreditedLimit ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
+    await changeNonAccreditedLimit.executeApp(tokenSymbol, batchSize);
   });
 
 program

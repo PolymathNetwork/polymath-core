@@ -1,10 +1,11 @@
-var readlineSync = require('readline-sync');
-var chalk = require('chalk');
-const shell = require('shelljs');
-var contracts = require('./helpers/contract_addresses');
-var abis = require('./helpers/contract_abis');
-var common = require('./common/common_functions');
-var gbl = require('./common/global');
+const readlineSync = require('readline-sync');
+const chalk = require('chalk');
+const accredit = require('./accredit');
+const changeNonAccreditedLimit = require('./changeNonAccreditedLimit');
+const contracts = require('./helpers/contract_addresses');
+const abis = require('./helpers/contract_abis');
+const common = require('./common/common_functions');
+const gbl = require('./common/global');
 
 ///////////////////
 // Crowdsale params
@@ -742,7 +743,7 @@ async function usdTieredSTO_configure(currentSTO) {
         await common.sendTransaction(changeAccreditedAction);
         break;
       case 2:
-        shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${remoteNetwork}`);
+        await accredit.executeApp(tokenSymbol, 75);
         break;
       case 3:
         let account = readlineSync.question('Enter the address to change non accredited limit: ');
@@ -754,7 +755,7 @@ async function usdTieredSTO_configure(currentSTO) {
         await common.sendTransaction(changeNonAccreditedLimitAction);
         break;
       case 4:
-        shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${remoteNetwork}`);
+        await changeNonAccreditedLimit.executeApp(tokenSymbol, 75);
         break;
       case 5:
         await modfifyTimes(currentSTO);

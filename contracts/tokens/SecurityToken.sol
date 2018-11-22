@@ -302,7 +302,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _maxCost,
         uint256 _budget
     ){ 
-        addModuleWithLabel(_moduleFactory, _data, _maxCost, _budget, "NA");
+        return addModuleWithLabel(_moduleFactory, _data, _maxCost, _budget, "");
     }
 
     /**
@@ -382,7 +382,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         modulesToData[_module].module,
         modulesToData[_module].moduleFactory,
         modulesToData[_module].isArchived,
-        modulesToData[_module].moduleTypes);
+        modulesToData[_module].moduleTypes,
         modulesToData[_module].label);
     }
 

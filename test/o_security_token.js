@@ -311,6 +311,21 @@ contract("SecurityToken", accounts => {
             I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
         });
 
+        it("Should successfully attach the STO factory with the security token", async () => {
+            startTime = latestTime() + duration.seconds(5000);
+            endTime = startTime + duration.days(30);
+            let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+
+            await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
+            await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner });
+
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: token_owner });
+
+            assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
+            assert.equal(web3.utils.toUtf8(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
+            I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
+        });
+
         it("Should successfully mint tokens while STO attached", async () => {
             await I_SecurityToken.mint(account_affiliate1, 100 * Math.pow(10, 18), { from: token_owner, gas: 500000 });
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
@@ -334,6 +349,7 @@ contract("SecurityToken", accounts => {
             assert.equal(moduleData[2], I_CappedSTOFactory.address);
             assert.equal(moduleData[3], false);
             assert.equal(moduleData[4][0], 3);
+            assert.equal(moduleData[5], 'NA');
         });
 
         it("Should get the modules of the securityToken by index (not added into the security token yet)", async () => {

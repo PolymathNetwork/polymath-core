@@ -3,7 +3,7 @@ pragma solidity ^0.4.24;
 import "./../../TransferManager/ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-contract LockupVolumeRestrictionTM is ITransferManager {
+contract LockUpTransferManager is ITransferManager {
 
     using SafeMath for uint256;
 
@@ -265,6 +265,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         require(_userAddress != address(0), "Invalid address");
         LockUp[] memory userLockup = lockUps[_userAddress];
         uint256 totalRemainingLockedAmount = 0;
+
         for (uint256 i = 0; i < userLockup.length; i++) {
             // Find out the remaining locked amount for a given lockup
             uint256 remainingLockedAmount = userLockup[i].lockupAmount.sub(_getUnlockedAmountForLockup(userLockup, i));
@@ -272,6 +273,45 @@ contract LockupVolumeRestrictionTM is ITransferManager {
             totalRemainingLockedAmount = totalRemainingLockedAmount.add(remainingLockedAmount);
         }
         return totalRemainingLockedAmount;
+    }
+
+    /**
+     * @notice Checks whether the transfer is allowed
+     * @param _userAddress Address of the user whose lock ups should be checked
+     * @param _amount Amount of tokens that need to transact
+     */
+    function _checkIfValidTransfer(address _userAddress, uint256 _amount) internal view returns (Result) {
+        uint256 totalRemainingLockedAmount = getLockedTokenToUser(_userAddress);
+        // Present balance of the user
+        uint256 currentBalance = ISecurityToken(securityToken).balanceOf(_userAddress);
+        if ((currentBalance.sub(_amount)) >= totalRemainingLockedAmount) {
+            return Result.NA;
+        }
+        return Result.INVALID;
+    }
+
+    /**
+     * @notice Provide the unlock amount for the given lockup for a particular user
+     */
+    function _getUnlockedAmountForLockup(LockUp[] userLockup, uint256 _lockupIndex) internal view returns (uint256) {
+            /*solium-disable-next-line security/no-block-members*/
+            if (userLockup[_lockupIndex].startTime > now) {
+                return 0;
+            } else if (userLockup[_lockupIndex].startTime.add(userLockup[_lockupIndex].lockUpPeriodSeconds) <= now) {
+                return userLockup[_lockupIndex].lockupAmount;
+            } else {
+                // Calculate the no. of periods for a lockup 
+                uint256 noOfPeriods = (userLockup[_lockupIndex].lockUpPeriodSeconds).div(userLockup[_lockupIndex].releaseFrequencySeconds);
+                // Calculate the transaction time lies in which period
+                /*solium-disable-next-line security/no-block-members*/
+                uint256 elapsedPeriod = (now.sub(userLockup[_lockupIndex].startTime)).div(userLockup[_lockupIndex].releaseFrequencySeconds);
+                // Calculate the allowed unlocked amount per period
+                uint256 amountPerPeriod = (userLockup[_lockupIndex].lockupAmount).div(noOfPeriods);
+                // Find out the unlocked amount for a given lockup
+                uint256 unLockedAmount = elapsedPeriod.mul(amountPerPeriod);
+                return unLockedAmount;
+            }
+            
     }
 
     function _modifyLockUp(
@@ -364,43 +404,6 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     }
 
     /**
-     * @notice Checks whether the transfer is allowed
-     * @param _userAddress Address of the user whose lock ups should be checked
-     * @param _amount Amount of tokens that need to transact
-     */
-    function _checkIfValidTransfer(address _userAddress, uint256 _amount) internal view returns (Result) {
-        uint256 totalRemainingLockedAmount = getLockedTokenToUser(_userAddress);
-        // Present balance of the user
-        uint256 currentBalance = ISecurityToken(securityToken).balanceOf(_userAddress);
-        if ((currentBalance.sub(_amount)) >= totalRemainingLockedAmount) {
-            return Result.NA;
-        }
-        return Result.INVALID;
-    }
-
-    /**
-     * @notice Provide the unlock amount for the given lockup for a particular user
-     */
-    function _getUnlockedAmountForLockup(LockUp[] userLockup, uint256 _lockupIndex) internal view returns (uint256) {
-            /*solium-disable-next-line security/no-block-members*/
-            if (userLockup[_lockupIndex].startTime > now) {
-                return 0;
-            } else {
-                // Calculate the no. of periods for a lockup 
-                uint256 noOfPeriods = (userLockup[_lockupIndex].lockUpPeriodSeconds).div(userLockup[_lockupIndex].releaseFrequencySeconds);
-                // Calculate the transaction time lies in which period
-                /*solium-disable-next-line security/no-block-members*/
-                uint256 elapsedPeriod = (now.sub(userLockup[_lockupIndex].startTime)).div(userLockup[_lockupIndex].releaseFrequencySeconds);
-                // Calculate the allowed unlocked amount per period
-                uint256 amountPerPeriod = (userLockup[_lockupIndex].lockupAmount).div(noOfPeriods);
-                // Find out the unlocked amount for a given lockup
-                uint256 unLockedAmount = elapsedPeriod.mul(amountPerPeriod);
-                return unLockedAmount;
-            }
-            
-    }
-
-    /**
      * @notice Parameter checking function for creating or editing a lockup.  This function will cause an exception if any of the parameters are bad.
      * @param _userAddress Address whom lockup is being applied
      * @param _lockupAmount Amount that needs to be locked
@@ -431,18 +434,6 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         require(
             _lockUpPeriodSeconds % _releaseFrequencySeconds == 0,
             "lockUpPeriodSeconds must be evenly divisible by releaseFrequencySeconds"
-        );
-
-        // make sure the amount to be released per period is not too granular for the token
-        uint256 totalPeriods = _lockUpPeriodSeconds.div(_releaseFrequencySeconds);
-        uint256 amountPerPeriod = _lockupAmount.div(totalPeriods);
-        require(
-            amountPerPeriod.mul(totalPeriods) == _lockupAmount,
-            "lockup amount should be completely divisible by the amount per period"
-        );
-        require(
-            amountPerPeriod % ISecurityToken(securityToken).granularity() == 0,
-            "The amount to be released per period is more granular than allowed by the token"
         );
     }
 

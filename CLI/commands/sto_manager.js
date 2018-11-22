@@ -61,59 +61,6 @@ async function executeApp() {
   }
 };
 
-async function setup(){
-  try {
-    let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
-    securityTokenRegistry.setProvider(web3.currentProvider);
-
-    let polytokenAddress = await contracts.polyToken();
-    let polytokenABI = abis.polyToken();
-    polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
-    polyToken.setProvider(web3.currentProvider);
-
-    //TODO: Use proper DAI token here
-    let usdTokenAddress = await contracts.usdToken();
-    usdToken = new web3.eth.Contract(polytokenABI, usdTokenAddress);
-    usdToken.setProvider(web3.currentProvider);
-  } catch (err) {
-    console.log(err)
-    console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
-    process.exit(0);
-  }
-}
-
-async function selectToken() {
-  let result = null;
-  
-  let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
-  if (userTokens.length == 0) {
-    console.log(chalk.red(`You have not issued any Security Token yet!`));
-  } else if (userTokens.length == 1) {
-    let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(userTokens[0]).call();
-    console.log(chalk.yellow(`You have only one token. ${tokenData[0]} will be selected automatically.`));
-    result = tokenData[0];
-  } else {
-    let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
-      let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
-      return {tokenData: tokenData, address: t};
-    }));
-    let options = tokenDataArray.map(function (t) {
-      return `${t.tokenData[0]} - Deployed at ${t.address}`;
-    });
-
-    let index = readlineSync.keyInSelect(options, 'Select a token:', {cancel: 'Exit'});
-    if (index != -1) {
-      result = tokenDataArray[index][0];
-    } else {
-      process.exit();
-    }
-  }
-  
-  return result;
-}
-
 function selectExistingSTO(stoModules, showPaused) {
   let filteredModules = stoModules;
   if (!showPaused) {
@@ -884,6 +831,58 @@ function welcome() {
   console.log("****************************************");
   console.log("The following script will allow you to manage STOs modules.");
   console.log("Issuer Account: " + Issuer.address + "\n");
+}
+
+async function setup(){
+  try {
+    let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
+    let securityTokenRegistryABI = abis.securityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+    securityTokenRegistry.setProvider(web3.currentProvider);
+
+    let polytokenAddress = await contracts.polyToken();
+    let polytokenABI = abis.polyToken();
+    polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
+    polyToken.setProvider(web3.currentProvider);
+
+    //TODO: Use proper DAI token here
+    let usdTokenAddress = await contracts.usdToken();
+    usdToken = new web3.eth.Contract(polytokenABI, usdTokenAddress);
+    usdToken.setProvider(web3.currentProvider);
+  } catch (err) {
+    console.log(err)
+    console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
+    process.exit(0);
+  }
+}
+
+async function selectToken() {
+  let result = null;
+  
+  let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
+  let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
+    let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
+    return {symbol: tokenData[0], address: t};
+  }));
+  let options = tokenDataArray.map(function (t) {
+    return `${t.symbol} - Deployed at ${t.address}`;
+  });
+  options.push('Enter token symbol manually');
+
+  let index = readlineSync.keyInSelect(options, 'Select a token:', {cancel: 'Exit'});
+  switch (options[index]) {
+    case 'Enter token symbol manually':
+      result = readlineSync.question('Enter the token symbol: ');
+      break;
+    case 'Exit':
+      process.exit();
+      break;
+    default:
+      result = tokenDataArray[index].symbol;
+      break;
+  }
+  
+  return result;
 }
 
 module.exports = {

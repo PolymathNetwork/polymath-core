@@ -42,9 +42,9 @@ program
 
 program
   .command('sto_manager')
+  .alias('sto')
   .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage modules')
   .option('-l, --launch <configFilePath>', 'Uses configuration file to configure and launch a STO')
-  .alias('sto')
   .description('Wizard-like script that will guide technical users in the creation of an STO')
   .action(async function(cmd) {
     await gbl.initialize(program.remoteNode);
@@ -77,10 +77,11 @@ program
 program
   .command('token_manager')
   .alias('stm')
+  .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage')
   .description('Manage your Security Tokens, mint tokens, add modules and change config')
-  .action(async function() {
+  .action(async function(cmd) {
     await gbl.initialize(program.remoteNode);
-    await token_manager.executeApp();
+    await token_manager.executeApp(cmd.securityToken);
   });
 
 program

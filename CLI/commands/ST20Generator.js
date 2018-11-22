@@ -1,10 +1,11 @@
-var readlineSync = require('readline-sync');
-var BigNumber = require('bignumber.js');
-var moment = require('moment');
-var chalk = require('chalk');
-var contracts = require('./helpers/contract_addresses');
-var abis = require('./helpers/contract_abis');
-var common = require('./common/common_functions');
+const readlineSync = require('readline-sync');
+const BigNumber = require('bignumber.js');
+const moment = require('moment');
+const chalk = require('chalk');
+const tokenManager = require('./token_manager');
+const contracts = require('./helpers/contract_addresses');
+const abis = require('./helpers/contract_abis');
+const common = require('./common/common_functions');
 
 ////////////////////////
 let securityTokenRegistryAddress;
@@ -31,6 +32,7 @@ async function executeApp(_ticker, _transferOwnership, _name, _details, _divisib
       await step_transfer_ticker_ownership(_transferOwnership); 
       await step_token_deploy(_name, _details, _divisible);
     }
+    await tokenManager.executeApp(tokenSymbol);
   } catch (err) {
     console.log(err);
     return;

@@ -1,8 +1,9 @@
 // Libraries for terminal prompts
 const readlineSync = require('readline-sync');
 const chalk = require('chalk');
-var whitelist = require('./whitelist');
-var multimint = require('./multi_mint');
+const whitelist = require('./whitelist');
+const multimint = require('./multi_mint');
+const stoManager = require('./sto_manager');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
 
@@ -16,6 +17,7 @@ let featureRegistry;
 let securityToken;
 
 let allModules;
+let tokenSymbol 
 
 async function setup() {
   try {
@@ -42,54 +44,14 @@ async function setup() {
 
 // Start function
 async function executeApp() {
-    common.logAsciiBull();
-    console.log(`*****************************************`);
-    console.log(`Welcome to the Command-Line Token Manager`);
-    console.log(`*****************************************`);
-    console.log("The following script will allow you to manage your ST-20 tokens");
-    console.log("Issuer Account: " + Issuer.address + "\n");
-
-    await setup();
-    await showUserInfo(Issuer.address);
-
-    securityToken = await selectToken();
-    while (securityToken) {
-      allModules = await getAllModules();
-      await displayTokenData();
-      await displayModules();
-      await selectAction();
-    }
-};
-
-async function selectToken() {
-  let stAddress;
-  let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
-  if (userTokens.length == 0) {
-    console.log(chalk.red(`You have not issued any Security Token yet!`));
-    process.exit(0);
-  } else if (userTokens.length == 1) {
-    console.log(chalk.yellow(`You have only one token. It will be selected automatically.`));
-    stAddress = userTokens[0];
-  } else {
-    let options = await Promise.all(userTokens.map(async function (t) {
-      let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
-      return `${tokenData[0]}
-      Deployed at ${t}`;
-    }));
-
-    let index = readlineSync.keyInSelect(options, 'Select a token:', {cancel: 'Exit'});
-    if (index == -1) {
-      process.exit(0);
-    } else {
-      stAddress = userTokens[index];
-    }
+  await showUserInfo(Issuer.address);
+  while (securityToken) {
+    allModules = await getAllModules();
+    await displayTokenData();
+    await displayModules();
+    await selectAction();
   }
-
-  let securityTokenABI = abis.securityToken();
-  let securityToken = new web3.eth.Contract(securityTokenABI, stAddress);
-  
-  return securityToken;
-}
+};
 
 async function displayTokenData() {
   let displayTokenSymbol = await securityToken.methods.symbol().call();
@@ -374,8 +336,6 @@ async function mintToSingleAddress(_investor, _amount) {
 }
 
 async function multi_mint_tokens() {
-  let tokenSymbol = await securityToken.methods.symbol().call();
-
   await whitelist.executeApp(tokenSymbol, 75);
   console.log(chalk.green(`\nCongratulations! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
@@ -449,17 +409,44 @@ async function listModuleOptions() {
 
 // Modules a actions
 async function addModule() {
-    console.log(chalk.red(`
+  let options = ['Permission Manager', 'Transfer Manager', 'Security Token Offering', 'Dividends', 'Burn'];
+  let index = readlineSync.keyInSelect(options, 'What type of module whould you like to add?', {cancel: 'Return'});
+  switch (options[index]) {
+    case 'Permission Manager':
+      console.log(chalk.red(`
     *********************************
     This option is not yet available.
     *********************************`));
+      break;
+    case 'Transfer Manager':
+      console.log(chalk.red(`
+    *********************************
+    This option is not yet available.
+    *********************************`));
+      break;
+    case 'Security Token Offering':
+      await stoManager.addSTOModule(tokenSymbol)
+      break;
+    case 'Dividends':
+      console.log(chalk.red(`
+    *********************************
+    This option is not yet available.
+    *********************************`));
+      break;
+    case 'Burn':
+      console.log(chalk.red(`
+    *********************************
+    This option is not yet available.
+    *********************************`));
+      break;
+  }
 }
 
 async function pauseModule(modules) {
   let options = modules.map(m => `${m.name} (${m.address})`);
   let index = readlineSync.keyInSelect(options, 'Which module whould you like to pause?');
   if (index != -1) {
-    console.log("\nSelected: ",options[index]);
+    console.log("\nSelected:",options[index]);
     let moduleABI;
     if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
       moduleABI = abis.ISTO();
@@ -594,8 +581,65 @@ async function getAllModules() {
   return modules;
 }
 
+async function initialize(_tokenSymbol) {
+  welcome();
+  await setup();
+  if (typeof _tokenSymbol === 'undefined') {
+    tokenSymbol = await selectToken();
+  } else {
+    tokenSymbol = _tokenSymbol;
+  }
+  let securityTokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
+  if (securityTokenAddress ==  '0x0000000000000000000000000000000000000000') {
+    console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
+    process.exit(0);
+  }
+  let securityTokenABI = abis.securityToken();
+  securityToken = new web3.eth.Contract(securityTokenABI, securityTokenAddress);
+  securityToken.setProvider(web3.currentProvider);
+}
+
+function welcome() {
+  common.logAsciiBull();
+  console.log(`*****************************************`);
+  console.log(`Welcome to the Command-Line Token Manager`);
+  console.log(`*****************************************`);
+  console.log("The following script will allow you to manage your ST-20 tokens");
+  console.log("Issuer Account: " + Issuer.address + "\n");
+}
+
+async function selectToken() {
+  let result = null;
+  
+  let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
+  let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
+    let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
+    return {symbol: tokenData[0], address: t};
+  }));
+  let options = tokenDataArray.map(function (t) {
+    return `${t.symbol} - Deployed at ${t.address}`;
+  });
+  options.push('Enter token symbol manually');
+
+  let index = readlineSync.keyInSelect(options, 'Select a token:', {cancel: 'Exit'});
+  switch (options[index]) {
+    case 'Enter token symbol manually':
+      result = readlineSync.question('Enter the token symbol: ');
+      break;
+    case 'Exit':
+      process.exit();
+      break;
+    default:
+      result = tokenDataArray[index].symbol;
+      break;
+  }
+  
+  return result;
+}
+
 module.exports = {
-    executeApp: async function() {
-          return executeApp();
-      }
+  executeApp: async function(_tokenSymbol) {
+    await initialize(_tokenSymbol)
+    return executeApp();
+  }
 }

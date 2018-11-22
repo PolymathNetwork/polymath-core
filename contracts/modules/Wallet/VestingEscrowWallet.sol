@@ -56,7 +56,7 @@ contract VestingEscrowWallet is IWallet {
         uint256 _frequency,
         uint256 _startTime
     );
-    event EditSchedule(
+    event ModifySchedule(
         address indexed _beneficiary,
         uint256 _index,
         uint256 _numberOfTokens,
@@ -104,6 +104,10 @@ contract VestingEscrowWallet is IWallet {
      * @notice Used to deposit tokens from treasury
      */
     function depositTokens(uint256 _numberOfTokens) external withPerm(ADMIN) {
+        _depositTokens(_numberOfTokens);
+    }
+
+    function _depositTokens(uint256 _numberOfTokens) internal {
         require(_numberOfTokens > 0, "Should be greater than zero");
         token.safeTransferFrom(treasury, this, _numberOfTokens);
         unassignedTokens = unassignedTokens.add(_numberOfTokens);
@@ -121,10 +125,10 @@ contract VestingEscrowWallet is IWallet {
     }
 
     /**
-     * @notice Sends available tokens to beneficiary
+     * @notice Pushes available tokens to beneficiary
      * @param _beneficiary beneficiary's address
      */
-    function sendAvailableTokens(address _beneficiary) public withPerm(ADMIN) {
+    function pushAvailableTokens(address _beneficiary) public withPerm(ADMIN) {
         _sendTokens(_beneficiary);
     }
 
@@ -143,11 +147,7 @@ contract VestingEscrowWallet is IWallet {
      */
     function addTemplate(uint256 _numberOfTokens, uint256 _duration, uint256 _frequency) external withPerm(ADMIN) {
         _validateTemplate(_numberOfTokens, _duration, _frequency);
-        Template memory template;
-        template.numberOfTokens = _numberOfTokens;
-        template.duration = _duration;
-        template.frequency = _frequency;
-        templates.push(template);
+        templates.push(Template(_numberOfTokens, _duration, _frequency));
         emit AddTemplate(_numberOfTokens, _duration, _frequency, templates.length - 1);
     }
 
@@ -191,23 +191,20 @@ contract VestingEscrowWallet is IWallet {
         withPerm(ADMIN)
     {
         _validateSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime);
-        require(_numberOfTokens <= unassignedTokens, "Not enough tokens");
-
-        Schedule memory schedule;
+        if (_numberOfTokens > unassignedTokens) {
+            _depositTokens(_numberOfTokens.sub(unassignedTokens));
+        }
         unassignedTokens = unassignedTokens.sub(_numberOfTokens);
-        schedule.numberOfTokens = _numberOfTokens;
-        schedule.lockedTokens = _numberOfTokens;
-        schedule.duration = _duration;
-        schedule.frequency = _frequency;
-        schedule.startTime = _startTime;
-        schedule.nextTime = _startTime.add(schedule.frequency);
-        schedule.state = State.CREATED;
         //add beneficiary to the schedule list only if adding first schedule
         if (dataMap[_beneficiary].schedules.length == 0) {
             dataMap[_beneficiary].index = beneficiaries.length;
             beneficiaries.push(_beneficiary);
         }
-        dataMap[_beneficiary].schedules.push(schedule);
+        dataMap[_beneficiary].schedules.push(
+            Schedule(
+                _numberOfTokens, _numberOfTokens, _duration, _frequency, _startTime, _startTime.add(_frequency), State.CREATED
+            )
+        );
         emit AddSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime);
     }
 
@@ -217,14 +214,18 @@ contract VestingEscrowWallet is IWallet {
      * @param _index index of the template
      * @param _startTime vesting start time
      */
-    function addScheduleFromTemplate(address _beneficiary, uint256 _index, uint256 _startTime) public withPerm(ADMIN) {
+    function addScheduleFromTemplate(address _beneficiary, uint256 _index, uint256 _startTime) external withPerm(ADMIN) {
+        _addScheduleFromTemplate(_beneficiary, _index, _startTime);
+    }
+
+    function _addScheduleFromTemplate(address _beneficiary, uint256 _index, uint256 _startTime) internal {
         require(_index < templates.length, "Template not found");
         Template memory template = templates[_index];
         addSchedule(_beneficiary, template.numberOfTokens, template.duration, template.frequency, _startTime);
     }
 
     /**
-     * @notice Edits vesting schedules for each of beneficiary
+     * @notice Modifies vesting schedules for each of beneficiary
      * @param _beneficiary beneficiary's addresses
      * @param _index index of schedule
      * @param _numberOfTokens number of tokens
@@ -232,7 +233,7 @@ contract VestingEscrowWallet is IWallet {
      * @param _frequency vesting frequency
      * @param _startTime vesting start time
      */
-    function editSchedule(
+    function modifySchedule(
         address _beneficiary,
         uint256 _index,
         uint256 _numberOfTokens,
@@ -251,16 +252,13 @@ contract VestingEscrowWallet is IWallet {
         if (_numberOfTokens <= schedule.lockedTokens) {
             unassignedTokens = unassignedTokens.add(schedule.lockedTokens - _numberOfTokens);
         } else {
-            require((_numberOfTokens - schedule.lockedTokens) <= unassignedTokens, "Not enough tokens");
+            if (_numberOfTokens - schedule.lockedTokens > unassignedTokens) {
+                _depositTokens(_numberOfTokens - schedule.lockedTokens - unassignedTokens);
+            }
             unassignedTokens = unassignedTokens.sub(_numberOfTokens - schedule.lockedTokens);
         }
-        schedule.numberOfTokens = _numberOfTokens;
-        schedule.lockedTokens = _numberOfTokens;
-        schedule.duration = _duration;
-        schedule.frequency = _frequency;
-        schedule.startTime = _startTime;
-        schedule.nextTime = _startTime.add(schedule.frequency);
-        emit EditSchedule(_beneficiary, _index, _numberOfTokens, _duration, _frequency, _startTime);
+        dataMap[_beneficiary].schedules[_index] = Schedule(_numberOfTokens, _numberOfTokens, _duration, _frequency, _startTime, _startTime.add(_frequency), State.CREATED);
+        emit ModifySchedule(_beneficiary, _index, _numberOfTokens, _duration, _frequency, _startTime);
     }
 
     /**
@@ -342,9 +340,10 @@ contract VestingEscrowWallet is IWallet {
      * @notice Used to bulk send available tokens for each of beneficiaries
      * @param _beneficiaries array of beneficiary's addresses
      */
-    function batchSendAvailableTokens(address[] _beneficiaries) external withPerm(ADMIN) {
+    function pushAvailableTokensMulti(address[] _beneficiaries) external withPerm(ADMIN) {
+        require(_beneficiaries.length > 1, "Array size should be greater than one");
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            sendAvailableTokens(_beneficiaries[i]);
+            pushAvailableTokens(_beneficiaries[i]);
         }
     }
 
@@ -356,7 +355,7 @@ contract VestingEscrowWallet is IWallet {
      * @param _frequency vesting frequency
      * @param _startTime vesting start time
      */
-    function batchAddSchedule(
+    function addScheduleMulti(
         address[] _beneficiaries,
         uint256 _numberOfTokens,
         uint256 _duration,
@@ -377,9 +376,9 @@ contract VestingEscrowWallet is IWallet {
      * @param _index index of the template
      * @param _startTime vesting start time
      */
-    function batchAddScheduleFromTemplate(address[] _beneficiaries, uint256 _index, uint256 _startTime) external withPerm(ADMIN) {
+    function addScheduleFromTemplateMulti(address[] _beneficiaries, uint256 _index, uint256 _startTime) external withPerm(ADMIN) {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            addScheduleFromTemplate(_beneficiaries[i], _index, _startTime);
+            _addScheduleFromTemplate(_beneficiaries[i], _index, _startTime);
         }
     }
 
@@ -387,14 +386,14 @@ contract VestingEscrowWallet is IWallet {
      * @notice Used to bulk revoke vesting schedules for each of beneficiaries
      * @param _beneficiaries array of beneficiary's addresses
      */
-    function batchRevokeSchedules(address[] _beneficiaries) external withPerm(ADMIN) {
+    function revokeSchedulesMulti(address[] _beneficiaries) external withPerm(ADMIN) {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             revokeSchedules(_beneficiaries[i]);
         }
     }
 
     /**
-     * @notice Used to bulk edit vesting schedules for each of beneficiaries
+     * @notice Used to bulk modify vesting schedules for each of beneficiaries
      * @param _beneficiaries array of beneficiary's addresses
      * @param _indexes array of beneficiary's indexes of schedule
      * @param _numberOfTokens number of tokens
@@ -402,7 +401,7 @@ contract VestingEscrowWallet is IWallet {
      * @param _frequency vesting frequency
      * @param _startTime vesting start time
      */
-    function batchEditSchedule(
+    function modifyScheduleMulti(
         address[] _beneficiaries,
         uint256[] _indexes,
         uint256 _numberOfTokens,
@@ -415,7 +414,7 @@ contract VestingEscrowWallet is IWallet {
     {
         require(_beneficiaries.length == _indexes.length, "Arrays sizes mismatch");
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            editSchedule(_beneficiaries[i], _indexes[i], _numberOfTokens, _duration, _frequency, _startTime);
+            modifySchedule(_beneficiaries[i], _indexes[i], _numberOfTokens, _duration, _frequency, _startTime);
         }
     }
 
@@ -426,7 +425,7 @@ contract VestingEscrowWallet is IWallet {
         uint256 _frequency,
         uint256 _startTime
     )
-        private
+        internal
         view
     {
         require(_beneficiary != address(0), "Invalid address");
@@ -434,14 +433,14 @@ contract VestingEscrowWallet is IWallet {
         require(now < _startTime, "Date in the past");
     }
 
-    function _validateTemplate(uint256 _numberOfTokens, uint256 _duration, uint256 _frequency) private pure {
+    function _validateTemplate(uint256 _numberOfTokens, uint256 _duration, uint256 _frequency) internal pure {
         require(_numberOfTokens > 0, "Zero amount");
         require(_duration % _frequency == 0, "Duration and frequency mismatch");
         uint256 periodCount = _duration.div(_frequency);
         require(_numberOfTokens % periodCount == 0, "Tokens and periods mismatch");
     }
 
-    function _sendTokens(address _beneficiary) private {
+    function _sendTokens(address _beneficiary) internal {
         Data storage data = dataMap[_beneficiary];
         uint256 amount = data.availableTokens;
         require(amount > 0, "No available tokens");
@@ -459,7 +458,7 @@ contract VestingEscrowWallet is IWallet {
         _update(_beneficiary);
     }
 
-    function _update(address _beneficiary) private {
+    function _update(address _beneficiary) internal {
         Data storage data = dataMap[_beneficiary];
         for (uint256 i = 0; i < data.schedules.length; i++) {
             Schedule storage schedule = data.schedules[i];
@@ -486,13 +485,13 @@ contract VestingEscrowWallet is IWallet {
         _updateAll();
     }
 
-    function _updateAll() private {
+    function _updateAll() internal {
         for (uint256 i = 0; i < beneficiaries.length; i++) {
             _update(beneficiaries[i]);
         }
     }
 
-    function _revokeSchedules(address _beneficiary) private {
+    function _revokeSchedules(address _beneficiary) internal {
         //can be removed
         if (dataMap[_beneficiary].availableTokens == 0) {
             uint256 index = dataMap[_beneficiary].index;

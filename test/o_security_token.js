@@ -342,14 +342,14 @@ contract("SecurityToken", accounts => {
     });
 
     describe("Module related functions", async () => {
-        it("Should get the modules of the securityToken by index", async () => {
+        it(" Should get the modules of the securityToken by name", async () => {
             let moduleData = await I_SecurityToken.getModule.call(I_CappedSTO.address);
             assert.equal(web3.utils.toAscii(moduleData[0]).replace(/\u0000/g, ""), "CappedSTO");
             assert.equal(moduleData[1], I_CappedSTO.address);
             assert.equal(moduleData[2], I_CappedSTOFactory.address);
             assert.equal(moduleData[3], false);
             assert.equal(moduleData[4][0], 3);
-            assert.equal(moduleData[5], 'NA');
+            assert.equal(moduleData[5], 0x0000000000000000000000000000000000000000);
         });
 
         it("Should get the modules of the securityToken by index (not added into the security token yet)", async () => {

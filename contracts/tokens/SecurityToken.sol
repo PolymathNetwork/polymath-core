@@ -90,6 +90,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         address _module,
         uint256 _moduleCost,
         uint256 _budget,
+        bytes32 _label,
         uint256 _timestamp
     );
 
@@ -262,9 +263,9 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         address _moduleFactory,
         bytes _data,
         uint256 _maxCost,
-        uint256 _budget,
+        uint256 _budget, 
         bytes32 _label
-    ) external onlyOwner nonReentrant {
+    ) onlyOwner nonReentrant {
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
@@ -292,16 +293,15 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         names[moduleName].push(module);
         //Emit log event
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, now);
+        emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, _label, now);
     }
-
 
     function addModule(
         address _moduleFactory,
         bytes _data,
         uint256 _maxCost,
         uint256 _budget
-    ){ 
+    ) external { 
         return addModuleWithLabel(_moduleFactory, _data, _maxCost, _budget, "");
     }
 

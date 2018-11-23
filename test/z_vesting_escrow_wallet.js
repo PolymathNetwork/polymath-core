@@ -263,6 +263,13 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(web3.utils.toAscii(tags[1]).replace(/\u0000/g, ""), "Escrow");
         });
 
+        it("Should get the instructions of the factory", async () => {
+            assert.equal(
+                (await I_VestingEscrowWalletFactory.getInstructions.call()).replace(/\u0000/g, ""),
+                "Issuer can send tokens to and then select the address that would be able to withdraw them according to their specific vesting schedule." +
+            "");
+        });
+
     });
 
     describe("Depositing and withdrawing tokens", async () => {

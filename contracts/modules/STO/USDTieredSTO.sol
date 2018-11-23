@@ -618,7 +618,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             tierData.mintedTotal = tierData.mintedTotal.add(tierPurchasedTokens);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
-        if ((investedUSD > 0) && (tierData.tokenTotal.sub(tierData.mintedTotal) > 0)) {
+        if (investedUSD > 0 && 
+            tierData.tokenTotal.sub(tierData.mintedTotal) > 0 &&
+            tierData.tokensDiscountPoly == tierData.mintedDiscountPoly
+        ) {
             (tierSpentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTier(_beneficiary, tierData.rate, tierData.tokenTotal.sub(tierData.mintedTotal), investedUSD, _tier);
             spentUSD = spentUSD.add(tierSpentUSD);
             tierData.minted[uint8(_fundRaiseType)] = tierData.minted[uint8(_fundRaiseType)].add(tierPurchasedTokens);
@@ -650,7 +653,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             _investedUSD = _investedUSD.sub(spentUSD);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
-        if ((_investedUSD > 0) && (tierData.tokenTotal.sub(tierData.mintedTotal.add(tokensMinted)) > 0)) {
+        if (_investedUSD > 0 && 
+            tierData.tokenTotal.sub(tierData.mintedTotal.add(tokensMinted)) > 0 &&
+            tierData.tokensDiscountPoly == tierData.mintedDiscountPoly
+        ) {
             (tierSpentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTierAmount(tierData.rate, tierData.tokenTotal.sub(tierData.mintedTotal), _investedUSD);
             spentUSD = spentUSD.add(tierSpentUSD);
             tokensMinted = tokensMinted.add(tierPurchasedTokens);
@@ -668,8 +674,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         returns(uint256 spentUSD, uint256 purchasedTokens, bool gotoNextTier)
     {
         (spentUSD, purchasedTokens, gotoNextTier) = _purchaseTierAmount(_tierPrice, _tierRemaining, _investedUSD);
-        require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
-        emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
+        if (purchasedTokens > 0) {
+            require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
+            emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
+        } 
     }
 
     function _purchaseTierAmount(

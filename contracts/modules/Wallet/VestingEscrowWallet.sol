@@ -30,7 +30,6 @@ contract VestingEscrowWallet is IWallet {
     }
 
     enum State {CREATED, STARTED, COMPLETED}
-    //TODO add method for getting state
 
     address public treasury;
     uint256 public unassignedTokens;
@@ -254,7 +253,7 @@ contract VestingEscrowWallet is IWallet {
     function revokeSchedule(address _beneficiary, uint256 _index) external withPerm(ADMIN) {
         require(_beneficiary != address(0), "Invalid address");
         require(_index < schedules[_beneficiary].length, "Schedule not found");
-//        _sendTokens(_beneficiary);
+        _sendTokens(_beneficiary);
         Schedule[] storage userSchedules = schedules[_beneficiary];
         unassignedTokens = unassignedTokens.add(userSchedules[_index].numberOfTokens - userSchedules[_index].releasedTokens);
         if (_index != userSchedules.length - 1) {
@@ -273,7 +272,7 @@ contract VestingEscrowWallet is IWallet {
      */
     function revokeSchedules(address _beneficiary) public withPerm(ADMIN) {
         require(_beneficiary != address(0), "Invalid address");
-//        _sendTokens(_beneficiary);
+        _sendTokens(_beneficiary);
         Schedule[] storage data = schedules[_beneficiary];
         for (uint256 i = 0; i < data.length; i++) {
             unassignedTokens = unassignedTokens.add(data[i].numberOfTokens - data[i].releasedTokens);
@@ -288,7 +287,7 @@ contract VestingEscrowWallet is IWallet {
      * @param _index index of the schedule
      * @return beneficiary's schedule
      */
-    function getSchedule(address _beneficiary, uint256 _index) external view returns(uint256, uint256, uint256, uint256) {
+    function getSchedule(address _beneficiary, uint256 _index) external view returns(uint256, uint256, uint256, uint256, State) {
         require(_beneficiary != address(0), "Invalid address");
         require(_index < schedules[_beneficiary].length, "Schedule not found");
         Schedule storage schedule = schedules[_beneficiary][_index];
@@ -296,8 +295,20 @@ contract VestingEscrowWallet is IWallet {
             schedule.numberOfTokens,
             schedule.duration,
             schedule.frequency,
-            schedule.startTime
+            schedule.startTime,
+            _getScheduleState(_beneficiary, _index)
         );
+    }
+
+    function _getScheduleState(address _beneficiary, uint256 _index) internal view returns(State) {
+        Schedule memory schedule = schedules[_beneficiary][_index];
+        if (now < schedule.startTime) {
+            return State.CREATED;
+        } else if (now > schedule.startTime && now < schedule.startTime.add(schedule.duration)) {
+            return State.STARTED;
+        } else {
+            return State.COMPLETED;
+        }
     }
 
     /**
@@ -434,12 +445,13 @@ contract VestingEscrowWallet is IWallet {
 
     function _sendTokens(address _beneficiary) internal {
         uint256 amount = _getAvailableTokens(_beneficiary);
-        require(amount > 0, "No available tokens");
-        for (uint256 i = 0; i < schedules[_beneficiary].length; i++) {
-            schedules[_beneficiary][i].availableTokens = 0;
+        if (amount > 0) {
+            for (uint256 i = 0; i < schedules[_beneficiary].length; i++) {
+                schedules[_beneficiary][i].availableTokens = 0;
+            }
+            ISecurityToken(securityToken).transfer(_beneficiary, amount);
+            emit SendTokens(_beneficiary, amount);
         }
-        ISecurityToken(securityToken).transfer(_beneficiary, amount);
-        emit SendTokens(_beneficiary, amount);
     }
 
     /**

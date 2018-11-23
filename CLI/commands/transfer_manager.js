@@ -183,7 +183,7 @@ async function configExistingModules(tmModules) {
   
   switch (moduleNameSelected) {
     case 'GeneralTransferManager':
-      currentTransferManager = new web3.eth.Contract(abis.generalTransferManager(), nonArchivedModules[index].address); 
+      currentTransferManager = new web3.eth.Contract(abis.generalTransferManager(), tmModules[index].address); 
       currentTransferManager.setProvider(web3.currentProvider);
       await generalTransferManager();
       break;
@@ -205,16 +205,16 @@ async function configExistingModules(tmModules) {
       break;
     case 'CountTransferManager':
       //await countTransferManager();
+      break;
+    case 'SingleTradeVolumeRestrictionTM':
+      //currentTransferManager = new web3.eth.Contract(abis.singleTradeVolumeRestrictionTM(), tmModules[index].address);
+      //currentTransferManager.setProvider(web3.currentProvider);
+      //await singleTradeVolumeRestrictionTM();
       console.log(chalk.red(`
         *********************************
         This option is not yet available.
         *********************************`
       ));
-      break;
-    case 'SingleTradeVolumeRestrictionTM':
-      currentTransferManager = new web3.eth.Contract(abis.singleTradeVolumeRestrictionTM(), nonArchivedModules[index].address);
-      currentTransferManager.setProvider(web3.currentProvider);
-      await singleTradeVolumeRestrictionTM();
       break;
     case 'LookupVolumeRestrictionTM':
       //await lookupVolumeRestrictionTM();
@@ -228,12 +228,12 @@ async function configExistingModules(tmModules) {
 }
 
 async function addTransferManagerModule() {
-  let options = ['GeneralTransferManager', 'ManualApprovalTransferManager', 'PercentageTransferManager', 
-                'CountTransferManager', 'SingleTradeVolumeRestrictionTM', 'LookupVolumeRestrictionTM'];
+  let options = ['GeneralTransferManager'/*, 'ManualApprovalTransferManager', 'PercentageTransferManager', 
+'CountTransferManager', 'SingleTradeVolumeRestrictionTM', 'LookupVolumeRestrictionTM'*/];
   
   let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', {cancel: 'Return'});
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
-    let bytes;
+    let bytes = web3.utils.fromAscii('', 16);
     switch (options[index]) {
       case 'ManualApprovalTransferManager':
         console.log(chalk.red(`
@@ -257,6 +257,7 @@ async function addTransferManagerModule() {
         ));
         break;
       case 'SingleTradeVolumeRestrictionTM':
+        /*
         let isTransferLimitInPercentage = !!readlineSync.keyInSelect(['In tokens', 'In percentage'], 'How do you want to set the transfer limit? ', {cancel: false});
         let globalTransferLimitInPercentageOrToken;
         if (isTransferLimitInPercentage) {
@@ -291,6 +292,12 @@ async function addTransferManagerModule() {
             }
           ]
         }, [isTransferLimitInPercentage, globalTransferLimitInPercentageOrToken, allowPrimaryIssuance]);
+      */
+        console.log(chalk.red(`
+          *********************************
+          This option is not yet available.
+          *********************************`
+        ));
         break;
       case 'LookupVolumeRestrictionTM':
         console.log(chalk.red(`
@@ -298,11 +305,9 @@ async function addTransferManagerModule() {
           This option is not yet available.
           *********************************`
         ));
-        break;     
-      default:
-        bytes = web3.utils.fromAscii('', 16);
+        break;
     }
-    let selectedTMFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.TRANSFER, options[index]);
+    let selectedTMFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.TRANSFER, options[index]);
     let addModuleAction = securityToken.methods.addModule(selectedTMFactoryAddress, bytes, 0, 0);
     let receipt = await common.sendTransaction(addModuleAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
@@ -363,9 +368,11 @@ async function generalTransferManager() {
         },
         limitMessage: "Must be a valid address"
       }); 
-      let fromTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens: ');
-      let toTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others: ');
-      let expiryTime = readlineSync.questionInt('Enter the time till investors KYC will be validated (after that investor need to do re-KYC): ');
+      let now = Math.floor(Date.now() / 1000);
+      let fromTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens (now = ${now}): `, {defaultInput: now});
+      let toTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (now = ${now}): `, {defaultInput: now});
+      let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
+      let expiryTime = readlineSync.questionInt(`Enter the time till investors KYC will be validated (after that investor need to do re-KYC) (1 hour from now = ${oneHourFromNow}): `, {defaultInput: oneHourFromNow});
       let canBuyFromSTO = readlineSync.keyInYNStrict('Is the investor a restricted investor?');
       let modifyWhitelistAction = currentTransferManager.methods.modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
       let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);

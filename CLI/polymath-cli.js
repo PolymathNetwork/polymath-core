@@ -119,10 +119,11 @@ program
 program
   .command('transfer_manager')
   .alias('tm')
+  .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage transfer modules')
   .description('Runs transfer_manager')
-  .action(async function() {
+  .action(async function(cmd) {
     await gbl.initialize(program.remoteNode);
-    await transfer_manager.executeApp();
+    await transfer_manager.executeApp(cmd.securityToken);
   });
 
 program

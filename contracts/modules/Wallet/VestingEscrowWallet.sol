@@ -23,11 +23,6 @@ contract VestingEscrowWallet is IWallet {
         uint256 startTime;
     }
 
-    struct Data {
-        uint256 index;
-        Schedule[] schedules;
-    }
-
     struct Template {
         uint256 numberOfTokens;
         uint256 duration;
@@ -40,7 +35,7 @@ contract VestingEscrowWallet is IWallet {
     address public treasury;
     uint256 public unassignedTokens;
 
-    mapping (address => Data) public dataMap;
+    mapping (address => Schedule[]) public schedules;
     address[] public beneficiaries;
 
     Template[] public templates;
@@ -191,11 +186,10 @@ contract VestingEscrowWallet is IWallet {
         }
         unassignedTokens = unassignedTokens.sub(_numberOfTokens);
         //add beneficiary to the schedule list only if adding first schedule
-        if (dataMap[_beneficiary].schedules.length == 0) {
-            dataMap[_beneficiary].index = beneficiaries.length;
+        if (schedules[_beneficiary].length == 0) {
             beneficiaries.push(_beneficiary);
         }
-        dataMap[_beneficiary].schedules.push(Schedule(_numberOfTokens, 0, 0, _duration, _frequency, _startTime));
+        schedules[_beneficiary].push(Schedule(_numberOfTokens, 0, 0, _duration, _frequency, _startTime));
         emit AddSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime);
     }
 
@@ -236,8 +230,8 @@ contract VestingEscrowWallet is IWallet {
         withPerm(ADMIN)
     {
         _validateSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime);
-        require(_index < dataMap[_beneficiary].schedules.length, "Schedule not found");
-        Schedule storage schedule = dataMap[_beneficiary].schedules[_index];
+        require(_index < schedules[_beneficiary].length, "Schedule not found");
+        Schedule storage schedule = schedules[_beneficiary][_index];
         /*solium-disable-next-line security/no-block-members*/
         require(now < schedule.startTime, "Schedule started");
         if (_numberOfTokens <= schedule.numberOfTokens) {
@@ -248,7 +242,7 @@ contract VestingEscrowWallet is IWallet {
             }
             unassignedTokens = unassignedTokens.sub(_numberOfTokens - schedule.numberOfTokens);
         }
-        dataMap[_beneficiary].schedules[_index] = Schedule(_numberOfTokens, 0, 0, _duration, _frequency, _startTime);
+        schedules[_beneficiary][_index] = Schedule(_numberOfTokens, 0, 0, _duration, _frequency, _startTime);
         emit ModifySchedule(_beneficiary, _index, _numberOfTokens, _duration, _frequency, _startTime);
     }
 
@@ -259,12 +253,12 @@ contract VestingEscrowWallet is IWallet {
      */
     function revokeSchedule(address _beneficiary, uint256 _index) external withPerm(ADMIN) {
         require(_beneficiary != address(0), "Invalid address");
-        require(_index < dataMap[_beneficiary].schedules.length, "Schedule not found");
-        Schedule[] storage schedules = dataMap[_beneficiary].schedules;
-        unassignedTokens = unassignedTokens.add(schedules[_index].numberOfTokens - schedules[_index].releasedTokens);
-        schedules[_index] = schedules[schedules.length - 1];
-        schedules.length--;
-        if (schedules.length == 0) {
+        require(_index < schedules[_beneficiary].length, "Schedule not found");
+        Schedule[] storage userSchedules = schedules[_beneficiary];
+        unassignedTokens = unassignedTokens.add(userSchedules[_index].numberOfTokens - userSchedules[_index].releasedTokens);
+        userSchedules[_index] = userSchedules[userSchedules.length - 1];
+        userSchedules.length--;
+        if (userSchedules.length == 0) {
             _revokeSchedules(_beneficiary);
         }
         emit RevokeSchedule(_beneficiary, _index);
@@ -277,11 +271,11 @@ contract VestingEscrowWallet is IWallet {
      */
     function revokeSchedules(address _beneficiary) public withPerm(ADMIN) {
         require(_beneficiary != address(0), "Invalid address");
-        Data storage data = dataMap[_beneficiary];
-        for (uint256 i = 0; i < data.schedules.length; i++) {
-            unassignedTokens = unassignedTokens.add(data.schedules[i].numberOfTokens - data.schedules[i].releasedTokens);
+        Schedule[] storage data = schedules[_beneficiary];
+        for (uint256 i = 0; i < data.length; i++) {
+            unassignedTokens = unassignedTokens.add(data[i].numberOfTokens - data[i].releasedTokens);
         }
-        delete dataMap[_beneficiary].schedules;
+        delete schedules[_beneficiary];
         _revokeSchedules(_beneficiary);
         emit RevokeSchedules(_beneficiary);
     }
@@ -294,8 +288,8 @@ contract VestingEscrowWallet is IWallet {
      */
     function getSchedule(address _beneficiary, uint256 _index) external view returns(uint256, uint256, uint256, uint256) {
         require(_beneficiary != address(0), "Invalid address");
-        require(_index < dataMap[_beneficiary].schedules.length, "Schedule not found");
-        Schedule storage schedule = dataMap[_beneficiary].schedules[_index];
+        require(_index < schedules[_beneficiary].length, "Schedule not found");
+        Schedule storage schedule = schedules[_beneficiary][_index];
         return (
             schedule.numberOfTokens,
             schedule.duration,
@@ -311,7 +305,7 @@ contract VestingEscrowWallet is IWallet {
      */
     function getScheduleCount(address _beneficiary) external view returns(uint256) {
         require(_beneficiary != address(0), "Invalid address");
-        return dataMap[_beneficiary].schedules.length;
+        return schedules[_beneficiary].length;
     }
 
     /**
@@ -326,8 +320,8 @@ contract VestingEscrowWallet is IWallet {
     function _getAvailableTokens(address _beneficiary) internal view returns(uint256) {
         require(_beneficiary != address(0));
         uint256 availableTokens;
-        for (uint256 i = 0; i < dataMap[_beneficiary].schedules.length; i++) {
-            availableTokens = availableTokens.add(dataMap[_beneficiary].schedules[i].availableTokens);
+        for (uint256 i = 0; i < schedules[_beneficiary].length; i++) {
+            availableTokens = availableTokens.add(schedules[_beneficiary][i].availableTokens);
         }
         return availableTokens;
     }
@@ -439,8 +433,8 @@ contract VestingEscrowWallet is IWallet {
     function _sendTokens(address _beneficiary) internal {
         uint256 amount = _getAvailableTokens(_beneficiary);
         require(amount > 0, "No available tokens");
-        for (uint256 i = 0; i < dataMap[_beneficiary].schedules.length; i++) {
-            dataMap[_beneficiary].schedules[i].availableTokens = 0;
+        for (uint256 i = 0; i < schedules[_beneficiary].length; i++) {
+            schedules[_beneficiary][i].availableTokens = 0;
         }
         ISecurityToken(securityToken).transfer(_beneficiary, amount);
         emit SendTokens(_beneficiary, amount);
@@ -451,9 +445,9 @@ contract VestingEscrowWallet is IWallet {
      */
     function updateAll() external withPerm(ADMIN) {
         for (uint256 i = 0; i < beneficiaries.length; i++) {
-            Data storage data = dataMap[beneficiaries[i]];
-            for (uint256 j = 0; j < data.schedules.length; j++) {
-                Schedule storage schedule = data.schedules[j];
+            Schedule[] storage data = schedules[beneficiaries[i]];
+            for (uint256 j = 0; j < data.length; j++) {
+                Schedule storage schedule = data[j];
                 if (schedule.releasedTokens < schedule.numberOfTokens) {
                     uint256 periodCount = schedule.duration.div(schedule.frequency);
                     /*solium-disable-next-line security/no-block-members*/
@@ -474,13 +468,15 @@ contract VestingEscrowWallet is IWallet {
     function _revokeSchedules(address _beneficiary) internal {
         //can be removed
         if (_getAvailableTokens(_beneficiary) == 0) {
-            uint256 index = dataMap[_beneficiary].index;
+            uint256 index;
+            for (uint256 i = 0; i < beneficiaries.length; i++) {
+                if (_beneficiary == beneficiaries[i]) {
+                    index = i;
+                }
+            }
             beneficiaries[index] = beneficiaries[beneficiaries.length - 1];
             beneficiaries.length--;
-            if (index != beneficiaries.length) {
-                dataMap[beneficiaries[index]].index = index;
-            }
-            delete dataMap[_beneficiary];
+            delete schedules[_beneficiary];
         }
     }
 

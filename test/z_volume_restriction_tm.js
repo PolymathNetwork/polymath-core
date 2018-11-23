@@ -68,6 +68,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
     const transferManagerKey = 2;
     const stoKey = 3;
 
+    let tempAmount = new BigNumber(0);
+
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
 
@@ -245,13 +247,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
             for (let i = 0; i < data[0].length; i++) {
                 console.log(`
                     Timestamps array index ${i}: ${data[0][i].toNumber()}
-                    Total Trade till now: ${await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i])}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
                 `);
             }
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
-                Days Covered : ${data[2].toNumber()}
-                Last Timestamp Index : ${data[3].toNumber()}
+                Last Timestamp Index : ${data[0].length -1}
             `);
         })
 
@@ -267,13 +269,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
             for (let i = 0; i < data[0].length; i++) {
                 console.log(`
                     Timestamps array index ${i}: ${data[0][i].toNumber()}
-                    Total Trade till now: ${await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i])}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
                 `);
             }
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
-                Days Covered : ${data[2].toNumber()}
-                Last Timestamp Index : ${data[3].toNumber()}
+                Last Timestamp Index : ${data[0].length -1}
             `);
         });
 
@@ -297,13 +299,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
             for (let i = 0; i < data[0].length; i++) {
                 console.log(`
                     Timestamps array index ${i}: ${data[0][i].toNumber()}
-                    Total Trade till now: ${await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i])}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
                 `);
             }
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
-                Days Covered : ${data[2].toNumber()}
-                Last Timestamp Index : ${data[3].toNumber()}
+                Last Timestamp Index : ${data[0].length - 1}
             `);
         });
 
@@ -314,15 +316,15 @@ contract('VolumeRestrictionTransferManager', accounts => {
             for (let i = 0; i < data[0].length; i++) {
                 console.log(`
                     Timestamps array index ${i}: ${data[0][i].toNumber()}
-                    Total Trade till now: ${await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i])}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
                 `);
             }
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
-                Days Covered : ${data[2].toNumber()}
-                Last Timestamp Index : ${data[3].toNumber()}
+                Last Timestamp Index : ${data[0].length - 1}
             `);
-            assert.equal(data[2].toNumber(), 2);
+            assert.equal(data[0].length - 1, 2);
         });
 
         it("Should successfully transfer the tokens in the last day of rolling period", async() => {
@@ -344,13 +346,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
             for (let i = 0; i < data[0].length; i++) {
                 console.log(`
                     Timestamps array index ${i}: ${data[0][i].toNumber()}
-                    Total Trade till now: ${await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i])}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
                 `);
             }
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
-                Days Covered : ${data[2].toNumber()}
-                Last Timestamp Index : ${data[3].toNumber()}
+                Last Timestamp Index : ${data[0].length - 1}
             `);
         });
 
@@ -372,35 +374,75 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should transfer the tokens in a new rolling period", async() => {
             let oldData = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
+            let firstDayAmount;
+            tempAmount = new BigNumber(0);
             for (let i = 0; i < oldData[0].length; i++) {
                 console.log(`
                     Timestamps array index ${i}: ${oldData[0][i].toNumber()}
-                    Total Trade till now: ${await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, oldData[0][i])}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, oldData[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
                 `);
+                if (i != 2) {
+                    firstDayAmount = await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, oldData[0][0]);
+                    tempAmount = tempAmount.plus(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, oldData[0][i]));
+                }
             }
+
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((oldData[1].toNumber()).toString())}
-                Days Covered : ${oldData[2].toNumber()}
-                Last Timestamp Index : ${oldData[3].toNumber()}
+                Last Timestamp Index : ${oldData[0].length -1}
             `);
+
+            let currentDayAmount = firstDayAmount.plus(new BigNumber(1).times(new BigNumber(10).pow(18)));
+            let tx = await I_SecurityToken.transfer(account_investor3, currentDayAmount, {from: account_investor1});
+            tempAmount = tempAmount.minus(currentDayAmount);
             
-            let tx = await I_SecurityToken.transfer(account_investor3, web3.utils.toWei(".3"), {from: account_investor1});
             console.log('\n');
-            console.log(tx.logs);
             let newData = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
-            for (let i = 0; i < newData[0].length; i++) {
+            for (let i = 2; i < newData[0].length; i++) {
                 console.log(`
                     Timestamps array index ${i}: ${newData[0][i].toNumber()}
-                    Total Trade till now: ${await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, newData[0][i])}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, newData[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
                 `);
             }
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((newData[1].toNumber()).toString())}
-                Days Covered : ${newData[2].toNumber()}
-                Last Timestamp Index : ${newData[3].toNumber()}
+                Last Timestamp Index : ${newData[0].length -1}
             `);
-            assert.notEqual(oldData[0][0].toNumber(), newData[0][0].toNumber());
-            assert.notEqual(oldData[0][1].toNumber(), newData[0][1].toNumber());
+            assert.notEqual(oldData[0][0].toNumber(), newData[0][3].toNumber());
+            assert.notEqual(oldData[0][1].toNumber(), newData[0][4].toNumber());
         });
+
+        it("Should transfer the more tokens on the same day", async() => {
+            // Check the balance of the investors 
+            let balBefore = await I_SecurityToken.balanceOf.call(account_investor1);
+            console.log(tempAmount.dividedBy(new BigNumber(10).pow(18)).toNumber());
+            await I_SecurityToken.transfer(account_investor3, tempAmount, {from: account_investor1});
+
+            // Check the balance of the investors 
+            let balAfter = await I_SecurityToken.balanceOf.call(account_investor1);
+            // Verifying the balances
+            assert.closeTo(
+                (balBefore.minus(balAfter).dividedBy(new BigNumber(10).pow(18))).toNumber(),
+                tempAmount.dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                0.01
+            );
+
+            let data = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
+            for (let i = 2; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length -1}
+            `);
+        });
+
+        
     });
 });

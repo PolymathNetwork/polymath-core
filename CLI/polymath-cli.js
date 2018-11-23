@@ -23,8 +23,8 @@ const fs = require('fs');
 
 program
   .version('1.0.1')
-  .description('Command Line Interface for Polymath-core')
-  .option('-r, --remote-node <network>', 'Use Infura to connect to a remote node on selected network');
+  .description('CLI for Polymath-core')
+  .option('-r, --remote-node <network>', 'Connect to a remote node');
 
 program
   .command('st20generator')

@@ -1,19 +1,8 @@
-const readlineSync = require('readline-sync');
-const chalk = require('chalk');
-const ethers = require('ethers');
-const shell = require('shelljs');
-const common = require('./common/common_functions');
-const global = require('./common/global');
-const contracts = require('./helpers/contract_addresses');
-const abis = require('./helpers/contract_abis');
-
-const MODULES_TYPES = {
-  PERMISSION: 1,
-  TRANSFER: 2,
-  STO: 3,
-  DIVIDEND: 4,
-  BURN: 5
-}
+var readlineSync = require('readline-sync');
+var chalk = require('chalk');
+var common = require('./common/common_functions');
+var contracts = require('./helpers/contract_addresses');
+var abis = require('./helpers/contract_abis');
 
 // App flow
 let tokenSymbol;
@@ -22,10 +11,7 @@ let securityTokenRegistry;
 let network;
 let currentTransferManager;
 
-async function executeApp(remoteNetwork) {
-  network = remoteNetwork;
-  await global.initialize(remoteNetwork);
-  
+async function executeApp() {
   common.logAsciiBull();
   console.log("*********************************************");
   console.log("Welcome to the Command-Line Transfer Manager.");
@@ -183,7 +169,8 @@ async function forcedTransfers() {
         limitMessage: "Must be a valid address",
         defaultInput: Issuer.address
       });
-      let setControllerAction = securityToken.methods.setController(controllerAddress);
+      let 
+      rollerAction = securityToken.methods.setController(controllerAddress);
       let setControllerReceipt = await common.sendTransaction(Issuer, setControllerAction, defaultGasPrice);
       let setControllerEvent = common.getEventFromLogs(securityToken._jsonInterface, setControllerReceipt.logs, 'SetController');
       console.log(chalk.green(`New controller is ${setControllerEvent._newController}`));
@@ -729,7 +716,7 @@ function fromWeiPercentage(number) {
 }
 
 module.exports = {
-  executeApp: async function(type, remoteNetwork) {
-    return executeApp(type, remoteNetwork);
+  executeApp: async function(type) {
+    return executeApp(type);
   }
 }

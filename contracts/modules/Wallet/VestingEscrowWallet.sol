@@ -254,16 +254,18 @@ contract VestingEscrowWallet is IWallet {
     function revokeSchedule(address _beneficiary, uint256 _index) external withPerm(ADMIN) {
         require(_beneficiary != address(0), "Invalid address");
         require(_index < schedules[_beneficiary].length, "Schedule not found");
+//        _sendTokens(_beneficiary);
         Schedule[] storage userSchedules = schedules[_beneficiary];
         unassignedTokens = unassignedTokens.add(userSchedules[_index].numberOfTokens - userSchedules[_index].releasedTokens);
-        userSchedules[_index] = userSchedules[userSchedules.length - 1];
+        if (_index != userSchedules.length - 1) {
+            userSchedules[_index] = userSchedules[userSchedules.length - 1];
+        }
         userSchedules.length--;
         if (userSchedules.length == 0) {
-            _revokeSchedules(_beneficiary);
+            _removeBeneficiary(_beneficiary);
         }
         emit RevokeSchedule(_beneficiary, _index);
     }
-
 
     /**
      * @notice Revokes all beneficiary's schedules
@@ -271,12 +273,12 @@ contract VestingEscrowWallet is IWallet {
      */
     function revokeSchedules(address _beneficiary) public withPerm(ADMIN) {
         require(_beneficiary != address(0), "Invalid address");
+//        _sendTokens(_beneficiary);
         Schedule[] storage data = schedules[_beneficiary];
         for (uint256 i = 0; i < data.length; i++) {
             unassignedTokens = unassignedTokens.add(data[i].numberOfTokens - data[i].releasedTokens);
         }
-        delete schedules[_beneficiary];
-        _revokeSchedules(_beneficiary);
+        _removeBeneficiary(_beneficiary);
         emit RevokeSchedules(_beneficiary);
     }
 
@@ -465,19 +467,20 @@ contract VestingEscrowWallet is IWallet {
         }
     }
 
-    function _revokeSchedules(address _beneficiary) internal {
-        //can be removed
-        if (_getAvailableTokens(_beneficiary) == 0) {
-            uint256 index;
-            for (uint256 i = 0; i < beneficiaries.length; i++) {
-                if (_beneficiary == beneficiaries[i]) {
-                    index = i;
-                }
+    function _removeBeneficiary(address _beneficiary) internal {
+        bool isFound = false;
+        uint256 index;
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            if (_beneficiary == beneficiaries[i]) {
+                isFound = true;
+                index = i;
             }
-            beneficiaries[index] = beneficiaries[beneficiaries.length - 1];
-            beneficiaries.length--;
-            delete schedules[_beneficiary];
         }
+        if (isFound && index != beneficiaries.length - 1) {
+            beneficiaries[index] = beneficiaries[beneficiaries.length - 1];
+        }
+        beneficiaries.length--;
+        delete schedules[_beneficiary];
     }
 
     /**

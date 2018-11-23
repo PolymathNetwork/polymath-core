@@ -3,6 +3,7 @@ var chalk = require('chalk');
 var common = require('./common/common_functions');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
+var gbl = require('./common/global');
 
 // App flow
 let tokenSymbol;
@@ -12,68 +13,31 @@ let network;
 let currentTransferManager;
 
 async function executeApp() {
-  common.logAsciiBull();
-  console.log("*********************************************");
-  console.log("Welcome to the Command-Line Transfer Manager.");
-  console.log("*********************************************");
-  console.log("Issuer Account: " + Issuer.address + "\n");
-
-  await setup();
-  try {
-    await start_explorer();
-  } catch (err) {
-    console.log(err);
-    return;
-  }
-};
-
-async function setup(){
-  try {
-    let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
-    securityTokenRegistry.setProvider(web3.currentProvider);
-  } catch (err) {
-    console.log(err)
-    console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
-    process.exit(0);
-  }
-}
-
-async function start_explorer() {
-  console.log('\n\x1b[34m%s\x1b[0m',"Transfer Manager - Main Menu");
-
-  if (!tokenSymbol)
-    tokenSymbol = readlineSync.question('Enter the token symbol: ');
-
-  let result = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
-  if (result == "0x0000000000000000000000000000000000000000") {
-    tokenSymbol = undefined;
-    console.log(chalk.red(`Token symbol provided is not a registered Security Token.`));
-  } else {
-    let securityTokenABI = abis.securityToken();
-    securityToken = new web3.eth.Contract(securityTokenABI,result);
+  let exit = false;
+  while (!exit) {
+    console.log('\n', chalk.blue('Transfer Manager - Main Menu', '\n'));
     
-    let tmModules = [];
-    let tmModuleAddresses = await securityToken.methods.getModulesByType(MODULES_TYPES.TRANSFER).call();
-    for (const address of tmModuleAddresses) {
-      tmModules.push(await securityToken.methods.getModule(address).call());
+    let tmModules = await getAllModulesByType(gbl.constants.MODULES_TYPES.TRANSFER);
+    let nonArchivedModules = tmModules.filter(m => !m.archived);
+    if (nonArchivedModules.length > 0) {
+      console.log(`Transfer Manager modules attached:`);
+      nonArchivedModules.map(m => console.log(`- ${m.name} at ${m.address}`))
+    } else {
+      console.log(`There are no Transfer Manager modules attached`);
     }
-
-    // Show non-archived attached TM modules
-    console.log();
-    console.log(`Transfer Manager modules attached:`);
-    tmModules.filter(m => m[3] == false).map(m => console.log(`    - ${web3.utils.hexToAscii(m[0])} at ${m[1]}`))
 
     let options = ['Verify transfer', 'Transfer'];
     let forcedTransferDisabled = await securityToken.methods.controllerDisabled().call();
     if (!forcedTransferDisabled) {
       options.push('Forced transfers');
     }
-    options.push('Config existing modules', 'Add new Transfer Manager module');
+    if (nonArchivedModules.length > 0) {
+      options.push('Config existing modules');
+    }
+    options.push('Add new Transfer Manager module');
 
-    let index = readlineSync.keyInSelect(options, 'Choose one:');
-    let optionSelected = index != -1 ? options[index] : 'Cancel';
+    let index = readlineSync.keyInSelect(options, 'What do you want to do?', {cancel: 'Exit'});
+    let optionSelected = index != -1 ? options[index] : 'Exit';
     console.log('Selected:', optionSelected, '\n');
     switch (optionSelected) {
       case 'Verify transfer':
@@ -130,18 +94,16 @@ async function start_explorer() {
         await forcedTransfers();
         break;
       case 'Config existing modules':
-        await configExistingModules(tmModules);
+        await configExistingModules(nonArchivedModules);
         break;
       case 'Add new Transfer Manager module':
         await addTransferManagerModule();
         break;
-      case 'Cancel':
-        process.exit(0);
+      case 'Exit':
+        exit = true;
+        break
     }
   }
-
-  //Restart
-  await start_explorer();
 }
 
 async function forcedTransfers() {
@@ -150,9 +112,9 @@ async function forcedTransfers() {
   if (controller == Issuer.address) {
     options.push('Force Transfer');
   }
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?');
-  let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Cancel', '\n');
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', {cancel: 'Return'});
+  let optionSelected = index != -1 ? options[index] : 'Return';
+  console.log('Selected:',  optionSelected, '\n');
   switch (optionSelected) {
     case 'Disable controller':
       if (readlineSync.keyInYNStrict()) {
@@ -169,8 +131,7 @@ async function forcedTransfers() {
         limitMessage: "Must be a valid address",
         defaultInput: Issuer.address
       });
-      let 
-      rollerAction = securityToken.methods.setController(controllerAddress);
+      let setControllerAction = securityToken.methods.setController(controllerAddress);
       let setControllerReceipt = await common.sendTransaction(setControllerAction);
       let setControllerEvent = common.getEventFromLogs(securityToken._jsonInterface, setControllerReceipt.logs, 'SetController');
       console.log(chalk.green(`New controller is ${setControllerEvent._newController}`));
@@ -215,16 +176,14 @@ async function forcedTransfers() {
 }
 
 async function configExistingModules(tmModules) {
-  let nonArchivedModules = tmModules.filter(m => m[3] == false);
-
-  let options = nonArchivedModules.map(m => `${web3.utils.hexToAscii(m[0])} at ${m[1]}`);
-  let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ');
-  console.log('Selected:', index != -1 ? options[index] : 'Cancel', '\n');
-  let moduleNameSelected = web3.utils.hexToUtf8(nonArchivedModules[index][0]);
+  let options = tmModules.map(m => `${m.name} at ${m.address}`);
+  let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', {cancel: 'Return'});
+  console.log('Selected:', index != -1 ? options[index] : 'Return', '\n');
+  let moduleNameSelected = tmModules[index].name;
   
   switch (moduleNameSelected) {
     case 'GeneralTransferManager':
-      currentTransferManager = new web3.eth.Contract(abis.generalTransferManager(), nonArchivedModules[index][1]); 
+      currentTransferManager = new web3.eth.Contract(abis.generalTransferManager(), nonArchivedModules[index].address); 
       currentTransferManager.setProvider(web3.currentProvider);
       await generalTransferManager();
       break;
@@ -253,7 +212,7 @@ async function configExistingModules(tmModules) {
       ));
       break;
     case 'SingleTradeVolumeRestrictionTM':
-      currentTransferManager = new web3.eth.Contract(abis.singleTradeVolumeRestrictionTM(), nonArchivedModules[index][1]);
+      currentTransferManager = new web3.eth.Contract(abis.singleTradeVolumeRestrictionTM(), nonArchivedModules[index].address);
       currentTransferManager.setProvider(web3.currentProvider);
       await singleTradeVolumeRestrictionTM();
       break;
@@ -272,7 +231,7 @@ async function addTransferManagerModule() {
   let options = ['GeneralTransferManager', 'ManualApprovalTransferManager', 'PercentageTransferManager', 
                 'CountTransferManager', 'SingleTradeVolumeRestrictionTM', 'LookupVolumeRestrictionTM'];
   
-  let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ');
+  let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', {cancel: 'Return'});
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
     let bytes;
     switch (options[index]) {
@@ -312,7 +271,7 @@ async function addTransferManagerModule() {
             limit: function(input) {
               return parseInt(input) > 0;
             },
-            limitMessage: "Must be greater than zero"
+            limitMessage: "Must be greater than 0"
           })); 
         }
         let allowPrimaryIssuance = readlineSync.keyInYNStrict(`Do you want to allow all primary issuance transfers? `);
@@ -347,13 +306,12 @@ async function addTransferManagerModule() {
     let addModuleAction = securityToken.methods.addModule(selectedTMFactoryAddress, bytes, 0, 0);
     let receipt = await common.sendTransaction(addModuleAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
-    console.log(`Module deployed at address: ${event._module}`);
+    console.log(chalk.green(`Module deployed at address: ${event._module}`));
   }
 }
 
 async function generalTransferManager() {
-  console.log(chalk.blue(`General Transfer Manager at ${currentTransferManager.options.address}`));
-  console.log();
+  console.log(chalk.blue(`General Transfer Manager at ${currentTransferManager.options.address}`), '\n');
 
   // Show current data
   let displayIssuanceAddress = await currentTransferManager.methods.issuanceAddress().call();
@@ -715,8 +673,106 @@ function fromWeiPercentage(number) {
   return web3.utils.fromWei(new web3.utils.BN(number).muln(100));
 }
 
+async function getAllModulesByType(type) {
+  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused) {
+    this.name = _name;
+    this.type = _moduleType;
+    this.address = _address;
+    this.factoryAddress = _factoryAddress;
+    this.archived = _archived;
+    this.paused = _paused;
+  }
+
+  let modules = [];
+
+  let allModules = await securityToken.methods.getModulesByType(type).call();
+
+  for (let i = 0; i < allModules.length; i++) {
+    let details = await securityToken.methods.getModule(allModules[i]).call();
+    let nameTemp = web3.utils.hexToUtf8(details[0]);
+    let pausedTemp = null;
+    if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER) {
+      let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
+      let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
+      pausedTemp = await contractTemp.methods.paused().call();
+    }
+    modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp));
+  }
+
+  return modules;
+}
+
+async function initialize(_tokenSymbol) {
+  welcome();
+  await setup();
+  if (typeof _tokenSymbol === 'undefined') {
+    tokenSymbol = await selectToken();
+  } else {
+    tokenSymbol = _tokenSymbol;
+  }
+  let securityTokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
+  if (securityTokenAddress ==  '0x0000000000000000000000000000000000000000') {
+    console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
+    process.exit(0);
+  }
+  let securityTokenABI = abis.securityToken();
+  securityToken = new web3.eth.Contract(securityTokenABI, securityTokenAddress);
+  securityToken.setProvider(web3.currentProvider);
+}
+
+function welcome() {
+  common.logAsciiBull();
+  console.log("*********************************************");
+  console.log("Welcome to the Command-Line Transfer Manager.");
+  console.log("*********************************************");
+  console.log("Issuer Account: " + Issuer.address + "\n");
+}
+
+async function setup(){
+  try {
+    let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
+    let securityTokenRegistryABI = abis.securityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+    securityTokenRegistry.setProvider(web3.currentProvider);
+  } catch (err) {
+    console.log(err)
+    console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
+    process.exit(0);
+  }
+}
+
+async function selectToken() {
+  let result = null;
+  
+  let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
+  let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
+    let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
+    return {symbol: tokenData[0], address: t};
+  }));
+  let options = tokenDataArray.map(function (t) {
+    return `${t.symbol} - Deployed at ${t.address}`;
+  });
+  options.push('Enter token symbol manually');
+
+  let index = readlineSync.keyInSelect(options, 'Select a token:', {cancel: 'Exit'});
+  switch (options[index]) {
+    case 'Enter token symbol manually':
+      result = readlineSync.question('Enter the token symbol: ');
+      break;
+    case 'Exit':
+      process.exit();
+      break;
+    default:
+      result = tokenDataArray[index].symbol;
+      break;
+  }
+  
+  return result;
+}
+
 module.exports = {
-  executeApp: async function(type) {
-    return executeApp(type);
+  executeApp: async function(_tokenSymbol) {
+    await initialize(_tokenSymbol);
+    return executeApp();
   }
 }

@@ -117,7 +117,7 @@ async function start_explorer() {
         let isTranferVerified = await securityToken.methods.verifyTransfer(Issuer.address, transferTo, web3.utils.toWei(transferAmount), web3.utils.fromAscii("")).call();
         if (isTranferVerified) {
           let transferAction = securityToken.methods.transfer(transferTo, web3.utils.toWei(transferAmount));
-          let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice);
+          let receipt = await common.sendTransaction(transferAction);
           let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
           console.log(chalk.green(`${event.from} transferred ${web3.utils.fromWei(event.value)} ${tokenSymbol} to ${event.to} successfully!`));
           console.log(`Balance of ${Issuer.address} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(Issuer.address).call())} ${tokenSymbol}`);
@@ -157,7 +157,7 @@ async function forcedTransfers() {
     case 'Disable controller':
       if (readlineSync.keyInYNStrict()) {
         let disableControllerAction = securityToken.methods.disableController();
-        await common.sendTransaction(Issuer, disableControllerAction, defaultGasPrice);
+        await common.sendTransaction(disableControllerAction);
         console.log(chalk.green(`Forced transfers have been disabled permanently`));
       }
       break;
@@ -171,7 +171,7 @@ async function forcedTransfers() {
       });
       let 
       rollerAction = securityToken.methods.setController(controllerAddress);
-      let setControllerReceipt = await common.sendTransaction(Issuer, setControllerAction, defaultGasPrice);
+      let setControllerReceipt = await common.sendTransaction(setControllerAction);
       let setControllerEvent = common.getEventFromLogs(securityToken._jsonInterface, setControllerReceipt.logs, 'SetController');
       console.log(chalk.green(`New controller is ${setControllerEvent._newController}`));
       break;
@@ -201,7 +201,7 @@ async function forcedTransfers() {
       let data = readlineSync.question('Enter the data to indicate validation: ');
       let log = readlineSync.question('Enter the data attached to the transfer by controller to emit in event: ');
       let forceTransferAction = securityToken.methods.forceTransfer(from, to, web3.utils.toWei(amount), web3.utils.asciiToHex(data), web3.utils.asciiToHex(log));
-      let forceTransferReceipt = await common.sendTransaction(Issuer, forceTransferAction, defaultGasPrice, 0, 1.5);
+      let forceTransferReceipt = await common.sendTransaction(forceTransferAction, { factor: 1.5 });
       let forceTransferEvent = common.getEventFromLogs(securityToken._jsonInterface, forceTransferReceipt.logs, 'ForceTransfer');
       console.log(chalk.green(`  ${forceTransferEvent._controller} has successfully forced a transfer of ${web3.utils.fromWei(forceTransferEvent._value)} ${tokenSymbol} 
   from ${forceTransferEvent._from} to ${forceTransferEvent._to} 
@@ -345,7 +345,7 @@ async function addTransferManagerModule() {
     }
     let selectedTMFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, MODULES_TYPES.TRANSFER, options[index]);
     let addModuleAction = securityToken.methods.addModule(selectedTMFactoryAddress, bytes, 0, 0);
-    let receipt = await common.sendTransaction(Issuer, addModuleAction, defaultGasPrice);
+    let receipt = await common.sendTransaction(addModuleAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
     console.log(`Module deployed at address: ${event._module}`);
   }
@@ -410,7 +410,7 @@ async function generalTransferManager() {
       let expiryTime = readlineSync.questionInt('Enter the time till investors KYC will be validated (after that investor need to do re-KYC): ');
       let canBuyFromSTO = readlineSync.keyInYNStrict('Is the investor a restricted investor?');
       let modifyWhitelistAction = currentTransferManager.methods.modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
-      let modifyWhitelistReceipt = await common.sendTransaction(Issuer, modifyWhitelistAction, defaultGasPrice);
+      let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
       let modifyWhitelistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyWhitelist');
       console.log(chalk.green(`${modifyWhitelistEvent._investor} has been whitelisted sucessfully!`));
       break;
@@ -449,7 +449,7 @@ async function generalTransferManager() {
         limitMessage: "Must be a valid address"
       }); 
       let changeIssuanceAddressAction = currentTransferManager.methods.changeIssuanceAddress(issuanceAddress);
-      let changeIssuanceAddressReceipt = await common.sendTransaction(Issuer, changeIssuanceAddressAction, defaultGasPrice);
+      let changeIssuanceAddressReceipt = await common.sendTransaction(changeIssuanceAddressAction);
       let changeIssuanceAddressEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeIssuanceAddressReceipt.logs, 'ChangeIssuanceAddress');
       console.log(chalk.green(`${changeIssuanceAddressEvent._issuanceAddress} is the new address for the issuance!`));
       break;
@@ -461,14 +461,14 @@ async function generalTransferManager() {
         limitMessage: "Must be a valid address"
       }); 
       let changeSigningAddressAction = currentTransferManager.methods.changeSigningAddress(signingAddress);
-      let changeSigningAddressReceipt = await common.sendTransaction(Issuer, changeSigningAddressAction, defaultGasPrice);
+      let changeSigningAddressReceipt = await common.sendTransaction(changeSigningAddressAction);
       let changeSigningAddressEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeSigningAddressReceipt.logs, 'ChangeSigningAddress');
       console.log(chalk.green(`${changeSigningAddressEvent._signingAddress} is the new address for the signing!`));
       break;
     case 'Allow all transfers':
     case 'Disallow all transfers':
       let changeAllowAllTransfersAction = currentTransferManager.methods.changeAllowAllTransfers(!displayAllowAllTransfers);
-      let changeAllowAllTransfersReceipt = await common.sendTransaction(Issuer, changeAllowAllTransfersAction, defaultGasPrice);
+      let changeAllowAllTransfersReceipt = await common.sendTransaction(changeAllowAllTransfersAction);
       let changeAllowAllTransfersEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeAllowAllTransfersReceipt.logs, 'AllowAllTransfers');
       if (changeAllowAllTransfersEvent._allowAllTransfers) {
         console.log(chalk.green(`All transfers are allowed!`));
@@ -479,7 +479,7 @@ async function generalTransferManager() {
     case 'Allow all whitelist transfers':
     case 'Disallow all whitelist transfers':
       let changeAllowAllWhitelistTransfersAction = currentTransferManager.methods.changeAllowAllWhitelistTransfers(!displayAllowAllWhitelistTransfers);
-      let changeAllowAllWhitelistTransfersReceipt = await common.sendTransaction(Issuer, changeAllowAllWhitelistTransfersAction, defaultGasPrice);
+      let changeAllowAllWhitelistTransfersReceipt = await common.sendTransaction(changeAllowAllWhitelistTransfersAction);
       let changeAllowAllWhitelistTransfersEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeAllowAllWhitelistTransfersReceipt.logs, 'AllowAllWhitelistTransfers');
       if (changeAllowAllWhitelistTransfersEvent._allowAllWhitelistTransfers) {
         console.log(chalk.green(`Time locks from whitelist are ignored for transfers!`));
@@ -490,7 +490,7 @@ async function generalTransferManager() {
     case 'Allow all whitelist issuances':
     case 'Disallow all whitelist issuances':
       let changeAllowAllWhitelistIssuancesAction = currentTransferManager.methods.changeAllowAllWhitelistIssuances(!displayAllowAllWhitelistIssuances);
-      let changeAllowAllWhitelistIssuancesReceipt = await common.sendTransaction(Issuer, changeAllowAllWhitelistIssuancesAction, defaultGasPrice);
+      let changeAllowAllWhitelistIssuancesReceipt = await common.sendTransaction(changeAllowAllWhitelistIssuancesAction);
       let changeAllowAllWhitelistIssuancesEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeAllowAllWhitelistIssuancesReceipt.logs, 'AllowAllWhitelistIssuances');
       if (changeAllowAllWhitelistIssuancesEvent._allowAllWhitelistIssuances) {
         console.log(chalk.green(`Time locks from whitelist are ignored for issuances!`));
@@ -501,7 +501,7 @@ async function generalTransferManager() {
     case 'Allow all burn transfers':
     case 'Disallow all burn transfers':
       let changeAllowAllBurnTransfersAction = currentTransferManager.methods.changeAllowAllBurnTransfers(!displayAllowAllBurnTransfers);
-      let changeAllowAllBurnTransfersReceipt = await common.sendTransaction(Issuer, changeAllowAllBurnTransfersAction, defaultGasPrice);
+      let changeAllowAllBurnTransfersReceipt = await common.sendTransaction(changeAllowAllBurnTransfersAction);
       let changeAllowAllBurnTransfersEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeAllowAllBurnTransfersReceipt.logs, 'AllowAllBurnTransfers');
       if (changeAllowAllBurnTransfersEvent._allowAllWhitelistTransfers) {
         console.log(chalk.green(`To burn tokens is allowed!`));
@@ -553,7 +553,7 @@ async function singleTradeVolumeRestrictionTM() {
     case 'Allow primary issuance':
     case 'Disallow primary issuance':
       let disallowPrimaryIssuanceAction = currentTransferManager.methods.setAllowPrimaryIssuance(!displayAllowPrimaryIssuance);
-      await common.sendTransaction(Issuer, disallowPrimaryIssuanceAction, defaultGasPrice);
+      await common.sendTransaction(disallowPrimaryIssuanceAction);
       break;
     case 'Add exempted wallet':
       let walletToExempt = readlineSync.question('Enter the wallet to exempt: ', {
@@ -563,7 +563,7 @@ async function singleTradeVolumeRestrictionTM() {
         limitMessage: "Must be a valid address"
       }); 
       let addExemptWalletAction = currentTransferManager.methods.addExemptWallet(walletToExempt);
-      let addExemptWalletReceipt = await common.sendTransaction(Issuer, addExemptWalletAction, defaultGasPrice);
+      let addExemptWalletReceipt = await common.sendTransaction(addExemptWalletAction);
       let addExemptWalletEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addExemptWalletReceipt.logs, 'ExemptWalletAdded');
       console.log(chalk.green(`${addExemptWalletEvent._wallet} has been exempted sucessfully!`));
       break;
@@ -575,7 +575,7 @@ async function singleTradeVolumeRestrictionTM() {
         limitMessage: "Must be a valid address"
       }); 
       let removeExemptWalletAction = currentTransferManager.methods.removeExemptWallet(exemptedWallet);
-      let removeExemptWalletReceipt = await common.sendTransaction(Issuer, removeExemptWalletAction, defaultGasPrice);
+      let removeExemptWalletReceipt = await common.sendTransaction(removeExemptWalletAction);
       let removeExemptWalletEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeExemptWalletReceipt.logs, 'ExemptWalletRemoved');
       console.log(chalk.green(`${removeExemptWalletEvent._wallet} has been removed from exempt wallets sucessfully!`));
       break;
@@ -587,7 +587,7 @@ async function singleTradeVolumeRestrictionTM() {
         limitMessage: "Must be greater than zero"
       })); 
       let changeTransferLimitToTokensAction = currentTransferManager.methods.changeTransferLimitToTokens(newDefaultLimitInTokens);
-      let changeTransferLimitToTokensReceipt = await common.sendTransaction(Issuer, changeTransferLimitToTokensAction, defaultGasPrice);
+      let changeTransferLimitToTokensReceipt = await common.sendTransaction(changeTransferLimitToTokensAction);
       let changeTransferLimitToTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeTransferLimitToTokensReceipt.logs, 'GlobalTransferLimitInTokensSet');
       console.log(chalk.green(`Transfer limit has been set to tokens sucessfully!`));
       console.log(chalk.green(`The default transfer limit is ${web3.utils.fromWei(changeTransferLimitToTokensEvent._amount)} ${tokenSymbol}`));
@@ -600,7 +600,7 @@ async function singleTradeVolumeRestrictionTM() {
         limitMessage: "Must be greater than 0 and less than 100"
       })); 
       let changeTransferLimitToPercentageAction = currentTransferManager.methods.changeTransferLimitToPercentage(newDefaultLimitInPercentage);
-      let changeTransferLimitToPercentageReceipt = await common.sendTransaction(Issuer, changeTransferLimitToPercentageAction, defaultGasPrice);
+      let changeTransferLimitToPercentageReceipt = await common.sendTransaction(changeTransferLimitToPercentageAction);
       let changeTransferLimitToPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeTransferLimitToPercentageReceipt.logs, 'GlobalTransferLimitInPercentageSet');
       console.log(chalk.green(`Transfer limit has been set to tokens sucessfully!`));
       console.log(chalk.green(`The default transfer limit is ${fromWeiPercentage(changeTransferLimitToPercentageEvent._percentage)} %`));
@@ -613,7 +613,7 @@ async function singleTradeVolumeRestrictionTM() {
         limitMessage: "Must be greater than 0 and less than 100"
       })); 
       let changeGlobalLimitInPercentageAction = currentTransferManager.methods.changeGlobalLimitInPercentage(defaultLimitInPercentage);
-      let changeGlobalLimitInPercentageReceipt = await common.sendTransaction(Issuer, changeGlobalLimitInPercentageAction, defaultGasPrice);
+      let changeGlobalLimitInPercentageReceipt = await common.sendTransaction(changeGlobalLimitInPercentageAction);
       let changeGlobalLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeGlobalLimitInPercentageReceipt.logs, 'GlobalTransferLimitInPercentageSet');
       console.log(chalk.green(`The default transfer limit is ${fromWeiPercentage(changeGlobalLimitInPercentageEvent._percentage)} %`));
       break;
@@ -625,7 +625,7 @@ async function singleTradeVolumeRestrictionTM() {
         limitMessage: "Must be greater than zero"
       })); 
       let changeGlobalLimitInTokensAction = currentTransferManager.methods.changeGlobalLimitInTokens(defaultLimitInTokens);
-      let changeGlobalLimitInTokensReceipt = await common.sendTransaction(Issuer, changeGlobalLimitInTokensAction, defaultGasPrice);
+      let changeGlobalLimitInTokensReceipt = await common.sendTransaction(changeGlobalLimitInTokensAction);
       let changeGlobalLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeGlobalLimitInTokensReceipt.logs, 'GlobalTransferLimitInTokensSet');
       console.log(chalk.green(`The default transfer limit is ${web3.utils.fromWei(changeGlobalLimitInTokensEvent._amount)} ${tokenSymbol}`));
       break;
@@ -643,7 +643,7 @@ async function singleTradeVolumeRestrictionTM() {
         limitMessage: "Must be greater than 0 and less than 100"
       })); 
       let setTransferLimitInPercentageAction = currentTransferManager.methods.setTransferLimitInPercentage(percentageAccount, accountLimitInPercentage);
-      let setTransferLimitInPercentageReceipt = await common.sendTransaction(Issuer, setTransferLimitInPercentageAction, defaultGasPrice);
+      let setTransferLimitInPercentageReceipt = await common.sendTransaction(setTransferLimitInPercentageAction);
       let setTransferLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, setTransferLimitInPercentageReceipt.logs, 'TransferLimitInPercentageSet');
       console.log(chalk.green(`The transfer limit for ${setTransferLimitInPercentageEvent._wallet} is ${fromWeiPercentage(setTransferLimitInPercentageEvent._percentage)} %`));
       break;
@@ -661,7 +661,7 @@ async function singleTradeVolumeRestrictionTM() {
         limitMessage: "Must be greater than zero"
       })); 
       let setTransferLimitInTokensAction = currentTransferManager.methods.setTransferLimitInTokens(tokensAccount, accountLimitInTokens);
-      let setTransferLimitInTokensReceipt = await common.sendTransaction(Issuer, setTransferLimitInTokensAction, defaultGasPrice);
+      let setTransferLimitInTokensReceipt = await common.sendTransaction(setTransferLimitInTokensAction);
       let setTransferLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, setTransferLimitInTokensReceipt.logs, 'TransferLimitInTokensSet');
       console.log(chalk.green(`The transfer limit for ${setTransferLimitInTokensEvent._wallet} is ${web3.utils.fromWei(setTransferLimitInTokensEvent._amount)} ${tokenSymbol}`));
       break;
@@ -673,7 +673,7 @@ async function singleTradeVolumeRestrictionTM() {
         limitMessage: "Must be a valid address"
       });
       let removeTransferLimitInPercentageAction = currentTransferManager.methods.removeTransferLimitInPercentage(percentageAccountToRemove);
-      let removeTransferLimitInPercentageReceipt = await common.sendTransaction(Issuer, removeTransferLimitInPercentageAction, defaultGasPrice);
+      let removeTransferLimitInPercentageReceipt = await common.sendTransaction(removeTransferLimitInPercentageAction);
       let removeTransferLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeTransferLimitInPercentageReceipt.logs, 'TransferLimitInPercentageRemoved');
       console.log(chalk.green(`The transfer limit for ${removeTransferLimitInPercentageEvent._wallet} is the default limit`));
       break;
@@ -685,7 +685,7 @@ async function singleTradeVolumeRestrictionTM() {
         limitMessage: "Must be a valid address"
       });
       let removeTransferLimitInTokensAction = currentTransferManager.methods.removeTransferLimitInTokens(tokensAccountToRemove);
-      let removeTransferLimitInTokensReceipt = await common.sendTransaction(Issuer, removeTransferLimitInTokensAction, defaultGasPrice);
+      let removeTransferLimitInTokensReceipt = await common.sendTransaction(removeTransferLimitInTokensAction);
       let removeTransferLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeTransferLimitInTokensReceipt.logs, 'TransferLimitInTokensRemoved');
       console.log(chalk.green(`The transfer limit for ${removeTransferLimitInTokensEvent._wallet} is the default limit`));
       break;

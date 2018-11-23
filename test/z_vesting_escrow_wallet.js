@@ -314,7 +314,7 @@ contract('VestingEscrowWallet', accounts => {
             await I_VestingEscrowWallet.depositTokens(numberOfTokens, {from: wallet_admin});
             await I_VestingEscrowWallet.addSchedule(account_beneficiary3, numberOfTokens, duration, frequency, startTime, {from: wallet_admin});
             await increaseTime(timeShift + frequency);
-            await I_VestingEscrowWallet.update(account_beneficiary3, {from: wallet_admin});
+            await I_VestingEscrowWallet.updateAll({from: wallet_admin});
 
             const tx = await I_VestingEscrowWallet.pushAvailableTokens(account_beneficiary3, {from: wallet_admin});
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary3);
@@ -350,9 +350,7 @@ contract('VestingEscrowWallet', accounts => {
             await I_VestingEscrowWallet.depositTokens(numberOfTokens, {from: wallet_admin});
             await I_VestingEscrowWallet.addSchedule(account_beneficiary3, numberOfTokens, duration, frequency, startTime, {from: wallet_admin});
             await increaseTime(timeShift + frequency * 3);
-            for (let i = 0; i < 4; i++) {
-                await I_VestingEscrowWallet.update(account_beneficiary3, {from: wallet_admin});
-            }
+            await I_VestingEscrowWallet.updateAll({from: wallet_admin});
 
             const tx = await I_VestingEscrowWallet.withdrawAvailableTokens({from: account_beneficiary3});
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary3);
@@ -397,7 +395,7 @@ contract('VestingEscrowWallet', accounts => {
             }
             let stepCount = 6;
             await increaseTime(durationUtil.minutes(stepCount) + durationUtil.seconds(100));
-            await I_VestingEscrowWallet.update(account_beneficiary3, {from: wallet_admin});
+            await I_VestingEscrowWallet.updateAll({from: wallet_admin});
 
             let numberOfTokens = 100000 + (30000 / 6 * stepCount) + (2000 / 10 * stepCount);
             const tx = await I_VestingEscrowWallet.withdrawAvailableTokens({from: account_beneficiary3});
@@ -975,12 +973,6 @@ contract('VestingEscrowWallet', accounts => {
         it("Should not be able to modify schedules for the beneficiaries", async () => {
             await catchPermission(
                 I_VestingEscrowWallet.modifyScheduleMulti([account_beneficiary1], [0], 10000, 4, 1, latestTime(), {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able update schedule", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.update(account_beneficiary1, {from: account_beneficiary1})
             );
         });
 

@@ -447,43 +447,27 @@ contract VestingEscrowWallet is IWallet {
     }
 
     /**
-     * @notice manually triggers update outside for beneficiary's schedule (can be used to reduce user gas costs)
-     * @param _beneficiary beneficiary's address of the schedule
-     */
-    function update(address _beneficiary) external withPerm(ADMIN) {
-        _update(_beneficiary);
-    }
-
-    function _update(address _beneficiary) internal {
-        Data storage data = dataMap[_beneficiary];
-        for (uint256 i = 0; i < data.schedules.length; i++) {
-            Schedule storage schedule = data.schedules[i];
-            if (schedule.releasedTokens < schedule.numberOfTokens) {
-                uint256 periodCount = schedule.duration.div(schedule.frequency);
-                /*solium-disable-next-line security/no-block-members*/
-                uint256 periodNumber = (now.sub(schedule.startTime)).div(schedule.frequency);
-                if (periodNumber > periodCount) {
-                    periodNumber = periodCount;
-                }
-                uint256 releasedTokens = schedule.numberOfTokens.mul(periodNumber).div(periodCount);
-                if (schedule.releasedTokens < releasedTokens) {
-                    schedule.availableTokens = schedule.availableTokens.add(releasedTokens - schedule.releasedTokens);
-                    schedule.releasedTokens = releasedTokens;
-                }
-            }
-        }
-    }
-
-    /**
      * @notice manually triggers update outside for all schedules (can be used to reduce user gas costs)
      */
     function updateAll() external withPerm(ADMIN) {
-        _updateAll();
-    }
-
-    function _updateAll() internal {
         for (uint256 i = 0; i < beneficiaries.length; i++) {
-            _update(beneficiaries[i]);
+            Data storage data = dataMap[beneficiaries[i]];
+            for (uint256 j = 0; j < data.schedules.length; j++) {
+                Schedule storage schedule = data.schedules[j];
+                if (schedule.releasedTokens < schedule.numberOfTokens) {
+                    uint256 periodCount = schedule.duration.div(schedule.frequency);
+                    /*solium-disable-next-line security/no-block-members*/
+                    uint256 periodNumber = (now.sub(schedule.startTime)).div(schedule.frequency);
+                    if (periodNumber > periodCount) {
+                        periodNumber = periodCount;
+                    }
+                    uint256 releasedTokens = schedule.numberOfTokens.mul(periodNumber).div(periodCount);
+                    if (schedule.releasedTokens < releasedTokens) {
+                        schedule.availableTokens = schedule.availableTokens.add(releasedTokens - schedule.releasedTokens);
+                        schedule.releasedTokens = releasedTokens;
+                    }
+                }
+            }
         }
     }
 

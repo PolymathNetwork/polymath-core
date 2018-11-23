@@ -1,7 +1,7 @@
 import {deployGPMAndVerifyed, deployVestingEscrowWalletAndVerifyed, setUpPolymathNetwork} from "./helpers/createInstances";
 import latestTime from "./helpers/latestTime";
 import {duration as durationUtil, latestBlock, promisifyLogWatch} from "./helpers/utils";
-import {catchPermission, catchRevert} from "./helpers/exceptions";
+import {catchRevert} from "./helpers/exceptions";
 import {increaseTime} from "./helpers/time";
 import {encodeModuleCall} from "./helpers/encodeCall";
 
@@ -273,6 +273,14 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
+        it("Should not be able to deposit -- fail because of permissions check", async () => {
+            let numberOfTokens = 25000;
+            await I_SecurityToken.approve(I_VestingEscrowWallet.address, numberOfTokens, { from: token_owner });
+            await catchRevert(
+                I_VestingEscrowWallet.depositTokens(25000, {from: account_beneficiary1})
+            );
+        });
+
         it("Should deposit tokens for new vesting schedules", async () => {
             let numberOfTokens = 25000;
             await I_SecurityToken.approve(I_VestingEscrowWallet.address, numberOfTokens, { from: token_owner });
@@ -285,6 +293,12 @@ contract('VestingEscrowWallet', accounts => {
 
             let balance = await I_SecurityToken.balanceOf.call(I_VestingEscrowWallet.address);
             assert.equal(balance.toNumber(), numberOfTokens);
+        });
+
+        it("Should not be able to withdraw tokens to a treasury -- fail because of permissions check", async () => {
+            await catchRevert(
+                I_VestingEscrowWallet.sendToTreasury({from: account_beneficiary1})
+            );
         });
 
         it("Should withdraw tokens to a treasury", async () => {
@@ -300,7 +314,7 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(balance.toNumber(), 0);
         });
 
-        it("Should send available tokens to the beneficiary address", async () => {
+        it("Should not be able to push available tokens -- fail because of permissions check", async () => {
             let numberOfTokens = 75000;
             let duration = durationUtil.seconds(30);
             let frequency = durationUtil.seconds(10);
@@ -312,6 +326,19 @@ contract('VestingEscrowWallet', accounts => {
             await increaseTime(timeShift + frequency);
             await I_VestingEscrowWallet.updateAll({from: wallet_admin});
 
+            await catchRevert(
+                I_VestingEscrowWallet.pushAvailableTokens(account_beneficiary3, {from: account_beneficiary1})
+            );
+        });
+
+        it("Should not be able update all schedules -- fail because of permissions check", async () => {
+            await catchRevert(
+                I_VestingEscrowWallet.updateAll({from: account_beneficiary1})
+            );
+        });
+
+        it("Should push available tokens to the beneficiary address", async () => {
+            let numberOfTokens = 75000;
             const tx = await I_VestingEscrowWallet.pushAvailableTokens(account_beneficiary3, {from: wallet_admin});
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary3);
             assert.equal(tx.logs[0].args._numberOfTokens.toNumber(), numberOfTokens / 3);
@@ -446,8 +473,6 @@ contract('VestingEscrowWallet', accounts => {
             }
         ];
 
-        //TODO add test for checking pushing during revoking
-
         it("Should fail to add vesting schedule to the beneficiary address -- fail because address in invalid", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.addSchedule(0, 100000, 4, 1, latestTime() + durationUtil.days(1), {from: wallet_admin})
@@ -502,6 +527,19 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
+        it("Should not be able to add schedule -- fail because of permissions check", async () => {
+            let numberOfTokens = schedules[0].numberOfTokens;
+            let duration = schedules[0].duration;
+            let frequency = schedules[0].frequency;
+            let startTime = schedules[0].startTime;
+            await I_SecurityToken.approve(I_VestingEscrowWallet.address, numberOfTokens, {from: token_owner});
+            await I_VestingEscrowWallet.depositTokens(numberOfTokens, {from: wallet_admin});
+            await catchRevert(
+                I_VestingEscrowWallet.addSchedule(account_beneficiary1, numberOfTokens, duration, frequency, startTime, {from: account_beneficiary1})
+            );
+            await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
+        });
+
         it("Should add vesting schedule to the beneficiary address", async () => {
             let numberOfTokens = schedules[0].numberOfTokens;
             let duration = schedules[0].duration;
@@ -551,6 +589,12 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
+        it("Should not be able to modify schedule -- fail because of permissions check", async () => {
+            await catchRevert(
+                I_VestingEscrowWallet.modifySchedule(account_beneficiary1, 0, 10000, 4, 1, latestTime() + 100, {from: account_beneficiary1})
+            );
+        });
+
         it("Should modify vesting schedule for the beneficiary's address", async () => {
             let numberOfTokens = schedules[1].numberOfTokens;
             let duration = schedules[1].duration;
@@ -591,6 +635,12 @@ contract('VestingEscrowWallet', accounts => {
 
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
             assert.equal(unassignedTokens.toNumber(), 0);
+        });
+
+        it("Should not be able to revoke schedule -- fail because of permissions check", async () => {
+            await catchRevert(
+                I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, 0, {from: account_beneficiary1})
+            );
         });
 
         it("Should revoke vesting schedule from the beneficiary address", async () => {
@@ -641,6 +691,12 @@ contract('VestingEscrowWallet', accounts => {
                 let schedule = await I_VestingEscrowWallet.getSchedule.call(account_beneficiary2, i);
                 checkSchedule(schedule, numberOfTokens, duration, frequency, startTime, CREATED);
             }
+        });
+
+        it("Should not be able to revoke schedules -- fail because of permissions check", async () => {
+            await catchRevert(
+                I_VestingEscrowWallet.revokeSchedules(account_beneficiary1, {from: account_beneficiary1})
+            );
         });
 
         it("Should revoke vesting schedule from the beneficiary address", async () => {
@@ -749,6 +805,12 @@ contract('VestingEscrowWallet', accounts => {
             }
         ];
 
+        it("Should not be able to add template -- fail because of permissions check", async () => {
+            await catchRevert(
+                I_VestingEscrowWallet.addTemplate(25000, 4, 1, {from: account_beneficiary1})
+            );
+        });
+
         it("Should add 3 Templates", async () => {
             for (let i = 0; i < schedules.length; i++) {
                 let numberOfTokens = schedules[i].numberOfTokens;
@@ -762,6 +824,12 @@ contract('VestingEscrowWallet', accounts => {
             }
         });
 
+        it("Should not be able to remove template -- fail because of permissions check", async () => {
+            await catchRevert(
+                I_VestingEscrowWallet.removeTemplate(1, {from: account_beneficiary1})
+            );
+        });
+
         it("Should remove template", async () => {
             const tx = await I_VestingEscrowWallet.removeTemplate(1, {from: wallet_admin});
 
@@ -772,6 +840,12 @@ contract('VestingEscrowWallet', accounts => {
             let startTime = schedules[2].startTime;
             await catchRevert(
                 I_VestingEscrowWallet.addScheduleFromTemplate(account_beneficiary1, 1, startTime, {from: wallet_admin})
+            );
+        });
+
+        it("Should not be able to add schedule from template -- fail because of permissions check", async () => {
+            await catchRevert(
+                I_VestingEscrowWallet.addScheduleFromTemplate(account_beneficiary1, 0, latestTime(), {from: account_beneficiary1})
             );
         });
 
@@ -814,6 +888,12 @@ contract('VestingEscrowWallet', accounts => {
 
     describe("Tests for multi operations", async () => {
 
+        it("Should not be able to add schedules to the beneficiaries -- fail because of permissions check", async () => {
+            await catchRevert(
+                I_VestingEscrowWallet.addScheduleMulti([account_beneficiary1], 10000, 4, 1, latestTime() + 100, {from: account_beneficiary1})
+            );
+        });
+
         it("Should add schedules for 3 beneficiaries", async () => {
             let numberOfTokens = 30000;
             let duration = durationUtil.weeks(4);
@@ -852,6 +932,19 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
+        it("Should not be able to modify schedules for the beneficiaries -- fail because of permissions check", async () => {
+            let numberOfTokens = 25000;
+            let duration = durationUtil.seconds(50);
+            let frequency = durationUtil.seconds(10);
+            let timeShift = durationUtil.seconds(100);
+            let startTime = latestTime() + timeShift;
+
+            let indexes = [0, 0, 0];
+            await catchRevert(
+                I_VestingEscrowWallet.modifyScheduleMulti(beneficiaries, indexes, numberOfTokens, duration, frequency, startTime, {from: account_beneficiary1})
+            );
+        });
+
         it("Should modify vesting schedule for 3 beneficiary's addresses", async () => {
             let numberOfTokens = 25000;
             let duration = durationUtil.seconds(50);
@@ -885,6 +978,12 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
+        it("Should not be able to send available tokens to the beneficiaries -- fail because of permissions check", async () => {
+            await catchRevert(
+                I_VestingEscrowWallet.pushAvailableTokensMulti([account_beneficiary1], {from: account_beneficiary1})
+            );
+        });
+
         it("Should send available tokens to the beneficiaries addresses", async () => {
             await I_VestingEscrowWallet.updateAll({from: wallet_admin});
 
@@ -903,6 +1002,22 @@ contract('VestingEscrowWallet', accounts => {
                 await I_VestingEscrowWallet.revokeSchedules(beneficiary, {from: wallet_admin});
                 await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
             }
+        });
+
+        it("Should not be able to add schedules from template to the beneficiaries -- fail because of permissions check", async () => {
+            let numberOfTokens = 18000;
+            let duration = durationUtil.weeks(3);
+            let frequency = durationUtil.weeks(1);
+            let startTime = latestTime() + durationUtil.seconds(100);
+
+            let totalNumberOfTokens = numberOfTokens * 3;
+            await I_SecurityToken.approve(I_VestingEscrowWallet.address, totalNumberOfTokens, {from: token_owner});
+            await I_VestingEscrowWallet.depositTokens(totalNumberOfTokens, {from: wallet_admin});
+            await I_VestingEscrowWallet.addTemplate(numberOfTokens, duration, frequency, {from: wallet_admin});
+
+            await catchRevert(
+                I_VestingEscrowWallet.addScheduleFromTemplateMulti([account_beneficiary1, account_beneficiary2], 0, startTime, {from: account_beneficiary1})
+            );
         });
 
         it("Should add schedules from template for 3 beneficiaries", async () => {
@@ -933,6 +1048,12 @@ contract('VestingEscrowWallet', accounts => {
 
         });
 
+        it("Should not be able to revoke schedules of the beneficiaries -- fail because of permissions check", async () => {
+            await catchRevert(
+                I_VestingEscrowWallet.revokeSchedulesMulti([account_beneficiary1], {from: account_beneficiary1})
+            );
+        });
+
         it("Should revoke vesting schedule from the 3 beneficiary's addresses", async () => {
             const tx = await I_VestingEscrowWallet.revokeSchedulesMulti(beneficiaries, {from: wallet_admin});
 
@@ -946,106 +1067,6 @@ contract('VestingEscrowWallet', accounts => {
             }
 
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
-        });
-
-    });
-
-    describe("Check permissions", async () => {
-
-        it("Should not be able to deposit", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.depositTokens(25000, {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to withdraw tokens to a treasury", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.sendToTreasury({from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to send available tokens", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.pushAvailableTokens(account_beneficiary3, {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to add template", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.addTemplate(25000, 4, 1, {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to remove template", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.removeTemplate(0, {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to add schedule", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.addSchedule(account_beneficiary1, 10000, 4, 1, latestTime(), {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to add schedule from template", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.addScheduleFromTemplate(account_beneficiary1, 0, latestTime(), {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to modify schedule", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.modifySchedule(account_beneficiary1, 0, 10000, 4, 1, latestTime(), {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to revoke schedule", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, 0, {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to revoke schedules", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.revokeSchedules(account_beneficiary1, {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to send available tokens to the beneficiaries", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.pushAvailableTokensMulti([account_beneficiary1], {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to add schedules to the beneficiaries", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.addScheduleMulti([account_beneficiary1], 10000, 4, 1, latestTime(), {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to add schedules from template to the beneficiaries", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.addScheduleFromTemplateMulti([account_beneficiary1], 0, latestTime(), {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to revoke schedules of the beneficiaries", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.revokeSchedulesMulti([account_beneficiary1], {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able to modify schedules for the beneficiaries", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.modifyScheduleMulti([account_beneficiary1], [0], 10000, 4, 1, latestTime(), {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able update all schedules", async () => {
-            await catchPermission(
-                I_VestingEscrowWallet.updateAll({from: account_beneficiary1})
-            );
         });
 
     });

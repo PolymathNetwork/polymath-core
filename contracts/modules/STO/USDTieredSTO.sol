@@ -620,7 +620,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
         if (investedUSD > 0 && 
             tierData.tokenTotal.sub(tierData.mintedTotal) > 0 &&
-            tierData.tokensDiscountPoly == tierData.mintedDiscountPoly
+            (_fundRaiseType != FundRaiseType.POLY || tierData.tokensDiscountPoly <= tierData.mintedDiscountPoly)
         ) {
             (tierSpentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTier(_beneficiary, tierData.rate, tierData.tokenTotal.sub(tierData.mintedTotal), investedUSD, _tier);
             spentUSD = spentUSD.add(tierSpentUSD);
@@ -655,7 +655,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
         if (_investedUSD > 0 && 
             tierData.tokenTotal.sub(tierData.mintedTotal.add(tokensMinted)) > 0 &&
-            tierData.tokensDiscountPoly == tierData.mintedDiscountPoly
+            (_fundRaiseType != FundRaiseType.POLY || tierData.tokensDiscountPoly <= tierData.mintedDiscountPoly)
         ) {
             (tierSpentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTierAmount(tierData.rate, tierData.tokenTotal.sub(tierData.mintedTotal), _investedUSD);
             spentUSD = spentUSD.add(tierSpentUSD);

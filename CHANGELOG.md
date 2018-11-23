@@ -1,6 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# v3.0.0
+
+[__3.0.0__]
+
+## Changed
+* Changed the first three params in Security Token `event ModuleAdded()` to be indexed for search. Params are `unit8[] types`, `bytes32 _name` and `address _moduleFactory`
+
+======
+
 # v1.5.0 - Release Candidate
 
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__

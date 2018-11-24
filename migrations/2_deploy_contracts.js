@@ -2,7 +2,6 @@ const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
-const SingleTradeVolumeRestrictionTMFactory = artifacts.require('./SingleTradeVolumeRestrictionTMFactory.sol')
 const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.sol');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
@@ -159,10 +158,6 @@ module.exports = function (deployer, network, accounts) {
     // to track the counts of the investors of the security token)
     return deployer.deploy(CountTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
   }).then(() => {
-    // D) Deploy the SingleTradeVolumeRestrictionTMFactory Contract (Factory used to generate the SingleTradeVolumeRestrictionTM contract use
-    // to impose volume restriction on a single trade that the investors could do for a particular security token)
-    return deployer.deploy(SingleTradeVolumeRestrictionTMFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
-  }).then(() => {
     // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
     // to track the percentage of investment the investors could do for a particular security token)
     return deployer.deploy(PercentageTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
@@ -201,10 +196,6 @@ module.exports = function (deployer, network, accounts) {
   }).then(() => {
     // Update all addresses into the registry contract by calling the function updateFromregistry
     return moduleRegistry.updateFromRegistry({from: PolymathAccount});
-  }).then(() => {
-    // D) Register the SingleTradeVolumeRestrictionTMFactory in the ModuleRegistry to make the factory available at the protocol level.
-    // So any securityToken can use that factory to generate the SingleTradeVolumeRestrictionTM contract.
-    return moduleRegistry.registerModule(SingleTradeVolumeRestrictionTMFactory.address, {from: PolymathAccount});
   }).then(() => {
     // D) Register the PercentageTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the PercentageTransferManager contract.
@@ -248,11 +239,6 @@ module.exports = function (deployer, network, accounts) {
     // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
     // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
     return moduleRegistry.verifyModule(PercentageTransferManagerFactory.address, true, {from: PolymathAccount});
-  }).then(() => {
-    // G) Once the SingleTradeVolumeRestrictionTMFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
-    // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
-    // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-    return moduleRegistry.verifyModule(SingleTradeVolumeRestrictionTMFactory.address, true, {from: PolymathAccount});
   }).then(() => {
     // G) Once the GeneralPermissionManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
     // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
@@ -308,28 +294,27 @@ module.exports = function (deployer, network, accounts) {
     console.log('\n');
     console.log(`
     ----------------------- Polymath Network Smart Contracts: -----------------------
-    PolymathRegistry:                      ${PolymathRegistry.address}
-    SecurityTokenRegistry (Proxy):         ${SecurityTokenRegistryProxy.address}
-    ModuleRegistry (Proxy):                ${ModuleRegistryProxy.address}
-    FeatureRegistry:                       ${FeatureRegistry.address}
+    PolymathRegistry:                     ${PolymathRegistry.address}
+    SecurityTokenRegistry (Proxy):        ${SecurityTokenRegistryProxy.address}
+    ModuleRegistry (Proxy):               ${ModuleRegistryProxy.address}
+    FeatureRegistry:                      ${FeatureRegistry.address}
 
-    ETHOracle:                             ${ETHOracle}
-    POLYOracle:                            ${POLYOracle}
+    ETHOracle:                            ${ETHOracle}
+    POLYOracle:                           ${POLYOracle}
 
-    STFactory:                             ${STFactory.address}
-    GeneralTransferManagerFactory:         ${GeneralTransferManagerFactory.address}
-    GeneralPermissionManagerFactory:       ${GeneralPermissionManagerFactory.address}
-    
-    CappedSTOFactory:                      ${CappedSTOFactory.address}
-    USDTieredSTOFactory:                   ${USDTieredSTOFactory.address}
-    USDTieredSTOProxyFactory:              ${USDTieredSTOProxyFactory.address}
+    STFactory:                            ${STFactory.address}
+    GeneralTransferManagerFactory:        ${GeneralTransferManagerFactory.address}
+    GeneralPermissionManagerFactory:      ${GeneralPermissionManagerFactory.address}
 
-    CountTransferManagerFactory:           ${CountTransferManagerFactory.address}
-    PercentageTransferManagerFactory:      ${PercentageTransferManagerFactory.address}
-    ManualApprovalTransferManagerFactory:  ${ManualApprovalTransferManagerFactory.address}
-    SingleTradeVolumeRestrictionTMFactory: ${SingleTradeVolumeRestrictionTMFactory.address}
-    EtherDividendCheckpointFactory:        ${EtherDividendCheckpointFactory.address}
-    ERC20DividendCheckpointFactory:        ${ERC20DividendCheckpointFactory.address}
+    CappedSTOFactory:                     ${CappedSTOFactory.address}
+    USDTieredSTOFactory:                  ${USDTieredSTOFactory.address}
+    USDTieredSTOProxyFactory:             ${USDTieredSTOProxyFactory.address}
+
+    CountTransferManagerFactory:          ${CountTransferManagerFactory.address}
+    PercentageTransferManagerFactory:     ${PercentageTransferManagerFactory.address}
+    ManualApprovalTransferManagerFactory: ${ManualApprovalTransferManagerFactory.address}
+    EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
+    ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
     ---------------------------------------------------------------------------------
     `);
     console.log('\n');

@@ -11,7 +11,7 @@ module.exports = {
       host: 'localhost',
       port: 8545,
       network_id: '*', // Match any network id
-      gas: 7900000,
+      gas: 9000000,
     },
     mainnet: {
       host: 'localhost',

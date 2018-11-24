@@ -82,7 +82,9 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
     let b = await deployFeatureRegistry(account_polymath);
     // STEP 3: Deploy the ModuleRegistry
     let c = await deployModuleRegistry(account_polymath);
-    // STEP 4: Deploy the GeneralTransferManagerFactory
+    // STEP 4a: Deploy the GeneralTransferManagerFactory
+    let logic = await deployGTMLogic(account_polymath);
+    // STEP 4b: Deploy the GeneralTransferManagerFactory
     let d = await deployGTM(account_polymath);
     // Step 6: Deploy the STversionProxy contract
     let e = await deploySTFactory(account_polymath);
@@ -127,8 +129,20 @@ async function deployModuleRegistry(account_polymath) {
     return new Array(I_ModuleRegistry, I_ModuleRegistryProxy, I_MRProxied);
 }
 
+async function deployGTMLogic(account_polymath) {
+    I_GeneralTransferManagerLogic = await GeneralTransferManager.new({ from: account_polymath });
+
+    assert.notEqual(
+        I_GeneralTransferManagerLogic.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "GeneralTransferManagerLogic contract was not deployed"
+    );
+
+    return new Array(I_GeneralTransferManagerLogic);
+}
+
 async function deployGTM(account_polymath) {
-    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
+    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, I_GeneralTransferManagerLogic.address, { from: account_polymath });
 
     assert.notEqual(
         I_GeneralTransferManagerFactory.address.valueOf(),
@@ -193,7 +207,7 @@ async function registerAndVerifyByMR(factoryAdrress, owner, mr) {
 /// Deploy the TransferManagers
 
 export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
-    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(polyToken, setupCost, 0, 0, I_GeneralTransferManagerLogic.address, { from: accountPolymath });
 
     assert.notEqual(
         I_GeneralPermissionManagerFactory.address.valueOf(),

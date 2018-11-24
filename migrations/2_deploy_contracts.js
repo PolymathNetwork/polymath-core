@@ -1,5 +1,6 @@
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol')
+const GeneralTransferManagerLogic = artifacts.require('./GeneralTransferManager.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
 const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.sol');
@@ -146,9 +147,14 @@ module.exports = function (deployer, network, accounts) {
     // Add module registry to polymath registry
     return polymathRegistry.changeAddress("ModuleRegistry", ModuleRegistryProxy.address, {from: PolymathAccount});
   }).then(() => {
+    console.log("deployinglogic")
+    // B) Deploy the GeneralTransferManagerLogic Contract (Factory used to generate the GeneralTransferManager contract and this
+    // manager attach with the securityToken contract at the time of deployment)
+    return deployer.deploy(GeneralTransferManagerLogic, {from: PolymathAccount});
+  }).then(() => {
     // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(GeneralTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    return deployer.deploy(GeneralTransferManagerFactory, PolyToken, 0, 0, 0, GeneralTransferManagerLogic.address, {from: PolymathAccount});
   }).then(() => {
     // C) Deploy the GeneralPermissionManagerFactory Contract (Factory used to generate the GeneralPermissionManager contract and
     // this manager attach with the securityToken contract at the time of deployment)

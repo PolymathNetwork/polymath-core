@@ -197,6 +197,28 @@ contract("GeneralTransferManager", accounts => {
             assert.equal(tx.logs[1].args._investor, account_affiliates2);
         });
 
+        it("Should whitelist lots of addresses and check gas", async () => {
+            let mockInvestors = [];
+            for (let i = 0; i < 50; i++) {
+                mockInvestors.push("0x0000000000000000000000000000000000000000".substring(0,42-i.toString().length) + i.toString());
+            }
+
+            let times = range1(50);
+            let bools = rangeB(50);
+            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
+                mockInvestors,
+                times,
+                times,
+                times,
+                bools,
+                {
+                    from: account_issuer,
+                    gas: 7900000
+                }
+            );
+            console.log("Multi Whitelist x 50: " + tx.receipt.gasUsed);
+        });
+
         it("Should mint the tokens to the affiliates", async () => {
             await I_SecurityToken.mintMulti([account_affiliates1, account_affiliates2], [100 * Math.pow(10, 18), 100 * Math.pow(10, 18)], {
                 from: account_issuer,
@@ -836,3 +858,6 @@ contract("GeneralTransferManager", accounts => {
         })
     });
 });
+
+function range1(i) {return i?range1(i-1).concat(i):[]}
+function rangeB(i) {return i?rangeB(i-1).concat(0):[]}

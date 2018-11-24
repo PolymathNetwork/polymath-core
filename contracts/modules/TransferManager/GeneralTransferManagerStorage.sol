@@ -27,7 +27,7 @@ contract GeneralTransferManagerStorage {
 
     // Allows all TimeRestrictions to be offset
     struct Offset {
-        uint64 offset;
+        uint64 time;
         uint8 isForward;
     }
 

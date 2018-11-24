@@ -8,7 +8,7 @@ import "../modules/ModuleStorage.sol";
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
-contract GeneralTransferManagerProxy is ModuleStorage, Pausable, GeneralTransferManagerStorage, Proxy {
+contract GeneralTransferManagerProxy is GeneralTransferManagerStorage, ModuleStorage, Pausable, Proxy {
 
     // Address of the current implementation
     address internal __implementation;

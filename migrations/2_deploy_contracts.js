@@ -147,10 +147,9 @@ module.exports = function (deployer, network, accounts) {
     // Add module registry to polymath registry
     return polymathRegistry.changeAddress("ModuleRegistry", ModuleRegistryProxy.address, {from: PolymathAccount});
   }).then(() => {
-    console.log("deployinglogic")
     // B) Deploy the GeneralTransferManagerLogic Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(GeneralTransferManagerLogic, {from: PolymathAccount});
+    return deployer.deploy(GeneralTransferManagerLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
   }).then(() => {
     // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
@@ -309,6 +308,7 @@ module.exports = function (deployer, network, accounts) {
     POLYOracle:                           ${POLYOracle}
 
     STFactory:                            ${STFactory.address}
+    GeneralTransferManagerLogic:          ${GeneralTransferManagerLogic.address}
     GeneralTransferManagerFactory:        ${GeneralTransferManagerFactory.address}
     GeneralPermissionManagerFactory:      ${GeneralPermissionManagerFactory.address}
 

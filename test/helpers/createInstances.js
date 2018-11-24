@@ -20,6 +20,7 @@ const USDTieredSTOProxyFactory = artifacts.require("./USDTieredSTOProxyFactory")
 const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
 const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
 const STFactory = artifacts.require("./STFactory.sol");
+const GeneralTransferManager = artifacts.require("./GeneralTransferManager.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
@@ -49,6 +50,7 @@ let I_EtherDividendCheckpointFactory;
 let I_CountTransferManagerFactory;
 let I_ERC20DividendCheckpointFactory;
 let I_GeneralPermissionManagerFactory;
+let I_GeneralTransferManagerLogic;
 let I_GeneralTransferManagerFactory;
 let I_GeneralTransferManager;
 let I_ModuleRegistryProxy;
@@ -130,7 +132,7 @@ async function deployModuleRegistry(account_polymath) {
 }
 
 async function deployGTMLogic(account_polymath) {
-    I_GeneralTransferManagerLogic = await GeneralTransferManager.new({ from: account_polymath });
+    I_GeneralTransferManagerLogic = await GeneralTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
 
     assert.notEqual(
         I_GeneralTransferManagerLogic.address.valueOf(),

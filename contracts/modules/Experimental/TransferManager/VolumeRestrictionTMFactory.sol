@@ -30,10 +30,10 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
-        address VolumeRestrictionTransferManager = new VolumeRestrictionTM(msg.sender, address(polyToken));
+        address volumeRestrictionTransferManager = new VolumeRestrictionTM(msg.sender, address(polyToken));
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(VolumeRestrictionTransferManager), getName(), address(this), msg.sender, setupCost, now);
-        return address(VolumeRestrictionTransferManager);
+        emit GenerateModuleFromFactory(volumeRestrictionTransferManager, getName(), address(this), msg.sender, setupCost, now);
+        return volumeRestrictionTransferManager;
     }
 
 
@@ -51,17 +51,18 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
      */
     function getInstructions() external view returns(string) {
         /*solium-disable-next-line max-len*/
-        return "";   /// TODO - need to add the Instruction for module
+        return "Module used to restrict the volume of tokens traded by the token holders";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
     function getTags() public view returns(bytes32[]) {
-        bytes32[] memory availableTags = new bytes32[](2);
+        bytes32[] memory availableTags = new bytes32[](3);
         availableTags[0] = "Maximum Volume";
         availableTags[1] = "Transfer Restriction";
         availableTags[2] = "Daily Restriction";
+        availableTags[3] = "Individual Restriction";
         return availableTags;
     }
 

@@ -174,7 +174,7 @@ contract VolumeRestrictionTM is ITransferManager {
         uint256 _endTime,
         uint256 _restrictionType 
     )
-        public
+        external
         withPerm(ADMIN)
     {
         _addIndividualRestriction(
@@ -366,7 +366,7 @@ contract VolumeRestrictionTM is ITransferManager {
         uint256 _endTime,
         uint256 _restrictionType 
     )
-        public
+        external
         withPerm(ADMIN)
     {
         _modifyIndividualRestriction(

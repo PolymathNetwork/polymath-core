@@ -132,7 +132,7 @@ contract VolumeRestrictionTM is ITransferManager {
         // If `_from` is present in the exemptionList or it is `0x0` address then it will not follow the vol restriction
         if (!paused && _from != address(0) && !exemptList[_from]) {
             // Function must only be called by the associated security token if _isTransfer == true
-            require(msg.sender == securityToken || !_isTransfer, "Sender is not the owner");
+            require(msg.sender == securityToken || !_isTransfer);
             // Checking the individual restriction if the `_from` comes in the individual category 
             if (individualRestriction[_from].endTime >= now && individualRestriction[_from].startTime <= now) {
                 return _individualRestrictionCheck(_from, _amount, _isTransfer);
@@ -150,7 +150,7 @@ contract VolumeRestrictionTM is ITransferManager {
      * @param _change Boolean value used to add (i.e true) or remove (i.e false) from the list 
      */
     function changeExemptWalletList(address _wallet, bool _change) public withPerm(ADMIN) {
-        require(_wallet != address(0), "0x0 address not allowed");
+        require(_wallet != address(0), "Invalid address");
         exemptList[_wallet] = _change;
         emit ChangedExemptWalletList(_wallet, _change);
     }
@@ -211,7 +211,7 @@ contract VolumeRestrictionTM is ITransferManager {
         withPerm(ADMIN)
     {
         _checkLengthOfArray(_allowedTokens, _allowedPercentageOfTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
-        require(_holders.length == _allowedTokens.length, "Array length mismatch");
+        require(_holders.length == _allowedTokens.length, "Length mismatch");
         for (uint256 i = 0; i < _holders.length; i++) {
             _addIndividualRestriction(
                 _holders[i],
@@ -247,7 +247,7 @@ contract VolumeRestrictionTM is ITransferManager {
     {   
         require(
             globalRestriction.endTime == 0 || globalRestriction.endTime > now,
-            "Restriction already present"
+            "Not allowed"
         );
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
         globalRestriction = VolumeRestriction(
@@ -288,7 +288,7 @@ contract VolumeRestrictionTM is ITransferManager {
     {   
         require(
             dailyGlobalRestriction.endTime == 0 || dailyGlobalRestriction.endTime > now,
-            "Restriction already present"
+            "Not Allowed"
         );
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, 1, _endTime, _restrictionType);
         dailyGlobalRestriction = VolumeRestriction(
@@ -403,7 +403,7 @@ contract VolumeRestrictionTM is ITransferManager {
         withPerm(ADMIN)
     {
         _checkLengthOfArray(_allowedTokens, _allowedPercentageOfTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
-        require(_holders.length == _allowedTokens.length, "Array length mismatch");
+        require(_holders.length == _allowedTokens.length, "Length mismatch");
         for (uint256 i = 0; i < _holders.length; i++) {
             _modifyIndividualRestriction(
                 _holders[i],
@@ -437,7 +437,7 @@ contract VolumeRestrictionTM is ITransferManager {
         external
         withPerm(ADMIN)
     {   
-        require(globalRestriction.startTime > now, "Not allowed to modify");    
+        require(globalRestriction.startTime > now, "Not allowed");    
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
         globalRestriction = VolumeRestriction(
             _allowedTokens,
@@ -477,7 +477,7 @@ contract VolumeRestrictionTM is ITransferManager {
         external
         withPerm(ADMIN)
     {   
-        require(dailyGlobalRestriction.startTime > now, "Not allowed to modify");    
+        require(dailyGlobalRestriction.startTime > now, "Not allowed");    
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
         dailyGlobalRestriction = VolumeRestriction(
             _allowedTokens,

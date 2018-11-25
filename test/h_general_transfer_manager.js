@@ -411,52 +411,60 @@ contract("GeneralTransferManager", accounts => {
     });
 
 
-    // describe("Buy tokens using on-chain whitelist and positive offset", async () => {
-    //     // let snap_id;
-    //
-    //     it("Should Buy the tokens", async () => {
-    //
-    //         // Add the Investor in to the whitelist
-    //         // snap_id = await takeSnapshot();
-    //         let tx = await I_GeneralTransferManager.modifyWhitelist(
-    //             account_investor1,
-    //             latestTime(),
-    //             latestTime(),
-    //             latestTime(),
-    //             1,
-    //             {
-    //                 from: account_issuer,
-    //                 gas: 6000000
-    //             }
-    //         );
-    //
-    //         assert.equal(
-    //             tx.logs[0].args._investor.toLowerCase(),
-    //             account_investor1.toLowerCase(),
-    //             "Failed in adding the investor in whitelist"
-    //         );
-    //
-    //         // Jump time
-    //         await increaseTime(5000);
-    //
-    //         // Mint some tokens
-    //         console.log(await I_GeneralTransferManager.offset.call());
-    //         await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
-    //
-    //         assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("4", "ether"));
-    //         await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor1});
-    //     });
-    //
-    //     it("Add an offset and check transfers are disabled", async () => {
-    //         let tx = await I_GeneralTransferManager.modifyOffset(duration.days(10), 1, {from: token_owner});
-    //         await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor1}));
-    //         await increaseTime(duration.days(10));
-    //         await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor1});
-    //         tx = await I_GeneralTransferManager.modifyOffset(0, 0, {from: token_owner});
-    //         // await revertToSnapshot(snap_id);
-    //     });
-    //
-    // });
+    describe("Buy tokens using on-chain whitelist and positive offset", async () => {
+        // let snap_id;
+
+        it("Should Buy the tokens", async () => {
+
+            // Add the Investor in to the whitelist
+            // snap_id = await takeSnapshot();
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor1,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(20),
+                1,
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                }
+            );
+
+            assert.equal(
+                tx.logs[0].args._investor.toLowerCase(),
+                account_investor1.toLowerCase(),
+                "Failed in adding the investor in whitelist"
+            );
+
+            // Jump time
+            await increaseTime(5000);
+            // console.log("vT1: " + JSON.stringify(await I_GeneralTransferManager.verifyTransfer.call(account_investor1, account_investor1, web3.utils.toWei("1", "ether"), "", false)));
+            // console.log("vT2: " + JSON.stringify(await I_GeneralTransferManager.verifyTransfer.call("0x0000000000000000000000000000000000000000", account_investor1, web3.utils.toWei("1", "ether"), "", false)));
+
+            // Mint some tokens
+            console.log(await I_GeneralTransferManager.offset.call());
+            await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
+
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("4", "ether"));
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor1});
+        });
+
+        it("Add an offset and check transfers are disabled", async () => {
+            let tx = await I_GeneralTransferManager.modifyOffset(duration.days(10), 1, {from: token_owner});
+            // console.log("vT1: " + JSON.stringify(await I_GeneralTransferManager.verifyTransfer.call(account_investor1, account_investor1, web3.utils.toWei("1", "ether"), "", false)));
+            // console.log("vT2: " + JSON.stringify(await I_GeneralTransferManager.verifyTransfer.call("0x0000000000000000000000000000000000000000", account_investor1, web3.utils.toWei("1", "ether"), "", false)));
+
+            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor1}));
+            await increaseTime(duration.days(10));
+            // console.log("vT1: " + JSON.stringify(await I_GeneralTransferManager.verifyTransfer.call(account_investor1, account_investor1, web3.utils.toWei("1", "ether"), "", false)));
+            // console.log("vT2: " + JSON.stringify(await I_GeneralTransferManager.verifyTransfer.call("0x0000000000000000000000000000000000000000", account_investor1, web3.utils.toWei("1", "ether"), "", false)));
+
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor1});
+            tx = await I_GeneralTransferManager.modifyOffset(0, 0, {from: token_owner});
+            // await revertToSnapshot(snap_id);
+        });
+
+    });
 
     describe("Buy tokens using off-chain whitelist", async () => {
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {

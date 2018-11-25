@@ -232,7 +232,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         uint8[] memory moduleTypes = moduleFactory.getTypes();
-        uint256 moduleCost = moduleFactory.getSetupCost();
+        uint256 moduleCost = moduleFactory.getSetupCostInPoly();
         require(moduleCost <= _maxCost, "Invalid cost");
         //Approve fee for module
         ERC20(polyToken).approve(_moduleFactory, moduleCost);

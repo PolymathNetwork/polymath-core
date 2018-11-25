@@ -14,8 +14,8 @@ contract MockWrongTypeFactory is MockBurnFactory {
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      MockBurnFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _polymathRegistry) public
+      MockBurnFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost, _polymathRegistry)
     {
     }
 

@@ -13,8 +13,8 @@ contract PercentageTransferManagerFactory is ModuleFactory {
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _polymathRegistry) public
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost, _polymathRegistry)
     {
         version = "1.0.0";
         name = "PercentageTransferManager";
@@ -30,14 +30,13 @@ contract PercentageTransferManagerFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+        _takeSetupCost();
         PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender, address(polyToken));
         require(Util.getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
         /*solium-disable-next-line security/no-low-level-calls*/
         require(address(percentageTransferManager).call(_data), "Unsuccessful call");
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(percentageTransferManager), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(percentageTransferManager), getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
         return address(percentageTransferManager);
 
     }

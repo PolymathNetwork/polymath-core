@@ -15,8 +15,8 @@ contract TrackedRedemptionFactory is ModuleFactory {
      * @param _usageCost Usage cost of module
      * @param _subscriptionCost Monthly cost of module
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _polymathRegistry) public
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost, _polymathRegistry)
     {
         version = "1.0.0";
         name = "TrackedRedemption";
@@ -31,11 +31,10 @@ contract TrackedRedemptionFactory is ModuleFactory {
      * @return Address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
-        if (setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Insufficent allowance or balance");
+        _takeSetupCost();
         address trackedRedemption = new TrackedRedemption(msg.sender, address(polyToken));
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(trackedRedemption), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(trackedRedemption), getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
         return address(trackedRedemption);
     }
 

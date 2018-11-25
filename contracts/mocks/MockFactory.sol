@@ -13,8 +13,8 @@ contract MockFactory is DummySTOFactory {
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      DummySTOFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _polymathRegistry) public
+      DummySTOFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost, _polymathRegistry)
     {
 
     }
@@ -32,7 +32,7 @@ contract MockFactory is DummySTOFactory {
             res[1] = 1;
             return res;
         }
-        
+
     }
 
     function changeTypes() external onlyOwner {

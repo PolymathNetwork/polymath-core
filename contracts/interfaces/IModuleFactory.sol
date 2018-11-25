@@ -13,7 +13,8 @@ interface IModuleFactory {
         bytes32 indexed _moduleName,
         address indexed _moduleFactory,
         address _creator,
-        uint256 _setupCost,
+        uint256 _setupCostInPoly,
+        uint256 _setupCostInUSD,
         uint256 _timestamp
     );
     event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
@@ -70,6 +71,11 @@ interface IModuleFactory {
      * @notice Get the setup cost of the module
      */
     function getSetupCost() external view returns (uint256);
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCostInPoly() external view returns (uint256);
 
     /**
      * @notice Used to get the lower bound

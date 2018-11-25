@@ -15,8 +15,8 @@ contract ScheduledCheckpointFactory is ModuleFactory {
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _polymathRegistry) public
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost, _polymathRegistry)
     {
         version = "1.0.0";
         name = "ScheduledCheckpoint";
@@ -31,10 +31,9 @@ contract ScheduledCheckpointFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
-        if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+        _takeSetupCost();
         address scheduledCheckpoint = new ScheduledCheckpoint(msg.sender, address(polyToken));
-        emit GenerateModuleFromFactory(scheduledCheckpoint, getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(scheduledCheckpoint, getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
         return scheduledCheckpoint;
     }
 
@@ -47,42 +46,7 @@ contract ScheduledCheckpointFactory is ModuleFactory {
         res[1] = 2;
         return res;
     }
-
-    /**
-     * @notice Get the name of the Module
-     */
-    function getName() public view returns(bytes32) {
-        return name;
-    }
-
-    /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() external view returns(string) {
-        return description;
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() external  view returns(string) {
-        return title;
-    }
-
-    /**
-     * @notice Get the version of the Module
-     */
-    function getVersion() external view returns(string) {
-        return version;
-    }
-
-    /**
-     * @notice Get the setup cost of the module
-     */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
-    }
-
+    
     /**
      * @notice Get the Instructions that helped to used the module
      */

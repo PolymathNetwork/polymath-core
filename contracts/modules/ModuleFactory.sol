@@ -2,8 +2,11 @@ pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IModuleFactory.sol";
+import "../interfaces/IOracle.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "../libraries/VersionUtils.sol";
+import "../PolymathRegistry.sol";
+import "../libraries/DecimalMath.sol";
 
 /**
  * @title Interface that any module factory contract should implement
@@ -14,6 +17,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     IERC20 public polyToken;
     uint256 public usageCost;
     uint256 public monthlySubscriptionCost;
+    address public polymathRegistry;
 
     uint256 public setupCost;
     string public description;
@@ -21,34 +25,25 @@ contract ModuleFactory is IModuleFactory, Ownable {
     bytes32 public name;
     string public title;
 
+    string constant POLY_ORACLE = "PolyUsdOracle";
+
     // @notice Allow only two variables to be stored
-    // 1. lowerBound 
+    // 1. lowerBound
     // 2. upperBound
-    // @dev (0.0.0 will act as the wildcard) 
+    // @dev (0.0.0 will act as the wildcard)
     // @dev uint24 consists packed value of uint8 _major, uint8 _minor, uint8 _patch
     mapping(string => uint24) compatibleSTVersionRange;
-
-    event ChangeFactorySetupFee(uint256 _oldSetupCost, uint256 _newSetupCost, address _moduleFactory);
-    event ChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
-    event ChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
-    event GenerateModuleFromFactory(
-        address _module,
-        bytes32 indexed _moduleName,
-        address indexed _moduleFactory,
-        address _creator,
-        uint256 _timestamp
-    );
-    event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public {
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _polymathRegistry) public {
         polyToken = IERC20(_polyAddress);
         setupCost = _setupCost;
         usageCost = _usageCost;
         monthlySubscriptionCost = _subscriptionCost;
+        polymathRegistry = _polymathRegistry;
     }
 
     /**
@@ -127,7 +122,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
             "Must be a valid bound type"
         );
         require(_newVersion.length == 3);
-        if (compatibleSTVersionRange[_boundType] != uint24(0)) { 
+        if (compatibleSTVersionRange[_boundType] != uint24(0)) {
             uint8[] memory _currentVersion = VersionUtils.unpack(compatibleSTVersionRange[_boundType]);
             require(VersionUtils.isValidVersion(_currentVersion, _newVersion), "Failed because of in-valid version");
         }
@@ -154,8 +149,16 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Get the setup cost of the module
      */
-    function getSetupCost() external view returns (uint256) {
+    function getSetupCost() public view returns (uint256) {
         return setupCost;
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCostInPoly() public view returns (uint256) {
+        uint256 polyRate = IOracle(PolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
+        return DecimalMath.mul(setupCost, polyRate);
     }
 
    /**
@@ -163,6 +166,13 @@ contract ModuleFactory is IModuleFactory, Ownable {
     */
     function getName() public view returns(bytes32) {
         return name;
+    }
+
+    function _takeSetupCost() internal {
+        uint256 setupCostInPoly = getSetupCostInPoly();
+        if (setupCostInPoly > 0) {
+            require(polyToken.transferFrom(msg.sender, owner(), setupCostInPoly), "Failed transferFrom because of sufficent Allowance is not provided");
+        }
     }
 
 }

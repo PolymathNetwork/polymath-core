@@ -62,9 +62,9 @@ contract DividendCheckpoint is ICheckpoint, Module {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         require(!dividends[_dividendIndex].reclaimed, "Dividend reclaimed");
         /*solium-disable-next-line security/no-block-members*/
-        require(now >= dividends[_dividendIndex].maturity, "Dividend maturity in future");
+        require(now >= dividends[_dividendIndex].maturity, "Maturity in future");
         /*solium-disable-next-line security/no-block-members*/
-        require(now < dividends[_dividendIndex].expiry, "Dividend expiry in past");
+        require(now < dividends[_dividendIndex].expiry, "Expiry in past");
         _;
     }
 
@@ -115,11 +115,11 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _withholding Withholding tax for individual investors (multiplied by 10**16)
      */
     function setWithholding(address[] _investors, uint256[] _withholding) public withPerm(MANAGE) {
-        require(_investors.length == _withholding.length, "Mismatched input lengths");
+        require(_investors.length == _withholding.length, "Mismatched input");
         /*solium-disable-next-line security/no-block-members*/
         emit SetWithholding(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
-            require(_withholding[i] <= 10**18, "Incorrect withholding tax");
+            require(_withholding[i] <= 10**18, "Invalid tax");
             withholdingTax[_investors[i]] = _withholding[i];
         }
     }
@@ -130,7 +130,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _withholding Withholding tax for all investors (multiplied by 10**16)
      */
     function setWithholdingFixed(address[] _investors, uint256 _withholding) public withPerm(MANAGE) {
-        require(_withholding <= 10**18, "Incorrect withholding tax");
+        require(_withholding <= 10**18, "Invalid tax");
         /*solium-disable-next-line security/no-block-members*/
         emit SetWithholdingFixed(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
@@ -192,8 +192,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
     function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
-        require(!dividend.claimed[msg.sender], "Dividend already claimed");
-        require(!dividend.dividendExcluded[msg.sender], "msg.sender excluded from Dividend");
+        require(!dividend.claimed[msg.sender], "Already claimed");
+        require(!dividend.dividendExcluded[msg.sender], "msg.sender excluded");
         _payDividend(msg.sender, dividend, _dividendIndex);
     }
 
@@ -218,7 +218,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @return claim, withheld amounts
      */
     function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256, uint256) {
-        require(_dividendIndex < dividends.length, "Invalid dividend");
+        require(_dividendIndex < dividends.length, "Invalid index");
         Dividend storage dividend = dividends[_dividendIndex];
         if (dividend.claimed[_payee] || dividend.dividendExcluded[_payee]) {
             return (0, 0);

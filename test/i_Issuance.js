@@ -215,7 +215,7 @@ contract("Issuance", accounts => {
                     fromTime + duration.days(70),
                     toTime + duration.days(90),
                     expiryTime + duration.days(50),
-                    true,
+                    1,
                     {
                         from: account_polymath
                     }
@@ -271,7 +271,7 @@ contract("Issuance", accounts => {
             });
 
             it("should add the investor into the whitelist by the delegate", async () => {
-                let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor2, fromTime, toTime, expiryTime, true, {
+                let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor2, fromTime, toTime, expiryTime, 1, {
                     from: account_delegate,
                     gas: 7000000
                 });

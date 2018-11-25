@@ -200,7 +200,7 @@ contract("EtherDividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(30),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -230,7 +230,7 @@ contract("EtherDividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(30),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -364,7 +364,7 @@ contract("EtherDividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(20),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -415,7 +415,7 @@ contract("EtherDividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -719,7 +719,7 @@ contract("EtherDividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -851,7 +851,7 @@ contract("EtherDividendCheckpoint", accounts => {
             let expiry = latestTime() + duration.days(10);
             let exclusions = [1];
             let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
-            await I_SecurityToken.createCheckpoint({ from: token_owner }); 
+            await I_SecurityToken.createCheckpoint({ from: token_owner });
             await catchRevert(I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(
                 maturity,
                 expiry,

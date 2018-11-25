@@ -146,9 +146,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
                 return (_onWhitelist(_to) && _onWhitelist(_from)) ? Result.VALID : Result.NA;
             }
             if (_from == issuanceAddress && (whitelist[_to].canBuyFromSTO == 0) && _isSTOAttached()) {
-                if ((whitelist[_to].canBuyFromSTO == 0) && _isSTOAttached()) {
-                    return Result.NA;
-                }
+                return Result.NA;
             }
             if (allowAllWhitelistIssuances && _from == issuanceAddress) {
                 return _onWhitelist(_to) ? Result.VALID : Result.NA;

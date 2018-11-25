@@ -273,8 +273,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
      * @param _investor Address of the investor
      */
     function _onWhitelist(address _investor) internal view returns(bool) {
-        return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) &&
-            (whitelist[_investor].expiryTime >= uint64(now))); /*solium-disable-line security/no-block-members*/
+        return (whitelist[_investor].expiryTime >= uint64(now)); /*solium-disable-line security/no-block-members*/
     }
 
     /**

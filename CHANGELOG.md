@@ -5,18 +5,16 @@ All notable changes to this project will be documented in this file.
 
 [__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
 
-## Added
+# USDTieredSTO 2.0.1
 * Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.
 * Added `getSTODetails` to USDTSTO.
 * Added an Array of Tiers that will hold data about every tier in USDTSTO.
 * Added `buyWithETHRateLimited`, `buyWithPOLYRateLimited` and `buyWithUSDRateLimited` to USDTSTO.
 * Added `getTokensSoldByTier` to return sold (not minted during finalisation) tokens in each tier to USDTSTO.
+* Removed individual mappings for tier data removed in UDSTSTO.
 
 ##Changed
 * `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
-
-## Removed
-* Individual mappings for tier data removed in UDSTSTO.
 
 # v1.5.0
 

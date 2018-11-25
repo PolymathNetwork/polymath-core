@@ -69,6 +69,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
     const stoKey = 3;
 
     let tempAmount = new BigNumber(0);
+    let tempArray = new Array();
+    let tempArrayVariable = new Array();
+    let tempArrayGlobal = new Array();
 
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
@@ -84,6 +87,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         account_investor1 = accounts[8];
         account_investor2 = accounts[9];
         account_investor3 = accounts[4];
+        account_investor4 = accounts[3];
         account_delegate = accounts[7];
         account_delegate2 = accounts[6];
         account_delegate3 = accounts[5];
@@ -250,38 +254,52 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
                         .dividedBy(new BigNumber(10).pow(18))}
                 `);
+                assert.equal((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), 0.3);
+                assert.equal(data[0][i].toNumber(), (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[2].toNumber())
             }
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
                 Last Timestamp Index : ${data[0].length -1}
             `);
+            assert.equal(web3.utils.fromWei((data[1].toNumber()).toString()), 0.3);
+            assert.equal(data[0].length -1, 0);
+            tempArray.push(0.3);
         })
 
         it("Should successfully transact the tokens after 1 and half days", async() => {
             await increaseTime(duration.days(1.5));
+            let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[2].toNumber();
             await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("1"), {from: account_investor1});
             // Check the balance of the investors 
             let bal1 = await I_SecurityToken.balanceOf.call(account_investor1);
             // Verifying the balances
             assert.equal(web3.utils.fromWei((bal1.toNumber()).toString()), 33.7);
-
+            tempArray.push(1);
             let data = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
+
             for (let i = 0; i < data[0].length; i++) {
                 console.log(`
                     Timestamps array index ${i}: ${data[0][i].toNumber()}
                     Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
-                        .dividedBy(new BigNumber(10).pow(18))}
+                        .dividedBy(new BigNumber(10).pow(18)).toNumber()}
                 `);
+                assert.equal((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArray[i]);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i));
             }
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
                 Last Timestamp Index : ${data[0].length -1}
             `);
+            assert.equal(web3.utils.fromWei((data[1].toNumber()).toString()), 1.3);
+            assert.equal(data[0].length -1, 1);
         });
 
         it("Should successfully transact more tokens on the same day (Fuzz test)", async() => {
             // Check the balance of the investors 
             let balBefore = await I_SecurityToken.balanceOf.call(account_investor1);
+            let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[2].toNumber();
             let totalAmountTransacted = 0;
             for (let i = 0; i < 10; i++) {
                 let amount = Math.random();
@@ -294,44 +312,63 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let balAfter = await I_SecurityToken.balanceOf.call(account_investor1);
             // Verifying the balances
             assert.closeTo((balBefore.minus(balAfter).dividedBy(new BigNumber(10).pow(18))).toNumber(), totalAmountTransacted, 0.01);
-
+            tempArray[1] = tempArray[1] + totalAmountTransacted;
             let data = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
+
             for (let i = 0; i < data[0].length; i++) {
                 console.log(`
                     Timestamps array index ${i}: ${data[0][i].toNumber()}
                     Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
                         .dividedBy(new BigNumber(10).pow(18))}
                 `);
+                assert.closeTo((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArray[i], 0.000001);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i))
             }
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
                 Last Timestamp Index : ${data[0].length - 1}
             `);
+            assert.closeTo(data[1].dividedBy(new BigNumber(10).pow(18)).toNumber(), 1.3 + totalAmountTransacted, 0.000001);
+            assert.equal(data[0].length -1, 1);
         });
 
         it("Should successfully transfer the tokens after half days-- should increase the day covered by 1", async() => {
+            let oldData = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
+            let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[2].toNumber();
             await increaseTime(duration.days(.5));
             await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("2"), {from: account_investor1});
             let data = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
+            tempArray.push(2);
+
             for (let i = 0; i < data[0].length; i++) {
                 console.log(`
                     Timestamps array index ${i}: ${data[0][i].toNumber()}
                     Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
                         .dividedBy(new BigNumber(10).pow(18))}
                 `);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i))
+                assert.closeTo((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArray[i], 0.000001);
             }
+            
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
                 Last Timestamp Index : ${data[0].length - 1}
             `);
             assert.equal(data[0].length - 1, 2);
+            assert.equal(data[1].dividedBy(new BigNumber(10).pow(18)).toNumber(), 
+                (oldData[1].plus(new BigNumber(2).times(new BigNumber(10).pow(18))))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber());
         });
 
         it("Should successfully transfer the tokens in the last day of rolling period", async() => {
             // Check the balance of the investors 
             let balBefore = await I_SecurityToken.balanceOf.call(account_investor1);
+            let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[2].toNumber();
+            let oldData = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
             let totalAmountTransacted = 0;
-            for (let i = 0; i < 3; i++) {
+            for (let i = 0; i < 2; i++) {
                 let amount = Math.random();
                 await I_SecurityToken.transfer(account_investor3, web3.utils.toWei(amount.toString()), {from: account_investor1});
                 console.log(`${i}: Restricted investor 1 able to transact ${amount} tokens to investor 3`); 
@@ -341,7 +378,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let balAfter = await I_SecurityToken.balanceOf.call(account_investor1);
             // Verifying the balances
             assert.closeTo((balBefore.minus(balAfter).dividedBy(new BigNumber(10).pow(18))).toNumber(), totalAmountTransacted, 0.01);
-
+            tempArray[2] = tempArray[2] + totalAmountTransacted;
             let data = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
             for (let i = 0; i < data[0].length; i++) {
                 console.log(`
@@ -349,11 +386,18 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
                         .dividedBy(new BigNumber(10).pow(18))}
                 `);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i))
+                assert.closeTo((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArray[i], 0.000001);
             }
+            
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
                 Last Timestamp Index : ${data[0].length - 1}
             `);
+            assert.equal(data[0].length - 1, 2);
+            assert.closeTo(data[1].dividedBy(new BigNumber(10).pow(18)).toNumber(), 
+                oldData[1].dividedBy(new BigNumber(10).pow(18)).toNumber() +  totalAmountTransacted, 0.00001);
         });
 
         it("Should fail to transact the tokens more than the allowed tokens in a rolling period", async() => {
@@ -374,6 +418,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should transfer the tokens in a new rolling period", async() => {
             let oldData = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
+            let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[2].toNumber();
             let firstDayAmount;
             tempAmount = new BigNumber(0);
             for (let i = 0; i < oldData[0].length; i++) {
@@ -396,7 +441,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let currentDayAmount = firstDayAmount.plus(new BigNumber(1).times(new BigNumber(10).pow(18)));
             let tx = await I_SecurityToken.transfer(account_investor3, currentDayAmount, {from: account_investor1});
             tempAmount = tempAmount.minus(currentDayAmount);
-            
+            tempArray.push(0);
+            tempArray.push(currentDayAmount.dividedBy(new BigNumber(10).pow(18)).toNumber());
             console.log('\n');
             let newData = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
             for (let i = 2; i < newData[0].length; i++) {
@@ -405,19 +451,20 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, newData[0][i]))
                         .dividedBy(new BigNumber(10).pow(18))}
                 `);
+                assert.equal(newData[0][i].toNumber(), startTime + duration.days(i))
+                assert.closeTo((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, newData[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArray[i], 0.00001);
             }
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((newData[1].toNumber()).toString())}
                 Last Timestamp Index : ${newData[0].length -1}
             `);
-            assert.notEqual(oldData[0][0].toNumber(), newData[0][3].toNumber());
-            assert.notEqual(oldData[0][1].toNumber(), newData[0][4].toNumber());
         });
 
         it("Should transfer the more tokens on the same day", async() => {
             // Check the balance of the investors 
             let balBefore = await I_SecurityToken.balanceOf.call(account_investor1);
-            console.log(tempAmount.dividedBy(new BigNumber(10).pow(18)).toNumber());
+            let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[2].toNumber();
             await I_SecurityToken.transfer(account_investor3, tempAmount, {from: account_investor1});
 
             // Check the balance of the investors 
@@ -428,7 +475,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 tempAmount.dividedBy(new BigNumber(10).pow(18)).toNumber(),
                 0.01
             );
-
+            tempArray[tempArray.length -1] = tempArray[tempArray.length -1] + tempAmount.dividedBy(new BigNumber(10).pow(18)).toNumber();
             let data = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
             for (let i = 2; i < data[0].length; i++) {
                 console.log(`
@@ -436,13 +483,510 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
                         .dividedBy(new BigNumber(10).pow(18))}
                 `);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i))
+                assert.closeTo((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArray[i], 0.00001);
             }
             console.log(`
                 SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
                 Last Timestamp Index : ${data[0].length -1}
             `);
+            let sumOflastperiod = 0;
+            for (let i = tempArray.length - 1; i >= tempArray.length - 3; i--) {
+                sumOflastperiod += tempArray[i];
+            }
+            assert.equal(data[0].length - 1, 4);
+            assert.closeTo(data[1].dividedBy(new BigNumber(10).pow(18)).toNumber(), sumOflastperiod, 0.00001);
+        });
+    });
+
+    describe("Test case for the variable individual restriction", async() => {
+        it("Should add the restriction succesfully", async() => {
+            let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor2,
+                    0,
+                    new BigNumber(20).times(new BigNumber(10).pow(16)),
+                    latestTime() + duration.seconds(2),
+                    3,
+                    latestTime() + duration.days(10),
+                    1,
+                    {
+                        from: token_owner
+                    }
+                );
+            
+            assert.equal(tx.logs[0].args._holder, account_investor2);
+            assert.equal(tx.logs[0].args._typeOfRestriction, 1);
         });
 
-        
+        it("Should not successfully transact the tokens -- failed because volume is above the limit", async() => {
+            await increaseTime(duration.seconds(10));
+            await catchRevert(
+                I_SecurityToken.transfer(account_investor3, web3.utils.toWei("15"), { from: account_investor2})
+            );
+        });
+
+        it("Should succesfully transact the tokens just after the starttime", async() => {
+            // Check the transfer will be valid or not by calling the verifyTransfer() directly by using _isTransfer = false
+            let result = await I_VolumeRestrictionTM.verifyTransfer.call(account_investor2, account_investor3, web3.utils.toWei('.3'), "0x0", false);
+            console.log(result);
+            assert.equal(result.toNumber(), 1);
+            // Perform the transaction
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('.3'), {from: account_investor2});
+            // Check the balance of the investors 
+            let bal1 = await I_SecurityToken.balanceOf.call(account_investor2);
+            // Verifying the balances
+            assert.equal(web3.utils.fromWei((bal1.toNumber()).toString()), 29.7);
+
+            let data = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor2);
+            console.log('\n');
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor2, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                assert.equal((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor2, data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), 0.3);
+                assert.equal(data[0][i].toNumber(), (await I_VolumeRestrictionTM.individualRestriction.call(account_investor2))[2].toNumber())
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length -1}
+            `);
+            assert.equal(web3.utils.fromWei((data[1].toNumber()).toString()), 0.3);
+            assert.equal(data[0].length -1, 0);
+            tempArrayVariable.push(0.3);
+        });
+
+        it("Should successfully transact the tokens after 1 and half days", async() => {
+            await increaseTime(duration.days(1.5));
+            let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor2))[2].toNumber();
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("1"), {from: account_investor2});
+            // Check the balance of the investors 
+            let bal1 = await I_SecurityToken.balanceOf.call(account_investor2);
+            // Verifying the balances
+            assert.equal(web3.utils.fromWei((bal1.toNumber()).toString()), 28.7);
+            tempArrayVariable.push(1);
+            let data = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor2);
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor2, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                assert.equal((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor2, data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArrayVariable[i]);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i));
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length -1}
+            `);
+            assert.equal(web3.utils.fromWei((data[1].toNumber()).toString()), 1.3);
+            assert.equal(data[0].length -1, 1);
+        });
+
+        it("Should successfully transact more tokens on the same day (Fuzz test)", async() => {
+            // Check the balance of the investors 
+            let balBefore = await I_SecurityToken.balanceOf.call(account_investor2);
+            let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor2))[2].toNumber();
+            let totalAmountTransacted = 0;
+            for (let i = 0; i < 10; i++) {
+                let amount = Math.random();
+                await I_SecurityToken.transfer(account_investor3, web3.utils.toWei(amount.toString()), {from: account_investor2});
+                console.log(`${i}: Restricted investor 2 able to transact ${amount} tokens to investor 3`); 
+                totalAmountTransacted += amount;
+            } 
+            
+            // Check the balance of the investors 
+            let balAfter = await I_SecurityToken.balanceOf.call(account_investor2);
+            tempArrayVariable[1] = tempArrayVariable[1] + totalAmountTransacted;
+            // Verifying the balances
+            assert.closeTo((balBefore.minus(balAfter).dividedBy(new BigNumber(10).pow(18))).toNumber(), totalAmountTransacted, 0.01);
+
+            let data = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor2);
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor2, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                assert.closeTo((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor2, data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArrayVariable[i], 0.000001);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i))
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length - 1}
+            `);
+            assert.closeTo(data[1].dividedBy(new BigNumber(10).pow(18)).toNumber(), 1.3 + totalAmountTransacted, 0.000001);
+            assert.equal(data[0].length -1, 1);
+        });
+
+        it("Should successfully transfer the tokens after half days-- should increase the day covered by 1", async() => {
+            let oldData = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor2);
+            let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor2))[2].toNumber();
+            await increaseTime(duration.days(.5));
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("2"), {from: account_investor2});
+            let data = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor2);
+            tempArrayVariable.push(2);
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor2, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i))
+                assert.closeTo((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor2, data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArrayVariable[i], 0.000001);
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length - 1}
+            `);
+            assert.equal(data[0].length - 1, 2);
+            assert.equal(data[1].dividedBy(new BigNumber(10).pow(18)).toNumber(), 
+                (oldData[1].plus(new BigNumber(2).times(new BigNumber(10).pow(18))))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber());
+        });
+
+        it("Should fail to transfer the tokens on third day -- because it is more than the rolling period allowed", async() => {
+            let data = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor2);
+            let res = await I_VolumeRestrictionTM.individualRestriction.call(account_investor2);
+            let allowedAmount = (res[1].mul(await I_SecurityToken.totalSupply.call())).dividedBy(new BigNumber(10).pow(18));
+            let remainingAmount = allowedAmount.minus(data[1]);
+
+            await catchRevert(
+                I_SecurityToken.transfer(
+                account_investor3,
+                remainingAmount.plus(new BigNumber(1).times(new BigNumber(10).pow(18))),
+                {
+                    from: account_investor2
+                }
+                )
+            );
+            tempAmount = remainingAmount;
+        });
+
+        it("Should successfully transfer tokens more than the allowed as totalsupply get increased", async() => {
+            await I_SecurityToken.mint(account_investor2, web3.utils.toWei("10"), { from: token_owner });
+            
+            await I_SecurityToken.transfer(
+                account_investor3,
+                tempAmount.plus(new BigNumber(1).times(new BigNumber(10).pow(18))),
+                {
+                    from: account_investor2
+                }
+            );
+        });
     });
+
+    describe("Add the test cases for global restriction", async() => {
+
+        it("Should successfully add the global restriction", async() => {
+            await I_VolumeRestrictionTM.addGlobalRestriction(
+                web3.utils.toWei("20"),
+                0,
+                latestTime() + duration.seconds(2),
+                3,
+                latestTime() + duration.days(10),
+                0,
+                {
+                    from: token_owner
+                }
+            );
+
+            let data = await I_VolumeRestrictionTM.globalRestriction.call();
+            assert.equal(data[0], web3.utils.toWei("20"));
+            assert.equal(data[3], 3);
+        });
+
+        it("Should successfully add the 2 more address in the whitelist", async() => {
+            await I_GeneralTransferManager.modifyWhitelistMulti(
+                [account_investor4, account_delegate3],
+                [latestTime(), latestTime()],
+                [latestTime(), latestTime()],
+                [latestTime() + duration.days(30), latestTime() + duration.days(30)],
+                [true, true],
+                {
+                    from: token_owner
+                }
+            );
+
+            // Mint some tokens and transferred to whitelisted addresses
+            await I_SecurityToken.mint(account_investor4, web3.utils.toWei("40", "ether"), {from: token_owner});
+            await I_SecurityToken.mint(account_delegate3, web3.utils.toWei("30", "ether"), {from: token_owner});
+            
+            // Check the balance of the investors 
+            let bal1 = await I_SecurityToken.balanceOf.call(account_investor4);
+            let bal2 = await I_SecurityToken.balanceOf.call(account_delegate3);
+            // Verifying the balances
+            assert.equal(web3.utils.fromWei((bal1.toNumber()).toString()), 40);
+            assert.equal(web3.utils.fromWei((bal2.toNumber()).toString()), 30);
+        });
+
+        it("Should successfully transfer the tokens with in the global range", async() => {
+            let startTime = (await I_VolumeRestrictionTM.globalRestriction.call())[2].toNumber();
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("1"), {from: account_investor4});
+            let data = await I_VolumeRestrictionTM.getGlobalBucketDetails.call();
+            let latestTimestamp = 0;
+            tempArrayGlobal.push(1);
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i));
+                assert.equal((await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArrayGlobal[i]);
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length - 1}
+            `);
+            assert.equal(web3.utils.fromWei((data[1].toNumber()).toString()), 1);
+            assert.equal(data[0].length - 1, 0);
+
+            console.log(`Transfer the tokens from the another investor comes under the global category`);
+            
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("4"), {from: account_delegate3});
+            tempArrayGlobal[tempArrayGlobal.length - 1] += 4; 
+            data = await I_VolumeRestrictionTM.getGlobalBucketDetails.call();
+            
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i));
+                assert.equal((await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArrayGlobal[i]);
+                latestTimestamp = data[0][i];
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length - 1}
+                Total amount traded in a day: ${web3.utils.fromWei((data[2].toNumber()).toString())}
+            `);
+            assert.equal(web3.utils.fromWei((data[1].toNumber()).toString()), 5);
+            assert.equal(data[0].length - 1, 0);
+            assert.equal(web3.utils.fromWei((data[2].toNumber()).toString()), 5);
+        });
+
+        it("Should transfer the tokens on the another day", async() => {
+            await increaseTime(duration.days(1.2));
+            let startTime = (await I_VolumeRestrictionTM.globalRestriction.call())[2].toNumber();
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("5"), { from: account_investor3});
+            tempArrayGlobal.push(5);
+            let latestTimestamp = 0;
+            let data = await I_VolumeRestrictionTM.getGlobalBucketDetails.call();
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i));
+                assert.equal((await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArrayGlobal[i]);
+                latestTimestamp = data[0][i];
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length - 1}
+                Total amount traded in a day: ${web3.utils.fromWei((data[2].toNumber()).toString())}
+            `);
+            assert.equal(web3.utils.fromWei((data[1].toNumber()).toString()), 10);
+            assert.equal(data[0].length - 1, 1);
+            assert.equal(web3.utils.fromWei((data[2].toNumber()).toString()), 5);
+        });
+
+        it("Should transfer tokens on the third day of rolling period", async() => {
+            await increaseTime(duration.days(1));
+            let startTime = (await I_VolumeRestrictionTM.globalRestriction.call())[2].toNumber();
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("6"), {from: account_investor4});
+            let data = await I_VolumeRestrictionTM.getGlobalBucketDetails.call();
+            tempArrayGlobal.push(6);
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i));
+                assert.equal((await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArrayGlobal[i]);
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length - 1}
+                Total amount traded in a day: ${web3.utils.fromWei((data[2].toNumber()).toString())}
+            `);
+            assert.equal(web3.utils.fromWei((data[1].toNumber()).toString()), 16);
+            assert.equal(data[0].length - 1, 2);
+            assert.equal(web3.utils.fromWei((data[2].toNumber()).toString()), 6);
+
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("4"), {from: account_delegate3});
+            data = await I_VolumeRestrictionTM.getGlobalBucketDetails.call();
+            tempArrayGlobal[tempArrayGlobal.length -1] += 4; 
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i));
+                assert.equal((await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArrayGlobal[i]);
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length - 1}
+                Total amount traded in a day: ${web3.utils.fromWei((data[2].toNumber()).toString())}
+            `);
+            assert.equal(web3.utils.fromWei((data[1].toNumber()).toString()), 20);
+            assert.equal(data[0].length - 1, 2);
+            assert.equal(web3.utils.fromWei((data[2].toNumber()).toString()), 10);
+        })
+
+        it("Should transfer of tokens get failed - limit of global token txn get reached", async() => {
+            let data = await I_VolumeRestrictionTM.getGlobalBucketDetails.call();
+            let startTime = (await I_VolumeRestrictionTM.globalRestriction.call())[2].toNumber();
+            let latestTimestamp = 0;
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                latestTimestamp = data[0][i];
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length - 1}
+                Total amount traded in a day: ${web3.utils.fromWei((data[2].toNumber()).toString())}
+            `);
+
+            // Already 20 tokens transferred
+            await catchRevert(
+                I_SecurityToken.transfer(account_delegate3, web3.utils.toWei("5"), {from: account_investor3})
+            );
+        });
+
+        it("Should allow to transact on the next rolling period", async() => {
+            await increaseTime(duration.days(1.7));
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("1"), {from: account_investor4});
+            let startTime = (await I_VolumeRestrictionTM.globalRestriction.call())[2].toNumber();
+            let data = await I_VolumeRestrictionTM.getGlobalBucketDetails.call();
+            let latestTimestamp = 0;
+            tempArrayGlobal.push(1);
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i));
+                assert.equal((await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArrayGlobal[i]);
+                latestTimestamp = data[0][i];
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length - 1}
+                Total amount traded in a day: ${web3.utils.fromWei((data[2].toNumber()).toString())}
+            `);
+            assert.equal(web3.utils.fromWei((data[1].toNumber()).toString()), 16);
+            assert.equal(data[0].length - 1, 3);
+            assert.equal(web3.utils.fromWei((data[2].toNumber()).toString()), 1);
+        });
+
+        it("Should add the daily restriction successfully", async() => {
+            await I_VolumeRestrictionTM.addDailyGlobalRestriction(
+                web3.utils.toWei("5"),
+                0,
+                latestTime() + duration.seconds(2),
+                latestTime() + duration.days(3),
+                0,
+                {
+                    from: token_owner
+                }
+            );
+            let data = await I_VolumeRestrictionTM.dailyGlobalRestriction.call();
+            assert.equal(data[0].dividedBy(new BigNumber(10).pow(18)).toNumber(), 5);
+            assert.equal(data[1].toNumber(), 0);
+            assert.equal(data[5].toNumber(), 0);
+        });
+
+        it("Should failed to transact tokens -- failed because amount of tx is more than the daily limit",async() => {
+            let startTime = (await I_VolumeRestrictionTM.globalRestriction.call())[2].toNumber();
+            await increaseTime(duration.days(2));
+            // Failed because amount of tokens is greater than the daily limit
+            await catchRevert(
+                I_SecurityToken.transfer(account_delegate3, web3.utils.toWei("5.1"), {from: account_investor4})
+            );
+        });
+
+        it("Should transfer the tokens with in the daily limit", async() => {
+            let startTime = (await I_VolumeRestrictionTM.globalRestriction.call())[2].toNumber();
+            await I_SecurityToken.transfer(account_delegate3, web3.utils.toWei("4.9"), {from: account_investor4});
+            tempArrayGlobal.push(0);
+            tempArrayGlobal.push(4.9);
+            let data = await I_VolumeRestrictionTM.getGlobalBucketDetails.call();
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i));
+                assert.equal((await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArrayGlobal[i]);
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length - 1}
+                Total amount traded in a day: ${web3.utils.fromWei((data[2].toNumber()).toString())}
+            `);
+            assert.equal(web3.utils.fromWei((data[1].toNumber()).toString()), 5.9);
+            assert.equal(data[0].length - 1, 5);
+            assert.equal(web3.utils.fromWei((data[2].toNumber()).toString()), 4.9);
+        });
+
+        it("Should transact the tokens more than the daily limit because daily limit restriction is ended", async() => {
+            let startTime = (await I_VolumeRestrictionTM.globalRestriction.call())[2].toNumber();
+            await increaseTime(duration.days(1));
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("10"), {from: account_delegate3});
+            tempArrayGlobal.push(10);
+            let data = await I_VolumeRestrictionTM.getGlobalBucketDetails.call();
+            for (let i = 0; i < data[0].length; i++) {
+                console.log(`
+                    Timestamps array index ${i}: ${data[0][i].toNumber()}
+                    Total Trade till now: ${(await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                        .dividedBy(new BigNumber(10).pow(18))}
+                `);
+                assert.equal(data[0][i].toNumber(), startTime + duration.days(i));
+                assert.equal((await I_VolumeRestrictionTM.globalBucket.call(data[0][i]))
+                .dividedBy(new BigNumber(10).pow(18)).toNumber(), tempArrayGlobal[i]);
+            }
+            console.log(`
+                SumOfLastPeriod : ${web3.utils.fromWei((data[1].toNumber()).toString())}
+                Last Timestamp Index : ${data[0].length - 1}
+                Total amount traded in a day: ${web3.utils.fromWei((data[2].toNumber()).toString())}
+            `);
+            assert.equal(web3.utils.fromWei((data[1].toNumber()).toString()), 14.9);
+            assert.equal(data[0].length - 1, 6);
+            assert.equal(web3.utils.fromWei((data[2].toNumber()).toString()), 10);
+        });
+    })
+
+    describe("Test for the exemptlist", async() => {
+
+        it("Should add the token holder in the exemption list", async() => {
+            
+        })
+    })
 });

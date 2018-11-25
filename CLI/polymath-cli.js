@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 
-const shell = require('shelljs');
 var faucet = require('./commands/faucet');
 var investor_portal = require('./commands/investor_portal');
 var module_manager = require('./commands/module_manager');
 var st20generator = require('./commands/ST20Generator');
 var transfer = require('./commands/transfer');
+var whitelist = require('./commands/whitelist');
+var multimint = require('./commands/multi_mint');
+var accredit = require('./commands/accredit');
+var changeNonAccreditedLimit = require('./commands/changeNonAccreditedLimit');
 var transfer_ownership = require('./commands/transfer_ownership');
 var dividends_manager = require('./commands/dividends_manager');
 var transfer_manager = require('./commands/transfer_manager');
@@ -20,7 +23,7 @@ const fs = require('fs');
 program
   .version('0.0.1')
   .description('CLI for Polymath-core')
-  .option('-r, --remote-node <network>', 'Use Infura to connect to a remote node on selected network');
+  .option('-r, --remote-node <network>', 'Connect to a remote node');
 
 program
   .command('st20generator')
@@ -74,7 +77,7 @@ program
   .description('Distribute tokens to previously whitelisted investors')
   .action(async function(tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    shell.exec(`${__dirname}/commands/scripts/script.sh Multimint ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
+    await multimint.executeApp(tokenSymbol, batchSize);
   });
 
 program
@@ -101,7 +104,7 @@ program
   .description('Mass-update a whitelist of allowed/known investors')
   .action(async function(tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    shell.exec(`${__dirname}/commands/scripts/script.sh Whitelist ${tokenSymbol} ${batchSize} ${program.remoteNode}`);
+    await whitelist.executeApp(tokenSymbol, batchSize);
   });
 
 program
@@ -137,7 +140,7 @@ program
   .description('Runs accredit')
   .action(async function(tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    shell.exec(`${__dirname}/commands/scripts/script.sh Accredit ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
+    await accredit.executeApp(tokenSymbol, batchSize);
   });
 
 program
@@ -146,7 +149,7 @@ program
   .description('Runs changeNonAccreditedLimit')
   .action(async function(tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    shell.exec(`${__dirname}/commands/scripts/script.sh NonAccreditedLimit ${tokenSymbol} ${batchSize} ${program.remoteNode}`);;
+    await changeNonAccreditedLimit.executeApp(tokenSymbol, batchSize);
   });
 
 program

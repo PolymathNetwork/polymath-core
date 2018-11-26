@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
-import "./ICheckpoint.sol";
-import "../Module.sol";
+import "../../Checkpoint/ICheckpoint.sol";
+import "../../Module.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**

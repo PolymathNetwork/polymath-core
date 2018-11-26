@@ -1,7 +1,22 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# v1.5.0 - Release Candidate
+# v2.1.0 - Release Candidate
+
+[__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
+
+# USDTieredSTO 2.0.1
+* Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.
+* Added `getSTODetails` to USDTSTO.
+* Added an Array of Tiers that will hold data about every tier in USDTSTO.
+* Added `buyWithETHRateLimited`, `buyWithPOLYRateLimited` and `buyWithUSDRateLimited` to USDTSTO.
+* Added `getTokensSoldByTier` to return sold (not minted during finalisation) tokens in each tier to USDTSTO.
+* Removed individual mappings for tier data removed in UDSTSTO.
+
+##Changed
+* `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
+
+# v1.5.0
 
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
@@ -34,7 +49,6 @@ All notable changes to this project will be documented in this file.
 * Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230     
 
 ## Fixed
-* `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
 * 0x0 and duplicate address in exclusions are no longer allowed in dividend modules.
 * All permissions are denied if no permission manager is active.
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
@@ -49,7 +63,7 @@ All notable changes to this project will be documented in this file.
 
 ======
 
-# v1.4.1 - Release Candidate
+# v1.4.1
 
 [__1.4.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 
@@ -73,7 +87,7 @@ All notable changes to this project will be documented in this file.
 * Fix #238: make beneficial investments optionally supported (default to not
 allowed)
 
-# v1.4.0 - Release candidate
+# v1.4.0
 
 [__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 

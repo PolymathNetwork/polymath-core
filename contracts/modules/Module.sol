@@ -25,6 +25,7 @@ contract Module is IModule {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _securityToken, address _polyAddress) public {
+        require(_securityToken != address(0) && _polyAddress != address(0), "Invalid address");
         securityToken = _securityToken;
         factory = msg.sender;
         polyToken = IERC20(_polyAddress);

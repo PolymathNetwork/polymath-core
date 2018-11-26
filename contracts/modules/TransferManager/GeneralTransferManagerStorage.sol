@@ -1,7 +1,5 @@
 pragma solidity ^0.4.24;
 
-import "./ITransferManager.sol";
-
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */

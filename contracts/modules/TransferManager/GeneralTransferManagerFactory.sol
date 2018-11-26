@@ -17,6 +17,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
+        require(_logicContract != address(0), "Invalid logic contract");
         version = "1.0.0";
         name = "GeneralTransferManager";
         title = "General Transfer Manager";

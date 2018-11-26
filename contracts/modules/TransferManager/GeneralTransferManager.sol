@@ -26,6 +26,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     // Emit when investor details get modified related to their whitelisting
     event OffsetModified(uint64 _time, uint8 _isForward);
 
+    // _fromTime is the time from which the _investor can send tokens
+    // _toTime is the time from which the _investor can receive tokens
+    // if allowAllWhitelistIssuances is TRUE, then _toTime is ignored when receiving tokens from the issuance address
+    // if allowAllWhitelistTransfers is TRUE, then _toTime and _fromTime is ignored when sending or receiving tokens
+    // in any case, any investor sending or receiving tokens, must have a _expiryTime in the future
     event ModifyWhitelist(
         address _investor,
         uint256 _dateAdded,
@@ -200,6 +205,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     )
         internal
     {
+        require(_investor != address(0), "Invalid investor");
         if (whitelist[_investor].added == uint8(0)) {
             investors.push(_investor);
         }

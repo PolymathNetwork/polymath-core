@@ -16,7 +16,7 @@ async function executeApp() {
   let exit = false;
   while (!exit) {
     console.log('\n', chalk.blue('Transfer Manager - Main Menu', '\n'));
-    
+
     let tmModules = await getAllModulesByType(gbl.constants.MODULES_TYPES.TRANSFER);
     let nonArchivedModules = tmModules.filter(m => !m.archived);
     if (nonArchivedModules.length > 0) {
@@ -36,7 +36,7 @@ async function executeApp() {
     }
     options.push('Add new Transfer Manager module');
 
-    let index = readlineSync.keyInSelect(options, 'What do you want to do?', {cancel: 'Exit'});
+    let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Exit' });
     let optionSelected = index != -1 ? options[index] : 'Exit';
     console.log('Selected:', optionSelected, '\n');
     switch (optionSelected) {
@@ -112,9 +112,9 @@ async function forcedTransfers() {
   if (controller == Issuer.address) {
     options.push('Force Transfer');
   }
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', {cancel: 'Return'});
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
   let optionSelected = index != -1 ? options[index] : 'Return';
-  console.log('Selected:',  optionSelected, '\n');
+  console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Disable controller':
       if (readlineSync.keyInYNStrict()) {
@@ -177,13 +177,13 @@ async function forcedTransfers() {
 
 async function configExistingModules(tmModules) {
   let options = tmModules.map(m => `${m.name} at ${m.address}`);
-  let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', {cancel: 'Return'});
+  let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'Return' });
   console.log('Selected:', index != -1 ? options[index] : 'Return', '\n');
   let moduleNameSelected = tmModules[index].name;
-  
+
   switch (moduleNameSelected) {
     case 'GeneralTransferManager':
-      currentTransferManager = new web3.eth.Contract(abis.generalTransferManager(), tmModules[index].address); 
+      currentTransferManager = new web3.eth.Contract(abis.generalTransferManager(), tmModules[index].address);
       currentTransferManager.setProvider(web3.currentProvider);
       await generalTransferManager();
       break;
@@ -230,8 +230,8 @@ async function configExistingModules(tmModules) {
 async function addTransferManagerModule() {
   let options = ['GeneralTransferManager'/*, 'ManualApprovalTransferManager', 'PercentageTransferManager', 
 'CountTransferManager', 'SingleTradeVolumeRestrictionTM', 'LookupVolumeRestrictionTM'*/];
-  
-  let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', {cancel: 'Return'});
+
+  let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
     let bytes = web3.utils.fromAscii('', 16);
     switch (options[index]) {
@@ -333,9 +333,9 @@ async function generalTransferManager() {
   console.log(`- Allow all whitelist issuances:   ${displayAllowAllWhitelistIssuances ? `YES` : `NO`}`);
   console.log(`- Allow all burn transfers:        ${displayAllowAllBurnTransfers ? `YES` : `NO`}`);
   // ------------------
-  
+
   let options = ['Modify whitelist', 'Modify whitelist from CSV', /*'Modify Whitelist Signed',*/
-                `Change issuance address`, 'Change signing address'];
+    `Change issuance address`, 'Change signing address'];
   if (displayAllowAllTransfers) {
     options.push('Disallow all transfers');
   } else {
@@ -363,16 +363,16 @@ async function generalTransferManager() {
   switch (optionSelected) {
     case 'Modify whitelist':
       let investor = readlineSync.question('Enter the address to whitelist: ', {
-        limit: function(input) {
+        limit: function (input) {
           return web3.utils.isAddress(input);
         },
         limitMessage: "Must be a valid address"
-      }); 
+      });
       let now = Math.floor(Date.now() / 1000);
-      let fromTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens (now = ${now}): `, {defaultInput: now});
-      let toTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (now = ${now}): `, {defaultInput: now});
+      let fromTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens (now = ${now}): `, { defaultInput: now });
+      let toTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (now = ${now}): `, { defaultInput: now });
       let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
-      let expiryTime = readlineSync.questionInt(`Enter the time till investors KYC will be validated (after that investor need to do re-KYC) (1 hour from now = ${oneHourFromNow}): `, {defaultInput: oneHourFromNow});
+      let expiryTime = readlineSync.questionInt(`Enter the time till investors KYC will be validated (after that investor need to do re-KYC) (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
       let canBuyFromSTO = readlineSync.keyInYNStrict('Is the investor a restricted investor?');
       let modifyWhitelistAction = currentTransferManager.methods.modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
       let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
@@ -408,11 +408,11 @@ async function generalTransferManager() {
     */
     case 'Change issuance address':
       let issuanceAddress = readlineSync.question('Enter the new issuance address: ', {
-        limit: function(input) {
+        limit: function (input) {
           return web3.utils.isAddress(input);
         },
         limitMessage: "Must be a valid address"
-      }); 
+      });
       let changeIssuanceAddressAction = currentTransferManager.methods.changeIssuanceAddress(issuanceAddress);
       let changeIssuanceAddressReceipt = await common.sendTransaction(changeIssuanceAddressAction);
       let changeIssuanceAddressEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeIssuanceAddressReceipt.logs, 'ChangeIssuanceAddress');
@@ -420,11 +420,11 @@ async function generalTransferManager() {
       break;
     case 'Change signing address':
       let signingAddress = readlineSync.question('Enter the new signing address: ', {
-        limit: function(input) {
+        limit: function (input) {
           return web3.utils.isAddress(input);
         },
         limitMessage: "Must be a valid address"
-      }); 
+      });
       let changeSigningAddressAction = currentTransferManager.methods.changeSigningAddress(signingAddress);
       let changeSigningAddressReceipt = await common.sendTransaction(changeSigningAddressAction);
       let changeSigningAddressEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeSigningAddressReceipt.logs, 'ChangeSigningAddress');
@@ -481,20 +481,20 @@ async function singleTradeVolumeRestrictionTM() {
   console.log(chalk.blue(`Single Trade Volume Restriction Transfer Manager at ${currentTransferManager.options.address}`));
   console.log();
 
-    // Show current data
-    let displayIsInPercentage = await currentTransferManager.methods.isTransferLimitInPercentage().call();
-    let displayGlobalTransferLimit;
-    if (displayIsInPercentage) {
-      displayGlobalTransferLimit = fromWeiPercentage(await currentTransferManager.methods.globalTransferLimitInPercentage().call());
-    } else {
-      displayGlobalTransferLimit = web3.utils.fromWei(await currentTransferManager.methods.globalTransferLimitInTokens().call());
-    }
-    let displayAllowPrimaryIssuance = await currentTransferManager.methods.allowPrimaryIssuance().call();
-    
-    console.log(`- Limit type:                ${displayIsInPercentage ? `Percentage` : `Tokens`}`);
-    console.log(`- Default transfer limit:    ${displayGlobalTransferLimit} ${displayIsInPercentage ? `%` : `${tokenSymbol}`}`);
-    console.log(`- Allow primary issuance:    ${displayAllowPrimaryIssuance ? `YES` : `NO`}`);
-    // ------------------
+  // Show current data
+  let displayIsInPercentage = await currentTransferManager.methods.isTransferLimitInPercentage().call();
+  let displayGlobalTransferLimit;
+  if (displayIsInPercentage) {
+    displayGlobalTransferLimit = fromWeiPercentage(await currentTransferManager.methods.globalTransferLimitInPercentage().call());
+  } else {
+    displayGlobalTransferLimit = web3.utils.fromWei(await currentTransferManager.methods.globalTransferLimitInTokens().call());
+  }
+  let displayAllowPrimaryIssuance = await currentTransferManager.methods.allowPrimaryIssuance().call();
+
+  console.log(`- Limit type:                ${displayIsInPercentage ? `Percentage` : `Tokens`}`);
+  console.log(`- Default transfer limit:    ${displayGlobalTransferLimit} ${displayIsInPercentage ? `%` : `${tokenSymbol}`}`);
+  console.log(`- Allow primary issuance:    ${displayAllowPrimaryIssuance ? `YES` : `NO`}`);
+  // ------------------
 
   let options = [];
   if (displayAllowPrimaryIssuance) {
@@ -504,11 +504,11 @@ async function singleTradeVolumeRestrictionTM() {
   }
   options.push('Add exempted wallet', 'Remove exempted wallet');
   if (displayIsInPercentage) {
-    options.push('Change transfer limit to tokens', 'Change default percentage limit', 
-                'Set percentage transfer limit per account', 'Remove percentage transfer limit per account');
+    options.push('Change transfer limit to tokens', 'Change default percentage limit',
+      'Set percentage transfer limit per account', 'Remove percentage transfer limit per account');
   } else {
-    options.push('Change transfer limit to percentage', 'Change default tokens limit', 
-                'Set tokens transfer limit per account', 'Remove tokens transfer limit per account');
+    options.push('Change transfer limit to percentage', 'Change default tokens limit',
+      'Set tokens transfer limit per account', 'Remove tokens transfer limit per account');
   }
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?');
@@ -522,11 +522,11 @@ async function singleTradeVolumeRestrictionTM() {
       break;
     case 'Add exempted wallet':
       let walletToExempt = readlineSync.question('Enter the wallet to exempt: ', {
-        limit: function(input) {
+        limit: function (input) {
           return web3.utils.isAddress(input);
         },
         limitMessage: "Must be a valid address"
-      }); 
+      });
       let addExemptWalletAction = currentTransferManager.methods.addExemptWallet(walletToExempt);
       let addExemptWalletReceipt = await common.sendTransaction(addExemptWalletAction);
       let addExemptWalletEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addExemptWalletReceipt.logs, 'ExemptWalletAdded');
@@ -534,11 +534,11 @@ async function singleTradeVolumeRestrictionTM() {
       break;
     case 'Remove exempted wallet':
       let exemptedWallet = readlineSync.question('Enter the wallet to remove from exempt: ', {
-        limit: function(input) {
+        limit: function (input) {
           return web3.utils.isAddress(input);
         },
         limitMessage: "Must be a valid address"
-      }); 
+      });
       let removeExemptWalletAction = currentTransferManager.methods.removeExemptWallet(exemptedWallet);
       let removeExemptWalletReceipt = await common.sendTransaction(removeExemptWalletAction);
       let removeExemptWalletEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeExemptWalletReceipt.logs, 'ExemptWalletRemoved');
@@ -546,11 +546,11 @@ async function singleTradeVolumeRestrictionTM() {
       break;
     case 'Change transfer limit to tokens':
       let newDefaultLimitInTokens = web3.utils.toWei(readlineSync.question('Enter the amount of tokens for default limit: ', {
-        limit: function(input) {
+        limit: function (input) {
           return parseInt(input) > 0;
         },
         limitMessage: "Must be greater than zero"
-      })); 
+      }));
       let changeTransferLimitToTokensAction = currentTransferManager.methods.changeTransferLimitToTokens(newDefaultLimitInTokens);
       let changeTransferLimitToTokensReceipt = await common.sendTransaction(changeTransferLimitToTokensAction);
       let changeTransferLimitToTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeTransferLimitToTokensReceipt.logs, 'GlobalTransferLimitInTokensSet');
@@ -559,11 +559,11 @@ async function singleTradeVolumeRestrictionTM() {
       break;
     case 'Change transfer limit to percentage':
       let newDefaultLimitInPercentage = toWeiPercentage(readlineSync.question('Enter the percentage for default limit: ', {
-        limit: function(input) {
+        limit: function (input) {
           return (parseInt(input) > 0 && parseInt(input) <= 100);
         },
         limitMessage: "Must be greater than 0 and less than 100"
-      })); 
+      }));
       let changeTransferLimitToPercentageAction = currentTransferManager.methods.changeTransferLimitToPercentage(newDefaultLimitInPercentage);
       let changeTransferLimitToPercentageReceipt = await common.sendTransaction(changeTransferLimitToPercentageAction);
       let changeTransferLimitToPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeTransferLimitToPercentageReceipt.logs, 'GlobalTransferLimitInPercentageSet');
@@ -572,11 +572,11 @@ async function singleTradeVolumeRestrictionTM() {
       break;
     case 'Change default percentage limit':
       let defaultLimitInPercentage = toWeiPercentage(readlineSync.question('Enter the percentage for default limit: ', {
-        limit: function(input) {
+        limit: function (input) {
           return (parseInt(input) > 0 && parseInt(input) <= 100);
         },
         limitMessage: "Must be greater than 0 and less than 100"
-      })); 
+      }));
       let changeGlobalLimitInPercentageAction = currentTransferManager.methods.changeGlobalLimitInPercentage(defaultLimitInPercentage);
       let changeGlobalLimitInPercentageReceipt = await common.sendTransaction(changeGlobalLimitInPercentageAction);
       let changeGlobalLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeGlobalLimitInPercentageReceipt.logs, 'GlobalTransferLimitInPercentageSet');
@@ -584,11 +584,11 @@ async function singleTradeVolumeRestrictionTM() {
       break;
     case 'Change default tokens limit':
       let defaultLimitInTokens = web3.utils.toWei(readlineSync.question('Enter the amount of tokens for default limit: ', {
-        limit: function(input) {
+        limit: function (input) {
           return parseInt(input) > 0;
         },
         limitMessage: "Must be greater than zero"
-      })); 
+      }));
       let changeGlobalLimitInTokensAction = currentTransferManager.methods.changeGlobalLimitInTokens(defaultLimitInTokens);
       let changeGlobalLimitInTokensReceipt = await common.sendTransaction(changeGlobalLimitInTokensAction);
       let changeGlobalLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeGlobalLimitInTokensReceipt.logs, 'GlobalTransferLimitInTokensSet');
@@ -596,17 +596,17 @@ async function singleTradeVolumeRestrictionTM() {
       break;
     case 'Set percentage transfer limit per account':
       let percentageAccount = readlineSync.question('Enter the wallet: ', {
-        limit: function(input) {
+        limit: function (input) {
           return web3.utils.isAddress(input);
         },
         limitMessage: "Must be a valid address"
       });
       let accountLimitInPercentage = toWeiPercentage(readlineSync.question(`Enter the transfer limit for ${percentageAccount} in percentage: `, {
-        limit: function(input) {
+        limit: function (input) {
           return (parseInt(input) > 0 && parseInt(input) <= 100);
         },
         limitMessage: "Must be greater than 0 and less than 100"
-      })); 
+      }));
       let setTransferLimitInPercentageAction = currentTransferManager.methods.setTransferLimitInPercentage(percentageAccount, accountLimitInPercentage);
       let setTransferLimitInPercentageReceipt = await common.sendTransaction(setTransferLimitInPercentageAction);
       let setTransferLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, setTransferLimitInPercentageReceipt.logs, 'TransferLimitInPercentageSet');
@@ -614,17 +614,17 @@ async function singleTradeVolumeRestrictionTM() {
       break;
     case 'Set tokens transfer limit per account':
       let tokensAccount = readlineSync.question('Enter the wallet: ', {
-        limit: function(input) {
+        limit: function (input) {
           return web3.utils.isAddress(input);
         },
         limitMessage: "Must be a valid address"
       });
       let accountLimitInTokens = web3.utils.toWei(readlineSync.question(`Enter the transfer limit for ${tokensAccount} in amount of tokens: `, {
-        limit: function(input) {
+        limit: function (input) {
           return parseInt(input) > 0;
         },
         limitMessage: "Must be greater than zero"
-      })); 
+      }));
       let setTransferLimitInTokensAction = currentTransferManager.methods.setTransferLimitInTokens(tokensAccount, accountLimitInTokens);
       let setTransferLimitInTokensReceipt = await common.sendTransaction(setTransferLimitInTokensAction);
       let setTransferLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, setTransferLimitInTokensReceipt.logs, 'TransferLimitInTokensSet');
@@ -632,7 +632,7 @@ async function singleTradeVolumeRestrictionTM() {
       break;
     case 'Remove percentage transfer limit per account':
       let percentageAccountToRemove = readlineSync.question('Enter the wallet to remove: ', {
-        limit: function(input) {
+        limit: function (input) {
           return web3.utils.isAddress(input);
         },
         limitMessage: "Must be a valid address"
@@ -644,7 +644,7 @@ async function singleTradeVolumeRestrictionTM() {
       break;
     case 'Remove tokens transfer limit per account':
       let tokensAccountToRemove = readlineSync.question('Enter the wallet to remove: ', {
-        limit: function(input) {
+        limit: function (input) {
           return web3.utils.isAddress(input);
         },
         limitMessage: "Must be a valid address"
@@ -656,6 +656,7 @@ async function singleTradeVolumeRestrictionTM() {
       break;
   }
 }
+
 /*
 // Copied from tests
 function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, restricted, validFrom, validTo, pk) {
@@ -718,7 +719,7 @@ async function initialize(_tokenSymbol) {
     tokenSymbol = _tokenSymbol;
   }
   let securityTokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
-  if (securityTokenAddress ==  '0x0000000000000000000000000000000000000000') {
+  if (securityTokenAddress == '0x0000000000000000000000000000000000000000') {
     console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
     process.exit(0);
   }
@@ -735,7 +736,7 @@ function welcome() {
   console.log("Issuer Account: " + Issuer.address + "\n");
 }
 
-async function setup(){
+async function setup() {
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
     let securityTokenRegistryABI = abis.securityTokenRegistry();
@@ -743,25 +744,25 @@ async function setup(){
     securityTokenRegistry.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
-    console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
+    console.log('\x1b[31m%s\x1b[0m', "There was a problem getting the contracts. Make sure they are deployed to the selected network.");
     process.exit(0);
   }
 }
 
 async function selectToken() {
   let result = null;
-  
+
   let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
   let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
     let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
-    return {symbol: tokenData[0], address: t};
+    return { symbol: tokenData[0], address: t };
   }));
   let options = tokenDataArray.map(function (t) {
     return `${t.symbol} - Deployed at ${t.address}`;
   });
   options.push('Enter token symbol manually');
 
-  let index = readlineSync.keyInSelect(options, 'Select a token:', {cancel: 'Exit'});
+  let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
   switch (options[index]) {
     case 'Enter token symbol manually':
       result = readlineSync.question('Enter the token symbol: ');
@@ -773,12 +774,12 @@ async function selectToken() {
       result = tokenDataArray[index].symbol;
       break;
   }
-  
+
   return result;
 }
 
 module.exports = {
-  executeApp: async function(_tokenSymbol) {
+  executeApp: async function (_tokenSymbol) {
     await initialize(_tokenSymbol);
     return executeApp();
   }

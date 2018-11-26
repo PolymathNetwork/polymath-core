@@ -209,7 +209,382 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
     describe("Test for the addIndividualRestriction", async() => {
 
+        it("Should add the restriction -- failed because of bad owner", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    web3.utils.toWei("12"),
+                    0,
+                    latestTime() + duration.seconds(2),
+                    3,
+                    latestTime() + duration.days(10),
+                    0,
+                    {
+                        from: account_polymath
+                    }
+                )
+            );
+        })
+
+        it("Should add the restriction -- failed because of bad parameters i.e invalid restriction type", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    web3.utils.toWei("12"),
+                    0,
+                    latestTime() + duration.seconds(2),
+                    3,
+                    latestTime() + duration.days(10),
+                    3,
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        })
+
+        it("Should add the restriction -- failed because of bad parameters i.e Invalid value of allowed tokens", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    0,
+                    0,
+                    latestTime() + duration.seconds(2),
+                    3,
+                    latestTime() + duration.days(10),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        })
+
+        it("Should add the restriction -- failed because of bad parameters i.e Percentage of tokens not within (0,100]", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    0,
+                    0,
+                    latestTime() + duration.seconds(2),
+                    3,
+                    latestTime() + duration.days(10),
+                    1,
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        })
+
+        it("Should add the restriction -- failed because of bad parameters i.e Percentage of tokens not within (0,100]", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    0,
+                    web3.utils.toWei("10"),
+                    latestTime() + duration.seconds(2),
+                    3,
+                    latestTime() + duration.days(10),
+                    1,
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        })
+
+        it("Should add the restriction -- failed because of bad parameters i.e invalid dates", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    web3.utils.toWei("10"),
+                    0,
+                    latestTime() - duration.seconds(5),
+                    3,
+                    latestTime() + duration.days(10),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        })
+
+        it("Should add the restriction -- failed because of bad parameters i.e invalid dates", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    web3.utils.toWei("10"),
+                    0,
+                    latestTime() + duration.days(2),
+                    3,
+                    latestTime() + duration.days(1),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        });
+
+        it("Should add the restriction -- failed because of bad parameters i.e invalid rolling period", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    web3.utils.toWei("10"),
+                    0,
+                    latestTime() + duration.days(2),
+                    0,
+                    latestTime() + duration.days(10),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        });
+
+        it("Should add the restriction -- failed because of bad parameters i.e invalid rolling period", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    web3.utils.toWei("10"),
+                    0,
+                    latestTime() + duration.days(2),
+                    366,
+                    latestTime() + duration.days(10),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        });
+
+        it("Should add the restriction -- failed because of bad parameters i.e invalid rolling period", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    web3.utils.toWei("10"),
+                    0,
+                    latestTime() + duration.days(2),
+                    3,
+                    latestTime() + duration.days(3),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        });
+
         it("Should add the restriction succesfully", async() => {
+            let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    web3.utils.toWei("12"),
+                    0,
+                    latestTime() + duration.seconds(2),
+                    3,
+                    latestTime() + duration.days(5),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                );
+            
+            assert.equal(tx.logs[0].args._holder, account_investor1);
+            assert.equal(tx.logs[0].args._typeOfRestriction, 0);
+        });
+
+        it("Should add the restriction for multiple investor -- failed because of bad owner", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestrictionMulti(
+                    [account_investor2, account_delegate3, account_investor4],
+                    [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
+                    [0,0,0],
+                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [3,4,5],
+                    [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
+                    [0,0,0],
+                    {
+                        from: account_polymath
+                    }
+                )
+            )
+        });
+
+        it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestrictionMulti(
+                    [account_investor2, account_delegate3],
+                    [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
+                    [0,0,0],
+                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [3,4,5],
+                    [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
+                    [0,0,0],
+                    {
+                        from: token_owner
+                    }
+                )
+            )
+        });
+
+        it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestrictionMulti(
+                    [account_investor2, account_delegate3, account_investor4],
+                    [web3.utils.toWei("12"), web3.utils.toWei("10")],
+                    [0,0,0],
+                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [3,4,5],
+                    [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
+                    [0,0,0],
+                    {
+                        from: account_polymath
+                    }
+                )
+            )
+        });
+
+        it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestrictionMulti(
+                    [account_investor2, account_delegate3, account_investor4],
+                    [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
+                    [0,0],
+                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [3,4,5],
+                    [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
+                    [0,0,0],
+                    {
+                        from: token_owner
+                    }
+                )
+            )
+        });
+
+        it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestrictionMulti(
+                    [account_investor2, account_delegate3, account_investor4],
+                    [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
+                    [0,0,0],
+                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [3,4,5],
+                    [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
+                    [0,0,0],
+                    {
+                        from: token_owner
+                    }
+                )
+            )
+        });
+
+        it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestrictionMulti(
+                    [account_investor2, account_delegate3, account_investor4],
+                    [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
+                    [0,0,0],
+                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [3],
+                    [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
+                    [0,0,0],
+                    {
+                        from: token_owner
+                    }
+                )
+            )
+        });
+
+        it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestrictionMulti(
+                    [account_investor2, account_delegate3, account_investor4],
+                    [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
+                    [0,0,0],
+                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [3, 4, 5],
+                    [latestTime() + duration.days(5)],
+                    [0,0,0],
+                    {
+                        from: token_owner
+                    }
+                )
+            )
+        });
+
+        it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.addIndividualRestrictionMulti(
+                    [account_investor2, account_delegate3, account_investor4],
+                    [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
+                    [0,0,0],
+                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [3, 4, 5],
+                    [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
+                    [],
+                    {
+                        from: token_owner
+                    }
+                )
+            )
+        });
+
+        it("Should add the restriction for multiple investor successfully", async() => {
+            await I_VolumeRestrictionTM.addIndividualRestrictionMulti(
+                    [account_investor2, account_delegate3, account_investor4],
+                    [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
+                    [0,0,0],
+                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [3, 4, 5],
+                    [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
+                    [0,0,0],
+                    {
+                        from: token_owner
+                    }
+            );
+            assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_investor2))[3].toNumber(), 3);
+            assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_delegate3))[3].toNumber(), 4);
+            assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_investor4))[3].toNumber(), 5);
+        });
+
+        it("Should remove the restriction multi -- failed because of address is 0", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.removeIndividualRestrictionMulti(
+                    [0, account_delegate3, account_investor4],
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        });
+
+        it("Should successfully remove the restriction", async() => {
+            await I_VolumeRestrictionTM.removeIndividualRestriction(account_investor2, {from: token_owner});
+            assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_investor2))[3].toNumber(), 0);
+        });
+
+        it("Should remove the restriction -- failed because restriction not present anymore", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.removeIndividualRestriction(account_investor2, {from: token_owner})
+            );
+        });
+
+        it("Should remove the restriction multi", async() => {
+            await I_VolumeRestrictionTM.removeIndividualRestrictionMulti(
+                [account_delegate3, account_investor4],
+                {
+                    from: token_owner
+                }
+            )
+        });
+
+        it("Should add the restriction succesfully after the expiry of previous one", async() => {
+            await increaseTime(duration.days(5.1));
+
             let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     web3.utils.toWei("12"),
@@ -223,8 +598,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     }
                 );
             
-            assert.equal(tx.logs[0].args._holder, account_investor1);
-            assert.equal(tx.logs[0].args._typeOfRestriction, 0);
+            assert.equal(tx.logs[1].args._holder, account_investor1);
+            assert.equal(tx.logs[1].args._typeOfRestriction, 0);
         });
 
         it("Should not successfully transact the tokens -- failed because volume is above the limit", async() => {
@@ -985,8 +1360,20 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
     describe("Test for the exemptlist", async() => {
 
+        it("Should add the token holder in the exemption list -- failed because of bad owner", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.changeExemptWalletList(account_investor4, true, {from: account_polymath})
+            );
+        });
+
         it("Should add the token holder in the exemption list", async() => {
-            
-        })
-    })
+            await I_VolumeRestrictionTM.changeExemptWalletList(account_investor4, true, {from: token_owner});
+            let beforeBal = await I_SecurityToken.balanceOf.call(account_investor4);
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("3"), {from: account_investor4});
+            let afterBal = await I_SecurityToken.balanceOf.call(account_investor4);
+            let diff = beforeBal.minus(afterBal);
+            assert.equal(web3.utils.fromWei((diff.toNumber()).toString()), 3);
+        });
+    });
+    
 });

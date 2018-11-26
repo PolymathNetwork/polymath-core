@@ -92,6 +92,7 @@ contract("GeneralTransferManager", accounts => {
         account_investor1 = accounts[8];
         account_investor2 = accounts[9];
         account_delegate = accounts[7];
+        account_investor3 = accounts[5];
         account_investor4 = accounts[6];
 
         account_affiliates1 = accounts[3];
@@ -201,7 +202,7 @@ contract("GeneralTransferManager", accounts => {
         it("Should whitelist lots of addresses and check gas", async () => {
             let mockInvestors = [];
             for (let i = 0; i < 50; i++) {
-                mockInvestors.push("0x0000000000000000000000000000000000000000".substring(0,42-i.toString().length) + i.toString());
+                mockInvestors.push("0x1000000000000000000000000000000000000000".substring(0,42-i.toString().length) + i.toString());
             }
 
             let times = range1(50);

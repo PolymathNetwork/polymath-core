@@ -1,17 +1,14 @@
 pragma solidity ^0.4.24;
 
 import "../modules/Checkpoint/DividendCheckpointStorage.sol";
-import "./Proxy.sol";
+import "./OwnedProxy.sol";
 import "../Pausable.sol";
 import "../modules/ModuleStorage.sol";
 
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
-contract EtherDividendCheckpointProxy is DividendCheckpointStorage, ModuleStorage, Pausable, Proxy {
-
-    // Address of the current implementation
-    address internal __implementation;
+contract EtherDividendCheckpointProxy is DividendCheckpointStorage, ModuleStorage, Pausable, OwnedProxy {
 
     /**
     * @notice Constructor
@@ -30,18 +27,4 @@ contract EtherDividendCheckpointProxy is DividendCheckpointStorage, ModuleStorag
         __implementation = _implementation;
     }
 
-    /**
-    * @notice Internal function to provide the address of the implementation contract
-    */
-    function _implementation() internal view returns (address) {
-        return __implementation;
-    }
-
-    /**
-    * @dev Tells the address of the current implementation
-    * @return address of the current implementation
-    */
-    function implementation() external view returns (address) {
-        return _implementation();
-    }
 }

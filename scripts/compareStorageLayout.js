@@ -20,27 +20,27 @@ function traverseAST(_input, _elements) {
   _elements.push(_input);
 }
 
-function compareStorageLayouts(oldLayout, newLayout) {
+function compareStorageLayouts(logicLayout, proxyLayout) {
   function makeComp(x) {
-    return [x.constant, x.name, x.scope, x.stateVariable, x.storageLocation, x.type, x.value, x.visibility].join(':');
+    return [x.constant, x.name, x.stateVariable, x.storageLocation, x.type, x.value, x.visibility].join(':');
   }
   // if(newLayout.length < oldLayout.length) return false;
-  for(var i=0;i<oldLayout.length;i++) {
-    const a = oldLayout[i].attributes;
+  for(var i=0; i < logicLayout.length; i++) {
+    const a = logicLayout[i].attributes;
     const comp1 = makeComp(a)
     console.log(comp1);
-    const b = newLayout[i].attributes;
+    const b = proxyLayout[i].attributes;
     const comp2 = makeComp(b);
     console.log(comp2);
     if(comp1 != comp2) {
-      // return false;
+      return false;
     }
   }
   return true;
 }
 
 function parseContract(input) {
-  // var output = JSON.parse(require('fs').readFileSync('../build/contracts/Pausable.json').toString()).ast;
+
   var output = solc.compile({ sources: input }, 1, _.noop);
   const elements = [];
   const AST = output.sources.contracts.AST;

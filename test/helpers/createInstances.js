@@ -8,6 +8,8 @@ const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock.sol");
+const ERC20DividendCheckpoint = artifacts.require("./ERC20DividendCheckpoint.sol");
+const EtherDividendCheckpoint = artifacts.require("./EtherDividendCheckpoint.sol");
 const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpointFactory.sol");
 const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpointFactory.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
@@ -46,8 +48,10 @@ let I_SingleTradeVolumeRestrictionManagerFactory;
 let I_ManualApprovalTransferManagerFactory;
 let I_VolumeRestrictionTransferManagerFactory;
 let I_PercentageTransferManagerFactory;
+let I_EtherDividendCheckpointLogic;
 let I_EtherDividendCheckpointFactory;
 let I_CountTransferManagerFactory;
+let I_ERC20DividendCheckpointLogic;
 let I_ERC20DividendCheckpointFactory;
 let I_GeneralPermissionManagerFactory;
 let I_GeneralTransferManagerLogic;
@@ -371,7 +375,8 @@ export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInst
 /// Deploy the Dividend Modules
 
 export async function deployERC20DividendAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
-    I_ERC20DividendCheckpointFactory = await ERC20DividendCheckpointFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    I_ERC20DividendCheckpointLogic = await ERC20DividendCheckpoint.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_ERC20DividendCheckpointFactory = await ERC20DividendCheckpointFactory.new(polyToken, setupCost, 0, 0, I_ERC20DividendCheckpointLogic.address, { from: accountPolymath });
 
     assert.notEqual(
         I_ERC20DividendCheckpointFactory.address.valueOf(),
@@ -383,7 +388,8 @@ export async function deployERC20DividendAndVerifyed(accountPolymath, MRProxyIns
 }
 
 export async function deployEtherDividendAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
-    I_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    I_EtherDividendCheckpointLogic = await EtherDividendCheckpoint.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(polyToken, setupCost, 0, 0, I_EtherDividendCheckpointLogic.address, { from: accountPolymath });
 
     assert.notEqual(
         I_EtherDividendCheckpointFactory.address.valueOf(),

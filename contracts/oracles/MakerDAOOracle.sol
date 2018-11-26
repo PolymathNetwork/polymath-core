@@ -13,6 +13,7 @@ contract MakerDAOOracle is IOracle, Ownable {
     bool public manualOverride;
     uint256 public manualPrice;
 
+    /*solium-disable-next-line security/no-block-members*/
     event ChangeMedianizer(address _newMedianizer, address _oldMedianizer, uint256 _now);
     event SetManualPrice(uint256 _oldPrice, uint256 _newPrice, uint256 _time);
     event SetManualOverride(bool _override, uint256 _time);
@@ -35,6 +36,7 @@ contract MakerDAOOracle is IOracle, Ownable {
       */
     function changeMedianier(address _medianizer) public onlyOwner {
         require(_medianizer != address(0), "0x not allowed");
+        /*solium-disable-next-line security/no-block-members*/
         emit ChangeMedianizer(_medianizer, medianizer, now);
         medianizer = _medianizer;
     }
@@ -78,6 +80,7 @@ contract MakerDAOOracle is IOracle, Ownable {
       * @param _price Price to set
       */
     function setManualPrice(uint256 _price) public onlyOwner {
+        /*solium-disable-next-line security/no-block-members*/
         emit SetManualPrice(manualPrice, _price, now);
         manualPrice = _price;
     }
@@ -88,6 +91,7 @@ contract MakerDAOOracle is IOracle, Ownable {
       */
     function setManualOverride(bool _override) public onlyOwner {
         manualOverride = _override;
+        /*solium-disable-next-line security/no-block-members*/
         emit SetManualOverride(_override, now);
     }
 

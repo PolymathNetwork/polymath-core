@@ -352,7 +352,13 @@ contract("PreSaleSTO", accounts => {
             );
         });
 
-        it("Should failed at the time of buying the tokens -- Because STO has started", async () => {
+        it("Should buy some more tokens to previous investor", async() => {
+            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1000", "ether"), web3.utils.toWei("1", "ether"), 0, { from: account_issuer });
+            // No change in the investor count
+            assert.equal((await I_PreSaleSTO.getNumberInvestors.call()).toNumber(), 3);
+        })
+
+        it("Should failed at the time of buying the tokens -- Because STO has ended", async () => {
             await increaseTime(duration.days(100)); // increased beyond the end time of the STO
 
             await catchRevert(
@@ -407,7 +413,7 @@ contract("PreSaleSTO", accounts => {
 
     describe("Test cases for the PresaleSTOFactory", async () => {
         it("should get the exact details of the factory", async () => {
-            assert.equal(await I_PreSaleSTOFactory.setupCost.call(), 0);
+            assert.equal(await I_PreSaleSTOFactory.getSetupCost.call(), 0);
             assert.equal((await I_PreSaleSTOFactory.getTypes.call())[0], 3);
             assert.equal(
                 web3.utils.toAscii(await I_PreSaleSTOFactory.getName.call()).replace(/\u0000/g, ""),
@@ -415,11 +421,11 @@ contract("PreSaleSTO", accounts => {
                 "Wrong Module added"
             );
             assert.equal(
-                await I_PreSaleSTOFactory.getDescription.call(),
+                await I_PreSaleSTOFactory.description.call(),
                 "Allows Issuer to configure pre-sale token allocations",
                 "Wrong Module added"
             );
-            assert.equal(await I_PreSaleSTOFactory.getTitle.call(), "PreSale STO", "Wrong Module added");
+            assert.equal(await I_PreSaleSTOFactory.title.call(), "PreSale STO", "Wrong Module added");
             assert.equal(
                 await I_PreSaleSTOFactory.getInstructions.call(),
                 "Configure and track pre-sale token allocations",

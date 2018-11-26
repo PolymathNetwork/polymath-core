@@ -19,13 +19,13 @@ contract CappedSTOFactory is ModuleFactory {
         version = "1.0.0";
         name = "CappedSTO";
         title = "Capped STO";
-        description = "Use to collects the funds and once the cap is reached then investment will be no longer entertained";
+        description = "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (ETH or POLY), and any security tokens left upon termination of the offering will not be minted.";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
@@ -35,7 +35,9 @@ contract CappedSTOFactory is ModuleFactory {
         CappedSTO cappedSTO = new CappedSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == cappedSTO.getInitFunction(), "Invalid data");
+        /*solium-disable-next-line security/no-low-level-calls*/
         require(address(cappedSTO).call(_data), "Unsuccessfull call");
+        /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(cappedSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(cappedSTO);
     }
@@ -50,44 +52,10 @@ contract CappedSTOFactory is ModuleFactory {
     }
 
     /**
-     * @notice Get the name of the Module
-     */
-    function getName() public view returns(bytes32) {
-        return name;
-    }
-
-    /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() external view returns(string) {
-        return description;
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() external view returns(string) {
-        return title;
-    }
-
-    /**
-     * @notice Get the version of the Module
-     */
-    function getVersion() external view returns(string) {
-        return version;
-    }
-
-    /**
-     * @notice Get the setup cost of the module
-     */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
-    }
-
-    /**
      * @notice Returns the instructions associated with the module
      */
     function getInstructions() external view returns(string) {
+        /*solium-disable-next-line max-len*/
         return "Initialises a capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY/ETH to token rate), _fundRaiseType (whether you are raising in POLY or ETH), _polyToken (address of POLY token), _fundsReceiver (address which will receive funds)";
     }
 

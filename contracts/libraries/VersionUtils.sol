@@ -46,15 +46,15 @@ library VersionUtils {
     }
 
     /**
-     * @notice This function use to compare the lower bound with the latest version
+     * @notice Used to compare the lower bound with the latest version
      * @param _version1 Array holds the lower bound of the version
      * @param _version2 Array holds the latest version of the ST
      * @return bool
      */
     function compareLowerBound(uint8[] _version1, uint8[] _version2) internal pure returns(bool) {
-        require(_version1.length == _version2.length);
+        require(_version1.length == _version2.length, "Input length mismatch");
         uint counter = 0;
-        for (uint8 j = 0; j< _version1.length; j++) {
+        for (uint8 j = 0; j < _version1.length; j++) {
             if (_version1[j] == 0)
                 counter ++;
         }
@@ -77,15 +77,15 @@ library VersionUtils {
     }
 
     /**
-     * @notice This function use to compare the upper bound with the latest version
+     * @notice Used to compare the upper bound with the latest version
      * @param _version1 Array holds the upper bound of the version
      * @param _version2 Array holds the latest version of the ST
      * @return bool
      */
     function compareUpperBound(uint8[] _version1, uint8[] _version2) internal pure returns(bool) {
-        require(_version1.length == _version2.length);
+        require(_version1.length == _version2.length, "Input length mismatch");
         uint counter = 0;
-        for (uint8 j = 0; j< _version1.length; j++) {
+        for (uint8 j = 0; j < _version1.length; j++) {
             if (_version1[j] == 0)
                 counter ++;
         }
@@ -109,7 +109,7 @@ library VersionUtils {
 
 
     /**
-     * @notice Use to pack the uint8[] array data into uint24 value
+     * @notice Used to pack the uint8[] array data into uint24 value
      * @param _major Major version
      * @param _minor Minor version
      * @param _patch Patch version
@@ -119,7 +119,7 @@ library VersionUtils {
     }
 
     /**
-     * @notice Use to convert packed data into uint8 array
+     * @notice Used to convert packed data into uint8 array
      * @param _packedVersion Packed data
      */
     function unpack(uint24 _packedVersion) internal pure returns (uint8[]) {

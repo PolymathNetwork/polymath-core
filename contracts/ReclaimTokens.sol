@@ -13,9 +13,9 @@ contract ReclaimTokens is Ownable {
     * @param _tokenContract The address of the token contract
     */
     function reclaimERC20(address _tokenContract) external onlyOwner {
-        require(_tokenContract != address(0));
+        require(_tokenContract != address(0), "Invalid address");
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(owner, balance));
+        require(token.transfer(owner, balance), "Transfer failed");
     }
 }

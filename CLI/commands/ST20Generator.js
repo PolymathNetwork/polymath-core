@@ -138,7 +138,7 @@ async function step_token_deploy(_name, _details, _divisible) {
 
   let divisibility;
   if (typeof _divisible !== 'undefined') {
-    divisibility = _divisible == 'true';
+    divisibility = _divisible.toString() == 'true';
     console.log(`Divisible: ${divisibility.toString()}`)
   } else {
     let divisible = readlineSync.question('Press "N" for Non-divisible type token or hit Enter for divisible type token (Default): ');

@@ -33,7 +33,7 @@ program
   .option('-o, --transferOwnership <newOwner>', `Transfers the ticker's ownership to newOwner account. If newOwner is 'false', this step is skipped`)
   .option('-n, --tokenName <tokenName>', 'Token name')
   .option('-d, --details <details>', 'Off-chain details of the token')
-  .option('-D, --divisible [div]', 'If token is divisible or not [true]', /^(true|false)/, 'true')
+  .option('-D, --divisible <div>', 'If token is divisible or not [true]', /^(true|false)/)
   .description('Wizard-like script that will guide technical users in the creation and deployment of an ST-20 token')
   .action(async function(cmd) {
     await gbl.initialize(program.remoteNode);

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./ITransferManager.sol";
+import "../../TransferManager/ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
@@ -59,7 +59,7 @@ contract SignedTransferManager is ITransferManager {
     function updateSigners(address[] _signers, bool[] _signersStats) public withPerm(ADMIN) {
         require(_signers.length == _signersStats.length, "input array length does not match");
         for(uint256 i=0; i<_signers.length; i++){
-            signers[_signers[i]] = _signersStats[i]; 
+            signers[_signers[i]] = _signersStats[i];
         }
         emit UpdateSigners(_signers, _signersStats);
     }
@@ -84,7 +84,7 @@ contract SignedTransferManager is ITransferManager {
             if(_data.length == 0){
                 return Result.INVALID;  // data input check
             }
-            
+
             require(invalidSignatures[_data] != true, "Invalid signature - signature is either used or deemed as invalid");
             bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
             bytes32 prependedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
@@ -128,8 +128,8 @@ contract SignedTransferManager is ITransferManager {
     /**
      * @notice used to recover signers' add from signature
      */
-    function _recoverSignerAdd(bytes32 _hash, bytes _data) internal view returns(address) {
-        
+    function _recoverSignerAdd(bytes32 _hash, bytes _data) internal pure returns(address) {
+
         //Check that the signature is valid
         require(_data.length == 65, "Date input length is invalid");
 
@@ -152,7 +152,7 @@ contract SignedTransferManager is ITransferManager {
         return ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash)), v, r, s);
     }
 
-   
+
     /**
      * @notice Return the permissions flag that are associated with ManualApproval transfer manager
      */

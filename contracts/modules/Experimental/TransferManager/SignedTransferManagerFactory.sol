@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./SignedTransferManager.sol";
-import "../ModuleFactory.sol";
+import "../../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying SignedTransferManager module

@@ -4,6 +4,7 @@ var common = require('./common/common_functions');
 var gbl = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
+const PolymathRegistry = require('./PolymathRegistryClass')
 
 // App flow
 let currentContract = null;
@@ -34,10 +35,7 @@ async function selectContract() {
     let selected = index == -1 ? 'CANCEL' : contractList[index];
     switch (selected) {
       case 'PolymathRegistry':
-        console.log(chalk.red(`
-    *********************************
-    This option is not yet available.
-    *********************************`));
+        await polymathRegistryActions();
         break;
       case 'FeatureRegistry':
         console.log(chalk.red(`
@@ -60,6 +58,32 @@ async function selectContract() {
       case 'CANCEL':
         process.exit(0);
     }
+  }
+}
+
+async function polymathRegistryActions() {
+  console.log('\n\x1b[34m%s\x1b[0m',"Polymath Registry - Main menu");
+
+  await PolymathRegistry.init()
+
+  let actions = ['Get Contract Address', 'Change Contract Address'];
+  let index = readlineSync.keyInSelect(actions, 'What do you want to do? ');
+  let selected = index == -1 ? 'CANCEL' : actions[index];
+
+  switch (selected) {
+    case 'Get Contract Address':
+      let contractName = readlineSync.question('Enter the contract name: ');
+      console.log(`${contractName} address: ${await PolymathRegistry.getAddress([contractName])}`)
+      break;
+    case 'Change Contract Address':
+      if (!PolymathRegistry.iAmOwner()) {
+        console.log(chalk.red(`You are not the owner of this contract.`));
+      } else {
+        let contractName = readlineSync.question(`Enter the contract name: `);
+        let contractAddress = readlineSync.question(`Enter the new ${contractName} address: `);
+        await PolymathRegistry.changeAddress([contractName, contractAddress])
+      }
+      break;
   }
 }
 

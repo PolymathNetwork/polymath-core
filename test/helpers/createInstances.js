@@ -15,6 +15,7 @@ const SingleTradeVolumeRestrictionManagerFactory = artifacts.require('./SingleTr
 const WeightedVoteCheckpointFactory = artifacts.require('./WeightedVoteCheckpointFactory.sol');
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
+const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const USDTieredSTOProxyFactory = artifacts.require("./USDTieredSTOProxyFactory");
 const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
@@ -38,6 +39,7 @@ const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 let I_USDTieredSTOProxyFactory;
 let I_USDTieredSTOFactory;
 let I_TrackedRedemptionFactory;
+let I_ScheduledCheckpointFactory;
 let I_MockBurnFactory;
 let I_MockWrongTypeBurnFactory;
 let I_SingleTradeVolumeRestrictionManagerFactory;
@@ -267,6 +269,18 @@ export async function deploySingleTradeVolumeRMAndVerified(accountPolymath, MRPr
     return new Array(I_SingleTradeVolumeRestrictionManagerFactory);
 }
 
+export async function deployScheduleCheckpointAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_ScheduledCheckpointFactory = await ScheduledCheckpointFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_ScheduledCheckpointFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "ScheduledCheckpointFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_ScheduledCheckpointFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_ScheduledCheckpointFactory);
+}
+
 /// Deploy the Permission Manager
 
 export async function deployGPMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
@@ -313,7 +327,7 @@ export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstanc
 
 export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
     I_PreSaleSTOFactory = await PreSaleSTOFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
-    
+
     assert.notEqual(
         I_PreSaleSTOFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -328,14 +342,14 @@ export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInst
     I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new({from: accountPolymath});
 
     I_USDTieredSTOFactory = await USDTieredSTOFactory.new(polyToken, setupCost, 0, 0, I_USDTieredSTOProxyFactory.address, { from: accountPolymath });
-    
+
     assert.notEqual(
         I_USDTieredSTOFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
         "USDTieredSTOFactory contract was not deployed"
     );
 
-    await registerAndVerifyByMR(I_USDTieredSTOFactory.address, accountPolymath, MRProxyInstance);   
+    await registerAndVerifyByMR(I_USDTieredSTOFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_USDTieredSTOFactory);
 }
 

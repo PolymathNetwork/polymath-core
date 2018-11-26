@@ -1,7 +1,6 @@
 var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js');
 var common = require('./common/common_functions');
-var global = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis')
 var chalk = require('chalk');
@@ -11,8 +10,7 @@ var chalk = require('chalk');
 let polyToken;
 let usdToken;
 
-async function executeApp(beneficiary, amount, remoteNetwork) {
-  await global.initialize(remoteNetwork);
+async function executeApp(beneficiary, amount) {
 
   console.log("\n");
   console.log("***************************")
@@ -43,7 +41,7 @@ async function setup(){
 
 async function send_poly(beneficiary, amount) {
   let issuerBalance = await polyToken.methods.balanceOf(Issuer.address).call({from : Issuer.address});
-  console.log(chalk.blue(`Hello user you have '${(new BigNumber(issuerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY'\n`))
+  console.log(chalk.blue(`Hello User, your current balance is '${(new BigNumber(issuerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY'\n`))
 
   if (typeof beneficiary === 'undefined' && typeof amount === 'undefined') {
     let options = ['250 POLY for ticker registration','500 POLY for token launch + ticker reg', '20K POLY for CappedSTO Module', 
@@ -79,7 +77,7 @@ async function send_poly(beneficiary, amount) {
         beneficiary = readlineSync.question(`Enter beneficiary 10K USD Tokens ('${Issuer.address}'): `);
         if (beneficiary == "") beneficiary = Issuer.address;
         let getTokensAction = usdToken.methods.getTokens(web3.utils.toWei('10000'), beneficiary);
-        await common.sendTransaction(Issuer, getTokensAction, defaultGasPrice);
+        await common.sendTransaction(getTokensAction);
         let balance = await usdToken.methods.balanceOf(beneficiary).call();
         let balanceInPoly = new BigNumber(balance).dividedBy(new BigNumber(10).pow(18));
         console.log(chalk.green(`Congratulations! balance of ${beneficiary} address is ${balanceInPoly.toNumber()} USD Tokens`));    
@@ -97,7 +95,7 @@ async function send_poly(beneficiary, amount) {
 async function transferTokens(to, amount) {
     try {
         let getTokensAction = polyToken.methods.getTokens(amount, to);
-        await common.sendTransaction(Issuer, getTokensAction, defaultGasPrice);
+        await common.sendTransaction(getTokensAction);
     } catch (err){
         console.log(err.message);
         return;
@@ -108,7 +106,7 @@ async function transferTokens(to, amount) {
 }
 
 module.exports = {
-  executeApp: async function(beneficiary, amount, remoteNetwork) {
-        return executeApp(beneficiary, amount, remoteNetwork);
+  executeApp: async function(beneficiary, amount) {
+        return executeApp(beneficiary, amount);
     }
 }

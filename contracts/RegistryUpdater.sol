@@ -12,11 +12,11 @@ contract RegistryUpdater is Ownable {
     address public polyToken;
 
     constructor (address _polymathRegistry) public {
-        require(_polymathRegistry != address(0));
+        require(_polymathRegistry != address(0), "Invalid address");
         polymathRegistry = _polymathRegistry;
     }
 
-    function updateFromRegistry() onlyOwner public {
+    function updateFromRegistry() public onlyOwner {
         moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
         securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
         featureRegistry = PolymathRegistry(polymathRegistry).getAddress("FeatureRegistry");

@@ -1,5 +1,4 @@
 var common = require('./common/common_functions');
-var global = require('./common/global');
 
 /////////////////////////////ARTIFACTS//////////////////////////////////////////
 var contracts = require('./helpers/contract_addresses');
@@ -14,12 +13,10 @@ let securityToken;
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
-async function startScript(tokenSymbol, transferTo, transferAmount, remoteNetwork) {
+async function startScript(tokenSymbol, transferTo, transferAmount) {
   _tokenSymbol = tokenSymbol;
   _transferTo = transferTo;
   _transferAmount = transferAmount;
-
-  await global.initialize(remoteNetwork);
 
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
@@ -46,11 +43,11 @@ async function transfer() {
 
   try{
     let transferAction = securityToken.methods.transfer(_transferTo,web3.utils.toWei(_transferAmount,"ether"));
-    let receipt = await common.sendTransaction(Issuer, transferAction, defaultGasPrice);
+    let receipt = await common.sendTransaction(transferAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
     console.log(`
   Account ${event.from}
-  transfered ${web3.utils.fromWei(event.value,"ether")} tokens
+  transferred ${web3.utils.fromWei(event.value,"ether")} tokens
   to account ${event.to}`
     );
   } catch (err){
@@ -61,7 +58,7 @@ async function transfer() {
 };
 
 module.exports = {
-  executeApp: async function(tokenSymbol, transferTo, transferAmount, remoteNetwork) {
-        return startScript(tokenSymbol, transferTo, transferAmount, remoteNetwork);
+  executeApp: async function(tokenSymbol, transferTo, transferAmount) {
+        return startScript(tokenSymbol, transferTo, transferAmount);
     }
 }

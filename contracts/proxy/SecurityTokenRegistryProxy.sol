@@ -10,6 +10,7 @@ import "./OwnedUpgradeabilityProxy.sol";
  * Besides, it allows to upgrade the SecurityTokenRegistry's behaviour towards further implementations, and provides basic
  * authorization control functionalities
  */
+/*solium-disable-next-line no-empty-blocks*/
 contract SecurityTokenRegistryProxy is EternalStorage, OwnedUpgradeabilityProxy {
 
 }

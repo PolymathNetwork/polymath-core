@@ -5,11 +5,9 @@ All notable changes to this project will be documented in this file.
 
 [__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-089-18__  
 
-## Fixed
-* Change the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.0.1`.   
-
-## Removed
-* Remove `0x0` check for the `_from` address to `ManualApprovalTransferManager`.
+## Manual Approval TransferManager
+* Removed `0x0` check for the `_from` address to `ManualApprovalTransferManager`. This allows for the Issuer/Transfer Agent to approve a one-off mint of tokens that otherwise would not be possible. 
+* Changed the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.0.1`.   
 
 # v1.5.0 - Release Candidate
 

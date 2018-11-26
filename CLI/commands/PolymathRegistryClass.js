@@ -1,3 +1,4 @@
+const contracts = require('./helpers/contract_addresses')
 const Contract = require('./ContractClass')
 
 class PolymathRegistry extends Contract {
@@ -6,7 +7,7 @@ class PolymathRegistry extends Contract {
   }
 
   async init () {
-    this.contract = await Contract.connect("polymathRegistry")
+    this.contract = await Contract.connect("polymathRegistry", await contracts["polymathRegistry"]())
   }
 
   async getAddress (arg) {

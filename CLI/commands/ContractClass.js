@@ -1,11 +1,10 @@
-const contracts = require('./helpers/contract_addresses')
 const common = require('./common/common_functions')
 const abis = require('./helpers/contract_abis')
 const gbl = require('./common/global')
 
 class Contract {
-  static async connect (contractName) {
-    return new web3.eth.Contract(abis[contractName](), await contracts[contractName]())
+  static async connect (contractName, address) {
+    return new web3.eth.Contract(abis[contractName](), address)
   }
 
   static async call (contract, methodName, methodArguments) {

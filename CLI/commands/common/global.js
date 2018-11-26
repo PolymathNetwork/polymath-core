@@ -24,18 +24,29 @@ function getGasPrice (networkId) {
   return gasPrice;
 }
 
+function providerValidator(url) {
+  var expression = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
+  var regex = new RegExp(expression);
+  return url.match(regex);
+}
+
+async function httpProvider(url, file) {
+  web3 = new Web3(new Web3.providers.HttpProvider(url));
+  Issuer = await web3.eth.accounts.privateKeyToAccount("0x" + require('fs').readFileSync(file).toString());
+}
+
 module.exports = {
   initialize: async function(network) {
     remoteNetwork = network;
     if (typeof web3 === 'undefined' || typeof Issuer === 'undefined' || typeof defaultGasPrice === 'undefined') {
       if (typeof remoteNetwork !== 'undefined') {
-        web3 = new Web3(new Web3.providers.HttpProvider(`https://${remoteNetwork}.infura.io/`));
-        let privKey = require('fs').readFileSync('./privKey').toString();
-        Issuer = await web3.eth.accounts.privateKeyToAccount("0x" + privKey);
+        if (!providerValidator(remoteNetwork)) {
+          console.log("Invalid remote node")
+          process.exit(0)
+        }
+        await httpProvider(remoteNetwork, './privKey');
       } else {
-        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
-        let privKeyLocal = require('fs').readFileSync('./privKeyLocal').toString()
-        Issuer = await web3.eth.accounts.privateKeyToAccount("0x" + privKeyLocal);
+        await httpProvider("http://localhost:8545", './privKeyLocal');
       }
       defaultGasPrice = getGasPrice(await web3.eth.net.getId());
     }

@@ -2,11 +2,14 @@ var readlineSync = require('readline-sync');
 var BigNumber = require('bignumber.js');
 var moment = require('moment');
 var chalk = require('chalk');
-const shell = require('shelljs');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 var common = require('./common/common_functions');
 var gbl = require('./common/global');
+var whitelist = require('./whitelist');
+var multi_mint = require('./multi_mint');
+var accredit = require('./accredit');
+var changeNonAccreditedLimit = require('./changeNonAccreditedLimit');
 
 let securityTokenRegistryAddress;
 
@@ -241,12 +244,11 @@ async function step_Wallet_Issuance(){
 }
 
 async function multi_mint_tokens() {
-  //await whitelist.startWhitelisting(tokenSymbol);
-  shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75 ${remoteNetwork}`);
+  await whitelist.executeApp(tokenSymbol, 75);
   console.log(chalk.green(`\nCongrats! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
 
-  shell.exec(`${__dirname}/scripts//script.sh Multimint ${tokenSymbol} 75 ${remoteNetwork}`);
+  await multi_mint.executeApp(tokenSymbol, 75);
   console.log(chalk.green(`\nHurray!! Tokens get successfully Minted and transferred to token holders`));
 }
 
@@ -843,28 +845,28 @@ async function usdTieredSTO_status() {
   let displayTiers = "";
   let displayMintedPerTier = "";
   for (let t = 0; t < tiersLength; t++) {
-    let ratePerTier = await currentSTO.methods.ratePerTier(t).call();
-    let tokensPerTierTotal = await currentSTO.methods.tokensPerTierTotal(t).call();
-    let mintedPerTierTotal = await currentSTO.methods.mintedPerTierTotal(t).call();
-
+    let tier = await currentSTO.methods.tiers(t).call();
+    let ratePerTier = tier.rate;
+    let tokensPerTierTotal = tier.tokenTotal;
+    let mintedPerTierTotal = tier.mintedTotal;
+    let mintedPerTierPerRaiseType = await currentSTO.methods.getTokensMintedByTier(t).call();
+    
     let displayMintedPerTierPerType = "";
     let displayDiscountTokens = "";
     for (const type of raiseTypes) {
       let displayDiscountMinted = "";
-      if (type == 'POLY') {
-        let tokensPerTierDiscountPoly = await currentSTO.methods.tokensPerTierDiscountPoly(t).call();
-        if (tokensPerTierDiscountPoly > 0) {
-          let ratePerTierDiscountPoly = await currentSTO.methods.ratePerTierDiscountPoly(t).call();
-          let mintedPerTierDiscountPoly = await currentSTO.methods.mintedPerTierDiscountPoly(t).call();
-          displayDiscountTokens = `
+      let tokensPerTierDiscountPoly = tier.tokensDiscountPoly;
+      if (tokensPerTierDiscountPoly > 0) {
+        let ratePerTierDiscountPoly = tier.rateDiscountPoly;
+        let mintedPerTierDiscountPoly = tier.mintedDiscountPoly;
+        displayDiscountTokens = `
         Tokens at discounted rate: ${web3.utils.fromWei(tokensPerTierDiscountPoly)} ${displayTokenSymbol}
         Discounted rate:           ${web3.utils.fromWei(ratePerTierDiscountPoly, 'ether')} USD per Token`;
 
-          displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
-        }
+        displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
       }
 
-      let mintedPerTier = await currentSTO.methods.mintedPerTier(gbl.constants.FUND_RAISE_TYPES[type], t).call();
+      let mintedPerTier = mintedPerTierPerRaiseType[gbl.constants.FUND_RAISE_TYPES[type]];
       displayMintedPerTierPerType += `
         Sold for ${type}:\t\t   ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
     }
@@ -1003,7 +1005,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(changeAccreditedAction);
           break;
         case 2:
-          shell.exec(`${__dirname}/scripts/script.sh Accredit ${tokenSymbol} 75 ${remoteNetwork}`);
+          await accredit.executeApp(tokenSymbol, 75);
           break;
         case 3:
           let account = readlineSync.question('Enter the address to change non accredited limit: ');
@@ -1015,7 +1017,7 @@ async function usdTieredSTO_configure() {
           await common.sendTransaction(changeNonAccreditedLimitAction);
           break;
         case 4:
-          shell.exec(`${__dirname}/scripts/script.sh NonAccreditedLimit ${tokenSymbol} 75 ${remoteNetwork}`);
+          await changeNonAccreditedLimit.executeApp(tokenSymbol, 75);
           break;
         case 5:
           await modfifyTimes();

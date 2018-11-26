@@ -334,7 +334,7 @@ contract VolumeRestrictionTM is ITransferManager {
      * @notice Use to remove the global restriction
      */
     function removeGlobalRestriction() public withPerm(ADMIN) {
-        require(globalRestriction.endTime != 0, "Not present");
+        require(globalRestriction.endTime != 0);
         globalRestriction = VolumeRestriction(0, 0, 0, 0, 0, RestrictionType(0));
         globalBucketDetails.timestamps.length = 0;
         globalBucketDetails.sumOfLastPeriod = 0;
@@ -345,7 +345,7 @@ contract VolumeRestrictionTM is ITransferManager {
      * @notice Use to remove the daily global restriction
      */
     function removeDailyGlobalRestriction() external withPerm(ADMIN) {
-        require(dailyGlobalRestriction.endTime != 0, "Not present");
+        require(dailyGlobalRestriction.endTime != 0);
         dailyGlobalRestriction = VolumeRestriction(0, 0, 0, 0, 0, RestrictionType(0));
         emit DailyGlobalRestrictionRemoved();
     } 
@@ -773,7 +773,7 @@ contract VolumeRestrictionTM is ITransferManager {
         internal
     {   
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
-        require(individualRestriction[_holder].startTime < now, "Not allowed to modify");
+        require(individualRestriction[_holder].startTime < now, "Not allowed");
         
         individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
@@ -807,7 +807,7 @@ contract VolumeRestrictionTM is ITransferManager {
     {   
         require(
             individualRestriction[_holder].endTime < now,
-            "Restriction already present"
+            "Already present"
         );
         require(_holder != address(0) && !exemptList[_holder], "Invalid address");
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
@@ -845,13 +845,13 @@ contract VolumeRestrictionTM is ITransferManager {
         internal
         view
     {
-        require(_restrictionType == 0 || _restrictionType == 1, "Invalid restriction type");
+        require(_restrictionType == 0 || _restrictionType == 1, "Invalid type");
         if (_restrictionType == uint256(RestrictionType.Fixed)) {
-            require(_allowedTokens > 0, "Invalid value of allowed tokens");
+            require(_allowedTokens > 0, "Invalid value");
         } else {
             require(
                 _allowedPercentageOfTokens > 0 && _allowedPercentageOfTokens <= 100 * 10 ** 16,
-                "Percentage of tokens not within (0,100]"
+                "Percentage is not within (0,100]"
             );
         }
         require(_startTime >= now && _endTime > _startTime);

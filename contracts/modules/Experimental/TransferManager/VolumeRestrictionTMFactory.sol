@@ -29,7 +29,7 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
      */
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Insufficent Allowance");
         address volumeRestrictionTransferManager = new VolumeRestrictionTM(msg.sender, address(polyToken));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(volumeRestrictionTransferManager, getName(), address(this), msg.sender, setupCost, now);

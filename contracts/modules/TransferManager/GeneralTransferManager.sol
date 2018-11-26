@@ -180,6 +180,26 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         public
         withPerm(WHITELIST)
     {
+        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+    }
+
+    /**
+    * @notice Adds or removes addresses from the whitelist.
+    * @param _investor is the address to whitelist
+    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
+    * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
+    */
+    function _modifyWhitelist(
+        address _investor,
+        uint64 _fromTime,
+        uint64 _toTime,
+        uint64 _expiryTime,
+        uint8 _canBuyFromSTO
+    )
+        internal
+    {
         if (whitelist[_investor].added == uint8(0)) {
             investors.push(_investor);
         }
@@ -208,7 +228,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         require(_toTimes.length == _expiryTimes.length, "Mismatched input lengths");
         require(_canBuyFromSTO.length == _toTimes.length, "Mismatched input length");
         for (uint256 i = 0; i < _investors.length; i++) {
-            modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i]);
+            _modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i]);
         }
     }
 

@@ -6,20 +6,25 @@ class PolymathRegistry extends Contract {
     super()
   }
 
-  async init () {
-    this.contract = await Contract.connect("polymathRegistry", await contracts["polymathRegistry"]())
+  async _init() {
+    if (!this.contract) {
+      this.contract = Contract.connect("polymathRegistry", await contracts["polymathRegistry"]())
+    }
   }
 
   async getAddress (arg) {
-    return Contract.call(this.contract, "getAddress", arg)
+    await this._init()
+    return Contract.call(this.contract, "getAddress", arg, () => {})
   }
 
   async iAmOwner () {
-    return Contract.owner(this.contract)
+    await this._init()
+    return Contract.owner(this.contract) == Issuer.address
   }
 
   async changeAddress (args) {
-    await Contract.transaction(this.contract, "changeAddress", args, {})
+    await this._init()
+    await Contract.transaction(this.contract, "changeAddress", args, {}, () => {})
   }
 }
 

@@ -64,8 +64,6 @@ async function selectContract() {
 async function polymathRegistryActions() {
   console.log('\n\x1b[34m%s\x1b[0m',"Polymath Registry - Main menu");
 
-  await PolymathRegistry.init()
-
   let actions = ['Get Contract Address', 'Change Contract Address'];
   let index = readlineSync.keyInSelect(actions, 'What do you want to do? ');
   let selected = index == -1 ? 'CANCEL' : actions[index];

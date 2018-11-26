@@ -246,10 +246,13 @@ contract VolumeRestrictionTM is ITransferManager {
         withPerm(ADMIN)
     {   
         require(
-            globalRestriction.endTime == 0 || globalRestriction.endTime > now,
+            globalRestriction.endTime < now,
             "Not allowed"
         );
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
+         if (globalRestriction.endTime != 0) {
+            removeGlobalRestriction();
+        }
         globalRestriction = VolumeRestriction(
             _allowedTokens,
             _allowedPercentageOfTokens,
@@ -287,7 +290,7 @@ contract VolumeRestrictionTM is ITransferManager {
         withPerm(ADMIN)
     {   
         require(
-            dailyGlobalRestriction.endTime == 0 || dailyGlobalRestriction.endTime > now,
+            dailyGlobalRestriction.endTime < now,
             "Not Allowed"
         );
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, 1, _endTime, _restrictionType);
@@ -330,7 +333,7 @@ contract VolumeRestrictionTM is ITransferManager {
     /**
      * @notice Use to remove the global restriction
      */
-    function removeGlobalRestriction() external withPerm(ADMIN) {
+    function removeGlobalRestriction() public withPerm(ADMIN) {
         require(globalRestriction.endTime != 0, "Not present");
         globalRestriction = VolumeRestriction(0, 0, 0, 0, 0, RestrictionType(0));
         globalBucketDetails.timestamps.length = 0;
@@ -437,7 +440,7 @@ contract VolumeRestrictionTM is ITransferManager {
         external
         withPerm(ADMIN)
     {   
-        require(globalRestriction.startTime > now, "Not allowed");    
+        require(globalRestriction.startTime < now, "Not allowed");    
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
         globalRestriction = VolumeRestriction(
             _allowedTokens,
@@ -477,7 +480,7 @@ contract VolumeRestrictionTM is ITransferManager {
         external
         withPerm(ADMIN)
     {   
-        require(dailyGlobalRestriction.startTime > now, "Not allowed");    
+        require(dailyGlobalRestriction.startTime < now, "Not allowed");    
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
         dailyGlobalRestriction = VolumeRestriction(
             _allowedTokens,
@@ -770,8 +773,8 @@ contract VolumeRestrictionTM is ITransferManager {
         internal
     {   
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
-        require(individualRestriction[_holder].startTime > now, "Not allowed to modify");
-
+        require(individualRestriction[_holder].startTime < now, "Not allowed to modify");
+        
         individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
             _allowedPercentageOfTokens,
@@ -803,12 +806,15 @@ contract VolumeRestrictionTM is ITransferManager {
         internal
     {   
         require(
-            individualRestriction[_holder].endTime == 0 || individualRestriction[_holder].endTime > now,
+            individualRestriction[_holder].endTime < now,
             "Restriction already present"
         );
         require(_holder != address(0) && !exemptList[_holder], "Invalid address");
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
         
+        if (individualRestriction[_holder].endTime != 0) {
+            _removeIndividualRestriction(_holder);
+        }
         individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
             _allowedPercentageOfTokens,
@@ -837,7 +843,7 @@ contract VolumeRestrictionTM is ITransferManager {
         uint256 _restrictionType 
     ) 
         internal
-        pure
+        view
     {
         require(_restrictionType == 0 || _restrictionType == 1, "Invalid restriction type");
         if (_restrictionType == uint256(RestrictionType.Fixed)) {
@@ -848,7 +854,7 @@ contract VolumeRestrictionTM is ITransferManager {
                 "Percentage of tokens not within (0,100]"
             );
         }
-        require(_startTime > 0 && _endTime > _startTime);
+        require(_startTime >= now && _endTime > _startTime);
         // Maximum limit for the rollingPeriod is 365 days
         require(_rollingPeriodDays >= 1 && _rollingPeriodDays <= 365);
         require(BokkyPooBahsDateTimeLibrary.diffDays(_startTime, _endTime) >= _rollingPeriodDays);

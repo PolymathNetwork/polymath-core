@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../../proxy/GeneralTransferManagerProxy.sol";
+import "./GeneralTransferManager.sol";
 import "../ModuleFactory.sol";
 
 /**
@@ -8,23 +8,19 @@ import "../ModuleFactory.sol";
  */
 contract GeneralTransferManagerFactory is ModuleFactory {
 
-    address public logicContract;
-
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-        require(_logicContract != address(0), "Invalid logic contract");
         version = "1.0.0";
         name = "GeneralTransferManager";
         title = "General Transfer Manager";
         description = "Manage transfers using a time based whitelist";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        logicContract = _logicContract;
     }
 
 
@@ -35,7 +31,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        address generalTransferManager = new GeneralTransferManagerProxy(msg.sender, address(polyToken), logicContract);
+        address generalTransferManager = new GeneralTransferManager(msg.sender, address(polyToken));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(generalTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(generalTransferManager);

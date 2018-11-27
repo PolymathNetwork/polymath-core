@@ -262,7 +262,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         uint256 _endTime
     ) external onlyOwner {
         /*solium-disable-next-line security/no-block-members*/
-        //require(now < startTime, "STO already started");
+        require(now < startTime, "STO already started");
         _modifyTimes(_startTime, _endTime);
     }
 
@@ -280,6 +280,14 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
         _modifyAddresses(_wallet, _reserveWallet, _usdTokens);
+    }
+
+    /**
+     * @dev Modifies addresses used as usd tokens
+     * @param _usdTokens Address of usd tokens
+     */
+    function modifyUSDTokens(address[] _usdTokens) public onlyOwner {
+        _modifyUSDTokens(_usdTokens);
     }
 
     function _modifyLimits(
@@ -333,6 +341,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         require(_wallet != address(0) && _reserveWallet != address(0), "Invalid wallet");
         wallet = _wallet;
         reserveWallet = _reserveWallet;
+        _modifyUSDTokens(_usdTokens);
+    }
+
+    function _modifyUSDTokens(address[] _usdTokens) internal {
         for(uint256 i = 0; i < usdTokens.length; i++) {
             usdTokenEnabled[usdTokens[i]] = false;
         }
@@ -340,7 +352,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         for(i = 0; i < _usdTokens.length; i++) {
             usdTokenEnabled[_usdTokens[i]] = true;
         }
-        emit SetAddresses(_wallet, _reserveWallet, _usdTokens);
+        emit SetAddresses(wallet, reserveWallet, _usdTokens);
     }
 
     ////////////////////

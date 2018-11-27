@@ -440,7 +440,7 @@ contract VolumeRestrictionTM is ITransferManager {
         external
         withPerm(ADMIN)
     {   
-        require(globalRestriction.startTime < now, "Not allowed");    
+        require(globalRestriction.startTime > now, "Not allowed");    
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
         globalRestriction = VolumeRestriction(
             _allowedTokens,
@@ -465,7 +465,6 @@ contract VolumeRestrictionTM is ITransferManager {
      * @param _allowedTokens Amount of tokens allowed to be traded for all token holder.
      * @param _allowedPercentageOfTokens Percentage of tokens w.r.t to totalSupply allowed to transact.
      * @param _startTime Unix timestamp at which restriction get into effect
-     * @param _rollingPeriodInDays Rolling period in days (Minimum value should be 1 day)
      * @param _endTime Unix timestamp at which restriction effects will gets end.
      * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for variable)
      */
@@ -473,20 +472,19 @@ contract VolumeRestrictionTM is ITransferManager {
         uint256 _allowedTokens,
         uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
-        uint256 _rollingPeriodInDays,
         uint256 _endTime,
         uint256 _restrictionType
     )
         external
         withPerm(ADMIN)
     {   
-        require(dailyGlobalRestriction.startTime < now, "Not allowed");    
-        _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
+        require(dailyGlobalRestriction.startTime > now, "Not allowed");    
+        _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, 1, _endTime, _restrictionType);
         dailyGlobalRestriction = VolumeRestriction(
             _allowedTokens,
             _allowedPercentageOfTokens,
             _startTime,
-            _rollingPeriodInDays,
+            1,
             _endTime,
             RestrictionType(_restrictionType)
         );
@@ -494,7 +492,7 @@ contract VolumeRestrictionTM is ITransferManager {
             _allowedTokens,
             _allowedPercentageOfTokens,
             _startTime,
-            _rollingPeriodInDays,
+            1,
             _endTime,
             _restrictionType
         );
@@ -773,7 +771,7 @@ contract VolumeRestrictionTM is ITransferManager {
         internal
     {   
         _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
-        require(individualRestriction[_holder].startTime < now, "Not allowed");
+        require(individualRestriction[_holder].startTime > now, "Not allowed");
         
         individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,

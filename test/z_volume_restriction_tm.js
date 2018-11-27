@@ -1375,5 +1375,73 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(web3.utils.fromWei((diff.toNumber()).toString()), 3);
         });
     });
+
+    describe("Test for modify functions", async() => {
+
+        it("Should not able to modify the already started restrictions --global", async() =>{
+            await catchRevert(
+                I_VolumeRestrictionTM.modifyGlobalRestriction(
+                    web3.utils.toWei("50"),
+                    0,
+                    latestTime() + duration.seconds(50),
+                    10,
+                    latestTime() + duration.days(20),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        });
+
+        it("Should not able to modify the already started restrictions -- daily global", async() =>{
+            await catchRevert(
+                I_VolumeRestrictionTM.modifyDailyGlobalRestriction(
+                    web3.utils.toWei("50"),
+                    0,
+                    latestTime() + duration.seconds(50),
+                    latestTime() + duration.days(20),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        });
+
+        it("Should not able to modify the already started restrictions -- Individual", async() =>{
+            await catchRevert(
+                I_VolumeRestrictionTM.modifyIndividualRestriction(
+                    account_investor2,
+                    web3.utils.toWei("50"),
+                    0,
+                    latestTime() + duration.seconds(50),
+                    10,
+                    latestTime() + duration.days(20),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        });
+
+        it("Should not able to modify the already started transaction -- multi Individuals", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.modifyIndividualRestrictionMulti(
+                    [account_investor2, account_investor1],
+                    [web3.utils.toWei("50"), web3.utils.toWei("50")],
+                    [0, 0],
+                    [latestTime() + duration.seconds(50), latestTime() + duration.seconds(50)],
+                    [10, 20],
+                    [latestTime() + duration.days(20), latestTime() + duration.days(50)],
+                    [0, 0],
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        });
+    });
     
 });

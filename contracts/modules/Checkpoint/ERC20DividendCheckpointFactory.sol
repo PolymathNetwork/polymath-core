@@ -1,14 +1,12 @@
 pragma solidity ^0.4.24;
 
-import "../../proxy/ERC20DividendCheckpointProxy.sol";
+import "./ERC20DividendCheckpoint.sol";
 import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying ERC20DividendCheckpoint module
  */
 contract ERC20DividendCheckpointFactory is ModuleFactory {
-
-    address public logicContract;
 
     /**
      * @notice Constructor
@@ -17,7 +15,7 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
@@ -26,7 +24,6 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
         description = "Create ERC20 dividends for token holders at a specific checkpoint";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        logicContract = _logicContract;
     }
 
     /**
@@ -36,7 +33,7 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "insufficent allowance");
-        address erc20DividendCheckpoint = new ERC20DividendCheckpointProxy(msg.sender, address(polyToken), logicContract);
+        address erc20DividendCheckpoint = new ERC20DividendCheckpoint(msg.sender, address(polyToken));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(erc20DividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return erc20DividendCheckpoint;

@@ -180,7 +180,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     [latestTime(), latestTime(), latestTime()],
                     [latestTime(), latestTime(), latestTime()],
                     [latestTime() + duration.days(30), latestTime() + duration.days(30), latestTime() + duration.days(30)],
-                    [true, true, true],
+                    [0, 0, 0],
                     {
                         from: token_owner
                     }
@@ -1083,7 +1083,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 [latestTime(), latestTime()],
                 [latestTime(), latestTime()],
                 [latestTime() + duration.days(30), latestTime() + duration.days(30)],
-                [true, true],
+                [0, 0],
                 {
                     from: token_owner
                 }
@@ -1442,6 +1442,67 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 )
             );
         });
+
+        it("Should add the individual restriction for multiple investor", async() => {
+            await I_VolumeRestrictionTM.addIndividualRestrictionMulti(
+                [account_investor3, account_delegate3],
+                [web3.utils.toWei("15"), 0],
+                [0, new BigNumber(12.78).times(new BigNumber(10).pow(16))],
+                [latestTime() + duration.days(1), latestTime() + duration.days(2)],
+                [15, 20],
+                [latestTime() + duration.days(40), latestTime() + duration.days(60)],
+                [0,1],
+                {
+                    from: token_owner
+                }
+            );
+
+            let indi1 = await I_VolumeRestrictionTM.individualRestriction.call(account_investor3);
+            let indi2 = await I_VolumeRestrictionTM.individualRestriction.call(account_delegate3);
+
+            assert.equal(indi1[0].dividedBy(new BigNumber(10).pow(18)), 15);
+            assert.equal(indi2[0].dividedBy(new BigNumber(10).pow(18)), 0);
+
+            assert.equal(indi1[1].dividedBy(new BigNumber(10).pow(18)), 0);
+            assert.equal(indi2[1].dividedBy(new BigNumber(10).pow(16)), 12.78);
+
+            assert.equal(indi1[3].toNumber(), 15);
+            assert.equal(indi2[3].toNumber(), 20);
+
+            assert.equal(indi1[5].toNumber(), 0);
+            assert.equal(indi2[5].toNumber(), 1);
+        });
+
+        it("Should modify the details before the starttime passed", async() => {
+            await I_VolumeRestrictionTM.modifyIndividualRestrictionMulti(
+                [account_investor3, account_delegate3],
+                [0, web3.utils.toWei("15")],
+                [new BigNumber(12.78).times(new BigNumber(10).pow(16)), 0],
+                [latestTime() + duration.days(1), latestTime() + duration.days(2)],
+                [20, 15],
+                [latestTime() + duration.days(40), latestTime() + duration.days(60)],
+                [1,0],
+                {
+                    from: token_owner
+                }
+            );
+
+            let indi1 = await I_VolumeRestrictionTM.individualRestriction.call(account_investor3);
+            let indi2 = await I_VolumeRestrictionTM.individualRestriction.call(account_delegate3);
+
+            assert.equal(indi2[0].dividedBy(new BigNumber(10).pow(18)), 15);
+            assert.equal(indi1[0].dividedBy(new BigNumber(10).pow(18)), 0);
+
+            assert.equal(indi2[1].dividedBy(new BigNumber(10).pow(18)), 0);
+            assert.equal(indi1[1].dividedBy(new BigNumber(10).pow(16)), 12.78);
+
+            assert.equal(indi2[3].toNumber(), 15);
+            assert.equal(indi1[3].toNumber(), 20);
+
+            assert.equal(indi2[5].toNumber(), 0);
+            assert.equal(indi1[5].toNumber(), 1);
+        });
+
     });
     
 });

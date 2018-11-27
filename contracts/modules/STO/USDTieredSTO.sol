@@ -278,16 +278,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address[] _usdTokens
     ) external onlyOwner {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO already started");
+        // require(now < startTime, "STO already started");
         _modifyAddresses(_wallet, _reserveWallet, _usdTokens);
-    }
-
-    /**
-     * @dev Modifies addresses used as usd tokens
-     * @param _usdTokens Address of usd tokens
-     */
-    function modifyUSDTokens(address[] _usdTokens) public onlyOwner {
-        _modifyUSDTokens(_usdTokens);
     }
 
     function _modifyLimits(

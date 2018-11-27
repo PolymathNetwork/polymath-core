@@ -913,7 +913,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      * @return bytes4 Configure function signature
      */
     function getInitFunction() public pure returns (bytes4) {
-        return 0xb0ff041e;
+        return 0xeac2f9e4;
     }
 
     function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns (address) {

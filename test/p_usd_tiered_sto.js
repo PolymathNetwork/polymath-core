@@ -157,8 +157,8 @@ contract("USDTieredSTO", accounts => {
                 name: "_reserveWallet"
             },
             {
-                type: "address",
-                name: "_usdToken"
+                type: "address[]",
+                name: "_usdTokens"
             }
         ]
     };
@@ -301,7 +301,7 @@ contract("USDTieredSTO", accounts => {
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
-            _usdToken.push(I_DaiToken.address);
+            _usdToken.push([I_DaiToken.address]);
 
             let config = [
                 _startTime[stoId],
@@ -315,7 +315,7 @@ contract("USDTieredSTO", accounts => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                [_usdToken[stoId]]
+                _usdToken[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -388,7 +388,7 @@ contract("USDTieredSTO", accounts => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                [_usdToken[stoId]]
+                _usdToken[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -412,7 +412,7 @@ contract("USDTieredSTO", accounts => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                [_usdToken[stoId]]
+                _usdToken[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -486,7 +486,7 @@ contract("USDTieredSTO", accounts => {
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
-            _usdToken.push(I_DaiToken.address);
+            _usdToken.push([I_DaiToken.address]);
 
             let config = [
                 _startTime[stoId],
@@ -500,7 +500,7 @@ contract("USDTieredSTO", accounts => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                [_usdToken[stoId]]
+                _usdToken[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -573,7 +573,7 @@ contract("USDTieredSTO", accounts => {
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
-            _usdToken.push(I_DaiToken.address);
+            _usdToken.push([I_DaiToken.address]);
 
             let config = [
                 _startTime[stoId],
@@ -587,7 +587,7 @@ contract("USDTieredSTO", accounts => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                [_usdToken[stoId]]
+                _usdToken[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -612,7 +612,7 @@ contract("USDTieredSTO", accounts => {
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
-            _usdToken.push(I_DaiToken.address);
+            _usdToken.push([I_DaiToken.address]);
 
             let config = [
                 _startTime[stoId],
@@ -626,7 +626,7 @@ contract("USDTieredSTO", accounts => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                [_usdToken[stoId]]
+                _usdToken[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -651,7 +651,7 @@ contract("USDTieredSTO", accounts => {
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
             _reserveWallet.push(RESERVEWALLET);
-            _usdToken.push(I_DaiToken.address);
+            _usdToken.push([I_DaiToken.address]);
 
             let config = [
                 _startTime[stoId],
@@ -665,7 +665,7 @@ contract("USDTieredSTO", accounts => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                [_usdToken[stoId]]
+                _usdToken[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -696,7 +696,7 @@ contract("USDTieredSTO", accounts => {
                     _fundRaiseTypes[stoId],
                     _wallet[stoId],
                     _reserveWallet[stoId],
-                    [_usdToken[stoId]]
+                    _usdToken[stoId]
                 ],
                 [
                     _startTime[stoId],
@@ -710,7 +710,7 @@ contract("USDTieredSTO", accounts => {
                     _fundRaiseTypes[stoId],
                     _wallet[stoId],
                     _reserveWallet[stoId],
-                    [_usdToken[stoId]]
+                    _usdToken[stoId]
                 ],
                 [
                     _startTime[stoId],
@@ -724,7 +724,7 @@ contract("USDTieredSTO", accounts => {
                     _fundRaiseTypes[stoId],
                     _wallet[stoId],
                     _reserveWallet[stoId],
-                    [_usdToken[stoId]]
+                    _usdToken[stoId]
                 ],
                 [
                     _startTime[stoId],
@@ -738,7 +738,7 @@ contract("USDTieredSTO", accounts => {
                     _fundRaiseTypes[stoId],
                     _wallet[stoId],
                     _reserveWallet[stoId],
-                    [_usdToken[stoId]]
+                    _usdToken[stoId]
                 ]
             ];
             for (var i = 0; i < config.length; i++) {
@@ -764,7 +764,7 @@ contract("USDTieredSTO", accounts => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                [_usdToken[stoId]]
+                _usdToken[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
@@ -787,7 +787,7 @@ contract("USDTieredSTO", accounts => {
                 _fundRaiseTypes[stoId],
                 wallet,
                 _reserveWallet[stoId],
-                [_usdToken[stoId]]
+                _usdToken[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
@@ -833,7 +833,7 @@ contract("USDTieredSTO", accounts => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                [_usdToken[stoId]]
+                _usdToken[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
@@ -857,7 +857,7 @@ contract("USDTieredSTO", accounts => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                [_usdToken[stoId]]
+                _usdToken[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 

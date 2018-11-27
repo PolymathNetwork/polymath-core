@@ -370,14 +370,6 @@ contract('BlacklistTransferManager', accounts => {
             );
         });
 
-        it("Should fail in adding the blacklist as repeat in days is invalid", async() => {
-            await catchRevert(
-                I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 0, { 
-                    from: token_owner 
-                })
-            );
-        });
-
         it("Should fail in adding the blacklist because only owner can add the blacklist", async() => {
            await catchRevert(
                I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 20, { 

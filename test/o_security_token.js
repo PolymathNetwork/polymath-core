@@ -193,7 +193,7 @@ contract("SecurityToken", accounts => {
             let toTime = fromTime + duration.days(100);
             let expiryTime = toTime + duration.days(100);
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate1, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate1, fromTime, toTime, expiryTime, 1, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -212,7 +212,7 @@ contract("SecurityToken", accounts => {
             let toTime = fromTime + duration.days(100);
             let expiryTime = toTime + duration.days(100);
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate2, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate2, fromTime, toTime, expiryTime, 1, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -517,7 +517,7 @@ contract("SecurityToken", accounts => {
             toTime = fromTime + duration.days(100);
             expiryTime = toTime + duration.days(100);
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, 1, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -614,7 +614,7 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should transfer from whitelist investor1 to whitelist investor 2", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor2, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor2, fromTime, toTime, expiryTime, 1, {
                 from: token_owner,
                 gas: 500000
             });
@@ -636,7 +636,7 @@ contract("SecurityToken", accounts => {
 
         it("Should transferFrom from one investor to other", async () => {
             await I_SecurityToken.approve(account_investor1, 2 * Math.pow(10, 18), { from: account_investor2 });
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, 1, {
                 from: token_owner,
                 gas: 500000
             });
@@ -682,7 +682,7 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should add the investor in the whitelist by the delegate", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, fromTime, toTime, expiryTime, 1, {
                 from: account_delegate,
                 gas: 6000000
             });
@@ -722,7 +722,7 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should remove investor from the whitelist by the delegate", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, 0, 0, 0, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, 0, 0, 0, 1, {
                 from: account_delegate,
                 gas: 6000000
             });
@@ -751,7 +751,7 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should fail in buying to tokens", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, fromTime, toTime, expiryTime, 1, {
                 from: account_delegate,
                 gas: 6000000
             });
@@ -939,7 +939,7 @@ contract("SecurityToken", accounts => {
                 latestTime(),
                 latestTime() + duration.seconds(2),
                 latestTime() + duration.days(50),
-                true,
+                1,
                 {
                 from: account_delegate,
                 gas: 6000000
@@ -982,7 +982,7 @@ contract("SecurityToken", accounts => {
                 latestTime(),
                 latestTime() + duration.seconds(2),
                 latestTime() + duration.days(50),
-                true,
+                1,
                 {
                 from: account_delegate,
                 gas: 6000000

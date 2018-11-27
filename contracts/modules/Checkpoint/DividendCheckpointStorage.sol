@@ -1,14 +1,7 @@
-/**
- * DISCLAIMER: Under certain conditions, the function pushDividendPayment
- * may fail due to block gas limits.
- * If the total number of investors that ever held tokens is greater than ~15,000 then
- * the function may fail. If this happens investors can pull their dividends, or the Issuer
- * can use pushDividendPaymentToAddresses to provide an explict address list in batches
- */
 pragma solidity ^0.4.24;
 
 /**
- * @title Checkpoint module for issuing ether dividends
+ * @title Holds the storage variable for the DividendCheckpoint modules (i.e ERC20, Ether)
  * @dev abstract contract
  */
 contract DividendCheckpointStorage {

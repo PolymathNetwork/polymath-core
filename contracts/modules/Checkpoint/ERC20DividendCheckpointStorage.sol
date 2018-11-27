@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 /**
- * @title Checkpoint module for issuing ERC20 dividends
+ * @title It holds the storage variables related to ERC20DividendCheckpoint module
  */
 contract ERC20DividendCheckpointStorage {
 

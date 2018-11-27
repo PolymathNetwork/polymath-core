@@ -3,7 +3,7 @@ pragma solidity ^0.4.18;
 import "./Proxy.sol";
 
 /**
- * @title OwnedUpgradeabilityProxy
+ * @title OwnedProxy
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
 contract OwnedProxy is Proxy {

@@ -154,12 +154,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         _;
     }
 
-    modifier validSC {
+    modifier validSC(address _usdToken) {
         require(fundRaiseTypes[uint8(FundRaiseType.SC)], "Stable coins not allowed");
-        _;
-    }
-
-    modifier validUSDToken(address _usdToken) {
         require(usdTokenEnabled[_usdToken], "Invalid USD token");
         _;
     }
@@ -476,7 +472,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _usdToken Address of USD stable coin to buy tokens with
       */
     function buyWithUSDRateLimited(address _beneficiary, uint256 _investedSC, uint256 _minTokens, IERC20 _usdToken) 
-        public validSC validUSDToken(_usdToken) 
+        public validSC(_usdToken) 
     {
         _buyWithTokens(_beneficiary, _investedSC, FundRaiseType.SC, _minTokens, _usdToken);
     }

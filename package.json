@@ -67,7 +67,6 @@
     "ethers": "^3.0.15",
     "fs": "0.0.1-security",
     "openzeppelin-solidity": "1.10.0",
-    "prompt": "^1.0.0",
     "readline-sync": "^1.4.9",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",

@@ -1,5 +1,6 @@
 var readlineSync = require('readline-sync');
 var chalk = require('chalk');
+var moment = require('moment');
 var common = require('./common/common_functions');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
@@ -188,12 +189,9 @@ async function configExistingModules(tmModules) {
       await generalTransferManager();
       break;
     case 'ManualApprovalTransferManager':
-      //await manualApprovalTransferManager();
-      console.log(chalk.red(`
-        *********************************
-        This option is not yet available.
-        *********************************`
-      ));
+      currentTransferManager = new web3.eth.Contract(abis.manualApprovalTransferManager(), tmModules[index].address);
+      currentTransferManager.setProvider(web3.currentProvider);
+      await manualApprovalTransferManager();
       break;
     case 'PercentageTransferManager':
       //await percentageTransferManager();
@@ -228,20 +226,13 @@ async function configExistingModules(tmModules) {
 }
 
 async function addTransferManagerModule() {
-  let options = ['GeneralTransferManager'/*, 'ManualApprovalTransferManager', 'PercentageTransferManager', 
+  let options = ['GeneralTransferManager', 'ManualApprovalTransferManager'/*, 'PercentageTransferManager', 
 'CountTransferManager', 'SingleTradeVolumeRestrictionTM', 'LookupVolumeRestrictionTM'*/];
 
   let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
     let bytes = web3.utils.fromAscii('', 16);
     switch (options[index]) {
-      case 'ManualApprovalTransferManager':
-        console.log(chalk.red(`
-          *********************************
-          This option is not yet available.
-          *********************************`
-        ));
-        break;
       case 'PercentageTransferManager':
         console.log(chalk.red(`
           *********************************
@@ -357,9 +348,9 @@ async function generalTransferManager() {
     options.push('Allow all burn transfers');
   }
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?');
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
   let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Cancel', '\n');
+  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
   switch (optionSelected) {
     case 'Modify whitelist':
       let investor = readlineSync.question('Enter the address to whitelist: ', {
@@ -477,6 +468,181 @@ async function generalTransferManager() {
   }
 }
 
+async function manualApprovalTransferManager() {
+  console.log(chalk.blue(`Manual Approval Transfer Manager at ${currentTransferManager.options.address}`), '\n');
+
+  let options = ['Check manual approval', 'Add manual approval', 'Revoke manual approval',
+    'Check manual blocking', 'Add manual blocking', 'Revoke manual blocking'];
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
+  let optionSelected = options[index];
+  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  let from;
+  let to;
+  switch (optionSelected) {
+    case 'Check manual approval':
+      from = readlineSync.question('Enter the address from which transfers would be approved: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      to = readlineSync.question('Enter the address to which transfers would be approved: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      console.log();
+      let manualApproval = await getManualApproval(from, to);
+      if (manualApproval) {
+        console.log(`Manual approval found!`);
+        console.log(`Allowance: ${web3.utils.fromWei(manualApproval.allowance)}`);
+        console.log(`Expiry time: ${moment.unix(manualApproval.expiryTime).format('MMMM Do YYYY, HH:mm:ss')};`)
+      } else {
+        console.log(chalk.yellow(`There are no manual approvals from ${from} to ${to}.`));
+      }
+      break;
+    case 'Add manual approval':
+      from = readlineSync.question('Enter the address from which transfers will be approved: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      to = readlineSync.question('Enter the address to which transfers will be approved: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      if (!await getManualApproval(from, to)) {
+        let allowance = readlineSync.question('Enter the amount of tokens which will be approved: ');
+        let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
+        let expiryTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) until which the transfer is allowed (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
+        let addManualApprovalAction = currentTransferManager.methods.addManualApproval(from, to, web3.utils.toWei(allowance), expiryTime);
+        let addManualApprovalReceipt = await common.sendTransaction(addManualApprovalAction);
+        let addManualApprovalEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addManualApprovalReceipt.logs, 'AddManualApproval');
+        console.log(chalk.green(`Manual approval has been added successfully!`));
+      } else {
+        console.log(chalk.red(`A manual approval already exists from ${from} to ${to}. Revoke it first if you want to add a new one.`));
+      }
+      break;
+    case 'Revoke manual approval':
+      from = readlineSync.question('Enter the address from which transfers were approved: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      to = readlineSync.question('Enter the address to which transfers were approved: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      if (await getManualApproval(from, to)) {
+        let revokeManualApprovalAction = currentTransferManager.methods.revokeManualApproval(from, to);
+        let revokeManualApprovalReceipt = await common.sendTransaction(revokeManualApprovalAction);
+        let revokeManualApprovalEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, revokeManualApprovalReceipt.logs, 'RevokeManualApproval');
+        console.log(chalk.green(`Manual approval has been revoked successfully!`));
+      } else {
+        console.log(chalk.red(`Manual approval from ${from} to ${to} does not exist.`));
+      }
+      break;
+    case 'Check manual blocking':
+      from = readlineSync.question('Enter the address from which transfers would be blocked: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      to = readlineSync.question('Enter the address to which transfers would be blocked: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      console.log();
+      let manualBlocking = await getManualBlocking(from, to);
+      if (manualBlocking) {
+        console.log(`Manual blocking found!`);
+        console.log(`Expiry time: ${moment.unix(manualBlocking).format('MMMM Do YYYY, HH:mm:ss')};`)
+      } else {
+        console.log(chalk.yellow(`There are no manual blockings from ${from} to ${to}.`));
+      }
+      break;
+    case 'Add manual blocking':
+      from = readlineSync.question('Enter the address from which transfers will be blocked: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      to = readlineSync.question('Enter the address to which transfers will be blocked: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      if (!await getManualBlocking(from, to)) {
+        let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
+        let expiryTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) until which the transfer is blocked (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
+        let addManualBlockingAction = currentTransferManager.methods.addManualBlocking(from, to, expiryTime);
+        let addManualBlockingReceipt = await common.sendTransaction(addManualBlockingAction);
+        let addManualBlockingEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addManualBlockingReceipt.logs, 'AddManualBlocking');
+        console.log(chalk.green(`Manual blocking has been added successfully!`));
+      } else {
+        console.log(chalk.red(`A manual blocking already exists from ${from} to ${to}. Revoke it first if you want to add a new one.`));
+      }
+      break;
+    case 'Revoke manual blocking':
+      from = readlineSync.question('Enter the address from which transfers were blocked: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      to = readlineSync.question('Enter the address to which transfers were blocked: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      if (await getManualBlocking(from, to)) {
+        let revokeManualBlockingAction = currentTransferManager.methods.revokeManualBlocking(from, to);
+        let revokeManualBlockingReceipt = await common.sendTransaction(revokeManualBlockingAction);
+        let revokeManualBlockingEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, revokeManualBlockingReceipt.logs, 'RevokeManualBlocking');
+        console.log(chalk.green(`Manual blocking has been revoked successfully!`));
+      } else {
+        console.log(chalk.red(`Manual blocking from ${from} to ${to} does not exist.`));
+      }
+      break;
+  }
+}
+
+async function getManualApproval(_from, _to) {
+  let result = null;
+
+  let manualApproval = await currentTransferManager.methods.manualApprovals(_from, _to).call();
+  if (manualApproval.expiryTime !== "0") {
+    result = manualApproval;
+  }
+
+  return result;
+}
+
+async function getManualBlocking(_from, _to) {
+  let result = null;
+
+  let manualBlocking = await currentTransferManager.methods.manualBlockings(_from, _to).call();
+  if (manualBlocking !== "0") {
+    result = manualBlocking;
+  }
+
+  return result;
+}
+
 async function singleTradeVolumeRestrictionTM() {
   console.log(chalk.blue(`Single Trade Volume Restriction Transfer Manager at ${currentTransferManager.options.address}`));
   console.log();
@@ -511,9 +677,9 @@ async function singleTradeVolumeRestrictionTM() {
       'Set tokens transfer limit per account', 'Remove tokens transfer limit per account');
   }
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?');
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
   let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Cancel', '\n');
+  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
   switch (optionSelected) {
     case 'Allow primary issuance':
     case 'Disallow primary issuance':

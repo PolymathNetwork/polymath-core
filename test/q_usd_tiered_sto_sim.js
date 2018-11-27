@@ -285,7 +285,7 @@ contract("USDTieredSTO Sim", accounts => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                _usdToken[stoId]
+                [_usdToken[stoId]]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);

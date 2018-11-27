@@ -1,11 +1,11 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# v2.1.0 - Release Candidate
+# v2.1.0 - Release Candidate    
 
 [__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
 
-# USDTieredSTO 2.0.1
+## USDTieredSTO 2.0.1
 * Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.
 * Added `getSTODetails` to USDTSTO.
 * Added an Array of Tiers that will hold data about every tier in USDTSTO.
@@ -15,9 +15,10 @@ All notable changes to this project will be documented in this file.
 
 ## Manual Approval TransferManager
 * Removed `0x0` check for the `_from` address to `ManualApprovalTransferManager`. This allows for the Issuer/Transfer Agent to approve a one-off mint of tokens that otherwise would not be possible. 
-* Changed the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.0.1`.  
+* Changed the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.0.1`.   
+* Deployed 2.0.1 `ManualApprovalTransferManagerFactory` to address 0x6af2afad53cb334e62b90ddbdcf3a086f654c298
 
-##Changed
+## Changed
 * `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
  
 

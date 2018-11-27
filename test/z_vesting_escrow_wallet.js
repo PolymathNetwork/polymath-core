@@ -331,16 +331,9 @@ contract('VestingEscrowWallet', accounts => {
             await I_VestingEscrowWallet.depositTokens(numberOfTokens, {from: wallet_admin});
             await I_VestingEscrowWallet.addSchedule(account_beneficiary3, numberOfTokens, duration, frequency, startTime, {from: wallet_admin});
             await increaseTime(timeShift + frequency);
-            await I_VestingEscrowWallet.updateAll({from: wallet_admin});
 
             await catchRevert(
                 I_VestingEscrowWallet.pushAvailableTokens(account_beneficiary3, {from: account_beneficiary1})
-            );
-        });
-
-        it("Should not be able update all schedules -- fail because of permissions check", async () => {
-            await catchRevert(
-                I_VestingEscrowWallet.updateAll({from: account_beneficiary1})
             );
         });
 
@@ -380,7 +373,6 @@ contract('VestingEscrowWallet', accounts => {
             await I_VestingEscrowWallet.depositTokens(numberOfTokens, {from: wallet_admin});
             await I_VestingEscrowWallet.addSchedule(account_beneficiary3, numberOfTokens, duration, frequency, startTime, {from: wallet_admin});
             await increaseTime(timeShift + frequency * 3);
-            await I_VestingEscrowWallet.updateAll({from: wallet_admin});
 
             const tx = await I_VestingEscrowWallet.withdrawAvailableTokens({from: account_beneficiary3});
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary3);
@@ -428,24 +420,26 @@ contract('VestingEscrowWallet', accounts => {
             }
             let stepCount = 6;
             await increaseTime(durationUtil.minutes(stepCount) + durationUtil.seconds(100));
-            await I_VestingEscrowWallet.updateAll({from: wallet_admin});
 
             let numberOfTokens = 100000 + (30000 / 6 * stepCount) + (2000 / 10 * stepCount);
             const tx = await I_VestingEscrowWallet.withdrawAvailableTokens({from: account_beneficiary3});
+
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary3);
-            assert.equal(tx.logs[0].args._numberOfTokens.toNumber(), numberOfTokens);
+            assert.equal(tx.logs[0].args._numberOfTokens.toNumber(), 100000);
+            assert.equal(tx.logs[1].args._beneficiary, account_beneficiary3);
+            assert.equal(tx.logs[1].args._numberOfTokens.toNumber(), 30000 / 6 * stepCount);
+            assert.equal(tx.logs[2].args._beneficiary, account_beneficiary3);
+            assert.equal(tx.logs[2].args._numberOfTokens.toNumber(), 2000 / 10 * stepCount);
 
             let balance = await I_SecurityToken.balanceOf.call(account_beneficiary3);
             assert.equal(balance.toNumber(), numberOfTokens);
 
             stepCount = 4;
             await increaseTime(durationUtil.minutes(stepCount) + durationUtil.seconds(100));
-            await I_VestingEscrowWallet.updateAll({from: wallet_admin});
 
-            numberOfTokens = (2000 / 10 * stepCount);
             const tx2 = await I_VestingEscrowWallet.withdrawAvailableTokens({from: account_beneficiary3});
             assert.equal(tx2.logs[0].args._beneficiary, account_beneficiary3);
-            assert.equal(tx2.logs[0].args._numberOfTokens.toNumber(), numberOfTokens);
+            assert.equal(tx2.logs[0].args._numberOfTokens.toNumber(), 2000 / 10 * stepCount);
 
             balance = await I_SecurityToken.balanceOf.call(account_beneficiary3);
             assert.equal(balance.toNumber(), totalNumberOfTokens);
@@ -528,12 +522,6 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
-        it("Should fail to get available tokens -- fail because address is invalid", async () => {
-            await catchRevert(
-                I_VestingEscrowWallet.getAvailableTokens(0)
-            );
-        });
-
         it("Should not be able to add schedule -- fail because of permissions check", async () => {
             let numberOfTokens = schedules[0].numberOfTokens;
             let duration = schedules[0].duration;
@@ -583,6 +571,10 @@ contract('VestingEscrowWallet', accounts => {
             checkSchedule(schedule, numberOfTokens, duration, frequency, startTime, CREATED);
 
             await I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, 1, {from: wallet_admin});
+
+
+
+
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
         });
 
@@ -612,7 +604,7 @@ contract('VestingEscrowWallet', accounts => {
             checkScheduleLog(tx.logs[0], account_beneficiary1, numberOfTokens, duration, frequency, startTime);
 
             let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(account_beneficiary1);
-            assert.equal(scheduleCount, 1);
+            assert.equal(scheduleCount.toNumber(), 1);
 
             let schedule = await I_VestingEscrowWallet.getSchedule.call(account_beneficiary1, 0);
             checkSchedule(schedule, numberOfTokens, duration, frequency, startTime, CREATED);
@@ -759,29 +751,27 @@ contract('VestingEscrowWallet', accounts => {
                 let startTime = latestTime() + durationUtil.seconds(100);
                 await I_VestingEscrowWallet.addSchedule(account_beneficiary3, numberOfTokens, duration, frequency, startTime, {from: wallet_admin});
             }
-            let stepCount = 6;
+            let stepCount = 3;
             await increaseTime(durationUtil.minutes(stepCount) + durationUtil.seconds(100));
-            await I_VestingEscrowWallet.updateAll({from: wallet_admin});
 
-            let numberOfTokens = 100000 + (30000 / 6 * stepCount) + (2000 / 10 * stepCount);
             const tx = await I_VestingEscrowWallet.revokeSchedule(account_beneficiary3, 0, {from: wallet_admin});
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary3);
-            assert.equal(tx.logs[0].args._numberOfTokens.toNumber(), numberOfTokens);
+            assert.equal(tx.logs[0].args._numberOfTokens.toNumber(), 100000 / 4 * stepCount);
 
             let balance = await I_SecurityToken.balanceOf.call(account_beneficiary3);
-            assert.equal(balance.toNumber(), numberOfTokens);
+            assert.equal(balance.toNumber(), 100000 / 4 * stepCount);
 
-            stepCount = 4;
-            await increaseTime(durationUtil.minutes(stepCount) + durationUtil.seconds(100));
-            await I_VestingEscrowWallet.updateAll({from: wallet_admin});
+            stepCount = 7;
+            await increaseTime(durationUtil.minutes(stepCount));
 
-            numberOfTokens = (2000 / 10 * stepCount);
             const tx2 = await I_VestingEscrowWallet.revokeAllSchedules(account_beneficiary3, {from: wallet_admin});
             assert.equal(tx2.logs[0].args._beneficiary, account_beneficiary3);
-            assert.equal(tx2.logs[0].args._numberOfTokens.toNumber(), numberOfTokens);
+            assert.equal(tx2.logs[0].args._numberOfTokens.toNumber(), 2000);
+            assert.equal(tx2.logs[1].args._beneficiary, account_beneficiary3);
+            assert.equal(tx2.logs[1].args._numberOfTokens.toNumber(), 30000);
 
             balance = await I_SecurityToken.balanceOf.call(account_beneficiary3);
-            assert.equal(balance.toNumber(), totalNumberOfTokens);
+            assert.equal(balance.toNumber(), totalNumberOfTokens - 100000 / 4);
 
             await I_SecurityToken.transfer(token_owner, balance, {from: account_beneficiary3});
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
@@ -992,8 +982,6 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should send available tokens to the beneficiaries addresses", async () => {
-            await I_VestingEscrowWallet.updateAll({from: wallet_admin});
-
             const tx = await I_VestingEscrowWallet.pushAvailableTokensMulti(beneficiaries, {from: wallet_admin});
 
             for (let i = 0; i < beneficiaries.length; i++) {

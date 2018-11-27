@@ -15,8 +15,7 @@ contract VestingEscrowWallet is IWallet {
 
     struct Schedule {
         uint256 numberOfTokens;
-        uint256 releasedTokens;
-        uint256 availableTokens;
+        uint256 claimedTokens;
         uint256 duration;
         uint256 frequency;
         uint256 startTime;
@@ -200,7 +199,7 @@ contract VestingEscrowWallet is IWallet {
         if (schedules[_beneficiary].length == 0) {
             beneficiaries.push(_beneficiary);
         }
-        schedules[_beneficiary].push(Schedule(_numberOfTokens, 0, 0, _duration, _frequency, _startTime));
+        schedules[_beneficiary].push(Schedule(_numberOfTokens, 0, _duration, _frequency, _startTime));
         uint256 index = schedules[_beneficiary].length - 1;
         emit AddSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime, index);
     }
@@ -267,7 +266,7 @@ contract VestingEscrowWallet is IWallet {
             }
             unassignedTokens = unassignedTokens.sub(_numberOfTokens.sub(schedule.numberOfTokens));
         }
-        schedules[_beneficiary][_index] = Schedule(_numberOfTokens, 0, 0, _duration, _frequency, _startTime);
+        schedules[_beneficiary][_index] = Schedule(_numberOfTokens, 0, _duration, _frequency, _startTime);
         emit ModifySchedule(_beneficiary, _index, _numberOfTokens, _duration, _frequency, _startTime);
     }
 
@@ -279,9 +278,10 @@ contract VestingEscrowWallet is IWallet {
     function revokeSchedule(address _beneficiary, uint256 _index) external withPerm(ADMIN) {
         require(_beneficiary != address(0), "Invalid address");
         require(_index < schedules[_beneficiary].length, "Schedule not found");
-        _sendTokens(_beneficiary);
+        _sendTokens(_beneficiary, _index);
         Schedule[] storage userSchedules = schedules[_beneficiary];
-        unassignedTokens = unassignedTokens.add(userSchedules[_index].numberOfTokens.sub(userSchedules[_index].releasedTokens));
+        uint256 releasedTokens = _getReleasedTokens(_beneficiary, _index);
+        unassignedTokens = unassignedTokens.add(userSchedules[_index].numberOfTokens.sub(releasedTokens));
         if (_index != userSchedules.length - 1) {
             userSchedules[_index] = userSchedules[userSchedules.length - 1];
         }
@@ -302,7 +302,8 @@ contract VestingEscrowWallet is IWallet {
         _sendTokens(_beneficiary);
         Schedule[] storage userSchedules = schedules[_beneficiary];
         for (uint256 i = 0; i < userSchedules.length; i++) {
-            unassignedTokens = unassignedTokens.add(userSchedules[i].numberOfTokens.sub(userSchedules[i].releasedTokens));
+            uint256 releasedTokens = _getReleasedTokens(_beneficiary, i);
+            unassignedTokens = unassignedTokens.add(userSchedules[i].numberOfTokens.sub(releasedTokens));
         }
         userSchedules.length = 0;
         emit RevokeAllSchedules(_beneficiary);
@@ -348,18 +349,26 @@ contract VestingEscrowWallet is IWallet {
         return schedules[_beneficiary].length;
     }
 
-    /**
-     * @notice Returns available tokens for beneficiary
-     * @param _beneficiary beneficiary's address
-     * @return available tokens for beneficiary
-     */
-    function getAvailableTokens(address _beneficiary) public view returns(uint256) {
-        require(_beneficiary != address(0));
-        uint256 availableTokens;
-        for (uint256 i = 0; i < schedules[_beneficiary].length; i++) {
-            availableTokens = availableTokens.add(schedules[_beneficiary][i].availableTokens);
+    function _getAvailableTokens(address _beneficiary, uint256 _index) internal view returns(uint256) {
+        Schedule storage schedule = schedules[_beneficiary][_index];
+        uint256 releasedTokens = _getReleasedTokens(_beneficiary, _index);
+        return releasedTokens.sub(schedule.claimedTokens);
+    }
+
+    function _getReleasedTokens(address _beneficiary, uint256 _index) internal view returns(uint256) {
+        Schedule storage schedule = schedules[_beneficiary][_index];
+        /*solium-disable-next-line security/no-block-members*/
+        if (now > schedule.startTime) {
+            uint256 periodCount = schedule.duration.div(schedule.frequency);
+            /*solium-disable-next-line security/no-block-members*/
+            uint256 periodNumber = (now.sub(schedule.startTime)).div(schedule.frequency);
+            if (periodNumber > periodCount) {
+                periodNumber = periodCount;
+            }
+            return schedule.numberOfTokens.mul(periodNumber).div(periodCount);
+        } else {
+            return 0;
         }
-        return availableTokens;
     }
 
     /**
@@ -377,16 +386,15 @@ contract VestingEscrowWallet is IWallet {
      * @notice Used to remove beneficiaries without schedules
      */
     function trimBeneficiaries() external withPerm(ADMIN) {
-        //TODO commented because of contract size
-//        for (uint256 i = 0; i < beneficiaries.length; i++) {
-//            if (schedules[beneficiaries[i]].length == 0) {
-//                delete schedules[beneficiaries[i]];
-//                if (i != beneficiaries.length - 1) {
-//                    beneficiaries[i] = beneficiaries[beneficiaries.length - 1];
-//                }
-//                beneficiaries.length--;
-//            }
-//        }
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            if (schedules[beneficiaries[i]].length == 0) {
+                delete schedules[beneficiaries[i]];
+                if (i != beneficiaries.length - 1) {
+                    beneficiaries[i] = beneficiaries[beneficiaries.length - 1];
+                }
+                beneficiaries.length--;
+            }
+        }
     }
 
     /**
@@ -483,38 +491,17 @@ contract VestingEscrowWallet is IWallet {
     }
 
     function _sendTokens(address _beneficiary) internal {
-        uint256 amount = getAvailableTokens(_beneficiary);
-        if (amount > 0) {
-            for (uint256 i = 0; i < schedules[_beneficiary].length; i++) {
-                schedules[_beneficiary][i].availableTokens = 0;
-            }
-            ISecurityToken(securityToken).transfer(_beneficiary, amount);
-            emit SendTokens(_beneficiary, amount);
+        for (uint256 i = 0; i < schedules[_beneficiary].length; i++) {
+            _sendTokens(_beneficiary, i);
         }
     }
 
-    /**
-     * @notice manually triggers update outside for all schedules (can be used to reduce user gas costs)
-     */
-    function updateAll() external withPerm(ADMIN) {
-        for (uint256 i = 0; i < beneficiaries.length; i++) {
-            Schedule[] storage data = schedules[beneficiaries[i]];
-            for (uint256 j = 0; j < data.length; j++) {
-                Schedule storage schedule = data[j];
-                if (schedule.releasedTokens < schedule.numberOfTokens) {
-                    uint256 periodCount = schedule.duration.div(schedule.frequency);
-                    /*solium-disable-next-line security/no-block-members*/
-                    uint256 periodNumber = (now.sub(schedule.startTime)).div(schedule.frequency);
-                    if (periodNumber > periodCount) {
-                        periodNumber = periodCount;
-                    }
-                    uint256 releasedTokens = schedule.numberOfTokens.mul(periodNumber).div(periodCount);
-                    if (schedule.releasedTokens < releasedTokens) {
-                        schedule.availableTokens = schedule.availableTokens.add(releasedTokens.sub(schedule.releasedTokens));
-                        schedule.releasedTokens = releasedTokens;
-                    }
-                }
-            }
+    function _sendTokens(address _beneficiary, uint256 _index) internal {
+        uint256 amount = _getAvailableTokens(_beneficiary, _index);
+        if (amount > 0) {
+            schedules[_beneficiary][_index].claimedTokens = schedules[_beneficiary][_index].claimedTokens.add(amount);
+            ISecurityToken(securityToken).transfer(_beneficiary, amount);
+            emit SendTokens(_beneficiary, amount);
         }
     }
 

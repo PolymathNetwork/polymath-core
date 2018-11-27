@@ -11,7 +11,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract ISTO is Module, Pausable  {
     using SafeMath for uint256;
 
-    enum FundRaiseType { ETH, POLY, DAI }
+    enum FundRaiseType { ETH, POLY, SC }
     mapping (uint8 => bool) public fundRaiseTypes;
     mapping (uint8 => uint256) public fundsRaised;
 
@@ -76,7 +76,7 @@ contract ISTO is Module, Pausable  {
         require(_fundRaiseTypes.length > 0, "Raise type is not specified");
         fundRaiseTypes[uint8(FundRaiseType.ETH)] = false;
         fundRaiseTypes[uint8(FundRaiseType.POLY)] = false;
-        fundRaiseTypes[uint8(FundRaiseType.DAI)] = false;
+        fundRaiseTypes[uint8(FundRaiseType.SC)] = false;
         for (uint8 j = 0; j < _fundRaiseTypes.length; j++) {
             fundRaiseTypes[uint8(_fundRaiseTypes[j])] = true;
         }

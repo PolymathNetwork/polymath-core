@@ -180,7 +180,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     [latestTime(), latestTime(), latestTime()],
                     [latestTime(), latestTime(), latestTime()],
                     [latestTime() + duration.days(30), latestTime() + duration.days(30), latestTime() + duration.days(30)],
-                    [0, 0, 0],
+                    [true, true, true],
                     {
                         from: token_owner
                     }
@@ -1080,7 +1080,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 [latestTime(), latestTime()],
                 [latestTime(), latestTime()],
                 [latestTime() + duration.days(30), latestTime() + duration.days(30)],
-                [0, 0],
+                [true, true],
                 {
                     from: token_owner
                 }

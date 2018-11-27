@@ -1,16 +1,17 @@
 pragma solidity ^0.4.24;
 
 import "./DividendCheckpoint.sol";
-import "./ERC20DividendCheckpointStorage.sol";
 import "../../interfaces/IOwnable.sol";
 import "../../interfaces/IERC20.sol";
 
 /**
  * @title Checkpoint module for issuing ERC20 dividends
  */
-contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendCheckpoint {
+contract ERC20DividendCheckpoint is DividendCheckpoint {
     using SafeMath for uint256;
 
+    // Mapping to token address for each dividend
+    mapping (uint256 => address) public dividendTokens;
     event ERC20DividendDeposited(
         address indexed _depositor,
         uint256 _checkpointId,
@@ -67,8 +68,8 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         address _token,
         uint256 _amount,
         bytes32 _name
-    )
-        external
+    ) 
+        external 
         withPerm(MANAGE)
     {
         createDividendWithExclusions(_maturity, _expiry, _token, _amount, excluded, _name);
@@ -132,16 +133,16 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
      * @param _name Name/Title for identification
      */
     function createDividendWithCheckpointAndExclusions(
-        uint256 _maturity,
-        uint256 _expiry,
-        address _token,
-        uint256 _amount,
-        uint256 _checkpointId,
+        uint256 _maturity, 
+        uint256 _expiry, 
+        address _token, 
+        uint256 _amount, 
+        uint256 _checkpointId, 
         address[] _excluded,
         bytes32 _name
-    )
+    ) 
         public
-        withPerm(MANAGE)
+        withPerm(MANAGE)      
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, _checkpointId, _excluded, _name);
     }
@@ -157,15 +158,15 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
      * @param _name Name/Title for identification
      */
     function _createDividendWithCheckpointAndExclusions(
-        uint256 _maturity,
-        uint256 _expiry,
-        address _token,
-        uint256 _amount,
-        uint256 _checkpointId,
+        uint256 _maturity, 
+        uint256 _expiry, 
+        address _token, 
+        uint256 _amount, 
+        uint256 _checkpointId, 
         address[] _excluded,
         bytes32 _name
-    )
-        internal
+    ) 
+        internal  
     {
         ISecurityToken securityTokenInstance = ISecurityToken(securityToken);
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
@@ -209,7 +210,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
     }
 
     /**
-     * @notice Emits the ERC20DividendDeposited event.
+     * @notice Emits the ERC20DividendDeposited event. 
      * Seperated into a different function as a workaround for stack too deep error
      */
     function _emitERC20DividendDepositedEvent(

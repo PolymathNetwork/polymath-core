@@ -2,6 +2,7 @@ pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";
 import "../../IdentityStorage.sol";
+import "../../KeyManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
@@ -35,10 +36,9 @@ contract KYCTransferManager is ITransferManager {
 
     function verifyTransfer(address /*_from*/, address _to, uint256 /*_amount*/, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
         if (!paused) {
-            IdentityStorage identityStorage = IdentityStorage(ISecurityToken(securityToken).identityStorage());
-            uint256 toIdentity = identityStorage.identityId(_to);
+            uint256 toIdentity = keyManager.getIdentityId(_to);
             bytes32 key = _getKYCKey(toIdentity);
-            if (identityStorage.boolData(key))
+            if (identityStorage.getBoolData(key))
                 return Result.VALID;
         }
         return Result.NA;
@@ -60,8 +60,7 @@ contract KYCTransferManager is ITransferManager {
     )
         internal
     {
-        IdentityStorage identityStorage = IdentityStorage(ISecurityToken(securityToken).identityStorage());
-        uint256 toIdentity = identityStorage.identityId(_investor);
+        uint256 toIdentity = keyManager.getIdentityId(_investor);
         bytes32 key = _getKYCKey(toIdentity);
         identityStorage.setData(key, _kycStatus);
     }

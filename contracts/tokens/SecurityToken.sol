@@ -2,6 +2,7 @@ pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/Math.sol";
 import "../IdentityStorage.sol";
+import "../KeyManager.sol";
 import "../interfaces/IPoly.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
@@ -50,6 +51,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     uint8 constant DATA_KEY = 10;
 
     IdentityStorage public identityStorage;
+
+    KeyManager public keyManager;
 
     uint256 public granularity;
 
@@ -205,7 +208,9 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _granularity,
         string _tokenDetails,
         address _polymathRegistry,
-        IdentityStorage _identityStorage
+        IdentityStorage _identityStorage,
+        KeyManager _keyManager
+
     )
     public
     ERC20Detailed(_name, _symbol, _decimals)
@@ -213,6 +218,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     {
         //When it is created, the owner is the STR
         updateFromRegistry();
+        keyManager = _keyManager;
         identityStorage = _identityStorage;
         tokenDetails = _tokenDetails;
         granularity = _granularity;

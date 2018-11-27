@@ -2,6 +2,8 @@ pragma solidity ^0.4.24;
 
 import "../interfaces/IModule.sol";
 import "../interfaces/ISecurityToken.sol";
+import "../IdentityStorage.sol";
+import "../KeyManager.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
@@ -14,6 +16,10 @@ contract Module is IModule {
     address public factory;
 
     address public securityToken;
+
+    IdentityStorage public identityStorage;
+
+    KeyManager public keyManager;
 
     bytes32 public constant FEE_ADMIN = "FEE_ADMIN";
 
@@ -28,6 +34,8 @@ contract Module is IModule {
         securityToken = _securityToken;
         factory = msg.sender;
         polyToken = IERC20(_polyAddress);
+        identityStorage = IdentityStorage(ISecurityToken(securityToken).identityStorage());
+        keyManager = KeyManager(ISecurityToken(securityToken).keyManager());
     }
 
     //Allows owner, factory or permissioned delegate

@@ -8,6 +8,7 @@ interface ISecurityToken {
     // Standard ERC20 interface
     function decimals() external view returns (uint8);
     function identityStorage() external view returns (address);
+    function keyManager() external view returns (address);
     function totalSupply() external view returns (uint256);
     function balanceOf(address _owner) external view returns (uint256);
     function allowance(address _owner, address _spender) external view returns (uint256);

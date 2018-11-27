@@ -107,7 +107,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
     // STEP 4: Deploy the SingleTradeVolumeRestrictionManagerFactory
     [I_SingleTradeVolumeRestrictionManagerFactory] = await deploySingleTradeVolumeRMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
     [P_SingleTradeVolumeRestrictionManagerFactory] = await deploySingleTradeVolumeRMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
-
+  
   });
 
   describe("Generate the SecurityToken", async () => {
@@ -165,7 +165,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
         latestTime(),
         latestTime(),
         latestTime() + duration.days(10),
-        1, {
+        true, {
           from: account_issuer
         });
 
@@ -193,7 +193,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
         latestTime(),
         latestTime(),
         latestTime() + duration.days(10),
-        1, {
+        true, {
           from: account_issuer
         });
 
@@ -212,7 +212,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
     //
     it("Fails to attach the SingleTradeVolumeRestrictionManager with the security token due to fees not paid", async () => {
       let managerArgs = encodeModuleCall(STVRParameters, [true, 90, false]);
-
+      
       await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
       await catchRevert(
           I_SecurityToken.addModule(P_SingleTradeVolumeRestrictionManagerFactory.address, managerArgs, web3.utils.toWei("500", "ether"), 0, { from: token_owner})
@@ -222,7 +222,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
     it("Should successfully attach the Paid SingleTradeVolumeRestrictionManager with the security token", async () => {
       let managerArgs = encodeModuleCall(STVRParameters, [false, 90, false]);
       await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
-
+      
       let tx = await I_SecurityToken.addModule(P_SingleTradeVolumeRestrictionManagerFactory.address, managerArgs, web3.utils.toWei("500", "ether"), 0, {
         from: token_owner
       });
@@ -291,7 +291,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
         I_SingleTradeVolumeRestrictionManager.addExemptWallet(accounts[5])
       );
 
-      await catchRevert(
+      await catchRevert( 
         I_SingleTradeVolumeRestrictionManager.addExemptWallet(zero_address, { from: token_owner })
       );
 
@@ -342,7 +342,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
      await catchRevert (
         I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInPercentage(accounts[4], 101 * 10 ** 16, { from: token_owner })
       );
-     // Transfer limit in tokens can not be set for a  manager that has transfer limit set as percentage
+     // Transfer limit in tokens can not be set for a  manager that has transfer limit set as percentage 
       await catchRevert (
         I_SingleTradeVolumeRestrictionPercentageManager.setTransferLimitInTokens(accounts[4], 1, { from: token_owner })
       );
@@ -393,7 +393,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
         from: token_owner
       });
       assert.equal(tx.logs[0].args._amount, 10, "Global Limit not set");
-
+     
       //Global limit can be set by non-admins
       await catchRevert(
         I_SingleTradeVolumeRestrictionPercentageManager.changeGlobalLimitInTokens(89)
@@ -542,7 +542,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
         latestTime(),
         latestTime(),
         latestTime() + duration.days(10),
-        1, {
+        true, {
           from: account_issuer
         }
       );
@@ -552,7 +552,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
         latestTime(),
         latestTime(),
         latestTime() + duration.days(10),
-        1, {
+        true, {
           from: account_issuer
         }
       );
@@ -562,7 +562,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
         latestTime(),
         latestTime(),
         latestTime() + duration.days(10),
-        1, {
+        true, {
           from: account_issuer
         }
       );
@@ -667,7 +667,7 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
     });
 
     it('should change transfer limits to tokens', async () => {
-      // Should not change to percentage again
+      // Should not change to percentage again 
       await catchRevert(
         I_SingleTradeVolumeRestrictionPercentageManager.changeTransferLimitToPercentage(1, { from: token_owner })
       );

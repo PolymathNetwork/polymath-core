@@ -149,7 +149,7 @@ contract("Checkpoints", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                false,
+                0,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -176,7 +176,7 @@ contract("Checkpoints", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                false,
+                0,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -201,7 +201,7 @@ contract("Checkpoints", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                false,
+                0,
                 {
                     from: account_issuer,
                     gas: 6000000

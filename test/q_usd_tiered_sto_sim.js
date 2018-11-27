@@ -195,7 +195,7 @@ contract("USDTieredSTO Sim", accounts => {
             I_SecurityTokenRegistryProxy,
             I_STRProxied
         ] = instances;
-       
+
        I_DaiToken = await PolyTokenFaucet.new({from: POLYMATH});
 
        // STEP 5: Deploy the USDTieredSTOFactory
@@ -299,22 +299,22 @@ contract("USDTieredSTO Sim", accounts => {
             assert.equal(await I_USDTieredSTO_Array[stoId].endTime.call(), _endTime[stoId], "Incorrect _endTime in config");
             for (var i = 0; i < _ratePerTier[stoId].length; i++) {
                 assert.equal(
-                    (await I_USDTieredSTO_Array[stoId].ratePerTier.call(i)).toNumber(),
+                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[0].toNumber(),
                     _ratePerTier[stoId][i].toNumber(),
                     "Incorrect _ratePerTier in config"
                 );
                 assert.equal(
-                    (await I_USDTieredSTO_Array[stoId].ratePerTierDiscountPoly.call(i)).toNumber(),
+                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[1].toNumber(),
                     _ratePerTierDiscountPoly[stoId][i].toNumber(),
                     "Incorrect _ratePerTierDiscountPoly in config"
                 );
                 assert.equal(
-                    (await I_USDTieredSTO_Array[stoId].tokensPerTierTotal.call(i)).toNumber(),
+                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[2].toNumber(),
                     _tokensPerTierTotal[stoId][i].toNumber(),
                     "Incorrect _tokensPerTierTotal in config"
                 );
                 assert.equal(
-                    (await I_USDTieredSTO_Array[stoId].tokensPerTierDiscountPoly.call(i)).toNumber(),
+                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[3].toNumber(),
                     _tokensPerTierDiscountPoly[stoId][i].toNumber(),
                     "Incorrect _tokensPerTierDiscountPoly in config"
                 );
@@ -353,13 +353,13 @@ contract("USDTieredSTO Sim", accounts => {
             let fromTime = latestTime() + duration.days(15);
             let toTime = latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let canBuyFromSTO = true;
+            let canBuyFromSTO = 1;
 
             await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(ACCREDITED2, fromTime, toTime, expiryTime, canBuyFromSTO, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED2, fromTime, toTime, expiryTime, canBuyFromSTO, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NOTAPPROVED, fromTime, toTime, expiryTime, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(NOTAPPROVED, fromTime, toTime, expiryTime, 0, { from: ISSUER });
 
             await increaseTime(duration.days(3));
 
@@ -455,13 +455,13 @@ contract("USDTieredSTO Sim", accounts => {
                 let Tokens_discount = [];
                 for (var i = 0; i < _ratePerTier[stoId].length; i++) {
                     Tokens_total.push(
-                        (await I_USDTieredSTO_Array[stoId].tokensPerTierTotal.call(i)).sub(
-                            await I_USDTieredSTO_Array[stoId].mintedPerTierTotal.call(i)
+                        (await I_USDTieredSTO_Array[stoId].tiers.call(i))[2].sub(
+                            (await I_USDTieredSTO_Array[stoId].tiers.call(i))[4]
                         )
                     );
                     Tokens_discount.push(
-                        (await I_USDTieredSTO_Array[stoId].tokensPerTierDiscountPoly.call(i)).sub(
-                            await I_USDTieredSTO_Array[stoId].mintedPerTierDiscountPoly.call(i)
+                        (await I_USDTieredSTO_Array[stoId].tiers.call(i))[3].sub(
+                            (await I_USDTieredSTO_Array[stoId].tiers.call(i))[5]
                         )
                     );
                 }

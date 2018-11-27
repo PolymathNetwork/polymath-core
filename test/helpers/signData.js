@@ -6,7 +6,7 @@ const ethUtil = require("ethereumjs-util");
 function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, restricted, validFrom, validTo, nonce, pk) {
     let packedData = utils
         .solidityKeccak256(
-            ["address", "address", "uint64", "uint64", "uint64", "uint8", "uint64", "uint64", "uint256"],
+            ["address", "address", "uint256", "uint256", "uint256", "bool", "uint256", "uint256", "uint256"],
             [tmAddress, investorAddress, fromTime, toTime, expiryTime, restricted, validFrom, validTo, nonce]
         )
         .slice(2);

@@ -339,6 +339,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         }
         usdTokens = _usdTokens;
         for(i = 0; i < _usdTokens.length; i++) {
+            require(_usdTokens[i] != address(0), "Invalid USD token");
             usdTokenEnabled[_usdTokens[i]] = true;
         }
         emit SetAddresses(wallet, reserveWallet, _usdTokens);

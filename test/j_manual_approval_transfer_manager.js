@@ -171,7 +171,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -201,7 +201,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -290,7 +290,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 6000000

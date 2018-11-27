@@ -935,7 +935,7 @@ contract("USDTieredSTO", accounts => {
             await I_USDTieredSTO_Array[stoId].modifyAddresses(
                 "0x0000000000000000000000000400000000000000",
                 "0x0000000000000000000003000000000000000000",
-                [address_zero],
+                [0x0000000000000000000003000000000000057a00],
                 { from: ISSUER }
             );
             assert.equal(
@@ -950,7 +950,7 @@ contract("USDTieredSTO", accounts => {
             );
             assert.equal(
                 await I_USDTieredSTO_Array[stoId].usdTokens.call(0),
-                address_zero,
+                "0x0000000000000000000003000000000000057a00",
                 "STO Configuration doesn't set as expected"
             );
         });

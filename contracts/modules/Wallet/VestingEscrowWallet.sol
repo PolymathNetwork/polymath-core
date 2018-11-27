@@ -3,7 +3,6 @@ pragma solidity ^0.4.24;
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/SafeERC20.sol";
 import "./IWallet.sol";
 
 /**
@@ -44,7 +43,8 @@ contract VestingEscrowWallet is IWallet {
         uint256 _numberOfTokens,
         uint256 _duration,
         uint256 _frequency,
-        uint256 _startTime
+        uint256 _startTime,
+        uint256 _index
     );
     event ModifySchedule(
         address indexed _beneficiary,
@@ -54,7 +54,7 @@ contract VestingEscrowWallet is IWallet {
         uint256 _frequency,
         uint256 _startTime
     );
-    event RevokeSchedules(address indexed _beneficiary);
+    event RevokeAllSchedules(address indexed _beneficiary);
     event RevokeSchedule(address indexed _beneficiary, uint256 _index);
     event DepositTokens(uint256 _numberOfTokens);
     event SendToTreasury(uint256 _numberOfTokens);
@@ -179,6 +179,18 @@ contract VestingEscrowWallet is IWallet {
         public
         withPerm(ADMIN)
     {
+        _addSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime);
+    }
+
+    function _addSchedule(
+        address _beneficiary,
+        uint256 _numberOfTokens,
+        uint256 _duration,
+        uint256 _frequency,
+        uint256 _startTime
+    )
+        internal
+    {
         _validateSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime);
         if (_numberOfTokens > unassignedTokens) {
             _depositTokens(_numberOfTokens.sub(unassignedTokens));
@@ -189,7 +201,8 @@ contract VestingEscrowWallet is IWallet {
             beneficiaries.push(_beneficiary);
         }
         schedules[_beneficiary].push(Schedule(_numberOfTokens, 0, 0, _duration, _frequency, _startTime));
-        emit AddSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime);
+        uint256 index = schedules[_beneficiary].length - 1;
+        emit AddSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime, index);
     }
 
     /**
@@ -205,7 +218,7 @@ contract VestingEscrowWallet is IWallet {
     function _addScheduleFromTemplate(address _beneficiary, uint256 _index, uint256 _startTime) internal {
         require(_index < templates.length, "Template not found");
         Template memory template = templates[_index];
-        addSchedule(_beneficiary, template.numberOfTokens, template.duration, template.frequency, _startTime);
+        _addSchedule(_beneficiary, template.numberOfTokens, template.duration, template.frequency, _startTime);
     }
 
     /**
@@ -228,18 +241,31 @@ contract VestingEscrowWallet is IWallet {
         public
         withPerm(ADMIN)
     {
+        _modifySchedule(_beneficiary, _index, _numberOfTokens, _duration, _frequency, _startTime);
+    }
+
+    function _modifySchedule(
+        address _beneficiary,
+        uint256 _index,
+        uint256 _numberOfTokens,
+        uint256 _duration,
+        uint256 _frequency,
+        uint256 _startTime
+    )
+        internal
+    {
         _validateSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime);
         require(_index < schedules[_beneficiary].length, "Schedule not found");
         Schedule storage schedule = schedules[_beneficiary][_index];
         /*solium-disable-next-line security/no-block-members*/
         require(now < schedule.startTime, "Schedule started");
         if (_numberOfTokens <= schedule.numberOfTokens) {
-            unassignedTokens = unassignedTokens.add(schedule.numberOfTokens - _numberOfTokens);
+            unassignedTokens = unassignedTokens.add(schedule.numberOfTokens.sub(_numberOfTokens));
         } else {
-            if (_numberOfTokens - schedule.numberOfTokens > unassignedTokens) {
-                _depositTokens(_numberOfTokens - schedule.numberOfTokens - unassignedTokens);
+            if (_numberOfTokens.sub(schedule.numberOfTokens) > unassignedTokens) {
+                _depositTokens(_numberOfTokens.sub(schedule.numberOfTokens).sub(unassignedTokens));
             }
-            unassignedTokens = unassignedTokens.sub(_numberOfTokens - schedule.numberOfTokens);
+            unassignedTokens = unassignedTokens.sub(_numberOfTokens.sub(schedule.numberOfTokens));
         }
         schedules[_beneficiary][_index] = Schedule(_numberOfTokens, 0, 0, _duration, _frequency, _startTime);
         emit ModifySchedule(_beneficiary, _index, _numberOfTokens, _duration, _frequency, _startTime);
@@ -255,14 +281,11 @@ contract VestingEscrowWallet is IWallet {
         require(_index < schedules[_beneficiary].length, "Schedule not found");
         _sendTokens(_beneficiary);
         Schedule[] storage userSchedules = schedules[_beneficiary];
-        unassignedTokens = unassignedTokens.add(userSchedules[_index].numberOfTokens - userSchedules[_index].releasedTokens);
+        unassignedTokens = unassignedTokens.add(userSchedules[_index].numberOfTokens.sub(userSchedules[_index].releasedTokens));
         if (_index != userSchedules.length - 1) {
             userSchedules[_index] = userSchedules[userSchedules.length - 1];
         }
         userSchedules.length--;
-        if (userSchedules.length == 0) {
-            _removeBeneficiary(_beneficiary);
-        }
         emit RevokeSchedule(_beneficiary, _index);
     }
 
@@ -270,15 +293,19 @@ contract VestingEscrowWallet is IWallet {
      * @notice Revokes all beneficiary's schedules
      * @param _beneficiary beneficiary's address
      */
-    function revokeSchedules(address _beneficiary) public withPerm(ADMIN) {
+    function revokeAllSchedules(address _beneficiary) public withPerm(ADMIN) {
+        _revokeAllSchedules(_beneficiary);
+    }
+
+    function _revokeAllSchedules(address _beneficiary) internal {
         require(_beneficiary != address(0), "Invalid address");
         _sendTokens(_beneficiary);
-        Schedule[] storage data = schedules[_beneficiary];
-        for (uint256 i = 0; i < data.length; i++) {
-            unassignedTokens = unassignedTokens.add(data[i].numberOfTokens - data[i].releasedTokens);
+        Schedule[] storage userSchedules = schedules[_beneficiary];
+        for (uint256 i = 0; i < userSchedules.length; i++) {
+            unassignedTokens = unassignedTokens.add(userSchedules[i].numberOfTokens.sub(userSchedules[i].releasedTokens));
         }
-        _removeBeneficiary(_beneficiary);
-        emit RevokeSchedules(_beneficiary);
+        userSchedules.length = 0;
+        emit RevokeAllSchedules(_beneficiary);
     }
 
     /**
@@ -296,11 +323,11 @@ contract VestingEscrowWallet is IWallet {
             schedule.duration,
             schedule.frequency,
             schedule.startTime,
-            _getScheduleState(_beneficiary, _index)
+            getScheduleState(_beneficiary, _index)
         );
     }
 
-    function _getScheduleState(address _beneficiary, uint256 _index) internal view returns(State) {
+    function getScheduleState(address _beneficiary, uint256 _index) public view returns(State) {
         Schedule memory schedule = schedules[_beneficiary][_index];
         if (now < schedule.startTime) {
             return State.CREATED;
@@ -326,11 +353,7 @@ contract VestingEscrowWallet is IWallet {
      * @param _beneficiary beneficiary's address
      * @return available tokens for beneficiary
      */
-    function getAvailableTokens(address _beneficiary) external view returns(uint256) {
-        return _getAvailableTokens(_beneficiary);
-    }
-
-    function _getAvailableTokens(address _beneficiary) internal view returns(uint256) {
+    function getAvailableTokens(address _beneficiary) public view returns(uint256) {
         require(_beneficiary != address(0));
         uint256 availableTokens;
         for (uint256 i = 0; i < schedules[_beneficiary].length; i++) {
@@ -348,6 +371,22 @@ contract VestingEscrowWallet is IWallet {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             pushAvailableTokens(_beneficiaries[i]);
         }
+    }
+
+    /**
+     * @notice Used to remove beneficiaries without schedules
+     */
+    function trimBeneficiaries() external withPerm(ADMIN) {
+        //TODO commented because of contract size
+//        for (uint256 i = 0; i < beneficiaries.length; i++) {
+//            if (schedules[beneficiaries[i]].length == 0) {
+//                delete schedules[beneficiaries[i]];
+//                if (i != beneficiaries.length - 1) {
+//                    beneficiaries[i] = beneficiaries[beneficiaries.length - 1];
+//                }
+//                beneficiaries.length--;
+//            }
+//        }
     }
 
     /**
@@ -369,7 +408,7 @@ contract VestingEscrowWallet is IWallet {
         withPerm(ADMIN)
     {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            addSchedule(_beneficiaries[i], _numberOfTokens, _duration, _frequency, _startTime);
+            _addSchedule(_beneficiaries[i], _numberOfTokens, _duration, _frequency, _startTime);
         }
     }
 
@@ -391,7 +430,7 @@ contract VestingEscrowWallet is IWallet {
      */
     function revokeSchedulesMulti(address[] _beneficiaries) external withPerm(ADMIN) {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            revokeSchedules(_beneficiaries[i]);
+            _revokeAllSchedules(_beneficiaries[i]);
         }
     }
 
@@ -417,7 +456,7 @@ contract VestingEscrowWallet is IWallet {
     {
         require(_beneficiaries.length == _indexes.length, "Arrays sizes mismatch");
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            modifySchedule(_beneficiaries[i], _indexes[i], _numberOfTokens, _duration, _frequency, _startTime);
+            _modifySchedule(_beneficiaries[i], _indexes[i], _numberOfTokens, _duration, _frequency, _startTime);
         }
     }
 
@@ -444,7 +483,7 @@ contract VestingEscrowWallet is IWallet {
     }
 
     function _sendTokens(address _beneficiary) internal {
-        uint256 amount = _getAvailableTokens(_beneficiary);
+        uint256 amount = getAvailableTokens(_beneficiary);
         if (amount > 0) {
             for (uint256 i = 0; i < schedules[_beneficiary].length; i++) {
                 schedules[_beneficiary][i].availableTokens = 0;
@@ -471,28 +510,12 @@ contract VestingEscrowWallet is IWallet {
                     }
                     uint256 releasedTokens = schedule.numberOfTokens.mul(periodNumber).div(periodCount);
                     if (schedule.releasedTokens < releasedTokens) {
-                        schedule.availableTokens = schedule.availableTokens.add(releasedTokens - schedule.releasedTokens);
+                        schedule.availableTokens = schedule.availableTokens.add(releasedTokens.sub(schedule.releasedTokens));
                         schedule.releasedTokens = releasedTokens;
                     }
                 }
             }
         }
-    }
-
-    function _removeBeneficiary(address _beneficiary) internal {
-        bool isFound = false;
-        uint256 index;
-        for (uint256 i = 0; i < beneficiaries.length; i++) {
-            if (_beneficiary == beneficiaries[i]) {
-                isFound = true;
-                index = i;
-            }
-        }
-        if (isFound && index != beneficiaries.length - 1) {
-            beneficiaries[index] = beneficiaries[beneficiaries.length - 1];
-        }
-        beneficiaries.length--;
-        delete schedules[_beneficiary];
     }
 
     /**

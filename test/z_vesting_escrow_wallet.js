@@ -366,7 +366,7 @@ contract('VestingEscrowWallet', accounts => {
                 I_VestingEscrowWallet.modifySchedule(account_beneficiary3, 0, numberOfTokens, duration, frequency, startTime, {from: wallet_admin})
             );
 
-            await I_VestingEscrowWallet.revokeSchedules(account_beneficiary3, {from: wallet_admin});
+            await I_VestingEscrowWallet.revokeAllSchedules(account_beneficiary3, {from: wallet_admin});
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
         });
 
@@ -393,7 +393,7 @@ contract('VestingEscrowWallet', accounts => {
             checkSchedule(schedule, numberOfTokens, duration, frequency, startTime, COMPLETED);
 
             await I_SecurityToken.transfer(token_owner, balance, {from: account_beneficiary3});
-            await I_VestingEscrowWallet.revokeSchedules(account_beneficiary3, {from: wallet_admin});
+            await I_VestingEscrowWallet.revokeAllSchedules(account_beneficiary3, {from: wallet_admin});
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
         });
 
@@ -451,7 +451,7 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(balance.toNumber(), totalNumberOfTokens);
 
             await I_SecurityToken.transfer(token_owner, balance, {from: account_beneficiary3});
-            await I_VestingEscrowWallet.revokeSchedules(account_beneficiary3, {from: wallet_admin});
+            await I_VestingEscrowWallet.revokeAllSchedules(account_beneficiary3, {from: wallet_admin});
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
         });
 
@@ -675,7 +675,7 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should fail to revoke vesting schedules -- fail because address is invalid", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.revokeSchedules(0, {from: wallet_admin})
+                I_VestingEscrowWallet.revokeAllSchedules(0, {from: wallet_admin})
             );
         });
 
@@ -702,7 +702,7 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should not be able to revoke schedules -- fail because of permissions check", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.revokeSchedules(account_beneficiary1, {from: account_beneficiary1})
+                I_VestingEscrowWallet.revokeAllSchedules(account_beneficiary1, {from: account_beneficiary1})
             );
         });
 
@@ -721,7 +721,7 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should revoke 2 vesting schedules from the beneficiary address", async () => {
-            const tx = await I_VestingEscrowWallet.revokeSchedules(account_beneficiary2, {from: wallet_admin});
+            const tx = await I_VestingEscrowWallet.revokeAllSchedules(account_beneficiary2, {from: wallet_admin});
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
 
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary2);
@@ -776,7 +776,7 @@ contract('VestingEscrowWallet', accounts => {
             await I_VestingEscrowWallet.updateAll({from: wallet_admin});
 
             numberOfTokens = (2000 / 10 * stepCount);
-            const tx2 = await I_VestingEscrowWallet.revokeSchedules(account_beneficiary3, {from: wallet_admin});
+            const tx2 = await I_VestingEscrowWallet.revokeAllSchedules(account_beneficiary3, {from: wallet_admin});
             assert.equal(tx2.logs[0].args._beneficiary, account_beneficiary3);
             assert.equal(tx2.logs[0].args._numberOfTokens.toNumber(), numberOfTokens);
 
@@ -1006,7 +1006,7 @@ contract('VestingEscrowWallet', accounts => {
                 assert.equal(balance.toNumber(), 5000);
 
                 await I_SecurityToken.transfer(token_owner, balance, {from: beneficiary});
-                await I_VestingEscrowWallet.revokeSchedules(beneficiary, {from: wallet_admin});
+                await I_VestingEscrowWallet.revokeAllSchedules(beneficiary, {from: wallet_admin});
                 await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
             }
         });
@@ -1073,6 +1073,7 @@ contract('VestingEscrowWallet', accounts => {
                 assert.equal(scheduleCount, 0);
             }
 
+            await I_VestingEscrowWallet.trimBeneficiaries({from: wallet_admin});
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
         });
 

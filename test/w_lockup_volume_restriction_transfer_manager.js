@@ -112,7 +112,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
 
-        LockupVolumeRestrictionTransferManagerFactory:
+        LockupVolumeRestrictionTransferManagerFactory:  
                                            ${I_VolumeRestrictionTransferManagerFactory.address}
         -----------------------------------------------------------------------------
         `);
@@ -165,7 +165,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                1,
+                true,
                 {
                     from: account_issuer
                 });
@@ -192,7 +192,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                1,
+                true,
                 {
                     from: account_issuer
                 });
@@ -249,7 +249,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                1,
+                true,
                 {
                     from: account_issuer
                 });
@@ -346,14 +346,14 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
 
             // balance should be 9000000000000000000 here (9 eth)
             let balance = await I_SecurityToken.balanceOf(account_investor2)
-
+        
             // create a lockup for their entire balance
             // over 16 seconds total, with 4 periods of 4 seconds each.
             // this will generate an exception because 9000000000000000000 / 4 = 2250000000000000000 but the token granularity is 1000000000000000000
             await catchRevert(
                 I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 16, 4, 0, balance, { from: token_owner })
             );
-
+           
         });
 
         it("Should prevent the transfer of tokens in a lockup", async() => {
@@ -572,7 +572,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should revert if the parameters are bad when creating multiple lockups", async() => {
-
+            
             await catchRevert(
                 // pass in the wrong number of params.  txn should revert
             I_VolumeRestrictionTransferManager.addLockUpMulti(

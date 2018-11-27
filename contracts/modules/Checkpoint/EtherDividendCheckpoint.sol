@@ -8,6 +8,7 @@ import "../../interfaces/IOwnable.sol";
  */
 contract EtherDividendCheckpoint is DividendCheckpoint {
     using SafeMath for uint256;
+    
     event EtherDividendDeposited(
         address indexed _depositor,
         uint256 _checkpointId,
@@ -56,7 +57,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 _expiry,
         uint256 _checkpointId,
         bytes32 _name
-    ) 
+    )
         external
         payable
         withPerm(MANAGE)
@@ -76,7 +77,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 _expiry,
         address[] _excluded,
         bytes32 _name
-    ) 
+    )
         public
         payable
         withPerm(MANAGE)
@@ -94,10 +95,10 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _name Name/title for identification
      */
     function createDividendWithCheckpointAndExclusions(
-        uint256 _maturity, 
-        uint256 _expiry, 
-        uint256 _checkpointId, 
-        address[] _excluded, 
+        uint256 _maturity,
+        uint256 _expiry,
+        uint256 _checkpointId,
+        address[] _excluded,
         bytes32 _name
     )
         public
@@ -116,12 +117,12 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _name Name/title for identification
      */
     function _createDividendWithCheckpointAndExclusions(
-        uint256 _maturity, 
-        uint256 _expiry, 
-        uint256 _checkpointId, 
-        address[] _excluded, 
+        uint256 _maturity,
+        uint256 _expiry,
+        uint256 _checkpointId,
+        address[] _excluded,
         bytes32 _name
-    ) 
+    )
         internal
     {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
@@ -169,7 +170,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      */
     function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
         (uint256 claim, uint256 withheld) = calculateDividend(_dividendIndex, _payee);
-        _dividend.claimed[_payee] = true;      
+        _dividend.claimed[_payee] = true;
         uint256 claimAfterWithheld = claim.sub(withheld);
         if (claimAfterWithheld > 0) {
             /*solium-disable-next-line security/no-send*/

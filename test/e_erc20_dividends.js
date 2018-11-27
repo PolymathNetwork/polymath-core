@@ -89,7 +89,7 @@ contract("ERC20DividendCheckpoint", accounts => {
         account_investor4 = accounts[9];
         account_temp = accounts[2];
         account_manager = accounts[5];
-        
+
         // Step 1: Deploy the genral PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
@@ -202,7 +202,7 @@ contract("ERC20DividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(30),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -232,7 +232,7 @@ contract("ERC20DividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(30),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -372,7 +372,7 @@ contract("ERC20DividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(20),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -434,7 +434,7 @@ contract("ERC20DividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -970,7 +970,7 @@ contract("ERC20DividendCheckpoint", accounts => {
             let expiry = latestTime() + duration.days(10);
             let exclusions = [1];
             let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
-            await I_SecurityToken.createCheckpoint({ from: token_owner }); 
+            await I_SecurityToken.createCheckpoint({ from: token_owner });
             await catchRevert(I_ERC20DividendCheckpoint.createDividendWithCheckpointAndExclusions(
                 maturity,
                 expiry,

@@ -2,7 +2,7 @@ import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
-import { 
+import {
     setUpPolymathNetwork,
     deployDummySTOAndVerifyed,
     deployCappedSTOAndVerifyed,
@@ -94,7 +94,7 @@ contract("Concurrent STO", accounts => {
            I_SecurityTokenRegistryProxy,
            I_STRProxied
        ] = instances;
-      
+
         // STEP 2: Deploy the STO Factories
 
         [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, STOSetupCost);
@@ -159,7 +159,7 @@ contract("Concurrent STO", accounts => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let canBuyFromSTO = true;
+            let canBuyFromSTO = 1;
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, canBuyFromSTO, {
                 from: account_issuer,

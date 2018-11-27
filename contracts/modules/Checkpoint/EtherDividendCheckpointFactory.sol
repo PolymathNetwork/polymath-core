@@ -1,12 +1,14 @@
 pragma solidity ^0.4.24;
 
-import "./EtherDividendCheckpoint.sol";
+import "../../proxy/EtherDividendCheckpointProxy.sol";
 import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying EtherDividendCheckpoint module
  */
 contract EtherDividendCheckpointFactory is ModuleFactory {
+
+    address public logicContract;
 
     /**
      * @notice Constructor
@@ -15,7 +17,7 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
@@ -24,6 +26,7 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
         description = "Create ETH dividends for token holders at a specific checkpoint";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        logicContract = _logicContract;
     }
 
     /**
@@ -33,7 +36,7 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
     function deploy(bytes /* _data */) external returns(address) {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Insufficent allowance or balance");
-        address ethDividendCheckpoint = new EtherDividendCheckpoint(msg.sender, address(polyToken));
+        address ethDividendCheckpoint = new EtherDividendCheckpointProxy(msg.sender, address(polyToken), logicContract);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(ethDividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return ethDividendCheckpoint;

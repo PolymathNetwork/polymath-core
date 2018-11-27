@@ -2,6 +2,7 @@ const contracts = require('./helpers/contract_addresses')
 const Contract = require('./ContractClass')
 
 class PolymathRegistry extends Contract {
+
   constructor () {
     super()
   }

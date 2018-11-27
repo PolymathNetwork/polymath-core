@@ -271,7 +271,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _maxCost,
         uint256 _budget
     ) external { 
-        return addModuleWithLabel(_moduleFactory, _data, _maxCost, _budget, "");
+        addModuleWithLabel(_moduleFactory, _data, _maxCost, _budget, "");
     }
 
     /**

@@ -92,6 +92,7 @@ contract("GeneralTransferManager", accounts => {
         account_investor1 = accounts[8];
         account_investor2 = accounts[9];
         account_delegate = accounts[7];
+        account_investor3 = accounts[5];
         account_investor4 = accounts[6];
 
         account_affiliates1 = accounts[3];
@@ -172,14 +173,14 @@ contract("GeneralTransferManager", accounts => {
             await catchRevert(
                 I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "", web3.utils.toWei("500"), 0, {from: account_issuer})
             );
-        })
+        });
 
         it("Should attach the paid GTM", async() => {
             let snap_id = await takeSnapshot();
             await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
             await I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "", web3.utils.toWei("500"), 0, {from: account_issuer});
             await revertToSnapshot(snap_id);
-        })
+        });
 
         it("Should whitelist the affiliates before the STO attached", async () => {
             let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
@@ -187,7 +188,7 @@ contract("GeneralTransferManager", accounts => {
                 [latestTime() + duration.days(30), latestTime() + duration.days(30)],
                 [latestTime() + duration.days(90), latestTime() + duration.days(90)],
                 [latestTime() + duration.years(1), latestTime() + duration.years(1)],
-                [false, false],
+                [0, 0],
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -195,6 +196,30 @@ contract("GeneralTransferManager", accounts => {
             );
             assert.equal(tx.logs[0].args._investor, account_affiliates1);
             assert.equal(tx.logs[1].args._investor, account_affiliates2);
+            assert.deepEqual(await I_GeneralTransferManager.getInvestors.call(), [account_affiliates1, account_affiliates2]);
+        });
+
+        it("Should whitelist lots of addresses and check gas", async () => {
+            let mockInvestors = [];
+            for (let i = 0; i < 50; i++) {
+                mockInvestors.push("0x1000000000000000000000000000000000000000".substring(0,42-i.toString().length) + i.toString());
+            }
+
+            let times = range1(50);
+            let bools = rangeB(50);
+            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
+                mockInvestors,
+                times,
+                times,
+                times,
+                bools,
+                {
+                    from: account_issuer,
+                    gas: 7900000
+                }
+            );
+            console.log("Multi Whitelist x 50: " + tx.receipt.gasUsed);
+            assert.deepEqual(await I_GeneralTransferManager.getInvestors.call(), [account_affiliates1, account_affiliates2].concat(mockInvestors));
         });
 
         it("Should mint the tokens to the affiliates", async () => {
@@ -291,7 +316,7 @@ contract("GeneralTransferManager", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                true,
+                1,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -320,7 +345,7 @@ contract("GeneralTransferManager", accounts => {
         it("Should fail in buying the tokens from the STO -- because amount is 0", async() => {
             await catchRevert(
                 I_DummySTO.generateTokens(account_investor1, 0, { from: token_owner })
-            );            
+            );
         });
 
         it("Should fail in buying the tokens from the STO -- because STO is paused", async() => {
@@ -342,6 +367,106 @@ contract("GeneralTransferManager", accounts => {
         });
     });
 
+    describe("Buy tokens using on-chain whitelist and negative offset", async () => {
+        // let snap_id;
+
+        it("Should Buy the tokens", async () => {
+            // Add the Investor in to the whitelist
+            // snap_id = await takeSnapshot();
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor1,
+                latestTime() + duration.days(10),
+                latestTime() + duration.days(10),
+                latestTime() + duration.days(20),
+                1,
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                }
+            );
+
+            assert.equal(
+                tx.logs[0].args._investor.toLowerCase(),
+                account_investor1.toLowerCase(),
+                "Failed in adding the investor in whitelist"
+            );
+
+            // Jump time
+            await increaseTime(5000);
+
+            // Mint some tokens
+            await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
+
+            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor1}));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("3", "ether"));
+        });
+
+        it("Add an offset and check transfers are disabled", async () => {
+            let tx = await I_GeneralTransferManager.modifyOffset(duration.days(10), 0, {from: token_owner});
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor1});
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("3", "ether"));
+            tx = await I_GeneralTransferManager.modifyOffset(0, 0, {from: token_owner});
+            // await revertToSnapshot(snap_id);
+        });
+
+    });
+
+
+    describe("Buy tokens using on-chain whitelist and positive offset", async () => {
+        // let snap_id;
+
+        it("Should Buy the tokens", async () => {
+
+            // Add the Investor in to the whitelist
+            // snap_id = await takeSnapshot();
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor1,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(20),
+                1,
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                }
+            );
+
+            assert.equal(
+                tx.logs[0].args._investor.toLowerCase(),
+                account_investor1.toLowerCase(),
+                "Failed in adding the investor in whitelist"
+            );
+
+            // Jump time
+            await increaseTime(5000);
+            // console.log("vT1: " + JSON.stringify(await I_GeneralTransferManager.verifyTransfer.call(account_investor1, account_investor1, web3.utils.toWei("1", "ether"), "", false)));
+            // console.log("vT2: " + JSON.stringify(await I_GeneralTransferManager.verifyTransfer.call("0x0000000000000000000000000000000000000000", account_investor1, web3.utils.toWei("1", "ether"), "", false)));
+
+            // Mint some tokens
+            console.log(await I_GeneralTransferManager.offset.call());
+            await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
+
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("4", "ether"));
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor1});
+        });
+
+        it("Add an offset and check transfers are disabled", async () => {
+            let tx = await I_GeneralTransferManager.modifyOffset(duration.days(10), 1, {from: token_owner});
+            // console.log("vT1: " + JSON.stringify(await I_GeneralTransferManager.verifyTransfer.call(account_investor1, account_investor1, web3.utils.toWei("1", "ether"), "", false)));
+            // console.log("vT2: " + JSON.stringify(await I_GeneralTransferManager.verifyTransfer.call("0x0000000000000000000000000000000000000000", account_investor1, web3.utils.toWei("1", "ether"), "", false)));
+
+            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor1}));
+            await increaseTime(duration.days(10));
+            // console.log("vT1: " + JSON.stringify(await I_GeneralTransferManager.verifyTransfer.call(account_investor1, account_investor1, web3.utils.toWei("1", "ether"), "", false)));
+            // console.log("vT2: " + JSON.stringify(await I_GeneralTransferManager.verifyTransfer.call("0x0000000000000000000000000000000000000000", account_investor1, web3.utils.toWei("1", "ether"), "", false)));
+
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor1});
+            tx = await I_GeneralTransferManager.modifyOffset(0, 0, {from: token_owner});
+            // await revertToSnapshot(snap_id);
+        });
+
+    });
+
     describe("Buy tokens using off-chain whitelist", async () => {
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
             await catchRevert(I_DummySTO.generateTokens(account_investor2, web3.utils.toWei("1", "ether"), { from: token_owner }));
@@ -359,7 +484,7 @@ contract("GeneralTransferManager", accounts => {
                 fromTime,
                 toTime,
                 expiryTime,
-                true,
+                1,
                 validFrom,
                 validTo,
                 nonce,
@@ -376,7 +501,7 @@ contract("GeneralTransferManager", accounts => {
                     fromTime,
                     toTime,
                     expiryTime,
-                    true,
+                    1,
                     validFrom,
                     validTo,
                     nonce,
@@ -403,7 +528,7 @@ contract("GeneralTransferManager", accounts => {
                 fromTime,
                 toTime,
                 expiryTime,
-                true,
+                1,
                 validFrom,
                 validTo,
                 nonce,
@@ -420,7 +545,7 @@ contract("GeneralTransferManager", accounts => {
                     fromTime,
                     toTime,
                     expiryTime,
-                    true,
+                    1,
                     validFrom,
                     validTo,
                     nonce,
@@ -447,7 +572,7 @@ contract("GeneralTransferManager", accounts => {
                 fromTime,
                 toTime,
                 expiryTime,
-                true,
+                1,
                 validFrom,
                 validTo,
                 nonce,
@@ -464,7 +589,7 @@ contract("GeneralTransferManager", accounts => {
                     fromTime,
                     toTime,
                     expiryTime,
-                    true,
+                    1,
                     validFrom,
                     validTo,
                     nonce,
@@ -491,7 +616,7 @@ contract("GeneralTransferManager", accounts => {
                 latestTime(),
                 latestTime() + duration.days(80),
                 expiryTime + duration.days(200),
-                true,
+                1,
                 validFrom,
                 validTo,
                 nonce,
@@ -507,7 +632,7 @@ contract("GeneralTransferManager", accounts => {
                 latestTime(),
                 latestTime() + duration.days(80),
                 expiryTime + duration.days(200),
-                true,
+                1,
                 validFrom,
                 validTo,
                 nonce,
@@ -547,7 +672,7 @@ contract("GeneralTransferManager", accounts => {
                 latestTime(),
                 latestTime() + duration.days(80),
                 expiryTime + duration.days(200),
-                true,
+                1,
                 validFrom,
                 validTo,
                 nonce,
@@ -563,7 +688,7 @@ contract("GeneralTransferManager", accounts => {
                 latestTime(),
                 latestTime() + duration.days(80),
                 expiryTime + duration.days(200),
-                true,
+                1,
                 validFrom,
                 validTo,
                 nonce,
@@ -670,7 +795,7 @@ contract("GeneralTransferManager", accounts => {
                     [fromTime, fromTime],
                     [toTime, toTime],
                     [expiryTime, expiryTime],
-                    [true, true],
+                    [1, 1],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -690,7 +815,7 @@ contract("GeneralTransferManager", accounts => {
                     [fromTime],
                     [toTime, toTime],
                     [expiryTime, expiryTime],
-                    [true, true],
+                    [1, 1],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -710,7 +835,7 @@ contract("GeneralTransferManager", accounts => {
                     [fromTime, fromTime],
                     [toTime],
                     [expiryTime, expiryTime],
-                    [true, true],
+                    [1, 1],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -730,7 +855,7 @@ contract("GeneralTransferManager", accounts => {
                     [fromTime, fromTime],
                     [toTime, toTime],
                     [expiryTime],
-                    [true, true],
+                    [1, 1],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -749,7 +874,7 @@ contract("GeneralTransferManager", accounts => {
                 [fromTime, fromTime],
                 [toTime, toTime],
                 [expiryTime, expiryTime],
-                [true, true],
+                [1, 1],
                 {
                     from: token_owner,
                     gas: 6000000
@@ -836,3 +961,6 @@ contract("GeneralTransferManager", accounts => {
         })
     });
 });
+
+function range1(i) {return i?range1(i-1).concat(i):[]}
+function rangeB(i) {return i?rangeB(i-1).concat(0):[]}

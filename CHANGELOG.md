@@ -13,6 +13,12 @@ All notable changes to this project will be documented in this file.
 * Added `getTokensSoldByTier` to return sold (not minted during finalisation) tokens in each tier to USDTSTO.
 * Removed individual mappings for tier data removed in UDSTSTO.
 
+# GeneralTransferManager
+* Add an Offset that can be used to move all from & to dates forwards or backwards by a fixed offset.
+* Add `address[] public investors` to record a list of all addresses that have been added to the whitelist (`getInvestors`)
+* Fix for when `allowAllWhitelistIssuances` is FALSE
+* Make GTM a Proxy based implementation to reduce deployment gas costs
+
 ##Changed
 * `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
 

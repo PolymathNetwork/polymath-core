@@ -130,7 +130,7 @@ contract("CappedSTO", accounts => {
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-        
+
         // STEP 6: Deploy the CappedSTOFactory
 
         I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, cappedSTOSetupCost, 0, 0, { from: token_owner });
@@ -360,7 +360,7 @@ contract("CappedSTO", accounts => {
             balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, 1, {
                 from: account_issuer
             });
 
@@ -443,7 +443,7 @@ contract("CappedSTO", accounts => {
                 fromTime,
                 toTime + duration.days(20),
                 expiryTime,
-                true,
+                1,
                 {
                     from: account_issuer
                 }
@@ -565,7 +565,7 @@ contract("CappedSTO", accounts => {
         it("Should successfully whitelist investor 3", async () => {
             balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, 1, {
                 from: account_issuer,
                 gas: 500000
             });
@@ -733,7 +733,7 @@ contract("CappedSTO", accounts => {
                     "Tokens are not transfered properly"
                 );
 
-                let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, P_fromTime, P_toTime, P_expiryTime, true, {
+                let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, P_fromTime, P_toTime, P_expiryTime, 1, {
                     from: account_issuer,
                     gas: 500000
                 });
@@ -800,7 +800,7 @@ contract("CappedSTO", accounts => {
                     P_fromTime,
                     P_toTime + duration.days(20),
                     P_expiryTime,
-                    true,
+                    1,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -997,7 +997,7 @@ contract("CappedSTO", accounts => {
 
             await I_PolyToken.getTokens(polyToInvest * Math.pow(10, 18), account_investor3);
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, P_fromTime, P_toTime, P_expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, P_fromTime, P_toTime, P_expiryTime, 1, {
                 from: account_issuer,
                 gas: 500000
             });

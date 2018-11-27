@@ -95,6 +95,8 @@ The CLI is for users that want to easily walkthrough all the details of an STO i
 | Count Transfer Manager Factory:                               | [0xd9fd7e34d6e2c47a69e02131cf8554d52c3445d5](https://etherscan.io/address/0xd9fd7e34d6e2c47a69e02131cf8554d52c3445d5)                                              |
 | Percentage Transfer Manager Factory:                             | [0xe6267a9c0a227d21c95b782b1bd32bb41fc3b43b](https://etherscan.io/address/0xe6267a9c0a227d21c95b782b1bd32bb41fc3b43b)                                              |
 | Manual Approval Transfer Manager Factory (2.0.1):                        | [0x6af2afad53cb334e62b90ddbdcf3a086f654c298](https://etherscan.io/address/0xe6267a9c0a227d21c95b782b1bd32bb41fc3b43b)                                              |
+
+
 New SecurityTokenRegistry (2.0.1): 0x538136ed73011a766bf0a126a27300c3a7a2e6a6
 (fixed bug with getTickersByOwner())
 
@@ -126,6 +128,8 @@ New Kovan PolyTokenFaucet: 0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792
 | Count Transfer Manager Factory:                               | [0x3c3c1f40ae2bdca82b90541b2cfbd41caa941c0e](https://kovan.etherscan.io/address/0x3c3c1f40ae2bdca82b90541b2cfbd41caa941c0e)                                              |
 | Percentage Transfer Manager Factory:                             | [0x8cd00c3914b2967a8b79815037f51c76874236b8](https://kovan.etherscan.io/address/0x8cd00c3914b2967a8b79815037f51c76874236b8)                                              |
 | Manual Approval Transfer Manager Factory:                        | [0x9faa79e2ccf0eb49aa6ebde1795ad2e951ce78f8](https://kovan.etherscan.io/address/0x9faa79e2ccf0eb49aa6ebde1795ad2e951ce78f8)                                              |
+
+
 New ManualApprovalTransferManager 0x9faa79e2ccf0eb49aa6ebde1795ad2e951ce78f8
 (Fixed 0x0 from bug)
 

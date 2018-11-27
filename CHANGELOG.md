@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 ## Manual Approval TransferManager
 * Removed `0x0` check for the `_from` address to `ManualApprovalTransferManager`. This allows for the Issuer/Transfer Agent to approve a one-off mint of tokens that otherwise would not be possible. 
 * Changed the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.0.1`.   
+* Deployed 2.0.1 `ManualApprovalTransferManagerFactory` to address 0x6af2afad53cb334e62b90ddbdcf3a086f654c298
 
 # v1.5.0 - Release Candidate
 

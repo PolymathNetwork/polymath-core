@@ -236,7 +236,7 @@ contract("PreSaleSTO", accounts => {
             expiryTime = toTime + duration.days(100);
 
             // Add the Investor in to the whitelist
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, 1, {
                 from: account_issuer,
                 gas: 6000000
             });
@@ -277,7 +277,7 @@ contract("PreSaleSTO", accounts => {
             expiryTime = toTime + duration.days(100);
 
             // Add the Investor in to the whitelist
-            let tx1 = await I_GeneralTransferManager.modifyWhitelist(account_investor2, fromTime, toTime, expiryTime, true, {
+            let tx1 = await I_GeneralTransferManager.modifyWhitelist(account_investor2, fromTime, toTime, expiryTime, 1, {
                 from: account_issuer,
                 gas: 6000000
             });
@@ -285,7 +285,7 @@ contract("PreSaleSTO", accounts => {
             assert.equal(tx1.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
 
             // Add the Investor in to the whitelist
-            let tx2 = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, {
+            let tx2 = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, 1, {
                 from: account_issuer,
                 gas: 6000000
             });

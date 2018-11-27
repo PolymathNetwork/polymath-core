@@ -153,8 +153,8 @@ contract("USDTieredSTO Sim", accounts => {
                 name: "_reserveWallet"
             },
             {
-                type: "address",
-                name: "_usdToken"
+                type: "address[]",
+                name: "_usdTokens"
             }
         ]
     };
@@ -604,7 +604,7 @@ contract("USDTieredSTO Sim", accounts => {
                     await I_DaiToken.getTokens(investment_DAI, _investor);
                     await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: _investor });
                     await catchRevert(
-                        I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE })
+                        I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, I_DaiToken.address, { from: _investor, gasPrice: GAS_PRICE })
                     );
                 } else
                     await catchRevert(
@@ -687,7 +687,7 @@ contract("USDTieredSTO Sim", accounts => {
                             .yellow
                     );
                 } else if (isDai && investment_DAI.gt(10)) {
-                    tx = await I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE });
+                    tx = await I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, I_DaiToken.address, { from: _investor, gasPrice: GAS_PRICE });
                     gasCost = BigNumber(GAS_PRICE).mul(tx.receipt.gasUsed);
                     console.log(
                         `buyWithUSD: ${investment_Token.div(10 ** 18)} tokens for ${investment_DAI.div(10 ** 18)} DAI by ${_investor}`

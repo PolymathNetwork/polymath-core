@@ -18,6 +18,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Storage //
     /////////////
     struct Tier {
+        // NB rates mentioned below are actually price and are used like price in the logic.
         // How many token units a buyer gets per USD in this tier (multiplied by 10**18)
         uint256 rate;
 

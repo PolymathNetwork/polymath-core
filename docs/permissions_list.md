@@ -271,6 +271,57 @@
         <tr>
             <td> removeTransferLimitInPercentageMulti </td>
         </tr>
+         <tr>
+            <td rowspan=16>Wallet</td>
+            <td rowspan=16>VestingEscrowWallet</td>
+            <td>depositTokens()</td>
+            <td rowspan=16>withPerm(ADMIN)</td>
+        </tr>
+        <tr>
+            <td>sendToTreasury()</td>
+        </tr>
+        <tr>
+            <td>pushAvailableTokens()</td>
+        </tr>
+        <tr>
+            <td>addTemplate()</td>
+        </tr>
+        <tr>
+            <td>removeTemplate()</td>
+        </tr>
+        <tr>
+            <td>addSchedule()</td>
+        </tr>
+        <tr>
+            <td>addScheduleFromTemplate()</td>
+        </tr>
+        <tr>
+            <td>modifySchedule()</td>
+        </tr>
+        <tr>
+            <td>revokeSchedule()</td>
+        </tr>
+        <tr>
+            <td>revokeAllSchedules()</td>
+        </tr>
+        <tr>
+            <td>trimBeneficiaries()</td>
+        </tr>
+        <tr>
+            <td>pushAvailableTokensMulti()</td>
+        </tr>
+        <tr>
+            <td>addScheduleMulti()</td>
+        </tr>
+        <tr>
+            <td>addScheduleFromTemplateMulti()</td>
+        </tr>
+        <tr>
+            <td>revokeSchedulesMulti()</td>
+        </tr>
+        <tr>
+            <td>modifyScheduleMulti()</td>
+        </tr>                                                                                                        
     </tbody>
  </table>
  

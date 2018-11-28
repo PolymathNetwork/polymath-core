@@ -17,11 +17,15 @@ import { encodeModuleCall } from "./helpers/encodeCall";
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
+
+// modules for test
 const CountTransferManager = artifacts.require("./CountTransferManager");
-const VolumeRestrictionTransferManager = artifacts.require('./LockupVolumeRestrictionTM');
-const PercentageTransferManager = artifacts.require('./PercentageTransferManager');
 const SingleTradeVolumeRestrictionManager = artifacts.require('./SingleTradeVolumeRestrictionTM');
 const ManualApprovalTransferManager = artifacts.require('./ManualApprovalTransferManager');
+const VolumeRestrictionTransferManager = artifacts.require('./LockupVolumeRestrictionTM');
+const PercentageTransferManager = artifacts.require('./PercentageTransferManager');
+
+
 
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -53,10 +57,6 @@ contract('GeneralPermissionManager', accounts => {
     let I_SecurityTokenRegistryProxy;
     let P_GeneralPermissionManager;
     let I_GeneralTransferManagerFactory;
-    let I_VolumeRestrictionTransferManagerFactory;
-    let I_PercentageTransferManagerFactory;
-    let I_PercentageTransferManager;
-    let I_VolumeRestrictionTransferManager;
     let I_GeneralPermissionManager;
     let I_GeneralTransferManager;
     let I_ModuleRegistryProxy;
@@ -70,18 +70,26 @@ contract('GeneralPermissionManager', accounts => {
     let I_STRProxied;
     let I_PolyToken;
     let I_PolymathRegistry;
+  
+
+    //Define all modules for test
     let I_CountTransferManagerFactory;
     let I_CountTransferManager;
+    
     let I_SingleTradeVolumeRestrictionManagerFactory;
     let I_SingleTradeVolumeRestrictionManager;
-    let I_SingleTradeVolumeRestrictionPercentageManager;
-    let P_SingleTradeVolumeRestrictionManager;
+    
     let P_SingleTradeVolumeRestrictionManagerFactory;
+    let P_SingleTradeVolumeRestrictionManager;
+
     let I_ManualApprovalTransferManagerFactory;
     let I_ManualApprovalTransferManager;
 
-    //Define all modules for test
-    let
+    let I_VolumeRestrictionTransferManagerFactory;
+    let I_VolumeRestrictionTransferManager;
+
+    let I_PercentageTransferManagerFactory;
+    let I_PercentageTransferManager;
 
     // SecurityToken Details
     const name = "Team";
@@ -108,8 +116,10 @@ contract('GeneralPermissionManager', accounts => {
     let testRepeat = 20;
 
 	// permission manager fuzz test
-	let modules = ['CappedSTO','DummySTO', 'USDTieredSTO', 'CountTransferManager', 'ManualApprovalTransferManager', 'PercentageTransferManager'];
-	let totalPerms = perms.length;
+	// let modules = ['CountTransferManager', 'SingleTradeVolumeRestrictionManager', 'ManualApprovalTransferManager', 'I_VolumeRestrictionTransferManager', 'PercentageTransferManager'];
+    let modules = ['I_CountTransferManager'];
+    let totalModules = modules.length;
+
 
     before(async () => {
         // Accounts setup
@@ -151,15 +161,11 @@ contract('GeneralPermissionManager', accounts => {
 
 	    // Deploy Modules
         [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-
-        [I_VolumeRestrictionTransferManagerFactory] = await deployLockupVolumeRTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-
-        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-
         [I_SingleTradeVolumeRestrictionManagerFactory] = await deploySingleTradeVolumeRMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
         [P_SingleTradeVolumeRestrictionManagerFactory] = await deploySingleTradeVolumeRMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
-
         [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_VolumeRestrictionTransferManagerFactory] = await deployLockupVolumeRTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
 
         // Printing all the contract addresses
         console.log(`
@@ -257,16 +263,22 @@ contract('GeneralPermissionManager', accounts => {
             console.log("1");
             // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
             for (var i = 0; i < testRepeat; i++) {
+                
+                var j = Math.floor(Math.random() * 10);
 
                 // choose a random module
+                let randomModule = modules[Math.floor(Math.random() * Math.floor(totalModules))];
+                console.log("choosen module "+ randomModule);
 
+                // attach it to the ST
+                let tx = await I_SecurityToken.addModule(randomModule.address, bytesSTO, 0, 0, { from: token_owner });
+                console.log("successfully attached module " + randomModule);
 
+                // remove it from the ST
+                tx = await I_SecurityToken.removeModule(randomModule.address, { from: token_owner });
+                console.log("successfully removed module " + randomModule);
 
-                // attach it to the ST 
-
-                // remove it from the ST 
-
-            };
+            }
         })
     });
 

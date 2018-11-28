@@ -200,7 +200,7 @@ async function cappedSTO_launch(stoConfig) {
     [cappedSTOconfig.startTime,
     cappedSTOconfig.endTime,
     web3.utils.toWei(cappedSTOconfig.cap.toString()),
-    cappedSTOconfig.rate,
+    web3.utils.toWei(cappedSTOconfig.rate.toString()),
     cappedSTOconfig.raiseType,
     cappedSTOconfig.wallet]
   );
@@ -219,7 +219,7 @@ async function cappedSTO_launch(stoConfig) {
 async function cappedSTO_status(currentSTO) {
   let displayStartTime = await currentSTO.methods.startTime().call();
   let displayEndTime = await currentSTO.methods.endTime().call();
-  let displayRate = await currentSTO.methods.rate().call();
+  let displayRate = new web3.utils.BN(await currentSTO.methods.rate().call());
   let displayCap = new web3.utils.BN(await currentSTO.methods.cap().call());
   let displayWallet = await currentSTO.methods.wallet().call();
   let displayRaiseType = await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.ETH).call() ? 'ETH' : 'POLY';
@@ -250,7 +250,7 @@ async function cappedSTO_status(currentSTO) {
   - Start Time:        ${new Date(displayStartTime * 1000)}
   - End Time:          ${new Date(displayEndTime * 1000)}
   - Raise Type:        ${displayRaiseType}
-  - Rate:              1 ${displayRaiseType} = ${displayRate} ${displayTokenSymbol.toUpperCase()}
+  - Rate:              1 ${displayRaiseType} = ${web3.utils.fromWei(displayRate)} ${displayTokenSymbol.toUpperCase()}
   - Wallet:            ${displayWallet}
   - Wallet Balance:    ${displayWalletBalance} ${displayRaiseType}
   -----------------------------------------------

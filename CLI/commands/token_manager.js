@@ -372,11 +372,11 @@ async function listModuleOptions() {
 
   let archivedModules = allModules.filter(m => m.archived);
   if (archivedModules.length > 0) {
-    options.push('Unarchive a module');
+    options.push('Unarchive a module', 'Remove a module');
   }
 
   if (allModules.length > 0) {
-    options.push('Remove a module', 'Change module budget');
+    options.push('Change module budget');
   }
 
   let index = readlineSync.keyInSelect(options, chalk.yellow('What do you want to do?'), { cancel: 'Return' });
@@ -399,7 +399,7 @@ async function listModuleOptions() {
       await unarchiveModule(archivedModules);
       break;
     case 'Remove a module':
-      await removeModule(allModules);
+      await removeModule(archivedModules);
       break;
     case 'Change module budget':
       await changeBudget(allModules);

@@ -195,7 +195,7 @@ contract("USDTieredSTO Sim", accounts => {
             I_SecurityTokenRegistryProxy,
             I_STRProxied
         ] = instances;
-
+       
        I_DaiToken = await PolyTokenFaucet.new({from: POLYMATH});
 
        // STEP 5: Deploy the USDTieredSTOFactory
@@ -353,13 +353,13 @@ contract("USDTieredSTO Sim", accounts => {
             let fromTime = latestTime() + duration.days(15);
             let toTime = latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let canBuyFromSTO = 1;
+            let canBuyFromSTO = true;
 
             await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(ACCREDITED2, fromTime, toTime, expiryTime, canBuyFromSTO, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED2, fromTime, toTime, expiryTime, canBuyFromSTO, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NOTAPPROVED, fromTime, toTime, expiryTime, 0, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(NOTAPPROVED, fromTime, toTime, expiryTime, false, { from: ISSUER });
 
             await increaseTime(duration.days(3));
 

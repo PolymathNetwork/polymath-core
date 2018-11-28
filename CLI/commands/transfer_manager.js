@@ -11,7 +11,6 @@ var whitelist = require('./whitelist');
 let tokenSymbol;
 let securityToken;
 let securityTokenRegistry;
-let network;
 let currentTransferManager;
 
 async function executeApp() {

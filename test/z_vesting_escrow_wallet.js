@@ -71,7 +71,7 @@ contract('VestingEscrowWallet', accounts => {
         // Accounts setup
         account_polymath = accounts[0];
         token_owner = accounts[1];
-        wallet_admin = accounts[2];
+        wallet_admin = token_owner;
 
         account_beneficiary1 = accounts[6];
         account_beneficiary2 = accounts[7];
@@ -173,13 +173,8 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should successfully attach the VestingEscrowWallet with the security token", async () => {
-            let bytesData = encodeModuleCall(
-                ["address"],
-                [token_owner]
-            );
-
             await I_SecurityToken.changeGranularity(1, {from: token_owner});
-            const tx = await I_SecurityToken.addModule(I_VestingEscrowWalletFactory.address, bytesData, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_VestingEscrowWalletFactory.address, "", 0, 0, { from: token_owner });
 
             assert.equal(tx.logs[2].args._types[0].toNumber(), 6, "VestingEscrowWallet doesn't get deployed");
             assert.equal(

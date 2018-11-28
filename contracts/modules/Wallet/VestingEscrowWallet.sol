@@ -29,7 +29,6 @@ contract VestingEscrowWallet is IWallet {
 
     enum State {CREATED, STARTED, COMPLETED}
 
-    address public treasury;
     uint256 public unassignedTokens;
 
     mapping (address => Schedule[]) public schedules;
@@ -55,8 +54,8 @@ contract VestingEscrowWallet is IWallet {
     );
     event RevokeAllSchedules(address indexed _beneficiary);
     event RevokeSchedule(address indexed _beneficiary, uint256 _index);
-    event DepositTokens(uint256 _numberOfTokens);
-    event SendToTreasury(uint256 _numberOfTokens);
+    event DepositTokens(uint256 _numberOfTokens, address _sender);
+    event SendToTreasury(uint256 _numberOfTokens, address _sender);
     event SendTokens(address indexed _beneficiary, uint256 _numberOfTokens);
     event AddTemplate(uint256 _numberOfTokens, uint256 _duration, uint256 _frequency, uint256 _index);
     event RemoveTemplate(uint256 _index);
@@ -73,19 +72,10 @@ contract VestingEscrowWallet is IWallet {
     }
 
     /**
-     * @notice Function used to initialize the different variables
-     * @param _treasury Address of the treasury
-     */
-    function configure(address _treasury) public onlyFactory {
-        require(_treasury != address(0), "Invalid address");
-        treasury = _treasury;
-    }
-
-    /**
      * @notice This function returns the signature of the configure function
      */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(address)"));
+        return bytes4(0);
     }
 
     /**
@@ -97,9 +87,9 @@ contract VestingEscrowWallet is IWallet {
 
     function _depositTokens(uint256 _numberOfTokens) internal {
         require(_numberOfTokens > 0, "Should be greater than zero");
-        ISecurityToken(securityToken).transferFrom(treasury, this, _numberOfTokens);
+        ISecurityToken(securityToken).transferFrom(msg.sender, this, _numberOfTokens);
         unassignedTokens = unassignedTokens.add(_numberOfTokens);
-        emit DepositTokens(_numberOfTokens);
+        emit DepositTokens(_numberOfTokens, msg.sender);
     }
 
     /**
@@ -108,8 +98,8 @@ contract VestingEscrowWallet is IWallet {
     function sendToTreasury() external withPerm(ADMIN) {
         uint256 amount = unassignedTokens;
         unassignedTokens = 0;
-        ISecurityToken(securityToken).transfer(treasury, amount);
-        emit SendToTreasury(amount);
+        ISecurityToken(securityToken).transfer(msg.sender, amount);
+        emit SendToTreasury(amount, msg.sender);
     }
 
     /**

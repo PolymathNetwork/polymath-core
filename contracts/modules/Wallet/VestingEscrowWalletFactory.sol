@@ -34,10 +34,6 @@ contract VestingEscrowWalletFactory is ModuleFactory {
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom due to insufficent Allowance provided");
         }
         VestingEscrowWallet vestingEscrowWallet = new VestingEscrowWallet(msg.sender, address(polyToken));
-        //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == vestingEscrowWallet.getInitFunction(), "Invalid data");
-        /*solium-disable-next-line security/no-low-level-calls*/
-        require(address(vestingEscrowWallet).call(_data), "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(vestingEscrowWallet), getName(), address(this), msg.sender, setupCost, now);
         return address(vestingEscrowWallet);

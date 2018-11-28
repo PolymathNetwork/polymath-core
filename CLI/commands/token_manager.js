@@ -4,6 +4,7 @@ const chalk = require('chalk');
 const whitelist = require('./whitelist');
 const multimint = require('./multi_mint');
 const stoManager = require('./sto_manager');
+const transferManager = require('./transfer_manager');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
 
@@ -419,10 +420,7 @@ async function addModule() {
     *********************************`));
       break;
     case 'Transfer Manager':
-      console.log(chalk.red(`
-    *********************************
-    This option is not yet available.
-    *********************************`));
+      await transferManager.addTransferManagerModule(tokenSymbol)
       break;
     case 'Security Token Offering':
       await stoManager.addSTOModule(tokenSymbol)

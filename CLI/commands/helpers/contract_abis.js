@@ -15,6 +15,8 @@ let erc20DividendCheckpointABI;
 let etherDividendCheckpointABI;
 let moduleInterfaceABI;
 let ownableABI;
+let iSTOABI;
+let iTransferManagerABI;
 let moduleFactoryABI;
 
 try {
@@ -35,6 +37,8 @@ try {
     etherDividendCheckpointABI  = JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpoint.json').toString()).abi;
     moduleInterfaceABI          = JSON.parse(require('fs').readFileSync('./build/contracts/IModule.json').toString()).abi;
     ownableABI                  = JSON.parse(require('fs').readFileSync('./build/contracts/Ownable.json').toString()).abi;
+    iSTOABI                     = JSON.parse(require('fs').readFileSync('./build/contracts/ISTO.json').toString()).abi
+    iTransferManagerABI         = JSON.parse(require('fs').readFileSync('./build/contracts/ITransferManager.json').toString()).abi
     moduleFactoryABI            = JSON.parse(require('fs').readFileSync('./build/contracts/ModuleFactory.json').toString()).abi;
 } catch (err) {
     console.log('\x1b[31m%s\x1b[0m',"Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
@@ -92,6 +96,12 @@ module.exports = {
     },
     ownable: function () {
         return ownableABI;
+    },
+    ISTO: function () {
+        return iSTOABI;
+    },
+    ITransferManager: function () {
+        return iTransferManagerABI;
     },
     moduleFactory: function () {
         return moduleFactoryABI;

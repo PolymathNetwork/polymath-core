@@ -2,8 +2,9 @@
 
 var faucet = require('./commands/faucet');
 var investor_portal = require('./commands/investor_portal');
-var module_manager = require('./commands/module_manager');
+var token_manager = require('./commands/token_manager');
 var st20generator = require('./commands/ST20Generator');
+var sto_manager = require('./commands/sto_manager');
 var transfer = require('./commands/transfer');
 var whitelist = require('./commands/whitelist');
 var multimint = require('./commands/multi_mint');
@@ -21,27 +22,38 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 
 program
-  .version('0.0.1')
+  .version('1.0.1')
   .description('CLI for Polymath-core')
   .option('-r, --remote-node <network>', 'Connect to a remote node');
 
 program
   .command('st20generator')
   .alias('st')
-  .option('-c, --config <file>', "Uses configuration file to configure ST and STO")
+  .option('-t, --ticker <ticker>', 'Unique token ticker')
+  .option('-o, --transferOwnership <newOwner>', `Transfers the ticker's ownership to newOwner account. If newOwner is 'false', this step is skipped`)
+  .option('-n, --tokenName <tokenName>', 'Token name')
+  .option('-d, --details <details>', 'Off-chain details of the token')
+  .option('-D, --divisible <div>', 'If token is divisible or not [true]', /^(true|false)/)
   .description('Wizard-like script that will guide technical users in the creation and deployment of an ST-20 token')
   .action(async function(cmd) {
-    let tokenConfig;
-    let mintingConfig;
-    let stoCofig;
-    if (cmd.config) {
-      let config = yaml.safeLoad(fs.readFileSync(`${__dirname}/data/${cmd.config}`, 'utf8'));
-      tokenConfig = config.securityToken;
-      mintingConfig = config.initialMint;
-      stoCofig = config.sto;
-    }
     await gbl.initialize(program.remoteNode);
-    await st20generator.executeApp(tokenConfig, mintingConfig, stoCofig);
+    await st20generator.executeApp(cmd.ticker, cmd.transferOwnership, cmd.tokenName, cmd.details, cmd.divisible);
+  });
+
+program
+  .command('sto_manager')
+  .alias('sto')
+  .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage modules')
+  .option('-l, --launch <configFilePath>', 'Uses configuration file to configure and launch a STO')
+  .description('Wizard-like script that will guide technical users in the creation of an STO')
+  .action(async function(cmd) {
+    await gbl.initialize(program.remoteNode);
+    if (cmd.launch) {
+      let config = yaml.safeLoad(fs.readFileSync(`${__dirname}/${cmd.launch}`, 'utf8'));
+      await sto_manager.addSTOModule(cmd.securityToken, config)
+    } else {
+      await sto_manager.executeApp(cmd.securityToken);
+    }
   });
 
 program
@@ -63,12 +75,13 @@ program
   });
 
 program
-  .command('module_manager')
-  .alias('mm')
-  .description('View modules attached to a token and their status')
-  .action(async function() {
+  .command('token_manager')
+  .alias('stm')
+  .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage')
+  .description('Manage your Security Tokens, mint tokens, add modules and change config')
+  .action(async function(cmd) {
     await gbl.initialize(program.remoteNode);
-    await module_manager.executeApp();
+    await token_manager.executeApp(cmd.securityToken);
   });
 
 program

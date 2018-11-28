@@ -24,13 +24,13 @@ contract GeneralTransferManagerStorage {
     }
 
     // Allows all TimeRestrictions to be offset
-    struct Offset {
-        uint64 time;
-        uint8 isForward;
+    struct Defaults {
+        uint64 fromTime;
+        uint64 toTime;
     }
 
     // Offset to be applied to all timings (except KYC expiry)
-    Offset public offset;
+    Defaults public defaults;
 
     // List of all addresses that have been added to the GTM at some point
     address[] public investors;

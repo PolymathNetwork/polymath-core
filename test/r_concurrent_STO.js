@@ -159,7 +159,7 @@ contract("Concurrent STO", accounts => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let canBuyFromSTO = 1;
+            let canBuyFromSTO = true;
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, canBuyFromSTO, {
                 from: account_issuer,

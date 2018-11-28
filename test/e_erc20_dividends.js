@@ -202,7 +202,7 @@ contract("ERC20DividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(30),
-                1,
+                true,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -232,7 +232,7 @@ contract("ERC20DividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(30),
-                1,
+                true,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -372,7 +372,7 @@ contract("ERC20DividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(20),
-                1,
+                true,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -434,7 +434,7 @@ contract("ERC20DividendCheckpoint", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                1,
+                true,
                 {
                     from: account_issuer,
                     gas: 500000

@@ -24,7 +24,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     // Emit when there is change in the flag variable called signingAddress
     event ChangeSigningAddress(address _signingAddress);
     // Emit when investor details get modified related to their whitelisting
-    event OffsetModified(uint64 _time, uint8 _isForward);
+    event DefaultsModified(uint64 _defaultFromTime, uint64 _defaultToTime);
 
     // _fromTime is the time from which the _investor can send tokens
     // _toTime is the time from which the _investor can receive tokens
@@ -52,10 +52,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     {
     }
 
-    function modifyOffset(uint64 _time, uint8 _isForward) public withPerm(FLAGS) {
-        offset.time = _time;
-        offset.isForward = _isForward;
-        emit OffsetModified(_time, _isForward);
+    function modifyDefaults(uint64 _defaultFromTime, uint64 _defaultToTime) public withPerm(FLAGS) {
+        defaults.fromTime = _defaultFromTime;
+        defaults.toTime = _defaultToTime;
+        emit DefaultsModified(_defaultFromTime, _defaultToTime);
     }
 
     /**
@@ -126,7 +126,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         allowAllBurnTransfers = _allowAllBurnTransfers;
         emit AllowAllBurnTransfers(_allowAllBurnTransfers);
     }
-
+    event Times(uint64 _from, uint64 _to);
     /**
      * @notice Default implementation of verifyTransfer used by SecurityToken
      * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
@@ -156,13 +156,15 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
             if (allowAllWhitelistIssuances && _from == issuanceAddress) {
                 return _onWhitelist(_to) ? Result.VALID : Result.NA;
             }
+            (uint64 adjustedFromTime, uint64 adjustedToTime) = _adjustTimes(whitelist[_from].fromTime, whitelist[_to].toTime);
+
             if (_from == issuanceAddress) {
-                return (_onWhitelist(_to) && _adjustTimes(whitelist[_to].toTime) <= uint64(now)) ? Result.VALID : Result.NA;
+                return (_onWhitelist(_to) && (adjustedToTime <= uint64(now))) ? Result.VALID : Result.NA;
             }
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
-            return ((_onWhitelist(_from) && _adjustTimes(whitelist[_from].fromTime) <= uint64(now)) &&
-                (_onWhitelist(_to) && _adjustTimes(whitelist[_to].toTime) <= uint64(now))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
+            return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) &&
+                (_onWhitelist(_to) && (adjustedToTime <= uint64(now)))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
         }
         return Result.NA;
     }
@@ -326,14 +328,19 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         return attached;
     }
 
-    function _adjustTimes(uint64 _time) internal view returns(uint64) {
-        if (offset.isForward != 0) {
-            require(_time + offset.time > _time);
-            return _time + offset.time;
-        } else {
-            require(_time >= offset.time);
-            return _time - offset.time;
+    /**
+     * @notice Internal function to adjust times using default values
+     */
+    function _adjustTimes(uint64 _fromTime, uint64 _toTime) internal view returns(uint64, uint64) {
+        uint64 adjustedFromTime = _fromTime;
+        uint64 adjustedToTime = _toTime;
+        if (_fromTime == 0) {
+            adjustedFromTime = defaults.fromTime;
         }
+        if (_toTime == 0) {
+            adjustedToTime = defaults.toTime;
+        }
+        return (adjustedFromTime, adjustedToTime);
     }
 
     /**
@@ -341,6 +348,38 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
      */
     function getInvestors() external view returns(address[]) {
         return investors;
+    }
+
+    /**
+     * @dev Returns list of all investors data
+     */
+    function getAllInvestorsData() external view returns(uint256[], uint256[], uint256[], bool[]) {
+        return _investorsData(investors);
+    }
+
+    /**
+     * @dev Returns list of specified investors data
+     */
+    function getInvestorsData(address[] _investors) external view returns(uint256[], uint256[], uint256[], bool[]) {
+        return _investorsData(_investors);
+    }
+
+    function _investorsData(address[] _investors) internal view returns(uint256[], uint256[], uint256[], bool[]) {
+        uint256[] memory fromTimes = new uint256[](_investors.length);
+        uint256[] memory toTimes = new uint256[](_investors.length);
+        uint256[] memory expiryTimes = new uint256[](_investors.length);
+        bool[] memory canBuyFromSTOs = new bool[](_investors.length);
+        for (uint256 i = 0; i < _investors.length; i++) {
+            fromTimes[i] = whitelist[_investors[i]].fromTime;
+            toTimes[i] = whitelist[_investors[i]].toTime;
+            expiryTimes[i] = whitelist[_investors[i]].expiryTime;
+            if (whitelist[_investors[i]].canBuyFromSTO == 0) {
+                canBuyFromSTOs[i] = false;
+            } else {
+                canBuyFromSTOs[i] = true;
+            }
+        }
+        return (fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
     }
 
     /**

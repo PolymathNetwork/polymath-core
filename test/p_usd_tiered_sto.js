@@ -1005,7 +1005,7 @@ contract("USDTieredSTO", accounts => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let whitelisted = 1;
+            let whitelisted = true;
 
             await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
@@ -1105,7 +1105,7 @@ contract("USDTieredSTO", accounts => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let whitelisted = 1;
+            let whitelisted = true;
 
             await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
@@ -1160,7 +1160,7 @@ contract("USDTieredSTO", accounts => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let whitelisted = 1;
+            let whitelisted = true;
 
             await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
@@ -1230,7 +1230,7 @@ contract("USDTieredSTO", accounts => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let whitelisted = 1;
+            let whitelisted = true;
 
             await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
@@ -1285,7 +1285,7 @@ contract("USDTieredSTO", accounts => {
             let fromTime = latestTime();
             let toTime = latestTime();
             let expiryTime = toTime + duration.days(100);
-            let whitelisted = 1;
+            let whitelisted = true;
 
             await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
             await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
@@ -1353,7 +1353,7 @@ contract("USDTieredSTO", accounts => {
             let fromTime = latestTime();
             let toTime = latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let whitelisted = 1;
+            let whitelisted = true;
 
             const tx1 = await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, {
                 from: ISSUER

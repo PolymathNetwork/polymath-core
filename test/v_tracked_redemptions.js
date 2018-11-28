@@ -190,7 +190,7 @@ contract("TrackedRedemption", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(30),
-                1,
+                true,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -220,7 +220,7 @@ contract("TrackedRedemption", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(30),
-                1,
+                true,
                 {
                     from: account_issuer,
                     gas: 500000

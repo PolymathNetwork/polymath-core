@@ -188,7 +188,7 @@ contract("GeneralTransferManager", accounts => {
                 [latestTime() + duration.days(30), latestTime() + duration.days(30)],
                 [latestTime() + duration.days(90), latestTime() + duration.days(90)],
                 [latestTime() + duration.years(1), latestTime() + duration.years(1)],
-                [0, 0],
+                [false, false],
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -316,7 +316,7 @@ contract("GeneralTransferManager", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(10),
-                1,
+                true,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -378,7 +378,7 @@ contract("GeneralTransferManager", accounts => {
                 latestTime() + duration.days(10),
                 latestTime() + duration.days(10),
                 latestTime() + duration.days(20),
-                1,
+                true,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -424,7 +424,7 @@ contract("GeneralTransferManager", accounts => {
                 latestTime(),
                 latestTime(),
                 latestTime() + duration.days(20),
-                1,
+                true,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -484,7 +484,7 @@ contract("GeneralTransferManager", accounts => {
                 fromTime,
                 toTime,
                 expiryTime,
-                1,
+                true,
                 validFrom,
                 validTo,
                 nonce,
@@ -501,7 +501,7 @@ contract("GeneralTransferManager", accounts => {
                     fromTime,
                     toTime,
                     expiryTime,
-                    1,
+                    true,
                     validFrom,
                     validTo,
                     nonce,
@@ -528,7 +528,7 @@ contract("GeneralTransferManager", accounts => {
                 fromTime,
                 toTime,
                 expiryTime,
-                1,
+                true,
                 validFrom,
                 validTo,
                 nonce,
@@ -545,7 +545,7 @@ contract("GeneralTransferManager", accounts => {
                     fromTime,
                     toTime,
                     expiryTime,
-                    1,
+                    true,
                     validFrom,
                     validTo,
                     nonce,
@@ -572,7 +572,7 @@ contract("GeneralTransferManager", accounts => {
                 fromTime,
                 toTime,
                 expiryTime,
-                1,
+                true,
                 validFrom,
                 validTo,
                 nonce,
@@ -589,7 +589,7 @@ contract("GeneralTransferManager", accounts => {
                     fromTime,
                     toTime,
                     expiryTime,
-                    1,
+                    true,
                     validFrom,
                     validTo,
                     nonce,
@@ -616,7 +616,7 @@ contract("GeneralTransferManager", accounts => {
                 latestTime(),
                 latestTime() + duration.days(80),
                 expiryTime + duration.days(200),
-                1,
+                true,
                 validFrom,
                 validTo,
                 nonce,
@@ -632,7 +632,7 @@ contract("GeneralTransferManager", accounts => {
                 latestTime(),
                 latestTime() + duration.days(80),
                 expiryTime + duration.days(200),
-                1,
+                true,
                 validFrom,
                 validTo,
                 nonce,
@@ -672,7 +672,7 @@ contract("GeneralTransferManager", accounts => {
                 latestTime(),
                 latestTime() + duration.days(80),
                 expiryTime + duration.days(200),
-                1,
+                true,
                 validFrom,
                 validTo,
                 nonce,
@@ -688,7 +688,7 @@ contract("GeneralTransferManager", accounts => {
                 latestTime(),
                 latestTime() + duration.days(80),
                 expiryTime + duration.days(200),
-                1,
+                true,
                 validFrom,
                 validTo,
                 nonce,
@@ -795,7 +795,7 @@ contract("GeneralTransferManager", accounts => {
                     [fromTime, fromTime],
                     [toTime, toTime],
                     [expiryTime, expiryTime],
-                    [1, 1],
+                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -835,7 +835,7 @@ contract("GeneralTransferManager", accounts => {
                     [fromTime, fromTime],
                     [toTime],
                     [expiryTime, expiryTime],
-                    [1, 1],
+                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -855,7 +855,7 @@ contract("GeneralTransferManager", accounts => {
                     [fromTime, fromTime],
                     [toTime, toTime],
                     [expiryTime],
-                    [1, 1],
+                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -874,7 +874,7 @@ contract("GeneralTransferManager", accounts => {
                 [fromTime, fromTime],
                 [toTime, toTime],
                 [expiryTime, expiryTime],
-                [1, 1],
+                [true, true],
                 {
                     from: token_owner,
                     gas: 6000000

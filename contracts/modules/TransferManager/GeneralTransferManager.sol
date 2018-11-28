@@ -35,10 +35,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         address _investor,
         uint256 _dateAdded,
         address _addedBy,
-        uint64 _fromTime,
-        uint64 _toTime,
-        uint64 _expiryTime,
-        uint8 _canBuyFromSTO
+        uint256 _fromTime,
+        uint256 _toTime,
+        uint256 _expiryTime,
+        bool _canBuyFromSTO
     );
 
     /**
@@ -177,15 +177,21 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     */
     function modifyWhitelist(
         address _investor,
-        uint64 _fromTime,
-        uint64 _toTime,
-        uint64 _expiryTime,
-        uint8 _canBuyFromSTO
+        uint256 _fromTime,
+        uint256 _toTime,
+        uint256 _expiryTime,
+        bool _canBuyFromSTO
     )
         public
         withPerm(WHITELIST)
     {
-        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        uint8 canBuyFromSTO = 0;
+        if (_canBuyFromSTO) {
+            canBuyFromSTO = 1;
+        }
+        _modifyWhitelist(_investor, uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO);
+        /*solium-disable-next-line security/no-block-members*/
+        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**
@@ -210,8 +216,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
             investors.push(_investor);
         }
         whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO, uint8(1));
-        /*solium-disable-next-line security/no-block-members*/
-        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**
@@ -224,17 +228,25 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     */
     function modifyWhitelistMulti(
         address[] _investors,
-        uint64[] _fromTimes,
-        uint64[] _toTimes,
-        uint64[] _expiryTimes,
-        uint8[] _canBuyFromSTO
+        uint256[] _fromTimes,
+        uint256[] _toTimes,
+        uint256[] _expiryTimes,
+        bool[] _canBuyFromSTO
     ) public withPerm(WHITELIST) {
         require(_investors.length == _fromTimes.length, "Mismatched input lengths");
         require(_fromTimes.length == _toTimes.length, "Mismatched input lengths");
         require(_toTimes.length == _expiryTimes.length, "Mismatched input lengths");
         require(_canBuyFromSTO.length == _toTimes.length, "Mismatched input length");
+        uint8 canBuyFromSTO;
         for (uint256 i = 0; i < _investors.length; i++) {
-            _modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i]);
+            if (_canBuyFromSTO[i]) {
+                canBuyFromSTO = 1;
+            } else {
+                canBuyFromSTO = 0;
+            }
+            _modifyWhitelist(_investors[i], uint64(_fromTimes[i]), uint64(_toTimes[i]), uint64(_expiryTimes[i]), canBuyFromSTO);
+            /*solium-disable-next-line security/no-block-members*/
+            emit ModifyWhitelist(_investors[i], now, msg.sender, _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i]);
         }
     }
 
@@ -254,21 +266,21 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     */
     function modifyWhitelistSigned(
         address _investor,
-        uint64 _fromTime,
-        uint64 _toTime,
-        uint64 _expiryTime,
-        uint8 _canBuyFromSTO,
-        uint64 _validFrom,
-        uint64 _validTo,
+        uint256 _fromTime,
+        uint256 _toTime,
+        uint256 _expiryTime,
+        bool _canBuyFromSTO,
+        uint256 _validFrom,
+        uint256 _validTo,
         uint256 _nonce,
         uint8 _v,
         bytes32 _r,
         bytes32 _s
     ) public {
         /*solium-disable-next-line security/no-block-members*/
-        require(_validFrom <= uint64(now), "ValidFrom is too early");
+        require(_validFrom <= now, "ValidFrom is too early");
         /*solium-disable-next-line security/no-block-members*/
-        require(_validTo >= uint64(now), "ValidTo is too late");
+        require(_validTo >= now, "ValidTo is too late");
         require(!nonceMap[_investor][_nonce], "Already used signature");
         nonceMap[_investor][_nonce] = true;
         bytes32 hash = keccak256(
@@ -278,7 +290,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         if (whitelist[_investor].added == uint8(0)) {
             investors.push(_investor);
         }
-        whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO, uint8(1));
+        uint8 canBuyFromSTO = 0;
+        if (_canBuyFromSTO) {
+            canBuyFromSTO = 1;
+        }
+        whitelist[_investor] = TimeRestriction(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1));
         /*solium-disable-next-line security/no-block-members*/
         emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }

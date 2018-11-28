@@ -948,5 +948,9 @@ module.exports = {
   executeApp: async function (_tokenSymbol) {
     await initialize(_tokenSymbol);
     return executeApp();
+  },
+  addTransferManagerModule: async function (_tokenSymbol) {
+    await initialize(_tokenSymbol);
+    return addTransferManagerModule()
   }
 }

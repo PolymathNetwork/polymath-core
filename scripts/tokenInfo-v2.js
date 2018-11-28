@@ -1,18 +1,19 @@
 const Web3 = require("web3");
-const web3 = new Web3(new Web3.providers.HttpProvider("https://kovan.infura.io/"));
+const web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/"));
 var request = require('request-promise')
 
 const securityTokenABI = JSON.parse(require('fs').readFileSync('../build/contracts/SecurityToken.json').toString()).abi;
 const generalTransferManagerABI = JSON.parse(require('fs').readFileSync('../build/contracts/GeneralTransferManager.json').toString()).abi;
 
 async function getTokens() {
-    const securityTokenRegistryAddress = "0x91110c2f67e2881a8540417be9eadf5bc9f2f248";
+    const securityTokenRegistryAddress = "0x240f9f86b1465bf1b8eb29bc88cbf65573dfdd97";
     const securityTokenRegistryABI = await getABIfromEtherscan(securityTokenRegistryAddress);
     const securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
 
-    let logs = await getLogsFromEtherscan(securityTokenRegistry.options.address, 9299699, 'latest', 'NewSecurityToken(string,string,address,address,uint256,address,bool,uint256)');
+    let logs = await getLogsFromEtherscan(securityTokenRegistry.options.address, 0, 'latest', 'NewSecurityToken(string,string,address,address,uint256,address,bool,uint256)');
+    console.log(logs.length);
     for (let i = 0; i < logs.length; i++) {
-        let tokenAddress = '0x' + logs[i].topics[1].slice(26,66)
+        let tokenAddress = '0x' + logs[i].topics[1].slice(26, 66)
         await getInfo(tokenAddress);
     }
 }
@@ -21,7 +22,7 @@ async function getInfo(tokenAddress) {
     let token = new web3.eth.Contract(securityTokenABI, tokenAddress);
     console.log("Token - " + tokenAddress);
     console.log("----------------------");
-    console.log("Owner: " + await token.methods.owner().call());
+    //console.log("Owner: " + await token.methods.owner().call());
     console.log("Name: " + await token.methods.name().call());
     console.log("Details: " + await token.methods.tokenDetails().call());
     console.log("Symbol: " + await token.methods.symbol().call());
@@ -33,7 +34,7 @@ async function getInfo(tokenAddress) {
     if (controllerDisabled) {
         console.log("Controller disabled: YES");
     } else {
-        console.log("Controller: " + await token.methods.controller().call()); 
+        console.log("Controller: " + await token.methods.controller().call());
     }
     console.log("Investors: " + await token.methods.getInvestorCount().call());
     console.log("Latest Checkpoint: " + await token.methods.currentCheckpointId().call());
@@ -42,7 +43,7 @@ async function getInfo(tokenAddress) {
     for (const m of gtmModules) {
         let gtmEvents = await getLogsFromEtherscan(m, 9299699, 'latest', 'ModifyWhitelist(address,uint256,address,uint256,uint256,uint256,bool)');
         gtmEventsCount += gtmEvents.length;
-    } 
+    }
     console.log("Count of GeneralTransferManager Events: " + gtmEventsCount);
     console.log("Modules Attached (TransferManager):");
     await getModules(2, token);
@@ -68,7 +69,7 @@ async function getModules(type, token) {
 }
 
 async function getLogsFromEtherscan(_address, _fromBlock, _toBlock, _eventSignature) {
-    let urlDomain = 'api-kovan';
+    let urlDomain = 'api';
     const options = {
         url: `https://${urlDomain}.etherscan.io/api`,
         qs: {
@@ -88,7 +89,7 @@ async function getLogsFromEtherscan(_address, _fromBlock, _toBlock, _eventSignat
 }
 
 async function getABIfromEtherscan(_address) {
-    let urlDomain = 'api-kovan';
+    let urlDomain = 'api';
     const options = {
         url: `https://${urlDomain}.etherscan.io/api`,
         qs: {

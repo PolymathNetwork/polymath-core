@@ -13,7 +13,8 @@ contract CappedSTO is ISTO, ReentrancyGuard {
 
     // Determine whether users can invest on behalf of a beneficiary
     bool public allowBeneficialInvestments = false;
-    // How many token units a buyer gets per wei / base unit of POLY
+    // How many token units multiplied by 10^18 a buyer gets per wei / base unit of POLY
+    // If rate is 10^18, buyer will get 1 token unit for every wei / base unit of poly.
     uint256 public rate;
     //How many tokens this STO will be allowed to sell to investors
     uint256 public cap;
@@ -49,7 +50,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @param _startTime Unix timestamp at which offering get started
      * @param _endTime Unix timestamp at which offering get ended
      * @param _cap Maximum No. of tokens for sale
-     * @param _rate Token units a buyer gets per wei / base unit of POLY
+     * @param _rate Token units multiplied by 10^18 a buyer gets per wei / base unit of POLY
      * @param _fundRaiseTypes Type of currency used to collect the funds
      * @param _fundsReceiver Ethereum account address to hold the funds
      */
@@ -154,6 +155,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @return Unixtimestamp at which offering gets start.
      * @return Unixtimestamp at which offering ends.
      * @return Number of tokens this STO will be allowed to sell to investors.
+     * @return Token units multiplied by 10^18 a buyer gets per wei / base unit of POLY
      * @return Amount of funds raised
      * @return Number of individual investors this STO have.
      * @return Amount of tokens get sold. 
@@ -259,8 +261,10 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     * @param _investedAmount Value in wei to be converted into tokens
     * @return Number of tokens that can be purchased with the specified _investedAmount
     */
-    function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256) {
-        return _investedAmount.mul(rate);
+    function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256 tokenAmount) {
+        tokenAmount = _investedAmount.mul(rate);
+        tokenAmount = tokenAmount.div(uint256(10) ** 18);
+        return tokenAmount;
     }
 
     /**

@@ -90,6 +90,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         address _module,
         uint256 _moduleCost,
         uint256 _budget,
+        bytes32 _label,
         uint256 _timestamp
     );
 
@@ -213,21 +214,24 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         securityTokenVersion = SemanticVersion(2,0,0);
     }
 
-    /**
-     * @notice Attachs a module to the SecurityToken
-     * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
-     * @dev to control restrictions on transfers.
-     * @param _moduleFactory is the address of the module factory to be added
-     * @param _data is data packed into bytes used to further configure the module (See STO usage)
-     * @param _maxCost max amount of POLY willing to pay to the module.
-     * @param _budget max amount of ongoing POLY willing to assign to the module.
-     */
-    function addModule(
+    // /**
+    //  * @notice Attachs a module to the SecurityToken
+    //  * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
+    //  * @dev to control restrictions on transfers.
+    //  * @param _moduleFactory is the address of the module factory to be added
+    //  * @param _data is data packed into bytes used to further configure the module (See STO usage)
+    //  * @param _maxCost max amount of POLY willing to pay to the module.
+    //  * @param _budget max amount of ongoing POLY willing to assign to the module.
+    //  * @param _label custom module label.
+    //  */
+
+    function addModuleWithLabel(
         address _moduleFactory,
         bytes _data,
         uint256 _maxCost,
-        uint256 _budget
-    ) external onlyOwner nonReentrant {
+        uint256 _budget, 
+        bytes32 _label
+    ) public onlyOwner nonReentrant {
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
@@ -250,12 +254,24 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
             modules[moduleTypes[i]].push(module);
         }
         modulesToData[module] = TokenLib.ModuleData(
-            moduleName, module, _moduleFactory, false, moduleTypes, moduleIndexes, names[moduleName].length
+            moduleName, module, _moduleFactory, false, moduleTypes, moduleIndexes, names[moduleName].length, _label
         );
         names[moduleName].push(module);
         //Emit log event
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, now);
+        emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, _label, now);
+    }
+
+    /**
+    * @notice addModule function will call addModuleWithLabel() with an empty label for backward compatible
+    */
+    function addModule(
+        address _moduleFactory,
+        bytes _data,
+        uint256 _maxCost,
+        uint256 _budget
+    ) external { 
+        addModuleWithLabel(_moduleFactory, _data, _maxCost, _budget, "");
     }
 
     /**
@@ -330,12 +346,13 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @return bool module archived
      * @return uint8 module type
      */
-    function getModule(address _module) external view returns (bytes32, address, address, bool, uint8[]) {
+    function getModule(address _module) external view returns (bytes32, address, address, bool, uint8[], bytes32) {
         return (modulesToData[_module].name,
         modulesToData[_module].module,
         modulesToData[_module].moduleFactory,
         modulesToData[_module].isArchived,
-        modulesToData[_module].moduleTypes);
+        modulesToData[_module].moduleTypes,
+        modulesToData[_module].label);
     }
 
     /**

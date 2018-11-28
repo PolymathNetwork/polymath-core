@@ -14,7 +14,8 @@ All notable changes to this project will be documented in this file.
 * Removed individual mappings for tier data removed in UDSTSTO.
 
 # GeneralTransferManager
-* Add an Offset that can be used to move all from & to dates forwards or backwards by a fixed offset.
+* `getInvestors`, `getAllInvestorsData`, `getInvestorsData` added to GTM to allow easy data queries.
+* `modifyDefaults(uint64 _defaultFromTime, uint64 _defaultToTime)` added which sets a default timestamp used when `fromTime` or `toTime` are 0
 * Add `address[] public investors` to record a list of all addresses that have been added to the whitelist (`getInvestors`)
 * Fix for when `allowAllWhitelistIssuances` is FALSE
 * Make GTM a Proxy based implementation to reduce deployment gas costs

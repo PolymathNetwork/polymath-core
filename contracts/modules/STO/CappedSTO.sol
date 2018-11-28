@@ -13,10 +13,11 @@ contract CappedSTO is ISTO, ReentrancyGuard {
 
     // Determine whether users can invest on behalf of a beneficiary
     bool public allowBeneficialInvestments = false;
-    // How many token units multiplied by 10^18 a buyer gets per wei / base unit of POLY
+    // How many token units a buyer gets (multiplied by 10^18) per wei / base unit of POLY
     // If rate is 10^18, buyer will get 1 token unit for every wei / base unit of poly.
     uint256 public rate;
-    //How many tokens this STO will be allowed to sell to investors
+    //How many token base units this STO will be allowed to sell to investors
+    // 1 full token = 10^decimals_of_token base units
     uint256 public cap;
 
     mapping (address => uint256) public investors;
@@ -49,8 +50,8 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @notice Function used to intialize the contract variables
      * @param _startTime Unix timestamp at which offering get started
      * @param _endTime Unix timestamp at which offering get ended
-     * @param _cap Maximum No. of tokens for sale
-     * @param _rate Token units multiplied by 10^18 a buyer gets per wei / base unit of POLY
+     * @param _cap Maximum No. of token base units for sale
+     * @param _rate Token units a buyer gets multiplied by 10^18 per wei / base unit of POLY 
      * @param _fundRaiseTypes Type of currency used to collect the funds
      * @param _fundsReceiver Ethereum account address to hold the funds
      */
@@ -154,8 +155,8 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @notice Return the STO details
      * @return Unixtimestamp at which offering gets start.
      * @return Unixtimestamp at which offering ends.
-     * @return Number of tokens this STO will be allowed to sell to investors.
-     * @return Token units multiplied by 10^18 a buyer gets per wei / base unit of POLY
+     * @return Number of token base units this STO will be allowed to sell to investors.
+     * @return Token units a buyer gets(multiplied by 10^18) per wei / base unit of POLY
      * @return Amount of funds raised
      * @return Number of individual investors this STO have.
      * @return Amount of tokens get sold. 

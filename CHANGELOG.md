@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 
 [__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
 
-# USDTieredSTO 2.0.1
+## USDTieredSTO 2.0.1
 * Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.
 * Added `getSTODetails` to USDTSTO.
 * Added an Array of Tiers that will hold data about every tier in USDTSTO.
@@ -13,8 +13,15 @@ All notable changes to this project will be documented in this file.
 * Added `getTokensSoldByTier` to return sold (not minted during finalisation) tokens in each tier to USDTSTO.
 * Removed individual mappings for tier data removed in UDSTSTO.
 
+## Experimental modules
+* Remove the `SingleTradeVolumeRestrictionTMFactory.sol` and its corresponding module `SingleTradeVolumeRestrictionTM.sol`.
+
 ##Changed
 * `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
+
+## Added
+* Add new module called `VolumeRestrictionTM.sol` under the TransferManager modules list. It will be used to restrict the token
+volume traded in a given rolling period.
 
 # v1.5.0
 

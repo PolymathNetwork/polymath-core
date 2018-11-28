@@ -17,7 +17,7 @@ let featureRegistry;
 let securityToken;
 
 let allModules;
-let tokenSymbol 
+let tokenSymbol
 
 async function setup() {
   try {
@@ -63,7 +63,7 @@ async function displayTokenData() {
   let displayTransferFrozen = await securityToken.methods.transfersFrozen().call();
   let displayMintingFrozen = await securityToken.methods.mintingFrozen().call();
   let displayUserTokens = await securityToken.methods.balanceOf(Issuer.address).call();
-  
+
   console.log(`
 ***************    Security Token Information    ****************
 - Address:              ${securityToken.options.address}
@@ -137,7 +137,7 @@ async function selectAction() {
   } else {
     options.push('Freeze transfers');
   }
-  
+
   let isMintingFrozen = await securityToken.methods.mintingFrozen().call();
   if (!isMintingFrozen) {
     let isFreezeMintingAllowed = await featureRegistry.methods.getFeatureStatus('freezeMintingAllowed').call();
@@ -147,7 +147,7 @@ async function selectAction() {
   }
 
   options.push('Create a checkpoint', 'List investors')
-  
+
   let currentCheckpointId = await securityToken.methods.currentCheckpointId().call();
   if (currentCheckpointId > 0) {
     options.push('List investors at checkpoint')
@@ -159,7 +159,7 @@ async function selectAction() {
 
   options.push('Manage modules', 'Withdraw tokens from contract');
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', {cancel: 'Exit'});
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Exit' });
   let selected = index == -1 ? 'Exit' : options[index];
   console.log('Selected:', selected);
   switch (selected) {
@@ -187,9 +187,9 @@ async function selectAction() {
       await listInvestors();
       break;
     case 'List investors at checkpoint':
-      let checkpointId = readlineSync.questionInt('Enter the id of the checkpoint: ', {
+      let checkpointId = readlineSync.question('Enter the id of the checkpoint: ', {
         limit: function (input) {
-          return input > 0 && input <= currentCheckpointId;
+          return parseInt(input) > 0 && parseInt(input) <= parseInt(currentCheckpointId);
         },
         limitMessage: `Must be greater than 0 and less than ${currentCheckpointId}`
       });
@@ -275,22 +275,22 @@ async function listInvestorsAtCheckpoint(checkpointId) {
   } else {
     console.log(chalk.yellow(`There are no investors at checkpoint ${checkpointId}`));
   }
-  
+
 }
 
 async function mintTokens() {
   let options = ['Modify whitelist', 'Mint tokens to a single address', `Modify whitelist and mint tokens using data from 'whitelist_data.csv' and 'multi_mint_data.csv'`];
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', {cancel: 'Return'});
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
   let selected = index == -1 ? 'Return' : options[index];
   console.log('Selected:', selected);
   switch (selected) {
     case 'Modify whitelist':
       let investor = readlineSync.question('Enter the address to whitelist: ', {
-        limit: function(input) {
+        limit: function (input) {
           return web3.utils.isAddress(input);
         },
         limitMessage: "Must be a valid address"
-      }); 
+      });
       let fromTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens: ');
       let toTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others: ');
       let expiryTime = readlineSync.questionInt('Enter the time till investors KYC will be validated (after that investor need to do re-KYC): ');
@@ -354,7 +354,7 @@ async function withdrawFromContract(erc20address, value) {
 
 async function listModuleOptions() {
   let options = ['Add a module']
-  
+
   let unpausedModules = allModules.filter(m => m.paused == false);
   if (unpausedModules.length > 0) {
     options.push('Pause a module');
@@ -379,7 +379,7 @@ async function listModuleOptions() {
     options.push('Remove a module', 'Change module budget');
   }
 
-  let index = readlineSync.keyInSelect(options, chalk.yellow('What do you want to do?'), {cancel: 'Return'});
+  let index = readlineSync.keyInSelect(options, chalk.yellow('What do you want to do?'), { cancel: 'Return' });
   let selected = index == -1 ? 'Exit' : options[index];
   console.log('Selected:', selected);
   switch (selected) {
@@ -403,14 +403,14 @@ async function listModuleOptions() {
       break;
     case 'Change module budget':
       await changeBudget(allModules);
-      break;    
+      break;
   }
 }
 
 // Modules a actions
 async function addModule() {
   let options = ['Permission Manager', 'Transfer Manager', 'Security Token Offering', 'Dividends', 'Burn'];
-  let index = readlineSync.keyInSelect(options, 'What type of module whould you like to add?', {cancel: 'Return'});
+  let index = readlineSync.keyInSelect(options, 'What type of module whould you like to add?', { cancel: 'Return' });
   switch (options[index]) {
     case 'Permission Manager':
       console.log(chalk.red(`
@@ -446,7 +446,7 @@ async function pauseModule(modules) {
   let options = modules.map(m => `${m.name} (${m.address})`);
   let index = readlineSync.keyInSelect(options, 'Which module whould you like to pause?');
   if (index != -1) {
-    console.log("\nSelected:",options[index]);
+    console.log("\nSelected:", options[index]);
     let moduleABI;
     if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
       moduleABI = abis.ISTO();
@@ -467,7 +467,7 @@ async function unpauseModule(modules) {
   let options = modules.map(m => `${m.name} (${m.address})`);
   let index = readlineSync.keyInSelect(options, 'Which module whould you like to pause?');
   if (index != -1) {
-    console.log("\nSelected: ",options[index]);
+    console.log("\nSelected: ", options[index]);
     let moduleABI;
     if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
       moduleABI = abis.ISTO();
@@ -488,9 +488,9 @@ async function archiveModule(modules) {
   let options = modules.map(m => `${m.name} (${m.address})`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to archive?');
   if (index != -1) {
-    console.log("\nSelected: ",options[index]);
+    console.log("\nSelected: ", options[index]);
     let archiveModuleAction = securityToken.methods.archiveModule(modules[index].address);
-    await common.sendTransaction(archiveModuleAction, {factor: 2});
+    await common.sendTransaction(archiveModuleAction, { factor: 2 });
     console.log(chalk.green(`${modules[index].name} has been archived successfully!`));
   }
 }
@@ -499,9 +499,9 @@ async function unarchiveModule(modules) {
   let options = modules.map(m => `${m.name} (${m.address})`);
   let index = readlineSync.keyInSelect(options, 'Which module whould you like to unarchive?');
   if (index != -1) {
-    console.log("\nSelected: ",options[index]);
+    console.log("\nSelected: ", options[index]);
     let unarchiveModuleAction = securityToken.methods.unarchiveModule(modules[index].address);
-    await common.sendTransaction(unarchiveModuleAction, {factor: 2});
+    await common.sendTransaction(unarchiveModuleAction, { factor: 2 });
     console.log(chalk.green(`${modules[index].name} has been unarchived successfully!`));
   }
 }
@@ -510,9 +510,9 @@ async function removeModule(modules) {
   let options = modules.map(m => `${m.name} (${m.address})`);
   let index = readlineSync.keyInSelect(options, 'Which module whould you like to remove?');
   if (index != -1) {
-    console.log("\nSelected: ",options[index]);
+    console.log("\nSelected: ", options[index]);
     let removeModuleAction = securityToken.methods.removeModule(modules[index].address);
-    await common.sendTransaction(removeModuleAction, {factor: 2});
+    await common.sendTransaction(removeModuleAction, { factor: 2 });
     console.log(chalk.green(`${modules[index].name} has been removed successfully!`));
   }
 }
@@ -521,8 +521,8 @@ async function changeBudget() {
   let options = modules.map(m => `${m.name} (${m.address})`);
   let index = readlineSync.keyInSelect(options, 'Which module whould you like to remove?');
   if (index != -1) {
-    console.log("\nSelected: ",options[index]);
-    let increase = 0 == readlineSync.keyInSelect(['Increase', 'Decrease'], `Do you want to increase or decrease budget?`, {cancel: false});
+    console.log("\nSelected: ", options[index]);
+    let increase = 0 == readlineSync.keyInSelect(['Increase', 'Decrease'], `Do you want to increase or decrease budget?`, { cancel: false });
     let amount = readlineSync.question(`Enter the amount of POLY to change in allowance`);
     let changeModuleBudgetAction = securityToken.methods.changeModuleBudget(modules[index].address, web3.utils.toWei(amount), increase);
     await common.sendTransaction(changeModuleBudgetAction);
@@ -532,7 +532,7 @@ async function changeBudget() {
 
 // Helpers
 async function showUserInfo(_user) {
-    console.log(`
+  console.log(`
 ********************    User Information    *********************
 - Address:              ${_user}
 - POLY balance:         ${web3.utils.fromWei(await polyToken.methods.balanceOf(_user).call())}
@@ -568,7 +568,7 @@ async function getAllModules() {
           pausedTemp = await contractTemp.methods.paused().call();
         }
         modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp));
-      } catch(error) {
+      } catch (error) {
         console.log(error);
         console.log(chalk.red(`
         *************************
@@ -590,7 +590,7 @@ async function initialize(_tokenSymbol) {
     tokenSymbol = _tokenSymbol;
   }
   let securityTokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
-  if (securityTokenAddress ==  '0x0000000000000000000000000000000000000000') {
+  if (securityTokenAddress == '0x0000000000000000000000000000000000000000') {
     console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
     process.exit(0);
   }
@@ -610,18 +610,18 @@ function welcome() {
 
 async function selectToken() {
   let result = null;
-  
+
   let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
   let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
     let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
-    return {symbol: tokenData[0], address: t};
+    return { symbol: tokenData[0], address: t };
   }));
   let options = tokenDataArray.map(function (t) {
     return `${t.symbol} - Deployed at ${t.address}`;
   });
   options.push('Enter token symbol manually');
 
-  let index = readlineSync.keyInSelect(options, 'Select a token:', {cancel: 'Exit'});
+  let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
   switch (options[index]) {
     case 'Enter token symbol manually':
       result = readlineSync.question('Enter the token symbol: ');
@@ -633,12 +633,12 @@ async function selectToken() {
       result = tokenDataArray[index].symbol;
       break;
   }
-  
+
   return result;
 }
 
 module.exports = {
-  executeApp: async function(_tokenSymbol) {
+  executeApp: async function (_tokenSymbol) {
     await initialize(_tokenSymbol)
     return executeApp();
   }

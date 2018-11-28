@@ -39,16 +39,16 @@ async function executeApp() {
     }
     options.push('Add new STO module');
 
-    let index = readlineSync.keyInSelect(options, 'What do you want to do?', {cancel: 'Exit'});
+    let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Exit' });
     let optionSelected = index != -1 ? options[index] : 'Exit';
     console.log('Selected:', optionSelected, '\n');
     switch (optionSelected) {
       case 'Show existing STO information':
-        let stoToShow = selectExistingSTO(nonArchivedModules, true); 
+        let stoToShow = selectExistingSTO(nonArchivedModules, true);
         await showSTO(stoToShow.name, stoToShow.module);
         break;
       case 'Modify existing STO':
-        let stoToModify = selectExistingSTO(nonArchivedModules); 
+        let stoToModify = selectExistingSTO(nonArchivedModules);
         await modifySTO(stoToModify.name, stoToModify.module);
         break;
       case 'Add new STO module':
@@ -67,7 +67,7 @@ function selectExistingSTO(stoModules, showPaused) {
     filteredModules = stoModules.filter(m => !m.paused);
   }
   let options = filteredModules.map(m => `${m.name} at ${m.address}`);
-  let index = readlineSync.keyInSelect(options, 'Select a module: ', {cancel: false});
+  let index = readlineSync.keyInSelect(options, 'Select a module: ', { cancel: false });
   console.log('Selected:', options[index], '\n');
   let selectedName = filteredModules[index].name;
   let stoABI;
@@ -81,7 +81,7 @@ function selectExistingSTO(stoModules, showPaused) {
   }
 
   let stoModule = new web3.eth.Contract(stoABI, filteredModules[index].address);
-  return {name: selectedName, module: stoModule};
+  return { name: selectedName, module: stoModule };
 }
 
 async function showSTO(selectedSTO, currentSTO) {
@@ -156,14 +156,14 @@ async function cappedSTO_launch(stoConfig) {
       return;
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, transferAmount);
-      let receipt = await common.sendTransaction(transferAction, {factor: 2});
+      let receipt = await common.sendTransaction(transferAction, { factor: 2 });
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }
   }
 
   let oneMinuteFromNow = new web3.utils.BN((Math.floor(Date.now() / 1000) + 60));
-  let oneMonthFromNow = new web3.utils.BN((Math.floor(Date.now()/1000)+ (30 * 24 * 60 * 60)));
+  let oneMonthFromNow = new web3.utils.BN((Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60)));
 
   let cappedSTOconfig = {};
   let useConfigFile = typeof stoConfig !== 'undefined';
@@ -172,7 +172,7 @@ async function cappedSTO_launch(stoConfig) {
     if (cappedSTOconfig.cap == "") cappedSTOconfig.cap = 500000;
 
     cappedSTOconfig.raiseType = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise or leave empty for Ether raise (E): ');
-    if (cappedSTOconfig.raiseType.toUpperCase() == 'P' ) {
+    if (cappedSTOconfig.raiseType.toUpperCase() == 'P') {
       cappedSTOconfig.raiseType = [gbl.constants.FUND_RAISE_TYPES.POLY];
     } else {
       cappedSTOconfig.raiseType = [gbl.constants.FUND_RAISE_TYPES.ETH];
@@ -185,7 +185,7 @@ async function cappedSTO_launch(stoConfig) {
     if (cappedSTOconfig.wallet == "") cappedSTOconfig.wallet = Issuer.address;
 
     cappedSTOconfig.startTime = readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ');
-    
+
     cappedSTOconfig.endTime = readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = ' + oneMonthFromNow + ' ): ');
   } else {
     cappedSTOconfig = stoConfig;
@@ -196,13 +196,13 @@ async function cappedSTO_launch(stoConfig) {
 
   let cappedSTOABI = abis.cappedSTO();
   let configureFunction = cappedSTOABI.find(o => o.name === 'configure' && o.type === 'function');
-  let bytesSTO = web3.eth.abi.encodeFunctionCall( configureFunction,
-    [ cappedSTOconfig.startTime, 
-      cappedSTOconfig.endTime, 
-      web3.utils.toWei(cappedSTOconfig.cap.toString()), 
-      cappedSTOconfig.rate, 
-      cappedSTOconfig.raiseType, 
-      cappedSTOconfig.wallet ]
+  let bytesSTO = web3.eth.abi.encodeFunctionCall(configureFunction,
+    [cappedSTOconfig.startTime,
+    cappedSTOconfig.endTime,
+    web3.utils.toWei(cappedSTOconfig.cap.toString()),
+    cappedSTOconfig.rate,
+    cappedSTOconfig.raiseType,
+    cappedSTOconfig.wallet]
   );
 
   let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, stoFee, 0);
@@ -229,7 +229,7 @@ async function cappedSTO_status(currentSTO) {
   let displayInvestorCount = await currentSTO.methods.investorCount().call();
   let displayTokenSymbol = await securityToken.methods.symbol().call();
 
-  let now = Math.floor(Date.now()/1000);
+  let now = Math.floor(Date.now() / 1000);
   let timeTitle;
   let timeRemaining;
 
@@ -270,7 +270,7 @@ async function cappedSTO_status(currentSTO) {
 function fundingConfigUSDTieredSTO() {
   let funding = {};
 
-  let selectedFunding = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise,' + chalk.green(` D `) + 'for DAI raise,' + chalk.green(` E `) + 'for Ether raise or any combination of them (i.e.'+ chalk.green(` PED `) + 'for all): ').toUpperCase();
+  let selectedFunding = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise,' + chalk.green(` D `) + 'for DAI raise,' + chalk.green(` E `) + 'for Ether raise or any combination of them (i.e.' + chalk.green(` PED `) + 'for all): ').toUpperCase();
 
   funding.raiseType = [];
   if (selectedFunding.includes('E')) {
@@ -293,7 +293,7 @@ function addressesConfigUSDTieredSTO(usdTokenRaise) {
   let addresses = {};
 
   addresses.wallet = readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer.address + '): ', {
-    limit: function(input) {
+    limit: function (input) {
       return web3.utils.isAddress(input);
     },
     limitMessage: "Must be a valid address",
@@ -302,7 +302,7 @@ function addressesConfigUSDTieredSTO(usdTokenRaise) {
   if (addresses.wallet == "") addresses.wallet = Issuer.address;
 
   addresses.reserveWallet = readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer.address + '): ', {
-    limit: function(input) {
+    limit: function (input) {
       return web3.utils.isAddress(input);
     },
     limitMessage: "Must be a valid address",
@@ -312,7 +312,7 @@ function addressesConfigUSDTieredSTO(usdTokenRaise) {
 
   if (usdTokenRaise) {
     addresses.usdToken = readlineSync.question('Enter the address of the USD Token or stable coin (' + usdToken.options.address + '): ', {
-      limit: function(input) {
+      limit: function (input) {
         return web3.utils.isAddress(input);
       },
       limitMessage: "Must be a valid address",
@@ -321,7 +321,7 @@ function addressesConfigUSDTieredSTO(usdTokenRaise) {
     if (addresses.usdToken == "") addresses.usdToken = usdToken.options.address;
   } else {
     addresses.usdToken = '0x0000000000000000000000000000000000000000';
-  } 
+  }
 
   return addresses;
 }
@@ -330,13 +330,13 @@ function tiersConfigUSDTieredSTO(polyRaise) {
   let tiers = {};
 
   let defaultTiers = 3;
-  tiers.tiers = readlineSync.questionInt(`Enter the number of tiers for the STO? (${defaultTiers}): `, {
-    limit: function(input) {
-      return input > 0;
+  tiers.tiers = parseInt(readlineSync.question(`Enter the number of tiers for the STO? (${defaultTiers}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
     },
     limitMessage: 'Must be greater than zero',
     defaultInput: defaultTiers
-  });
+  }));
 
   let defaultTokensPerTier = [190000000, 100000000, 200000000];
   let defaultRatePerTier = ['0.05', '0.10', '0.15'];
@@ -347,33 +347,33 @@ function tiersConfigUSDTieredSTO(polyRaise) {
   tiers.tokensPerTierDiscountPoly = [];
   tiers.ratePerTierDiscountPoly = [];
   for (let i = 0; i < tiers.tiers; i++) {
-    tiers.tokensPerTier[i] = readlineSync.question(`How many tokens do you plan to sell on tier No. ${i+1}? (${defaultTokensPerTier[i]}): `, {
-      limit: function(input) {
+    tiers.tokensPerTier[i] = readlineSync.question(`How many tokens do you plan to sell on tier No. ${i + 1}? (${defaultTokensPerTier[i]}): `, {
+      limit: function (input) {
         return parseFloat(input) > 0;
       },
       limitMessage: 'Must be greater than zero',
       defaultInput: defaultTokensPerTier[i]
     });
 
-    tiers.ratePerTier[i] = readlineSync.question(`What is the USD per token rate for tier No. ${i+1}? (${defaultRatePerTier[i]}): `, {
-      limit: function(input) {
+    tiers.ratePerTier[i] = readlineSync.question(`What is the USD per token rate for tier No. ${i + 1}? (${defaultRatePerTier[i]}): `, {
+      limit: function (input) {
         return parseFloat(input) > 0;
       },
       limitMessage: 'Must be greater than zero',
       defaultInput: defaultRatePerTier[i]
     });
 
-    if (polyRaise && readlineSync.keyInYNStrict(`Do you plan to have a discounted rate for POLY investments for tier No. ${i+1}? `)) {
-      tiers.tokensPerTierDiscountPoly[i] = readlineSync.question(`How many of those tokens do you plan to sell at discounted rate on tier No. ${i+1}? (${defaultTokensPerTierDiscountPoly[i]}): `, {
-        limit: function(input) {
+    if (polyRaise && readlineSync.keyInYNStrict(`Do you plan to have a discounted rate for POLY investments for tier No. ${i + 1}? `)) {
+      tiers.tokensPerTierDiscountPoly[i] = readlineSync.question(`How many of those tokens do you plan to sell at discounted rate on tier No. ${i + 1}? (${defaultTokensPerTierDiscountPoly[i]}): `, {
+        limit: function (input) {
           return parseFloat(input) < parseFloat(tiers.tokensPerTier[i]);
         },
         limitMessage: 'Must be less than the No. of tokens of the tier',
         defaultInput: defaultTokensPerTierDiscountPoly[i]
       });
 
-      tiers.ratePerTierDiscountPoly[i] = readlineSync.question(`What is the discounted rate for tier No. ${i+1}? (${defaultRatePerTierDiscountPoly[i]}): `, {
-        limit: function(input) {
+      tiers.ratePerTierDiscountPoly[i] = readlineSync.question(`What is the discounted rate for tier No. ${i + 1}? (${defaultRatePerTierDiscountPoly[i]}): `, {
+        limit: function (input) {
           return parseFloat(input) < parseFloat(tiers.ratePerTier[i]);
         },
         limitMessage: 'Must be less than the rate of the tier',
@@ -393,7 +393,7 @@ function limitsConfigUSDTieredSTO() {
 
   let defaultMinimumInvestment = 5;
   limits.minimumInvestmentUSD = readlineSync.question(`What is the minimum investment in USD? (${defaultMinimumInvestment}): `, {
-    limit: function(input) {
+    limit: function (input) {
       return parseFloat(input) > 0;
     },
     limitMessage: "Must be greater than zero",
@@ -402,7 +402,7 @@ function limitsConfigUSDTieredSTO() {
 
   let nonAccreditedLimit = 2500;
   limits.nonAccreditedLimitUSD = readlineSync.question(`What is the default limit for non accredited investors in USD? (${nonAccreditedLimit}): `, {
-    limit: function(input) {
+    limit: function (input) {
       return parseFloat(input) >= parseFloat(limits.minimumInvestmentUSD);
     },
     limitMessage: "Must be greater than minimum investment",
@@ -417,13 +417,13 @@ function timesConfigUSDTieredSTO(stoConfig) {
 
   let oneMinuteFromNow = Math.floor(Date.now() / 1000) + 60;
   if (typeof stoConfig === 'undefined') {
-    times.startTime = readlineSync.questionInt('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ', {
-      limit: function(input) {
-        return input > Math.floor(Date.now() / 1000);
+    times.startTime = parseInt(readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ', {
+      limit: function (input) {
+        return parseInt(input) > Math.floor(Date.now() / 1000);
       },
       limitMessage: "Must be a future time",
       defaultInput: oneMinuteFromNow
-    });
+    }));
   } else {
     times.startTime = stoConfig.times.startTime;
   }
@@ -431,13 +431,13 @@ function timesConfigUSDTieredSTO(stoConfig) {
 
   let oneMonthFromNow = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60);
   if (typeof stoConfig === 'undefined') {
-    times.endTime = readlineSync.questionInt('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = ' + oneMonthFromNow + ' ): ', {
-      limit: function(input) {
-        return input > times.startTime;
+    times.endTime = parseInt(readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = ' + oneMonthFromNow + ' ): ', {
+      limit: function (input) {
+        return parseInt(input) > times.startTime;
       },
       limitMessage: "Must be greater than Start Time",
       defaultInput: oneMonthFromNow
-    });
+    }));
   } else {
     times.endTime = stoConfig.times.startTime;
   }
@@ -466,7 +466,7 @@ async function usdTieredSTO_launch(stoConfig) {
       return;
     } else {
       let transferAction = polyToken.methods.transfer(securityToken._address, transferAmount);
-      let receipt = await common.sendTransaction(transferAction, {factor: 2});
+      let receipt = await common.sendTransaction(transferAction, { factor: 2 });
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
       console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
     }
@@ -481,19 +481,19 @@ async function usdTieredSTO_launch(stoConfig) {
 
   let usdTieredSTOABI = abis.usdTieredSTO();
   let configureFunction = usdTieredSTOABI.find(o => o.name === 'configure' && o.type === 'function');
-  let bytesSTO = web3.eth.abi.encodeFunctionCall( configureFunction, 
-    [ times.startTime,
-      times.endTime,
-      tiers.ratePerTier.map(r => web3.utils.toWei(r.toString())),
-      tiers.ratePerTierDiscountPoly.map(rd => web3.utils.toWei(rd.toString())),
-      tiers.tokensPerTier.map(t => web3.utils.toWei(t.toString())),
-      tiers.tokensPerTierDiscountPoly.map(td => web3.utils.toWei(td.toString())),
-      web3.utils.toWei(limits.nonAccreditedLimitUSD.toString()),
-      web3.utils.toWei(limits.minimumInvestmentUSD.toString()),
-      funding.raiseType,
-      addresses.wallet,
-      addresses.reserveWallet,
-      addresses.usdToken ]
+  let bytesSTO = web3.eth.abi.encodeFunctionCall(configureFunction,
+    [times.startTime,
+    times.endTime,
+    tiers.ratePerTier.map(r => web3.utils.toWei(r.toString())),
+    tiers.ratePerTierDiscountPoly.map(rd => web3.utils.toWei(rd.toString())),
+    tiers.tokensPerTier.map(t => web3.utils.toWei(t.toString())),
+    tiers.tokensPerTierDiscountPoly.map(td => web3.utils.toWei(td.toString())),
+    web3.utils.toWei(limits.nonAccreditedLimitUSD.toString()),
+    web3.utils.toWei(limits.minimumInvestmentUSD.toString()),
+    funding.raiseType,
+    addresses.wallet,
+    addresses.reserveWallet,
+    addresses.usdToken]
   );
 
   let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, stoFee, 0);
@@ -525,7 +525,7 @@ async function usdTieredSTO_status(currentSTO) {
   let raiseTypes = [];
   for (const fundType in gbl.constants.FUND_RAISE_TYPES) {
     if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES[fundType]).call()) {
-        raiseTypes.push(fundType);
+      raiseTypes.push(fundType);
     }
   }
 
@@ -559,14 +559,14 @@ async function usdTieredSTO_status(currentSTO) {
     }
 
     displayTiers += `
-  - Tier ${t+1}:
+  - Tier ${t + 1}:
       Tokens:                    ${web3.utils.fromWei(tokensPerTierTotal)} ${displayTokenSymbol}
       Rate:                      ${web3.utils.fromWei(ratePerTier)} USD per Token`
-    + displayDiscountTokens;
+      + displayDiscountTokens;
 
-    displayMintedPerTier +=  `
-  - Tokens minted in Tier ${t+1}:     ${web3.utils.fromWei(mintedPerTierTotal)} ${displayTokenSymbol}`
-    + displayMintedPerTierPerType;
+    displayMintedPerTier += `
+  - Tokens minted in Tier ${t + 1}:     ${web3.utils.fromWei(mintedPerTierTotal)} ${displayTokenSymbol}`
+      + displayMintedPerTierPerType;
   }
 
   let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call());
@@ -581,13 +581,13 @@ async function usdTieredSTO_status(currentSTO) {
     let walletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
     displayWalletBalancePerType += `
       Balance ${type}:\t\t ${walletBalance} ${type} (${walletBalanceUSD} USD)`;
-    
+
     balance = await getBalance(displayReserveWallet, gbl.constants.FUND_RAISE_TYPES[type]);
     let reserveWalletBalance = web3.utils.fromWei(balance);
     let reserveWalletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
     displayReserveWalletBalancePerType += `
       Balance ${type}:\t\t ${reserveWalletBalance} ${type} (${reserveWalletBalanceUSD} USD)`;
-    
+
     let fundsRaised = web3.utils.fromWei(await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES[type]).call());
     displayFundsRaisedPerType += `
       ${type}:\t\t\t ${fundsRaised} ${type}`;
@@ -602,7 +602,7 @@ async function usdTieredSTO_status(currentSTO) {
 
   let displayRaiseType = raiseTypes.join(' - ');
 
-  let now = Math.floor(Date.now()/1000);
+  let now = Math.floor(Date.now() / 1000);
   let timeTitle;
   let timeRemaining;
   if (now < displayStartTime) {
@@ -622,24 +622,24 @@ async function usdTieredSTO_status(currentSTO) {
   - End Time:                    ${new Date(displayEndTime * 1000)}
   - Raise Type:                  ${displayRaiseType}
   - Tiers:                       ${tiersLength}`
-  + displayTiers + `
+    + displayTiers + `
   - Minimum Investment:          ${displayMinimumInvestmentUSD} USD
   - Non Accredited Limit:        ${displayNonAccreditedLimitUSD} USD
   - Wallet:                      ${displayWallet}`
-  + displayWalletBalancePerType + `
+    + displayWalletBalancePerType + `
   - Reserve Wallet:              ${displayReserveWallet}`
-  + displayReserveWalletBalancePerType + `
+    + displayReserveWalletBalancePerType + `
 
   ---------------------------------------------------------------
   - ${timeTitle}              ${timeRemaining}
   - Is Finalized:                ${displayIsFinalized}
   - Tokens Sold:                 ${displayTokensSold} ${displayTokenSymbol}`
-  + displayTokensSoldPerType + `
+    + displayTokensSoldPerType + `
   - Current Tier:                ${displayCurrentTier}`
-  + displayMintedPerTier + `
+    + displayMintedPerTier + `
   - Investor count:              ${displayInvestorCount}
   - Funds Raised`
-  + displayFundsRaisedPerType + `
+    + displayFundsRaisedPerType + `
       USD:                       ${displayFundsRaisedUSD} USD
   `);
 
@@ -815,7 +815,7 @@ async function initialize(_tokenSymbol) {
     tokenSymbol = _tokenSymbol;
   }
   let securityTokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
-  if (securityTokenAddress ==  '0x0000000000000000000000000000000000000000') {
+  if (securityTokenAddress == '0x0000000000000000000000000000000000000000') {
     console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
     process.exit(0);
   }
@@ -833,7 +833,7 @@ function welcome() {
   console.log("Issuer Account: " + Issuer.address + "\n");
 }
 
-async function setup(){
+async function setup() {
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
     let securityTokenRegistryABI = abis.securityTokenRegistry();
@@ -851,25 +851,25 @@ async function setup(){
     usdToken.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
-    console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
+    console.log('\x1b[31m%s\x1b[0m', "There was a problem getting the contracts. Make sure they are deployed to the selected network.");
     process.exit(0);
   }
 }
 
 async function selectToken() {
   let result = null;
-  
+
   let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
   let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
     let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
-    return {symbol: tokenData[0], address: t};
+    return { symbol: tokenData[0], address: t };
   }));
   let options = tokenDataArray.map(function (t) {
     return `${t.symbol} - Deployed at ${t.address}`;
   });
   options.push('Enter token symbol manually');
 
-  let index = readlineSync.keyInSelect(options, 'Select a token:', {cancel: 'Exit'});
+  let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
   switch (options[index]) {
     case 'Enter token symbol manually':
       result = readlineSync.question('Enter the token symbol: ');
@@ -881,16 +881,16 @@ async function selectToken() {
       result = tokenDataArray[index].symbol;
       break;
   }
-  
+
   return result;
 }
 
 module.exports = {
-  executeApp: async function(_tokenSymbol) {
+  executeApp: async function (_tokenSymbol) {
     await initialize(_tokenSymbol);
     return executeApp();
   },
-  addSTOModule: async function(_tokenSymbol, stoConfig) {
+  addSTOModule: async function (_tokenSymbol, stoConfig) {
     await initialize(_tokenSymbol);
     return addSTOModule(stoConfig)
   }

@@ -1,31 +1,32 @@
 const contracts = require('./helpers/contract_addresses')
+const Validation = require('./ValidationClass')
 const Contract = require('./ContractClass')
 
-class PolymathRegistry extends Contract {
-
-  constructor () {
-    super()
-  }
+class PolymathRegistry extends Validation {
 
   async _init() {
     if (!this.contract) {
-      this.contract = Contract.connect("polymathRegistry", await contracts["polymathRegistry"]())
+      this.contract = new Contract("polymathRegistry", await contracts["polymathRegistry"]())
     }
   }
 
   async getAddress (arg) {
+    Validation.isArray(arg)
+
     await this._init()
-    return Contract.call(this.contract, "getAddress", arg, () => {})
+    return this.contract.call("getAddress", arg, () => {})
   }
 
   async iAmOwner () {
     await this._init()
-    return Contract.owner(this.contract) == Issuer.address
+    return this.contract.owner() == Issuer.address
   }
 
   async changeAddress (args) {
+    Validation.isArray(arg)
+
     await this._init()
-    await Contract.transaction(this.contract, "changeAddress", args, {}, () => {})
+    await this.contract.sendTransaction(this.contract.methods()["changeAddress"].apply(this, args))
   }
 }
 

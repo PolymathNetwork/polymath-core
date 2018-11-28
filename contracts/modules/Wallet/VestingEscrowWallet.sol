@@ -254,7 +254,7 @@ contract VestingEscrowWallet is IWallet {
         internal
     {
         _validateSchedule(_beneficiary, _numberOfTokens, _duration, _frequency, _startTime);
-        require(_index < schedules[_beneficiary].length, "Schedule not found");
+        _checkSchedule(_beneficiary, _index);
         Schedule storage schedule = schedules[_beneficiary][_index];
         /*solium-disable-next-line security/no-block-members*/
         require(now < schedule.startTime, "Schedule started");
@@ -276,8 +276,7 @@ contract VestingEscrowWallet is IWallet {
      * @param _index index of the schedule
      */
     function revokeSchedule(address _beneficiary, uint256 _index) external withPerm(ADMIN) {
-        require(_beneficiary != address(0), "Invalid address");
-        require(_index < schedules[_beneficiary].length, "Schedule not found");
+        _checkSchedule(_beneficiary, _index);
         _sendTokens(_beneficiary, _index);
         Schedule[] storage userSchedules = schedules[_beneficiary];
         uint256 releasedTokens = _getReleasedTokens(_beneficiary, _index);
@@ -316,8 +315,7 @@ contract VestingEscrowWallet is IWallet {
      * @return beneficiary's schedule
      */
     function getSchedule(address _beneficiary, uint256 _index) external view returns(uint256, uint256, uint256, uint256, State) {
-        require(_beneficiary != address(0), "Invalid address");
-        require(_index < schedules[_beneficiary].length, "Schedule not found");
+        _checkSchedule(_beneficiary, _index);
         Schedule storage schedule = schedules[_beneficiary][_index];
         return (
             schedule.numberOfTokens,
@@ -372,17 +370,6 @@ contract VestingEscrowWallet is IWallet {
     }
 
     /**
-     * @notice Used to bulk send available tokens for each of beneficiaries
-     * @param _beneficiaries array of beneficiary's addresses
-     */
-    function pushAvailableTokensMulti(address[] _beneficiaries) external withPerm(ADMIN) {
-        require(_beneficiaries.length > 1, "Array size should be greater than one");
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            pushAvailableTokens(_beneficiaries[i]);
-        }
-    }
-
-    /**
      * @notice Used to remove beneficiaries without schedules
      */
     function trimBeneficiaries() external withPerm(ADMIN) {
@@ -398,25 +385,43 @@ contract VestingEscrowWallet is IWallet {
     }
 
     /**
+     * @notice Used to bulk send available tokens for each of beneficiaries
+     * @param _beneficiaries array of beneficiary's addresses
+     */
+    function pushAvailableTokensMulti(address[] _beneficiaries) external withPerm(ADMIN) {
+        require(_beneficiaries.length > 1, "Array size should be greater than one");
+        for (uint256 i = 0; i < _beneficiaries.length; i++) {
+            pushAvailableTokens(_beneficiaries[i]);
+        }
+    }
+
+    /**
      * @notice Used to bulk add vesting schedules for each of beneficiaries
      * @param _beneficiaries array of beneficiary's addresses
-     * @param _numberOfTokens number of tokens
-     * @param _duration vesting duration
-     * @param _frequency vesting frequency
-     * @param _startTime vesting start time
+     * @param _numberOfTokens array of number of tokens
+     * @param _durations array of vesting duration
+     * @param _frequencies array of vesting frequency
+     * @param _startTimes array of vesting start time
      */
     function addScheduleMulti(
         address[] _beneficiaries,
-        uint256 _numberOfTokens,
-        uint256 _duration,
-        uint256 _frequency,
-        uint256 _startTime
+        uint256[] _numberOfTokens,
+        uint256[] _durations,
+        uint256[] _frequencies,
+        uint256[] _startTimes
     )
         external
         withPerm(ADMIN)
     {
+        require(
+            _beneficiaries.length == _numberOfTokens.length && /*solium-disable-line operator-whitespace*/
+            _beneficiaries.length == _durations.length && /*solium-disable-line operator-whitespace*/
+            _beneficiaries.length == _frequencies.length && /*solium-disable-line operator-whitespace*/
+            _beneficiaries.length == _startTimes.length,
+            "Arrays sizes mismatch"
+        );
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            _addSchedule(_beneficiaries[i], _numberOfTokens, _duration, _frequency, _startTime);
+            _addSchedule(_beneficiaries[i], _numberOfTokens[i], _durations[i], _frequencies[i], _startTimes[i]);
         }
     }
 
@@ -424,11 +429,12 @@ contract VestingEscrowWallet is IWallet {
      * @notice Used to bulk add vesting schedules from template for each of beneficiaries
      * @param _beneficiaries array of beneficiary's addresses
      * @param _index index of the template
-     * @param _startTime vesting start time
+     * @param _startTimes array of vesting start time
      */
-    function addScheduleFromTemplateMulti(address[] _beneficiaries, uint256 _index, uint256 _startTime) external withPerm(ADMIN) {
+    function addScheduleFromTemplateMulti(address[] _beneficiaries, uint256 _index, uint256[] _startTimes) external withPerm(ADMIN) {
+        require(_beneficiaries.length == _startTimes.length, "Arrays sizes mismatch");
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            _addScheduleFromTemplate(_beneficiaries[i], _index, _startTime);
+            _addScheduleFromTemplate(_beneficiaries[i], _index, _startTimes[i]);
         }
     }
 
@@ -446,25 +452,32 @@ contract VestingEscrowWallet is IWallet {
      * @notice Used to bulk modify vesting schedules for each of beneficiaries
      * @param _beneficiaries array of beneficiary's addresses
      * @param _indexes array of beneficiary's indexes of schedule
-     * @param _numberOfTokens number of tokens
-     * @param _duration vesting duration
-     * @param _frequency vesting frequency
-     * @param _startTime vesting start time
+     * @param _numberOfTokens array of number of tokens
+     * @param _durations array of vesting duration
+     * @param _frequencies array of vesting frequency
+     * @param _startTimes array of vesting start time
      */
     function modifyScheduleMulti(
         address[] _beneficiaries,
         uint256[] _indexes,
-        uint256 _numberOfTokens,
-        uint256 _duration,
-        uint256 _frequency,
-        uint256 _startTime
+        uint256[] _numberOfTokens,
+        uint256[] _durations,
+        uint256[] _frequencies,
+        uint256[] _startTimes
     )
-        external
+        public
         withPerm(ADMIN)
     {
-        require(_beneficiaries.length == _indexes.length, "Arrays sizes mismatch");
+        require(
+            _beneficiaries.length == _indexes.length && /*solium-disable-line operator-whitespace*/
+            _beneficiaries.length == _numberOfTokens.length && /*solium-disable-line operator-whitespace*/
+            _beneficiaries.length == _durations.length && /*solium-disable-line operator-whitespace*/
+            _beneficiaries.length == _frequencies.length && /*solium-disable-line operator-whitespace*/
+            _beneficiaries.length == _startTimes.length,
+            "Arrays sizes mismatch"
+        );
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            _modifySchedule(_beneficiaries[i], _indexes[i], _numberOfTokens, _duration, _frequency, _startTime);
+            _modifySchedule(_beneficiaries[i], _indexes[i], _numberOfTokens[i], _durations[i], _frequencies[i], _startTimes[i]);
         }
     }
 
@@ -481,6 +494,11 @@ contract VestingEscrowWallet is IWallet {
         require(_beneficiary != address(0), "Invalid address");
         _validateTemplate(_numberOfTokens, _duration, _frequency);
         require(now < _startTime, "Date in the past");
+    }
+
+    function _checkSchedule(address _beneficiary, uint256 _index) internal view {
+        require(_beneficiary != address(0), "Invalid address");
+        require(_index < schedules[_beneficiary].length, "Schedule not found");
     }
 
     function _validateTemplate(uint256 _numberOfTokens, uint256 _duration, uint256 _frequency) internal pure {

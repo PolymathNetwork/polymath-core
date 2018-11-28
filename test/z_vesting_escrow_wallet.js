@@ -886,83 +886,95 @@ contract('VestingEscrowWallet', accounts => {
     describe("Tests for multi operations", async () => {
 
         it("Should not be able to add schedules to the beneficiaries -- fail because of permissions check", async () => {
+            let startTimes = [latestTime() + 100, latestTime() + 100, latestTime() + 100];
             await catchRevert(
-                I_VestingEscrowWallet.addScheduleMulti([account_beneficiary1], 10000, 4, 1, latestTime() + 100, {from: account_beneficiary1})
+                I_VestingEscrowWallet.addScheduleMulti(beneficiaries, [10000, 10000, 10000], [4, 4, 4], [1, 1, 1], startTimes, {from: account_beneficiary1})
             );
         });
 
-        it("Should add schedules for 3 beneficiaries", async () => {
-            let numberOfTokens = 30000;
-            let duration = durationUtil.weeks(4);
-            let frequency = durationUtil.weeks(1);
-            let startTime = latestTime() + durationUtil.seconds(100);
+        it("Should not be able to add schedules to the beneficiaries -- fail because of arrays sizes mismatch", async () => {
+            let startTimes = [latestTime() + 100, latestTime() + 100, latestTime() + 100];
+            let totalNumberOfTokens = 60000;
+            await I_SecurityToken.approve(I_VestingEscrowWallet.address, totalNumberOfTokens, {from: token_owner});
+            await I_VestingEscrowWallet.depositTokens(totalNumberOfTokens, {from: wallet_admin});
+            await catchRevert(
+                I_VestingEscrowWallet.addScheduleMulti(beneficiaries, [20000, 30000, 10000], [4, 4], [1, 1, 1], startTimes, {from: wallet_admin})
+            );
+            I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
+        });
 
-            let totalNumberOfTokens = numberOfTokens * 3;
+        it("Should add schedules for 3 beneficiaries", async () => {
+            let numberOfTokens = [20000, 30000, 10000];
+            let durations = [durationUtil.weeks(4), durationUtil.weeks(3), durationUtil.weeks(4)];
+            let frequencies = [durationUtil.weeks(2), durationUtil.weeks(1), durationUtil.weeks(1)];
+            let startTimes = [latestTime() + durationUtil.days(1), latestTime() + durationUtil.days(2), latestTime() + durationUtil.days(3)];
+
+            let totalNumberOfTokens = 60000;
             await I_SecurityToken.approve(I_VestingEscrowWallet.address, totalNumberOfTokens, {from: token_owner});
             await I_VestingEscrowWallet.depositTokens(totalNumberOfTokens, {from: wallet_admin});
 
-            let tx = await I_VestingEscrowWallet.addScheduleMulti(beneficiaries, numberOfTokens, duration, frequency, startTime, {from: wallet_admin});
+            let tx = await I_VestingEscrowWallet.addScheduleMulti(beneficiaries, numberOfTokens, durations, frequencies, startTimes, {from: wallet_admin});
 
             for (let i = 0; i < beneficiaries.length; i++) {
                 let log = tx.logs[i];
                 let beneficiary = beneficiaries[i];
-                checkScheduleLog(log, beneficiary, numberOfTokens, duration, frequency, startTime);
+                checkScheduleLog(log, beneficiary, numberOfTokens[i], durations[i], frequencies[i], startTimes[i]);
 
                 let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(beneficiary);
                 assert.equal(scheduleCount, 1);
 
                 let schedule = await I_VestingEscrowWallet.getSchedule.call(beneficiary, 0);
-                checkSchedule(schedule, numberOfTokens, duration, frequency, startTime, CREATED);
+                checkSchedule(schedule, numberOfTokens[i], durations[i], frequencies[i], startTimes[i], CREATED);
             }
         });
 
-        it("Should not be able modify vesting schedule for 3 beneficiary's addresses", async () => {
-            let numberOfTokens = 25000;
-            let duration = durationUtil.seconds(50);
-            let frequency = durationUtil.seconds(10);
+        it("Should not be able modify vesting schedule for 3 beneficiary's addresses -- fail because of arrays sizes mismatch", async () => {
+            let numberOfTokens = [25000, 25000, 25000];
+            let durations = [durationUtil.seconds(50), durationUtil.seconds(50), durationUtil.seconds(50)];
+            let frequencies = [durationUtil.seconds(10), durationUtil.seconds(10), durationUtil.seconds(10)];
             let timeShift = durationUtil.seconds(100);
-            let startTime = latestTime() + timeShift;
+            let startTimes = [latestTime() + timeShift, latestTime() + timeShift, latestTime() + timeShift];
 
             let indexes = [0, 0, 0, 0];
             await catchRevert(
-                I_VestingEscrowWallet.modifyScheduleMulti(beneficiaries, indexes, numberOfTokens, duration, frequency, startTime, {from: wallet_admin})
+                I_VestingEscrowWallet.modifyScheduleMulti(beneficiaries, indexes, numberOfTokens, durations, frequencies, startTimes, {from: wallet_admin})
             );
         });
 
         it("Should not be able to modify schedules for the beneficiaries -- fail because of permissions check", async () => {
-            let numberOfTokens = 25000;
-            let duration = durationUtil.seconds(50);
-            let frequency = durationUtil.seconds(10);
+            let numberOfTokens = [25000, 25000, 25000];
+            let durations = [durationUtil.seconds(50), durationUtil.seconds(50), durationUtil.seconds(50)];
+            let frequencies = [durationUtil.seconds(10), durationUtil.seconds(10), durationUtil.seconds(10)];
             let timeShift = durationUtil.seconds(100);
-            let startTime = latestTime() + timeShift;
+            let startTimes = [latestTime() + timeShift, latestTime() + timeShift, latestTime() + timeShift];
 
             let indexes = [0, 0, 0];
             await catchRevert(
-                I_VestingEscrowWallet.modifyScheduleMulti(beneficiaries, indexes, numberOfTokens, duration, frequency, startTime, {from: account_beneficiary1})
+                I_VestingEscrowWallet.modifyScheduleMulti(beneficiaries, indexes, numberOfTokens, durations, frequencies, startTimes, {from: account_beneficiary1})
             );
         });
 
         it("Should modify vesting schedule for 3 beneficiary's addresses", async () => {
-            let numberOfTokens = 25000;
-            let duration = durationUtil.seconds(50);
-            let frequency = durationUtil.seconds(10);
+            let numberOfTokens = [15000, 15000, 15000];
+            let durations = [durationUtil.seconds(50), durationUtil.seconds(50), durationUtil.seconds(50)];
+            let frequencies = [durationUtil.seconds(10), durationUtil.seconds(10), durationUtil.seconds(10)];
             let timeShift = durationUtil.seconds(100);
-            let startTime = latestTime() + timeShift;
+            let startTimes = [latestTime() + timeShift, latestTime() + timeShift, latestTime() + timeShift];
 
             let indexes = [0, 0, 0];
-            const tx = await I_VestingEscrowWallet.modifyScheduleMulti(beneficiaries, indexes, numberOfTokens, duration, frequency, startTime, {from: wallet_admin});
-            await increaseTime(timeShift + frequency);
+            const tx = await I_VestingEscrowWallet.modifyScheduleMulti(beneficiaries, indexes, numberOfTokens, durations, frequencies, startTimes, {from: wallet_admin});
+            await increaseTime(timeShift + frequencies[0]);
 
             for (let i = 0; i < beneficiaries.length; i++) {
                 let log = tx.logs[i];
                 let beneficiary = beneficiaries[i];
-                checkScheduleLog(log, beneficiary, numberOfTokens, duration, frequency, startTime);
+                checkScheduleLog(log, beneficiary, numberOfTokens[i], durations[i], frequencies[i], startTimes[i]);
 
                 let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(beneficiary);
                 assert.equal(scheduleCount, 1);
 
                 let schedule = await I_VestingEscrowWallet.getSchedule.call(beneficiary, 0);
-                checkSchedule(schedule, numberOfTokens, duration, frequency, startTime, STARTED);
+                checkSchedule(schedule, numberOfTokens[i], durations[i], frequencies[i], startTimes[i], STARTED);
             }
 
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
@@ -988,10 +1000,10 @@ contract('VestingEscrowWallet', accounts => {
                 let log = tx.logs[i];
                 let beneficiary = beneficiaries[i];
                 assert.equal(log.args._beneficiary, beneficiary);
-                assert.equal(log.args._numberOfTokens.toNumber(), 5000);
+                assert.equal(log.args._numberOfTokens.toNumber(), 3000);
 
                 let balance = await I_SecurityToken.balanceOf.call(beneficiary);
-                assert.equal(balance.toNumber(), 5000);
+                assert.equal(balance.toNumber(), 3000);
 
                 await I_SecurityToken.transfer(token_owner, balance, {from: beneficiary});
                 await I_VestingEscrowWallet.revokeAllSchedules(beneficiary, {from: wallet_admin});
@@ -1003,7 +1015,7 @@ contract('VestingEscrowWallet', accounts => {
             let numberOfTokens = 18000;
             let duration = durationUtil.weeks(3);
             let frequency = durationUtil.weeks(1);
-            let startTime = latestTime() + durationUtil.seconds(100);
+            let startTimes = [latestTime() + durationUtil.seconds(100), latestTime() + durationUtil.seconds(100), latestTime() + durationUtil.seconds(100)];
 
             let totalNumberOfTokens = numberOfTokens * 3;
             await I_SecurityToken.approve(I_VestingEscrowWallet.address, totalNumberOfTokens, {from: token_owner});
@@ -1011,7 +1023,7 @@ contract('VestingEscrowWallet', accounts => {
             await I_VestingEscrowWallet.addTemplate(numberOfTokens, duration, frequency, {from: wallet_admin});
 
             await catchRevert(
-                I_VestingEscrowWallet.addScheduleFromTemplateMulti([account_beneficiary1, account_beneficiary2], 0, startTime, {from: account_beneficiary1})
+                I_VestingEscrowWallet.addScheduleFromTemplateMulti(beneficiaries, 0, startTimes, {from: account_beneficiary1})
             );
         });
 
@@ -1019,26 +1031,26 @@ contract('VestingEscrowWallet', accounts => {
             let numberOfTokens = 18000;
             let duration = durationUtil.weeks(3);
             let frequency = durationUtil.weeks(1);
-            let startTime = latestTime() + durationUtil.seconds(100);
+            let startTimes = [latestTime() + durationUtil.seconds(100), latestTime() + durationUtil.seconds(100), latestTime() + durationUtil.seconds(100)];
 
             let totalNumberOfTokens = numberOfTokens * 3;
             await I_SecurityToken.approve(I_VestingEscrowWallet.address, totalNumberOfTokens, {from: token_owner});
             await I_VestingEscrowWallet.depositTokens(totalNumberOfTokens, {from: wallet_admin});
             await I_VestingEscrowWallet.addTemplate(numberOfTokens, duration, frequency, {from: wallet_admin});
 
-            let tx = await I_VestingEscrowWallet.addScheduleFromTemplateMulti(beneficiaries, 0, startTime, {from: wallet_admin});
+            let tx = await I_VestingEscrowWallet.addScheduleFromTemplateMulti(beneficiaries, 0, startTimes, {from: wallet_admin});
             await I_VestingEscrowWallet.removeTemplate(0, {from: wallet_admin});
 
             for (let i = 0; i < beneficiaries.length; i++) {
                 let log = tx.logs[i];
                 let beneficiary = beneficiaries[i];
-                checkScheduleLog(log, beneficiary, numberOfTokens, duration, frequency, startTime);
+                checkScheduleLog(log, beneficiary, numberOfTokens, duration, frequency, startTimes[i]);
 
                 let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(beneficiary);
                 assert.equal(scheduleCount.toNumber(), 1);
 
                 let schedule = await I_VestingEscrowWallet.getSchedule.call(beneficiary, 0);
-                checkSchedule(schedule, numberOfTokens, duration, frequency, startTime, CREATED);
+                checkSchedule(schedule, numberOfTokens, duration, frequency, startTimes[i], CREATED);
             }
 
         });

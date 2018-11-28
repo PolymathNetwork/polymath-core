@@ -80,6 +80,9 @@ contract('GeneralPermissionManager', accounts => {
     let I_ManualApprovalTransferManagerFactory;
     let I_ManualApprovalTransferManager;
 
+    //Define all modules for test
+    let
+
     // SecurityToken Details
     const name = "Team";
     const symbol = "sap";
@@ -105,7 +108,7 @@ contract('GeneralPermissionManager', accounts => {
     let testRepeat = 20;
 
 	// permission manager fuzz test
-	let perms = ['ADMIN','WHITELIST', 'FLAGS', 'TRANSFER_APPROVAL'];
+	let modules = ['CappedSTO','DummySTO', 'USDTieredSTO', 'CountTransferManager', 'ManualApprovalTransferManager', 'PercentageTransferManager'];
 	let totalPerms = perms.length;
 
     before(async () => {
@@ -244,4 +247,27 @@ contract('GeneralPermissionManager', accounts => {
             I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
         });
     });
+
+
+
+    describe("adding and removing different modules", async () => {
+
+        it("should pass test for randomly adding and removing modules ", async () => {
+
+            console.log("1");
+            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
+            for (var i = 0; i < testRepeat; i++) {
+
+                // choose a random module
+
+
+
+                // attach it to the ST 
+
+                // remove it from the ST 
+
+            };
+        })
+    });
+
 });

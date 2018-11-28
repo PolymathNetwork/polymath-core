@@ -736,7 +736,7 @@ contract('BlacklistTransferManager', accounts => {
         });
 
         it("Only owner has the permission to delete the investor from all the blacklist type", async() => {
-            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "a_blacklist", { from: token_owner });
+            await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "g_blacklist", { from: token_owner });
             await catchRevert(
                 I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor1, { 
                     from: account_investor2 

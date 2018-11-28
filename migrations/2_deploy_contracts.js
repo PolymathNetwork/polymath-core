@@ -6,6 +6,7 @@ const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.s
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
+const BlacklistTransferManagerFactory = artifacts.require('./BlacklistTransferManagerFactory.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol')
@@ -158,6 +159,10 @@ module.exports = function (deployer, network, accounts) {
     // to track the counts of the investors of the security token)
     return deployer.deploy(CountTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
   }).then(() => {
+    // D) Deploy the BlacklistTransferManagerFactory Contract (Factory used to generate the BlacklistTransferManager contract use
+    // to to automate blacklist and restrict transfers)
+    return deployer.deploy(BlacklistTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+  }).then(() => {
     // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
     // to track the percentage of investment the investors could do for a particular security token)
     return deployer.deploy(PercentageTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
@@ -209,6 +214,10 @@ module.exports = function (deployer, network, accounts) {
     // So any securityToken can use that factory to generate the GeneralTransferManager contract.
     return moduleRegistry.registerModule(GeneralTransferManagerFactory.address, {from: PolymathAccount});
   }).then(() => {
+    // D) Register the BlacklistTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
+    // So any securityToken can use that factory to generate the GeneralTransferManager contract.
+    return moduleRegistry.registerModule(BlacklistTransferManagerFactory.address, {from: PolymathAccount});
+  }).then(() => {
     // E) Register the GeneralPermissionManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the GeneralPermissionManager contract.
     return moduleRegistry.registerModule(GeneralPermissionManagerFactory.address, {from: PolymathAccount});
@@ -229,6 +238,11 @@ module.exports = function (deployer, network, accounts) {
     // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
     // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
     return moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, {from: PolymathAccount});
+  }).then(() => {
+    // G) Once the BlacklistTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+    // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+    // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+    return moduleRegistry.verifyModule(BlacklistTransferManagerFactory.address, true, {from: PolymathAccount});
   }).then(() => {
     // G) Once the CountTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
     // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
@@ -315,6 +329,7 @@ module.exports = function (deployer, network, accounts) {
     ManualApprovalTransferManagerFactory: ${ManualApprovalTransferManagerFactory.address}
     EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
+    BlacklistTransferManagerFactory:      ${BlacklistTransferManagerFactory.address}
     ---------------------------------------------------------------------------------
     `);
     console.log('\n');

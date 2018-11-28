@@ -29,7 +29,7 @@ contract VestingEscrowWalletFactory is ModuleFactory {
      * _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
-    function deploy(bytes _data) external returns(address) {
+    function deploy(bytes /*_data*/) external returns(address) {
         if (setupCost > 0) {
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom due to insufficent Allowance provided");
         }

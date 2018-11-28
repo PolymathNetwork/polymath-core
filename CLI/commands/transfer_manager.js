@@ -5,6 +5,7 @@ var common = require('./common/common_functions');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 var gbl = require('./common/global');
+var whitelist = require('./whitelist');
 
 // App flow
 let tokenSymbol;
@@ -373,7 +374,7 @@ async function generalTransferManager() {
     case 'Modify whitelist from CSV':
       console.log(chalk.yellow(`Data is going to be read from 'data/whitelist_data.csv'. Be sure this file is updated!`));
       if (readlineSync.keyInYNStrict(`Do you want to continue?`)) {
-        shell.exec(`${__dirname}/scripts/script.sh Whitelist ${tokenSymbol} 75 ${network}`);
+        await whitelist.executeApp(tokenSymbl);
       }
       break;
     /*

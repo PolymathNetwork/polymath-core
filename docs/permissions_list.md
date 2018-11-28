@@ -270,8 +270,9 @@
         </tr>
         <tr>
             <td> removeTransferLimitInPercentageMulti </td>
-        </tr>
-         <tr>
+        </tr>      
+        <tr></tr>
+        <tr>
             <td rowspan=16>Wallet</td>
             <td rowspan=16>VestingEscrowWallet</td>
             <td>depositTokens()</td>

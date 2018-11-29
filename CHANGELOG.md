@@ -1,16 +1,15 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# v3.0.0 
+# v3.0.0 - Release Candidate
 
-## Added 
-* Added new function `addModuleWithLabel` which includes a new `_label` param so user can customize the label of the module. #428 
+[__3.0.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __10-11-18__
 
-
-## Fixed
-* Fixed `addModule` function to be backwards compatible and call the new `addModuleWithLabel` function with an empty label
-* Fixed event `ModuleAdded` to also emit `_label`
-* Fixed function `getModule` to also return the module label
+## SecurityToken
+* Added new function `addModuleWithLabel()` which takes an extra param `_label` that used for giving the customize label to the module for display purpose. #428   
+* Fixed `addModule` function to be backwards compatible and call the new `addModuleWithLabel` function with an empty label.  
+* Fixed event `ModuleAdded` to also emit `_label`.    
+* Fixed function `getModule` to also return the respective module label.   
 
 # v1.5.0 - Release Candidate
 

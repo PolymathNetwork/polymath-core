@@ -221,7 +221,7 @@ contract BlacklistTransferManager is ITransferManager {
     * @param _blacklistName Name of the blacklist
     */
     function addInvestorToBlacklist(address _investor, bytes32 _blacklistName) public withPerm(ADMIN) {
-        require(blacklists[_blacklistName].startTime >= now, "Blacklist type doesn't exist");
+        require(blacklists[_blacklistName].endTime != 0, "Blacklist type doesn't exist");
         require(_investor != address(0), "Invalid investor address");
         uint256 investorIndex = investorToBlacklist[_investor].length;
         // Add blacklist index to the investor 

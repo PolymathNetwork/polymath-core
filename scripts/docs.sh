@@ -32,12 +32,20 @@ create_docs() {
     cd $WEBSITE_DIRECTORY
     fi
 
+    echo "Fetching solc binary"
+    curl -L -o solidity-ubuntu-trusty.zip https://github.com/ethereum/solidity/releases/download/v0.4.24/solidity-ubuntu-trusty.zip
+    unzip solidity-ubuntu-trusty.zip
+    CWD=$(pwd)
+    OLD_SOLC_PATH=$SOLC_PATH
+    export SOLC_PATH=$CWD/solc
     echo "Generating the API documentation in branch $latestTag"
     # Command to generate the documentation using the solidity-docgen
 
     migrate=$(SOLC_ARGS="openzeppelin-solidity="$CORE_ROUTE"/node_modules/openzeppelin-solidity" \
 solidity-docgen -x external/oraclizeAPI.sol,mocks/MockPolyOracle.sol,oracles/PolyOracle.sol $CORE_ROUTE $CORE_ROUTE/contracts $CORE_ROUTE/polymath-developer-portal/)
     
+    export SOLC_PATH=$OLD_SOLC_PATH
+
     echo "Successfully docs are generated..."
     
     echo "Installing npm dependencies..."

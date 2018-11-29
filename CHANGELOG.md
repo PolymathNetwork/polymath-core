@@ -31,7 +31,9 @@ All notable changes to this project will be documented in this file.
 * Add `getReputationOfFactory()` & `getModuleListOfType()` functions to get the array type data from the ModuleRegistry contract.   
 * Add `_setupCost` in `LogGenerateModuleFromFactory` event.   
 * Add new function `getAllModulesByName()`, To get the list of modules having the same name. #198.  
-* Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230     
+* Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230 
+* Add new `_label` param in ST when a module is added so user can customize the label of the module. #428    
+
 
 ## Fixed
 * `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.

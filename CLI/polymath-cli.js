@@ -7,7 +7,6 @@ var st20generator = require('./commands/ST20Generator');
 var sto_manager = require('./commands/sto_manager');
 var transfer = require('./commands/transfer');
 var whitelist = require('./commands/whitelist');
-var accredit = require('./commands/accredit');
 var changeNonAccreditedLimit = require('./commands/changeNonAccreditedLimit');
 var transfer_ownership = require('./commands/transfer_ownership');
 var dividends_manager = require('./commands/dividends_manager');
@@ -152,7 +151,7 @@ program
   .description('Runs accredit')
   .action(async function(tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    await accredit.executeApp(tokenSymbol, batchSize);
+    await sto_manager.startCSV(tokenSymbol, batchSize)
   });
 
 program

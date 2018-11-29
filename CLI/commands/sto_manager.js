@@ -1,11 +1,12 @@
 const readlineSync = require('readline-sync');
 const chalk = require('chalk');
-const accredit = require('./accredit');
 const changeNonAccreditedLimit = require('./changeNonAccreditedLimit');
 const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
+const csv_shared = require('./common/csv_shared');
+const BigNumber = require('bignumber.js');
 
 ///////////////////
 // Crowdsale params
@@ -17,6 +18,12 @@ let securityTokenRegistry;
 let polyToken;
 let usdToken;
 let securityToken;
+
+/* CSV variables */
+let distribData = new Array();
+let fullFileData = new Array();
+let badData = new Array();
+/* End CSV variables */
 
 async function executeApp() {
   let exit = false;
@@ -690,7 +697,7 @@ async function usdTieredSTO_configure(currentSTO) {
         await common.sendTransaction(changeAccreditedAction);
         break;
       case 2:
-        await accredit.executeApp(tokenSymbol, 75);
+        await startCSV(tokenSymbol, 75);
         break;
       case 3:
         let account = readlineSync.question('Enter the address to change non accredited limit: ');
@@ -726,6 +733,84 @@ async function usdTieredSTO_configure(currentSTO) {
         break;
     }
   }
+}
+
+async function startCSV(tokenSymbol, batchSize) {
+  securityToken = await csv_shared.start(tokenSymbol, batchSize);
+
+  let result_processing = await csv_shared.read('./CLI/data/accredited_data.csv', accredit_processing);
+  distribData = result_processing.distribData;
+  fullFileData = result_processing.fullFileData;
+  badData = result_processing.badData;
+  
+  await saveInBlockchain();
+}
+
+function accredit_processing(csv_line) {
+  let isAddress = web3.utils.isAddress(csv_line[0]);
+  let isAccredited = (typeof JSON.parse(csv_line[1].toLowerCase())) == "boolean" ? JSON.parse(csv_line[1].toLowerCase()) : "not-valid";
+
+  if (isAddress &&
+    (isAccredited != "not-valid")) {
+    return [true, new Array(web3.utils.toChecksumAddress(csv_line[0]), isAccredited)]
+  } else {
+    return [false, new Array(csv_line[0], isAccredited)]
+  }
+}
+
+async function saveInBlockchain() {
+  let gtmModules;
+  try {
+    gtmModules = await securityToken.methods.getModulesByName(web3.utils.toHex('USDTieredSTO')).call();
+  } catch (e) {
+    console.log("Please attach USDTieredSTO module before launch this action.", e)
+    process.exit(0)
+  }
+
+  if (!gtmModules.length) {
+    console.log("Please attach USDTieredSTO module before launch this action.")
+    process.exit(0)
+  }
+
+  let usdTieredSTO = new web3.eth.Contract(abis.usdTieredSTO(), gtmModules[0]);
+
+  console.log(`
+    --------------------------------------------------------
+    ----- Sending accreditation changes to blockchain  -----
+    --------------------------------------------------------
+  `);
+
+  for (let i = 0; i < distribData.length; i++) {
+    try {
+
+      // Splitting the user arrays to be organized by input
+      for (let i = 0; i < distribData.length; i++) {
+        try {
+          let investorArray = [], isAccreditedArray = [];
+    
+          for (let j = 0; j < distribData[i].length; j++) {
+            investorArray.push(distribData[i][j][0])
+            isAccreditedArray.push(distribData[i][j][1])
+          }
+    
+          let changeAccreditedAction = await usdTieredSTO.methods.changeAccredited(investorArray, isAccreditedArray);
+          let tx = await common.sendTransaction(changeAccreditedAction);
+          console.log(`Batch ${i} - Attempting to change accredited accounts:\n\n`, investorArray, "\n\n");
+          console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
+          console.log("Change accredited transaction was successful.", tx.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(tx.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");
+          console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
+        } catch (err) {
+          console.log("ERROR:", err);
+        }
+      }
+
+    } catch (err) {
+      console.log("ERROR", err)
+      process.exit(0)
+    }
+  }
+
+  return;
 }
 
 async function modfifyTimes(currentSTO) {
@@ -893,5 +978,8 @@ module.exports = {
   addSTOModule: async function (_tokenSymbol, stoConfig) {
     await initialize(_tokenSymbol);
     return addSTOModule(stoConfig)
+  },
+  startCSV: async function (tokenSymbol, batchSize) {
+    return startCSV(tokenSymbol, batchSize);
   }
 }

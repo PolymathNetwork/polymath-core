@@ -38,7 +38,7 @@ contract BlacklistTransferManager is ITransferManager {
     event AddBlacklistType(
         uint256 _startTime, 
         uint256 _endTime, 
-        bytes32 _name, 
+        bytes32 _blacklistName, 
         uint256 _repeatPeriodTime
     );
     
@@ -46,13 +46,13 @@ contract BlacklistTransferManager is ITransferManager {
     event ModifyBlacklistType(
         uint256 _startTime,
         uint256 _endTime, 
-        bytes32 _name, 
+        bytes32 _blacklistName, 
         uint256 _repeatPeriodTime
     );
     
     // Emit when the added blacklist type is deleted
     event DeleteBlacklistType(
-        bytes32 _name
+        bytes32 _blacklistName
     );
 
     // Emit when new investor is added to the blacklist type
@@ -64,7 +64,7 @@ contract BlacklistTransferManager is ITransferManager {
     // Emit when investor is deleted from the blacklist type
     event DeleteInvestorFromBlacklist(
         address indexed _investor,
-        bytes32 _blacklist
+        bytes32 _blacklistName
     );
 
    
@@ -126,32 +126,32 @@ contract BlacklistTransferManager is ITransferManager {
     * @notice Used to add the blacklist type
     * @param _startTime Start date of the blacklist type
     * @param _endTime End date of the blacklist type
-    * @param _name Name of the blacklist type
+    * @param _blacklistName Name of the blacklist type
     * @param _repeatPeriodTime Repeat period of the blacklist type
     */
-    function addBlacklistType(uint256 _startTime, uint256 _endTime, bytes32 _name, uint256 _repeatPeriodTime) public withPerm(ADMIN) {
-        _addBlacklistType(_startTime, _endTime, _name, _repeatPeriodTime);
+    function addBlacklistType(uint256 _startTime, uint256 _endTime, bytes32 _blacklistName, uint256 _repeatPeriodTime) public withPerm(ADMIN) {
+        _addBlacklistType(_startTime, _endTime, _blacklistName, _repeatPeriodTime);
     }
     
     /**
     * @notice Used to add the multiple blacklist type
     * @param _startTimes Start date of the blacklist type
     * @param _endTimes End date of the blacklist type
-    * @param _names Name of the blacklist type
+    * @param _blacklistNames Name of the blacklist type
     * @param _repeatPeriodTimes Repeat period of the blacklist type
     */
-    function addBlacklistTypeMulti(uint256[] _startTimes, uint256[] _endTimes, bytes32[] _names, uint256[] _repeatPeriodTimes) external withPerm(ADMIN) {
-        require (_startTimes.length == _endTimes.length && _endTimes.length == _names.length && _names.length == _repeatPeriodTimes.length, "Input array's length mismatch"); 
+    function addBlacklistTypeMulti(uint256[] _startTimes, uint256[] _endTimes, bytes32[] _blacklistNames, uint256[] _repeatPeriodTimes) external withPerm(ADMIN) {
+        require (_startTimes.length == _endTimes.length && _endTimes.length == _blacklistNames.length && _blacklistNames.length == _repeatPeriodTimes.length, "Input array's length mismatch"); 
         for (uint256 i = 0; i < _startTimes.length; i++){
-            _addBlacklistType(_startTimes[i], _endTimes[i], _names[i], _repeatPeriodTimes[i]);
+            _addBlacklistType(_startTimes[i], _endTimes[i], _blacklistNames[i], _repeatPeriodTimes[i]);
         }
     }
 
     /**
      * @notice Internal function 
      */
-    function _validParams(uint256 _startTime, uint256 _endTime, bytes32 _name) internal view {
-        require(_name != bytes32(0), "Invalid blacklist name"); 
+    function _validParams(uint256 _startTime, uint256 _endTime, bytes32 _blacklistName) internal view {
+        require(_blacklistName != bytes32(0), "Invalid blacklist name"); 
         require(_startTime >= now && _startTime < _endTime, "Invalid start or end date");
     }
 
@@ -159,42 +159,42 @@ contract BlacklistTransferManager is ITransferManager {
     * @notice Used to modify the details of a given blacklist type
     * @param _startTime Start date of the blacklist type
     * @param _endTime End date of the blacklist type
-    * @param _name Name of the blacklist type
+    * @param _blacklistName Name of the blacklist type
     * @param _repeatPeriodTime Repeat period of the blacklist type
     */
-    function modifyBlacklistType(uint256 _startTime, uint256 _endTime, bytes32 _name, uint256 _repeatPeriodTime) public withPerm(ADMIN) {
-        require(blacklists[_name].endTime != 0, "Blacklist type doesn't exist"); 
-        _validParams(_startTime, _endTime, _name);
-        blacklists[_name] = BlacklistsDetails(_startTime, _endTime, _repeatPeriodTime);
-        emit ModifyBlacklistType(_startTime, _endTime, _name, _repeatPeriodTime);
+    function modifyBlacklistType(uint256 _startTime, uint256 _endTime, bytes32 _blacklistName, uint256 _repeatPeriodTime) public withPerm(ADMIN) {
+        require(blacklists[_blacklistName].endTime != 0, "Blacklist type doesn't exist"); 
+        _validParams(_startTime, _endTime, _blacklistName);
+        blacklists[_blacklistName] = BlacklistsDetails(_startTime, _endTime, _repeatPeriodTime);
+        emit ModifyBlacklistType(_startTime, _endTime, _blacklistName, _repeatPeriodTime);
     }
 
     /**
     * @notice Used to modify the details of a given multpile blacklist types
     * @param _startTimes Start date of the blacklist type
     * @param _endTimes End date of the blacklist type
-    * @param _names Name of the blacklist type
+    * @param _blacklistNames Name of the blacklist type
     * @param _repeatPeriodTimes Repeat period of the blacklist type
     */
-    function modifyBlacklistTypeMulti(uint256[] _startTimes, uint256[] _endTimes, bytes32[] _names, uint256[] _repeatPeriodTimes) external withPerm(ADMIN) {
-        require (_startTimes.length == _endTimes.length && _endTimes.length == _names.length && _names.length == _repeatPeriodTimes.length, "Input array's length mismatch"); 
+    function modifyBlacklistTypeMulti(uint256[] _startTimes, uint256[] _endTimes, bytes32[] _blacklistNames, uint256[] _repeatPeriodTimes) external withPerm(ADMIN) {
+        require (_startTimes.length == _endTimes.length && _endTimes.length == _blacklistNames.length && _blacklistNames.length == _repeatPeriodTimes.length, "Input array's length mismatch"); 
         for (uint256 i = 0; i < _startTimes.length; i++){
-            modifyBlacklistType(_startTimes[i], _endTimes[i], _names[i], _repeatPeriodTimes[i]);
+            modifyBlacklistType(_startTimes[i], _endTimes[i], _blacklistNames[i], _repeatPeriodTimes[i]);
         }
     }
 
     /**
     * @notice Used to delete the blacklist type
-    * @param _name Name of the blacklist type
+    * @param _blacklistName Name of the blacklist type
     */
-    function deleteBlacklistType(bytes32 _name) public withPerm(ADMIN) {
-        require(blacklists[_name].endTime != 0, "Blacklist type doesn’t exist");
-        require(blacklistToInvestor[_name].length == 0, "Investors are associated with the blacklist");
+    function deleteBlacklistType(bytes32 _blacklistName) public withPerm(ADMIN) {
+        require(blacklists[_blacklistName].endTime != 0, "Blacklist type doesn’t exist");
+        require(blacklistToInvestor[_blacklistName].length == 0, "Investors are associated with the blacklist");
         // delete blacklist type 
-        delete(blacklists[_name]);
+        delete(blacklists[_blacklistName]);
         uint256 i = 0;
         for (i = 0; i < allBlacklists.length; i++) {
-            if (allBlacklists[i] == _name) {
+            if (allBlacklists[i] == _blacklistName) {
                 break;
             }
         }
@@ -202,16 +202,16 @@ contract BlacklistTransferManager is ITransferManager {
             allBlacklists[i] = allBlacklists[allBlacklists.length -1];
         }
         allBlacklists.length--;
-        emit DeleteBlacklistType(_name);
+        emit DeleteBlacklistType(_blacklistName);
     }
 
     /**
     * @notice Used to delete the multiple blacklist type
-    * @param _names Name of the blacklist type
+    * @param _blacklistNames Name of the blacklist type
     */
-    function deleteBlacklistTypeMulti(bytes32[] _names) external withPerm(ADMIN) {
-        for(uint256 i = 0; i < _names.length; i++){
-            deleteBlacklistType(_names[i]);
+    function deleteBlacklistTypeMulti(bytes32[] _blacklistNames) external withPerm(ADMIN) {
+        for(uint256 i = 0; i < _blacklistNames.length; i++){
+            deleteBlacklistType(_blacklistNames[i]);
         }
     }
 
@@ -261,13 +261,13 @@ contract BlacklistTransferManager is ITransferManager {
     * @notice Used to assign the new blacklist type to the investor
     * @param _startTime Start date of the blacklist type
     * @param _endTime End date of the blacklist type
-    * @param _name Name of the blacklist type
+    * @param _blacklistName Name of the blacklist type
     * @param _repeatPeriodTime Repeat period of the blacklist type
     * @param _investor Address of the investor
     */
-    function addInvestorToNewBlacklist(uint256 _startTime, uint256 _endTime, bytes32 _name, uint256 _repeatPeriodTime, address _investor) external withPerm(ADMIN){
-        _addBlacklistType(_startTime, _endTime, _name, _repeatPeriodTime);
-        addInvestorToBlacklist(_investor, _name);
+    function addInvestorToNewBlacklist(uint256 _startTime, uint256 _endTime, bytes32 _blacklistName, uint256 _repeatPeriodTime, address _investor) external withPerm(ADMIN){
+        _addBlacklistType(_startTime, _endTime, _blacklistName, _repeatPeriodTime);
+        addInvestorToBlacklist(_investor, _blacklistName);
     }
 
     /**
@@ -336,12 +336,12 @@ contract BlacklistTransferManager is ITransferManager {
         }
     }
 
-    function _addBlacklistType(uint256 _startTime, uint256 _endTime, bytes32 _name, uint256 _repeatPeriodTime) internal {
-        require(blacklists[_name].endTime == 0, "Blacklist type already exist"); 
-        _validParams(_startTime, _endTime, _name);
-        blacklists[_name] = BlacklistsDetails(_startTime, _endTime, _repeatPeriodTime);
-        allBlacklists.push(_name);
-        emit AddBlacklistType(_startTime, _endTime, _name, _repeatPeriodTime);
+    function _addBlacklistType(uint256 _startTime, uint256 _endTime, bytes32 _blacklistName, uint256 _repeatPeriodTime) internal {
+        require(blacklists[_blacklistName].endTime == 0, "Blacklist type already exist"); 
+        _validParams(_startTime, _endTime, _blacklistName);
+        blacklists[_blacklistName] = BlacklistsDetails(_startTime, _endTime, _repeatPeriodTime);
+        allBlacklists.push(_blacklistName);
+        emit AddBlacklistType(_startTime, _endTime, _blacklistName, _repeatPeriodTime);
     }
     
     /**

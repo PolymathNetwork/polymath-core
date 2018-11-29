@@ -335,7 +335,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should add the blacklist", async() => {
             //Add the new blacklist
             let tx = await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "a_blacklist", 20, { from: token_owner });
-            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._name), "a_blacklist", "Failed in adding the type in blacklist");
+            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._blacklistName), "a_blacklist", "Failed in adding the type in blacklist");
         });
 
         it("Should fail in adding the blacklist as blacklist type already exist", async() => {
@@ -388,7 +388,7 @@ contract('BlacklistTransferManager', accounts => {
             
             let event_data = tx.logs;
             for (var i = 0; i < event_data.length; i++) {
-                let blacklistName = event_data[i].args._name;
+                let blacklistName = event_data[i].args._blacklistName;
                 assert.equal(web3.utils.hexToUtf8(blacklistName), name[i], "Failed in adding the blacklist");
             }
         });
@@ -422,7 +422,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should modify the blacklist", async() => {
             //Modify the existing blacklist
             let tx = await I_BlacklistTransferManager.modifyBlacklistType(latestTime()+2000, latestTime()+3000, "a_blacklist", 20, { from: token_owner });
-            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._name), "a_blacklist", "Failed in modifying the startdate of blacklist");
+            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._blacklistName), "a_blacklist", "Failed in modifying the startdate of blacklist");
 
         });
 
@@ -477,7 +477,7 @@ contract('BlacklistTransferManager', accounts => {
             
             let event_data = tx.logs;
             for (var i = 0; i < event_data.length; i++) {
-                let blacklistName = event_data[i].args._name;
+                let blacklistName = event_data[i].args._blacklistName;
                 assert.equal(web3.utils.hexToUtf8(blacklistName), name[i], "Failed in adding the blacklist");
             }
         });
@@ -677,7 +677,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should delete the blacklist type", async() => {
             await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "b_blacklist", 20, { from: token_owner });
             let tx = await I_BlacklistTransferManager.deleteBlacklistType("b_blacklist", { from: token_owner });
-            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._name), "b_blacklist", "Failed in deleting the blacklist");
+            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._blacklistName), "b_blacklist", "Failed in deleting the blacklist");
 
         });
 
@@ -712,7 +712,7 @@ contract('BlacklistTransferManager', accounts => {
             
             let event_data = tx.logs;
             for (var i = 0; i < event_data.length; i++) {
-                let blacklistName = event_data[i].args._name;
+                let blacklistName = event_data[i].args._blacklistName;
                 assert.equal(web3.utils.hexToUtf8(blacklistName), name[i], "Failed in deleting the blacklist");
             }
 
@@ -866,7 +866,7 @@ contract('BlacklistTransferManager', accounts => {
 
         it("Should add investor and new blacklist type", async() => {
             let tx = await I_BlacklistTransferManager.addInvestorToNewBlacklist(latestTime()+1000, latestTime()+3000, "c_blacklist", 20, account_investor3, { from: token_owner });
-            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._name), "c_blacklist", "Failed in adding the blacklist");
+            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._blacklistName), "c_blacklist", "Failed in adding the blacklist");
             assert.equal(tx.logs[1].args._investor, account_investor3, "Failed in adding the investor to blacklist");
 
         });

@@ -197,6 +197,11 @@ async function configExistingModules(tmModules) {
       currentTransferManager.setProvider(web3.currentProvider);
       await manualApprovalTransferManager();
       break;
+    case 'BlacklistTransferManager':
+      currentTransferManager = new web3.eth.Contract(abis.blacklistTransferManager(), tmModules[index].address);
+      currentTransferManager.setProvider(web3.currentProvider);
+      await blacklistTransferManager();
+      break;
     case 'PercentageTransferManager':
       //await percentageTransferManager();
       console.log(chalk.red(`
@@ -230,8 +235,8 @@ async function configExistingModules(tmModules) {
 }
 
 async function addTransferManagerModule() {
-  let options = ['GeneralTransferManager', 'ManualApprovalTransferManager'/*, 'PercentageTransferManager', 
-'CountTransferManager', 'SingleTradeVolumeRestrictionTM', 'LookupVolumeRestrictionTM'*/];
+  let options = ['GeneralTransferManager', 'ManualApprovalTransferManager', 'BlacklistTransferManager'];
+  /*, 'PercentageTransferManager', 'CountTransferManager', 'SingleTradeVolumeRestrictionTM', 'LookupVolumeRestrictionTM'];*/
 
   let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
@@ -689,6 +694,217 @@ async function getManualBlocking(_from, _to) {
   }
 
   return result;
+}
+
+async function blacklistTransferManager() {
+  console.log(chalk.blue(`Blacklist Transfer Manager at ${currentTransferManager.options.address}`), '\n');
+
+  let currentBlacklists = await currentTransferManager.methods.getAllBlacklists().call();
+  console.log(`- Blacklists:    ${currentBlacklists.length}`);
+
+  let options = ['Add new blacklist'];
+  if (currentBlacklists.length > 0) {
+    options.push('Manage existing blacklist');
+  }
+  options.push('Delete investors from all blacklists', 'Operate with multiple blacklists');
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: "Return" });
+  let optionSelected = index !== -1 ? options[index] : 'Return';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Add new blacklist':
+      let name = readlineSync.question(`Enter the name of the blacklist type: `, {
+        limit: function (input) {
+          return input !== "";
+        },
+        limitMessage: `Invalid blacklist name`
+      });
+      let minuteFromNow = Math.floor(Date.now() / 1000) + 60;
+      let startTime = readlineSync.questionInt(`Enter the start date (Unix Epoch time) of the blacklist type (a minute from now = ${minuteFromNow}): `, { defaultInput: minuteFromNow });
+      let oneDayFromStartTime = startTime + 24 * 60 * 60;
+      let endTime = readlineSync.questionInt(`Enter the end date (Unix Epoch time) of the blacklist type (1 day from start time = ${oneDayFromStartTime}): `, { defaultInput: oneDayFromStartTime });
+      let repeatPeriodTime = readlineSync.questionInt(`Enter the repeat period (days) of the blacklist type, 0 to disable (90 days): `, { defaultInput: 90 });
+      if (readlineSync.keyInYNStrict(`Do you want to add an investor to this blacklist type? `)) {
+        let investor = readlineSync.question(`Enter the address of the investor: `, {
+          limit: function (input) {
+            return web3.utils.isAddress(input);
+          },
+          limitMessage: `Must be a valid address`
+        });
+        let addInvestorToNewBlacklistAction = currentTransferManager.methods.addInvestorToNewBlacklist(
+          startTime,
+          endTime,
+          web3.utils.toHex(name),
+          repeatPeriodTime,
+          investor
+        );
+        let addInvestorToNewBlacklistReceipt = await common.sendTransaction(addInvestorToNewBlacklistAction);
+        let addNewBlacklistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addInvestorToNewBlacklistReceipt.logs, 'AddBlacklistType');
+        console.log(chalk.green(`${web3.utils.hexToUtf8(addNewBlacklistEvent._blacklistName)} blacklist type has been added successfully!`));
+        let addInvestorToNewBlacklistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addInvestorToNewBlacklistReceipt.logs, 'AddInvestorToBlacklist');
+        console.log(chalk.green(`${addInvestorToNewBlacklistEvent._investor} has been added to ${web3.utils.hexToUtf8(addInvestorToNewBlacklistEvent._blacklistName)} successfully!`));
+      } else {
+        let addBlacklistTypeAction = currentTransferManager.methods.addBlacklistType(startTime, endTime, web3.utils.toHex(name), repeatPeriodTime);
+        let addBlacklistTypeReceipt = await common.sendTransaction(addBlacklistTypeAction);
+        let addBlacklistTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addBlacklistTypeReceipt.logs, 'AddBlacklistType');
+        console.log(chalk.green(`${web3.utils.hexToUtf8(addBlacklistTypeEvent._blacklistName)} blacklist type has been added successfully!`));
+      }
+      break;
+    case 'Manage existing blacklist':
+      let options = currentBlacklists.map(b => web3.utils.hexToUtf8(b));
+      let index = readlineSync.keyInSelect(options, 'Which blacklist type do you want to manage? ', { cancel: "Return" });
+      let optionSelected = index !== -1 ? options[index] : 'Return';
+      console.log('Selected:', optionSelected, '\n');
+      if (index !== -1) {
+        await manageExistingBlacklist(currentBlacklists[index]);
+      }
+      break;
+    case 'Remove investors from all blacklists':
+      let investorsToRemove = readlineSync.question(`Enter the addresses of the investors separated by comma (i.e. addr1,addr2,addr3): `, {
+        limit: function (input) {
+          let addresses = input.split(",");
+          return (
+            addresses.length > 0 &&
+            addresses.every(a => web3.utils.isAddress(a))
+          );
+        },
+        limitMessage: `All addresses must be valid`
+      }).split(',');
+      let deleteInvestorFromAllBlacklistAction;
+      if (investorsToRemove.length === 1) {
+        deleteInvestorFromAllBlacklistAction = currentTransferManager.methods.deleteInvestorFromAllBlacklist(investorsToAdd[0]);
+      } else {
+        deleteInvestorFromAllBlacklistAction = currentTransferManager.methods.adeleteInvestorFromAllBlacklistMulti(nvestorsToAdd);
+      }
+      let deleteInvestorFromAllBlacklistReceipt = await common.sendTransaction(deleteInvestorFromAllBlacklistAction);
+      let deleteInvestorFromAllBlacklistEvents = common.getMultipleEventsFromLogs(currentTransferManager._jsonInterface, deleteInvestorFromAllBlacklistReceipt.logs, 'DeleteInvestorFromBlacklist');
+      deleteInvestorFromAllBlacklistEvents.map(e => console.log(chalk.green(`${e._investor} has been removed from ${web3.utils.hexToUtf8(e._blacklistName)} successfully!`)));
+      break;
+    case 'Operate with multiple blacklists':
+      await operateWithMultipleBlacklists();
+      break;
+  }
+}
+
+async function manageExistingBlacklist(blacklistName) {
+  // Show current data
+  let currentBlacklist = await currentTransferManager.methods.blacklists(blacklistName).call();
+  let investors = await currentTransferManager.methods.getListOfAddresses(blacklistName).call();
+
+  console.log(`- Name:                 ${web3.utils.hexToUtf8(blacklistName)}`);
+  console.log(`- Start time:           ${moment.unix(currentBlacklist.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+  console.log(`- End time:             ${moment.unix(currentBlacklist.endTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+  console.log(`- Span:                 ${gbl.constants.DURATION.days(currentBlacklist.endTime - currentBlacklist.startTime)} days`);
+  console.log(`- Repeat period time:   ${currentBlacklist.repeatPeriodTime} days`);
+  console.log(`- Investors:            ${investors.length}`);
+  // ------------------
+
+  let options = [
+    "Modify properties",
+    "Show investors",
+    "Add investors",
+    "Remove investor",
+    "Delete this blacklist type"
+  ];
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
+  let optionSelected = index !== -1 ? options[index] : 'Return';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Modify properties':
+      let minuteFromNow = Math.floor(Date.now() / 1000) + 60;
+      let startTime = readlineSync.questionInt(`Enter the start date (Unix Epoch time) of the blacklist type (a minute from now = ${minuteFromNow}): `, { defaultInput: minuteFromNow });
+      let oneDayFromStartTime = startTime + 24 * 60 * 60;
+      let endTime = readlineSync.questionInt(`Enter the end date (Unix Epoch time) of the blacklist type (1 day from start time = ${oneDayFromStartTime}): `, { defaultInput: oneDayFromStartTime });
+      let repeatPeriodTime = readlineSync.questionInt(`Enter the repeat period (days) of the blacklist type, 0 to disable (90 days): `, { defaultInput: 90 });
+      let modifyBlacklistTypeAction = currentTransferManager.methods.modifyBlacklistType(
+        startTime,
+        endTime,
+        blacklistName,
+        repeatPeriodTime
+      );
+      let modifyBlacklistTypeReceipt = await common.sendTransaction(modifyBlacklistTypeAction);
+      let modifyBlacklistTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyBlacklistTypeReceipt.logs, 'ModifyBlacklistType');
+      console.log(chalk.green(`${web3.utils.hexToUtf8(modifyBlacklistTypeEvent._blacklistName)} blacklist type has been modified successfully!`));
+      break;
+    case 'Show investors':
+      if (investors.length > 0) {
+        console.log("************ List of investors ************");
+        investors.map(i => console.log(i));
+      } else {
+        console.log(chalk.yellow("There are no investors yet"));
+      }
+      break;
+    case 'Add investors':
+      let investorsToAdd = readlineSync.question(`Enter the addresses of the investors separated by comma (i.e. addr1,addr2,addr3): `, {
+        limit: function (input) {
+          let addresses = input.split(",");
+          return (
+            addresses.length > 0 &&
+            addresses.every(a => web3.utils.isAddress(a))
+          );
+        },
+        limitMessage: `All addresses must be valid`
+      }).split(",");
+      let addInvestorToBlacklistAction;
+      if (investorsToAdd.length === 1) {
+        addInvestorToBlacklistAction = currentTransferManager.methods.addInvestorToBlacklist(investorsToAdd[0], blacklistName);
+      } else {
+        addInvestorToBlacklistAction = currentTransferManager.methods.addInvestorToBlacklistMulti(investorsToAdd, blacklistName);
+      }
+      let addInvestorToBlacklistReceipt = await common.sendTransaction(addInvestorToBlacklistAction);
+      let addInvestorToBlacklistEvents = common.getMultipleEventsFromLogs(currentTransferManager._jsonInterface, addInvestorToBlacklistReceipt.logs, 'AddInvestorToBlacklist');
+      addInvestorToBlacklistEvents.map(e => console.log(chalk.green(`${e._investor} has been added to ${web3.utils.hexToUtf8(e._blacklistName)} successfully!`)));
+      break;
+    case "Remove investor":
+      let investorsToRemove = readlineSync.question(`Enter the address of the investor: `, {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: `Must be a valid address`
+      });
+      let deleteInvestorFromBlacklistAction = currentTransferManager.methods.deleteInvestorFromBlacklist(investorsToRemove, blacklistName);
+      let deleteInvestorFromBlacklistReceipt = await common.sendTransaction(deleteInvestorFromBlacklistAction);
+      let deleteInvestorFromBlacklistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, deleteInvestorFromBlacklistReceipt.logs, 'DeleteInvestorFromBlacklist');
+      console.log(chalk.green(`${deleteInvestorFromBlacklistEvent._investor} has been removed from ${web3.utils.hexToUtf8(deleteInvestorFromBlacklistEvent._blacklistName)} successfully!`));
+      break;
+    case "Delete this blacklist type":
+      if (readlineSync.keyInYNStrict()) {
+        let deleteBlacklistTypeAction = currentTransferManager.methods.deleteBlacklistType(blacklistName);
+        let deleteBlacklistTypeReceipt = await common.sendTransaction(deleteBlacklistTypeAction);
+        let deleteBlacklistTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, deleteBlacklistTypeReceipt.logs, 'DeleteBlacklistType');
+        console.log(chalk.green(`${web3.utils.hexToUtf8(deleteBlacklistTypeEvent._blacklistName)} blacklist type has been deleted successfully!`));
+      }
+      break;
+  }
+}
+
+async function operateWithMultipleBlacklists() {
+  let options = ['Add multiple blacklists'];
+  if (currentBlacklists.length > 0) {
+    options.push('Modify multiple blacklists');
+  }
+  options.push(
+    'Delete multiple blacklists',
+    'Add investors to multiple blacklists',
+    'Remove investors from multiple blacklists'
+  );
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
+  let optionSelected = index !== -1 ? options[index] : 'Return';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Add multiple blacklists':
+      break;
+    case 'Modify multiple blacklists':
+      break;
+    case 'Delete multiple blacklists':
+      break;
+    case 'Add investors to multiple blacklists':
+      break;
+    case 'Remove investors from multiple blacklists':
+      break;
+  }
 }
 
 async function singleTradeVolumeRestrictionTM() {

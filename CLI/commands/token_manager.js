@@ -829,5 +829,8 @@ module.exports = {
   executeApp: async function (_tokenSymbol) {
     await initialize(_tokenSymbol)
     return executeApp();
+  },
+  startCSV: async function (tokenSymbol, batchSize) {
+    return startCSV(tokenSymbol, batchSize);
   }
 }

@@ -7,7 +7,6 @@ var st20generator = require('./commands/ST20Generator');
 var sto_manager = require('./commands/sto_manager');
 var transfer = require('./commands/transfer');
 var whitelist = require('./commands/whitelist');
-var multimint = require('./commands/multi_mint');
 var accredit = require('./commands/accredit');
 var changeNonAccreditedLimit = require('./commands/changeNonAccreditedLimit');
 var transfer_ownership = require('./commands/transfer_ownership');
@@ -90,7 +89,7 @@ program
   .description('Distribute tokens to previously whitelisted investors')
   .action(async function(tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    await multimint.executeApp(tokenSymbol, batchSize);
+    await token_manager.startCSV(tokenSymbol, batchSize);
   });
 
 program

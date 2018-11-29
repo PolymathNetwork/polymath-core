@@ -32,7 +32,7 @@ program
   .option('-d, --details <details>', 'Off-chain details of the token')
   .option('-D, --divisible <div>', 'If token is divisible or not [true]', /^(true|false)/)
   .description('Wizard-like script that will guide technical users in the creation and deployment of an ST-20 token')
-  .action(async function(cmd) {
+  .action(async function (cmd) {
     await gbl.initialize(program.remoteNode);
     await st20generator.executeApp(cmd.ticker, cmd.transferOwnership, cmd.tokenName, cmd.details, cmd.divisible);
   });
@@ -43,7 +43,7 @@ program
   .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage modules')
   .option('-l, --launch <configFilePath>', 'Uses configuration file to configure and launch a STO')
   .description('Wizard-like script that will guide technical users in the creation of an STO')
-  .action(async function(cmd) {
+  .action(async function (cmd) {
     await gbl.initialize(program.remoteNode);
     if (cmd.launch) {
       let config = yaml.safeLoad(fs.readFileSync(`${__dirname}/${cmd.launch}`, 'utf8'));
@@ -57,7 +57,7 @@ program
   .command('faucet [beneficiary] [amount]')
   .alias('f')
   .description('Poly faucet for local private netwtorks')
-  .action(async function(beneficiary, amount) {
+  .action(async function (beneficiary, amount) {
     await gbl.initialize(program.remoteNode);
     await faucet.executeApp(beneficiary, amount);
   });
@@ -66,7 +66,7 @@ program
   .command('investor_portal [investor] [privateKey] [symbol] [currency] [amount]')
   .alias('i')
   .description('Participate in any STO you have been whitelisted for')
-  .action(async function(investor, privateKey, symbol, currency, amount) {
+  .action(async function (investor, privateKey, symbol, currency, amount) {
     await gbl.initialize(program.remoteNode);
     await investor_portal.executeApp(investor, privateKey, symbol, currency, amount);
   });
@@ -76,7 +76,7 @@ program
   .alias('stm')
   .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage')
   .description('Manage your Security Tokens, mint tokens, add modules and change config')
-  .action(async function(cmd) {
+  .action(async function (cmd) {
     await gbl.initialize(program.remoteNode);
     await token_manager.executeApp(cmd.securityToken);
   });
@@ -85,7 +85,7 @@ program
   .command('multi_mint <tokenSymbol> [batchSize]')
   .alias('mi')
   .description('Distribute tokens to previously whitelisted investors')
-  .action(async function(tokenSymbol, batchSize) {
+  .action(async function (tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
     await token_manager.startCSV(tokenSymbol, batchSize);
   });
@@ -94,7 +94,7 @@ program
   .command('transfer <tokenSymbol> <transferTo> <transferAmount>')
   .alias('t')
   .description('Transfer ST tokens to another account')
-  .action(async function(tokenSymbol, transferTo, transferAmount) {
+  .action(async function (tokenSymbol, transferTo, transferAmount) {
     await gbl.initialize(program.remoteNode);
     await transfer.executeApp(tokenSymbol, transferTo, transferAmount);
   });
@@ -103,7 +103,7 @@ program
   .command('transfer_ownership <contractAddress> <transferTo>')
   .alias('to')
   .description('Transfer Ownership of an own contract to another account')
-  .action(async function(contractAddress, transferTo) {
+  .action(async function (contractAddress, transferTo) {
     await gbl.initialize(program.remoteNode);
     await transfer_ownership.executeApp(contractAddress, transferTo);
   });
@@ -112,7 +112,7 @@ program
   .command('whitelist <tokenSymbol> [batchSize]')
   .alias('w')
   .description('Mass-update a whitelist of allowed/known investors')
-  .action(async function(tokenSymbol, batchSize) {
+  .action(async function (tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
     await whitelist.executeApp(tokenSymbol, batchSize);
   });
@@ -121,7 +121,7 @@ program
   .command('dividends_manager [dividendsType]')
   .alias('dm')
   .description('Runs dividends_manager')
-  .action(async function(dividendsType) {
+  .action(async function (dividendsType) {
     await gbl.initialize(program.remoteNode);
     await dividends_manager.executeApp(dividendsType);
   });
@@ -129,17 +129,18 @@ program
 program
   .command('transfer_manager')
   .alias('tm')
+  .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage transfer modules')
   .description('Runs transfer_manager')
-  .action(async function() {
+  .action(async function (cmd) {
     await gbl.initialize(program.remoteNode);
-    await transfer_manager.executeApp();
+    await transfer_manager.executeApp(cmd.securityToken);
   });
 
 program
   .command('contract_manager')
   .alias('cm')
   .description('Runs contract_manager')
-  .action(async function() {
+  .action(async function () {
     await gbl.initialize(program.remoteNode);
     await contract_manager.executeApp();
   });
@@ -148,7 +149,7 @@ program
   .command('accredit <tokenSymbol> [batchSize]')
   .alias('a')
   .description('Runs accredit')
-  .action(async function(tokenSymbol, batchSize) {
+  .action(async function (tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
     await sto_manager.startCSV(tokenSymbol, batchSize, 'accredited')
   });
@@ -157,7 +158,7 @@ program
   .command('nonAccreditedLimit <tokenSymbol> [batchSize]')
   .alias('nal')
   .description('Runs changeNonAccreditedLimit')
-  .action(async function(tokenSymbol, batchSize) {
+  .action(async function (tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
     await sto_manager.startCSV(tokenSymbol, batchSize, 'nonAccredited')
   });
@@ -166,7 +167,7 @@ program
   .command('strMigrator [toStrAddress] [fromTrAddress] [fromStrAddress]')
   .alias('str')
   .description('Runs STR Migrator')
-  .action(async function(toStrAddress, fromTrAddress, fromStrAddress) {
+  .action(async function (toStrAddress, fromTrAddress, fromStrAddress) {
     await gbl.initialize(program.remoteNode);
     await strMigrator.executeApp(toStrAddress, fromTrAddress, fromStrAddress);
   });
@@ -175,7 +176,7 @@ program
   .command('permission_manager')
   .alias('pm')
   .description('Runs permission_manager')
-  .action(async function() {
+  .action(async function () {
     await gbl.initialize(program.remoteNode);
     await permission_manager.executeApp();
   });

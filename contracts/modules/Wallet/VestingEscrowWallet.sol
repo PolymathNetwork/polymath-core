@@ -297,11 +297,16 @@ contract VestingEscrowWallet is IWallet {
         _checkSchedule(_beneficiary, _templateName);
         uint256 index = templateToScheduleIndex[_beneficiary][_templateName];
         _sendTokens(_beneficiary, index);
-        Schedule[] storage userSchedules = schedules[_beneficiary];
-        //update unassignedTokens
         uint256 releasedTokens = _getReleasedTokens(_beneficiary, index);
         unassignedTokens = unassignedTokens.add(templates[_templateName].numberOfTokens.sub(releasedTokens));
-        //delete user schedule and relation between user and template
+        _deleteUserToTemplates(_beneficiary, _templateName);
+        _deleteTemplateToUsers(_beneficiary, _templateName);
+        emit RevokeSchedule(_beneficiary, _templateName);
+    }
+
+    function _deleteUserToTemplates(address _beneficiary, bytes32 _templateName) internal {
+        uint256 index = templateToScheduleIndex[_beneficiary][_templateName];
+        Schedule[] storage userSchedules = schedules[_beneficiary];
         if (index != userSchedules.length - 1) {
             userSchedules[index] = userSchedules[userSchedules.length - 1];
             userToTemplates[_beneficiary][index] = userToTemplates[_beneficiary][userToTemplates[_beneficiary].length - 1];
@@ -309,15 +314,16 @@ contract VestingEscrowWallet is IWallet {
         userSchedules.length--;
         userToTemplates[_beneficiary].length--;
         delete templateToScheduleIndex[_beneficiary][_templateName];
-        //delete relation between template and user
+    }
+
+    function _deleteTemplateToUsers(address _beneficiary, bytes32 _templateName) internal {
+        uint256 index = templateToScheduleIndex[_beneficiary][_templateName];
         uint256 templateIndex = templateToUserIndex[_templateName][_beneficiary];
         if (templateIndex != templateToUsers[_templateName].length - 1) {
             templateToUsers[_templateName][templateIndex] = templateToUsers[_templateName][templateToUsers[_templateName].length - 1];
         }
         templateToUsers[_templateName].length--;
         delete templateToUserIndex[_templateName][_beneficiary];
-
-        emit RevokeSchedule(_beneficiary, _templateName);
     }
 
     /**
@@ -337,8 +343,9 @@ contract VestingEscrowWallet is IWallet {
             Template storage template = templates[userSchedules[i].templateName];
             unassignedTokens = unassignedTokens.add(template.numberOfTokens.sub(releasedTokens));
             delete templateToScheduleIndex[_beneficiary][userSchedules[i].templateName];
+            _deleteTemplateToUsers(_beneficiary, userSchedules[i].templateName);
         }
-        userSchedules.length = 0;
+        delete schedules[_beneficiary];
         delete userToTemplates[_beneficiary];
         emit RevokeAllSchedules(_beneficiary);
     }

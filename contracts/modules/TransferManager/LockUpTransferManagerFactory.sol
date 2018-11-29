@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./../../ModuleFactory.sol";
+import "../ModuleFactory.sol";
 import "./LockUpTransferManager.sol";
 
 /**

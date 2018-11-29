@@ -317,7 +317,6 @@ contract VestingEscrowWallet is IWallet {
     }
 
     function _deleteTemplateToUsers(address _beneficiary, bytes32 _templateName) internal {
-        uint256 index = templateToScheduleIndex[_beneficiary][_templateName];
         uint256 templateIndex = templateToUserIndex[_templateName][_beneficiary];
         if (templateIndex != templateToUsers[_templateName].length - 1) {
             templateToUsers[_templateName][templateIndex] = templateToUsers[_templateName][templateToUsers[_templateName].length - 1];
@@ -365,16 +364,11 @@ contract VestingEscrowWallet is IWallet {
             templates[schedule.templateName].duration,
             templates[schedule.templateName].frequency,
             schedule.startTime,
-            getScheduleState(_beneficiary, _templateName)
+            _getScheduleState(_beneficiary, _templateName)
         );
     }
 
-    /**
-     * @notice Returns state of the schedule
-     * @param _beneficiary beneficiary's address
-     * @return state of the schedule
-     */
-    function getScheduleState(address _beneficiary, bytes32 _templateName) public view returns(State) {
+    function _getScheduleState(address _beneficiary, bytes32 _templateName) internal view returns(State) {
         _checkSchedule(_beneficiary, _templateName);
         uint256 index = templateToScheduleIndex[_beneficiary][_templateName];
         Schedule memory schedule = schedules[_beneficiary][index];

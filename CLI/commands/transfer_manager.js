@@ -180,7 +180,7 @@ async function configExistingModules(tmModules) {
   let options = tmModules.map(m => `${m.name} at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'Return' });
   console.log('Selected:', index != -1 ? options[index] : 'Return', '\n');
-  let moduleNameSelected = tmModules[index].name;
+  let moduleNameSelected = index != -1 ? tmModules[index].name : 'Return';
 
   switch (moduleNameSelected) {
     case 'GeneralTransferManager':
@@ -202,7 +202,9 @@ async function configExistingModules(tmModules) {
       ));
       break;
     case 'CountTransferManager':
-      //await countTransferManager();
+      currentTransferManager = new web3.eth.Contract(abis.countTransferManager(), tmModules[index].address);
+      currentTransferManager.setProvider(web3.currentProvider);
+      await countTransferManager();
       break;
     case 'SingleTradeVolumeRestrictionTM':
       //currentTransferManager = new web3.eth.Contract(abis.singleTradeVolumeRestrictionTM(), tmModules[index].address);
@@ -226,8 +228,14 @@ async function configExistingModules(tmModules) {
 }
 
 async function addTransferManagerModule() {
-  let options = ['GeneralTransferManager', 'ManualApprovalTransferManager'/*, 'PercentageTransferManager', 
-'CountTransferManager', 'SingleTradeVolumeRestrictionTM', 'LookupVolumeRestrictionTM'*/];
+  let options = [
+    'GeneralTransferManager',
+    'ManualApprovalTransferManager',
+    'CountTransferManager',
+    //'PercentageTransferManager', 
+    //'SingleTradeVolumeRestrictionTM',
+    //'LookupVolumeRestrictionTM'*/
+  ];
 
   let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
@@ -241,11 +249,9 @@ async function addTransferManagerModule() {
         ));
         break;
       case 'CountTransferManager':
-        console.log(chalk.red(`
-          *********************************
-          This option is not yet available.
-          *********************************`
-        ));
+        let maxHolderCount = readlineSync.question('Enter the maximum no. of holders the SecurityToken is allowed to have: ');
+        let configureCountTM = abis.countTransferManager().find(o => o.name === 'configure' && o.type === 'function');
+        bytes = web3.eth.abi.encodeFunctionCall(configureCountTM, [maxHolderCount]);
         break;
       case 'SingleTradeVolumeRestrictionTM':
         /*
@@ -641,6 +647,29 @@ async function getManualBlocking(_from, _to) {
   }
 
   return result;
+}
+
+async function countTransferManager() {
+  console.log(chalk.blue(`Count Transfer Manager at ${currentTransferManager.options.address}`), '\n');
+
+  // Show current data
+  let displayMaxHolderCount = await currentTransferManager.methods.maxHolderCount().call();
+
+  console.log(`- Max holder count:        ${displayMaxHolderCount}`);
+
+  let options = ['Change max holder count']
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
+  let optionSelected = options[index];
+  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  switch (optionSelected) {
+    case 'Change max holder count':
+      let maxHolderCount = readlineSync.question('Enter the maximum no. of holders the SecurityToken is allowed to have: ');
+      let changeHolderCountAction = currentTransferManager.methods.changeHolderCount(maxHolderCount);
+      let changeHolderCountReceipt = await common.sendTransaction(changeHolderCountAction);
+      let changeHolderCountEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeHolderCountReceipt.logs, 'ModifyHolderCount');
+      console.log(chalk.green(`Max holder count has been set to ${changeHolderCountEvent._newHolderCount} sucessfully!`));
+      break;
+  }
 }
 
 async function singleTradeVolumeRestrictionTM() {

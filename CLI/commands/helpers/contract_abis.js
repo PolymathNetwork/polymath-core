@@ -8,6 +8,7 @@ let cappedSTOABI;
 let usdTieredSTOABI;
 let generalTransferManagerABI;
 let manualApprovalTransferManagerABI;
+let countTransferManagerABI;
 let generalPermissionManagerABI;
 let polyTokenABI;
 let cappedSTOFactoryABI;
@@ -31,6 +32,7 @@ try {
     usdTieredSTOABI = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTO.json').toString()).abi;
     generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
     manualApprovalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/ManualApprovalTransferManager.json').toString()).abi;
+    countTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/CountTransferManager.json').toString()).abi;
     generalPermissionManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralPermissionManager.json').toString()).abi;
     polyTokenABI = JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).abi;
     cappedSTOFactoryABI = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).abi;
@@ -77,6 +79,9 @@ module.exports = {
     },
     manualApprovalTransferManager: function () {
         return manualApprovalTransferManagerABI;
+    },
+    countTransferManager: function () {
+        return countTransferManagerABI;
     },
     generalPermissionManager: function () {
         return generalPermissionManagerABI;

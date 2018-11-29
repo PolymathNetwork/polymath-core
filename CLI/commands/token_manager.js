@@ -3,6 +3,7 @@ const readlineSync = require('readline-sync');
 const chalk = require('chalk');
 const whitelist = require('./whitelist');
 const stoManager = require('./sto_manager');
+const transferManager = require('./transfer_manager');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
 const csv_shared = require('./common/csv_shared');
@@ -607,10 +608,7 @@ async function addModule() {
     *********************************`));
       break;
     case 'Transfer Manager':
-      console.log(chalk.red(`
-    *********************************
-    This option is not yet available.
-    *********************************`));
+      await transferManager.addTransferManagerModule(tokenSymbol)
       break;
     case 'Security Token Offering':
       await stoManager.addSTOModule(tokenSymbol)

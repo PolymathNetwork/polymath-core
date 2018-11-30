@@ -487,8 +487,13 @@ contract LockUpTransferManager is ITransferManager {
         internal
     {
         /*solium-disable-next-line security/no-block-members*/
-        require(lockups[_lockupName].startTime > now, "Not allowed to modify");
-        require(_startTime >= now, "Past time is not allowed");
+        uint256 startTime = _startTime;
+
+        if (_startTime == 0) {
+            startTime = now;
+        }
+        require(startTime >= now, "Invalid start time");
+        require(lockups[_lockupName].lockupAmount != 0, "Doesn't exist");
 
         _checkLockUpParams(
             _lockupAmount,
@@ -498,14 +503,14 @@ contract LockUpTransferManager is ITransferManager {
 
         lockups[_lockupName] =  LockUp(
             _lockupAmount,
-            _startTime,
+            startTime,
             _lockUpPeriodSeconds,
             _releaseFrequencySeconds
         );
         
         emit ModifyLockUpType(
             _lockupAmount,
-            _startTime,
+            startTime,
             _lockUpPeriodSeconds,
             _releaseFrequencySeconds,
             _lockupName
@@ -589,14 +594,18 @@ contract LockUpTransferManager is ITransferManager {
     )
         internal 
     {
+        uint256 startTime = _startTime;
         require(_lockupName != bytes32(0), "Invalid name");
         require(lockups[_lockupName].lockupAmount == 0, "Already exist");
         /*solium-disable-next-line security/no-block-members*/
-        require(_startTime >= now, "Past time not allowed");
+        if (_startTime == 0) {
+            startTime = now;
+        }
+        require(startTime >= now, "Invalid start time");
         _checkLockUpParams(_lockupAmount, _lockUpPeriodSeconds, _releaseFrequencySeconds);
-        lockups[_lockupName] = LockUp(_lockupAmount, _startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds);
+        lockups[_lockupName] = LockUp(_lockupAmount, startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds);
         lockupArray.push(_lockupName);
-        emit AddNewLockUpType(_lockupName, _lockupAmount, _startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds);
+        emit AddNewLockUpType(_lockupName, _lockupAmount, startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds);
     }  
 
     /**

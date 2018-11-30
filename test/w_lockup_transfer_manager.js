@@ -900,22 +900,20 @@ contract('LockUpTransferManager', accounts => {
 
         });
 
-        it("Modify the lockup during the lockup periods --fail because already tokens get unlocked", async() => {
+        it("Modify the lockup during the lockup periods", async() => {
             let balance = await I_SecurityToken.balanceOf(account_investor1)
             let lockUp = await I_LockUpTransferManager.getLockUp(account_investor1, "f_lockup");
             console.log(lockUp[4].dividedBy(new BigNumber(1).times(new BigNumber(10).pow(18))).toNumber());
             // edit the lockup
-            await catchRevert(
-                I_LockUpTransferManager.modifyLockUpType(
+            await I_LockUpTransferManager.modifyLockUpType(
                     balance,
-                    temp,                
+                    latestTime() + duration.days(10),                
                     90,
                     30,
                     "f_lockup",
                     { 
                         from: token_owner
                     }
-                )
             );
         });
 

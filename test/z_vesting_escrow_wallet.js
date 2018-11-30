@@ -974,18 +974,18 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should not be able to send available tokens to the beneficiaries addresses -- fail because of array size", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.pushAvailableTokensMulti([account_beneficiary1], {from: wallet_admin})
+                I_VestingEscrowWallet.pushAvailableTokensMulti(0, 2, {from: wallet_admin})
             );
         });
 
         it("Should not be able to send available tokens to the beneficiaries -- fail because of permissions check", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.pushAvailableTokensMulti([account_beneficiary1], {from: account_beneficiary1})
+                I_VestingEscrowWallet.pushAvailableTokensMulti(0, 2, {from: account_beneficiary1})
             );
         });
 
         it("Should send available tokens to the beneficiaries addresses", async () => {
-            const tx = await I_VestingEscrowWallet.pushAvailableTokensMulti(beneficiaries, {from: wallet_admin});
+            const tx = await I_VestingEscrowWallet.pushAvailableTokensMulti(0, 2, {from: wallet_admin});
 
             for (let i = 0; i < beneficiaries.length; i++) {
                 let log = tx.logs[i];
@@ -1056,7 +1056,6 @@ contract('VestingEscrowWallet', accounts => {
                 assert.equal(scheduleCount, 0);
             }
 
-            await I_VestingEscrowWallet.trimBeneficiaries({from: wallet_admin});
             await I_VestingEscrowWallet.sendToTreasury({from: wallet_admin});
         });
 

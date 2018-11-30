@@ -454,27 +454,14 @@ contract VestingEscrowWallet is IWallet {
     }
 
     /**
-     * @notice Used to remove beneficiaries without schedules
-     * TODO: Improve the Trim beneficiary logic -- remain because of size of bytecode hit the limit
-     */
-    function trimBeneficiaries() external withPerm(ADMIN) {
-        for (uint256 i = 0; i < beneficiaries.length; i++) {
-            if (schedules[beneficiaries[i]].length == 0) {
-                if (i != beneficiaries.length - 1) {
-                    beneficiaries[i] = beneficiaries[beneficiaries.length - 1];
-                }
-                beneficiaries.length--;
-            }
-        }
-    }
-
-    /**
      * @notice Used to bulk send available tokens for each of beneficiaries
-     * @param _beneficiaries array of beneficiary's addresses
+     * @param _fromIndex start index of array of beneficiary's addresses
+     * @param _toIndex end index of array of beneficiary's addresses
      */
-    function pushAvailableTokensMulti(address[] _beneficiaries) external withPerm(ADMIN) {
-        for (uint256 i = 0; i < _beneficiaries.length; i++) {
-            pushAvailableTokens(_beneficiaries[i]);
+    function pushAvailableTokensMulti(uint256 _fromIndex, uint256 _toIndex) external withPerm(ADMIN) {
+        require(_toIndex <= beneficiaries.length - 1, "Array out of bound");
+        for (uint256 i = _fromIndex; i <= _toIndex; i++) {
+            pushAvailableTokens(beneficiaries[i]);
         }
     }
 

@@ -19,9 +19,10 @@ async function checkPermission(contractName, functionName, contractRegistry) {
     let stOwner = await securityToken.methods.owner().call();
     if (stOwner == Issuer.address) {
       return true
+    } else {
+      let result = await securityToken.methods.checkPermission(Issuer.address, contractRegistry.options.address, web3.utils.asciiToHex(permission)).call();
+      return result
     }
-    let result = await securityToken.methods.checkPermission(Issuer.address, contractRegistry.options.address, web3.utils.asciiToHex(permission)).call();
-    return result
   }
 };
 
@@ -98,7 +99,6 @@ module.exports = {
 `);
   },
   sendTransaction: async function (action, options) {
-
     await checkPermissions(action);
 
     options = getFinalOptions(options);

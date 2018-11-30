@@ -1,8 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "./IWallet.sol";
 
 /**
@@ -14,42 +12,48 @@ contract VestingEscrowWallet is IWallet {
     bytes32 public constant ADMIN = "ADMIN";
 
     struct Schedule {
-        //name of the template
+        // Name of the template
         bytes32 templateName;
-        //tokens that were already claimed
+        // Tokens that were already claimed
         uint256 claimedTokens;
-        //start time of the schedule
+        // Start time of the schedule
         uint256 startTime;
     }
 
     struct Template {
-        //total amount of tokens
+        // Total amount of tokens
         uint256 numberOfTokens;
-        //schedule duration
+        // Schedule duration (How long the schedule will last)
         uint256 duration;
-        //schedule frequency
+        // Schedule frequency (It is a cliff time period)
         uint256 frequency;
     }
 
+    // States used to represent the status of the schedule
     enum State {CREATED, STARTED, COMPLETED}
-
+    // Number of tokens that are hold by the `this` contract but are unassigned to any schedule
     uint256 public unassignedTokens;
-
+    // Address of the Treasury wallet. All of the unassigned token will transfer to that address.
+    address public treasuryWallet;
+    // List of all beneficiaries who have the schedules running/completed/created
     address[] public beneficiaries;
 
-    //holds schedules for user
+    // Holds schedules array corresponds to the affiliate/employee address
     mapping(address => Schedule[]) public schedules;
-    //holds template names for user
+    // Holds template names array corresponds to the affiliate/employee address
     mapping(address => bytes32[]) internal userToTemplates;
-    //mapping use to store the indexes for different template names for a user
-    mapping(address => mapping(bytes32 => uint256)) internal templateToScheduleIndex;
-
-    //holds user for template
+    // Mapping use to store the indexes for different template names for a user. 
+    // affiliate/employee address => template name => index
+    mapping(address => mapping(bytes32 => uint256)) internal userToTemplateIndex;
+    // Holds affiliate/employee addresses coressponds to the template name
     mapping(bytes32 => address[]) internal templateToUsers;
-    //mapping use to store the indexes for users for a template
+    // Mapping use to store the indexes for different users for a template.
+    // template name => affiliate/employee address => index
     mapping(bytes32 => mapping(address => uint256)) internal templateToUserIndex;
-
+    // Store the template details corresponds to the template name
     mapping(bytes32 => Template) templates;
+
+    // List of all template names
     bytes32[] public templateNames;
 
     // Emit when new schedule is added
@@ -78,6 +82,8 @@ contract VestingEscrowWallet is IWallet {
     event AddTemplate(bytes32 _name, uint256 _numberOfTokens, uint256 _duration, uint256 _frequency);
     // Emit when template is removed
     event RemoveTemplate(bytes32 _name);
+    // Emit when the treasury wallet gets changed
+    event TreasuryWalletChanged(address _newWallet, address _oldWallet);
 
     /**
      * @notice Constructor
@@ -94,7 +100,26 @@ contract VestingEscrowWallet is IWallet {
      * @notice This function returns the signature of the configure function
      */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(0);
+        return bytes4(keccak256("configure(address)"));
+    }
+
+    /**
+     * @notice Use to intialize the treasury wallet address
+     * @param _treasuryWallet Address of the treasury wallet
+     */
+    function configure(address _treasuryWallet) public onlyFactory {
+        require(_treasuryWallet != address(0), "Invalid address");
+        treasuryWallet = _treasuryWallet;
+    }
+
+    /**
+     * @notice Use to change the treasury wallet address
+     * @param _newTreasuryWallet Address of the treasury wallet
+     */
+    function changeTreasuryWallet(address _newTreasuryWallet) public onlyOwner {
+        require(_newTreasuryWallet != address(0));
+        emit TreasuryWalletChanged(_newTreasuryWallet, treasuryWallet);
+        treasuryWallet = _newTreasuryWallet;
     }
 
     /**
@@ -105,8 +130,8 @@ contract VestingEscrowWallet is IWallet {
     }
 
     function _depositTokens(uint256 _numberOfTokens) internal {
-        require(_numberOfTokens > 0, "Should be greater than zero");
-        ISecurityToken(securityToken).transferFrom(msg.sender, this, _numberOfTokens);
+        require(_numberOfTokens > 0, "Should be > 0");
+        ISecurityToken(securityToken).transferFrom(msg.sender, address(this), _numberOfTokens);
         unassignedTokens = unassignedTokens.add(_numberOfTokens);
         emit DepositTokens(_numberOfTokens, msg.sender);
     }
@@ -117,7 +142,7 @@ contract VestingEscrowWallet is IWallet {
     function sendToTreasury() external withPerm(ADMIN) {
         uint256 amount = unassignedTokens;
         unassignedTokens = 0;
-        ISecurityToken(securityToken).transfer(msg.sender, amount);
+        ISecurityToken(securityToken).transfer(treasuryWallet, amount);
         emit SendToTreasury(amount, msg.sender);
     }
 
@@ -132,7 +157,7 @@ contract VestingEscrowWallet is IWallet {
     /**
      * @notice Used to withdraw available tokens by beneficiary
      */
-    function withdrawAvailableTokens() external {
+    function pullAvailableTokens() external {
         _sendTokens(msg.sender);
     }
 
@@ -148,7 +173,8 @@ contract VestingEscrowWallet is IWallet {
     }
 
     function _addTemplate(bytes32 _name, uint256 _numberOfTokens, uint256 _duration, uint256 _frequency) internal {
-        require(!_isTemplateExists(_name));
+        require(_name != bytes32(0), "Invalid name");
+        require(!_isTemplateExists(_name), "Already exists");
         _validateTemplate(_numberOfTokens, _duration, _frequency);
         templateNames.push(_name);
         templates[_name] = Template(_numberOfTokens, _duration, _frequency);
@@ -160,8 +186,8 @@ contract VestingEscrowWallet is IWallet {
      * @param _name name of template
      */
     function removeTemplate(bytes32 _name) external withPerm(ADMIN) {
-        require(_isTemplateExists(_name));
-        require(!_isTemplateUsed(_name));
+        require(_isTemplateExists(_name), "Already exists");
+        require(templateToUsers[_name].length == 0);
         // delete template data
         delete templates[_name];
         uint256 i;
@@ -210,7 +236,7 @@ contract VestingEscrowWallet is IWallet {
         uint256 _frequency,
         uint256 _startTime
     )
-        public
+        external
         withPerm(ADMIN)
     {
         _addSchedule(_beneficiary, _templateName, _numberOfTokens, _duration, _frequency, _startTime);
@@ -243,13 +269,12 @@ contract VestingEscrowWallet is IWallet {
     function _addScheduleFromTemplate(address _beneficiary, bytes32 _templateName, uint256 _startTime) internal {
         require(_beneficiary != address(0), "Invalid address");
         require(_isTemplateExists(_templateName));
-        uint256 index = templateToScheduleIndex[_beneficiary][_templateName];
+        uint256 index = userToTemplateIndex[_beneficiary][_templateName];
         require(
-            schedules[_beneficiary].length == 0 ||
             schedules[_beneficiary][index].templateName != _templateName,
-            "Schedule from this template already added"
+            "Already added"
         );
-        require(now < _startTime, "Date in the past");
+        require(_startTime >= now, "Date in the past");
         uint256 numberOfTokens = templates[_templateName].numberOfTokens;
         if (numberOfTokens > unassignedTokens) {
             _depositTokens(numberOfTokens.sub(unassignedTokens));
@@ -261,7 +286,7 @@ contract VestingEscrowWallet is IWallet {
         }
         schedules[_beneficiary].push(Schedule(_templateName, 0, _startTime));
         userToTemplates[_beneficiary].push(_templateName);
-        templateToScheduleIndex[_beneficiary][_templateName] = schedules[_beneficiary].length - 1;
+        userToTemplateIndex[_beneficiary][_templateName] = schedules[_beneficiary].length - 1;
         templateToUsers[_templateName].push(_beneficiary);
         templateToUserIndex[_templateName][_beneficiary] = templateToUsers[_templateName].length - 1;
         emit AddSchedule(_beneficiary, _templateName, _startTime);
@@ -279,8 +304,8 @@ contract VestingEscrowWallet is IWallet {
 
     function _modifySchedule(address _beneficiary, bytes32 _templateName, uint256 _startTime) internal {
         _checkSchedule(_beneficiary, _templateName);
-        require(now < _startTime, "Date in the past");
-        uint256 index = templateToScheduleIndex[_beneficiary][_templateName];
+        require(_startTime > now, "Date in the past");
+        uint256 index = userToTemplateIndex[_beneficiary][_templateName];
         Schedule storage schedule = schedules[_beneficiary][index];
         /*solium-disable-next-line security/no-block-members*/
         require(now < schedule.startTime, "Schedule started");
@@ -295,8 +320,8 @@ contract VestingEscrowWallet is IWallet {
      */
     function revokeSchedule(address _beneficiary, bytes32 _templateName) external withPerm(ADMIN) {
         _checkSchedule(_beneficiary, _templateName);
-        uint256 index = templateToScheduleIndex[_beneficiary][_templateName];
-        _sendTokens(_beneficiary, index);
+        uint256 index = userToTemplateIndex[_beneficiary][_templateName];
+        _sendTokensPerSchedule(_beneficiary, index);
         uint256 releasedTokens = _getReleasedTokens(_beneficiary, index);
         unassignedTokens = unassignedTokens.add(templates[_templateName].numberOfTokens.sub(releasedTokens));
         _deleteUserToTemplates(_beneficiary, _templateName);
@@ -305,21 +330,23 @@ contract VestingEscrowWallet is IWallet {
     }
 
     function _deleteUserToTemplates(address _beneficiary, bytes32 _templateName) internal {
-        uint256 index = templateToScheduleIndex[_beneficiary][_templateName];
+        uint256 index = userToTemplateIndex[_beneficiary][_templateName];
         Schedule[] storage userSchedules = schedules[_beneficiary];
         if (index != userSchedules.length - 1) {
             userSchedules[index] = userSchedules[userSchedules.length - 1];
             userToTemplates[_beneficiary][index] = userToTemplates[_beneficiary][userToTemplates[_beneficiary].length - 1];
+            userToTemplateIndex[_beneficiary][userSchedules[index].templateName] = index;
         }
         userSchedules.length--;
         userToTemplates[_beneficiary].length--;
-        delete templateToScheduleIndex[_beneficiary][_templateName];
+        delete userToTemplateIndex[_beneficiary][_templateName];
     }
 
     function _deleteTemplateToUsers(address _beneficiary, bytes32 _templateName) internal {
         uint256 templateIndex = templateToUserIndex[_templateName][_beneficiary];
         if (templateIndex != templateToUsers[_templateName].length - 1) {
             templateToUsers[_templateName][templateIndex] = templateToUsers[_templateName][templateToUsers[_templateName].length - 1];
+            templateToUserIndex[_templateName][templateToUsers[_templateName][templateIndex]] = templateIndex;
         }
         templateToUsers[_templateName].length--;
         delete templateToUserIndex[_templateName][_beneficiary];
@@ -339,9 +366,9 @@ contract VestingEscrowWallet is IWallet {
         Schedule[] storage userSchedules = schedules[_beneficiary];
         for (uint256 i = 0; i < userSchedules.length; i++) {
             uint256 releasedTokens = _getReleasedTokens(_beneficiary, i);
-            Template storage template = templates[userSchedules[i].templateName];
+            Template memory template = templates[userSchedules[i].templateName];
             unassignedTokens = unassignedTokens.add(template.numberOfTokens.sub(releasedTokens));
-            delete templateToScheduleIndex[_beneficiary][userSchedules[i].templateName];
+            delete userToTemplateIndex[_beneficiary][userSchedules[i].templateName];
             _deleteTemplateToUsers(_beneficiary, userSchedules[i].templateName);
         }
         delete schedules[_beneficiary];
@@ -355,22 +382,23 @@ contract VestingEscrowWallet is IWallet {
      * @param _templateName name of the template
      * @return beneficiary's schedule
      */
-    function getSchedule(address _beneficiary, bytes32 _templateName) external view returns(uint256, uint256, uint256, uint256, State) {
+    function getSchedule(address _beneficiary, bytes32 _templateName) external view returns(uint256, uint256, uint256, uint256, uint256, State) {
         _checkSchedule(_beneficiary, _templateName);
-        uint256 index = templateToScheduleIndex[_beneficiary][_templateName];
-        Schedule storage schedule = schedules[_beneficiary][index];
+        uint256 index = userToTemplateIndex[_beneficiary][_templateName];
+        Schedule memory schedule = schedules[_beneficiary][index];
         return (
             templates[schedule.templateName].numberOfTokens,
             templates[schedule.templateName].duration,
             templates[schedule.templateName].frequency,
             schedule.startTime,
+            schedule.claimedTokens,
             _getScheduleState(_beneficiary, _templateName)
         );
     }
 
     function _getScheduleState(address _beneficiary, bytes32 _templateName) internal view returns(State) {
         _checkSchedule(_beneficiary, _templateName);
-        uint256 index = templateToScheduleIndex[_beneficiary][_templateName];
+        uint256 index = userToTemplateIndex[_beneficiary][_templateName];
         Schedule memory schedule = schedules[_beneficiary][index];
         if (now < schedule.startTime) {
             return State.CREATED;
@@ -402,14 +430,14 @@ contract VestingEscrowWallet is IWallet {
     }
 
     function _getAvailableTokens(address _beneficiary, uint256 _index) internal view returns(uint256) {
-        Schedule storage schedule = schedules[_beneficiary][_index];
+        Schedule memory schedule = schedules[_beneficiary][_index];
         uint256 releasedTokens = _getReleasedTokens(_beneficiary, _index);
         return releasedTokens.sub(schedule.claimedTokens);
     }
 
     function _getReleasedTokens(address _beneficiary, uint256 _index) internal view returns(uint256) {
-        Schedule storage schedule = schedules[_beneficiary][_index];
-        Template storage template = templates[schedule.templateName];
+        Schedule memory schedule = schedules[_beneficiary][_index];
+        Template memory template = templates[schedule.templateName];
         /*solium-disable-next-line security/no-block-members*/
         if (now > schedule.startTime) {
             uint256 periodCount = template.duration.div(template.frequency);
@@ -426,11 +454,11 @@ contract VestingEscrowWallet is IWallet {
 
     /**
      * @notice Used to remove beneficiaries without schedules
+     * TODO: Improve the Trim beneficiary logic -- remain because of size of bytecode hit the limit
      */
     function trimBeneficiaries() external withPerm(ADMIN) {
         for (uint256 i = 0; i < beneficiaries.length; i++) {
             if (schedules[beneficiaries[i]].length == 0) {
-                delete schedules[beneficiaries[i]];
                 if (i != beneficiaries.length - 1) {
                     beneficiaries[i] = beneficiaries[beneficiaries.length - 1];
                 }
@@ -444,7 +472,6 @@ contract VestingEscrowWallet is IWallet {
      * @param _beneficiaries array of beneficiary's addresses
      */
     function pushAvailableTokensMulti(address[] _beneficiaries) external withPerm(ADMIN) {
-        require(_beneficiaries.length > 1, "Array size should be greater than one");
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             pushAvailableTokens(_beneficiaries[i]);
         }
@@ -532,7 +559,7 @@ contract VestingEscrowWallet is IWallet {
 
     function _checkSchedule(address _beneficiary, bytes32 _templateName) internal view {
         require(_beneficiary != address(0), "Invalid address");
-        uint256 index = templateToScheduleIndex[_beneficiary][_templateName];
+        uint256 index = userToTemplateIndex[_beneficiary][_templateName];
         require(
             index < schedules[_beneficiary].length &&
             schedules[_beneficiary][index].templateName == _templateName,
@@ -544,24 +571,22 @@ contract VestingEscrowWallet is IWallet {
         return templates[_name].numberOfTokens > 0;
     }
 
-    function _isTemplateUsed(bytes32 _name) internal view returns(bool) {
-        return templateToUsers[_name].length > 0;
-    }
-
-    function _validateTemplate(uint256 _numberOfTokens, uint256 _duration, uint256 _frequency) internal pure {
+    function _validateTemplate(uint256 _numberOfTokens, uint256 _duration, uint256 _frequency) internal view {
         require(_numberOfTokens > 0, "Zero amount");
-        require(_duration % _frequency == 0, "Duration and frequency mismatch");
+        require(_duration % _frequency == 0, "Invalid frequency");
         uint256 periodCount = _duration.div(_frequency);
-        require(_numberOfTokens % periodCount == 0, "Tokens and periods mismatch");
+        require(_numberOfTokens % periodCount == 0);
+        uint256 amountPerPeriod = _numberOfTokens.div(periodCount);
+        require(amountPerPeriod % ISecurityToken(securityToken).granularity() == 0, "Invalid granularity");
     }
 
     function _sendTokens(address _beneficiary) internal {
         for (uint256 i = 0; i < schedules[_beneficiary].length; i++) {
-            _sendTokens(_beneficiary, i);
+            _sendTokensPerSchedule(_beneficiary, i);
         }
     }
 
-    function _sendTokens(address _beneficiary, uint256 _index) internal {
+    function _sendTokensPerSchedule(address _beneficiary, uint256 _index) internal {
         uint256 amount = _getAvailableTokens(_beneficiary, _index);
         if (amount > 0) {
             schedules[_beneficiary][_index].claimedTokens = schedules[_beneficiary][_index].claimedTokens.add(amount);

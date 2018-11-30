@@ -5,10 +5,8 @@ cache:
   directories:
   - node_modules
 before_install: 
-  - echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum 
-  - sudo apt-get -y update  
-  - sudo apt-get -y install solc
-  - sudo apt-get -y install libz3
+  - echo -ne '\n' | sudo apt-add-repository -y ppa:hvr/z3
+  - sudo apt-get -y update
   - sudo apt-get -y install libz3-dev
 matrix:
   fast_finish: true

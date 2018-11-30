@@ -368,7 +368,6 @@ contract LockUpTransferManager is ITransferManager {
             userToLockups[_userAddress][userToLockupIndex[_userAddress][_lockupName]] == _lockupName,
             "User not assosicated with given lockup"
         );
-        bytes32[] memory userLockupNames = userToLockups[_userAddress];
         return (
             lockups[_lockupName].lockupAmount,
             lockups[_lockupName].startTime,
@@ -454,10 +453,8 @@ contract LockUpTransferManager is ITransferManager {
             // Calculate the transaction time lies in which period
             /*solium-disable-next-line security/no-block-members*/
             uint256 elapsedPeriod = (now.sub(lockups[_lockupName].startTime)).div(lockups[_lockupName].releaseFrequencySeconds);
-            // Calculate the allowed unlocked amount per period
-            uint256 amountPerPeriod = (lockups[_lockupName].lockupAmount).div(noOfPeriods);
             // Find out the unlocked amount for a given lockup
-            uint256 unLockedAmount = elapsedPeriod.mul(amountPerPeriod);
+            uint256 unLockedAmount = (lockups[_lockupName].lockupAmount.mul(elapsedPeriod)).div(noOfPeriods);
             return unLockedAmount;
         } 
     }
@@ -615,23 +612,11 @@ contract LockUpTransferManager is ITransferManager {
         uint256 _releaseFrequencySeconds
     ) 
         internal 
-        view 
+        pure 
     {   
         require(_lockUpPeriodSeconds != 0, "lockUpPeriodSeconds cannot be zero");
         require(_releaseFrequencySeconds != 0, "releaseFrequencySeconds cannot be zero");
         require(_lockupAmount != 0, "lockupAmount cannot be zero");
-
-        // check that the total amount to be released isn't too granular
-        require(
-            _lockupAmount % ISecurityToken(securityToken).granularity() == 0,
-            "The total amount to be released is more granular than allowed by the token"
-        );
-
-        // check that releaseFrequencySeconds evenly divides lockUpPeriodSeconds
-        require(
-            _lockUpPeriodSeconds % _releaseFrequencySeconds == 0,
-            "lockUpPeriodSeconds must be evenly divisible by releaseFrequencySeconds"
-        );
     }
 
     /**

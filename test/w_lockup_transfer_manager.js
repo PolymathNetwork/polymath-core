@@ -420,25 +420,6 @@ contract('LockUpTransferManager', accounts => {
             );
         });
 
-
-        it("Should prevent the creation of a lockup with bad parameters where the total amount to be released is more granular than allowed by the token", async() => {
-            // create a lockup
-            // this will generate an exception because we're locking up 5e17 tokens but the granularity is 5e18 tokens
-            await catchRevert(
-                I_LockUpTransferManager.addNewLockUpToUser(
-                    account_investor2,
-                    web3.utils.toWei('0.5', 'ether'),
-                    latestTime() + + duration.seconds(1),
-                    duration.seconds(400000),
-                    duration.seconds(100000),
-                    "a_lockup",
-                    { 
-                        from: token_owner
-                    }
-                )
-            );
-        });
-
         it("Should add the lockup type -- fail because of bad owner", async() => {
             await catchRevert(
                 I_LockUpTransferManager.addNewLockUpType(
@@ -516,30 +497,6 @@ contract('LockUpTransferManager', accounts => {
             );
             assert.equal(tx.logs[1].args.userAddress, account_investor1);
             assert.equal((tx.logs[0].args.lockupAmount).toNumber(), web3.utils.toWei('64951', 'ether'));
-        });
-
-        it("Should prevent the creation of a lockup with bad parameters where the lockUpPeriodSeconds is not evenly divisible by releaseFrequencySeconds", async() => {
-
-            // balance should be 9000000000000000000 here (9 eth)
-            let balance = await I_SecurityToken.balanceOf(account_investor2)
-
-
-            // create a lockup
-            // over 17 seconds total, with 4 periods.
-            // this will generate an exception because 17 is not evenly divisble by 4.
-            await catchRevert(
-                I_LockUpTransferManager.addNewLockUpToUser(
-                    account_investor2,
-                    web3.utils.toWei('4', 'ether'),
-                    latestTime(),
-                    17,
-                    4,
-                    "b_lockup",
-                    {
-                        from: token_owner
-                    }
-                )
-            );
         });
 
         it("Should prevent the transfer of tokens in a lockup", async() => {

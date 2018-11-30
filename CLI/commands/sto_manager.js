@@ -5,6 +5,7 @@ const abis = require('./helpers/contract_abis');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
 const csv_shared = require('./common/csv_shared');
+const csvParse = require('./helpers/csv');
 const BigNumber = require('bignumber.js');
 
 ///////////////////
@@ -696,6 +697,17 @@ async function usdTieredSTO_configure(currentSTO) {
         await common.sendTransaction(changeAccreditedAction);
         break;
       case 2:
+        let batchSize = 75;
+        let csvFile = fs.readFileSync('./CLI/data/accredited_data.csv');
+        let columns = ['address', 'accredited'];
+        let resultData = [];
+        let index = 0;
+        while (true) {
+          index++;
+          let data = csvParse(csvFile, { columns: columns, from_line: index, to_line: batchSize * index });
+          resultData.push(data);
+        }
+        let accredit;
         await startCSV(tokenSymbol, 75, 'accredited');
         break;
       case 3:
@@ -736,7 +748,7 @@ async function usdTieredSTO_configure(currentSTO) {
 
 async function startCSV(tokenSymbol, batchSize, accreditionType) {
   let file, proccessing, saving;
-  
+
   switch (accreditionType) {
     case 'accredited':
       file = './CLI/data/accredited_data.csv'
@@ -756,7 +768,7 @@ async function startCSV(tokenSymbol, batchSize, accreditionType) {
   distribData = result_processing.distribData;
   fullFileData = result_processing.fullFileData;
   badData = result_processing.badData;
-  
+
   await saving();
 }
 
@@ -812,12 +824,12 @@ async function saveInBlockchainAccredited() {
       for (let i = 0; i < distribData.length; i++) {
         try {
           let investorArray = [], isAccreditedArray = [];
-    
+
           for (let j = 0; j < distribData[i].length; j++) {
             investorArray.push(distribData[i][j][0])
             isAccreditedArray.push(distribData[i][j][1])
           }
-    
+
           let changeAccreditedAction = await usdTieredSTO.methods.changeAccredited(investorArray, isAccreditedArray);
           let tx = await common.sendTransaction(changeAccreditedAction);
           console.log(`Batch ${i} - Attempting to change accredited accounts:\n\n`, investorArray, "\n\n");
@@ -867,7 +879,7 @@ async function saveInBlockchainNonAccredited() {
       for (let i = 0; i < distribData.length; i++) {
         try {
           let investorArray = [], limitArray = [];
-    
+
           for (let j = 0; j < distribData[i].length; j++) {
             investorArray.push(distribData[i][j][0]);
             limitArray.push(web3.utils.toWei(distribData[i][j][1].toString()));
@@ -879,7 +891,7 @@ async function saveInBlockchainNonAccredited() {
           console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
           console.log("Change accredited transaction was successful.", tx.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(tx.gasUsed * defaultGasPrice).toString()), "Ether");
           console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
-    
+
         } catch (err) {
           console.log("ERROR:", err);
         }
@@ -1064,3 +1076,5 @@ module.exports = {
     return startCSV(tokenSymbol, batchSize, accreditionType);
   }
 }
+
+

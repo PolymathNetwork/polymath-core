@@ -271,6 +271,7 @@ contract VestingEscrowWallet is IWallet {
         require(_isTemplateExists(_templateName));
         uint256 index = userToTemplateIndex[_beneficiary][_templateName];
         require(
+            schedules[_beneficiary].length == 0 ||
             schedules[_beneficiary][index].templateName != _templateName,
             "Already added"
         );

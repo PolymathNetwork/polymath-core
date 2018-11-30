@@ -38,6 +38,7 @@ create_docs() {
     CWD=$(pwd)
     OLD_SOLC_PATH=$SOLC_PATH
     export SOLC_PATH=$CWD/solc
+    curl -o node_modules/solidity-docgen/buffer-size/lib/index.js https://raw.githubusercontent.com/maxsam4/solidity-docgen/buffer-size/lib/index.js
     echo "Generating the API documentation in branch $latestTag"
     # Command to generate the documentation using the solidity-docgen
 

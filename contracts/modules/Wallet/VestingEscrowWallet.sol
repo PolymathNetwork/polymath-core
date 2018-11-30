@@ -131,7 +131,7 @@ contract VestingEscrowWallet is IWallet {
 
     function _depositTokens(uint256 _numberOfTokens) internal {
         require(_numberOfTokens > 0, "Should be > 0");
-        ISecurityToken(securityToken).transferFrom(msg.sender, address(this), _numberOfTokens);
+        ISecurityToken(securityToken).transferFrom(treasuryWallet, address(this), _numberOfTokens);
         unassignedTokens = unassignedTokens.add(_numberOfTokens);
         emit DepositTokens(_numberOfTokens, msg.sender);
     }

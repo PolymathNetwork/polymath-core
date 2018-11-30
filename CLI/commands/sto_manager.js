@@ -708,7 +708,7 @@ async function usdTieredSTO_configure(currentSTO) {
         await common.sendTransaction(changeNonAccreditedLimitAction);
         break;
       case 4:
-        await startCSV(tokenSymbol, 75, 'nonAccredited');
+        await startCSV(tokenSymbol, 75, 'nonAccreditedLimit');
         break;
       case 5:
         await modfifyTimes(currentSTO);
@@ -743,7 +743,7 @@ async function startCSV(tokenSymbol, batchSize, accreditionType) {
       proccessing = accredit_processing
       saving = saveInBlockchainAccredited
       break;
-    case 'nonAccredited':
+    case 'nonAccreditedLimit':
       file = './CLI/data/nonAccreditedLimits_data.csv'
       proccessing = nonAccredited_processing
       saving = saveInBlockchainNonAccredited

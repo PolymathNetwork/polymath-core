@@ -1,7 +1,6 @@
 // Libraries for terminal prompts
 const readlineSync = require('readline-sync');
 const chalk = require('chalk');
-const whitelist = require('./whitelist');
 const stoManager = require('./sto_manager');
 const transferManager = require('./transfer_manager');
 const common = require('./common/common_functions');
@@ -347,7 +346,7 @@ async function mintToSingleAddress(_investor, _amount) {
 }
 
 async function multi_mint_tokens() {
-  await whitelist.executeApp(tokenSymbol, 75);
+  await transferManager.startCSV(tokenSymbol, 75);
   console.log(chalk.green(`\nCongratulations! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
   console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
 

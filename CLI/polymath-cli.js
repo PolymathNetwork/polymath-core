@@ -6,7 +6,6 @@ var token_manager = require('./commands/token_manager');
 var st20generator = require('./commands/ST20Generator');
 var sto_manager = require('./commands/sto_manager');
 var transfer = require('./commands/transfer');
-var whitelist = require('./commands/whitelist');
 var transfer_ownership = require('./commands/transfer_ownership');
 var dividends_manager = require('./commands/dividends_manager');
 var transfer_manager = require('./commands/transfer_manager');
@@ -114,7 +113,7 @@ program
   .description('Mass-update a whitelist of allowed/known investors')
   .action(async function (tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    await whitelist.executeApp(tokenSymbol, batchSize);
+    await transfer_manager.startCSV(tokenSymbol, batchSize);
   });
 
 program
@@ -160,7 +159,7 @@ program
   .description('Runs changeNonAccreditedLimit')
   .action(async function (tokenSymbol, batchSize) {
     await gbl.initialize(program.remoteNode);
-    await sto_manager.startCSV(tokenSymbol, batchSize, 'nonAccredited')
+    await sto_manager.startCSV(tokenSymbol, batchSize, 'nonAccreditedLimit')
   });
 
 program

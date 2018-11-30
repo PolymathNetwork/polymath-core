@@ -4,20 +4,18 @@ import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../libraries/BokkyPooBahsDateTimeLibrary.sol";
 
-contract VolumeRestrictionTM is ITransferManager {
+contract VolumeRestrictionTM_prev is ITransferManager {
     
     using SafeMath for uint256;
 
     // permission definition
     bytes32 public constant ADMIN = "ADMIN";
 
-    enum RestrictionType { Fixed, Percentage }
+    enum RestrictionType { Fixed, Variable }
 
     struct VolumeRestriction {
-        // If typeOfRestriction is `Percentage` then allowedTokens will be in
-        // the % (w.r.t to totalSupply) with a multiplier of 10**16 . else it 
-        // will be fixed amount of tokens
         uint256 allowedTokens;
+        uint256 allowedPercentageOfTokens;
         uint256 startTime;
         uint256 rollingPeriodInDays;
         uint256 endTime;
@@ -25,9 +23,8 @@ contract VolumeRestrictionTM is ITransferManager {
     }
 
     struct BucketDetails {
-        uint256 lastTradedDayTime;
+        uint256[] timestamps;
         uint256 sumOfLastPeriod;   // It is the sum of transacted amount within the last rollingPeriodDays 
-        uint256 daysCovered;    // No of days covered till (from the startTime of VolumeRestriction)
     }
 
     // Global restriction that applies to all token holders
@@ -53,6 +50,7 @@ contract VolumeRestrictionTM is ITransferManager {
     event AddNewIndividualRestriction(
         address indexed _holder,
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
@@ -62,6 +60,7 @@ contract VolumeRestrictionTM is ITransferManager {
     event ModifyIndividualRestriction(
         address indexed _holder,
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
@@ -70,6 +69,7 @@ contract VolumeRestrictionTM is ITransferManager {
     // Emit when the new global restriction is added
     event AddGlobalRestriction(
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
@@ -78,6 +78,7 @@ contract VolumeRestrictionTM is ITransferManager {
     // Emit when the new daily (global) restriction is added
     event AddDailyGlobalRestriction(
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
@@ -86,6 +87,7 @@ contract VolumeRestrictionTM is ITransferManager {
     // Emit when global restriction get modified
     event ModifyGlobalRestriction(
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
@@ -94,6 +96,7 @@ contract VolumeRestrictionTM is ITransferManager {
     // Emit when daily global restriction get modified
     event ModifyDailyGlobalRestriction(
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
@@ -156,14 +159,16 @@ contract VolumeRestrictionTM is ITransferManager {
      * @notice Use to add the new individual restriction for a given token holder
      * @param _holder Address of the token holder, whom restriction will be implied
      * @param _allowedTokens Amount of tokens allowed to be trade for a given address.
+     * @param _allowedPercentageOfTokens Percentage of tokens w.r.t to totalSupply allowed to transact.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _rollingPeriodInDays Rolling period in days (Minimum value should be 1 day)
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for variable)
      */
     function addIndividualRestriction(
         address _holder,
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
@@ -175,6 +180,7 @@ contract VolumeRestrictionTM is ITransferManager {
         _addIndividualRestriction(
             _holder,
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
@@ -186,14 +192,16 @@ contract VolumeRestrictionTM is ITransferManager {
      * @notice Use to add the new individual restriction for multiple token holders
      * @param _holders Array of address of the token holders, whom restriction will be implied
      * @param _allowedTokens Array of amount of tokens allowed to be trade for a given address.
+     * @param _allowedPercentageOfTokens Array of percentage of tokens w.r.t to totalSupply allowed to transact.
      * @param _startTimes Array of unix timestamps at which restrictions get into effect
      * @param _rollingPeriodInDays Array of rolling period in days (Minimum value should be 1 day)
      * @param _endTimes Array of unix timestamps at which restriction effects will gets end.
-     * @param _restrictionTypes Array of restriction types value will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionTypes Array of restriction types value will be 0 or 1 (i.e 0 for fixed while 1 for variable)
      */
     function addIndividualRestrictionMulti(
         address[] _holders,
         uint256[] _allowedTokens,
+        uint256[] _allowedPercentageOfTokens,
         uint256[] _startTimes,
         uint256[] _rollingPeriodInDays,
         uint256[] _endTimes,
@@ -202,12 +210,13 @@ contract VolumeRestrictionTM is ITransferManager {
         public
         withPerm(ADMIN)
     {
-        _checkLengthOfArray(_allowedTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
+        _checkLengthOfArray(_allowedTokens, _allowedPercentageOfTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
         require(_holders.length == _allowedTokens.length, "Length mismatch");
         for (uint256 i = 0; i < _holders.length; i++) {
             _addIndividualRestriction(
                 _holders[i],
                 _allowedTokens[i],
+                _allowedPercentageOfTokens[i],
                 _startTimes[i],
                 _rollingPeriodInDays[i],
                 _endTimes[i],
@@ -219,13 +228,15 @@ contract VolumeRestrictionTM is ITransferManager {
     /**
      * @notice Use to add the new global restriction for all token holder
      * @param _allowedTokens Amount of tokens allowed to be traded for all token holder.
+     * @param _allowedPercentageOfTokens Percentage of tokens w.r.t to totalSupply allowed to transact.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _rollingPeriodInDays Rolling period in days (Minimum value should be 1 day)
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for variable)
      */
     function addGlobalRestriction(
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
@@ -238,12 +249,13 @@ contract VolumeRestrictionTM is ITransferManager {
             globalRestriction.endTime < now,
             "Not allowed"
         );
-        _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
+        _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
          if (globalRestriction.endTime != 0) {
             removeGlobalRestriction();
         }
         globalRestriction = VolumeRestriction(
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
@@ -251,6 +263,7 @@ contract VolumeRestrictionTM is ITransferManager {
         );
         emit AddGlobalRestriction(
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
@@ -261,12 +274,14 @@ contract VolumeRestrictionTM is ITransferManager {
     /**
      * @notice Use to add the new global daily restriction for all token holder
      * @param _allowedTokens Amount of tokens allowed to be traded for all token holder.
+     * @param _allowedPercentageOfTokens Percentage of tokens w.r.t to totalSupply allowed to transact.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for variable)
      */
     function addDailyGlobalRestriction(
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _endTime,
         uint256 _restrictionType 
@@ -278,9 +293,10 @@ contract VolumeRestrictionTM is ITransferManager {
             dailyGlobalRestriction.endTime < now,
             "Not Allowed"
         );
-        _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType);
+        _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, 1, _endTime, _restrictionType);
         dailyGlobalRestriction = VolumeRestriction(
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             1,
             _endTime,
@@ -288,6 +304,7 @@ contract VolumeRestrictionTM is ITransferManager {
         );
         emit AddDailyGlobalRestriction(
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             1,
             _endTime,
@@ -318,10 +335,9 @@ contract VolumeRestrictionTM is ITransferManager {
      */
     function removeGlobalRestriction() public withPerm(ADMIN) {
         require(globalRestriction.endTime != 0);
-        globalRestriction = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        globalBucketDetails.lastTradedDayTime = 0;
+        globalRestriction = VolumeRestriction(0, 0, 0, 0, 0, RestrictionType(0));
+        globalBucketDetails.timestamps.length = 0;
         globalBucketDetails.sumOfLastPeriod = 0;
-        globalBucketDetails.daysCovered = 0;
         emit GlobalRestrictionRemoved();
     }
 
@@ -330,7 +346,7 @@ contract VolumeRestrictionTM is ITransferManager {
      */
     function removeDailyGlobalRestriction() external withPerm(ADMIN) {
         require(dailyGlobalRestriction.endTime != 0);
-        dailyGlobalRestriction = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
+        dailyGlobalRestriction = VolumeRestriction(0, 0, 0, 0, 0, RestrictionType(0));
         emit DailyGlobalRestrictionRemoved();
     } 
 
@@ -338,14 +354,16 @@ contract VolumeRestrictionTM is ITransferManager {
      * @notice Use to modify the existing individual restriction for a given token holder
      * @param _holder Address of the token holder, whom restriction will be implied
      * @param _allowedTokens Amount of tokens allowed to be trade for a given address.
+     * @param _allowedPercentageOfTokens Percentage of tokens w.r.t to totalSupply allowed to transact.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _rollingPeriodInDays Rolling period in days (Minimum value should be 1 day)
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for variable)
      */
     function modifyIndividualRestriction(
         address _holder,
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
@@ -357,6 +375,7 @@ contract VolumeRestrictionTM is ITransferManager {
         _modifyIndividualRestriction(
             _holder,
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
@@ -368,14 +387,16 @@ contract VolumeRestrictionTM is ITransferManager {
      * @notice Use to modify the existing individual restriction for multiple token holders
      * @param _holders Array of address of the token holders, whom restriction will be implied
      * @param _allowedTokens Array of amount of tokens allowed to be trade for a given address.
+     * @param _allowedPercentageOfTokens Array of percentage of tokens w.r.t to totalSupply allowed to transact.
      * @param _startTimes Array of unix timestamps at which restrictions get into effect
      * @param _rollingPeriodInDays Array of rolling period in days (Minimum value should be 1 day)
      * @param _endTimes Array of unix timestamps at which restriction effects will gets end.
-     * @param _restrictionTypes Array of restriction types value will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionTypes Array of restriction types value will be 0 or 1 (i.e 0 for fixed while 1 for variable)
      */
     function modifyIndividualRestrictionMulti(
         address[] _holders,
         uint256[] _allowedTokens,
+        uint256[] _allowedPercentageOfTokens,
         uint256[] _startTimes,
         uint256[] _rollingPeriodInDays,
         uint256[] _endTimes,
@@ -384,12 +405,13 @@ contract VolumeRestrictionTM is ITransferManager {
         public
         withPerm(ADMIN)
     {
-        _checkLengthOfArray(_allowedTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
+        _checkLengthOfArray(_allowedTokens, _allowedPercentageOfTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
         require(_holders.length == _allowedTokens.length, "Length mismatch");
         for (uint256 i = 0; i < _holders.length; i++) {
             _modifyIndividualRestriction(
                 _holders[i],
                 _allowedTokens[i],
+                _allowedPercentageOfTokens[i],
                 _startTimes[i],
                 _rollingPeriodInDays[i],
                 _endTimes[i],
@@ -401,13 +423,15 @@ contract VolumeRestrictionTM is ITransferManager {
     /**
      * @notice Use to modify the global restriction for all token holder
      * @param _allowedTokens Amount of tokens allowed to be traded for all token holder.
+     * @param _allowedPercentageOfTokens Percentage of tokens w.r.t to totalSupply allowed to transact.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _rollingPeriodInDays Rolling period in days (Minimum value should be 1 day)
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for variable)
      */
     function modifyGlobalRestriction(
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
@@ -417,9 +441,10 @@ contract VolumeRestrictionTM is ITransferManager {
         withPerm(ADMIN)
     {   
         require(globalRestriction.startTime > now, "Not allowed");    
-        _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
+        _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
         globalRestriction = VolumeRestriction(
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
@@ -427,6 +452,7 @@ contract VolumeRestrictionTM is ITransferManager {
         );
         emit ModifyGlobalRestriction(
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
@@ -437,12 +463,14 @@ contract VolumeRestrictionTM is ITransferManager {
     /**
      * @notice Use to modify the daily global restriction for all token holder
      * @param _allowedTokens Amount of tokens allowed to be traded for all token holder.
+     * @param _allowedPercentageOfTokens Percentage of tokens w.r.t to totalSupply allowed to transact.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for variable)
      */
     function modifyDailyGlobalRestriction(
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _endTime,
         uint256 _restrictionType
@@ -451,9 +479,10 @@ contract VolumeRestrictionTM is ITransferManager {
         withPerm(ADMIN)
     {   
         require(dailyGlobalRestriction.startTime > now, "Not allowed");    
-        _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType);
+        _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, 1, _endTime, _restrictionType);
         dailyGlobalRestriction = VolumeRestriction(
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             1,
             _endTime,
@@ -461,6 +490,7 @@ contract VolumeRestrictionTM is ITransferManager {
         );
         emit ModifyDailyGlobalRestriction(
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             1,
             _endTime,
@@ -472,21 +502,22 @@ contract VolumeRestrictionTM is ITransferManager {
      * @notice Internal function have a logic to validate the txn amount with global restriction 
      */
     function _globalRestrictionCheck(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {
+        uint256[] memory timestamps = globalBucketDetails.timestamps;
         uint256 fromTimestamp;
         uint256 sumOfLastPeriod = 0;
-        uint256 daysCovered = 0;
-        if (globalBucketDetails.lastTradedDayTime == 0) {
+        if (timestamps.length == 0) {
             // It will execute when the txn is performed first time after the addition of global restriction
             fromTimestamp = globalRestriction.startTime;
         } else {
             // picking up the preivous timestamp
-            fromTimestamp = globalBucketDetails.lastTradedDayTime;
+            fromTimestamp = timestamps[timestamps.length -1];
         }
         // Calculating the difference of days
         uint256 diffDays = BokkyPooBahsDateTimeLibrary.diffDays(fromTimestamp, now); 
+        uint256[] memory passedTimestamps = new uint256[](diffDays);
         // Check with the bucket and parse all the new timestamps to calculate the sumOfLastPeriod
         // re-using the local variables to avoid the stack too deep error.
-        (sumOfLastPeriod, fromTimestamp, daysCovered) = _bucketCheck(
+        (sumOfLastPeriod, fromTimestamp, passedTimestamps) = _bucketCheck(
             fromTimestamp,
             diffDays,
             _from,
@@ -502,10 +533,11 @@ contract VolumeRestrictionTM is ITransferManager {
             if(_isTransfer) {
                 // update the global storage
                 _updateGlobalStorage(
+                    passedTimestamps,
                     fromTimestamp,
                     _amount,
-                    sumOfLastPeriod,
-                    daysCovered
+                    diffDays,
+                    sumOfLastPeriod
                 );
             }
             return Result.NA;
@@ -517,23 +549,28 @@ contract VolumeRestrictionTM is ITransferManager {
      * @notice Internal function to update the state variables related to global restriction
      */
     function _updateGlobalStorage(
+        uint256[] passedTimestamps,
         uint256 _fromTime,
         uint256 _amount,
-        uint256 _sumOfLastPeriod,
-        uint256 _daysCovered
+        uint256 _diffDays,
+        uint256 _sumOfLastPeriod
     )
         internal
     {
-        if (globalBucketDetails.lastTradedDayTime != _fromTime) {
-             // Assigning the latest transaction timestamp of the day
-            globalBucketDetails.lastTradedDayTime = _fromTime;
-            globalBucketDetails.daysCovered = _daysCovered;
+        for (uint256 i = 0; i < passedTimestamps.length; i++) {
+            // Add the timestamp that is already passed
+            globalBucketDetails.timestamps.push(passedTimestamps[i]);
         }
-        if (_amount != 0) {
+        // This condition is the works only when the transaction performed just after the startTime (_diffDays == 0)
+        if (globalBucketDetails.timestamps.length == 0) {
+            globalBucketDetails.timestamps.push(_fromTime);
+        }
+        if(_amount != 0) {
             // updating the sumOfLastPeriod
             globalBucketDetails.sumOfLastPeriod = _sumOfLastPeriod.add(_amount);
 
-            // Increasing the total amount of the day by `_amount`
+            // Re-using the local variable to avoid stack too deep error
+            _fromTime = globalBucketDetails.timestamps[globalBucketDetails.timestamps.length -1];
             globalBucket[_fromTime] = globalBucket[_fromTime].add(_amount);
         }
     }
@@ -549,43 +586,43 @@ contract VolumeRestrictionTM is ITransferManager {
     )
         internal
         view
-        returns (uint256, uint256, uint256)
+        returns (uint256, uint256, uint256[])
     {
-        uint256 counter = _bucketDetails.daysCovered;
+        uint256[] memory passedTimestamps = new uint256[](_diffDays);
+        uint256 counter = _bucketDetails.timestamps.length;
         uint256 i = 0;
-        if (_diffDays >= _restriction.rollingPeriodInDays) {
-            // If the difference of days is greater than the rollingPeriod then sumOfLastPeriod will always be zero
-            _bucketDetails.sumOfLastPeriod = 0;
-
-        } else {
+        if (_diffDays != 0) {
             for (i = 0; i < _diffDays; i++) {
-            // This condition is to check whether the first rolling period is covered or not
-            // if not then it continues and adding 0 value into sumOfLastPeriod without subtracting
-            // the earlier value at that index
-            if (counter >= _restriction.rollingPeriodInDays) {
-                if (_isGlobal) {
-                    // Subtracting the former value(Sum of all the txn amount of that day) from the sumOfLastPeriod
-                    _bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.
-                    sub(globalBucket[_bucketDetails.lastTradedDayTime.sub((counter.sub(_restriction.rollingPeriodInDays)).mul(1 days))]);
-                } else {
-                    // Subtracting the former value(Sum of all the txn amount of that day) from the sumOfLastPeriod
-                    _bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.
-                    sub(bucket[_from][_bucketDetails.lastTradedDayTime.sub((counter.sub(_restriction.rollingPeriodInDays)).mul(1 days))]);
-                }
-            }
+                // calculating the timestamp that will used as an index of the next bucket
+                // i.e buckets period will be look like this T1 to T2-1, T2 to T3-1 .... 
+                // where T1,T2,T3 are timestamps having 24 hrs difference
+                _fromTime = _fromTime.add(1 days);
 
-            // Adding the last amount that is transacted on the `_fromTime` not actually doing it but left written to understand
-            // the alogrithm
-            //_bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.add(uint256(0));
-            // Storing all those timestamps whose total transacted value is 0
-            counter++;
+                // This condition is to check whether the first rolling period is covered or not
+                // if not then it continues and adding 0 value into sumOfLastPeriod without subtracting
+                // the earlier value at that index
+                if (counter >= _restriction.rollingPeriodInDays) {
+                    if (_isGlobal) {
+                        // Subtracting the former value(Sum of all the txn amount of that day) from the sumOfLastPeriod
+                        _bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.
+                        sub(globalBucket[_bucketDetails.timestamps[counter.sub(_restriction.rollingPeriodInDays)]]);
+                    } else {
+                        // Subtracting the former value(Sum of all the txn amount of that day) from the sumOfLastPeriod
+                        _bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.
+                        sub(bucket[_from][_bucketDetails.timestamps[counter.sub(_restriction.rollingPeriodInDays)]]);
+                    }
+                    
+                }
+
+                // Adding the last amount that is transacted on the `_fromTime` not actually doing it but left written to understand
+                // the alogrithm
+                //_bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.add(uint256(0));
+                // Storing all those timestamps whose total transacted value is 0
+                passedTimestamps[i] = _fromTime;
+                counter++;
             }
         }
-        // calculating the timestamp that will used as an index of the next bucket
-        // i.e buckets period will be look like this T1 to T2-1, T2 to T3-1 .... 
-        // where T1,T2,T3 are timestamps having 24 hrs difference
-        _fromTime = _fromTime.add(_diffDays.mul(1 days));
-        return (_bucketDetails.sumOfLastPeriod, _fromTime, counter.add(_diffDays));
+        return (_bucketDetails.sumOfLastPeriod, _fromTime, passedTimestamps);
     }
 
     /**
@@ -600,22 +637,21 @@ contract VolumeRestrictionTM is ITransferManager {
         internal
         returns(Result)
     {   
-        uint256 daysCovered;
         uint256 fromTimestamp;
         uint256 sumOfLastPeriod = 0;
-        if (bucketToUser[_from].lastTradedDayTime == 0) {
+        if (bucketToUser[_from].timestamps.length == 0) {
             // It will execute when the txn is performed first time after the addition of individual restriction
             fromTimestamp = individualRestriction[_from].startTime;
         } else {
             // Picking up the last timestamp
-            fromTimestamp = bucketToUser[_from].lastTradedDayTime;
+            fromTimestamp = bucketToUser[_from].timestamps[bucketToUser[_from].timestamps.length -1];
         }
         // Calculating the difference of days
         uint256 diffDays = BokkyPooBahsDateTimeLibrary.diffDays(fromTimestamp, now); 
-       
+        uint256[] memory passedTimestamps = new uint256[](diffDays);
         // Check with the bucket and parse all the new timestamps to calculate the sumOfLastPeriod
         // re-using the local variables to avoid the stack too deep error.
-        (sumOfLastPeriod, fromTimestamp, daysCovered) = _bucketCheck(
+        (sumOfLastPeriod, fromTimestamp, passedTimestamps) = _bucketCheck(
             fromTimestamp,
             diffDays,
             _from,
@@ -626,11 +662,12 @@ contract VolumeRestrictionTM is ITransferManager {
         if (_checkValidAmountToTransact(sumOfLastPeriod, _amount, individualRestriction[_from])) {
             if (_isTransfer) {
                 _updateIndividualStorage(
+                    passedTimestamps,
                     _from,
                     fromTimestamp,
                     _amount,
-                    sumOfLastPeriod,
-                    daysCovered
+                    diffDays,
+                    sumOfLastPeriod
                 );
             }
             return Result.NA;
@@ -668,8 +705,8 @@ contract VolumeRestrictionTM is ITransferManager {
         returns (bool)
     {    
         uint256 _allowedAmount = 0;
-        if (_restriction.typeOfRestriction == RestrictionType.Percentage) {
-            _allowedAmount = (_restriction.allowedTokens.mul(ISecurityToken(securityToken).totalSupply())) / uint256(10) ** 18;
+        if (_restriction.typeOfRestriction == RestrictionType.Variable) {
+            _allowedAmount = (_restriction.allowedPercentageOfTokens.mul(ISecurityToken(securityToken).totalSupply()))/ uint256(10) ** 18;
         } else {
             _allowedAmount = _restriction.allowedTokens;
         }
@@ -682,23 +719,30 @@ contract VolumeRestrictionTM is ITransferManager {
     }
 
     function _updateIndividualStorage(
+        uint256[] passedTimestamps,
         address _from,
         uint256 _fromTime,
         uint256 _amount,
-        uint256 _sumOfLastPeriod,
-        uint256 _daysCovered
+        uint256 _diffDays,
+        uint256 _sumOfLastPeriod
     )
         internal 
     {
-        if (bucketToUser[_from].lastTradedDayTime != _fromTime) {
-             // Assigning the latest transaction timestamp of the day
-            bucketToUser[_from].lastTradedDayTime = _fromTime;
-            bucketToUser[_from].daysCovered = _daysCovered;
+        if (_diffDays != 0) {
+            for (uint256 i = 0; i < passedTimestamps.length; i++) {
+                // Add the timestamp that is already passed
+                bucketToUser[_from].timestamps.push(passedTimestamps[i]);
+            }
+        }
+        // This condition is the works only when the transaction performed just after the startTime (_diffDays == 0)
+        if (bucketToUser[_from].timestamps.length == 0) {
+            bucketToUser[_from].timestamps.push(_fromTime);
         }
         if(_amount != 0) {
             bucketToUser[_from].sumOfLastPeriod = _sumOfLastPeriod.add(_amount);
 
-            // Increasing the total amount of the day by `_amount`
+            // Re-using the local variable to avoid stack too deep error
+            _fromTime = bucketToUser[_from].timestamps[bucketToUser[_from].timestamps.length -1];
             bucket[_from][_fromTime] = bucket[_from][_fromTime].add(_amount);
         }
         
@@ -707,16 +751,16 @@ contract VolumeRestrictionTM is ITransferManager {
     function _removeIndividualRestriction(address _user) internal {
         require(_user != address(0), "Invalid address");
         require(individualRestriction[_user].endTime != 0, "Not present");
-        individualRestriction[_user] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        bucketToUser[_user].lastTradedDayTime = 0;
+        individualRestriction[_user] = VolumeRestriction(0, 0, 0, 0, 0, RestrictionType(0));
+        bucketToUser[_user].timestamps.length = 0;
         bucketToUser[_user].sumOfLastPeriod = 0;
-        bucketToUser[_user].daysCovered = 0;
         emit IndividualRestrictionRemoved(_user);
     }
 
     function _modifyIndividualRestriction(
         address _holder,
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
@@ -724,11 +768,12 @@ contract VolumeRestrictionTM is ITransferManager {
     )
         internal
     {   
-        _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
+        _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
         require(individualRestriction[_holder].startTime > now, "Not allowed");
         
         individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
@@ -737,6 +782,7 @@ contract VolumeRestrictionTM is ITransferManager {
         emit ModifyIndividualRestriction(
             _holder,
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
@@ -747,6 +793,7 @@ contract VolumeRestrictionTM is ITransferManager {
     function _addIndividualRestriction(
         address _holder,
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
@@ -759,13 +806,14 @@ contract VolumeRestrictionTM is ITransferManager {
             "Already present"
         );
         require(_holder != address(0) && !exemptList[_holder], "Invalid address");
-        _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
+        _checkInputParams(_allowedTokens, _allowedPercentageOfTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
         
         if (individualRestriction[_holder].endTime != 0) {
             _removeIndividualRestriction(_holder);
         }
         individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
@@ -774,6 +822,7 @@ contract VolumeRestrictionTM is ITransferManager {
         emit AddNewIndividualRestriction(
             _holder,
             _allowedTokens,
+            _allowedPercentageOfTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
@@ -783,6 +832,7 @@ contract VolumeRestrictionTM is ITransferManager {
 
     function _checkInputParams(
         uint256 _allowedTokens,
+        uint256 _allowedPercentageOfTokens,
         uint256 _startTime, 
         uint256 _rollingPeriodDays, 
         uint256 _endTime,
@@ -796,7 +846,7 @@ contract VolumeRestrictionTM is ITransferManager {
             require(_allowedTokens > 0, "Invalid value");
         } else {
             require(
-                _allowedTokens > 0 && _allowedTokens <= 100 * 10 ** 16,
+                _allowedPercentageOfTokens > 0 && _allowedPercentageOfTokens <= 100 * 10 ** 16,
                 "Percentage is not within (0,100]"
             );
         }
@@ -808,6 +858,7 @@ contract VolumeRestrictionTM is ITransferManager {
 
     function _checkLengthOfArray(
         uint256[] _allowedTokens,
+        uint256[] _allowedPercentageOfTokens,
         uint256[] _startTimes,
         uint256[] _rollingPeriodInDays,
         uint256[] _endTimes,
@@ -817,7 +868,8 @@ contract VolumeRestrictionTM is ITransferManager {
         pure 
     {
         require(
-            _allowedTokens.length == _startTimes.length &&
+            _allowedTokens.length == _allowedPercentageOfTokens.length &&
+            _allowedPercentageOfTokens.length == _startTimes.length &&
             _startTimes.length == _rollingPeriodInDays.length &&
             _rollingPeriodInDays.length == _endTimes.length &&
             _endTimes.length == _restrictionTypes.length,
@@ -828,12 +880,12 @@ contract VolumeRestrictionTM is ITransferManager {
     /**
      * @notice Use to get the bucket details for a given address
      * @param _user Address of the token holder for whom the bucket details has queried
-     * @return uint256 lastTradedDayTime
+     * @return uint256 Array of the timestamps
      * @return uint256 sumOfLastPeriod
      */
-    function getBucketDetailsToUser(address _user) external view returns(uint256, uint256) {
+    function getBucketDetailsToUser(address _user) external view returns(uint256[], uint256) {
         return(
-            bucketToUser[_user].lastTradedDayTime,
+            bucketToUser[_user].timestamps,
             bucketToUser[_user].sumOfLastPeriod
         );
     }
@@ -849,15 +901,15 @@ contract VolumeRestrictionTM is ITransferManager {
 
     /**
      * @notice Use to get the global bucket details
-     * @return uint256 lastTradedDayTime
+     * @return uint256 Array of timestamps
      * @return uint256 sumOfLastPeriod
      * @return uint256 Total amount traded on the latest timestamp
      */
-    function getGlobalBucketDetails() external view returns(uint256, uint256, uint256) {
+    function getGlobalBucketDetails() external view returns(uint256[], uint256, uint256) {
         return(
-            globalBucketDetails.lastTradedDayTime,
+            globalBucketDetails.timestamps,
             globalBucketDetails.sumOfLastPeriod,
-            globalBucket[globalBucketDetails.lastTradedDayTime]
+            globalBucket[globalBucketDetails.timestamps[globalBucketDetails.timestamps.length - 1]]
         );
     }
 

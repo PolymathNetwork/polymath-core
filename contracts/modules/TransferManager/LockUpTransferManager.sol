@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./TransferManager/ITransferManager.sol";
+import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 contract LockUpTransferManager is ITransferManager {
@@ -592,6 +592,7 @@ contract LockUpTransferManager is ITransferManager {
     )
         internal 
     {
+        require(_lockupName != bytes32(0), "Invalid name");
         require(lockups[_lockupName].lockupAmount == 0, "Already exist");
         /*solium-disable-next-line security/no-block-members*/
         require(_startTime >= now, "Past time not allowed");

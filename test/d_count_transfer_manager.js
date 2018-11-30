@@ -40,6 +40,7 @@ contract("CountTransferManager", accounts => {
     let I_GeneralPermissionManager;
     let I_CountTransferManager;
     let I_GeneralTransferManager;
+    let I_GeneralTransferManager2;
     let I_ExchangeTransferManager;
     let I_ModuleRegistry;
     let I_ModuleRegistryProxy;
@@ -49,12 +50,14 @@ contract("CountTransferManager", accounts => {
     let I_SecurityTokenRegistry;
     let I_STFactory;
     let I_SecurityToken;
+    let I_SecurityToken2;
     let I_PolyToken;
     let I_PolymathRegistry;
 
     // SecurityToken Details
     const name = "Team";
     const symbol = "sap";
+    const symbol2 = "sapp";
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
     const contact = "team@polymath.network";
@@ -339,11 +342,11 @@ contract("CountTransferManager", accounts => {
             await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei("2", "ether"), { from: account_investor2 }));
         });
 
-        it("Should be able to transfer to a new token holder if all tokens are transferred and existing holder is removed", async () => {
-            console.log('acc2 balancce is ' + (await I_SecurityToken.balanceOf(account_investor2)).toNumber());
-            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("4", "ether"), { from: account_investor2 });
-            assert((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei("4", "ether"));
-        });
+        // it("Should be able to transfer to a new token holder if all tokens are transferred and existing holder is removed", async () => {
+        //     console.log('acc2 balancce is ' + (await I_SecurityToken.balanceOf(account_investor2)).toNumber());
+        //     await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("4", "ether"), { from: account_investor2 });
+        //     assert((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei("4", "ether"));
+        // });
 
         it("Should be able to consolidate balances", async () => {
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 });
@@ -352,6 +355,73 @@ contract("CountTransferManager", accounts => {
         it("Should get the permission list", async () => {
             let perm = await I_CountTransferManager.getPermissions.call();
             assert.equal(perm.length, 1);
+        });
+
+        describe("Test cases for adding and removing acc holder at the same time", async () => {
+            it("deploy a new token & auto attach modules", async () => {
+                
+                //register ticker and deploy token
+                await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+                let tx = await I_STRProxied.registerTicker(token_owner, symbol2, contact, { from: token_owner });
+
+                await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+                let _blockNo = latestBlock();
+                let tx2 = await I_STRProxied.generateSecurityToken(name, symbol2, tokenDetails, false, { from: token_owner });
+           
+                I_SecurityToken2 = SecurityToken.at(tx2.logs[1].args._securityTokenAddress);
+
+                let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];
+                I_GeneralTransferManager2 = GeneralTransferManager.at(moduleData);
+            });
+
+            it("add 3 holders to the token", async () => {
+
+                await I_GeneralTransferManager2.modifyWhitelist(
+                    account_investor1,
+                    latestTime(),
+                    latestTime(),
+                    latestTime() + duration.days(10),
+                    true,
+                    {
+                        from: account_issuer,
+                        gas: 500000
+                    }
+                );
+
+                await I_GeneralTransferManager2.modifyWhitelist(
+                    account_investor2,
+                    latestTime(),
+                    latestTime(),
+                    latestTime() + duration.days(10),
+                    true,
+                    {
+                        from: account_issuer,
+                        gas: 500000
+                    }
+                );
+
+                await I_GeneralTransferManager2.modifyWhitelist(
+                    account_investor3,
+                    latestTime(),
+                    latestTime(),
+                    latestTime() + duration.days(10),
+                    true,
+                    {
+                        from: account_issuer,
+                        gas: 500000
+                    }
+                );
+
+                // Jump time
+                await increaseTime(5000);
+
+                // Mint some tokens
+                await I_SecurityToken2.mint(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
+                await I_SecurityToken2.mint(account_investor2, web3.utils.toWei("1", "ether"), { from: token_owner });
+                await I_SecurityToken2.mint(account_investor3, web3.utils.toWei("1", "ether"), { from: token_owner });
+
+                assert.equal((await I_SecurityToken2.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
+                });
         });
 
         describe("Test cases for the factory", async () => {

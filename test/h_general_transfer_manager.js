@@ -421,7 +421,7 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Add a from default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.modifyDefaults(latestTime() + duration.days(5), 0, {from: token_owner});
+            let tx = await I_GeneralTransferManager.changeDefaults(latestTime() + duration.days(5), 0, {from: token_owner});
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor2});
             await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1}));
             await increaseTime(duration.days(5));
@@ -429,7 +429,7 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Add a to default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.modifyDefaults(0, latestTime() + duration.days(5), {from: token_owner});
+            let tx = await I_GeneralTransferManager.changeDefaults(0, latestTime() + duration.days(5), {from: token_owner});
             await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor2}));
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
             await increaseTime(duration.days(5));
@@ -446,7 +446,7 @@ contract("GeneralTransferManager", accounts => {
                     gas: 6000000
                 }
             );
-            await I_GeneralTransferManager.modifyDefaults(0, 0, {from: token_owner});
+            await I_GeneralTransferManager.changeDefaults(0, 0, {from: token_owner});
         });
 
 

@@ -24,7 +24,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     // Emit when there is change in the flag variable called signingAddress
     event ChangeSigningAddress(address _signingAddress);
     // Emit when investor details get modified related to their whitelisting
-    event DefaultsModified(uint64 _defaultFromTime, uint64 _defaultToTime);
+    event ChangeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime);
 
     // _fromTime is the time from which the _investor can send tokens
     // _toTime is the time from which the _investor can receive tokens
@@ -52,17 +52,22 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     {
     }
 
-    function modifyDefaults(uint64 _defaultFromTime, uint64 _defaultToTime) public withPerm(FLAGS) {
-        defaults.fromTime = _defaultFromTime;
-        defaults.toTime = _defaultToTime;
-        emit DefaultsModified(_defaultFromTime, _defaultToTime);
-    }
-
     /**
      * @notice This function returns the signature of configure function
      */
     function getInitFunction() public pure returns (bytes4) {
         return bytes4(0);
+    }
+
+    /**
+     * @notice Used to change the default times used when fromTime / toTime are zero
+     * @param _defaultFromTime default for zero fromTime
+     * @param _defaultToTime default for zero toTime
+     */
+    function changeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime) public withPerm(FLAGS) {
+        defaults.fromTime = _defaultFromTime;
+        defaults.toTime = _defaultToTime;
+        emit ChangeDefaults(_defaultFromTime, _defaultToTime);
     }
 
     /**
@@ -126,7 +131,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         allowAllBurnTransfers = _allowAllBurnTransfers;
         emit AllowAllBurnTransfers(_allowAllBurnTransfers);
     }
-    event Times(uint64 _from, uint64 _to);
+
     /**
      * @notice Default implementation of verifyTransfer used by SecurityToken
      * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
@@ -150,17 +155,21 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
                 //Anyone on the whitelist can transfer, regardless of time
                 return (_onWhitelist(_to) && _onWhitelist(_from)) ? Result.VALID : Result.NA;
             }
-            if (_from == issuanceAddress && (whitelist[_to].canBuyFromSTO == 0) && _isSTOAttached()) {
-                return Result.NA;
-            }
-            if (allowAllWhitelistIssuances && _from == issuanceAddress) {
-                return _onWhitelist(_to) ? Result.VALID : Result.NA;
-            }
-            (uint64 adjustedFromTime, uint64 adjustedToTime) = _adjustTimes(whitelist[_from].fromTime, whitelist[_to].toTime);
 
+            (uint64 adjustedFromTime, uint64 adjustedToTime) = _adjustTimes(whitelist[_from].fromTime, whitelist[_to].toTime);
             if (_from == issuanceAddress) {
-                return (_onWhitelist(_to) && (adjustedToTime <= uint64(now))) ? Result.VALID : Result.NA;
+                // Possible STO transaction, but investor not allowed to purchased from STO
+                if ((whitelist[_to].canBuyFromSTO == 0) && _isSTOAttached()) {
+                    return Result.NA;
+                }
+                // if allowAllWhitelistIssuances is true, so time stamp ignored
+                if (allowAllWhitelistIssuances) {
+                    return _onWhitelist(_to) ? Result.VALID : Result.NA;
+                } else {
+                    return (_onWhitelist(_to) && (adjustedToTime <= uint64(now))) ? Result.VALID : Result.NA;
+                }
             }
+
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
             return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) &&
@@ -187,13 +196,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         public
         withPerm(WHITELIST)
     {
-        uint8 canBuyFromSTO = 0;
-        if (_canBuyFromSTO) {
-            canBuyFromSTO = 1;
-        }
-        _modifyWhitelist(_investor, uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO);
-        /*solium-disable-next-line security/no-block-members*/
-        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**
@@ -206,18 +209,23 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     */
     function _modifyWhitelist(
         address _investor,
-        uint64 _fromTime,
-        uint64 _toTime,
-        uint64 _expiryTime,
-        uint8 _canBuyFromSTO
+        uint256 _fromTime,
+        uint256 _toTime,
+        uint256 _expiryTime,
+        bool _canBuyFromSTO
     )
         internal
     {
         require(_investor != address(0), "Invalid investor");
+        uint8 canBuyFromSTO = 0;
+        if (_canBuyFromSTO) {
+            canBuyFromSTO = 1;
+        }
         if (whitelist[_investor].added == uint8(0)) {
             investors.push(_investor);
         }
-        whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO, uint8(1));
+        whitelist[_investor] = TimeRestriction(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1));
+        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**
@@ -239,16 +247,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         require(_fromTimes.length == _toTimes.length, "Mismatched input lengths");
         require(_toTimes.length == _expiryTimes.length, "Mismatched input lengths");
         require(_canBuyFromSTO.length == _toTimes.length, "Mismatched input length");
-        uint8 canBuyFromSTO;
         for (uint256 i = 0; i < _investors.length; i++) {
-            if (_canBuyFromSTO[i]) {
-                canBuyFromSTO = 1;
-            } else {
-                canBuyFromSTO = 0;
-            }
-            _modifyWhitelist(_investors[i], uint64(_fromTimes[i]), uint64(_toTimes[i]), uint64(_expiryTimes[i]), canBuyFromSTO);
-            /*solium-disable-next-line security/no-block-members*/
-            emit ModifyWhitelist(_investors[i], now, msg.sender, _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i]);
+            _modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i]);
         }
     }
 
@@ -289,16 +289,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
             abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce)
         );
         _checkSig(hash, _v, _r, _s);
-        if (whitelist[_investor].added == uint8(0)) {
-            investors.push(_investor);
-        }
-        uint8 canBuyFromSTO = 0;
-        if (_canBuyFromSTO) {
-            canBuyFromSTO = 1;
-        }
-        whitelist[_investor] = TimeRestriction(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1));
-        /*solium-disable-next-line security/no-block-members*/
-        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**

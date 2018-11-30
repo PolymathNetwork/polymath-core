@@ -479,7 +479,7 @@ contract("ModuleRegistry", accounts => {
 
                 let sto1 = (await I_MRProxied.getModulesByType.call(3))[0];
                 let sto2 = (await I_MRProxied.getModulesByType.call(3))[1];
-                let sto3 = (await I_MRProxied.getModulesByType.call(3))[2];                
+                let sto3 = (await I_MRProxied.getModulesByType.call(3))[2];
                 let sto4 = (await I_MRProxied.getModulesByType.call(3))[3];
 
                 assert.equal(sto1, I_CappedSTOFactory1.address);
@@ -542,7 +542,7 @@ contract("ModuleRegistry", accounts => {
                         I_MRProxied.reclaimERC20("0x000000000000000000000000000000000000000", { from: account_polymath })
                     );
                 });
-    
+
                 it("Should successfully reclaim POLY tokens -- not authorised", async() => {
                     catchRevert(
                         I_MRProxied.reclaimERC20(I_PolyToken.address, { from: account_temp })
@@ -592,7 +592,7 @@ contract("ModuleRegistry", accounts => {
                         I_ReclaimERC20.reclaimERC20("0x000000000000000000000000000000000000000", { from: account_polymath })
                     );
                 });
-    
+
                 it("Should successfully reclaim POLY tokens -- not authorised", async() => {
                     catchRevert(
                         I_ReclaimERC20.reclaimERC20(I_PolyToken.address, { from: account_temp })
@@ -614,7 +614,7 @@ contract("ModuleRegistry", accounts => {
             describe("Test case for the PolymathRegistry", async() => {
 
                 it("Should successfully get the address -- fail because key is not exist", async() => {
-                    catchRevert( 
+                    catchRevert(
                         I_PolymathRegistry.getAddress("PolyOracle")
                     );
                 });
@@ -623,6 +623,35 @@ contract("ModuleRegistry", accounts => {
                     let _moduleR = await I_PolymathRegistry.getAddress("ModuleRegistry");
                     assert.equal(_moduleR, I_ModuleRegistryProxy.address);
                 })
+            })
+
+
+            describe("Test cases for the transferOwnership", async() => {
+
+                it("Should fail to transfer the ownership -- not authorised", async() => {
+                    catchRevert(
+                        I_MRProxied.transferOwnership(account_temp, { from: account_issuer})
+                    );
+                });
+
+                it("Should fail to transfer the ownership -- 0x address is not allowed", async() => {
+                    catchRevert(
+                        I_MRProxied.transferOwnership("0x000000000000000000000000000000000000000", { from: account_polymath})
+                    );
+                });
+
+                it("Should successfully transfer the ownership of the STR", async() => {
+                    let tx = await I_MRProxied.transferOwnership(account_temp, { from: account_polymath });
+                    assert.equal(tx.logs[0].args.previousOwner, account_polymath);
+                    assert.equal(tx.logs[0].args.newOwner, account_temp);
+                });
+
+                it("New owner has authorisation", async() => {
+                    let tx = await I_MRProxied.transferOwnership(account_polymath, { from: account_temp });
+                    assert.equal(tx.logs[0].args.previousOwner, account_temp);
+                    assert.equal(tx.logs[0].args.newOwner, account_polymath);
+                });
+
             })
         });
     });

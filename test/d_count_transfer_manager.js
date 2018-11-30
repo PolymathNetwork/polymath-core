@@ -339,6 +339,12 @@ contract("CountTransferManager", accounts => {
             await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei("2", "ether"), { from: account_investor2 }));
         });
 
+        it("Should be able to transfer to a new token holder if all tokens are transferred and existing holder is removed", async () => {
+            console.log('acc2 balancce is ' + (await I_SecurityToken.balanceOf(account_investor2)).toNumber());
+            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("4", "ether"), { from: account_investor2 });
+            assert((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei("4", "ether"));
+        });
+
         it("Should be able to consolidate balances", async () => {
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 });
         });

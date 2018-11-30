@@ -6,19 +6,22 @@
 ![Polymath logo](Polymath.png)
 
 # Polymath Core
-
 The Polymath Core smart contracts provide a system for launching regulatory-compliant securities tokens on a decentralized blockchain. This particular repository is the implementation of a system that allows for the creation of ST-20-compatible tokens. This system has a modular design that promotes a variety of pluggable components for various types of issuances, legal requirements, and offering processes.
 
+## Introduction to Security Tokens
+
+### What is a Security token?
+A Security Token shares many of the characteristics of both fungible (erc20) and non-fungible tokens (erc721). Security tokens are designed to represent complete or fractional ownership interests in assets and/or entities. While utility tokens have no limitations on who can send or receive the token, security tokens are subject to many restrictions based on identity, jurisdiction and asset category.
+### Security Tokens Vs. Utility Tokens?
+The concept of utility tokens is fairly well understood in the blockchain space today. Utility tokens represent access to a network, and your token purchase represents the ability to buy goods or services from that network- Think of when you purchase a arcade token to allow you to play an arcade game machine. Utility tokens give you that same type of access to a product or service. On the other hand, security tokens represent complete or fractional ownership in an asset (such as shares in a company, a real-estate asset, artwork, etc). Such as having a stake in a company, real estate, or intellectual property can all be represented by security tokens. Security tokens offer the benefit of bringing significant transparency over traditional paper shares through the use of the blockchain and its associated public ledger. Security token structure, distribution, or changes that could affect investors are now accessible to all via the blockchain. 
 
 # ST-20 Interface Overview
 ## Description
 An ST-20 token is an Ethereum-based token implemented on top of the ERC-20 protocol that adds the ability for tokens to control transfers based on specific rules. ST-20 tokens rely on Transfer Managers to determine the ruleset the token should apply in order to allow or deny a transfer, be it between the issuer and investors, in a peer to peer exchange, or a transaction with an exchange.
 
 ## How it works
-ST-20 tokens must implement a `verifyTransfer` method which will be called when attempting to execute a `transfer` or `transferFrom` method. The `verifyTransfer` method will determine whether that transaction can be completed or not. The implementation of `verifyTransfer` can take many forms, but the default approach is a whitelist controlled by the `GeneralTransferManager`.
-
-### The ST-20 Interface
-
+ST-20 tokens must implement a verifyTransfer method which will be called when attempting to execute a transfer or transferFrom method. The verifyTransfer method will determine whether that transaction can be completed or not. The implementation of verifyTransfer can take many forms, but the default approach is a whitelist controlled by the GeneralTransferManager.
+## The ST-20 Interface
 ```
 contract IST20 {
 
@@ -32,36 +35,74 @@ contract IST20 {
     function mint(address _investor, uint256 _amount) public returns (bool success);
 }
 ```
-
-
 # The Polymath Core Architecture
-The diagram below depicts a high-level view of the various modules, registries, and contracts implemented in Polymath Core:
+The diagram below depicts a high-level view of the various modules, registries, and contracts implemented within Polymath Core 2.0.0:
 
-![Polymath Core architecture](https://github.com/PolymathNetwork/polymath-core/blob/master/docs/images/PolymathCore.png)
+![Polymath Core architecture](https://github.com/PolymathNetwork/polymath-core/blob/master/docs/images/Core%20Architecture%202.0.0%20%20Diagram.png)
 
 ## Components
-### SecurityToken
-`SecurityToken` is an implementation of the ST-20 protocol that allows the addition of different modules to control its behavior. Different modules can be attached to `SecurityToken`:
-- [TransferManager modules](contracts/modules/TransferManager): These control the logic behind transfers and how they are allowed or disallowed.
-By default, the ST (Security Token) gets a `GeneralTransferManager` module attached in order to determine if transfers should be allowed based on a whitelist approach. The `GeneralTransferManager` behaves differently depending who is trying to transfer the tokens.
-a) In an offering setting (investors buying tokens from the issuer) the investor's address should be present on an internal whitelist managed by the issuer within the `GeneralTransferManager`.
+### Polymath Registries
+
+**Security Token Registry (STR)** - This registry tells us which tokens and tickers have been registered to it. This allows us to prevent people from reserving the same ticker as another issuer as well checking for inputs such as making sure it is a maximum of 10 characters and what the expiry date is on the respective ticker. Right now, if you reserve a ticker it last for 60 days. After it expires someone else can go ahead and reserve it or they you can re-register it.
+
+With the **2.0.0 Core Release**, when you deploy a token you do it through the ST registry and it keeps a record of which tokens have been registered within it. 
+
+**The Module Registry** - This registry keeps a record of all the different module factories. 
+
+**The Features Registry** - A registry of features that we may enable in the future but right now only Polymath has control of the features. Later, Polymath can easily turn access on and off.
+
+To be clear, each module has its own factory which is in charge of deploying an instance of that module for the issuers token. 
+
+There are General factories which every token uses (if wanted). It works by sending the token to the factory where it asks for an instance of that said module and the token will add an instance of that module to itself. This allows for each token to have its unique modules associated with it. All of this is created through the factories and the module registry keeps a records of all the different modules factories that are registered.
+
+As of now, Polymath is the only one that can add or register a module factory to the module registry. Polymath submits the modules to the registry, however, we are exploring different approaches to open up development to other parties such as potentially working with external developers to provide services to issuers through modules. 
+
+**Polymath has 3 main registries** 
+1. Security Token Registry 
+2. Features Registry 
+3. Module Registry 
+
+The Polymath Registry holds the addresses of the 3 registries above. 
+
+As of the **2.0.0 release**, we have built it out so that the Module and Security Token Registry are upgradeable. This means that down the road if there is something in the logic that we need to change, we can do that without having to re-deploy the whole thing again. All we need to do is update it. 
+
+### Modules
+
+**Security Token (ST-20)**: The SecurityToken is an implementation of the ST-20 protocol that allows the addition of different modules to control its behavior. Different modules can be attached to a SecurityToken. 
+
+We have a ST-20 token which is an Ethereum-based token implemented on top of the ERC-20 protocol that adds the ability for tokens to control transfers based on specific rules. ST-20 tokens rely on Transfer Managers to determine the ruleset the token should apply in order to allow or deny a transfer, be it between the issuer and investors, in a peer to peer exchange, or a transaction with an exchange.
+
+To simplify, it breaks down to having a base token that gives the issuer the ability to add functionality through modules. 
+
+###### Example 
+
+We have modules that can deal with transfer management. Restricting transfers through a whitelist  or just restricting a transfer between addresses that could make an account go over a specified limit or you can limit the amount of a token holders or you can even limit transfers to prevent dumping of tokens by having a lockup period for token holders. 
+
+#### The Polymath Modules 
+**TransferManager modules:** These control the logic behind transfers and how they are allowed or disallowed. By default, the ST (Security Token) gets a `GeneralTransferManager` module attached in order to determine if transfers should be allowed based on a whitelist approach. 
+
+The `GeneralTransferManager` behaves differently depending who is trying to transfer the tokens. 
+a) In an offering setting (investors buying tokens from the issuer) the investor's address should be present on an internal whitelist managed by the issuer within the GeneralTransferManager. 
+
 b) In a peer to peer transfer, restrictions apply based on real-life lockups that are enforced on-chain. For example, if a particular holder has a 1-year sale restriction for the token, the transaction will fail until that year passes.
-- [Security Token Offering (STO) modules](contracts/modules/STO): A `SecurityToken` can be attached to one (and only one) STO module that will dictate the logic of how those tokens will be sold/distributed. An STO is the equivalent to the Crowdsale contracts often found present in traditional ICOs.
-- [Permission Manager modules](contracts/modules/PermissionManager): These modules manage permissions on different aspects of the issuance process. The issuer can use this module to manage permissions and designate administrators on his token. For example, the issuer might give a KYC firm permissions to add investors to the whitelist.   
-- [Checkpoint Modules](contracts/modules/Checkpoint): These modules allow the issuer to define checkpoints at which token balances and the total supply of a token can be consistently queried. This functionality is useful for dividend payment mechanisms and on-chain governance, both of which need to be able to determine token balances consistently as of a specified point in time.
 
-### TickerRegistry
-The ticker registry manages the sign up process to the Polymath platform. Issuers can use this contract to register a token symbol (which are unique within the Polymath network). Token Symbol registrations have an expiration period (7 days by default) in which the issuer has to complete the process of deploying their SecurityToken. If they do not complete the process in time, their ticker symbol will be made available for someone else to register.
+**Security Token Offering (STO) modules:** A SecurityToken can be attached to one (and only one) STO module that will dictate the logic of how those tokens will be sold/distributed. An STO is the equivalent to the Crowdsale contracts often found present in traditional ICOs.
 
-### SecurityTokenRegistry
-The security token registry keeps track of deployed STs on the Polymath Platform and uses the TickerRegistry to allow only registered symbols to be deployed.
+**Permission Manager modules:** These modules manage permissions on different aspects of the issuance process. The issuer can use this module to manage permissions and designate administrators on his token. For example, the issuer might give a KYC firm permissions to add investors to the whitelist.
 
-### ModuleRegistry
-Modules allow custom add-in functionality in the issuance process and beyond. The module registry keeps track of modules added by Polymath or any other users. Modules can only be attached to STs if Polymath has previously verified them. If not, the only user able to utilize a module is its owner, and they should be using it "at their own risk".
+**Checkpoint Modules**
+These modules allow the issuer to define checkpoints at which token balances and the total supply of a token can be consistently queried. This functionality is useful for dividend payment mechanisms and on-chain governance, both of which need to be able to determine token balances consistently as of a specified point in time.
 
-## CLI and CLI Documentation 
+**Burn Modules** 
+These modules allow issuers or investors to burn or redeem their tokens in exchange of another token which can be on chain or offchain.
 
-The CLI is for users that want to easily walkthrough all the details of an STO issuance. The CLI documentation is located on our [Github Wiki](https://github.com/PolymathNetwork/polymath-core/wiki). You can easily navigate through it with the sidebar directory in order to run the CLI and set up and test the following: 
+With the Core **2.0.0 Release**, Polymath has also introduced the `USDTieredSTO`. This new STO module allows a security token to be issued in return for investment (security token offering) in various currencies (ETH, POLY & a USD stable coin). The price of tokens is denominated in USD and the STO allows multiple tiers with different price points to be defined. Discounts for investments made in POLY can also be defined.
+
+## CLI and CLI Documentation Wiki: 
+
+The CLI is for users that want to easily walkthrough all the details of an STO issuance. The CLI documentation is located on our [Github Wiki](https://github.com/PolymathNetwork/polymath-core/wiki). 
+
+You can easily navigate through it with the sidebar directory in order to run the CLI and set up and test the following: 
 
 1. Prerequisite Instructions / Deploy and setup the Polymath contracts
 2. Launch the CLI on Ganache

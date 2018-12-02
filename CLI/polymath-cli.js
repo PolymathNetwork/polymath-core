@@ -145,24 +145,6 @@ program
   });
 
 program
-  .command('accredit <tokenSymbol> [batchSize]')
-  .alias('a')
-  .description('Runs accredit')
-  .action(async function (tokenSymbol, batchSize) {
-    await gbl.initialize(program.remoteNode);
-    await sto_manager.startCSV(tokenSymbol, batchSize, 'accredited')
-  });
-
-program
-  .command('nonAccreditedLimit <tokenSymbol> [batchSize]')
-  .alias('nal')
-  .description('Runs changeNonAccreditedLimit')
-  .action(async function (tokenSymbol, batchSize) {
-    await gbl.initialize(program.remoteNode);
-    await sto_manager.startCSV(tokenSymbol, batchSize, 'nonAccreditedLimit')
-  });
-
-program
   .command('strMigrator [toStrAddress] [fromTrAddress] [fromStrAddress]')
   .alias('str')
   .description('Runs STR Migrator')

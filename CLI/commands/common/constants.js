@@ -7,22 +7,22 @@ module.exports = Object.freeze({
         BURN: 5
     },
     DURATION: {
-        seconds: function(val) {
+        seconds: function (val) {
             return val
         },
-        minutes: function(val) {
+        minutes: function (val) {
             return val * this.seconds(60)
         },
-        hours: function(val) {
+        hours: function (val) {
             return val * this.minutes(60)
         },
-        days: function(val) {
+        days: function (val) {
             return val * this.hours(24)
         },
-        weeks: function(val) {
+        weeks: function (val) {
             return val * this.days(7)
         },
-        years: function(val) {
+        years: function (val) {
             return val * this.days(365)
         }
     },
@@ -30,5 +30,6 @@ module.exports = Object.freeze({
         ETH: 0,
         POLY: 1,
         DAI: 2
-    }
+    },
+    DEFAULT_BATCH_SIZE: 75
 });

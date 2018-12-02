@@ -9,6 +9,11 @@ const csvParse = require('./helpers/csv');
 const BigNumber = require('bignumber.js');
 
 ///////////////////
+// Constants
+const ACCREDIT_DATA_CSV = './CLI/data/STO/USDTieredSTO/accredited_data.csv';
+const NON_ACCREDIT_LIMIT_DATA_CSV = './CLI/data/STO/USDTieredSTO/nonAccreditedLimits_data.csv'
+
+///////////////////
 // Crowdsale params
 let tokenSymbol;
 
@@ -18,12 +23,6 @@ let securityTokenRegistry;
 let polyToken;
 let usdToken;
 let securityToken;
-
-/* CSV variables */
-let distribData = new Array();
-let fullFileData = new Array();
-let badData = new Array();
-/* End CSV variables */
 
 async function executeApp() {
   let exit = false;
@@ -697,18 +696,7 @@ async function usdTieredSTO_configure(currentSTO) {
         await common.sendTransaction(changeAccreditedAction);
         break;
       case 2:
-        let batchSize = 75;
-        let csvFile = fs.readFileSync('./CLI/data/accredited_data.csv');
-        let columns = ['address', 'accredited'];
-        let resultData = [];
-        let index = 0;
-        while (true) {
-          index++;
-          let data = csvParse(csvFile, { columns: columns, from_line: index, to_line: batchSize * index });
-          resultData.push(data);
-        }
-        let accredit;
-        await startCSV(tokenSymbol, 75, 'accredited');
+        await changeAccreditedInBatch(currentSTO);
         break;
       case 3:
         let account = readlineSync.question('Enter the address to change non accredited limit: ');
@@ -716,11 +704,10 @@ async function usdTieredSTO_configure(currentSTO) {
         let accounts = [account];
         let limits = [web3.utils.toWei(limit)];
         let changeNonAccreditedLimitAction = currentSTO.methods.changeNonAccreditedLimit(accounts, limits);
-        // 2 GAS?
         await common.sendTransaction(changeNonAccreditedLimitAction);
         break;
       case 4:
-        await startCSV(tokenSymbol, 75, 'nonAccreditedLimit');
+        await changeNonAccreditedLimitsInBatch(currentSTO);
         break;
       case 5:
         await modfifyTimes(currentSTO);
@@ -746,164 +733,60 @@ async function usdTieredSTO_configure(currentSTO) {
   }
 }
 
-async function startCSV(tokenSymbol, batchSize, accreditionType) {
-  let file, proccessing, saving;
-
-  switch (accreditionType) {
-    case 'accredited':
-      file = './CLI/data/accredited_data.csv'
-      proccessing = accredit_processing
-      saving = saveInBlockchainAccredited
-      break;
-    case 'nonAccreditedLimit':
-      file = './CLI/data/nonAccreditedLimits_data.csv'
-      proccessing = nonAccredited_processing
-      saving = saveInBlockchainNonAccredited
-      break;
+async function changeAccreditedInBatch(currentSTO) {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ACCREDIT_DATA_CSV}): `, {
+    defaultInput: ACCREDIT_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row => web3.utils.isAddress(row[0]) && typeof row[1] === 'boolean');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')}`));
   }
-
-  securityToken = await csv_shared.start(tokenSymbol, batchSize);
-
-  let result_processing = await csv_shared.read(file, proccessing);
-  distribData = result_processing.distribData;
-  fullFileData = result_processing.fullFileData;
-  badData = result_processing.badData;
-
-  await saving();
-}
-
-function nonAccredited_processing(csv_line) {
-  let isAddress = web3.utils.isAddress(csv_line[0]);
-  let isNumber = !isNaN(csv_line[1]);
-
-  if (isAddress && isNumber) {
-    return [true, new Array(web3.utils.toChecksumAddress(csv_line[0]), csv_line[1])]
-  } else {
-    return [false, new Array(csv_line[0], csv_line[1])]
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [investorArray, isAccreditedArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to change accredited accounts:\n\n`, investorArray[batch], '\n');
+    let action = await currentSTO.methods.changeAccredited(investorArray[batch], isAccreditedArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Change accredited transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used. Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
 
-function accredit_processing(csv_line) {
-  let isAddress = web3.utils.isAddress(csv_line[0]);
-  let isAccredited = (typeof JSON.parse(csv_line[1].toLowerCase())) == "boolean" ? JSON.parse(csv_line[1].toLowerCase()) : "not-valid";
-
-  if (isAddress &&
-    (isAccredited != "not-valid")) {
-    return [true, new Array(web3.utils.toChecksumAddress(csv_line[0]), isAccredited)]
-  } else {
-    return [false, new Array(csv_line[0], isAccredited)]
+async function changeNonAccreditedLimitsInBatch(currentSTO) {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${NON_ACCREDIT_LIMIT_DATA_CSV}): `, {
+    defaultInput: NON_ACCREDIT_LIMIT_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row => web3.utils.isAddress(row[0]) && !isNaN(row[1]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')}`));
   }
-}
-
-async function saveInBlockchainAccredited() {
-  let gtmModules;
-  try {
-    gtmModules = await securityToken.methods.getModulesByName(web3.utils.toHex('USDTieredSTO')).call();
-  } catch (e) {
-    console.log("Please attach USDTieredSTO module before launch this action.", e)
-    process.exit(0)
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [investorArray, limitArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to change accredited accounts:\n\n`, investorArray[batch], '\n');
+    let action = await currentSTO.methods.changeNonAccreditedLimit(investorArray[batch], limitArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Change non accredited limits transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used. Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
-
-  if (!gtmModules.length) {
-    console.log("Please attach USDTieredSTO module before launch this action.")
-    process.exit(0)
-  }
-
-  let usdTieredSTO = new web3.eth.Contract(abis.usdTieredSTO(), gtmModules[0]);
-
-  console.log(`
-    --------------------------------------------------------
-    ----- Sending accreditation changes to blockchain  -----
-    --------------------------------------------------------
-  `);
-
-  for (let i = 0; i < distribData.length; i++) {
-    try {
-
-      // Splitting the user arrays to be organized by input
-      for (let i = 0; i < distribData.length; i++) {
-        try {
-          let investorArray = [], isAccreditedArray = [];
-
-          for (let j = 0; j < distribData[i].length; j++) {
-            investorArray.push(distribData[i][j][0])
-            isAccreditedArray.push(distribData[i][j][1])
-          }
-
-          let changeAccreditedAction = await usdTieredSTO.methods.changeAccredited(investorArray, isAccreditedArray);
-          let tx = await common.sendTransaction(changeAccreditedAction);
-          console.log(`Batch ${i} - Attempting to change accredited accounts:\n\n`, investorArray, "\n\n");
-          console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
-          console.log("Change accredited transaction was successful.", tx.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(tx.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");
-          console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
-        } catch (err) {
-          console.log("ERROR:", err);
-        }
-      }
-
-    } catch (err) {
-      console.log("ERROR", err)
-      process.exit(0)
-    }
-  }
-
-  return;
-}
-
-async function saveInBlockchainNonAccredited() {
-  let gtmModules;
-  try {
-    gtmModules = await securityToken.methods.getModulesByName(web3.utils.toHex('USDTieredSTO')).call();
-  } catch (e) {
-    console.log("Please attach USDTieredSTO module before launch this action.", e)
-    process.exit(0)
-  }
-
-  if (!gtmModules.length) {
-    console.log("Please attach USDTieredSTO module before launch this action.")
-    process.exit(0)
-  }
-
-  let usdTieredSTO = new web3.eth.Contract(abis.usdTieredSTO(), gtmModules[0]);
-
-  console.log(`
-    --------------------------------------------------------------
-    ----- Sending non accredited limit changes to blockchain -----
-    --------------------------------------------------------------
-  `);
-
-  for (let i = 0; i < distribData.length; i++) {
-    try {
-
-      // Splitting the user arrays to be organized by input
-      for (let i = 0; i < distribData.length; i++) {
-        try {
-          let investorArray = [], limitArray = [];
-
-          for (let j = 0; j < distribData[i].length; j++) {
-            investorArray.push(distribData[i][j][0]);
-            limitArray.push(web3.utils.toWei(distribData[i][j][1].toString()));
-          }
-
-          let changeNonAccreditedLimitAction = await usdTieredSTO.methods.changeNonAccreditedLimit(investorArray, limitArray);
-          let tx = await common.sendTransaction(changeNonAccreditedLimitAction);
-          console.log(`Batch ${i} - Attempting to change non accredited limits to accounts:\n\n`, investorArray, "\n\n");
-          console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
-          console.log("Change accredited transaction was successful.", tx.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(tx.gasUsed * defaultGasPrice).toString()), "Ether");
-          console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
-
-        } catch (err) {
-          console.log("ERROR:", err);
-        }
-      }
-
-    } catch (err) {
-      console.log("ERROR", err)
-      process.exit(0)
-    }
-  }
-
-  return;
 }
 
 async function modfifyTimes(currentSTO) {
@@ -1071,10 +954,5 @@ module.exports = {
   addSTOModule: async function (_tokenSymbol, stoConfig) {
     await initialize(_tokenSymbol);
     return addSTOModule(stoConfig)
-  },
-  startCSV: async function (tokenSymbol, batchSize, accreditionType) {
-    return startCSV(tokenSymbol, batchSize, accreditionType);
   }
 }
-
-

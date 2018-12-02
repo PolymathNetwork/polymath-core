@@ -58,7 +58,7 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
      * @notice Get the tags related to the module factory
      */
     function getTags() public view returns(bytes32[]) {
-        bytes32[] memory availableTags = new bytes32[](3);
+        bytes32[] memory availableTags = new bytes32[](4);
         availableTags[0] = "Maximum Volume";
         availableTags[1] = "Transfer Restriction";
         availableTags[2] = "Daily Restriction";

@@ -42,7 +42,7 @@ function getFinalOptions(options) {
 async function getGasLimit(options, action) {
   let block = await web3.eth.getBlock("latest");
   let networkGasLimit = block.gasLimit;
-  let gas = Math.round(options.factor * (await action.estimateGas({ from: options.from.address, value: options.value})));
+  let gas = Math.round(options.factor * (await action.estimateGas({ from: options.from.address, value: options.value })));
   return (gas > networkGasLimit) ? networkGasLimit : gas;
 }
 
@@ -65,16 +65,16 @@ async function checkPermissions(action) {
 module.exports = {
   convertToDaysRemaining: function (timeRemaining) {
     var seconds = parseInt(timeRemaining, 10);
-  
+
     var days = Math.floor(seconds / (3600 * 24));
-    seconds  -= days * 3600 * 24;
-    var hrs   = Math.floor(seconds / 3600);
-    seconds  -= hrs * 3600;
+    seconds -= days * 3600 * 24;
+    var hrs = Math.floor(seconds / 3600);
+    seconds -= hrs * 3600;
     var mnts = Math.floor(seconds / 60);
-    seconds  -= mnts * 60;
+    seconds -= mnts * 60;
     return (days + " days, " + hrs + " Hrs, " + mnts + " Minutes, " + seconds + " Seconds");
   },
-  logAsciiBull: function() {
+  logAsciiBull: function () {
     console.log(`                                                                          
                                        /######%%,             /#(              
                                      ##########%%%%%,      ,%%%.      %        
@@ -103,8 +103,8 @@ module.exports = {
 
     options = getFinalOptions(options);
     let gasLimit = await getGasLimit(options, action);
-  
-    console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gasLimit} ----`));    
+
+    console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gasLimit} ----`));
 
     let nonce = await web3.eth.getTransactionCount(options.from.address);
     let abi = action.encodeABI();
@@ -117,24 +117,24 @@ module.exports = {
       nonce: nonce,
       value: web3.utils.toHex(options.value)
     };
-    
+
     const transaction = new Tx(parameter);
     transaction.sign(Buffer.from(options.from.privateKey.replace('0x', ''), 'hex'));
     return await web3.eth.sendSignedTransaction('0x' + transaction.serialize().toString('hex'))
-    .on('transactionHash', function(hash){
-      console.log(`
+      .on('transactionHash', function (hash) {
+        console.log(`
   Your transaction is being processed. Please wait...
   TxHash: ${hash}`
-      );
-    })
-    .on('receipt', function(receipt){
-      console.log(`
+        );
+      })
+      .on('receipt', function (receipt) {
+        console.log(`
   Congratulations! The transaction was successfully completed.
   Gas used: ${receipt.gasUsed} - Gas spent: ${web3.utils.fromWei((new web3.utils.BN(options.gasPrice)).mul(new web3.utils.BN(receipt.gasUsed)))} Ether
   Review it on Etherscan.
   TxHash: ${receipt.transactionHash}\n`
-      );
-    });
+        );
+      });
   },
   getEventFromLogs: function (jsonInterface, logs, eventName) {
     let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
@@ -145,5 +145,20 @@ module.exports = {
     let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
     let filteredLogs = logs.filter(l => l.topics.includes(eventJsonInterface.signature));
     return filteredLogs.map(l => web3.eth.abi.decodeLog(eventJsonInterface.inputs, l.data, l.topics.slice(1)));
+  },
+  splitIntoBatches: function (data, batchSize) {
+    let allBatches = [];
+    for (let index = 0; index < data.length; index += batchSize) {
+      allBatches.push(data.slice(index, index + batchSize));
+    }
+    return allBatches;
+  },
+  transposeBatches: function (batches) {
+    let result = [];
+    let columns = batches[0][0].length;
+    for (let index = 0; index < columns; index++) {
+      result[index] = batches.map(batch => batch.map(record => record[index]));
+    }
+    return result;
   }
 };

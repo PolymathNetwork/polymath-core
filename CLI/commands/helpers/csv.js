@@ -1,5 +1,6 @@
 const csvParse = require('csv-parse/lib/sync');
 const fs = require('fs');
+const web3Utils = require('web3-utils');
 
 function _cast(obj) {
   if (/^(\-|\+)?([1-9]+[0-9]*)$/.test(obj)) { // Int
@@ -16,6 +17,8 @@ function _cast(obj) {
   }
   else if (obj.toLowerCase() === "true" || obj.toLowerCase() === "false") { // Boolean
     obj = JSON.parse(obj.toLowerCase());
+  } else if (web3Utils.isAddress(obj)) {
+    obj = web3Utils.toChecksumAddress(obj);
   }
   return obj;
 }
@@ -25,18 +28,8 @@ function parse(_csvFilePath, _batchSize) {
   let input = fs.readFileSync(_csvFilePath);
   // Parse csv
   let data = csvParse(input, { cast: _cast });
-  // Batches
-  let allBatches = [];
-  for (let index = 0; index < data.length; index += _batchSize) {
-    allBatches.push(data.slice(index, index + _batchSize));
-  }
-  // Transform result
-  let result = [];
-  let columnsLenght = data[0].length;
-  for (let index = 0; index < columnsLenght; index++) {
-    result[index] = allBatches.map(batch => batch.map(record => record[index]));
-  }
-  return result;
+
+  return data;
 }
 
 module.exports = parse;

@@ -108,15 +108,6 @@ program
   });
 
 program
-  .command('whitelist <tokenSymbol> [batchSize]')
-  .alias('w')
-  .description('Mass-update a whitelist of allowed/known investors')
-  .action(async function (tokenSymbol, batchSize) {
-    await gbl.initialize(program.remoteNode);
-    await transfer_manager.startCSV(tokenSymbol, batchSize);
-  });
-
-program
   .command('dividends_manager [dividendsType]')
   .alias('dm')
   .description('Runs dividends_manager')

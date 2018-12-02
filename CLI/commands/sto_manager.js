@@ -4,9 +4,7 @@ const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
-const csv_shared = require('./common/csv_shared');
 const csvParse = require('./helpers/csv');
-const BigNumber = require('bignumber.js');
 
 ///////////////////
 // Constants

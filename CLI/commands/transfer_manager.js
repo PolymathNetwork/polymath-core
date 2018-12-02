@@ -1,26 +1,21 @@
-var readlineSync = require('readline-sync');
-var chalk = require('chalk');
-var moment = require('moment');
-var common = require('./common/common_functions');
-var contracts = require('./helpers/contract_addresses');
-var abis = require('./helpers/contract_abis');
-var gbl = require('./common/global');
-var transferManager = require('./transfer_manager');
-var csv_shared = require('./common/csv_shared');
-var BigNumber = require('bignumber.js');
+const readlineSync = require('readline-sync');
+const chalk = require('chalk');
+const moment = require('moment');
+const common = require('./common/common_functions');
+const contracts = require('./helpers/contract_addresses');
+const abis = require('./helpers/contract_abis');
+const gbl = require('./common/global');
+const csvParse = require('./helpers/csv');
+
+///////////////////
+// Constants
+const WHITELIST_DATA_CSV = './CLI/data/Transfer/GTM/whitelist_data.csv';
 
 // App flow
 let tokenSymbol;
 let securityToken;
 let securityTokenRegistry;
 let currentTransferManager;
-let generalTransferManager;
-
-/* CSV variables */
-let distribData = new Array();
-let fullFileData = new Array();
-let badData = new Array();
-/* End CSV variables */
 
 async function executeApp() {
   let exit = false;
@@ -334,7 +329,7 @@ async function generalTransferManager() {
   console.log(`- Allow all burn transfers:        ${displayAllowAllBurnTransfers ? `YES` : `NO`}`);
   // ------------------
 
-  let options = ['Modify whitelist', 'Modify whitelist from CSV', /*'Modify Whitelist Signed',*/
+  let options = ['Check whitelist', 'Modify whitelist', 'Modify whitelist from CSV', /*'Modify Whitelist Signed',*/
     `Change issuance address`, 'Change signing address'];
   if (displayAllowAllTransfers) {
     options.push('Disallow all transfers');
@@ -361,6 +356,19 @@ async function generalTransferManager() {
   let optionSelected = options[index];
   console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
   switch (optionSelected) {
+    case 'Check whitelist':
+      let investorToCheck = readlineSync.question('Enter the address you want to check: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      let timeRestriction = await currentTransferManager.methods.whitelist(investorToCheck).call();
+      console.log(`Sale lockup: ${moment.unix(timeRestriction.fromTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+      console.log(`Buy lockup: ${moment.unix(timeRestriction.toTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+      console.log(`KYC expiry time: ${moment.unix(timeRestriction.expiryTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+      console.log(`Restricted investor: ${timeRestriction.canBuyFromSTO ? 'YES' : 'NO'} `);
+      break;
     case 'Modify whitelist':
       let investor = readlineSync.question('Enter the address to whitelist: ', {
         limit: function (input) {
@@ -369,10 +377,10 @@ async function generalTransferManager() {
         limitMessage: "Must be a valid address"
       });
       let now = Math.floor(Date.now() / 1000);
-      let fromTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens (now = ${now}): `, { defaultInput: now });
-      let toTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (now = ${now}): `, { defaultInput: now });
+      let fromTime = readlineSync.questionInt(`Enter the time(Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens(now = ${now}): `, { defaultInput: now });
+      let toTime = readlineSync.questionInt(`Enter the time(Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others(now = ${now}): `, { defaultInput: now });
       let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
-      let expiryTime = readlineSync.questionInt(`Enter the time till investors KYC will be validated (after that investor need to do re-KYC) (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
+      let expiryTime = readlineSync.questionInt(`Enter the time till investors KYC will be validated(after that investor need to do re - KYC) (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
       let canBuyFromSTO = readlineSync.keyInYNStrict('Is the investor a restricted investor?');
       let modifyWhitelistAction = currentTransferManager.methods.modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
       let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
@@ -380,10 +388,7 @@ async function generalTransferManager() {
       console.log(chalk.green(`${modifyWhitelistEvent._investor} has been whitelisted sucessfully!`));
       break;
     case 'Modify whitelist from CSV':
-      console.log(chalk.yellow(`Data is going to be read from 'data/whitelist_data.csv'. Be sure this file is updated!`));
-      if (readlineSync.keyInYNStrict(`Do you want to continue?`)) {
-        await transferManager.startCSV(tokenSymbol);
-      }
+      await modifyWhitelistInBatch();
       break;
     /*
     case 'Modify Whitelist Signed':
@@ -403,7 +408,7 @@ async function generalTransferManager() {
       let modifyWhitelistSignedAction = currentTransferManager.methods.modifyWhitelistSigned(investorSigned, fromTimeSigned, toTimeSigned, expiryTimeSigned, canBuyFromSTOSigned);
       let modifyWhitelistSignedReceipt = await common.sendTransaction(Issuer, modifyWhitelistSignedAction, defaultGasPrice);
       let modifyWhitelistSignedEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyWhitelistSignedReceipt.logs, 'ModifyWhitelist');
-      console.log(chalk.green(`${modifyWhitelistSignedEvent._investor} has been whitelisted sucessfully!`));
+      console.log(chalk.green(`${ modifyWhitelistSignedEvent._investor } has been whitelisted sucessfully!`));
       break;
     */
     case 'Change issuance address':
@@ -477,173 +482,42 @@ async function generalTransferManager() {
   }
 }
 
-async function startCSV(tokenSymbol, batchSize) {
-  securityToken = await csv_shared.start(tokenSymbol, batchSize);
-
-  let result_processing = await csv_shared.read('./CLI/data/whitelist_data.csv', whitelist_processing);
-  distribData = result_processing.distribData;
-  fullFileData = result_processing.fullFileData;
-  badData = result_processing.badData;
-
-  await saveInBlockchain();
-  await finalResults();
-};
-
-function whitelist_processing(csv_line) {
-  let isAddress = web3.utils.isAddress(csv_line[0]);
-  let sellValid = isValidDate(csv_line[1])
-  let buyValid = isValidDate(csv_line[2])
-  let kycExpiryDate = isValidDate(csv_line[3])
-  let canBuyFromSTO = (typeof JSON.parse(csv_line[4].toLowerCase())) == "boolean" ? JSON.parse(csv_line[4].toLowerCase()) : "not-valid";
-
-  if (isAddress &&
-      sellValid &&
-      buyValid &&
-      kycExpiryDate &&
-      (canBuyFromSTO != "not-valid")) {
-    return [true, new Array(web3.utils.toChecksumAddress(csv_line[0]), sellValid, buyValid, kycExpiryDate, canBuyFromSTO)]
-  } else {
-    return [false, new Array(csv_line[0], sellValid, buyValid, kycExpiryDate, canBuyFromSTO)]
+async function modifyWhitelistInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file(${WHITELIST_DATA_CSV}): `, {
+    defaultInput: WHITELIST_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size(${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row =>
+    web3.utils.isAddress(row[0]) &&
+    moment.unix(row[1]).isValid() &&
+    moment.unix(row[2]).isValid() &&
+    moment.unix(row[3]).isValid() &&
+    typeof row[4] === 'boolean'
+  );
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
   }
-}
-
-function isValidDate(date) {
-  var matches = /^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/.exec(date);
-  if (matches == null) return false;
-  var d = matches[2];
-  var m = matches[1] - 1;
-  var y = matches[3];
-  var composedDate = new Date(y, m, d);
-  var timestampDate = composedDate.getTime()
-
-  // For some reason these timestamps are being recorded +4 hours UTC
-  if (composedDate.getDate() == d &&
-      composedDate.getMonth() == m &&
-      composedDate.getFullYear() == y) {
-    return timestampDate / 1000
-  } else {
-    return false
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to change accredited accounts: \n\n`, investorArray[batch], '\n');
+    let action = await currentTransferManager.methods.modifyWhitelistMulti(investorArray[batch], fromTimesArray[batch], toTimesArray[batch], expiryTimeArray[batch], canBuyFromSTOArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Whitelist transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
-}
-
-async function saveInBlockchain() {
-  let gtmModules;
-  try {
-    gtmModules = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
-  } catch (e) {
-    console.log("Please attach General Transfer module before launch this action.", e)
-    process.exit(0)
-  }
-
-  generalTransferManager = new web3.eth.Contract(abis.generalTransferManager(), gtmModules[0]);
-
-  console.log(`
-    -------------------------------------------------------
-    ----- Sending buy/sell restrictions to blockchain -----
-    -------------------------------------------------------
-  `);
-
-  for (let i = 0; i < distribData.length; i++) {
-    try {
-      let investorArray = [], fromTimesArray = [], toTimesArray = [], expiryTimeArray = [], canBuyFromSTOArray = [];
-
-      // Splitting the user arrays to be organized by input
-      for (let j = 0; j < distribData[i].length; j++) {
-        investorArray.push(distribData[i][j][0])
-        fromTimesArray.push(distribData[i][j][1])
-        toTimesArray.push(distribData[i][j][2])
-        expiryTimeArray.push(distribData[i][j][3])
-        canBuyFromSTOArray.push(distribData[i][j][4])
-      }
-
-      let modifyWhitelistMultiAction = await generalTransferManager.methods.modifyWhitelistMulti(investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray);
-      let tx = await common.sendTransaction(modifyWhitelistMultiAction);
-      console.log(`Batch ${i} - Attempting to modifyWhitelist accounts:\n\n`, investorArray, "\n\n");
-      console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------");
-      console.log("Whitelist transaxction was successful.", tx.gasUsed, "gas used. Spent:", web3.utils.fromWei(BigNumber(tx.gasUsed * defaultGasPrice).toString(), "ether"), "Ether");
-      console.log("---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------\n\n");
-
-    } catch (err) {
-      console.log("ERROR", err)
-      process.exit(0)
-    }
-  }
-
-  return;
-}
-
-async function finalResults() {
-  let totalInvestors = 0;
-  let updatedInvestors = 0;
-  let investorObjectLookup = {};
-  let investorData_Events = new Array();
-  let event_data = await generalTransferManager.getPastEvents('ModifyWhitelist', {fromBlock: 0, toBlock: 'latest'}, () => {});
-
-  for (var i = 0; i < event_data.length; i++) {
-    let combineArray = [];
-
-    let investorAddress_Event = event_data[i].returnValues._investor
-    let fromTime_Event = event_data[i].returnValues._fromTime
-    let toTime_Event = event_data[i].returnValues._toTime
-    let expiryTime_Event = event_data[i].returnValues._expiryTime
-    let canBuyFromSTO_Event = event_data[i].returnValues._canBuyFromSTO
-    let blockNumber = event_data[i].blockNumber
-
-    combineArray.push(investorAddress_Event);
-    combineArray.push(fromTime_Event);
-    combineArray.push(toTime_Event);
-    combineArray.push(expiryTime_Event);
-    combineArray.push(canBuyFromSTO_Event);
-    combineArray.push(blockNumber)
-
-    investorData_Events.push(combineArray)
-
-    // We have already recorded it, so this is an update to our object
-    if (investorObjectLookup.hasOwnProperty(investorAddress_Event)) {
-      // The block number form the event we are checking is bigger, so we gotta replace it
-      if (investorObjectLookup[investorAddress_Event].recordedBlockNumber < blockNumber) {
-        investorObjectLookup[investorAddress_Event] = {fromTime: fromTime_Event, toTime: toTime_Event, expiryTime: expiryTime_Event, canBuyFromSTO: canBuyFromSTO_Event, recordedBlockNumber: blockNumber};
-        updatedInvestors += 1;
-      }
-    } else {
-      investorObjectLookup[investorAddress_Event] = {fromTime: fromTime_Event, toTime: toTime_Event, expiryTime: expiryTime_Event, canBuyFromSTO: canBuyFromSTO_Event, recordedBlockNumber: blockNumber};
-      totalInvestors += 1;
-    }
-  }
-
-  let investorAddress_Events = Object.keys(investorObjectLookup)
-
-  console.log(`******************** EVENT LOGS ANALYSIS COMPLETE ********************\n`);
-  console.log(`A total of ${totalInvestors} investors have been whitelisted total, all time.\n`);
-  console.log(`This script in total sent ${fullFileData.length - badData.length} new investors and updated investors to the blockchain.\n`);
-  console.log(`There were ${badData.length} bad entries that didnt get sent to the blockchain in the script.\n`);
-  console.log("************************************************************************************************");
-  console.log("OBJECT WITH EVERY USER AND THEIR UPDATED TIMES: \n\n", investorObjectLookup)
-  console.log("************************************************************************************************");
-  console.log("LIST OF ALL INVESTORS WHITELISTED: \n\n", investorAddress_Events)
-
-  let missingDistribs = [];
-  for (let l = 0; l < fullFileData.length; l++) {
-    if (!investorObjectLookup.hasOwnProperty(fullFileData[l][0])) {
-      missingDistribs.push(fullFileData[l])
-    }
-  }
-
-  if (missingDistribs.length > 0) {
-    console.log("************************************************************************************************");
-    console.log("-- No LogModifyWhitelist event was found for the following data arrays. Please review them manually --")
-    console.log(missingDistribs)
-    console.log("************************************************************************************************");
-  } else {
-    console.log("\n************************************************************************************************");
-    console.log("All accounts passed through from the CSV were successfully whitelisted, because we were able to read them all from events")
-    console.log("************************************************************************************************");
-  }
-
 }
 
 async function manualApprovalTransferManager() {
-  console.log(chalk.blue(`Manual Approval Transfer Manager at ${currentTransferManager.options.address}`), '\n');
+  console.log(chalk.blue(`Manual Approval Transfer Manager at ${currentTransferManager.options.address} `), '\n');
 
   let options = ['Check manual approval', 'Add manual approval', 'Revoke manual approval',
     'Check manual blocking', 'Add manual blocking', 'Revoke manual blocking'];
@@ -671,8 +545,8 @@ async function manualApprovalTransferManager() {
       let manualApproval = await getManualApproval(from, to);
       if (manualApproval) {
         console.log(`Manual approval found!`);
-        console.log(`Allowance: ${web3.utils.fromWei(manualApproval.allowance)}`);
-        console.log(`Expiry time: ${moment.unix(manualApproval.expiryTime).format('MMMM Do YYYY, HH:mm:ss')};`)
+        console.log(`Allowance: ${web3.utils.fromWei(manualApproval.allowance)} `);
+        console.log(`Expiry time: ${moment.unix(manualApproval.expiryTime).format('MMMM Do YYYY, HH:mm:ss')}; `)
       } else {
         console.log(chalk.yellow(`There are no manual approvals from ${from} to ${to}.`));
       }
@@ -693,13 +567,13 @@ async function manualApprovalTransferManager() {
       if (!await getManualApproval(from, to)) {
         let allowance = readlineSync.question('Enter the amount of tokens which will be approved: ');
         let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
-        let expiryTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) until which the transfer is allowed (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
+        let expiryTime = readlineSync.questionInt(`Enter the time(Unix Epoch time) until which the transfer is allowed(1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
         let addManualApprovalAction = currentTransferManager.methods.addManualApproval(from, to, web3.utils.toWei(allowance), expiryTime);
         let addManualApprovalReceipt = await common.sendTransaction(addManualApprovalAction);
         let addManualApprovalEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addManualApprovalReceipt.logs, 'AddManualApproval');
         console.log(chalk.green(`Manual approval has been added successfully!`));
       } else {
-        console.log(chalk.red(`A manual approval already exists from ${from} to ${to}. Revoke it first if you want to add a new one.`));
+        console.log(chalk.red(`A manual approval already exists from ${from} to ${to}.Revoke it first if you want to add a new one.`));
       }
       break;
     case 'Revoke manual approval':
@@ -741,7 +615,7 @@ async function manualApprovalTransferManager() {
       let manualBlocking = await getManualBlocking(from, to);
       if (manualBlocking) {
         console.log(`Manual blocking found!`);
-        console.log(`Expiry time: ${moment.unix(manualBlocking).format('MMMM Do YYYY, HH:mm:ss')};`)
+        console.log(`Expiry time: ${moment.unix(manualBlocking).format('MMMM Do YYYY, HH:mm:ss')}; `)
       } else {
         console.log(chalk.yellow(`There are no manual blockings from ${from} to ${to}.`));
       }
@@ -761,13 +635,13 @@ async function manualApprovalTransferManager() {
       });
       if (!await getManualBlocking(from, to)) {
         let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
-        let expiryTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) until which the transfer is blocked (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
+        let expiryTime = readlineSync.questionInt(`Enter the time(Unix Epoch time) until which the transfer is blocked(1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
         let addManualBlockingAction = currentTransferManager.methods.addManualBlocking(from, to, expiryTime);
         let addManualBlockingReceipt = await common.sendTransaction(addManualBlockingAction);
         let addManualBlockingEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addManualBlockingReceipt.logs, 'AddManualBlocking');
         console.log(chalk.green(`Manual blocking has been added successfully!`));
       } else {
-        console.log(chalk.red(`A manual blocking already exists from ${from} to ${to}. Revoke it first if you want to add a new one.`));
+        console.log(chalk.red(`A manual blocking already exists from ${from} to ${to}.Revoke it first if you want to add a new one.`));
       }
       break;
     case 'Revoke manual blocking':
@@ -818,7 +692,7 @@ async function getManualBlocking(_from, _to) {
 }
 
 async function singleTradeVolumeRestrictionTM() {
-  console.log(chalk.blue(`Single Trade Volume Restriction Transfer Manager at ${currentTransferManager.options.address}`));
+  console.log(chalk.blue(`Single Trade Volume Restriction Transfer Manager at ${currentTransferManager.options.address} `));
   console.log();
 
   // Show current data
@@ -831,9 +705,9 @@ async function singleTradeVolumeRestrictionTM() {
   }
   let displayAllowPrimaryIssuance = await currentTransferManager.methods.allowPrimaryIssuance().call();
 
-  console.log(`- Limit type:                ${displayIsInPercentage ? `Percentage` : `Tokens`}`);
-  console.log(`- Default transfer limit:    ${displayGlobalTransferLimit} ${displayIsInPercentage ? `%` : `${tokenSymbol}`}`);
-  console.log(`- Allow primary issuance:    ${displayAllowPrimaryIssuance ? `YES` : `NO`}`);
+  console.log(`- Limit type: ${displayIsInPercentage ? `Percentage` : `Tokens`} `);
+  console.log(`- Default transfer limit: ${displayGlobalTransferLimit} ${displayIsInPercentage ? `%` : `${tokenSymbol}`} `);
+  console.log(`- Allow primary issuance: ${displayAllowPrimaryIssuance ? `YES` : `NO`} `);
   // ------------------
 
   let options = [];
@@ -895,7 +769,7 @@ async function singleTradeVolumeRestrictionTM() {
       let changeTransferLimitToTokensReceipt = await common.sendTransaction(changeTransferLimitToTokensAction);
       let changeTransferLimitToTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeTransferLimitToTokensReceipt.logs, 'GlobalTransferLimitInTokensSet');
       console.log(chalk.green(`Transfer limit has been set to tokens sucessfully!`));
-      console.log(chalk.green(`The default transfer limit is ${web3.utils.fromWei(changeTransferLimitToTokensEvent._amount)} ${tokenSymbol}`));
+      console.log(chalk.green(`The default transfer limit is ${web3.utils.fromWei(changeTransferLimitToTokensEvent._amount)} ${tokenSymbol} `));
       break;
     case 'Change transfer limit to percentage':
       let newDefaultLimitInPercentage = toWeiPercentage(readlineSync.question('Enter the percentage for default limit: ', {
@@ -908,7 +782,7 @@ async function singleTradeVolumeRestrictionTM() {
       let changeTransferLimitToPercentageReceipt = await common.sendTransaction(changeTransferLimitToPercentageAction);
       let changeTransferLimitToPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeTransferLimitToPercentageReceipt.logs, 'GlobalTransferLimitInPercentageSet');
       console.log(chalk.green(`Transfer limit has been set to tokens sucessfully!`));
-      console.log(chalk.green(`The default transfer limit is ${fromWeiPercentage(changeTransferLimitToPercentageEvent._percentage)} %`));
+      console.log(chalk.green(`The default transfer limit is ${fromWeiPercentage(changeTransferLimitToPercentageEvent._percentage)} % `));
       break;
     case 'Change default percentage limit':
       let defaultLimitInPercentage = toWeiPercentage(readlineSync.question('Enter the percentage for default limit: ', {
@@ -920,7 +794,7 @@ async function singleTradeVolumeRestrictionTM() {
       let changeGlobalLimitInPercentageAction = currentTransferManager.methods.changeGlobalLimitInPercentage(defaultLimitInPercentage);
       let changeGlobalLimitInPercentageReceipt = await common.sendTransaction(changeGlobalLimitInPercentageAction);
       let changeGlobalLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeGlobalLimitInPercentageReceipt.logs, 'GlobalTransferLimitInPercentageSet');
-      console.log(chalk.green(`The default transfer limit is ${fromWeiPercentage(changeGlobalLimitInPercentageEvent._percentage)} %`));
+      console.log(chalk.green(`The default transfer limit is ${fromWeiPercentage(changeGlobalLimitInPercentageEvent._percentage)} % `));
       break;
     case 'Change default tokens limit':
       let defaultLimitInTokens = web3.utils.toWei(readlineSync.question('Enter the amount of tokens for default limit: ', {
@@ -932,7 +806,7 @@ async function singleTradeVolumeRestrictionTM() {
       let changeGlobalLimitInTokensAction = currentTransferManager.methods.changeGlobalLimitInTokens(defaultLimitInTokens);
       let changeGlobalLimitInTokensReceipt = await common.sendTransaction(changeGlobalLimitInTokensAction);
       let changeGlobalLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeGlobalLimitInTokensReceipt.logs, 'GlobalTransferLimitInTokensSet');
-      console.log(chalk.green(`The default transfer limit is ${web3.utils.fromWei(changeGlobalLimitInTokensEvent._amount)} ${tokenSymbol}`));
+      console.log(chalk.green(`The default transfer limit is ${web3.utils.fromWei(changeGlobalLimitInTokensEvent._amount)} ${tokenSymbol} `));
       break;
     case 'Set percentage transfer limit per account':
       let percentageAccount = readlineSync.question('Enter the wallet: ', {
@@ -950,7 +824,7 @@ async function singleTradeVolumeRestrictionTM() {
       let setTransferLimitInPercentageAction = currentTransferManager.methods.setTransferLimitInPercentage(percentageAccount, accountLimitInPercentage);
       let setTransferLimitInPercentageReceipt = await common.sendTransaction(setTransferLimitInPercentageAction);
       let setTransferLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, setTransferLimitInPercentageReceipt.logs, 'TransferLimitInPercentageSet');
-      console.log(chalk.green(`The transfer limit for ${setTransferLimitInPercentageEvent._wallet} is ${fromWeiPercentage(setTransferLimitInPercentageEvent._percentage)} %`));
+      console.log(chalk.green(`The transfer limit for ${setTransferLimitInPercentageEvent._wallet} is ${fromWeiPercentage(setTransferLimitInPercentageEvent._percentage)} % `));
       break;
     case 'Set tokens transfer limit per account':
       let tokensAccount = readlineSync.question('Enter the wallet: ', {
@@ -968,7 +842,7 @@ async function singleTradeVolumeRestrictionTM() {
       let setTransferLimitInTokensAction = currentTransferManager.methods.setTransferLimitInTokens(tokensAccount, accountLimitInTokens);
       let setTransferLimitInTokensReceipt = await common.sendTransaction(setTransferLimitInTokensAction);
       let setTransferLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, setTransferLimitInTokensReceipt.logs, 'TransferLimitInTokensSet');
-      console.log(chalk.green(`The transfer limit for ${setTransferLimitInTokensEvent._wallet} is ${web3.utils.fromWei(setTransferLimitInTokensEvent._amount)} ${tokenSymbol}`));
+      console.log(chalk.green(`The transfer limit for ${setTransferLimitInTokensEvent._wallet} is ${web3.utils.fromWei(setTransferLimitInTokensEvent._amount)} ${tokenSymbol} `));
       break;
     case 'Remove percentage transfer limit per account':
       let percentageAccountToRemove = readlineSync.question('Enter the wallet to remove: ', {
@@ -1007,8 +881,8 @@ function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, rest
       )
       .slice(2);
   packedData = new Buffer(packedData, "hex");
-  packedData = Buffer.concat([new Buffer(`\x19Ethereum Signed Message:\n${packedData.length.toString()}`), packedData]);
-  packedData = web3.sha3(`0x${packedData.toString("hex")}`, { encoding: "hex" });
+  packedData = Buffer.concat([new Buffer(`\x19Ethereum Signed Message: \n${ packedData.length.toString() } `), packedData]);
+  packedData = web3.sha3(`0x${ packedData.toString("hex") } `, { encoding: "hex" });
   return ethUtil.ecsign(new Buffer(packedData.slice(2), "hex"), new Buffer(pk, "hex"));
 }
 */
@@ -1098,7 +972,7 @@ async function selectToken() {
     return { symbol: tokenData[0], address: t };
   }));
   let options = tokenDataArray.map(function (t) {
-    return `${t.symbol} - Deployed at ${t.address}`;
+    return `${t.symbol} - Deployed at ${t.address} `;
   });
   options.push('Enter token symbol manually');
 
@@ -1126,8 +1000,5 @@ module.exports = {
   addTransferManagerModule: async function (_tokenSymbol) {
     await initialize(_tokenSymbol);
     return addTransferManagerModule()
-  },
-  startCSV: async function (tokenSymbol, batchSize) {
-    return startCSV(tokenSymbol, batchSize);
   }
 }

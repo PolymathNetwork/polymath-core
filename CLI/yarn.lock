@@ -437,6 +437,11 @@ crypto-browserify@3.12.0:
     randombytes "^2.0.0"
     randomfill "^1.0.3"
 
+csv-parse@^4.0.1:
+  version "4.0.1"
+  resolved "https://registry.yarnpkg.com/csv-parse/-/csv-parse-4.0.1.tgz#4ad438352cbf12d5317d0fb9d588e53473293851"
+  integrity sha512-ehkwejEj05wwO7Q9JD+YSI6dNMIauHIroNU1RALrmRrqPoZIwRnfBtgq5GkU6i2RxZOJqjo3dtI1NrVSXvaimA==
+
 dashdash@^1.12.0:
   version "1.14.1"
   resolved "https://registry.yarnpkg.com/dashdash/-/dashdash-1.14.1.tgz#853cfa0f7cbe2fed5de20326b8dd581035f6e2f0"

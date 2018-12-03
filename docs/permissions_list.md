@@ -275,8 +275,12 @@
         <tr>
             <td rowspan=16>Wallet</td>
             <td rowspan=16>VestingEscrowWallet</td>
+            <td>changeTreasuryWallet()</td>
+            <td>onlyOwner</td>
+        </tr>
+        <tr>
             <td>depositTokens()</td>
-            <td rowspan=16>withPerm(ADMIN)</td>
+            <td rowspan=15>withPerm(ADMIN)</td>
         </tr>
         <tr>
             <td>sendToTreasury()</td>
@@ -304,9 +308,6 @@
         </tr>
         <tr>
             <td>revokeAllSchedules()</td>
-        </tr>
-        <tr>
-            <td>trimBeneficiaries()</td>
         </tr>
         <tr>
             <td>pushAvailableTokensMulti()</td>

@@ -855,6 +855,7 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should add 3 Templates", async () => {
+            let oldTemplateCount = await I_VestingEscrowWallet.getTemplateCount.call();
             for (let i = 0; i < schedules.length; i++) {
                 let templateName = schedules[i].templateName;
                 let numberOfTokens = schedules[i].numberOfTokens;
@@ -866,6 +867,11 @@ contract('VestingEscrowWallet', accounts => {
                 assert.equal(tx.logs[0].args._numberOfTokens.toNumber(), numberOfTokens);
                 assert.equal(tx.logs[0].args._duration.toNumber(), duration);
                 assert.equal(tx.logs[0].args._frequency.toNumber(), frequency);
+            }
+            let templateNames = await I_VestingEscrowWallet.getAllTemplateNames.call();
+
+            for (let i = 0, j = oldTemplateCount; i < schedules.length; i++, j++) {
+                assert.equal(web3.utils.hexToUtf8(templateNames[j]), schedules[i].templateName);
             }
         });
 

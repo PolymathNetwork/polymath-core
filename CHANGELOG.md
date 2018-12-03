@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# v2.1.0 - Release Candidate
+# v2.1.0 - Release Candidate    
 
 [__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
 
@@ -14,10 +14,16 @@ All notable changes to this project will be documented in this file.
 * Added `getTokensSoldByTier` to return sold (not minted during finalisation) tokens in each tier to USDTSTO.
 * Removed individual mappings for tier data removed in UDSTSTO.
 
-##Changed
-* `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
+## Manual Approval TransferManager
+* Removed `0x0` check for the `_from` address to `ManualApprovalTransferManager`. This allows for the Issuer/Transfer Agent to approve a one-off mint of tokens that otherwise would not be possible. 
+* Changed the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.0.1`.   
+* Deployed 2.0.1 `ManualApprovalTransferManagerFactory` to address 0x6af2afad53cb334e62b90ddbdcf3a086f654c298
 
-# v1.5.0
+## Changed
+* `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
+ 
+
+# v1.5.0 - Release Candidate
 
 [__1.5.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __15-08-18__
 
@@ -54,13 +60,13 @@ All notable changes to this project will be documented in this file.
 * All permissions are denied if no permission manager is active.
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
 * Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230  
-* Change the function name of `withdraPoly` to `withdrawERC20` and make the function generalize to extract tokens from the ST contract. parmeters are contract address and the value need to extract from the securityToken.          
+* Change the function name of `withdraPoly` to `withdrawERC20` and make the function generalize to extract tokens from the ST contract. parmeters are contract address and the value need to extract from the securityToken.     
 
 ## Removed
 * Removed investors list pruning
 * Remove `swarmHash` from the `registerTicker(), addCustomTicker(), generateSecurityToken(), addCustomSecurityToken()` functions of TickerRegistry.sol and SecurityTokenRegistry.sol. #230  
 * Remove `Log` prefix from all the event present in the ecosystem.    
-* Removed `addTagByModuleType` & `removeTagsByModuleType` from MR.
+* Removed `addTagByModuleType` & `removeTagsByModuleType` from MR. 
 
 ======
 

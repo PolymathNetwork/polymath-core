@@ -779,7 +779,7 @@ async function changeNonAccreditedLimitsInBatch(currentSTO) {
   let batches = common.splitIntoBatches(validData, batchSize);
   let [investorArray, limitArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
-    console.log(`Batch ${batch + 1} - Attempting to change accredited accounts:\n\n`, investorArray[batch], '\n');
+    console.log(`Batch ${batch + 1} - Attempting to change non accredited limit to accounts:\n\n`, investorArray[batch], '\n');
     let action = await currentSTO.methods.changeNonAccreditedLimit(investorArray[batch], limitArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Change non accredited limits transaction was successful.'));

@@ -31,5 +31,6 @@ module.exports = Object.freeze({
         POLY: 1,
         DAI: 2
     },
-    DEFAULT_BATCH_SIZE: 75
+    DEFAULT_BATCH_SIZE: 75,
+    ADDRESS_ZERO: '0x0000000000000000000000000000000000000000'
 });

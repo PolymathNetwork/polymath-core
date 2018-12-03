@@ -74,19 +74,17 @@ program
   .command('token_manager')
   .alias('stm')
   .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage')
+  .option('-m, --multiMint <csvFilePath>', 'Distribute tokens to previously whitelisted investors')
+  .option('-b, --batchSize <batchSize>', 'Max number of records per transaction')
   .description('Manage your Security Tokens, mint tokens, add modules and change config')
   .action(async function (cmd) {
     await gbl.initialize(program.remoteNode);
-    await token_manager.executeApp(cmd.securityToken);
-  });
-
-program
-  .command('multi_mint <tokenSymbol> [batchSize]')
-  .alias('mi')
-  .description('Distribute tokens to previously whitelisted investors')
-  .action(async function (tokenSymbol, batchSize) {
-    await gbl.initialize(program.remoteNode);
-    await token_manager.startCSV(tokenSymbol, batchSize);
+    if (cmd.multiMint) {
+      let batchSize = cmd.batchSize ? cmd.batchSize : gbl.constants.DEFAULT_BATCH_SIZE;
+      await token_manager.multiMint(cmd.securityToken, cmd.multiMint, batchSize);
+    } else {
+      await token_manager.executeApp(cmd.securityToken);
+    }
   });
 
 program

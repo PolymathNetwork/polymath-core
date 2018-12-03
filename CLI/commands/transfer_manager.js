@@ -483,10 +483,10 @@ async function generalTransferManager() {
 }
 
 async function modifyWhitelistInBatch() {
-  let csvFilePath = readlineSync.question(`Enter the path for csv data file(${WHITELIST_DATA_CSV}): `, {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${WHITELIST_DATA_CSV}): `, {
     defaultInput: WHITELIST_DATA_CSV
   });
-  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size(${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
     limit: function (input) {
       return parseInt(input) > 0;
     },
@@ -508,7 +508,7 @@ async function modifyWhitelistInBatch() {
   let batches = common.splitIntoBatches(validData, batchSize);
   let [investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
-    console.log(`Batch ${batch + 1} - Attempting to change accredited accounts: \n\n`, investorArray[batch], '\n');
+    console.log(`Batch ${batch + 1} - Attempting to modify whitelist to accounts: \n\n`, investorArray[batch], '\n');
     let action = await currentTransferManager.methods.modifyWhitelistMulti(investorArray[batch], fromTimesArray[batch], toTimesArray[batch], expiryTimeArray[batch], canBuyFromSTOArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Whitelist transaction was successful.'));

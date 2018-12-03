@@ -74,19 +74,17 @@ program
   .command('token_manager')
   .alias('stm')
   .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage')
+  .option('-m, --multiMint <csvFilePath>', 'Distribute tokens to previously whitelisted investors')
+  .option('-b, --batchSize <batchSize>', 'Max number of records per transaction')
   .description('Manage your Security Tokens, mint tokens, add modules and change config')
   .action(async function (cmd) {
     await gbl.initialize(program.remoteNode);
-    await token_manager.executeApp(cmd.securityToken);
-  });
-
-program
-  .command('multi_mint <tokenSymbol> [batchSize]')
-  .alias('mi')
-  .description('Distribute tokens to previously whitelisted investors')
-  .action(async function (tokenSymbol, batchSize) {
-    await gbl.initialize(program.remoteNode);
-    await token_manager.startCSV(tokenSymbol, batchSize);
+    if (cmd.multiMint) {
+      let batchSize = cmd.batchSize ? cmd.batchSize : gbl.constants.DEFAULT_BATCH_SIZE;
+      await token_manager.multiMint(cmd.securityToken, cmd.multiMint, batchSize);
+    } else {
+      await token_manager.executeApp(cmd.securityToken);
+    }
   });
 
 program
@@ -105,15 +103,6 @@ program
   .action(async function (contractAddress, transferTo) {
     await gbl.initialize(program.remoteNode);
     await transfer_ownership.executeApp(contractAddress, transferTo);
-  });
-
-program
-  .command('whitelist <tokenSymbol> [batchSize]')
-  .alias('w')
-  .description('Mass-update a whitelist of allowed/known investors')
-  .action(async function (tokenSymbol, batchSize) {
-    await gbl.initialize(program.remoteNode);
-    await transfer_manager.startCSV(tokenSymbol, batchSize);
   });
 
 program
@@ -142,24 +131,6 @@ program
   .action(async function () {
     await gbl.initialize(program.remoteNode);
     await contract_manager.executeApp();
-  });
-
-program
-  .command('accredit <tokenSymbol> [batchSize]')
-  .alias('a')
-  .description('Runs accredit')
-  .action(async function (tokenSymbol, batchSize) {
-    await gbl.initialize(program.remoteNode);
-    await sto_manager.startCSV(tokenSymbol, batchSize, 'accredited')
-  });
-
-program
-  .command('nonAccreditedLimit <tokenSymbol> [batchSize]')
-  .alias('nal')
-  .description('Runs changeNonAccreditedLimit')
-  .action(async function (tokenSymbol, batchSize) {
-    await gbl.initialize(program.remoteNode);
-    await sto_manager.startCSV(tokenSymbol, batchSize, 'nonAccreditedLimit')
   });
 
 program

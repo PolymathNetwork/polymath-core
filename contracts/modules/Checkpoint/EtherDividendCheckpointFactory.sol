@@ -22,7 +22,7 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         require(_logicContract != address(0), "Invalid logic contract");
-        version = "1.0.0";
+        version = "2.1.0";
         name = "EtherDividendCheckpoint";
         title = "Ether Dividend Checkpoint";
         description = "Create ETH dividends for token holders at a specific checkpoint";

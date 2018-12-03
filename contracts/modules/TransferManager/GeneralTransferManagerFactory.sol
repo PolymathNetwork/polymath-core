@@ -22,7 +22,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         require(_logicContract != address(0), "Invalid logic contract");
-        version = "2.0.0";
+        version = "2.1.0";
         name = "GeneralTransferManager";
         title = "General Transfer Manager";
         description = "Manage transfers using a time based whitelist";

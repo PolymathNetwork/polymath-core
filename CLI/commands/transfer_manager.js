@@ -10,6 +10,7 @@ const csvParse = require('./helpers/csv');
 ///////////////////
 // Constants
 const WHITELIST_DATA_CSV = './CLI/data/Transfer/GTM/whitelist_data.csv';
+const PERCENTAGE_WHITELIST_DATA_CSV = './CLI/data/Transfer/PercentageTM/whitelist_data.csv';
 
 // App flow
 let tokenSymbol;
@@ -518,7 +519,7 @@ async function modifyWhitelistInBatch() {
     console.log(`Batch ${batch + 1} - Attempting to modify whitelist to accounts: \n\n`, investorArray[batch], '\n');
     let action = await currentTransferManager.methods.modifyWhitelistMulti(investorArray[batch], fromTimesArray[batch], toTimesArray[batch], expiryTimeArray[batch], canBuyFromSTOArray[batch]);
     let receipt = await common.sendTransaction(action);
-    console.log(chalk.green('Whitelist transaction was successful.'));
+    console.log(chalk.green('Modify whitelist transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
@@ -785,6 +786,31 @@ async function percentageTransferManager() {
       }
       break;
     case 'Modify whitelist from CSV':
+      let csvFilePath = readlineSync.question(`Enter the path for csv data file (${PERCENTAGE_WHITELIST_DATA_CSV}): `, {
+        defaultInput: PERCENTAGE_WHITELIST_DATA_CSV
+      });
+      let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+        limit: function (input) {
+          return parseInt(input) > 0;
+        },
+        limitMessage: 'Must be greater than 0',
+        defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+      });
+      let parsedData = csvParse(csvFilePath);
+      let validData = parsedData.filter(row => web3.utils.isAddress(row[0]) && typeof row[1] === 'boolean');
+      let invalidRows = parsedData.filter(row => !validData.includes(row));
+      if (invalidRows.length > 0) {
+        console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')}`));
+      }
+      let batches = common.splitIntoBatches(validData, batchSize);
+      let [investorArray, isWhitelistedArray] = common.transposeBatches(batches);
+      for (let batch = 0; batch < batches.length; batch++) {
+        console.log(`Batch ${batch + 1} - Attempting to modify whitelist accounts:\n\n`, investorArray[batch], '\n');
+        let action = await currentTransferManager.methods.modifyWhitelistMulti(investorArray[batch], isWhitelistedArray[batch]);
+        let receipt = await common.sendTransaction(action);
+        console.log(chalk.green('Modify whitelist transaction was successful.'));
+        console.log(`${receipt.gasUsed} gas used. Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+      }
       break;
     case 'Allow primary issuance':
     case 'Disallow primary issuance':

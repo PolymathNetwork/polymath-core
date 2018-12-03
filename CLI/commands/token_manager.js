@@ -1,12 +1,14 @@
 // Libraries for terminal prompts
 const readlineSync = require('readline-sync');
 const chalk = require('chalk');
-const whitelist = require('./whitelist');
-const multimint = require('./multi_mint');
 const stoManager = require('./sto_manager');
 const transferManager = require('./transfer_manager');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
+const csvParse = require('./helpers/csv');
+
+// Constants
+const MULTIMINT_DATA_CSV = './CLI/data/ST/multi_mint_data.csv';
 
 // Load contract artifacts
 const contracts = require('./helpers/contract_addresses');
@@ -280,7 +282,7 @@ async function listInvestorsAtCheckpoint(checkpointId) {
 }
 
 async function mintTokens() {
-  let options = ['Modify whitelist', 'Mint tokens to a single address', `Modify whitelist and mint tokens using data from 'whitelist_data.csv' and 'multi_mint_data.csv'`];
+  let options = ['Modify whitelist', 'Mint tokens to a single address', `Mint tokens to multiple addresses from CSV`];
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
   let selected = index == -1 ? 'Return' : options[index];
   console.log('Selected:', selected);
@@ -304,8 +306,9 @@ async function mintTokens() {
       let amount = readlineSync.question(`Enter the amount of tokens to mint: `);
       await mintToSingleAddress(receiver, amount);
       break;
-    case `Modify whitelist and mint tokens using data from 'whitelist_data.csv' and 'multi_mint_data.csv'`:
-      await multi_mint_tokens();
+    case `Mint tokens to multiple addresses from CSV`:
+      console.log(chalk.yellow(`Investors should be previously whitelisted.`));
+      await multiMint();
       break;
   }
 }
@@ -336,15 +339,68 @@ async function mintToSingleAddress(_investor, _amount) {
   }
 }
 
-async function multi_mint_tokens() {
-  await whitelist.executeApp(tokenSymbol, 75);
-  console.log(chalk.green(`\nCongratulations! All the affiliates get succssfully whitelisted, Now its time to Mint the tokens\n`));
-  console.log(chalk.red(`WARNING: `) + `Please make sure all the addresses that get whitelisted are only eligible to hold or get Security token\n`);
+async function multiMint(_csvFilePath, _batchSize) {
+  let csvFilePath;
+  if (typeof _csvFilePath !== 'undefined') {
+    csvFilePath = _csvFilePath;
+  } else {
+    csvFilePath = readlineSync.question(`Enter the path for csv data file (${MULTIMINT_DATA_CSV}): `, {
+      defaultInput: MULTIMINT_DATA_CSV
+    });
+  }
+  let batchSize;
+  if (typeof _batchSize !== 'undefined') {
+    batchSize = _batchSize;
+  } else {
+    batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+      limit: function (input) {
+        return parseInt(input) > 0;
+      },
+      limitMessage: 'Must be greater than 0',
+      defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+    });
+  }
+  let parsedData = csvParse(csvFilePath);
+  let tokenDivisible = await securityToken.methods.granularity().call() == 1;
+  let validData = parsedData.filter(row =>
+    web3.utils.isAddress(row[0]) &&
+    (!isNaN(row[1]) && (tokenDivisible || parseFloat(row[1]) % 1 == 0))
+  );
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let verifiedData = [];
+  let unverifiedData = [];
+  for (const row of validData) {
+    let investorAccount = row[0];
+    let tokenAmount = web3.utils.toWei(row[1].toString());
+    let verifiedTransaction = await securityToken.methods.verifyTransfer(gbl.constants.ADDRESS_ZERO, investorAccount, tokenAmount, web3.utils.fromAscii('')).call();
+    if (verifiedTransaction) {
+      verifiedData.push(row);
+    } else {
+      unverifiedData.push(row);
+    }
+  }
 
-  await multimint.executeApp(tokenSymbol, 75);
-  console.log(chalk.green(`\nCongratulations! Tokens get successfully Minted and transferred to token holders`));
+  let batches = common.splitIntoBatches(verifiedData, batchSize);
+  let [investorArray, amountArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to mint tokens to accounts: \n\n`, investorArray[batch], '\n');
+    amountArray[batch] = amountArray[batch].map(a => web3.utils.toWei(a.toString()));
+    let action = await securityToken.methods.mintMulti(investorArray[batch], amountArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Multi mint transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+
+  if (unverifiedData.length > 0) {
+    console.log("*********************************************************************************************************");
+    console.log('The following data arrays failed at verifyTransfer. Please review if these accounts are whitelisted\n');
+    console.log(chalk.red(unverifiedData.map(d => `${d[0]}, ${d[1]}`).join('\n')));
+    console.log("*********************************************************************************************************");
+  }
 }
-///
 
 async function withdrawFromContract(erc20address, value) {
   let withdrawAction = securityToken.methods.withdrawERC20(erc20address, value);
@@ -638,7 +694,11 @@ async function selectToken() {
 
 module.exports = {
   executeApp: async function (_tokenSymbol) {
-    await initialize(_tokenSymbol)
+    await initialize(_tokenSymbol);
     return executeApp();
+  },
+  multiMint: async function (_tokenSymbol, _csvPath, _batchSize) {
+    await initialize(_tokenSymbol);
+    return multiMint(_csvPath, _batchSize);
   }
 }

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./VestingEscrowWallet.sol";
+import "../../proxy/VestingEscrowWalletProxy.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
 
@@ -8,20 +8,23 @@ import "../../libraries/Util.sol";
  * @title Factory for deploying VestingEscrowWallet module
  */
 contract VestingEscrowWalletFactory is ModuleFactory {
-
+    
+    address public logicContract;
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
+        require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
         name = "VestingEscrowWallet";
         title = "Vesting Escrow Wallet";
         description = "Manage vesting schedules to employees / affiliates";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        logicContract = _logicContract;
     }
 
     /**
@@ -33,7 +36,7 @@ contract VestingEscrowWalletFactory is ModuleFactory {
         if (setupCost > 0) {
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom due to insufficent Allowance provided");
         }
-        VestingEscrowWallet vestingEscrowWallet = new VestingEscrowWallet(msg.sender, address(polyToken));
+        VestingEscrowWalletProxy vestingEscrowWallet = new VestingEscrowWalletProxy(msg.sender, address(polyToken), logicContract);
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == vestingEscrowWallet.getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/
@@ -65,8 +68,8 @@ contract VestingEscrowWalletFactory is ModuleFactory {
      */
     function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "Vested Wallet";
-        availableTags[1] = "Escrow";
+        availableTags[0] = "Vested";
+        availableTags[1] = "Escrow Wallet";
         return availableTags;
     }
 }

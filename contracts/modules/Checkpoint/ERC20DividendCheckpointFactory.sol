@@ -16,10 +16,12 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
+     * @param _logicContract Contract address that contains the logic related to `description`
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
+        require(_logicContract != address(0), "Invalid logic contract");
         version = "1.0.0";
         name = "ERC20DividendCheckpoint";
         title = "ERC20 Dividend Checkpoint";

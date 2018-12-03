@@ -155,9 +155,11 @@ module.exports = {
   },
   transposeBatches: function (batches) {
     let result = [];
-    let columns = batches[0][0].length;
-    for (let index = 0; index < columns; index++) {
-      result[index] = batches.map(batch => batch.map(record => record[index]));
+    if (batches.length > 0 && batches[0].length > 0) {
+      let columns = batches[0][0].length;
+      for (let index = 0; index < columns; index++) {
+        result[index] = batches.map(batch => batch.map(record => record[index]));
+      }
     }
     return result;
   }

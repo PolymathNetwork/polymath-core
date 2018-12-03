@@ -344,8 +344,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     /**
      * @dev Returns list of all investors data
      */
-    function getAllInvestorsData() external view returns(uint256[], uint256[], uint256[], bool[]) {
-        return _investorsData(investors);
+    function getAllInvestorsData() external view returns(address[], uint256[], uint256[], uint256[], bool[]) {
+        (uint256[] memory fromTimes, uint256[] memory toTimes, uint256[] memory expiryTimes, bool[] memory canBuyFromSTOs)
+          = _investorsData(investors);
+        return (investors, fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
+
     }
 
     /**

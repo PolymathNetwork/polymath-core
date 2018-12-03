@@ -6,6 +6,7 @@ const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
+const STABLE = 'STABLE';
 
 ///////////////////
 // Crowdsale params
@@ -270,7 +271,7 @@ async function cappedSTO_status(currentSTO) {
 function fundingConfigUSDTieredSTO() {
   let funding = {};
 
-  let selectedFunding = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise,' + chalk.green(` D `) + 'for DAI raise,' + chalk.green(` E `) + 'for Ether raise or any combination of them (i.e.' + chalk.green(` PED `) + 'for all): ').toUpperCase();
+  let selectedFunding = readlineSync.question('Enter' + chalk.green(` P `) + 'for POLY raise,' + chalk.green(` S `) + 'for Stable Coin raise,' + chalk.green(` E `) + 'for Ether raise or any combination of them (i.e.' + chalk.green(` PSE `) + 'for all): ').toUpperCase();
 
   funding.raiseType = [];
   if (selectedFunding.includes('E')) {
@@ -279,17 +280,17 @@ function fundingConfigUSDTieredSTO() {
   if (selectedFunding.includes('P')) {
     funding.raiseType.push(gbl.constants.FUND_RAISE_TYPES.POLY);
   }
-  if (selectedFunding.includes('D')) {
-    funding.raiseType.push(gbl.constants.FUND_RAISE_TYPES.DAI);
+  if (selectedFunding.includes('S')) {
+    funding.raiseType.push(gbl.constants.FUND_RAISE_TYPES.STABLE);
   }
   if (funding.raiseType.length == 0) {
-    funding.raiseType = [gbl.constants.FUND_RAISE_TYPES.ETH, gbl.constants.FUND_RAISE_TYPES.POLY, gbl.constants.FUND_RAISE_TYPES.DAI];
+    funding.raiseType = [gbl.constants.FUND_RAISE_TYPES.ETH, gbl.constants.FUND_RAISE_TYPES.POLY, gbl.constants.FUND_RAISE_TYPES.STABLE];
   }
 
   return funding;
 }
 
-function addressesConfigUSDTieredSTO(usdTokenRaise) {
+async function addressesConfigUSDTieredSTO(usdTokenRaise) {
   let addresses = {};
 
   addresses.wallet = readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer.address + '): ', {
@@ -310,20 +311,72 @@ function addressesConfigUSDTieredSTO(usdTokenRaise) {
   });
   if (addresses.reserveWallet == "") addresses.reserveWallet = Issuer.address;
 
+  let listOfAddress;
+
   if (usdTokenRaise) {
-    addresses.usdToken = readlineSync.question('Enter the address of the USD Token or stable coin (' + usdToken.options.address + '): ', {
+    addresses.usdToken = readlineSync.question('Enter the address (or many addresses that you want separated by comma) of the USD Token or stable coin (' + usdToken.options.address + '): ', {
       limit: function (input) {
-        return web3.utils.isAddress(input);
+        listOfAddress = input.split(',');
+        let response = true
+        listOfAddress.forEach((addr) => {
+          if (!web3.utils.isAddress(addr)) {
+            response = false
+          }
+        })
+        return response
       },
       limitMessage: "Must be a valid address",
       defaultInput: usdToken.options.address
     });
-    if (addresses.usdToken == "") addresses.usdToken = usdToken.options.address;
+    if (addresses.usdToken == "") {
+      listOfAddress = [usdToken.options.address]
+      addresses.usdToken = [usdToken.options.address];
+    }
   } else {
-    addresses.usdToken = '0x0000000000000000000000000000000000000000';
+    listOfAddress = ['0x0000000000000000000000000000000000000000']
+    addresses.usdToken = ['0x0000000000000000000000000000000000000000'];
+  }
+
+  if (!await processArray(listOfAddress)) {
+    console.log(`Please, verify your stable coins addresses to continue with this process.`)
+    process.exit(0)
+  }
+
+  if (typeof addresses.usdToken === 'string') {
+    addresses.usdToken = addresses.usdToken.split(",")
   }
 
   return addresses;
+}
+
+async function checkSymbol(address) {
+  let stableCoin = common.connect(abis.erc20(), address);
+  try {
+    return await stableCoin.methods.symbol().call();
+  } catch (e) {
+    return ""
+  }
+}
+
+async function processArray(array) {
+  let result = true;
+  for (const address of array) {
+    let symbol = await checkSymbol(address);
+    if (symbol == "") {
+      result = false;
+      console.log(`${address} seems not to be a stable coin`)
+    }
+  }
+  return result
+}
+
+async function processAddress(array) {
+  let list = [];
+  for (const address of array) {
+    let symbol = await checkSymbol(address);
+    list.push(symbol)
+  }
+  return list
 }
 
 function tiersConfigUSDTieredSTO(polyRaise) {
@@ -474,7 +527,7 @@ async function usdTieredSTO_launch(stoConfig) {
 
   let useConfigFile = typeof stoConfig !== 'undefined';
   let funding = useConfigFile ? stoConfig.funding : fundingConfigUSDTieredSTO();
-  let addresses = useConfigFile ? stoConfig.addresses : addressesConfigUSDTieredSTO(funding.raiseType.includes(gbl.constants.FUND_RAISE_TYPES.DAI));
+  let addresses = useConfigFile ? stoConfig.addresses : await addressesConfigUSDTieredSTO(funding.raiseType.includes(gbl.constants.FUND_RAISE_TYPES.STABLE));
   let tiers = useConfigFile ? stoConfig.tiers : tiersConfigUSDTieredSTO(funding.raiseType.includes(gbl.constants.FUND_RAISE_TYPES.POLY));
   let limits = useConfigFile ? stoConfig.limits : limitsConfigUSDTieredSTO();
   let times = timesConfigUSDTieredSTO(stoConfig);
@@ -519,12 +572,17 @@ async function usdTieredSTO_status(currentSTO) {
   let displayInvestorCount = await currentSTO.methods.investorCount().call();
   let displayIsFinalized = await currentSTO.methods.isFinalized().call() ? "YES" : "NO";
   let displayTokenSymbol = await securityToken.methods.symbol().call();
-
-  let tiersLength = await currentSTO.methods.getNumberOfTiers().call();;
-
+  let tiersLength = await currentSTO.methods.getNumberOfTiers().call();
+  //REMOVE ONCE SMART CONTRACT SUPPORT METHOD TO GET STABLE COIN ADDRESSES
+  let listOfStableCoins = ["0xa016B2ae79436E20FBe22Bf230a92A5Fb055762F", "0xae794d38cb481868a8CB19b9d7A5073851bC6dB7"];
   let raiseTypes = [];
+  let stableSymbols = [];
+
   for (const fundType in gbl.constants.FUND_RAISE_TYPES) {
     if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES[fundType]).call()) {
+      if (fundType == STABLE) {
+        stableSymbols = await processAddress(listOfStableCoins)
+      }
       raiseTypes.push(fundType);
     }
   }
@@ -554,8 +612,13 @@ async function usdTieredSTO_status(currentSTO) {
       }
 
       let mintedPerTier = mintedPerTierPerRaiseType[gbl.constants.FUND_RAISE_TYPES[type]];
-      displayMintedPerTierPerType += `
-      Sold for ${type}:\t\t ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
+      if ((type == STABLE) && (stableSymbols.length)) {
+        displayMintedPerTierPerType += `
+        Sold for ${stableSymbols.toString()}:\t ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
+      } else {
+        displayMintedPerTierPerType += `
+        Sold for ${type}:\t\t ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
+      }
     }
 
     displayTiers += `
@@ -579,28 +642,52 @@ async function usdTieredSTO_status(currentSTO) {
     let balance = await getBalance(displayWallet, gbl.constants.FUND_RAISE_TYPES[type]);
     let walletBalance = web3.utils.fromWei(balance);
     let walletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
-    displayWalletBalancePerType += `
+    if ((type == STABLE) && (stableSymbols.length)) {
+      displayWalletBalancePerType += `
+      Balance ${stableSymbols.toString()}:\t ${walletBalanceUSD} USD`;
+    } else {
+      displayWalletBalancePerType += `
       Balance ${type}:\t\t ${walletBalance} ${type} (${walletBalanceUSD} USD)`;
-
+    }
+    
     balance = await getBalance(displayReserveWallet, gbl.constants.FUND_RAISE_TYPES[type]);
     let reserveWalletBalance = web3.utils.fromWei(balance);
     let reserveWalletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
-    displayReserveWalletBalancePerType += `
+    if ((type == STABLE) && (stableSymbols.length)) {
+      displayReserveWalletBalancePerType += `
+      Balance ${stableSymbols.toString()}:\t ${reserveWalletBalanceUSD} USD`;
+    } else {
+      displayReserveWalletBalancePerType += `
       Balance ${type}:\t\t ${reserveWalletBalance} ${type} (${reserveWalletBalanceUSD} USD)`;
+    }
 
     let fundsRaised = web3.utils.fromWei(await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES[type]).call());
-    displayFundsRaisedPerType += `
+    if ((type == STABLE) && (stableSymbols.length)) {
+      displayFundsRaisedPerType += `
+      ${stableSymbols.toString()}:\t\t ${fundsRaised} USD`;
+    } else {
+      displayFundsRaisedPerType += `
       ${type}:\t\t\t ${fundsRaised} ${type}`;
+    }
 
     //Only show sold for if more than one raise type are allowed
     if (raiseTypes.length > 1) {
       let tokensSoldPerType = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(gbl.constants.FUND_RAISE_TYPES[type]).call());
-      displayTokensSoldPerType += `
-      Sold for ${type}:\t\t ${tokensSoldPerType} ${displayTokenSymbol}`;
+      if ((type == STABLE) && (stableSymbols.length)) {
+        displayTokensSoldPerType += `
+        Sold for ${stableSymbols.toString()}:\t ${tokensSoldPerType} ${displayTokenSymbol}`;
+      } else {
+        displayTokensSoldPerType += `
+        Sold for ${type}:\t\t ${tokensSoldPerType} ${displayTokenSymbol}`;
+      }
     }
   }
 
   let displayRaiseType = raiseTypes.join(' - ');
+  //If STO has stable coins, we list them one by one
+  if (stableSymbols.length) {
+    displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.toString().replace(`,`,` - `)}`
+  }
 
   let now = Math.floor(Date.now() / 1000);
   let timeTitle;
@@ -747,7 +834,7 @@ async function modfifyFunding(currentSTO) {
 }
 
 async function modfifyAddresses(currentSTO) {
-  let addresses = addressesConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.DAI).call());
+  let addresses = await addressesConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.STABLE).call());
   let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.wallet, addresses.reserveWallet, addresses.usdToken);
   await common.sendTransaction(modifyAddressesAction);
 }
@@ -772,7 +859,7 @@ async function getBalance(from, type) {
       return await web3.eth.getBalance(from);
     case gbl.constants.FUND_RAISE_TYPES.POLY:
       return await polyToken.methods.balanceOf(from).call();
-    case gbl.constants.FUND_RAISE_TYPES.DAI:
+    case gbl.constants.FUND_RAISE_TYPES.STABLE:
       return await usdToken.methods.balanceOf(from).call();
   }
 }

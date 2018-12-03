@@ -19,6 +19,7 @@ let ownableABI;
 let iSTOABI;
 let iTransferManagerABI;
 let moduleFactoryABI;
+let erc20;
 
 try {
     polymathRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/PolymathRegistry.json').toString()).abi;
@@ -42,6 +43,7 @@ try {
     iSTOABI = JSON.parse(require('fs').readFileSync('./build/contracts/ISTO.json').toString()).abi
     iTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/ITransferManager.json').toString()).abi
     moduleFactoryABI = JSON.parse(require('fs').readFileSync('./build/contracts/ModuleFactory.json').toString()).abi;
+    erc20ABI = JSON.parse(require('fs').readFileSync('./build/contracts/DetailedERC20.json').toString()).abi;
 } catch (err) {
     console.log('\x1b[31m%s\x1b[0m', "Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
     throw err;
@@ -110,5 +112,8 @@ module.exports = {
     },
     moduleFactory: function () {
         return moduleFactoryABI;
+    },
+    erc20: function () {
+        return erc20ABI;
     }
 }

@@ -29,6 +29,6 @@ module.exports = Object.freeze({
     FUND_RAISE_TYPES: {
         ETH: 0,
         POLY: 1,
-        DAI: 2
+        STABLE: 2
     }
 });

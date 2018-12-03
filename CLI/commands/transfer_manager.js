@@ -6,6 +6,7 @@ var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 var gbl = require('./common/global');
 var whitelist = require('./whitelist');
+const { table } = require('table')
 
 // App flow
 let tokenSymbol;
@@ -316,6 +317,8 @@ async function generalTransferManager() {
   let displayAllowAllWhitelistTransfers = await currentTransferManager.methods.allowAllWhitelistTransfers().call();
   let displayAllowAllWhitelistIssuances = await currentTransferManager.methods.allowAllWhitelistIssuances().call();
   let displayAllowAllBurnTransfers = await currentTransferManager.methods.allowAllBurnTransfers().call();
+  let displayDefaults = await currentTransferManager.methods.defaults().call();
+  let displayInvestors = await currentTransferManager.methods.getInvestors().call();
 
   console.log(`- Issuance address:                ${displayIssuanceAddress}`);
   console.log(`- Signing address:                 ${displaySigningAddress}`);
@@ -323,10 +326,18 @@ async function generalTransferManager() {
   console.log(`- Allow all whitelist transfers:   ${displayAllowAllWhitelistTransfers ? `YES` : `NO`}`);
   console.log(`- Allow all whitelist issuances:   ${displayAllowAllWhitelistIssuances ? `YES` : `NO`}`);
   console.log(`- Allow all burn transfers:        ${displayAllowAllBurnTransfers ? `YES` : `NO`}`);
+  console.log(`- Default times:`);
+  console.log(`   - From time:                    ${displayDefaults.fromTime} (${moment.unix(displayDefaults.fromTime).format('MMMM Do YYYY, HH:mm:ss')})`);
+  console.log(`   - To time:                      ${displayDefaults.toTime} (${moment.unix(displayDefaults.toTime).format('MMMM Do YYYY, HH:mm:ss')})`);
+  console.log(`- Investors:                       ${displayInvestors.length}`);
   // ------------------
 
-  let options = ['Modify whitelist', 'Modify whitelist from CSV', /*'Modify Whitelist Signed',*/
-    `Change issuance address`, 'Change signing address'];
+  let options = [];
+  if (displayInvestors.length > 0) {
+    options.push(`Show investors`, `Show whitelist data`);
+  }
+  options.push('Modify whitelist', 'Modify whitelist from CSV', /*'Modify Whitelist Signed',*/
+    'Change the default times used when they are zero', `Change issuance address`, 'Change signing address');
   if (displayAllowAllTransfers) {
     options.push('Disallow all transfers');
   } else {
@@ -352,6 +363,34 @@ async function generalTransferManager() {
   let optionSelected = options[index];
   console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
   switch (optionSelected) {
+    case `Show investors`:
+      console.log('***** List of investors on whitelist *****');
+      displayInvestors.map(i => console.log(i));
+      break;
+    case `Show whitelist data`:
+      let investorsToShow = readlineSync.question(`Enter the addresses of the investors you want to show (i.e: addr1,addr2,addr3) or leave empty to show them all: `, {
+        limit: function (input) {
+          return input === '' || input.split(",").every(a => web3.utils.isAddress(a));
+        },
+        limitMessage: `All addresses must be valid`
+      });
+      if (investorsToShow === '') {
+        let whitelistData = await currentTransferManager.methods.getAllInvestorsData().call();
+        showWhitelistTable(whitelistData[0], whitelistData[1], whitelistData[2], whitelistData[3], whitelistData[4]);
+      } else {
+        let investorsArray = investorsToShow.split(',');
+        let whitelistData = await currentTransferManager.methods.getInvestorsData(investorsArray).call();
+        showWhitelistTable(investorsArray, whitelistData[0], whitelistData[1], whitelistData[2], whitelistData[3]);
+      }
+      break;
+    case 'Change the default times used when they are zero':
+      let fromTimeDefault = readlineSync.questionInt(`Enter the default time (Unix Epoch time) used when fromTime is zero: `);
+      let toTimeDefault = readlineSync.questionInt(`Enter the default time (Unix Epoch time) used when fromTime is zero: `);
+      let changeDefaultsAction = currentTransferManager.methods.changeDefaults(fromTimeDefault, toTimeDefault);
+      let changeDefaultsReceipt = await common.sendTransaction(changeDefaultsAction);
+      let changeDefaultsEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeDefaultsReceipt.logs, 'ChangeDefaults');
+      console.log(chalk.green(`Default times have been updated successfully!`));
+      break;
     case 'Modify whitelist':
       let investor = readlineSync.question('Enter the address to whitelist: ', {
         limit: function (input) {
@@ -373,7 +412,7 @@ async function generalTransferManager() {
     case 'Modify whitelist from CSV':
       console.log(chalk.yellow(`Data is going to be read from 'data/whitelist_data.csv'. Be sure this file is updated!`));
       if (readlineSync.keyInYNStrict(`Do you want to continue?`)) {
-        await whitelist.executeApp(tokenSymbl);
+        await whitelist.executeApp(tokenSymbol);
       }
       break;
     /*
@@ -468,6 +507,21 @@ async function generalTransferManager() {
   }
 }
 
+function showWhitelistTable(investorsArray, fromTimeArray, toTimeArray, expiryTimeArray, canBuyFromSTOArray) {
+  let dataTable = [['Investor', 'From time', 'To time', 'KYC expiry date', 'Restricted']];
+  for (let i = 0; i < investorsArray.length; i++) {
+    dataTable.push([
+      investorsArray[i],
+      moment.unix(fromTimeArray[i]).format('MM/DD/YYYY HH:mm'),
+      moment.unix(toTimeArray[i]).format('MM/DD/YYYY HH:mm'),
+      moment.unix(expiryTimeArray[i]).format('MM/DD/YYYY HH:mm'),
+      canBuyFromSTOArray[i] ? 'YES' : 'NO'
+    ]);
+  }
+  console.log();
+  console.log(table(dataTable));
+}
+
 async function manualApprovalTransferManager() {
   console.log(chalk.blue(`Manual Approval Transfer Manager at ${currentTransferManager.options.address}`), '\n');
 
@@ -498,7 +552,7 @@ async function manualApprovalTransferManager() {
       if (manualApproval) {
         console.log(`Manual approval found!`);
         console.log(`Allowance: ${web3.utils.fromWei(manualApproval.allowance)}`);
-        console.log(`Expiry time: ${moment.unix(manualApproval.expiryTime).format('MMMM Do YYYY, HH:mm:ss')};`)
+        console.log(`Expiry time: ${moment.unix(manualApproval.expiryTime).format('MMMM Do YYYY, HH:mm:ss')}`);
       } else {
         console.log(chalk.yellow(`There are no manual approvals from ${from} to ${to}.`));
       }

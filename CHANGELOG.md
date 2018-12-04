@@ -5,6 +5,9 @@ All notable changes to this project will be documented in this file.
 
 [__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
 
+# CappedSTO 2.0.1
+* `rate` is now accepted as multiplied by 10^18 to allow settting higher price than 1ETH/POLY per token.
+
 ## USDTieredSTO 2.0.1
 * Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.
 * Added `getSTODetails` to USDTSTO.

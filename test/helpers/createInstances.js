@@ -11,7 +11,6 @@ const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock
 const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpointFactory.sol");
 const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpointFactory.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
-const SingleTradeVolumeRestrictionManagerFactory = artifacts.require('./SingleTradeVolumeRestrictionTMFactory.sol');
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
 const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
@@ -42,7 +41,6 @@ let I_TrackedRedemptionFactory;
 let I_ScheduledCheckpointFactory;
 let I_MockBurnFactory;
 let I_MockWrongTypeBurnFactory;
-let I_SingleTradeVolumeRestrictionManagerFactory;
 let I_ManualApprovalTransferManagerFactory;
 let I_VolumeRestrictionTransferManagerFactory;
 let I_PercentageTransferManagerFactory;
@@ -255,18 +253,6 @@ export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyI
 
     await registerAndVerifyByMR(I_VolumeRestrictionTransferManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_VolumeRestrictionTransferManagerFactory);
-}
-
-export async function deploySingleTradeVolumeRMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
-    I_SingleTradeVolumeRestrictionManagerFactory = await SingleTradeVolumeRestrictionManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
-    assert.notEqual(
-        I_SingleTradeVolumeRestrictionManagerFactory.address.valueOf(),
-        "0x0000000000000000000000000000000000000000",
-        "SingleTradeVolumeRestrictionManagerFactory contract was not deployed"
-    );
-
-    await registerAndVerifyByMR(I_SingleTradeVolumeRestrictionManagerFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_SingleTradeVolumeRestrictionManagerFactory);
 }
 
 export async function deployScheduleCheckpointAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {

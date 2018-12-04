@@ -30,7 +30,7 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
     function deploy(bytes /* _data */) external returns(address) {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom due to insufficent Allowance provided");
-        address permissionManager = new GeneralPermissionManager(msg.sender, address(polyToken));
+        address permissionManager = new GeneralPermissionManager(msg.sender);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(permissionManager), getName(), address(this), msg.sender, setupCost, now);
         return permissionManager;

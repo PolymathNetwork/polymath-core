@@ -31,7 +31,7 @@ contract DummySTOFactory is ModuleFactory {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Sufficent Allowance is not provided");
         //Check valid bytes - can only call module init function
-        DummySTO dummySTO = new DummySTO(msg.sender, address(polyToken));
+        DummySTO dummySTO = new DummySTO(msg.sender);
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == dummySTO.getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/

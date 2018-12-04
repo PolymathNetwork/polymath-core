@@ -34,7 +34,7 @@ contract PreSaleSTOFactory is ModuleFactory {
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Sufficent Allowance is not provided");
         }
         //Check valid bytes - can only call module init function
-        PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender, address(polyToken));
+        PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender);
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == preSaleSTO.getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/

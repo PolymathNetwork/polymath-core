@@ -35,7 +35,7 @@ contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
     function deploy(bytes _data) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        SingleTradeVolumeRestrictionTM singleTradeVolumeRestrictionManager = new SingleTradeVolumeRestrictionTM(msg.sender, address(polyToken));
+        SingleTradeVolumeRestrictionTM singleTradeVolumeRestrictionManager = new SingleTradeVolumeRestrictionTM(msg.sender);
 
         require(Util.getSig(_data) == singleTradeVolumeRestrictionManager.getInitFunction(), "Provided data is not valid");
         /*solium-disable-next-line security/no-low-level-calls*/

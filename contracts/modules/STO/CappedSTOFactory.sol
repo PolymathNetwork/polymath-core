@@ -32,7 +32,7 @@ contract CappedSTOFactory is ModuleFactory {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Sufficent Allowance is not provided");
         //Check valid bytes - can only call module init function
-        CappedSTO cappedSTO = new CappedSTO(msg.sender, address(polyToken));
+        CappedSTO cappedSTO = new CappedSTO(msg.sender);
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == cappedSTO.getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/

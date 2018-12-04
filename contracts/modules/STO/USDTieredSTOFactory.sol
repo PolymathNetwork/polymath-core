@@ -38,7 +38,7 @@ contract USDTieredSTOFactory is ModuleFactory {
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Sufficent Allowance is not provided");
         require(USDTieredSTOProxyAddress != address(0), "Proxy contract should be pre-set");
         //Check valid bytes - can only call module init function
-        address usdTieredSTO = IUSDTieredSTOProxy(USDTieredSTOProxyAddress).deploySTO(msg.sender, address(polyToken), address(this));
+        address usdTieredSTO = IUSDTieredSTOProxy(USDTieredSTOProxyAddress).deploySTO(msg.sender, address(this));
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == IUSDTieredSTOProxy(USDTieredSTOProxyAddress).getInitFunction(usdTieredSTO), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/

@@ -1155,7 +1155,8 @@ async function selectToken() {
   options.push('Enter token symbol manually');
 
   let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
-  switch (options[index]) {
+  let selected = index != -1 ? options[index] : 'Exit';
+  switch (selected) {
     case 'Enter token symbol manually':
       result = readlineSync.question('Enter the token symbol: ');
       break;

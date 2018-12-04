@@ -10,6 +10,7 @@ var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
 const STO_KEY = 3;
+const STABLE = 'STABLE';
 
 let securityTokenRegistry;
 let securityToken;
@@ -157,13 +158,13 @@ async function showUserInfo(_user) {
     console.log(`
     *******************    User Information    ********************
     - Address:               ${_user}`);
-    if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.POLY)) {
+    if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.POLY).call()) {
         console.log(`    - POLY balance:\t     ${await polyBalance(_user)}`);
     }
-    if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.ETH)) {
+    if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.ETH).call()) {
         console.log(`    - ETH balance:\t     ${web3.utils.fromWei(await web3.eth.getBalance(_user))}`);
     }
-    if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.DAI)) {
+    if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.STABLE).call()) {
         console.log(`    - DAI balance:\t     ${await usdBalance(_user)}`);
     }
 }
@@ -237,12 +238,41 @@ async function showCappedSTOInfo() {
     }
 }
 
+async function processAddress(array) {
+    let list = [];
+    for (const address of array) {
+        let symbol = await checkSymbol(address);
+        list.push(symbol)
+    }
+    return list
+}
+
+async function checkSymbol(address) {
+    let stableCoin = common.connect(abis.erc20(), address);
+    try {
+        return await stableCoin.methods.symbol().call();
+    } catch (e) {
+        return ""
+    }
+}
+
 async function showUserInfoForUSDTieredSTO()
 {
+    let stableSymbols = [];
+    //REMOVE ONCE SMART CONTRACT SUPPORT METHOD TO GET STABLE COIN ADDRESSES
+    let listOfStableCoins = ["0xa016B2ae79436E20FBe22Bf230a92A5Fb055762F", "0xae794d38cb481868a8CB19b9d7A5073851bC6dB7"];
+
     for (const fundType in gbl.constants.FUND_RAISE_TYPES) {
         if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES[fundType]).call()) {
+            if (fundType == STABLE) {
+                stableSymbols = await processAddress(listOfStableCoins)
+            }
             let displayInvestorInvested = web3.utils.fromWei(await currentSTO.methods.investorInvested(User.address, gbl.constants.FUND_RAISE_TYPES[fundType]).call());
-            console.log(`    - Invested in ${fundType}:\t     ${displayInvestorInvested} ${fundType}`);
+            if ((fundType == STABLE) && (stableSymbols.length)) {
+                console.log(`    - Invested in ${stableSymbols.toString()}:\t     ${displayInvestorInvested} USD`);
+            } else {
+                console.log(`    - Invested in ${fundType}:\t     ${displayInvestorInvested} ${fundType}`);
+            }
         }
     }
 
@@ -280,10 +310,16 @@ async function showUSDTieredSTOInfo() {
     let displayIsOpen = await currentSTO.methods.isOpen().call();
     let displayTokenSymbol = await securityToken.methods.symbol().call();
     let tiersLength = await currentSTO.methods.getNumberOfTiers().call();
+    let stableSymbols = [];
+    //REMOVE ONCE SMART CONTRACT SUPPORT METHOD TO GET STABLE COIN ADDRESSES
+    let listOfStableCoins = ["0xa016B2ae79436E20FBe22Bf230a92A5Fb055762F", "0xae794d38cb481868a8CB19b9d7A5073851bC6dB7"];
 
     for (const fundType in gbl.constants.FUND_RAISE_TYPES) {
         if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES[fundType]).call()) {
             raiseTypes.push(fundType);
+            if (fundType == STABLE) {
+                stableSymbols = await processAddress(listOfStableCoins)
+            }
         }
     }
 
@@ -313,8 +349,13 @@ async function showUSDTieredSTOInfo() {
             
 
             let mintedPerTier = mintedPerTierPerRaiseType[gbl.constants.FUND_RAISE_TYPES[type]];
-            displayMintedPerTierPerType += `
+            if ((type == STABLE) && (stableSymbols.length)) {
+                displayMintedPerTierPerType += `
+        Sold for ${stableSymbols.toString()}:\t   ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
+            } else {
+                displayMintedPerTierPerType += `
         Sold for ${type}:\t\t   ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
+            }
         }
 
         displayTiers += `
@@ -334,18 +375,31 @@ async function showUSDTieredSTOInfo() {
     let displayTokensSoldPerType = '';
     for (const type of raiseTypes) {
         let fundsRaised = web3.utils.fromWei(await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES[type]).call());
-        displayFundsRaisedPerType += `
-        ${type}:\t\t\t   ${fundsRaised} ${type}`;
-
+        if ((type == STABLE) && (stableSymbols.length)) {
+            displayFundsRaisedPerType += `
+        ${stableSymbols.toString()}:\t\t   ${fundsRaised} USD`;    
+        } else {
+            displayFundsRaisedPerType += `
+        ${type}:\t\t\t   ${fundsRaised} ${type}`;    
+        }
         //Only show sold per raise type is more than one are allowed
         if (raiseTypes.length > 1) {
             let tokensSoldPerType = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(gbl.constants.FUND_RAISE_TYPES[type]).call());
-            displayTokensSoldPerType += `
+            if ((type == STABLE) && (stableSymbols.length)) {
+                displayTokensSoldPerType += `
+        Sold for ${stableSymbols.toString()}:\t   ${tokensSoldPerType} ${displayTokenSymbol}`;
+            } else {
+                displayTokensSoldPerType += `
         Sold for ${type}:\t\t   ${tokensSoldPerType} ${displayTokenSymbol}`;
+            }
         }
     }
 
     let displayRaiseType = raiseTypes.join(' - ');
+    //If STO has stable coins, we list them one by one
+    if (stableSymbols.length) {
+        displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.toString().replace(`,`,` - `)}`
+    }
 
     let now = Math.floor(Date.now()/1000);
     let timeTitle;

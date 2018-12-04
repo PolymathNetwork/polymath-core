@@ -39,6 +39,7 @@ contract("CountTransferManager", accounts => {
     let I_CountTransferManagerFactory;
     let I_GeneralPermissionManager;
     let I_CountTransferManager;
+    let I_CountTransferManager2;
     let I_GeneralTransferManager;
     let I_GeneralTransferManager2;
     let I_ExchangeTransferManager;
@@ -342,12 +343,6 @@ contract("CountTransferManager", accounts => {
             await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei("2", "ether"), { from: account_investor2 }));
         });
 
-        // it("Should be able to transfer to a new token holder if all tokens are transferred and existing holder is removed", async () => {
-        //     console.log('acc2 balancce is ' + (await I_SecurityToken.balanceOf(account_investor2)).toNumber());
-        //     await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("4", "ether"), { from: account_investor2 });
-        //     assert((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei("4", "ether"));
-        // });
-
         it("Should be able to consolidate balances", async () => {
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 });
         });
@@ -418,9 +413,45 @@ contract("CountTransferManager", accounts => {
                 // Mint some tokens
                 await I_SecurityToken2.mint(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
                 await I_SecurityToken2.mint(account_investor2, web3.utils.toWei("1", "ether"), { from: token_owner });
-                await I_SecurityToken2.mint(account_investor3, web3.utils.toWei("1", "ether"), { from: token_owner });
 
                 assert.equal((await I_SecurityToken2.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
+                });
+
+                // Add count transfer manager and only allow 2 holders
+                it("Should intialize the auto attached modules", async () => {
+                    let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];
+                    I_GeneralTransferManager2 = GeneralTransferManager.at(moduleData);
+                });
+
+                it("Should successfully attach the CountTransferManager factory with the security token", async () => {
+                    await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+                    await catchRevert(
+                        I_SecurityToken2.addModule(P_CountTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, {
+                            from: token_owner
+                        })
+                    );
+                });
+
+                it("Should successfully attach the CountTransferManager with the security token and set max holder to 2", async () => {
+                    const tx = await I_SecurityToken2.addModule(I_CountTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
+                    assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
+                    assert.equal(
+                        web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
+                        "CountTransferManager",
+                        "CountTransferManager module was not added"
+                    );
+                    I_CountTransferManager2 = CountTransferManager.at(tx.logs[2].args._module);
+                    await I_CountTransferManager2.changeHolderCount(2, {from: token_owner});
+                    console.log('current max holder number is '+ await I_CountTransferManager2.maxHolderCount({from: token_owner}));
+                });
+
+                it("Should allow add a new token holder while transfer all the tokens at one go", async () => {
+
+                    let amount = (await I_SecurityToken2.balanceOf(account_investor2)).toNumber();
+                    console.log('amount is '+amount);
+                    await I_SecurityToken2.transfer(account_investor3, amount, { from: account_investor2 });
+                    assert((await I_SecurityToken2.balanceOf(account_investor3)).toNumber(), web3.utils.toWei("2", "ether"));
+
                 });
         });
 

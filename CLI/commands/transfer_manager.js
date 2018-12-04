@@ -10,6 +10,11 @@ const csvParse = require('./helpers/csv');
 ///////////////////
 // Constants
 const WHITELIST_DATA_CSV = './CLI/data/Transfer/GTM/whitelist_data.csv';
+const ADD_BLACKLIST_DATA_CSV = './CLI/data/Transfer/BlacklistTM/add_blacklist_data.csv';
+const MODIFY_BLACKLIST_DATA_CSV = './CLI/data/Transfer/BlacklistTM/modify_blacklist_data.csv';
+const DELETE_BLACKLIST_DATA_CSV = './CLI/data/Transfer/BlacklistTM/delete_blacklist_data.csv';
+const ADD_INVESTOR_BLACKLIST_DATA_CSV = './CLI/data/Transfer/BlacklistTM/add_investor_blacklist_data.csv';
+const REMOVE_INVESTOR_BLACKLIST_DATA_CSV = './CLI/data/Transfer/BlacklistTM/remove_investor_blacklist_data.csv';
 
 // App flow
 let tokenSymbol;
@@ -514,7 +519,7 @@ async function modifyWhitelistInBatch() {
   let [investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to modify whitelist to accounts: \n\n`, investorArray[batch], '\n');
-    let action = await currentTransferManager.methods.modifyWhitelistMulti(investorArray[batch], fromTimesArray[batch], toTimesArray[batch], expiryTimeArray[batch], canBuyFromSTOArray[batch]);
+    let action = currentTransferManager.methods.modifyWhitelistMulti(investorArray[batch], fromTimesArray[batch], toTimesArray[batch], expiryTimeArray[batch], canBuyFromSTOArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Whitelist transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
@@ -762,11 +767,7 @@ async function blacklistTransferManager() {
     case 'Remove investors from all blacklists':
       let investorsToRemove = readlineSync.question(`Enter the addresses of the investors separated by comma (i.e. addr1,addr2,addr3): `, {
         limit: function (input) {
-          let addresses = input.split(",");
-          return (
-            addresses.length > 0 &&
-            addresses.every(a => web3.utils.isAddress(a))
-          );
+          return (input !== '' && input.split(",").every(a => web3.utils.isAddress(a)));
         },
         limitMessage: `All addresses must be valid`
       }).split(',');
@@ -781,7 +782,7 @@ async function blacklistTransferManager() {
       deleteInvestorFromAllBlacklistEvents.map(e => console.log(chalk.green(`${e._investor} has been removed from ${web3.utils.hexToUtf8(e._blacklistName)} successfully!`)));
       break;
     case 'Operate with multiple blacklists':
-      await operateWithMultipleBlacklists();
+      await operateWithMultipleBlacklists(currentBlacklists);
       break;
   }
 }
@@ -794,7 +795,7 @@ async function manageExistingBlacklist(blacklistName) {
   console.log(`- Name:                 ${web3.utils.hexToUtf8(blacklistName)}`);
   console.log(`- Start time:           ${moment.unix(currentBlacklist.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
   console.log(`- End time:             ${moment.unix(currentBlacklist.endTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-  console.log(`- Span:                 ${gbl.constants.DURATION.days(currentBlacklist.endTime - currentBlacklist.startTime)} days`);
+  console.log(`- Span:                 ${(currentBlacklist.endTime - currentBlacklist.startTime) / 60 / 60 / 24} days`);
   console.log(`- Repeat period time:   ${currentBlacklist.repeatPeriodTime} days`);
   console.log(`- Investors:            ${investors.length}`);
   // ------------------
@@ -838,11 +839,7 @@ async function manageExistingBlacklist(blacklistName) {
     case 'Add investors':
       let investorsToAdd = readlineSync.question(`Enter the addresses of the investors separated by comma (i.e. addr1,addr2,addr3): `, {
         limit: function (input) {
-          let addresses = input.split(",");
-          return (
-            addresses.length > 0 &&
-            addresses.every(a => web3.utils.isAddress(a))
-          );
+          return (input !== '' && input.split(",").every(a => web3.utils.isAddress(a)));
         },
         limitMessage: `All addresses must be valid`
       }).split(",");
@@ -879,7 +876,7 @@ async function manageExistingBlacklist(blacklistName) {
   }
 }
 
-async function operateWithMultipleBlacklists() {
+async function operateWithMultipleBlacklists(currentBlacklists) {
   let options = ['Add multiple blacklists'];
   if (currentBlacklists.length > 0) {
     options.push('Modify multiple blacklists');
@@ -895,15 +892,177 @@ async function operateWithMultipleBlacklists() {
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Add multiple blacklists':
+      await addBlacklistsInBatch();
       break;
     case 'Modify multiple blacklists':
+      await modifyBlacklistsInBatch();
       break;
     case 'Delete multiple blacklists':
+      await deleteBlacklistsInBatch();
       break;
     case 'Add investors to multiple blacklists':
+      await addInvestorsToBlacklistsInBatch();
       break;
     case 'Remove investors from multiple blacklists':
+      await removeInvestorsFromBlacklistsInBatch();
       break;
+  }
+}
+
+async function addBlacklistsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_BLACKLIST_DATA_CSV}): `, {
+    defaultInput: ADD_BLACKLIST_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => moment.unix(row[0]).isValid() &&
+      moment.unix(row[1]).isValid() &&
+      typeof row[2] === 'string' &&
+      (!isNaN(row[3] && (parseFloat(row[3]) % 1 === 0))));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [startTimeArray, endTimeArray, blacklistNameArray, repeatPeriodTimeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add the following blacklists:\n\n`, blacklistNameArray[batch], '\n');
+    blacklistNameArray[batch] = blacklistNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.addBlacklistTypeMulti(startTimeArray[batch], endTimeArray[batch], blacklistNameArray[batch], repeatPeriodTimeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add multiple blacklists transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function modifyBlacklistsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${MODIFY_BLACKLIST_DATA_CSV}): `, {
+    defaultInput: MODIFY_BLACKLIST_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => moment.unix(row[0]).isValid() &&
+      moment.unix(row[1]).isValid() &&
+      typeof row[2] === 'string' &&
+      (!isNaN(row[3] && (parseFloat(row[3]) % 1 === 0))));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [startTimeArray, endTimeArray, blacklistNameArray, repeatPeriodTimeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to modify the following blacklists:\n\n`, blacklistNameArray[batch], '\n');
+    blacklistNameArray[batch] = blacklistNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.modifyBlacklistTypeMulti(startTimeArray[batch], endTimeArray[batch], blacklistNameArray[batch], repeatPeriodTimeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Modify multiple blacklists transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function deleteBlacklistsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${DELETE_BLACKLIST_DATA_CSV}): `, {
+    defaultInput: DELETE_BLACKLIST_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row => typeof row[0] === 'string');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [blacklistNameArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to delete the following blacklists:\n\n`, blacklistNameArray[batch], '\n');
+    blacklistNameArray[batch] = blacklistNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.deleteBlacklistTypeMulti(blacklistNameArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Delete multiple blacklists transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function addInvestorsToBlacklistsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_INVESTOR_BLACKLIST_DATA_CSV}): `, {
+    defaultInput: ADD_INVESTOR_BLACKLIST_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      typeof row[1] === 'string');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [investorArray, blacklistNameArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add the following investors:\n\n`, investorArray[batch], '\n');
+    blacklistNameArray[batch] = blacklistNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.addMultiInvestorToBlacklistMulti(investorArray[batch], blacklistNameArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add investors to multiple blacklists transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function removeInvestorsFromBlacklistsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${REMOVE_INVESTOR_BLACKLIST_DATA_CSV}): `, {
+    defaultInput: REMOVE_INVESTOR_BLACKLIST_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      typeof row[1] === 'string');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [investorArray, blacklistNameArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to remove the following investors:\n\n`, investorArray[batch], '\n');
+    blacklistNameArray[batch] = blacklistNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.deleteMultiInvestorsFromBlacklistMulti(investorArray[batch], blacklistNameArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Remove investors from multiple blacklists transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
 

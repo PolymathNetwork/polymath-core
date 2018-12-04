@@ -1,11 +1,15 @@
 const readlineSync = require('readline-sync');
 const chalk = require('chalk');
-const accredit = require('./accredit');
-const changeNonAccreditedLimit = require('./changeNonAccreditedLimit');
 const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
+const csvParse = require('./helpers/csv');
+
+///////////////////
+// Constants
+const ACCREDIT_DATA_CSV = './CLI/data/STO/USDTieredSTO/accredited_data.csv';
+const NON_ACCREDIT_LIMIT_DATA_CSV = './CLI/data/STO/USDTieredSTO/nonAccreditedLimits_data.csv'
 
 ///////////////////
 // Crowdsale params
@@ -200,7 +204,7 @@ async function cappedSTO_launch(stoConfig) {
     [cappedSTOconfig.startTime,
     cappedSTOconfig.endTime,
     web3.utils.toWei(cappedSTOconfig.cap.toString()),
-    cappedSTOconfig.rate,
+    web3.utils.toWei(cappedSTOconfig.rate.toString()),
     cappedSTOconfig.raiseType,
     cappedSTOconfig.wallet]
   );
@@ -219,7 +223,7 @@ async function cappedSTO_launch(stoConfig) {
 async function cappedSTO_status(currentSTO) {
   let displayStartTime = await currentSTO.methods.startTime().call();
   let displayEndTime = await currentSTO.methods.endTime().call();
-  let displayRate = await currentSTO.methods.rate().call();
+  let displayRate = new web3.utils.BN(await currentSTO.methods.rate().call());
   let displayCap = new web3.utils.BN(await currentSTO.methods.cap().call());
   let displayWallet = await currentSTO.methods.wallet().call();
   let displayRaiseType = await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.ETH).call() ? 'ETH' : 'POLY';
@@ -250,7 +254,7 @@ async function cappedSTO_status(currentSTO) {
   - Start Time:        ${new Date(displayStartTime * 1000)}
   - End Time:          ${new Date(displayEndTime * 1000)}
   - Raise Type:        ${displayRaiseType}
-  - Rate:              1 ${displayRaiseType} = ${displayRate} ${displayTokenSymbol.toUpperCase()}
+  - Rate:              1 ${displayRaiseType} = ${web3.utils.fromWei(displayRate)} ${displayTokenSymbol.toUpperCase()}
   - Wallet:            ${displayWallet}
   - Wallet Balance:    ${displayWalletBalance} ${displayRaiseType}
   -----------------------------------------------
@@ -690,7 +694,7 @@ async function usdTieredSTO_configure(currentSTO) {
         await common.sendTransaction(changeAccreditedAction);
         break;
       case 2:
-        await accredit.executeApp(tokenSymbol, 75);
+        await changeAccreditedInBatch(currentSTO);
         break;
       case 3:
         let account = readlineSync.question('Enter the address to change non accredited limit: ');
@@ -698,11 +702,10 @@ async function usdTieredSTO_configure(currentSTO) {
         let accounts = [account];
         let limits = [web3.utils.toWei(limit)];
         let changeNonAccreditedLimitAction = currentSTO.methods.changeNonAccreditedLimit(accounts, limits);
-        // 2 GAS?
         await common.sendTransaction(changeNonAccreditedLimitAction);
         break;
       case 4:
-        await changeNonAccreditedLimit.executeApp(tokenSymbol, 75);
+        await changeNonAccreditedLimitsInBatch(currentSTO);
         break;
       case 5:
         await modfifyTimes(currentSTO);
@@ -725,6 +728,62 @@ async function usdTieredSTO_configure(currentSTO) {
         await usdTieredSTO_status(currentSTO);
         break;
     }
+  }
+}
+
+async function changeAccreditedInBatch(currentSTO) {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ACCREDIT_DATA_CSV}): `, {
+    defaultInput: ACCREDIT_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row => web3.utils.isAddress(row[0]) && typeof row[1] === 'boolean');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')}`));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [investorArray, isAccreditedArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to change accredited accounts:\n\n`, investorArray[batch], '\n');
+    let action = await currentSTO.methods.changeAccredited(investorArray[batch], isAccreditedArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Change accredited transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used. Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function changeNonAccreditedLimitsInBatch(currentSTO) {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${NON_ACCREDIT_LIMIT_DATA_CSV}): `, {
+    defaultInput: NON_ACCREDIT_LIMIT_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row => web3.utils.isAddress(row[0]) && !isNaN(row[1]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')}`));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [investorArray, limitArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to change non accredited limit to accounts:\n\n`, investorArray[batch], '\n');
+    let action = await currentSTO.methods.changeNonAccreditedLimit(investorArray[batch], limitArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Change non accredited limits transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used. Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
 
@@ -870,7 +929,8 @@ async function selectToken() {
   options.push('Enter token symbol manually');
 
   let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
-  switch (options[index]) {
+  let selected = index != -1 ? options[index] : 'Exit';
+  switch (selected) {
     case 'Enter token symbol manually':
       result = readlineSync.question('Enter the token symbol: ');
       break;

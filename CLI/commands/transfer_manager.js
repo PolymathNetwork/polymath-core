@@ -10,6 +10,7 @@ const csvParse = require('./helpers/csv');
 ///////////////////
 // Constants
 const WHITELIST_DATA_CSV = './CLI/data/Transfer/GTM/whitelist_data.csv';
+const PERCENTAGE_WHITELIST_DATA_CSV = './CLI/data/Transfer/PercentageTM/whitelist_data.csv';
 
 // App flow
 let tokenSymbol;
@@ -184,7 +185,7 @@ async function configExistingModules(tmModules) {
   let options = tmModules.map(m => `${m.name} at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'Return' });
   console.log('Selected:', index != -1 ? options[index] : 'Return', '\n');
-  let moduleNameSelected = tmModules[index].name;
+  let moduleNameSelected = index != -1 ? tmModules[index].name : 'Return';
 
   switch (moduleNameSelected) {
     case 'GeneralTransferManager':
@@ -197,16 +198,15 @@ async function configExistingModules(tmModules) {
       currentTransferManager.setProvider(web3.currentProvider);
       await manualApprovalTransferManager();
       break;
-    case 'PercentageTransferManager':
-      //await percentageTransferManager();
-      console.log(chalk.red(`
-        *********************************
-        This option is not yet available.
-        *********************************`
-      ));
-      break;
     case 'CountTransferManager':
-      //await countTransferManager();
+      currentTransferManager = new web3.eth.Contract(abis.countTransferManager(), tmModules[index].address);
+      currentTransferManager.setProvider(web3.currentProvider);
+      await countTransferManager();
+      break;
+    case 'PercentageTransferManager':
+      currentTransferManager = new web3.eth.Contract(abis.percentageTransferManager(), tmModules[index].address);
+      currentTransferManager.setProvider(web3.currentProvider);
+      await percentageTransferManager();
       break;
     case 'SingleTradeVolumeRestrictionTM':
       //currentTransferManager = new web3.eth.Contract(abis.singleTradeVolumeRestrictionTM(), tmModules[index].address);
@@ -230,26 +230,34 @@ async function configExistingModules(tmModules) {
 }
 
 async function addTransferManagerModule() {
-  let options = ['GeneralTransferManager', 'ManualApprovalTransferManager'/*, 'PercentageTransferManager', 
-'CountTransferManager', 'SingleTradeVolumeRestrictionTM', 'LookupVolumeRestrictionTM'*/];
+  let options = [
+    'GeneralTransferManager',
+    'ManualApprovalTransferManager',
+    'CountTransferManager',
+    'PercentageTransferManager',
+    //'SingleTradeVolumeRestrictionTM',
+    //'LookupVolumeRestrictionTM'*/
+  ];
 
   let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
     let bytes = web3.utils.fromAscii('', 16);
     switch (options[index]) {
-      case 'PercentageTransferManager':
-        console.log(chalk.red(`
-          *********************************
-          This option is not yet available.
-          *********************************`
-        ));
-        break;
       case 'CountTransferManager':
-        console.log(chalk.red(`
-          *********************************
-          This option is not yet available.
-          *********************************`
-        ));
+        let maxHolderCount = readlineSync.question('Enter the maximum no. of holders the SecurityToken is allowed to have: ');
+        let configureCountTM = abis.countTransferManager().find(o => o.name === 'configure' && o.type === 'function');
+        bytes = web3.eth.abi.encodeFunctionCall(configureCountTM, [maxHolderCount]);
+        break;
+      case 'PercentageTransferManager':
+        let maxHolderPercentage = toWeiPercentage(readlineSync.question('Enter the maximum amount of tokens in percentage that an investor can hold: ', {
+          limit: function (input) {
+            return (parseInt(input) > 0 && parseInt(input) <= 100);
+          },
+          limitMessage: "Must be greater than 0 and less than 100"
+        }));
+        let allowPercentagePrimaryIssuance = readlineSync.keyInYNStrict(`Do you want to ignore transactions which are part of the primary issuance? `);
+        let configurePercentageTM = abis.percentageTransferManager().find(o => o.name === 'configure' && o.type === 'function');
+        bytes = web3.eth.abi.encodeFunctionCall(configurePercentageTM, [maxHolderPercentage, allowPercentagePrimaryIssuance]);
         break;
       case 'SingleTradeVolumeRestrictionTM':
         /*
@@ -511,7 +519,7 @@ async function modifyWhitelistInBatch() {
     console.log(`Batch ${batch + 1} - Attempting to modify whitelist to accounts: \n\n`, investorArray[batch], '\n');
     let action = await currentTransferManager.methods.modifyWhitelistMulti(investorArray[batch], fromTimesArray[batch], toTimesArray[batch], expiryTimeArray[batch], canBuyFromSTOArray[batch]);
     let receipt = await common.sendTransaction(action);
-    console.log(chalk.green('Whitelist transaction was successful.'));
+    console.log(chalk.green('Modify whitelist transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
@@ -689,6 +697,134 @@ async function getManualBlocking(_from, _to) {
   }
 
   return result;
+}
+
+async function countTransferManager() {
+  console.log(chalk.blue(`Count Transfer Manager at ${currentTransferManager.options.address}`), '\n');
+
+  // Show current data
+  let displayMaxHolderCount = await currentTransferManager.methods.maxHolderCount().call();
+
+  console.log(`- Max holder count:        ${displayMaxHolderCount}`);
+
+  let options = ['Change max holder count']
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
+  let optionSelected = options[index];
+  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  switch (optionSelected) {
+    case 'Change max holder count':
+      let maxHolderCount = readlineSync.question('Enter the maximum no. of holders the SecurityToken is allowed to have: ');
+      let changeHolderCountAction = currentTransferManager.methods.changeHolderCount(maxHolderCount);
+      let changeHolderCountReceipt = await common.sendTransaction(changeHolderCountAction);
+      let changeHolderCountEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeHolderCountReceipt.logs, 'ModifyHolderCount');
+      console.log(chalk.green(`Max holder count has been set to ${changeHolderCountEvent._newHolderCount} sucessfully!`));
+      break;
+  }
+}
+
+async function percentageTransferManager() {
+  console.log(chalk.blue(`Percentage Transfer Manager at ${currentTransferManager.options.address}`), '\n');
+
+  // Show current data
+  let displayMaxHolderPercentage = await currentTransferManager.methods.maxHolderPercentage().call();
+  let displayAllowPrimaryIssuance = await currentTransferManager.methods.allowPrimaryIssuance().call();
+
+  console.log(`- Max holder percentage:   ${fromWeiPercentage(displayMaxHolderPercentage)}%`);
+  console.log(`- Allow primary issuance:  ${displayAllowPrimaryIssuance ? `YES` : `NO`}`);
+
+  let options = ['Change max holder percentage', 'Check if investor is whitelisted', 'Modify whitelist', 'Modify whitelist from CSV'];
+  if (displayAllowPrimaryIssuance) {
+    options.push('Disallow primary issuance');
+  } else {
+    options.push('Allow primary issuance');
+  }
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
+  let optionSelected = options[index];
+  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  switch (optionSelected) {
+    case 'Change max holder percentage':
+      let maxHolderPercentage = toWeiPercentage(readlineSync.question('Enter the maximum amount of tokens in percentage that an investor can hold: ', {
+        limit: function (input) {
+          return (parseInt(input) > 0 && parseInt(input) <= 100);
+        },
+        limitMessage: "Must be greater than 0 and less than 100"
+      }));
+      let changeHolderPercentageAction = currentTransferManager.methods.changeHolderPercentage(maxHolderPercentage);
+      let changeHolderPercentageReceipt = await common.sendTransaction(changeHolderPercentageAction);
+      let changeHolderPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeHolderPercentageReceipt.logs, 'ModifyHolderPercentage');
+      console.log(chalk.green(`Max holder percentage has been set to ${fromWeiPercentage(changeHolderPercentageEvent._newHolderPercentage)} successfully!`));
+      break;
+    case 'Check if investor is whitelisted':
+      let investorToCheck = readlineSync.question('Enter the address of the investor: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      let isWhitelisted = await currentTransferManager.methods.whitelist(investorToCheck).call();
+      if (isWhitelisted) {
+        console.log(chalk.green(`${investorToCheck} is whitelisted!`));
+      } else {
+        console.log(chalk.yellow(`${investorToCheck} is not whitelisted!`));
+      }
+      break;
+    case 'Modify whitelist':
+      let valid = !!readlineSync.keyInSelect(['Remove investor from whitelist', 'Add investor to whitelist'], 'How do you want to do? ', { cancel: false });
+      let investorToWhitelist = readlineSync.question('Enter the address of the investor: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      let modifyWhitelistAction = currentTransferManager.methods.modifyWhitelist(investorToWhitelist, valid);
+      let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
+      let modifyWhitelistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyWhitelist');
+      if (modifyWhitelistEvent._valid) {
+        console.log(chalk.green(`${modifyWhitelistEvent._investor} has been added to the whitelist sucessfully!`));
+      } else {
+        console.log(chalk.green(`${modifyWhitelistEvent._investor} has been removed from the whitelist sucessfully!`));
+      }
+      break;
+    case 'Modify whitelist from CSV':
+      let csvFilePath = readlineSync.question(`Enter the path for csv data file (${PERCENTAGE_WHITELIST_DATA_CSV}): `, {
+        defaultInput: PERCENTAGE_WHITELIST_DATA_CSV
+      });
+      let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+        limit: function (input) {
+          return parseInt(input) > 0;
+        },
+        limitMessage: 'Must be greater than 0',
+        defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+      });
+      let parsedData = csvParse(csvFilePath);
+      let validData = parsedData.filter(row => web3.utils.isAddress(row[0]) && typeof row[1] === 'boolean');
+      let invalidRows = parsedData.filter(row => !validData.includes(row));
+      if (invalidRows.length > 0) {
+        console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')}`));
+      }
+      let batches = common.splitIntoBatches(validData, batchSize);
+      let [investorArray, isWhitelistedArray] = common.transposeBatches(batches);
+      for (let batch = 0; batch < batches.length; batch++) {
+        console.log(`Batch ${batch + 1} - Attempting to modify whitelist accounts:\n\n`, investorArray[batch], '\n');
+        let action = await currentTransferManager.methods.modifyWhitelistMulti(investorArray[batch], isWhitelistedArray[batch]);
+        let receipt = await common.sendTransaction(action);
+        console.log(chalk.green('Modify whitelist transaction was successful.'));
+        console.log(`${receipt.gasUsed} gas used. Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+      }
+      break;
+    case 'Allow primary issuance':
+    case 'Disallow primary issuance':
+      let setAllowPrimaryIssuanceAction = currentTransferManager.methods.setAllowPrimaryIssuance(!displayAllowPrimaryIssuance);
+      let setAllowPrimaryIssuanceReceipt = await common.sendTransaction(setAllowPrimaryIssuanceAction);
+      let setAllowPrimaryIssuanceEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, setAllowPrimaryIssuanceReceipt.logs, 'SetAllowPrimaryIssuance');
+      if (setAllowPrimaryIssuanceEvent._allowPrimaryIssuance) {
+        console.log(chalk.green(`Transactions which are part of the primary issuance will be ignored!`));
+      } else {
+        console.log(chalk.green(`Transactions which are part of the primary issuance will NOT be ignored!`));
+      }
+      break;
+
+  }
 }
 
 async function singleTradeVolumeRestrictionTM() {

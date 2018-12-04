@@ -468,34 +468,42 @@ contract VolumeRestrictionTM is ITransferManager {
     function _restrictionCheck(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {
         uint256 sumOfLastPeriod = 0; 
         uint256 daysCovered = 0;
-        uint256 lastTradedDayTime; 
-        uint256 globalSumOfLastPeriod;
-        uint256 globalDaysCovered;
+        uint256 lastTradedDayTime = 0; 
+        uint256 globalSumOfLastPeriod = 0;
+        uint256 globalDaysCovered = 0;
         bool validIR = true;
         bool validGR = true;
+        uint8 _temp = 0;
         if (individualRestriction[_from].endTime >= now && individualRestriction[_from].startTime <= now) {
             (validIR, sumOfLastPeriod, lastTradedDayTime, daysCovered) = _individualRestrictionCheck(_from, _amount);
-        } 
-        (validGR, globalSumOfLastPeriod, lastTradedDayTime, globalDaysCovered) =  _globalRestrictionCheck(_from, _amount);
-        // Total amout that is transacted uptill now for `fromTimestamp` day
-        uint256 txSumOfDay = bucket[_from][lastTradedDayTime];
-        // allow modification in storage when `_isTransfer` equals true
-        if (_isTransfer) {
-            // update the storage
-            _updateStorage(
-                _from,
-                _amount,
-                lastTradedDayTime,
-                sumOfLastPeriod, 
-                globalSumOfLastPeriod, 
-                daysCovered, 
-                globalDaysCovered
-            );
+            _temp = _temp + 1;
         }
-        if (validGR && validIR && _dailyTxCheck(txSumOfDay, _amount))
-            return Result.NA;
-        else 
-            return Result.INVALID;
+        if (globalRestriction.endTime >= now && globalRestriction.startTime <= now) {
+            (validGR, globalSumOfLastPeriod, lastTradedDayTime, globalDaysCovered) =  _globalRestrictionCheck(_from, _amount);
+            _temp = _temp + 1;
+        }
+        if (_temp > 0) {
+            // Total amout that is transacted uptill now for `fromTimestamp` day
+            uint256 txSumOfDay = bucket[_from][lastTradedDayTime];
+            // allow modification in storage when `_isTransfer` equals true
+            if (_isTransfer) {
+                // update the storage
+                _updateStorage(
+                    _from,
+                    _amount,
+                    lastTradedDayTime,
+                    sumOfLastPeriod, 
+                    globalSumOfLastPeriod, 
+                    daysCovered, 
+                    globalDaysCovered
+                );
+            }
+            if (validGR && validIR && _dailyTxCheck(txSumOfDay, _amount))
+                return Result.NA;
+            else 
+                return Result.INVALID;
+        }
+        return Result.NA; 
     }   
 
     /**

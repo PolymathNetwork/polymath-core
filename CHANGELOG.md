@@ -17,6 +17,8 @@ All notable changes to this project will be documented in this file.
 * `getInvestors`, `getAllInvestorsData`, `getInvestorsData` added to GTM to allow easy data queries.
 * `modifyDefaults(uint64 _defaultFromTime, uint64 _defaultToTime)` added which sets a default timestamp used when `fromTime` or `toTime` are 0
 * Add `address[] public investors` to record a list of all addresses that have been added to the whitelist (`getInvestors`).
+* General Transfer Manager: Fix for when `allowAllWhitelistIssuances` is FALSE
+* General Transfer Manager: Make GTM a Proxy based implementation to reduce deployment gas costs
 * Changed the version of `GeneralTransferManagerFactory` from `1.0.0` to `2.1.0`.
 
 ## Manual Approval TransferManager
@@ -26,11 +28,11 @@ All notable changes to this project will be documented in this file.
 
 ## Dividends
 * Changed the version of `ERC20DividendCheckpointFactory` & `EtherDividendCheckpointFactory` from `1.0.0` to `2.1.0`.
+* Applied proxy pattern to Dividends modules
 
 ## Changed
 * `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
-* General Transfer Manager: Fix for when `allowAllWhitelistIssuances` is FALSE
-* General Transfer Manager: Make GTM a Proxy based implementation to reduce deployment gas costs
+
 
 # v1.5.0 - Release Candidate
 

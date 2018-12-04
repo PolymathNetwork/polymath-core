@@ -383,7 +383,7 @@ contract VestingEscrowWallet is IWallet {
      * @notice Returns beneficiary's schedule
      * @param _beneficiary beneficiary's address
      * @param _templateName name of the template
-     * @return beneficiary's schedule
+     * @return beneficiary's schedule data (numberOfTokens, duration, frequency, startTime, claimedTokens, State)
      */
     function getSchedule(address _beneficiary, bytes32 _templateName) external view returns(uint256, uint256, uint256, uint256, uint256, State) {
         _checkSchedule(_beneficiary, _templateName);

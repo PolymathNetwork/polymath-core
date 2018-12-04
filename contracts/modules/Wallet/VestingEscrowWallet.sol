@@ -14,7 +14,7 @@ contract VestingEscrowWallet is IWallet {
 
     // States used to represent the status of the schedule
     enum State {CREATED, STARTED, COMPLETED}
-    
+
     // Emit when new schedule is added
     event AddSchedule(
         address indexed _beneficiary,
@@ -90,7 +90,7 @@ contract VestingEscrowWallet is IWallet {
 
     function _depositTokens(uint256 _numberOfTokens) internal {
         require(_numberOfTokens > 0, "Should be > 0");
-        ISecurityToken(securityToken).transferFrom(treasuryWallet, address(this), _numberOfTokens);
+        ISecurityToken(securityToken).transferFrom(msg.sender, address(this), _numberOfTokens);
         unassignedTokens = unassignedTokens.add(_numberOfTokens);
         emit DepositTokens(_numberOfTokens, msg.sender);
     }
@@ -145,8 +145,8 @@ contract VestingEscrowWallet is IWallet {
      * @param _name name of template
      */
     function removeTemplate(bytes32 _name) external withPerm(ADMIN) {
-        require(_isTemplateExists(_name), "Already exists");
-        require(templateToUsers[_name].length == 0);
+        require(_isTemplateExists(_name), "Template not found");
+        require(templateToUsers[_name].length == 0, "Template is used");
         // delete template data
         delete templates[_name];
         uint256 i;
@@ -174,7 +174,7 @@ contract VestingEscrowWallet is IWallet {
      * @notice get the list of template names
      * @return bytes32 Array of template names
      */
-    function getTemplateNames() external view returns(bytes32[]) {
+    function getAllTemplateNames() external view returns(bytes32[]) {
         return templateNames;
     }
 
@@ -227,7 +227,7 @@ contract VestingEscrowWallet is IWallet {
 
     function _addScheduleFromTemplate(address _beneficiary, bytes32 _templateName, uint256 _startTime) internal {
         require(_beneficiary != address(0), "Invalid address");
-        require(_isTemplateExists(_templateName));
+        require(_isTemplateExists(_templateName), "Template not found");
         uint256 index = userToTemplateIndex[_beneficiary][_templateName];
         require(
             schedules[_beneficiary].length == 0 ||
@@ -240,9 +240,9 @@ contract VestingEscrowWallet is IWallet {
             _depositTokens(numberOfTokens.sub(unassignedTokens));
         }
         unassignedTokens = unassignedTokens.sub(numberOfTokens);
-        //add beneficiary to the schedule list only if adding first schedule
-        if (schedules[_beneficiary].length == 0) {
+        if (!beneficiaryAdded[_beneficiary]) {
             beneficiaries.push(_beneficiary);
+            beneficiaryAdded[_beneficiary] = true;
         }
         schedules[_beneficiary].push(Schedule(_templateName, 0, _startTime));
         userToTemplates[_beneficiary].push(_templateName);
@@ -340,7 +340,7 @@ contract VestingEscrowWallet is IWallet {
      * @notice Returns beneficiary's schedule
      * @param _beneficiary beneficiary's address
      * @param _templateName name of the template
-     * @return beneficiary's schedule
+     * @return beneficiary's schedule data (numberOfTokens, duration, frequency, startTime, claimedTokens, State)
      */
     function getSchedule(address _beneficiary, bytes32 _templateName) external view returns(uint256, uint256, uint256, uint256, uint256, State) {
         _checkSchedule(_beneficiary, _templateName);

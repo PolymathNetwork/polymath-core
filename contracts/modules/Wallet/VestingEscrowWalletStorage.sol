@@ -29,6 +29,8 @@ contract VestingEscrowWalletStorage {
     address public treasuryWallet;
     // List of all beneficiaries who have the schedules running/completed/created
     address[] public beneficiaries;
+    // Flag whether beneficiary has been already added or not
+    mapping(address => bool) internal beneficiaryAdded;
 
     // Holds schedules array corresponds to the affiliate/employee address
     mapping(address => Schedule[]) public schedules;

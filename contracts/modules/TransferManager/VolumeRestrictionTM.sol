@@ -486,7 +486,7 @@ contract VolumeRestrictionTM is ITransferManager {
         }
         if (txSumOfDay > 0) {
             // Total amout that is transacted uptill now for `fromTimestamp` day
-            txSumOfDay = bucket[_from][lastTradedDayTime] <= bucket[_from][globalLastTradedDayTime]? bucket[_from][lastTradedDayTime] : bucket[_from][globalLastTradedDayTime];
+            txSumOfDay = bucket[_from][lastTradedDayTime] >= bucket[_from][globalLastTradedDayTime]? bucket[_from][lastTradedDayTime] : bucket[_from][globalLastTradedDayTime];
             // allow modification in storage when `_isTransfer` equals true
             if (_isTransfer) {
                 // update the storage
@@ -516,12 +516,12 @@ contract VolumeRestrictionTM is ITransferManager {
         uint256 daysCovered;
         uint256 fromTimestamp;
         uint256 sumOfLastPeriod = 0;
-        if (bucketToUser[_from].lastTradedDayTime < globalRestriction.startTime) {
+        if (bucketToUser[_from].globalLastTradedDayTime < globalRestriction.startTime) {
             // It will execute when the txn is performed first time after the addition of global restriction
             fromTimestamp = globalRestriction.startTime;
         } else {
             // picking up the preivous timestamp
-            fromTimestamp = bucketToUser[_from].lastTradedDayTime;
+            fromTimestamp = bucketToUser[_from].globalLastTradedDayTime;
         }
         // Calculating the difference of days
         uint256 diffDays = BokkyPooBahsDateTimeLibrary.diffDays(fromTimestamp, now); 
@@ -685,14 +685,19 @@ contract VolumeRestrictionTM is ITransferManager {
             bucketToUser[_from].globalLastTradedDayTime = _globalLastTradedDayTime;
         }
         if (_amount != 0) {
+            if (globalRestriction.endTime >= now && globalRestriction.startTime <= now) {
+                bucketToUser[_from].globalSumOfLastPeriod = _globalSumOfLastPeriod.add(_amount);
+                bucketToUser[_from].globalDaysCovered = _globalDaysCovered;
+                // Increasing the total amount of the day by `_amount`
+                bucket[_from][_globalLastTradedDayTime] = bucket[_from][_globalLastTradedDayTime].add(_amount);
+            }
             if (individualRestriction[_from].endTime >= now && individualRestriction[_from].startTime <= now) {
                 bucketToUser[_from].daysCovered = _daysCovered;
                 bucketToUser[_from].sumOfLastPeriod = _sumOfLastPeriod.add(_amount);
+                if (_lastTradedDayTime != _globalLastTradedDayTime)
+                    // Increasing the total amount of the day by `_amount`
+                    bucket[_from][_lastTradedDayTime] = bucket[_from][_lastTradedDayTime].add(_amount);
             }
-            bucketToUser[_from].globalSumOfLastPeriod = _globalSumOfLastPeriod.add(_amount);
-            bucketToUser[_from].globalDaysCovered = _globalDaysCovered;
-            // Increasing the total amount of the day by `_amount`
-            bucket[_from][_lastTradedDayTime] = bucket[_from][_lastTradedDayTime].add(_amount);
         }
         
     }

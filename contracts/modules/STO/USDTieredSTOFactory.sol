@@ -13,10 +13,9 @@ contract USDTieredSTOFactory is ModuleFactory {
 
     /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _proxyFactoryAddress) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _proxyFactoryAddress) public
+    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         require(_proxyFactoryAddress != address(0), "0x address is not allowed");
         USDTieredSTOProxyAddress = _proxyFactoryAddress;
@@ -34,6 +33,7 @@ contract USDTieredSTOFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
+        IERC20 polyToken = getPolyToken(msg.sender);
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Sufficent Allowance is not provided");
         require(USDTieredSTOProxyAddress != address(0), "Proxy contract should be pre-set");

@@ -10,13 +10,12 @@ contract TrackedRedemptionFactory is ModuleFactory {
 
     /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
      * @param _setupCost Setup cost of module
      * @param _usageCost Usage cost of module
      * @param _subscriptionCost Monthly cost of module
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
         name = "TrackedRedemption";
@@ -31,6 +30,7 @@ contract TrackedRedemptionFactory is ModuleFactory {
      * @return Address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
+        IERC20 polyToken = getPolyToken(msg.sender);
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Insufficent allowance or balance");
         address trackedRedemption = new TrackedRedemption(msg.sender);

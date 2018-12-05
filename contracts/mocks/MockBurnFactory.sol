@@ -11,10 +11,9 @@ contract MockBurnFactory is TrackedRedemptionFactory {
 
      /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      TrackedRedemptionFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+      TrackedRedemptionFactory(_setupCost, _usageCost, _subscriptionCost)
     {
     }
 
@@ -23,6 +22,7 @@ contract MockBurnFactory is TrackedRedemptionFactory {
      * @return Address Contract address of the Module
      */
     function deploy(bytes /*_data*/) external returns(address) {
+        IERC20 polyToken = getPolyToken(msg.sender);
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Unable to pay setup cost");
         //Check valid bytes - can only call module init function

@@ -6,10 +6,9 @@ contract TestSTOFactory is DummySTOFactory {
 
     /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      DummySTOFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+      DummySTOFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
         name = "TestSTO";

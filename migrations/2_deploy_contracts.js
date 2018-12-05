@@ -149,31 +149,31 @@ module.exports = function (deployer, network, accounts) {
   }).then(() => {
     // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(GeneralTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    return deployer.deploy(GeneralTransferManagerFactory, 0, 0, 0, {from: PolymathAccount});
   }).then(() => {
     // C) Deploy the GeneralPermissionManagerFactory Contract (Factory used to generate the GeneralPermissionManager contract and
     // this manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(GeneralPermissionManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    return deployer.deploy(GeneralPermissionManagerFactory, 0, 0, 0, {from: PolymathAccount});
   }).then(() => {
     // D) Deploy the CountTransferManagerFactory Contract (Factory used to generate the CountTransferManager contract use
     // to track the counts of the investors of the security token)
-    return deployer.deploy(CountTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    return deployer.deploy(CountTransferManagerFactory, 0, 0, 0, {from: PolymathAccount});
   }).then(() => {
     // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
     // to track the percentage of investment the investors could do for a particular security token)
-    return deployer.deploy(PercentageTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    return deployer.deploy(PercentageTransferManagerFactory, 0, 0, 0, {from: PolymathAccount});
   }).then(() => {
     // D) Deploy the EtherDividendCheckpointFactory Contract (Factory used to generate the EtherDividendCheckpoint contract use
     // to provide the functionality of the dividend in terms of ETH)
-    return deployer.deploy(EtherDividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    return deployer.deploy(EtherDividendCheckpointFactory, 0, 0, 0, {from: PolymathAccount});
   }).then(() => {
     // D) Deploy the ERC20DividendCheckpointFactory Contract (Factory used to generate the ERC20DividendCheckpoint contract use
     // to provide the functionality of the dividend in terms of ERC20 token)
-    return deployer.deploy(ERC20DividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    return deployer.deploy(ERC20DividendCheckpointFactory, 0, 0, 0, {from: PolymathAccount});
   }).then(() => {
       // D) Deploy the ManualApprovalTransferManagerFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
       // to manual approve the transfer that will overcome the other transfer restrictions)
-      return deployer.deploy(ManualApprovalTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+      return deployer.deploy(ManualApprovalTransferManagerFactory, 0, 0, 0, {from: PolymathAccount});
   }).then(() => {
     // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
     return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, {from: PolymathAccount});
@@ -262,7 +262,7 @@ module.exports = function (deployer, network, accounts) {
     return moduleRegistry.verifyModule(ManualApprovalTransferManagerFactory.address, true, {from: PolymathAccount});
   }).then(() => {
     // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
-    return deployer.deploy(CappedSTOFactory, PolyToken, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})
+    return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})
   }).then(() => {
     // N) Register the CappedSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the CappedSTOFactory contract.
@@ -277,7 +277,7 @@ module.exports = function (deployer, network, accounts) {
     return deployer.deploy(USDTieredSTOProxyFactory, {from: PolymathAccount});
   }).then(() => {
     // H) Deploy the USDTieredSTOFactory (Use to generate the USDTieredSTOFactory contract which will used to collect the funds ).
-    return deployer.deploy(USDTieredSTOFactory, PolyToken, usdTieredSTOSetupCost, 0, 0, USDTieredSTOProxyFactory.address, {from: PolymathAccount})
+    return deployer.deploy(USDTieredSTOFactory, usdTieredSTOSetupCost, 0, 0, USDTieredSTOProxyFactory.address, {from: PolymathAccount})
   }).then(() => {
     // I) Register the USDTieredSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the USDTieredSTOFactory contract.

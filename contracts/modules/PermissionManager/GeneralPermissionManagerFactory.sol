@@ -10,10 +10,9 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
         name = "GeneralPermissionManager";
@@ -28,6 +27,7 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
+        IERC20 polyToken = getPolyToken(msg.sender);
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom due to insufficent Allowance provided");
         address permissionManager = new GeneralPermissionManager(msg.sender);

@@ -86,7 +86,7 @@ contract("CappedSTO", accounts => {
     let startTime_ETH2;
     let endTime_ETH2;
     const cap = web3.utils.toWei("10000");
-    const rate = 1000;
+    const rate = web3.utils.toWei("1000");
     const E_fundRaiseType = 0;
     const address_zero = "0x0000000000000000000000000000000000000000";
 
@@ -97,7 +97,7 @@ contract("CappedSTO", accounts => {
     let blockNo;
     const P_cap = web3.utils.toWei("50000");
     const P_fundRaiseType = 1;
-    const P_rate = 5;
+    const P_rate = web3.utils.toWei("5");
     const cappedSTOSetupCost = web3.utils.toWei("20000", "ether");
     const maxCost = cappedSTOSetupCost;
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
@@ -130,7 +130,7 @@ contract("CappedSTO", accounts => {
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-        
+
         // STEP 6: Deploy the CappedSTOFactory
 
         I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, cappedSTOSetupCost, 0, 0, { from: token_owner });
@@ -298,7 +298,7 @@ contract("CappedSTO", accounts => {
             assert.equal(await I_CappedSTO_Array_ETH[0].startTime.call(), startTime_ETH1, "STO Configuration doesn't set as expected");
             assert.equal(await I_CappedSTO_Array_ETH[0].endTime.call(), endTime_ETH1, "STO Configuration doesn't set as expected");
             assert.equal((await I_CappedSTO_Array_ETH[0].cap.call()).toNumber(), cap, "STO Configuration doesn't set as expected");
-            assert.equal(await I_CappedSTO_Array_ETH[0].rate.call(), rate, "STO Configuration doesn't set as expected");
+            assert.equal((await I_CappedSTO_Array_ETH[0].rate.call()).toNumber(), rate, "STO Configuration doesn't set as expected");
             assert.equal(
                 await I_CappedSTO_Array_ETH[0].fundRaiseTypes.call(E_fundRaiseType),
                 true,
@@ -554,7 +554,7 @@ contract("CappedSTO", accounts => {
             assert.equal(await I_CappedSTO_Array_ETH[1].startTime.call(), startTime_ETH2, "STO Configuration doesn't set as expected");
             assert.equal(await I_CappedSTO_Array_ETH[1].endTime.call(), endTime_ETH2, "STO Configuration doesn't set as expected");
             assert.equal((await I_CappedSTO_Array_ETH[1].cap.call()).toNumber(), cap, "STO Configuration doesn't set as expected");
-            assert.equal(await I_CappedSTO_Array_ETH[1].rate.call(), rate, "STO Configuration doesn't set as expected");
+            assert.equal((await I_CappedSTO_Array_ETH[1].rate.call()).toNumber(), rate, "STO Configuration doesn't set as expected");
             assert.equal(
                 await I_CappedSTO_Array_ETH[1].fundRaiseTypes.call(E_fundRaiseType),
                 true,
@@ -993,8 +993,8 @@ contract("CappedSTO", accounts => {
 
         it("Should successfully invest in second STO", async () => {
             const polyToInvest = 1000;
-            const stToReceive = polyToInvest * P_rate;
-
+            const stToReceive = (polyToInvest * P_rate)/Math.pow(10, 18);
+            
             await I_PolyToken.getTokens(polyToInvest * Math.pow(10, 18), account_investor3);
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, P_fromTime, P_toTime, P_expiryTime, true, {

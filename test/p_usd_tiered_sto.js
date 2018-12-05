@@ -636,7 +636,7 @@ contract("USDTieredSTO", accounts => {
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
             I_USDTieredSTO_Array.push(USDTieredSTO.at(tx.logs[2].args._module));
             let tokens = await I_USDTieredSTO_Array[I_USDTieredSTO_Array.length - 1].getUsdTokens.call();
-            assert.equal(tokens, _usdToken[stoId], "USD Tokens should match");
+            assert.equal(tokens[0], I_DaiToken.address, "USD Tokens should match");
         });
 
         it("Should successfully attach the fifth STO module to the security token", async () => {

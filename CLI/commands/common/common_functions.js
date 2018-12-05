@@ -102,7 +102,7 @@ module.exports = {
     await checkPermissions(action);
 
     options = getFinalOptions(options);
-    let gasLimit = 8000000//await getGasLimit(options, action);
+    let gasLimit = await getGasLimit(options, action);
 
     console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gasLimit} ----`));
 

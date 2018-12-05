@@ -26,6 +26,7 @@ contract VolumeRestrictionTM is ITransferManager {
 
     struct BucketDetails {
         uint256 lastTradedDayTime;
+        uint256 globalLastTradedDayTime;
         uint256 sumOfLastPeriod;   // It is the sum of transacted amount within the last rollingPeriodDays
         uint256 globalSumOfLastPeriod; 
         uint256 daysCovered;    // No of days covered till (from the startTime of VolumeRestriction)
@@ -468,23 +469,24 @@ contract VolumeRestrictionTM is ITransferManager {
     function _restrictionCheck(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {
         uint256 sumOfLastPeriod = 0; 
         uint256 daysCovered = 0;
-        uint256 lastTradedDayTime = 0; 
+        uint256 lastTradedDayTime = 0;
+        uint256 globalLastTradedDayTime = 0; 
         uint256 globalSumOfLastPeriod = 0;
         uint256 globalDaysCovered = 0;
         bool validIR = true;
         bool validGR = true;
-        uint8 _temp = 0;
+        uint256 txSumOfDay = 0;
         if (individualRestriction[_from].endTime >= now && individualRestriction[_from].startTime <= now) {
             (validIR, sumOfLastPeriod, lastTradedDayTime, daysCovered) = _individualRestrictionCheck(_from, _amount);
-            _temp = _temp + 1;
+            txSumOfDay = txSumOfDay + 1;
         }
         if (globalRestriction.endTime >= now && globalRestriction.startTime <= now) {
-            (validGR, globalSumOfLastPeriod, lastTradedDayTime, globalDaysCovered) =  _globalRestrictionCheck(_from, _amount);
-            _temp = _temp + 1;
+            (validGR, globalSumOfLastPeriod, globalLastTradedDayTime, globalDaysCovered) =  _globalRestrictionCheck(_from, _amount);
+            txSumOfDay = txSumOfDay + 1;
         }
-        if (_temp > 0) {
+        if (txSumOfDay > 0) {
             // Total amout that is transacted uptill now for `fromTimestamp` day
-            uint256 txSumOfDay = bucket[_from][lastTradedDayTime];
+            txSumOfDay = bucket[_from][lastTradedDayTime] <= bucket[_from][globalLastTradedDayTime]? bucket[_from][lastTradedDayTime] : bucket[_from][globalLastTradedDayTime];
             // allow modification in storage when `_isTransfer` equals true
             if (_isTransfer) {
                 // update the storage
@@ -495,7 +497,8 @@ contract VolumeRestrictionTM is ITransferManager {
                     sumOfLastPeriod, 
                     globalSumOfLastPeriod, 
                     daysCovered, 
-                    globalDaysCovered
+                    globalDaysCovered,
+                    globalLastTradedDayTime
                 );
             }
             if (validGR && validIR && _dailyTxCheck(txSumOfDay, _amount))
@@ -668,13 +671,18 @@ contract VolumeRestrictionTM is ITransferManager {
         uint256 _sumOfLastPeriod,
         uint256 _globalSumOfLastPeriod, 
         uint256 _daysCovered, 
-        uint256 _globalDaysCovered
+        uint256 _globalDaysCovered,
+        uint256 _globalLastTradedDayTime
     )
         internal 
     {
         if (bucketToUser[_from].lastTradedDayTime != _lastTradedDayTime) {
-             // Assigning the latest transaction timestamp of the day
+            // Assigning the latest transaction timestamp of the day
             bucketToUser[_from].lastTradedDayTime = _lastTradedDayTime;
+        }
+        if (bucketToUser[_from].globalLastTradedDayTime != _globalLastTradedDayTime) {
+            // Assigning the latest transaction timestamp of the day
+            bucketToUser[_from].globalLastTradedDayTime = _globalLastTradedDayTime;
         }
         if (_amount != 0) {
             if (individualRestriction[_from].endTime >= now && individualRestriction[_from].startTime <= now) {
@@ -817,11 +825,14 @@ contract VolumeRestrictionTM is ITransferManager {
      * @return uint256 sumOfLastPeriod
      * @return uint256 days covered
      */
-    function getBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256) {
+    function getBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256, uint256, uint256, uint256) {
         return(
             bucketToUser[_user].lastTradedDayTime,
             bucketToUser[_user].sumOfLastPeriod,
-            bucketToUser[_user].daysCovered
+            bucketToUser[_user].daysCovered,
+            bucketToUser[_user].globalDaysCovered,
+            bucketToUser[_user].globalSumOfLastPeriod,
+            bucketToUser[_user].globalLastTradedDayTime
         );
     }
 

@@ -222,7 +222,7 @@ contract("USDTieredSTO", accounts => {
              I_SecurityTokenRegistryProxy,
              I_STRProxied
          ] = instances;
-        
+
         I_DaiToken = await PolyTokenFaucet.new({from: POLYMATH});
         // STEP 4: Deploy the GeneralDelegateManagerFactory
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(POLYMATH, I_MRProxied, I_PolyToken.address, 0);
@@ -4482,7 +4482,7 @@ contract("USDTieredSTO", accounts => {
                     "fundsRaisedUSD not changed as expected"
                 );
             });
-            
+
             it("should return minted tokens in a tier", async () => {
                 let totalMinted = (await I_USDTieredSTO_Array[0].getTokensSoldByTier.call(0)).toNumber();
                 let individualMinted = await I_USDTieredSTO_Array[0].getTokensMintedByTier.call(0);
@@ -4564,7 +4564,7 @@ contract("USDTieredSTO", accounts => {
             assert.equal((await I_USDTieredSTOFactory.getSetupCost.call()).toNumber(), STOSetupCost);
             assert.equal((await I_USDTieredSTOFactory.getTypes.call())[0], 3);
             assert.equal(web3.utils.hexToString(await I_USDTieredSTOFactory.getName.call()), "USDTieredSTO", "Wrong Module added");
-            assert.equal(await I_USDTieredSTOFactory.description.call(), 
+            assert.equal(await I_USDTieredSTOFactory.description.call(),
             "It allows both accredited and non-accredited investors to contribute into the STO. Non-accredited investors will be capped at a maximum investment limit (as a default or specific to their jurisdiction). Tokens will be sold according to tiers sequentially & each tier has its own price and volume of tokens to sell. Upon receipt of funds (ETH, POLY or DAI), security tokens will automatically transfer to investor’s wallet address",
             "Wrong Module added");
             assert.equal(await I_USDTieredSTOFactory.title.call(), "USD Tiered STO", "Wrong Module added");

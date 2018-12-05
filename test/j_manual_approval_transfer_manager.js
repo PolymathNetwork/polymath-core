@@ -491,7 +491,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 "Allows an issuer to set manual approvals for specific pairs of addresses and amounts. Init function takes no parameters.",
                 "Wrong Module added"
             );
-            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "2.0.1");
+            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "2.1.0");
         });
 
         it("Should get the tags of the factory", async () => {

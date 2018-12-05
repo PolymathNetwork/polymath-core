@@ -155,8 +155,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     }
 
     modifier validSC(address _usdToken) {
-        require(fundRaiseTypes[uint8(FundRaiseType.SC)], "Stable coins not allowed");
-        require(usdTokenEnabled[_usdToken], "Invalid USD token");
+        require(fundRaiseTypes[uint8(FundRaiseType.SC)] && usdTokenEnabled[_usdToken], "USD not allowed");
         _;
     }
 
@@ -472,8 +471,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
       * @param _minTokens Minumum number of tokens to buy or else revert
       * @param _usdToken Address of USD stable coin to buy tokens with
       */
-    function buyWithUSDRateLimited(address _beneficiary, uint256 _investedSC, uint256 _minTokens, IERC20 _usdToken) 
-        public validSC(_usdToken) 
+    function buyWithUSDRateLimited(address _beneficiary, uint256 _investedSC, uint256 _minTokens, IERC20 _usdToken)
+        public validSC(_usdToken)
     {
         _buyWithTokens(_beneficiary, _investedSC, FundRaiseType.SC, _minTokens, _usdToken);
     }
@@ -512,7 +511,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         if (!allowBeneficialInvestments) {
             require(_beneficiary == msg.sender, "Beneficiary != funder");
         }
-        
+
         uint256 originalUSD = DecimalMath.mul(_rate, _investmentValue);
         uint256 allowedUSD = _buyTokensChecks(_beneficiary, _investmentValue, originalUSD);
 
@@ -634,7 +633,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             tierData.mintedTotal = tierData.mintedTotal.add(tierPurchasedTokens);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
-        if (investedUSD > 0 && 
+        if (investedUSD > 0 &&
             tierData.tokenTotal.sub(tierData.mintedTotal) > 0 &&
             (_fundRaiseType != FundRaiseType.POLY || tierData.tokensDiscountPoly <= tierData.mintedDiscountPoly)
         ) {
@@ -669,7 +668,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
             _investedUSD = _investedUSD.sub(spentUSD);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
-        if (_investedUSD > 0 && 
+        if (_investedUSD > 0 &&
             tierData.tokenTotal.sub(tierData.mintedTotal.add(tokensMinted)) > 0 &&
             (_fundRaiseType != FundRaiseType.POLY || tierData.tokensDiscountPoly <= tierData.mintedDiscountPoly)
         ) {
@@ -693,7 +692,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         if (purchasedTokens > 0) {
             require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
             emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
-        } 
+        }
     }
 
     function _purchaseTierAmount(
@@ -864,6 +863,14 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
      */
     function getNumberOfTiers() public view returns (uint256) {
         return tiers.length;
+    }
+
+    /**
+     * @notice Return the usd tokens accepted by the STO
+     * @return address[] usd tokens
+     */
+    function getUsdTokens() public view returns (address[]) {
+        return usdTokens;
     }
 
     /**

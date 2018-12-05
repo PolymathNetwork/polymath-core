@@ -51,7 +51,7 @@ async function executeApp(investorAddress, investorPrivKey, symbol, currency, am
         }
     }
     if (investorAddress != "") {
-        User = { address: investorAddress, privateKey: investorPrivKey};
+        User = { address: investorAddress, privateKey: investorPrivKey };
     } else {
         User = Issuer;
     }
@@ -112,7 +112,7 @@ async function inputSymbol(symbol) {
     if (STSymbol == "") process.exit();
 
     STAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(STSymbol).call();
-    if (STAddress == "0x0000000000000000000000000000000000000000"){
+    if (STAddress == "0x0000000000000000000000000000000000000000") {
         console.log(`Token symbol provided is not a registered Security Token. Please enter another symbol.`);
     } else {
         let securityTokenABI = abis.securityToken();
@@ -124,12 +124,12 @@ async function inputSymbol(symbol) {
         let generalTransferManagerABI = abis.generalTransferManager();
         generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, gtmModule[0]);
 
-        let stoModules = await securityToken.methods.getModulesByType(STO_KEY).call();
+        let stoModules = await securityToken.methods.getModulesByType(gbl.constants.MODULES_TYPES.STO).call();
         if (stoModules.length == 0) {
             console.log(chalk.red(`There is no STO module attached to the ${STSymbol.toUpperCase()} Token. No further actions can be taken.`));
             process.exit(0);
         } else {
-            STOAddress = stoModules[0];       
+            STOAddress = stoModules[0];
             let stoModuleData = await securityToken.methods.getModule(STOAddress).call();
             selectedSTO = web3.utils.toAscii(stoModuleData[0]).replace(/\u0000/g, '');
             let interfaceSTOABI = abis.stoInterface();
@@ -188,19 +188,19 @@ async function showCappedSTOInfo() {
         }
     }
 
-    let now = Math.floor(Date.now()/1000);
+    let now = Math.floor(Date.now() / 1000);
 
-    await generalTransferManager.methods.whitelist(User.address).call({}, function(error, result){
+    await generalTransferManager.methods.whitelist(User.address).call({}, function (error, result) {
         displayCanBuy = result.canBuyFromSTO;
         displayValidKYC = parseInt(result.expiryTime) > now;
     });
 
     let timeTitle;
     let timeRemaining;
-    if(now < displayStartTime){
+    if (now < displayStartTime) {
         timeTitle = "STO starts in: ";
         timeRemaining = displayStartTime - now;
-    }else{
+    } else {
         timeTitle = "Time remaining:";
         timeRemaining = displayEndTime - now;
     }
@@ -214,7 +214,7 @@ async function showCappedSTOInfo() {
     - Start Time:        ${new Date(displayStartTime * 1000)}
     - End Time:          ${new Date(displayEndTime * 1000)}
     - Raise Type:        ${displayRaiseType}
-    - Rate:              1 ${displayRaiseType} = ${displayRate} ${STSymbol.toUpperCase()}
+    - Rate:              1 ${displayRaiseType} = ${web3.utils.fromWei(displayRate)} ${STSymbol.toUpperCase()}
     ---------------------------------------------------------------
     - ${timeTitle}    ${timeRemaining}
     - Funds raised:      ${web3.utils.fromWei(displayFundsRaised)} ${displayRaiseType}
@@ -223,7 +223,7 @@ async function showCappedSTOInfo() {
     - Investor count:    ${displayInvestorCount}
     `);
 
-    if(!displayCanBuy) {
+    if (!displayCanBuy) {
         console.log(chalk.red(`Your address is not approved to participate in this token sale.\n`));
         process.exit(0);
     } else if (!displayValidKYC) {
@@ -279,15 +279,15 @@ async function showUserInfoForUSDTieredSTO()
     let displayInvestorInvestedUSD = web3.utils.fromWei(await currentSTO.methods.investorInvestedUSD(User.address).call());
     console.log(`    - Invested in USD:       ${displayInvestorInvestedUSD} USD`);
 
-    await generalTransferManager.methods.whitelist(User.address).call({}, function(error, result){
+    await generalTransferManager.methods.whitelist(User.address).call({}, function (error, result) {
         displayCanBuy = result.canBuyFromSTO;
-        displayValidKYC = parseInt(result.expiryTime) > Math.floor(Date.now()/1000);
+        displayValidKYC = parseInt(result.expiryTime) > Math.floor(Date.now() / 1000);
     });
-    console.log(`    - Whitelisted:           ${(displayCanBuy)? 'YES' : 'NO'}`);
-    console.log(`    - Valid KYC:             ${(displayValidKYC)? 'YES' : 'NO'}`);
+    console.log(`    - Whitelisted:           ${(displayCanBuy) ? 'YES' : 'NO'}`);
+    console.log(`    - Valid KYC:             ${(displayValidKYC) ? 'YES' : 'NO'}`);
 
     let displayIsUserAccredited = await currentSTO.methods.accredited(User.address).call();
-    console.log(`    - Accredited:            ${(displayIsUserAccredited)? "YES" : "NO"}`)
+    console.log(`    - Accredited:            ${(displayIsUserAccredited) ? "YES" : "NO"}`)
 
     if (!await currentSTO.methods.accredited(User.address).call()) {
         let displayOverrideNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSDOverride(User.address).call())
@@ -346,7 +346,7 @@ async function showUSDTieredSTOInfo() {
 
                 displayDiscountMinted = `(${web3.utils.fromWei(mintedPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
             }
-            
+
 
             let mintedPerTier = mintedPerTierPerRaiseType[gbl.constants.FUND_RAISE_TYPES[type]];
             if ((type == STABLE) && (stableSymbols.length)) {
@@ -359,14 +359,14 @@ async function showUSDTieredSTOInfo() {
         }
 
         displayTiers += `
-    - Tier ${t+1}:
+    - Tier ${t + 1}:
         Tokens:                    ${web3.utils.fromWei(tokensPerTierTotal)} ${displayTokenSymbol}
         Rate:                      ${web3.utils.fromWei(ratePerTier)} USD per Token`
-        + displayDiscountTokens;
+            + displayDiscountTokens;
 
-        displayMintedPerTier +=  `
-    - Tokens minted in Tier ${t+1}:     ${web3.utils.fromWei(mintedPerTierTotal)} ${displayTokenSymbol}`
-        + displayMintedPerTierPerType;
+        displayMintedPerTier += `
+    - Tokens minted in Tier ${t + 1}:     ${web3.utils.fromWei(mintedPerTierTotal)} ${displayTokenSymbol}`
+            + displayMintedPerTierPerType;
     }
 
     let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call());
@@ -401,7 +401,7 @@ async function showUSDTieredSTOInfo() {
         displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.toString().replace(`,`,` - `)}`
     }
 
-    let now = Math.floor(Date.now()/1000);
+    let now = Math.floor(Date.now() / 1000);
     let timeTitle;
     let timeRemaining;
     if (now < displayStartTime) {
@@ -420,18 +420,18 @@ async function showUSDTieredSTOInfo() {
     - End Time:                    ${new Date(displayEndTime * 1000)}
     - Raise Type:                  ${displayRaiseType}
     - Tiers:                       ${tiersLength}`
-    + displayTiers + `
+        + displayTiers + `
     - Minimum Investment:          ${displayMinimumInvestmentUSD} USD
     - Default NonAccredited Limit: ${displayNonAccreditedLimitUSD} USD
     -----------------------------------------------------------------------
     - ${timeTitle}              ${timeRemaining}
     - Tokens Sold:                 ${displayTokensSold} ${displayTokenSymbol}`
-    + displayTokensSoldPerType + `
+        + displayTokensSoldPerType + `
     - Current Tier:                ${displayCurrentTier}`
-    + displayMintedPerTier + `
+        + displayMintedPerTier + `
     - Investor count:              ${displayInvestorCount}
     - Funds Raised`
-    + displayFundsRaisedPerType + `
+        + displayFundsRaisedPerType + `
         USD:                       ${displayFundsRaisedUSD} USD
     `);
 
@@ -465,7 +465,7 @@ async function investCappedSTO(currency, amount) {
     }
     if (amt == "") process.exit();
 
-    let rate = await currentSTO.methods.rate().call();
+    let rate = web3.utils.fromWei(await currentSTO.methods.rate().call());
     let cost = new BigNumber(amt).div(rate);
     console.log(`This investment will cost ${cost} ${raiseTypes[0]}`);
 
@@ -476,11 +476,11 @@ async function investCappedSTO(currency, amount) {
             let allowance = await polyToken.methods.allowance(STOAddress, User.address).call();
             if (allowance < costWei) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
-                await common.sendTransaction(approveAction, {from: User});
+                await common.sendTransaction(approveAction, { from: User });
             }
             let actionBuyTokensWithPoly = currentSTO.methods.buyTokensWithPoly(costWei);
-            let receipt = await common.sendTransaction(actionBuyTokensWithPoly, {from: User});
-            logTokensPurchasedCappedSTO(receipt);
+            let receipt = await common.sendTransaction(actionBuyTokensWithPoly, { from: User });
+            logTokensPurchasedCappedSTO(receipt, 'POLY');
         } else {
             console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} POLY but have ${userBalance} POLY.`));
             console.log(chalk.red(`Please purchase a smaller amount of tokens or access the POLY faucet to get the POLY to complete this txn.`));
@@ -488,8 +488,8 @@ async function investCappedSTO(currency, amount) {
         }
     } else {
         let actionBuyTokens = currentSTO.methods.buyTokens(User.address);
-        let receipt = await common.sendTransaction(actionBuyTokens, {from: User, value: costWei});
-        logTokensPurchasedCappedSTO(receipt);
+        let receipt = await common.sendTransaction(actionBuyTokens, { from: User, value: costWei });
+        logTokensPurchasedCappedSTO(receipt, 'ETH');
     }
     await showTokenInfo();
 }
@@ -510,7 +510,7 @@ async function investUsdTieredSTO(currency, amount) {
             console.log(chalk.green(`   Current ${type} price:\t\t   ${displayPrice} USD`));
         }
         if (raiseTypes.length > 1) {
-            let index = readlineSync.keyInSelect(raiseTypes, 'Choose one of the allowed raise types: ', {cancel: false});
+            let index = readlineSync.keyInSelect(raiseTypes, 'Choose one of the allowed raise types: ', { cancel: false });
             raiseType = raiseTypes[index];
         } else {
             raiseType = raiseTypes[0];
@@ -524,7 +524,7 @@ async function investUsdTieredSTO(currency, amount) {
         let minimumInvestmentUSD = await currentSTO.methods.minimumInvestmentUSD().call();
         let minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(gbl.constants.FUND_RAISE_TYPES[raiseType], minimumInvestmentUSD).call();
         cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `), {
-            limit: function(input) {
+            limit: function (input) {
                 return investorInvestedUSD != 0 || parseInt(input) > parseInt(web3.utils.fromWei(minimumInvestmentRaiseType));
             },
             limitMessage: `Amount must be greater than minimum investment (${web3.utils.fromWei(minimumInvestmentRaiseType)} ${raiseType} = ${web3.utils.fromWei(minimumInvestmentUSD)} USD)`
@@ -550,10 +550,10 @@ async function investUsdTieredSTO(currency, amount) {
             let allowance = await polyToken.methods.allowance(STOAddress, User.address).call();
             if (allowance < costWei) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
-                await common.sendTransaction(approveAction, {from: User});
+                await common.sendTransaction(approveAction, { from: User });
             }
             let actionBuyWithPoly = currentSTO.methods.buyWithPOLYRateLimited(User.address, costWei, minTokenToBuy);
-            let receipt = await common.sendTransaction(actionBuyWithPoly, {from: User, factor: 2});
+            let receipt = await common.sendTransaction(actionBuyWithPoly, { from: User, factor: 2 });
             logTokensPurchasedUSDTieredSTO(receipt);
         } else {
             console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} POLY but have ${userBalance} POLY.`));
@@ -566,19 +566,19 @@ async function investUsdTieredSTO(currency, amount) {
             let allowance = await usdToken.methods.allowance(STOAddress, User.address).call();
             if (allowance < costWei) {
                 let approveAction = usdToken.methods.approve(STOAddress, costWei);
-                await common.sendTransaction(approveAction, {from: User});
+                await common.sendTransaction(approveAction, { from: User });
             }
             let actionBuyWithUSD = currentSTO.methods.buyWithUSDRateLimited(User.address, costWei, minTokenToBuy);
-            let receipt = await common.sendTransaction(actionBuyWithUSD, {from: User, factor: 1.5});
+            let receipt = await common.sendTransaction(actionBuyWithUSD, { from: User, factor: 1.5 });
             logTokensPurchasedUSDTieredSTO(receipt);
         } else {
             console.log(chalk.red(`Not enough balance to Buy tokens, Require ${cost} DAI but have ${userBalance} DAI.`));
             console.log(chalk.red(`Please purchase a smaller amount of tokens.`));
             process.exit();
-        } 
+        }
     } else {
         let actionBuyWithETH = currentSTO.methods.buyWithETHRateLimited(User.address, minTokenToBuy);
-        let receipt = await common.sendTransaction(actionBuyWithETH, {from: User, value: costWei});
+        let receipt = await common.sendTransaction(actionBuyWithETH, { from: User, value: costWei });
         logTokensPurchasedUSDTieredSTO(receipt);
     }
 
@@ -608,7 +608,7 @@ function logTokensPurchasedUSDTieredSTO(receipt) {
     };
 }
 
-function logTokensPurchasedCappedSTO(receipt) {
+function logTokensPurchasedCappedSTO(receipt, displayRaiseType) {
     console.log(chalk.green(`Congratulations! The token purchase was successfully completed.`));
     let events = common.getMultipleEventsFromLogs(currentSTO._jsonInterface, receipt.logs, 'TokenPurchase');
     for (event of events) {
@@ -621,7 +621,7 @@ function logTokensPurchasedCappedSTO(receipt) {
 }
 
 module.exports = {
-    executeApp: async function(investorAddress, investorPrivKey, symbol, currency, amount) {
-          return executeApp(investorAddress, investorPrivKey, symbol, currency, amount);
-      }
+    executeApp: async function (investorAddress, investorPrivKey, symbol, currency, amount) {
+        return executeApp(investorAddress, investorPrivKey, symbol, currency, amount);
+    }
 }

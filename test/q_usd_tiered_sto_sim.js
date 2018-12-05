@@ -195,7 +195,7 @@ contract("USDTieredSTO Sim", accounts => {
             I_SecurityTokenRegistryProxy,
             I_STRProxied
         ] = instances;
-       
+
        I_DaiToken = await PolyTokenFaucet.new({from: POLYMATH});
 
        // STEP 5: Deploy the USDTieredSTOFactory

@@ -18,7 +18,7 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-        version = "2.0.1";
+        version = "2.1.0";
         name = "ManualApprovalTransferManager";
         title = "Manual Approval Transfer Manager";
         description = "Manage transfers using single approvals / blocking";

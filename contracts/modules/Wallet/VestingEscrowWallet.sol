@@ -420,7 +420,8 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     function pushAvailableTokensMulti(uint256 _fromIndex, uint256 _toIndex) external withPerm(ADMIN) {
         require(_toIndex <= beneficiaries.length - 1, "Array out of bound");
         for (uint256 i = _fromIndex; i <= _toIndex; i++) {
-            pushAvailableTokens(beneficiaries[i]);
+            if (schedules[beneficiaries[i]].length !=0)
+                pushAvailableTokens(beneficiaries[i]);
         }
     }
 

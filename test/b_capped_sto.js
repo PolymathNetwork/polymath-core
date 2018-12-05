@@ -133,7 +133,7 @@ contract("CappedSTO", accounts => {
         
         // STEP 6: Deploy the CappedSTOFactory
 
-        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, cappedSTOSetupCost, 0, 0, { from: token_owner });
+        I_CappedSTOFactory = await CappedSTOFactory.new(cappedSTOSetupCost, 0, 0, { from: token_owner });
 
         assert.notEqual(
             I_CappedSTOFactory.address.valueOf(),

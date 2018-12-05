@@ -117,7 +117,7 @@ contract('GeneralPermissionManager', accounts => {
 
 	// permission manager fuzz test
 	// let modules = ['CountTransferManager', 'SingleTradeVolumeRestrictionManager', 'ManualApprovalTransferManager', 'I_VolumeRestrictionTransferManager', 'PercentageTransferManager'];
-    let modules = ['I_CountTransferManager'];
+    let modules = ['I_CountTransferManagerFactory'];
     let totalModules = modules.length;
 
 
@@ -158,6 +158,8 @@ contract('GeneralPermissionManager', accounts => {
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
         // STEP 6: Deploy the GeneralDelegateManagerFactory
         [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
+
+        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
 
 	    // Deploy Modules
         [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
@@ -266,13 +268,20 @@ contract('GeneralPermissionManager', accounts => {
                 
                 var j = Math.floor(Math.random() * 10);
 
+                console.log("1.2");
                 // choose a random module
-                let randomModule = modules[Math.floor(Math.random() * Math.floor(totalModules))];
-                console.log("choosen module "+ randomModule);
+                let randomModuleFactory = modules[Math.floor(Math.random() * Math.floor(totalModules))];
+                console.log("choosen module "+ randomModuleFactory.address);
 
                 // attach it to the ST
-                let tx = await I_SecurityToken.addModule(randomModule.address, bytesSTO, 0, 0, { from: token_owner });
+                let tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
+                 console.log("1.3");
+                let randomModule = CountTransferManager.at(tx.logs[2].args._module);
+                 console.log("1.4");
                 console.log("successfully attached module " + randomModule);
+                 console.log("1.5");
+                 console.log(randomModule.address);
+
 
                 // remove it from the ST
                 tx = await I_SecurityToken.removeModule(randomModule.address, { from: token_owner });

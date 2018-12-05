@@ -7,7 +7,7 @@ import "./IWallet.sol";
 /**
  * @title Wallet for core vesting escrow functionality
  */
-contract VestingEscrowWallet is IWallet {
+contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     using SafeMath for uint256;
 
     bytes32 public constant ADMIN = "ADMIN";

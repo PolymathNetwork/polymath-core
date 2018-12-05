@@ -33,6 +33,7 @@ const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
 const MockBurnFactory = artifacts.require("./MockBurnFactory.sol");
 const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
 const VestingEscrowWalletFactory = artifacts.require("./VestingEscrowWalletFactory.sol");
+const VestingEscrowWallet = artifacts.require("./VestingEscrowWallet.sol");
 
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
@@ -69,6 +70,7 @@ let I_PolyToken;
 let I_STFactory;
 let I_PolymathRegistry;
 let I_SecurityTokenRegistryProxy;
+let I_VestingEscrowWalletLogic;
 let I_STRProxied;
 let I_MRProxied;
 
@@ -406,7 +408,8 @@ export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstan
 }
 
 export async function deployVestingEscrowWalletAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
-    I_VestingEscrowWalletFactory = await VestingEscrowWalletFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    I_VestingEscrowWalletLogic = await VestingEscrowWallet.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_VestingEscrowWalletFactory = await VestingEscrowWalletFactory.new(polyToken, setupCost, 0, 0, I_VestingEscrowWalletLogic.address, { from: accountPolymath });
 
     assert.notEqual(
         I_VestingEscrowWalletFactory.address.valueOf(),

@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "../../proxy/VestingEscrowWalletProxy.sol";
+import "../../interfaces/IBoot.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
 
@@ -38,7 +39,7 @@ contract VestingEscrowWalletFactory is ModuleFactory {
         }
         VestingEscrowWalletProxy vestingEscrowWallet = new VestingEscrowWalletProxy(msg.sender, address(polyToken), logicContract);
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == vestingEscrowWallet.getInitFunction(), "Invalid data");
+        require(Util.getSig(_data) == IBoot(vestingEscrowWallet).getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/
         require(address(vestingEscrowWallet).call(_data), "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
@@ -60,7 +61,7 @@ contract VestingEscrowWalletFactory is ModuleFactory {
      */
     function getInstructions() external view returns(string) {
         /*solium-disable-next-line max-len*/
-        return "Issuer can send tokens to and then select the address that would be able to withdraw them according to their specific vesting schedule.";
+        return "Issuer can deposit tokens to the contract and create the vesting schedule for the given address (Affiliate/Employee). These address can withdraw tokens according to there vesting schedule.";
     }
 
     /**

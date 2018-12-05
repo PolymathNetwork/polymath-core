@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../modules/wallet/VestingEscrowWalletStorage.sol";
+import "../modules/Wallet/VestingEscrowWalletStorage.sol";
 import "./OwnedProxy.sol";
 import "../Pausable.sol";
 import "../modules/ModuleStorage.sol";

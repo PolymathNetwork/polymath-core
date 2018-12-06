@@ -69,7 +69,7 @@ let I_MRProxied;
 // Initial fee for ticker registry and security token registry
 const initRegFee = web3.utils.toWei("250");
 
-const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
+const STRProxyParameters = ["address", "address", "uint256", "uint256", "address"];
 const MRProxyParameters = ["address", "address"];
 
 /// Function use to launch the polymath ecossystem.
@@ -163,7 +163,6 @@ async function deploySTR(account_polymath) {
         I_STFactory.address,
         initRegFee,
         initRegFee,
-        I_PolyToken.address,
         account_polymath
     ]);
     await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, { from: account_polymath });

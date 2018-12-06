@@ -162,7 +162,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _STFactory is the address of the Proxy contract for Security Tokens
      * @param _stLaunchFee is the fee in POLY required to launch a token
      * @param _tickerRegFee is the fee in POLY required to register a ticker
-     * @param _polyToken is the address of the POLY ERC20 token
      * @param _owner is the owner of the STR
      */
     function initialize(
@@ -170,7 +169,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         address _STFactory,
         uint256 _stLaunchFee,
         uint256 _tickerRegFee,
-        address _polyToken,
         address _owner
     )
         external
@@ -178,7 +176,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     {
         require(!getBool(INITIALIZE),"already initialized");
         require(
-            _STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0),
+            _STFactory != address(0) && _owner != address(0) && _polymathRegistry != address(0),
             "Invalid address"
         );
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Fees should not be 0");

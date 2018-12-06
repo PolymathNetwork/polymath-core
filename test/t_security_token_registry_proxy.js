@@ -105,7 +105,6 @@ contract("SecurityTokenRegistryProxy", accounts => {
                 I_STFactory.address,
                 initRegFee,
                 initRegFee,
-                I_PolyToken.address,
                 account_polymath
             ]);
             await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {

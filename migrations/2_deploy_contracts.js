@@ -102,9 +102,6 @@ module.exports = function (deployer, network, accounts) {
         name: '_tickerRegFee'
     },{
         type: 'address',
-        name: '_polyToken'
-    },{
-        type: 'address',
         name: '_owner'
     }]
   };
@@ -189,7 +186,7 @@ module.exports = function (deployer, network, accounts) {
   }).then(()=> {
     return deployer.deploy(SecurityTokenRegistryProxy, {from: PolymathAccount});
   }).then(() => {
-    let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolyToken, PolymathAccount]);
+    let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolymathAccount]);
     return SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
   }).then(() => {
     // Assign the address into the SecurityTokenRegistry key

@@ -38,9 +38,9 @@ async function increaseTimeByDate(toTime) {
   }
 }
 
-async function increaseTimeByDuration(duration) {
-  let blockTimestamp = moment.unix((await web3.eth.getBlock('latest')).timestamp);
-  let toTime = blockTimestamp.add(duration, "seconds");
+function increaseTimeByDuration(duration) {
+  let currentTime = moment().unix();
+  let toTime = currentTime.add(duration, "seconds");
   return increaseTimeByDate(toTime);
 }
 

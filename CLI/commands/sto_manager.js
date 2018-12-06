@@ -577,8 +577,7 @@ async function usdTieredSTO_status(currentSTO) {
   let displayIsFinalized = await currentSTO.methods.isFinalized().call() ? "YES" : "NO";
   let displayTokenSymbol = await securityToken.methods.symbol().call();
   let tiersLength = await currentSTO.methods.getNumberOfTiers().call();
-  //REMOVE ONCE SMART CONTRACT SUPPORT METHOD TO GET STABLE COIN ADDRESSES
-  let listOfStableCoins = ["0xa016B2ae79436E20FBe22Bf230a92A5Fb055762F", "0xae794d38cb481868a8CB19b9d7A5073851bC6dB7"];
+  let listOfStableCoins = await currentSTO.methods.getUsdTokens().call();
   let raiseTypes = [];
   let stableSymbols = [];
 

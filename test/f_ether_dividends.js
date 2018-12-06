@@ -851,7 +851,7 @@ contract("EtherDividendCheckpoint", accounts => {
             let expiry = latestTime() + duration.days(10);
             let exclusions = [1];
             let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
-            await I_SecurityToken.createCheckpoint({ from: token_owner }); 
+            await I_SecurityToken.createCheckpoint({ from: token_owner });
             await catchRevert(I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(
                 maturity,
                 expiry,
@@ -954,7 +954,7 @@ contract("EtherDividendCheckpoint", accounts => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_EtherDividendCheckpointFactory.getSetupCost.call()).toNumber(), 0);
                 assert.equal((await I_EtherDividendCheckpointFactory.getTypes.call())[0], 4);
-                assert.equal(await I_EtherDividendCheckpointFactory.version.call(), "1.0.0");
+                assert.equal(await I_EtherDividendCheckpointFactory.version.call(), "2.1.0");
                 assert.equal(
                     web3.utils.toAscii(await I_EtherDividendCheckpointFactory.getName.call()).replace(/\u0000/g, ""),
                     "EtherDividendCheckpoint",

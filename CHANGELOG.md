@@ -1,14 +1,41 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-# v2.1.0 - Release Candidate
+# v2.1.0 - Release Candidate    
 
-[__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-089-18__  
+[__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
+
+## CappedSTO 2.0.1
+* `rate` is now accepted as multiplied by 10^18 to allow settting higher price than 1ETH/POLY per token.
+
+## USDTieredSTO 2.0.1
+* Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.
+* Added `getSTODetails` to USDTSTO.
+* Added an Array of Tiers that will hold data about every tier in USDTSTO.
+* Added `buyWithETHRateLimited`, `buyWithPOLYRateLimited` and `buyWithUSDRateLimited` to USDTSTO.
+* Added `getTokensSoldByTier` to return sold (not minted during finalisation) tokens in each tier to USDTSTO.
+* Removed individual mappings for tier data removed in UDSTSTO.
+
+## GeneralTransferManager
+* `getInvestors`, `getAllInvestorsData`, `getInvestorsData` added to GTM to allow easy data queries.
+* `modifyDefaults(uint64 _defaultFromTime, uint64 _defaultToTime)` added which sets a default timestamp used when `fromTime` or `toTime` are 0
+* Add `address[] public investors` to record a list of all addresses that have been added to the whitelist (`getInvestors`).
+* General Transfer Manager: Fix for when `allowAllWhitelistIssuances` is FALSE
+* General Transfer Manager: Make GTM a Proxy based implementation to reduce deployment gas costs
+* Changed the version of `GeneralTransferManagerFactory` from `1.0.0` to `2.1.0`.
 
 ## Manual Approval TransferManager
 * Removed `0x0` check for the `_from` address to `ManualApprovalTransferManager`. This allows for the Issuer/Transfer Agent to approve a one-off mint of tokens that otherwise would not be possible. 
-* Changed the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.0.1`.   
+* Changed the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.1.0`.   
 * Deployed 2.0.1 `ManualApprovalTransferManagerFactory` to address 0x6af2afad53cb334e62b90ddbdcf3a086f654c298
+
+## Dividends
+* Changed the version of `ERC20DividendCheckpointFactory` & `EtherDividendCheckpointFactory` from `1.0.0` to `2.1.0`.
+* Applied proxy pattern to Dividends modules
+
+## Changed
+* `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
+
 
 # v1.5.0 - Release Candidate
 
@@ -43,7 +70,6 @@ All notable changes to this project will be documented in this file.
 * Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230     
 
 ## Fixed
-* `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
 * 0x0 and duplicate address in exclusions are no longer allowed in dividend modules.
 * All permissions are denied if no permission manager is active.
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
@@ -58,7 +84,7 @@ All notable changes to this project will be documented in this file.
 
 ======
 
-# v1.4.1 - Release Candidate
+# v1.4.1
 
 [__1.4.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 
@@ -82,7 +108,7 @@ All notable changes to this project will be documented in this file.
 * Fix #238: make beneficial investments optionally supported (default to not
 allowed)
 
-# v1.4.0 - Release candidate
+# v1.4.0
 
 [__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 

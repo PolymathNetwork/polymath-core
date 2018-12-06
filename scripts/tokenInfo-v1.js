@@ -12,7 +12,7 @@ async function getTokens() {
 
     let logs = await getLogsFromEtherscan(securityTokenRegistry.options.address, web3.utils.hexToNumber('0x5C5C18'), 'latest', 'LogNewSecurityToken(string,address,address)');
     for (let i = 0; i < logs.length; i++) {
-        let tokenAddress = '0x' + logs[i].topics[1].slice(26,66)
+        let tokenAddress = '0x' + logs[i].topics[1].slice(26, 66)
         await getInfo(tokenAddress);
     }
 }

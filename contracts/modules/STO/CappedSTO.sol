@@ -275,7 +275,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         uint256 granularity = ISecurityToken(securityToken).granularity();
         _tokens = _tokens.div(granularity);
         _tokens = _tokens.mul(granularity);
-        _refund = _investedAmount.sub(_tokens.div(rate));
+        _refund = _investedAmount.sub((_tokens.mul(uint256(10) ** 18)).div(rate));
     }
 
     /**

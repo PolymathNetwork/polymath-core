@@ -26,25 +26,25 @@ contract VolumeRestrictionTM is ITransferManager {
 
     struct BucketDetails {
         uint256 lastTradedDayTime;
-        uint256 globalLastTradedDayTime;
-        uint256 sumOfLastPeriod;   // It is the sum of transacted amount within the last rollingPeriodDays
-        uint256 globalSumOfLastPeriod; 
+        uint256 sumOfLastPeriod;   // It is the sum of transacted amount within the last rollingPeriodDays 
         uint256 daysCovered;    // No of days covered till (from the startTime of VolumeRestriction)
-        uint256 globalDaysCovered;
+        uint256 dailyLastTradedDayTime;
     }
 
     // Global restriction that applies to all token holders
-    VolumeRestriction public globalRestriction;
+    VolumeRestriction public defaultRestriction;
     // Daily global restriction that applies to all token holders (Total ST traded daily is restricted)
-    VolumeRestriction public dailyGlobalRestriction;
-    // Variable stores the data matrix for the globa restrictions
-    BucketDetails internal globalBucketDetails;
+    VolumeRestriction public defaultDailyRestriction;
     // Restriction stored corresponds to a particular token holder
     mapping(address => VolumeRestriction) public individualRestriction;
+    // Daily restriction stored corresponds to a particular token holder
+    mapping(address => VolumeRestriction) public individualDailyRestriction;
     // Storing _from => day's timestamp => total amount transact in a day --individual
     mapping(address => mapping(uint256 => uint256)) internal bucket;
     // Storing the information that used to validate the transaction
     mapping(address => BucketDetails) internal bucketToUser;
+    // Storing the information related to default restriction
+    mapping(address => BucketDetails) internal defaultBucketToUser;
     // List of wallets that are exempted from all the restrictions applied by the this contract
     mapping(address => bool) public exemptList;
 
@@ -69,31 +69,31 @@ contract VolumeRestrictionTM is ITransferManager {
         uint256 _typeOfRestriction
     );
     // Emit when the new global restriction is added
-    event AddGlobalRestriction(
+    event AddDefaultRestriction(
         uint256 _allowedTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
         uint256 _typeOfRestriction
     );
-    // Emit when the new daily (global) restriction is added
-    event AddDailyGlobalRestriction(
+    // Emit when the new daily (Default) restriction is added
+    event AddDefaultDailyRestriction(
         uint256 _allowedTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
         uint256 _typeOfRestriction
     );
-    // Emit when global restriction get modified
-    event ModifyGlobalRestriction(
+    // Emit when default restriction get modified
+    event ModifyDefaultRestriction(
         uint256 _allowedTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
         uint256 _endTime,
         uint256 _typeOfRestriction
     );
-    // Emit when daily global restriction get modified
-    event ModifyDailyGlobalRestriction(
+    // Emit when daily default restriction get modified
+    event ModifyDefaultDailyRestriction(
         uint256 _allowedTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
@@ -102,10 +102,10 @@ contract VolumeRestrictionTM is ITransferManager {
     );
     // Emit when the individual restriction gets removed
     event IndividualRestrictionRemoved(address _user);
-    // Emit when the global restriction gets removed
-    event GlobalRestrictionRemoved();
-    // Emit when the daily global restriction gets removed
-    event DailyGlobalRestrictionRemoved();
+    // Emit when the default restriction gets removed
+    event DefaultRestrictionRemoved();
+    // Emit when the daily default restriction gets removed
+    event DefaultDailyRestrictionRemoved();
 
     /**
      * @notice Constructor
@@ -131,7 +131,17 @@ contract VolumeRestrictionTM is ITransferManager {
         if (!paused && _from != address(0) && !exemptList[_from]) {
             // Function must only be called by the associated security token if _isTransfer == true
             require(msg.sender == securityToken || !_isTransfer);
-            return _restrictionCheck(_from, _amount, _isTransfer);
+            // Checking the individual restriction if the `_from` comes in the individual category 
+            if (individualRestriction[_from].endTime >= now && individualRestriction[_from].startTime <= now 
+                || individualDailyRestriction[_from].endTime >= now && individualDailyRestriction[_from].startTime <= now) {
+
+                return _individualRestrictionCheck(_from, _amount, _isTransfer);
+                // If the `_from` doesn't fall under the individual category. It will processed with in the global category automatically
+            } else if (defaultRestriction.endTime >= now && defaultRestriction.startTime <= now
+                || defaultDailyRestriction.endTime >= now && defaultDailyRestriction.startTime <= now) {
+                
+                return _defaultRestrictionCheck(_from, _amount, _isTransfer);
+            }
         } 
         return Result.NA;
     }
@@ -212,14 +222,14 @@ contract VolumeRestrictionTM is ITransferManager {
     }
 
     /**
-     * @notice Use to add the new global restriction for all token holder
+     * @notice Use to add the new default restriction for all token holder
      * @param _allowedTokens Amount of tokens allowed to be traded for all token holder.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _rollingPeriodInDays Rolling period in days (Minimum value should be 1 day)
      * @param _endTime Unix timestamp at which restriction effects will gets end.
      * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
      */
-    function addGlobalRestriction(
+    function addDefaultRestriction(
         uint256 _allowedTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
@@ -230,21 +240,18 @@ contract VolumeRestrictionTM is ITransferManager {
         withPerm(ADMIN)
     {   
         require(
-            globalRestriction.endTime < now,
+            defaultRestriction.endTime < now,
             "Not allowed"
         );
         _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
-         if (globalRestriction.endTime != 0) {
-            removeGlobalRestriction();
-        }
-        globalRestriction = VolumeRestriction(
+        defaultRestriction = VolumeRestriction(
             _allowedTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
             RestrictionType(_restrictionType)
         );
-        emit AddGlobalRestriction(
+        emit AddDefaultRestriction(
             _allowedTokens,
             _startTime,
             _rollingPeriodInDays,
@@ -254,13 +261,13 @@ contract VolumeRestrictionTM is ITransferManager {
     }
 
     /**
-     * @notice Use to add the new global daily restriction for all token holder
+     * @notice Use to add the new default daily restriction for all token holder
      * @param _allowedTokens Amount of tokens allowed to be traded for all token holder.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _endTime Unix timestamp at which restriction effects will gets end.
      * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
      */
-    function addDailyGlobalRestriction(
+    function addDefaultDailyRestriction(
         uint256 _allowedTokens,
         uint256 _startTime,
         uint256 _endTime,
@@ -270,18 +277,18 @@ contract VolumeRestrictionTM is ITransferManager {
         withPerm(ADMIN)
     {   
         require(
-            dailyGlobalRestriction.endTime < now,
+            defaultDailyRestriction.endTime < now,
             "Not Allowed"
         );
         _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType);
-        dailyGlobalRestriction = VolumeRestriction(
+        defaultDailyRestriction = VolumeRestriction(
             _allowedTokens,
             _startTime,
             1,
             _endTime,
             RestrictionType(_restrictionType)
         );
-        emit AddDailyGlobalRestriction(
+        emit AddDefaultDailyRestriction(
             _allowedTokens,
             _startTime,
             1,
@@ -309,24 +316,21 @@ contract VolumeRestrictionTM is ITransferManager {
     }
 
     /**
-     * @notice Use to remove the global restriction
+     * @notice Use to remove the default restriction
      */
-    function removeGlobalRestriction() public withPerm(ADMIN) {
-        require(globalRestriction.endTime != 0);
-        globalRestriction = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        globalBucketDetails.lastTradedDayTime = 0;
-        globalBucketDetails.sumOfLastPeriod = 0;
-        globalBucketDetails.daysCovered = 0;
-        emit GlobalRestrictionRemoved();
+    function removeDefaultRestriction() public withPerm(ADMIN) {
+        require(defaultRestriction.endTime != 0);
+        defaultRestriction = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
+        emit DefaultRestrictionRemoved();
     }
 
     /**
-     * @notice Use to remove the daily global restriction
+     * @notice Use to remove the daily default restriction
      */
-    function removeDailyGlobalRestriction() external withPerm(ADMIN) {
-        require(dailyGlobalRestriction.endTime != 0);
-        dailyGlobalRestriction = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        emit DailyGlobalRestrictionRemoved();
+    function removeDefaultDailyRestriction() external withPerm(ADMIN) {
+        require(defaultDailyRestriction.endTime != 0);
+        defaultDailyRestriction = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
+        emit DefaultDailyRestrictionRemoved();
     } 
 
     /**
@@ -401,7 +405,7 @@ contract VolumeRestrictionTM is ITransferManager {
      * @param _endTime Unix timestamp at which restriction effects will gets end.
      * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
      */
-    function modifyGlobalRestriction(
+    function modifyDefaultRestriction(
         uint256 _allowedTokens,
         uint256 _startTime,
         uint256 _rollingPeriodInDays,
@@ -411,16 +415,16 @@ contract VolumeRestrictionTM is ITransferManager {
         external
         withPerm(ADMIN)
     {   
-        require(globalRestriction.startTime > now, "Not allowed");    
+        require(defaultRestriction.startTime > now, "Not allowed");    
         _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType);
-        globalRestriction = VolumeRestriction(
+        defaultRestriction = VolumeRestriction(
             _allowedTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
             RestrictionType(_restrictionType)
         );
-        emit ModifyGlobalRestriction(
+        emit ModifyDefaultRestriction(
             _allowedTokens,
             _startTime,
             _rollingPeriodInDays,
@@ -430,13 +434,13 @@ contract VolumeRestrictionTM is ITransferManager {
     }
 
     /**
-     * @notice Use to modify the daily global restriction for all token holder
+     * @notice Use to modify the daily default restriction for all token holder
      * @param _allowedTokens Amount of tokens allowed to be traded for all token holder.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _endTime Unix timestamp at which restriction effects will gets end.
      * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
      */
-    function modifyDailyGlobalRestriction(
+    function modifyDefaultDailyRestriction(
         uint256 _allowedTokens,
         uint256 _startTime,
         uint256 _endTime,
@@ -445,16 +449,16 @@ contract VolumeRestrictionTM is ITransferManager {
         external
         withPerm(ADMIN)
     {   
-        require(dailyGlobalRestriction.startTime > now, "Not allowed");    
+        require(defaultDailyRestriction.startTime > now, "Not allowed");    
         _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType);
-        dailyGlobalRestriction = VolumeRestriction(
+        defaultDailyRestriction = VolumeRestriction(
             _allowedTokens,
             _startTime,
             1,
             _endTime,
             RestrictionType(_restrictionType)
         );
-        emit ModifyDailyGlobalRestriction(
+        emit ModifyDefaultDailyRestriction(
             _allowedTokens,
             _startTime,
             1,
@@ -464,116 +468,132 @@ contract VolumeRestrictionTM is ITransferManager {
     }
 
     /**
-     * @notice Internal function have a logic to validate the txn amount with global restriction 
-     */
-    function _restrictionCheck(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {
-        uint256 sumOfLastPeriod = 0; 
-        uint256 daysCovered = 0;
-        uint256 lastTradedDayTime = 0;
-        uint256 globalLastTradedDayTime = 0; 
-        uint256 globalSumOfLastPeriod = 0;
-        uint256 globalDaysCovered = 0;
-        bool validIR = true;
-        bool validGR = true;
-        uint256 txSumOfDay = 0;
-        if (individualRestriction[_from].endTime >= now && individualRestriction[_from].startTime <= now) {
-            (validIR, sumOfLastPeriod, lastTradedDayTime, daysCovered) = _individualRestrictionCheck(_from, _amount);
-            txSumOfDay = txSumOfDay + 1;
-        }
-        if (globalRestriction.endTime >= now && globalRestriction.startTime <= now) {
-            (validGR, globalSumOfLastPeriod, globalLastTradedDayTime, globalDaysCovered) =  _globalRestrictionCheck(_from, _amount);
-            txSumOfDay = txSumOfDay + 1;
-        }
-        if (txSumOfDay > 0) {
-            // Total amout that is transacted uptill now for `fromTimestamp` day
-            txSumOfDay = bucket[_from][lastTradedDayTime] >= bucket[_from][globalLastTradedDayTime]? bucket[_from][lastTradedDayTime] : bucket[_from][globalLastTradedDayTime];
-            // allow modification in storage when `_isTransfer` equals true
-            if (_isTransfer) {
-                // update the storage
-                _updateStorage(
-                    _from,
-                    _amount,
-                    lastTradedDayTime,
-                    sumOfLastPeriod, 
-                    globalSumOfLastPeriod, 
-                    daysCovered, 
-                    globalDaysCovered,
-                    globalLastTradedDayTime
-                );
-            }
-            if (validGR && validIR && _dailyTxCheck(txSumOfDay, _amount))
-                return Result.NA;
-            else 
-                return Result.INVALID;
-        }
-        return Result.NA; 
-    }   
-
-    /**
-     * @notice Internal function have a logic to validate the txn amount with global restriction 
-     */
-    function _globalRestrictionCheck(address _from, uint256 _amount) internal view returns (bool, uint256, uint256, uint256) {
-        uint256 daysCovered;
-        uint256 fromTimestamp;
+    * @notice Internal function used to validate the transaction for a given address
+    * If it validates then it also update the storage corressponds to the default restriction
+    */
+    function _defaultRestrictionCheck(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {   
+        // using the variable to avoid stack too deep error
+        uint256 daysCovered = defaultRestriction.rollingPeriodInDays;
+        uint256 fromTimestamp = 0;
         uint256 sumOfLastPeriod = 0;
-        if (bucketToUser[_from].globalLastTradedDayTime < globalRestriction.startTime) {
-            // It will execute when the txn is performed first time after the addition of global restriction
-            fromTimestamp = globalRestriction.startTime;
-        } else {
-            // picking up the preivous timestamp
-            fromTimestamp = bucketToUser[_from].globalLastTradedDayTime;
+        uint256 dailyTime = 0;
+        bool allowedDefault = true;
+        bool allowedDaily;
+        if (defaultRestriction.endTime >= now && defaultRestriction.startTime <= now) {
+            if (defaultBucketToUser[_from].lastTradedDayTime < defaultRestriction.startTime) {
+                // It will execute when the txn is performed first time after the addition of individual restriction
+                fromTimestamp = defaultRestriction.startTime;
+            } else {
+                // Picking up the last timestamp
+                fromTimestamp = defaultBucketToUser[_from].lastTradedDayTime;
+            }
+        
+            // Check with the bucket and parse all the new timestamps to calculate the sumOfLastPeriod
+            // re-using the local variables to avoid the stack too deep error.
+            (sumOfLastPeriod, fromTimestamp, daysCovered) = _bucketCheck(
+                fromTimestamp,
+                BokkyPooBahsDateTimeLibrary.diffDays(fromTimestamp, now),
+                _from,
+                daysCovered,
+                defaultBucketToUser[_from]
+            );
+            // validation of the transaction amount
+            if (!_checkValidAmountToTransact(sumOfLastPeriod, _amount, defaultRestriction)) {
+                allowedDefault == false;
+            }
         }
-        // Calculating the difference of days
-        uint256 diffDays = BokkyPooBahsDateTimeLibrary.diffDays(fromTimestamp, now); 
-        // Check with the bucket and parse all the new timestamps to calculate the sumOfLastPeriod
-        // re-using the local variables to avoid the stack too deep error.
-        (sumOfLastPeriod, fromTimestamp, daysCovered) = _bucketCheck(
-            fromTimestamp,
-            diffDays,
-            _from,
-            bucketToUser[_from],
-            true,
-            globalRestriction.rollingPeriodInDays
-        );
-         // validation of the transaction amount
-        if (_checkValidAmountToTransact(sumOfLastPeriod, _amount, globalRestriction)) {
-            return (true, sumOfLastPeriod, fromTimestamp, daysCovered);
-        } 
-        return (false, sumOfLastPeriod, fromTimestamp, daysCovered);  
+        (allowedDaily, dailyTime) = _dailyTxCheck(_from, _amount, fromTimestamp, defaultBucketToUser[_from].dailyLastTradedDayTime, defaultDailyRestriction);
+        
+        if (_isTransfer) {
+            _updateStorage(
+                _from,
+                _amount,
+                fromTimestamp,
+                sumOfLastPeriod,
+                daysCovered,
+                dailyTime,
+                defaultBucketToUser[_from]
+            );
+        }
+        return ((allowedDaily && allowedDefault) == true ? Result.NA : Result.INVALID);
     }
 
     /**
      * @notice Internal function used to validate the transaction for a given address
      * If it validates then it also update the storage corressponds to the individual restriction
      */
-    function _individualRestrictionCheck(address _from, uint256 _amount) internal view returns (bool, uint256, uint256, uint256) {   
+    function _individualRestrictionCheck(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {   
         // using the variable to avoid stack too deep error
         uint256 daysCovered = individualRestriction[_from].rollingPeriodInDays;
-        uint256 fromTimestamp;
+        uint256 fromTimestamp = 0;
         uint256 sumOfLastPeriod = 0;
-        if (bucketToUser[_from].lastTradedDayTime < individualRestriction[_from].startTime) {
-            // It will execute when the txn is performed first time after the addition of individual restriction
-            fromTimestamp = individualRestriction[_from].startTime;
-        } else {
-            // Picking up the last timestamp
-            fromTimestamp = bucketToUser[_from].lastTradedDayTime;
+        uint256 dailyTime = 0;
+        bool allowedIndividual = true;
+        bool allowedDaily;
+        if (individualRestriction[_from].endTime >= now && individualRestriction[_from].startTime <= now) {
+            if (bucketToUser[_from].lastTradedDayTime < individualRestriction[_from].startTime) {
+                // It will execute when the txn is performed first time after the addition of individual restriction
+                fromTimestamp = individualRestriction[_from].startTime;
+            } else {
+                // Picking up the last timestamp
+                fromTimestamp = bucketToUser[_from].lastTradedDayTime;
+            }
+        
+            // Check with the bucket and parse all the new timestamps to calculate the sumOfLastPeriod
+            // re-using the local variables to avoid the stack too deep error.
+            (sumOfLastPeriod, fromTimestamp, daysCovered) = _bucketCheck(
+                fromTimestamp,
+                BokkyPooBahsDateTimeLibrary.diffDays(fromTimestamp, now),
+                _from,
+                daysCovered,
+                bucketToUser[_from]
+            );
+            // validation of the transaction amount
+            if (!_checkValidAmountToTransact(sumOfLastPeriod, _amount, individualRestriction[_from])) {
+                allowedIndividual == false;
+            }
         }
-       
-        // Check with the bucket and parse all the new timestamps to calculate the sumOfLastPeriod
-        // re-using the local variables to avoid the stack too deep error.
-        (sumOfLastPeriod, fromTimestamp, daysCovered) = _bucketCheck(
-            fromTimestamp,
-            BokkyPooBahsDateTimeLibrary.diffDays(fromTimestamp, now),
-            _from,
-            bucketToUser[_from],
-            false,
-            daysCovered
-        );
-        // validation of the transaction amount
-        if (_checkValidAmountToTransact(sumOfLastPeriod, _amount, individualRestriction[_from])) {
-            return (true, sumOfLastPeriod, fromTimestamp, daysCovered);
-        } 
-        return (false, sumOfLastPeriod, fromTimestamp, daysCovered);  
+        (allowedDaily, dailyTime) = _dailyTxCheck(_from, _amount, fromTimestamp, bucketToUser[_from].dailyLastTradedDayTime, individualDailyRestriction[_from]);
+        
+        if (_isTransfer) {
+            _updateStorage(
+                _from,
+                _amount,
+                fromTimestamp,
+                sumOfLastPeriod,
+                daysCovered,
+                dailyTime,
+                bucketToUser[_from]
+            );
+        }
+
+        return ((allowedDaily && allowedIndividual) == true ? Result.NA : Result.INVALID);
+    }
+
+    function _dailyTxCheck(
+        address from,
+        uint256 amount,
+        uint256 fromTimestamp,
+        uint256 dailyLastTradedDayTime,
+        VolumeRestriction restriction
+    ) 
+        internal
+        view
+        returns(bool, uint256)
+    {
+        // Checking whether the daily restriction is added or not if yes then calculate
+        // the total amount get traded on a particular day (~ _fromTime)
+        if ( now <= restriction.endTime && now >= restriction.startTime) {   
+            uint256 txSumOfDay = 0;
+            if (now.sub(dailyLastTradedDayTime) < 1 days || dailyLastTradedDayTime == 0) {
+                txSumOfDay = bucket[from][dailyLastTradedDayTime] >= bucket[from][fromTimestamp] ? bucket[from][dailyLastTradedDayTime] : bucket[from][fromTimestamp];
+            } else {
+                txSumOfDay = 0;
+                dailyLastTradedDayTime = now;
+            }
+            return (_checkValidAmountToTransact(txSumOfDay, amount, restriction), dailyLastTradedDayTime);
+        }
+        return (true, dailyLastTradedDayTime);
     }
 
     /// Internal function for the bucket check
@@ -581,21 +601,16 @@ contract VolumeRestrictionTM is ITransferManager {
         uint256 _fromTime,
         uint256 _diffDays,
         address _from,
-        BucketDetails memory _bucketDetails,
-        bool _isGlobal,
-        uint256 _rollingPeriodInDays
+        uint256 _rollingPeriodInDays,
+        BucketDetails memory _bucketDetails
     )
         internal
         view
         returns (uint256, uint256, uint256)
     {
-        uint256 counter = _bucketDetails.globalDaysCovered;
-        uint256 sumOfLastPeriod = _bucketDetails.globalSumOfLastPeriod;
+        uint256 counter = _bucketDetails.daysCovered;
+        uint256 sumOfLastPeriod = _bucketDetails.sumOfLastPeriod;
         uint256 i = 0;
-        if (!_isGlobal) {
-            counter = _bucketDetails.daysCovered;
-            sumOfLastPeriod = _bucketDetails.sumOfLastPeriod;
-        }
         if (_diffDays >= _rollingPeriodInDays) {
             // If the difference of days is greater than the rollingPeriod then sumOfLastPeriod will always be zero
             sumOfLastPeriod = 0;
@@ -623,24 +638,6 @@ contract VolumeRestrictionTM is ITransferManager {
         return (sumOfLastPeriod, _fromTime, counter);
     }
 
-    function _dailyTxCheck(
-        uint256 _dailyAmount,
-        uint256 _amount
-    ) 
-        internal
-        view
-        returns(bool)
-    {
-        // Checking whether the global day restriction is added or not if yes then calculate
-        // the total amount get traded on a particular day (~ _fromTime)
-        if ( now <= dailyGlobalRestriction.endTime && now >= dailyGlobalRestriction.startTime)
-        {   
-            if (!_checkValidAmountToTransact(_dailyAmount, _amount, dailyGlobalRestriction)) 
-                return false;
-        }
-        return true;
-    }
-
     function _checkValidAmountToTransact(
         uint256 _sumOfLastPeriod,
         uint256 _amountToTransact,
@@ -657,11 +654,7 @@ contract VolumeRestrictionTM is ITransferManager {
             _allowedAmount = _restriction.allowedTokens;
         }
         // Validation on the amount to transact
-        if (_allowedAmount >= _sumOfLastPeriod.add(_amountToTransact)) {
-            return true;
-        } else {
-            return false;
-        }
+        return (_allowedAmount >= _sumOfLastPeriod.add(_amountToTransact));
     }
 
     function _updateStorage(
@@ -669,37 +662,33 @@ contract VolumeRestrictionTM is ITransferManager {
         uint256 _amount,
         uint256 _lastTradedDayTime,
         uint256 _sumOfLastPeriod,
-        uint256 _globalSumOfLastPeriod, 
         uint256 _daysCovered, 
-        uint256 _globalDaysCovered,
-        uint256 _globalLastTradedDayTime
+        uint256 _dailyLastTradedDayTime,
+        BucketDetails storage _details
     )
         internal 
-    {
-        if (bucketToUser[_from].lastTradedDayTime != _lastTradedDayTime) {
+    {   
+        // Cheap storage technique
+        if (_details.lastTradedDayTime != _lastTradedDayTime) {
             // Assigning the latest transaction timestamp of the day
-            bucketToUser[_from].lastTradedDayTime = _lastTradedDayTime;
+            _details.lastTradedDayTime = _lastTradedDayTime;
         }
-        if (bucketToUser[_from].globalLastTradedDayTime != _globalLastTradedDayTime) {
+        if (_lastTradedDayTime != 0 && _lastTradedDayTime != _dailyLastTradedDayTime) {
             // Assigning the latest transaction timestamp of the day
-            bucketToUser[_from].globalLastTradedDayTime = _globalLastTradedDayTime;
+            _details.dailyLastTradedDayTime = _lastTradedDayTime;
+        } else if (_details.dailyLastTradedDayTime != _dailyLastTradedDayTime) {
+            // Assigning the latest transaction timestamp of the day
+            _details.dailyLastTradedDayTime = _dailyLastTradedDayTime;
+        }
+        if (_details.daysCovered != _daysCovered) {
+                _details.daysCovered = _daysCovered;
         }
         if (_amount != 0) {
-            if (globalRestriction.endTime >= now && globalRestriction.startTime <= now) {
-                bucketToUser[_from].globalSumOfLastPeriod = _globalSumOfLastPeriod.add(_amount);
-                bucketToUser[_from].globalDaysCovered = _globalDaysCovered;
-                // Increasing the total amount of the day by `_amount`
-                bucket[_from][_globalLastTradedDayTime] = bucket[_from][_globalLastTradedDayTime].add(_amount);
-            }
-            if (individualRestriction[_from].endTime >= now && individualRestriction[_from].startTime <= now) {
-                bucketToUser[_from].daysCovered = _daysCovered;
-                bucketToUser[_from].sumOfLastPeriod = _sumOfLastPeriod.add(_amount);
-                if (_lastTradedDayTime != _globalLastTradedDayTime)
-                    // Increasing the total amount of the day by `_amount`
-                    bucket[_from][_lastTradedDayTime] = bucket[_from][_lastTradedDayTime].add(_amount);
-            }
-        }
-        
+            _details.sumOfLastPeriod = _sumOfLastPeriod.add(_amount);
+            _dailyLastTradedDayTime = _details.dailyLastTradedDayTime;
+            // Increasing the total amount of the day by `_amount`
+            bucket[_from][_dailyLastTradedDayTime] = bucket[_from][_dailyLastTradedDayTime].add(_amount);
+        }  
     }
 
     function _removeIndividualRestriction(address _user) internal {
@@ -830,14 +819,11 @@ contract VolumeRestrictionTM is ITransferManager {
      * @return uint256 sumOfLastPeriod
      * @return uint256 days covered
      */
-    function getBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256, uint256, uint256, uint256) {
+    function getBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256) {
         return(
             bucketToUser[_user].lastTradedDayTime,
             bucketToUser[_user].sumOfLastPeriod,
-            bucketToUser[_user].daysCovered,
-            bucketToUser[_user].globalDaysCovered,
-            bucketToUser[_user].globalSumOfLastPeriod,
-            bucketToUser[_user].globalLastTradedDayTime
+            bucketToUser[_user].daysCovered
         );
     }
 
@@ -848,18 +834,6 @@ contract VolumeRestrictionTM is ITransferManager {
      */
     function getTotalTradeByuser(address _user, uint256 _at) external view returns(uint256) {
         return bucket[_user][_at];
-    }
-
-    /**
-     * @notice Use to get the global bucket details
-     * @return uint256 lastTradedDayTime
-     * @return uint256 sumOfLastPeriod
-     */
-    function getGlobalBucketDetails() external view returns(uint256, uint256) {
-        return(
-            globalBucketDetails.lastTradedDayTime,
-            globalBucketDetails.sumOfLastPeriod
-        );
     }
 
     /**

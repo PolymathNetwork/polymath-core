@@ -59,17 +59,18 @@ async function executeApp(investorAddress, investorPrivKey, symbol, currency, am
 
     try {
         await inputSymbol(symbol);
-        await showUserInfo(User.address);
         switch (selectedSTO) {
             case 'CappedSTO':
                 let cappedSTOABI = abis.cappedSTO();
                 currentSTO = new web3.eth.Contract(cappedSTOABI, STOAddress);
+                await showUserInfo(User.address);
                 await showCappedSTOInfo();
                 await investCappedSTO(currency, amount);
                 break;
             case 'USDTieredSTO':
                 let usdTieredSTOABI = abis.usdTieredSTO();
                 currentSTO = new web3.eth.Contract(usdTieredSTOABI, STOAddress);
+                await showUserInfo(User.address);
                 await showUserInfoForUSDTieredSTO();
                 await showUSDTieredSTOInfo();
                 await investUsdTieredSTO(currency, amount)

@@ -219,7 +219,6 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         it("Should successfully deploy USDTieredSTOFactory", async () => {
             I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new();
             I_USDTieredSTOFactory = await USDTieredSTOFactory.new(
-                I_PolyToken.address,
                 STOSetupCost,
                 0,
                 0,

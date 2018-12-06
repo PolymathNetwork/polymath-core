@@ -5,6 +5,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IOwnable.sol";
 import "./interfaces/ISTFactory.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
+import "./interfaces/IPolymathRegistry.sol";
 import "./storage/EternalStorage.sol";
 import "./libraries/Util.sol";
 import "./libraries/Encoder.sol";
@@ -181,7 +182,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             "Invalid address"
         );
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Fees should not be 0");
-        set(POLYTOKEN, _polyToken);
         set(STLAUNCHFEE, _stLaunchFee);
         set(TICKERREGFEE, _tickerRegFee);
         set(EXPIRYLIMIT, uint256(60 * 1 days));
@@ -747,6 +747,14 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function updatePolyTokenAddress(address _newAddress) external onlyOwner {
         require(_newAddress != address(0), "Invalid address");
         set(POLYTOKEN, _newAddress);
+    }
+
+    /**
+     * @notice Stores the contract addresses of other key contracts from the PolymathRegistry
+     */
+    function updateFromRegistry() external onlyOwner {
+        address _polymathRegistry = getAddress(Encoder.getKey("polymathRegistry"));
+        set(Encoder.getKey("polyToken"), IPolymathRegistry(_polymathRegistry).getAddress("PolyToken"));
     }
 
     /**

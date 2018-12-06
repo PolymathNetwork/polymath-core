@@ -286,6 +286,8 @@ contract("SecurityTokenRegistry", accounts => {
                 from: account_polymath
             });
             I_STRProxied = SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+
+            await I_STRProxied.updateFromRegistry({ from: account_polymath });
         });
     });
 

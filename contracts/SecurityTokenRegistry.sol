@@ -739,15 +739,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     }
 
     /**
-     * @notice Changes the PolyToken address. Only Polymath.
-     * @param _newAddress is the address of the polytoken.
-     */
-    function updatePolyTokenAddress(address _newAddress) external onlyOwner {
-        require(_newAddress != address(0), "Invalid address");
-        set(POLYTOKEN, _newAddress);
-    }
-
-    /**
      * @notice Stores the contract addresses of other key contracts from the PolymathRegistry
      */
     function updateFromRegistry() external onlyOwner {

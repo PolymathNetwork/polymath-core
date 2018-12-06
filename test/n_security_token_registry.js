@@ -262,8 +262,17 @@ contract("SecurityTokenRegistry", accounts => {
                 from: account_polymath
             });
             I_STRProxied = SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+        });
 
-            await I_STRProxied.updateFromRegistry({ from: account_polymath });
+        describe("Test case for the upgradeFromregistry", async () => {
+            it("Should successfully update the registry contract address -- failed because of bad owner", async () => {
+                await catchRevert(I_STRProxied.updateFromRegistry({ from: account_temp }));
+            });
+
+            it("Should successfully update the registry contract addresses", async () => {
+                await I_STRProxied.updateFromRegistry({ from: account_polymath });
+                assert.equal(await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("polyToken")), I_PolyToken.address);
+            });
         });
     });
 
@@ -930,29 +939,6 @@ contract("SecurityTokenRegistry", accounts => {
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, "POLY", "SecurityToken doesn't get deployed");
-        });
-    });
-
-    describe("Test case for the update poly token", async () => {
-        it("Should change the polytoken address -- failed because of bad owner", async () => {
-            catchRevert(
-                I_STRProxied.updatePolyTokenAddress(dummy_token, { from: account_temp }),
-                "tx revert -> failed because of bad owner"
-            );
-        });
-
-        it("Should change the polytoken address -- failed because of 0x address", async () => {
-            catchRevert(
-                I_STRProxied.updatePolyTokenAddress("0x0000000000000000000000000000000000000000000", { from: account_polymath }),
-                "tx revert -> failed because 0x address"
-            );
-        });
-
-        it("Should successfully change the polytoken address", async () => {
-            let _id = await takeSnapshot();
-            await I_STRProxied.updatePolyTokenAddress(dummy_token, { from: account_polymath });
-            assert.equal(await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("polyToken")), dummy_token);
-            await revertToSnapshot(_id);
         });
     });
 

@@ -6,25 +6,14 @@ const securityTokenABI = JSON.parse(require('fs').readFileSync('../CLI/data/Secu
 const generalTransferManagerABI = JSON.parse(require('fs').readFileSync('../CLI/data/GeneralTransferManager1-4-0.json').toString()).abi;
 
 async function getTokens() {
-<<<<<<< HEAD:scripts/tokenInfo.js
-    let strEvents = await web3.eth.getPastLogs({fromBlock:'0x5C5C18', address:securityTokenRegistry.address, topics: ["0x2510d802a0818e71139a7680a6388bcffcd3fa686e02a0f7319488c5bdb38fcb"]});
-    for (let i = 0; i < strEvents.length; i++) {
-        let tokenAddress = '0x' + strEvents[i].topics[1].slice(26,66)
-        try {
-            await getInfo(tokenAddress);
-        } catch(exception) {
-            console.log('Failed to load info of', tokenAddress, exception);
-        }
-=======
     const securityTokenRegistryAddress = "0xEf58491224958d978fACF55D2120c55A24516B98";
     const securityTokenRegistryABI = await getABIfromEtherscan(securityTokenRegistryAddress);
     const securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
 
     let logs = await getLogsFromEtherscan(securityTokenRegistry.options.address, web3.utils.hexToNumber('0x5C5C18'), 'latest', 'LogNewSecurityToken(string,address,address)');
     for (let i = 0; i < logs.length; i++) {
-        let tokenAddress = '0x' + logs[i].topics[1].slice(26,66)
+        let tokenAddress = '0x' + logs[i].topics[1].slice(26, 66)
         await getInfo(tokenAddress);
->>>>>>> master-dev-2.1:scripts/tokenInfo-v1.js
     }
 }
 

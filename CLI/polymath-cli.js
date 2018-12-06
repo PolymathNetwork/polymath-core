@@ -140,14 +140,8 @@ program
   .option('-ot, --onlyTickers', 'Only migrate tickers without a launched token')
   .alias('str')
   .description('Runs STR Migrator')
-<<<<<<< HEAD
-  .action(async function (toStrAddress, fromTrAddress, fromStrAddress) {
-    await gbl.initialize(program.remoteNode);
-    await strMigrator.executeApp(toStrAddress, fromTrAddress, fromStrAddress);
-=======
-  .action(async function(toStrAddress, fromTrAddress, fromStrAddress, cmd) {
+  .action(async function (toStrAddress, fromTrAddress, fromStrAddress, cmd) {
     await strMigrator.executeApp(toStrAddress, fromTrAddress, fromStrAddress, cmd.singleTicker, cmd.tokenAddress, cmd.onlyTickers, program.remoteNode);
->>>>>>> master-dev-2.1
   });
 
 program

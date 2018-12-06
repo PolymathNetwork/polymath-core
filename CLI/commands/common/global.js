@@ -3,8 +3,7 @@ const constants = require('./constants');
 
 global.web3, global.Issuer, global.defaultGasPrice, global.remoteNetwork;
 
-function getGasPrice (networkId) {
-<<<<<<< HEAD
+function getGasPrice(networkId) {
   let gasPrice;
   switch (networkId) {
     case 1: //Mainnet
@@ -24,25 +23,6 @@ function getGasPrice (networkId) {
   }
   return gasPrice;
 }
-=======
-    let gasPrice;
-    switch (networkId) {
-      case 1: //Mainnet
-        gasPrice = 20000000000;
-        break;
-      case 3: //Ropsten
-        gasPrice = 50000000000;
-        break;
-      case 15: //Ganache
-        gasPrice = 50000000000;
-        break;
-      case 42: //Kovan
-        gasPrice = 5000000000;
-        break;
-      default:
-        throw new Error('Network ID not identified');
-    }
->>>>>>> master-dev-2.1
 
 function providerValidator(url) {
   var expression = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
@@ -56,7 +36,7 @@ async function httpProvider(url, file) {
 }
 
 module.exports = {
-  initialize: async function(network) {
+  initialize: async function (network) {
     remoteNetwork = network;
     if (typeof web3 === 'undefined' || typeof Issuer === 'undefined' || typeof defaultGasPrice === 'undefined') {
       if (typeof remoteNetwork !== 'undefined') {

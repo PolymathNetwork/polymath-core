@@ -9,9 +9,12 @@ import "../modules/Experimental/Burn/TrackedRedemptionFactory.sol";
 
 contract MockBurnFactory is TrackedRedemptionFactory {
 
-     /**
-     * @notice Constructor
-     */
+    /**
+    * @notice Constructor
+    * @param _setupCost Setup cost of the module
+    * @param _usageCost Usage cost of the module
+    * @param _subscriptionCost Subscription cost of the module
+    */
     constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
       TrackedRedemptionFactory(_setupCost, _usageCost, _subscriptionCost)
     {
@@ -22,9 +25,10 @@ contract MockBurnFactory is TrackedRedemptionFactory {
      * @return Address Contract address of the Module
      */
     function deploy(bytes /*_data*/) external returns(address) {
-        IERC20 polyToken = getPolyToken(msg.sender);
-        if(setupCost > 0)
+        if (setupCost > 0) {
+            IERC20 polyToken = getPolyToken(msg.sender);
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Unable to pay setup cost");
+        }
         //Check valid bytes - can only call module init function
         MockRedemptionManager mockRedemptionManager = new MockRedemptionManager(msg.sender);
         /*solium-disable-next-line security/no-block-members*/

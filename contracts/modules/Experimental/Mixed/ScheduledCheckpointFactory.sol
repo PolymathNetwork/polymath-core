@@ -30,9 +30,10 @@ contract ScheduledCheckpointFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
-        IERC20 polyToken = getPolyToken(msg.sender);
-        if(setupCost > 0)
+        if (setupCost > 0) {
+            IERC20 polyToken = getPolyToken(msg.sender);
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+        }
         address scheduledCheckpoint = new ScheduledCheckpoint(msg.sender);
         emit GenerateModuleFromFactory(scheduledCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return scheduledCheckpoint;

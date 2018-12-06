@@ -11,6 +11,9 @@ contract DummySTOFactory is ModuleFactory {
 
     /**
      * @notice Constructor
+     * @param _setupCost Setup cost of the module
+     * @param _usageCost Usage cost of the module
+     * @param _subscriptionCost Subscription cost of the module
      */
     constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
@@ -22,14 +25,16 @@ contract DummySTOFactory is ModuleFactory {
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
+
     /**
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        IERC20 polyToken = getPolyToken(msg.sender);
-        if (setupCost > 0)
+        if (setupCost > 0) {
+            IERC20 polyToken = getPolyToken(msg.sender);
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Sufficent Allowance is not provided");
+        }
         //Check valid bytes - can only call module init function
         DummySTO dummySTO = new DummySTO(msg.sender);
         //Checks that _data is valid (not calling anything it shouldn't)

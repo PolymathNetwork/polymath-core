@@ -32,9 +32,10 @@ contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
     * @return address Contract address of the Module
     */
     function deploy(bytes _data) external returns(address) {
-        IERC20 polyToken = getPolyToken(msg.sender);
-        if (setupCost > 0)
+        if (setupCost > 0) {
+            IERC20 polyToken = getPolyToken(msg.sender);
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+        }
         SingleTradeVolumeRestrictionTM singleTradeVolumeRestrictionManager = new SingleTradeVolumeRestrictionTM(msg.sender);
 
         require(Util.getSig(_data) == singleTradeVolumeRestrictionManager.getInitFunction(), "Provided data is not valid");

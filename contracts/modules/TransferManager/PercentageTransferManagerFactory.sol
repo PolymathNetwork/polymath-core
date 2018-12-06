@@ -11,6 +11,9 @@ contract PercentageTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
+     * @param _setupCost Setup cost of the module
+     * @param _usageCost Usage cost of the module
+     * @param _subscriptionCost Subscription cost of the module
      */
     constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
@@ -29,9 +32,10 @@ contract PercentageTransferManagerFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        IERC20 polyToken = getPolyToken(msg.sender);
-        if(setupCost > 0)
+        if (setupCost > 0) {
+            IERC20 polyToken = getPolyToken(msg.sender);
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+        }
         PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender);
         require(Util.getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
         /*solium-disable-next-line security/no-low-level-calls*/

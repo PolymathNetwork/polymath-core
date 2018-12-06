@@ -113,13 +113,13 @@ contract("PercentageTransferManager", accounts => {
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
 
         // STEP 3(a): Deploy the PercentageTransferManager
-        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, 0);
 
         // STEP 4(b): Deploy the PercentageTransferManager
-        [P_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500", "ether"));
+        [P_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));
     
         // Printing all the contract addresses
         console.log(`

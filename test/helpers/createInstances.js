@@ -192,7 +192,7 @@ async function registerAndVerifyByMR(factoryAdrress, owner, mr) {
 
 /// Deploy the TransferManagers
 
-export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
@@ -206,7 +206,7 @@ export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, pol
     return new Array(I_GeneralTransferManagerFactory);
 }
 
-export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_CountTransferManagerFactory = await CountTransferManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
@@ -219,7 +219,7 @@ export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance,
     return new Array(I_CountTransferManagerFactory);
 }
 
-export async function deployManualApprovalTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployManualApprovalTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
     assert.notEqual(
         I_ManualApprovalTransferManagerFactory.address.valueOf(),
@@ -231,7 +231,7 @@ export async function deployManualApprovalTMAndVerifyed(accountPolymath, MRProxy
     return new Array(I_ManualApprovalTransferManagerFactory);
 }
 
-export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
     I_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
     assert.notEqual(
         I_PercentageTransferManagerFactory.address.valueOf(),
@@ -243,7 +243,7 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
     return new Array(I_PercentageTransferManagerFactory);
 }
 
-export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
     I_VolumeRestrictionTransferManagerFactory = await VolumeRestrictionTransferManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
     assert.notEqual(
         I_VolumeRestrictionTransferManagerFactory.address.valueOf(),
@@ -255,7 +255,7 @@ export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyI
     return new Array(I_VolumeRestrictionTransferManagerFactory);
 }
 
-export async function deploySingleTradeVolumeRMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deploySingleTradeVolumeRMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
     I_SingleTradeVolumeRestrictionManagerFactory = await SingleTradeVolumeRestrictionManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
     assert.notEqual(
         I_SingleTradeVolumeRestrictionManagerFactory.address.valueOf(),
@@ -267,7 +267,7 @@ export async function deploySingleTradeVolumeRMAndVerified(accountPolymath, MRPr
     return new Array(I_SingleTradeVolumeRestrictionManagerFactory);
 }
 
-export async function deployScheduleCheckpointAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployScheduleCheckpointAndVerified(accountPolymath, MRProxyInstance, setupCost) {
     I_ScheduledCheckpointFactory = await ScheduledCheckpointFactory.new(setupCost, 0, 0, { from: accountPolymath });
     assert.notEqual(
         I_ScheduledCheckpointFactory.address.valueOf(),
@@ -281,7 +281,7 @@ export async function deployScheduleCheckpointAndVerified(accountPolymath, MRPro
 
 /// Deploy the Permission Manager
 
-export async function deployGPMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployGPMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
@@ -298,7 +298,7 @@ export async function deployGPMAndVerifyed(accountPolymath, MRProxyInstance, pol
 
 /// Deploy the STO Modules
 
-export async function deployDummySTOAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployDummySTOAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_DummySTOFactory = await DummySTOFactory.new(setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
@@ -310,7 +310,7 @@ export async function deployDummySTOAndVerifyed(accountPolymath, MRProxyInstance
     return new Array(I_DummySTOFactory);
 }
 
-export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_CappedSTOFactory = await CappedSTOFactory.new(setupCost, 0, 0, { from: accountPolymath });
     assert.notEqual(
         I_CappedSTOFactory.address.valueOf(),
@@ -323,7 +323,7 @@ export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstanc
 
 }
 
-export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstance, setupCost) {
     I_PreSaleSTOFactory = await PreSaleSTOFactory.new(setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
@@ -336,7 +336,7 @@ export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstan
     return new Array(I_PreSaleSTOFactory);
 }
 
-export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInstance, setupCost) {
     I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new({from: accountPolymath});
 
     I_USDTieredSTOFactory = await USDTieredSTOFactory.new(setupCost, 0, 0, I_USDTieredSTOProxyFactory.address, { from: accountPolymath });
@@ -354,7 +354,7 @@ export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInst
 
 /// Deploy the Dividend Modules
 
-export async function deployERC20DividendAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployERC20DividendAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_ERC20DividendCheckpointFactory = await ERC20DividendCheckpointFactory.new(setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
@@ -366,7 +366,7 @@ export async function deployERC20DividendAndVerifyed(accountPolymath, MRProxyIns
     return new Array(I_ERC20DividendCheckpointFactory);
 }
 
-export async function deployEtherDividendAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployEtherDividendAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
@@ -382,7 +382,7 @@ export async function deployEtherDividendAndVerifyed(accountPolymath, MRProxyIns
 
 /// Deploy the Burn Module
 
-export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_TrackedRedemptionFactory = await TrackedRedemptionFactory.new(setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
@@ -396,7 +396,7 @@ export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstan
 }
 
 
-export async function deployMockRedemptionAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployMockRedemptionAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_MockBurnFactory = await MockBurnFactory.new(setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(
@@ -409,7 +409,7 @@ export async function deployMockRedemptionAndVerifyed(accountPolymath, MRProxyIn
     return new Array(I_MockBurnFactory);
 }
 
-export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_MockWrongTypeBurnFactory = await MockWrongTypeFactory.new(setupCost, 0, 0, { from: accountPolymath });
 
     assert.notEqual(

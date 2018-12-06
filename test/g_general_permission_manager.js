@@ -103,9 +103,9 @@ contract('GeneralPermissionManager', accounts => {
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
         // STEP 6: Deploy the GeneralDelegateManagerFactory
-        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
+        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"));
 
         // Printing all the contract addresses
         console.log(`

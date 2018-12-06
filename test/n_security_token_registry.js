@@ -119,7 +119,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         // STEP 8: Deploy the CappedSTOFactory
 
-        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, 0);
         // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({ from: account_polymath });

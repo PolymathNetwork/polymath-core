@@ -129,7 +129,7 @@ contract("CappedSTO", accounts => {
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
         
         // STEP 6: Deploy the CappedSTOFactory
 

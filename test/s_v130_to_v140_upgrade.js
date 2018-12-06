@@ -118,10 +118,10 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         ] = instances;
 
         // STEP 4: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(POLYMATH, I_MRProxied, I_PolyToken.address, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(POLYMATH, I_MRProxied, 0);
 
         // STEP 5: Deploy the CappedSTOFactory
-        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(POLYMATH, I_MRProxied, I_PolyToken.address, STOSetupCost);
+        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(POLYMATH, I_MRProxied, STOSetupCost);
 
         // Step 12: Mint tokens to ISSUERs
         await I_PolyToken.getTokens(REGFEE * 2, ISSUER1);

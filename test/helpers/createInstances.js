@@ -177,6 +177,7 @@ async function setInPolymathRegistry(account_polymath) {
     await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, { from: account_polymath });
     await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, { from: account_polymath });
     await I_MRProxied.updateFromRegistry({ from: account_polymath });
+    await I_STRProxied.updateFromRegistry({ from: account_polymath });
 }
 
 async function registerGTM(account_polymath) {

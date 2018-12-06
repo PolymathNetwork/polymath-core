@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 * Added `buyWithETHRateLimited`, `buyWithPOLYRateLimited` and `buyWithUSDRateLimited` to USDTSTO.
 * Added `getTokensSoldByTier` to return sold (not minted during finalisation) tokens in each tier to USDTSTO.
 * Removed individual mappings for tier data removed in UDSTSTO.
+* Removed the old Proxy deployment method of USDTieredSTO and adopt the new inherited proxy deployment approach.
 
 ## GeneralTransferManager
 * `getInvestors`, `getAllInvestorsData`, `getInvestorsData` added to GTM to allow easy data queries.

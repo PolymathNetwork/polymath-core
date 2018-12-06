@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
-import "../../interfaces/IUSDTieredSTOProxy.sol";
+import "../../interfaces/IBoot.sol";
+import "../../proxy/USDTieredSTOProxy.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
 
@@ -9,17 +10,17 @@ import "../../libraries/Util.sol";
  */
 contract USDTieredSTOFactory is ModuleFactory {
 
-    address public USDTieredSTOProxyAddress;
+    address public logicContract;
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _proxyFactoryAddress) public
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-        require(_proxyFactoryAddress != address(0), "0x address is not allowed");
-        USDTieredSTOProxyAddress = _proxyFactoryAddress;
+        require(_logicContract != address(0), "0x address is not allowed");
+        logicContract = _logicContract;
         version = "1.0.0";
         name = "USDTieredSTO";
         title = "USD Tiered STO";
@@ -36,11 +37,10 @@ contract USDTieredSTOFactory is ModuleFactory {
     function deploy(bytes _data) external returns(address) {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
-        require(USDTieredSTOProxyAddress != address(0), "Proxy contract should be pre-set");
         //Check valid bytes - can only call module init function
-        address usdTieredSTO = IUSDTieredSTOProxy(USDTieredSTOProxyAddress).deploySTO(msg.sender, address(polyToken), address(this));
+        address usdTieredSTO = new USDTieredSTOProxy(msg.sender, address(polyToken), logicContract);
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == IUSDTieredSTOProxy(USDTieredSTOProxyAddress).getInitFunction(usdTieredSTO), "Invalid data");
+        require(Util.getSig(_data) == IBoot(usdTieredSTO).getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/
         require(address(usdTieredSTO).call(_data), "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/

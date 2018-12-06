@@ -1,9 +1,12 @@
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol')
+const GeneralTransferManagerLogic = artifacts.require('./GeneralTransferManager.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
 const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.sol');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
+const EtherDividendCheckpointLogic = artifacts.require('./EtherDividendCheckpoint.sol')
+const ERC20DividendCheckpointLogic = artifacts.require('./ERC20DividendCheckpoint.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
@@ -147,9 +150,21 @@ module.exports = function (deployer, network, accounts) {
     // Add module registry to polymath registry
     return polymathRegistry.changeAddress("ModuleRegistry", ModuleRegistryProxy.address, {from: PolymathAccount});
   }).then(() => {
+    // B) Deploy the GeneralTransferManagerLogic Contract (Factory used to generate the GeneralTransferManager contract and this
+    // manager attach with the securityToken contract at the time of deployment)
+    return deployer.deploy(GeneralTransferManagerLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+  }).then(() => {
+    // B) Deploy the GeneralTransferManagerLogic Contract (Factory used to generate the GeneralTransferManager contract and this
+    // manager attach with the securityToken contract at the time of deployment)
+    return deployer.deploy(ERC20DividendCheckpointLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+  }).then(() => {
+    // B) Deploy the GeneralTransferManagerLogic Contract (Factory used to generate the GeneralTransferManager contract and this
+    // manager attach with the securityToken contract at the time of deployment)
+    return deployer.deploy(EtherDividendCheckpointLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+  }).then(() => {
     // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(GeneralTransferManagerFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    return deployer.deploy(GeneralTransferManagerFactory, PolyToken, 0, 0, 0, GeneralTransferManagerLogic.address, {from: PolymathAccount});
   }).then(() => {
     // C) Deploy the GeneralPermissionManagerFactory Contract (Factory used to generate the GeneralPermissionManager contract and
     // this manager attach with the securityToken contract at the time of deployment)
@@ -165,11 +180,11 @@ module.exports = function (deployer, network, accounts) {
   }).then(() => {
     // D) Deploy the EtherDividendCheckpointFactory Contract (Factory used to generate the EtherDividendCheckpoint contract use
     // to provide the functionality of the dividend in terms of ETH)
-    return deployer.deploy(EtherDividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    return deployer.deploy(EtherDividendCheckpointFactory, PolyToken, 0, 0, 0, EtherDividendCheckpointLogic.address, {from: PolymathAccount});
   }).then(() => {
     // D) Deploy the ERC20DividendCheckpointFactory Contract (Factory used to generate the ERC20DividendCheckpoint contract use
     // to provide the functionality of the dividend in terms of ERC20 token)
-    return deployer.deploy(ERC20DividendCheckpointFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    return deployer.deploy(ERC20DividendCheckpointFactory, PolyToken, 0, 0, 0, ERC20DividendCheckpointLogic.address, {from: PolymathAccount});
   }).then(() => {
     // D) Deploy the VolumeRestrictionTMFactory Contract (Factory used to generate the VolumeRestrictionTM contract use
     // to provide the functionality of restricting the token volume)
@@ -317,6 +332,7 @@ module.exports = function (deployer, network, accounts) {
     POLYOracle:                           ${POLYOracle}
 
     STFactory:                            ${STFactory.address}
+    GeneralTransferManagerLogic:          ${GeneralTransferManagerLogic.address}
     GeneralTransferManagerFactory:        ${GeneralTransferManagerFactory.address}
     GeneralPermissionManagerFactory:      ${GeneralPermissionManagerFactory.address}
 
@@ -327,6 +343,8 @@ module.exports = function (deployer, network, accounts) {
     CountTransferManagerFactory:          ${CountTransferManagerFactory.address}
     PercentageTransferManagerFactory:     ${PercentageTransferManagerFactory.address}
     ManualApprovalTransferManagerFactory: ${ManualApprovalTransferManagerFactory.address}
+    EtherDividendCheckpointLogic:         ${EtherDividendCheckpointLogic.address}
+    ERC20DividendCheckpointLogic:         ${ERC20DividendCheckpointLogic.address}
     EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
     VolumeRestrictionTMFactory:           ${VolumeRestrictionTMFactory.address}

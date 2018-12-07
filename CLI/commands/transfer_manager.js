@@ -1045,7 +1045,24 @@ async function manageExistingBlacklist(blacklistName) {
       console.log(chalk.green(`${deleteInvestorFromBlacklistEvent._investor} has been removed from ${web3.utils.hexToUtf8(deleteInvestorFromBlacklistEvent._blacklistName)} successfully!`));
       break;
     case "Delete this blacklist type":
-      if (readlineSync.keyInYNStrict()) {
+      let isEmpty = investors.length === 0;
+      if (!isEmpty) {
+        console.log(chalk.yellow(`This blacklist have investors added on it. To delete it you must remove them first.`));
+        if (readlineSync.keyInYNStrict(`Do you want to remove them? `)) {
+          let data = investors.map(i => [i, blacklistName])
+          let batches = common.splitIntoBatches(data, gbl.constants.DEFAULT_BATCH_SIZE);
+          let [investorArray, blacklistNameArray] = common.transposeBatches(batches);
+          for (let batch = 0; batch < batches.length; batch++) {
+            console.log(`Batch ${batch + 1} - Attempting to remove the following investors:\n\n`, investorArray[batch], '\n');
+            let action = currentTransferManager.methods.deleteMultiInvestorsFromBlacklistMulti(investorArray[batch], blacklistNameArray[batch]);
+            let receipt = await common.sendTransaction(action);
+            console.log(chalk.green('Remove investors from multiple blacklists transaction was successful.'));
+            console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+          }
+          isEmpty = true;
+        }
+      }
+      if (isEmpty) {
         let deleteBlacklistTypeAction = currentTransferManager.methods.deleteBlacklistType(blacklistName);
         let deleteBlacklistTypeReceipt = await common.sendTransaction(deleteBlacklistTypeAction);
         let deleteBlacklistTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, deleteBlacklistTypeReceipt.logs, 'DeleteBlacklistType');
@@ -1171,7 +1188,20 @@ async function deleteBlacklistsInBatch() {
   if (invalidRows.length > 0) {
     console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
   }
-  let batches = common.splitIntoBatches(validData, batchSize);
+
+  let verifiedData = [];
+  let unverifiedData = [];
+  for (const row of validData) {
+    let blacklistName = row[0];
+    let verifiedTransaction = (await currentTransferManager.methods.getListOfAddresses(web3.utils.toHex(blacklistName)).call()).length === 0;
+    if (verifiedTransaction) {
+      verifiedData.push(row);
+    } else {
+      unverifiedData.push(row);
+    }
+  }
+
+  let batches = common.splitIntoBatches(verifiedData, batchSize);
   let [blacklistNameArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to delete the following blacklists:\n\n`, blacklistNameArray[batch], '\n');
@@ -1180,6 +1210,13 @@ async function deleteBlacklistsInBatch() {
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Delete multiple blacklists transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+
+  if (unverifiedData.length > 0) {
+    console.log("*****************************************************************************************************************");
+    console.log('The following data would failed as these blacklists have investors. They must be empty to be able to delete them.\n');
+    console.log(chalk.red(unverifiedData.map(d => `${d[0]}`).join('\n')));
+    console.log("*****************************************************************************************************************");
   }
 }
 

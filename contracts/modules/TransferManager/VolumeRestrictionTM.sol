@@ -107,13 +107,13 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             // Function must only be called by the associated security token if _isTransfer == true
             require(msg.sender == securityToken || !_isTransfer);
             // Checking the individual restriction if the `_from` comes in the individual category 
-            if (individualRestriction[_from].endTime >= now && individualRestriction[_from].startTime <= now 
-                || individualDailyRestriction[_from].endTime >= now && individualDailyRestriction[_from].startTime <= now) {
+            if ((individualRestriction[_from].endTime >= now && individualRestriction[_from].startTime <= now) 
+                || (individualDailyRestriction[_from].endTime >= now && individualDailyRestriction[_from].startTime <= now)) {
 
                 return _individualRestrictionCheck(_from, _amount, _isTransfer);
                 // If the `_from` doesn't fall under the individual category. It will processed with in the global category automatically
-            } else if (defaultRestriction.endTime >= now && defaultRestriction.startTime <= now
-                || defaultDailyRestriction.endTime >= now && defaultDailyRestriction.startTime <= now) {
+            } else if ((defaultRestriction.endTime >= now && defaultRestriction.startTime <= now)
+                || (defaultDailyRestriction.endTime >= now && defaultDailyRestriction.startTime <= now)) {
                 
                 return _defaultRestrictionCheck(_from, _amount, _isTransfer);
             }
@@ -769,7 +769,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             );
             // validation of the transaction amount
             if (!_checkValidAmountToTransact(sumOfLastPeriod, _amount, defaultRestriction)) {
-                allowedDefault == false;
+                allowedDefault = false;
             }
         }
         (allowedDaily, dailyTime) = _dailyTxCheck(_from, _amount, fromTimestamp, bucketDetails.dailyLastTradedDayTime, defaultDailyRestriction);
@@ -823,7 +823,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             );
             // validation of the transaction amount
             if (!_checkValidAmountToTransact(sumOfLastPeriod, _amount, restriction)) {
-                allowedIndividual == false;
+                allowedIndividual = false;
             }
         }
         (allowedDaily, dailyTime) = _dailyTxCheck(_from, _amount, fromTimestamp, bucketDetails.dailyLastTradedDayTime, dailyRestriction);
@@ -840,7 +840,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             );
         }
 
-        return ((allowedDaily && allowedIndividual) == true ? Result.NA : Result.INVALID);
+        return ((allowedDaily && allowedIndividual) ? Result.NA : Result.INVALID);
     }
 
     function _dailyTxCheck(
@@ -860,6 +860,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             uint256 txSumOfDay = 0;
             if (now.sub(dailyLastTradedDayTime) < 1 days || dailyLastTradedDayTime == 0) {
                 txSumOfDay = bucket[from][dailyLastTradedDayTime] >= bucket[from][fromTimestamp] ? bucket[from][dailyLastTradedDayTime] : bucket[from][fromTimestamp];
+                if (dailyLastTradedDayTime == 0)
+                    dailyLastTradedDayTime = now;
             } else {
                 txSumOfDay = 0;
                 dailyLastTradedDayTime = now;
@@ -962,7 +964,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
                 details.daysCovered = _daysCovered;
         }
         if (_amount != 0) {
-            details.sumOfLastPeriod = _sumOfLastPeriod.add(_amount);
+            if (_lastTradedDayTime !=0) {
+                details.sumOfLastPeriod = _sumOfLastPeriod.add(_amount);
+            }
             _dailyLastTradedDayTime = details.dailyLastTradedDayTime;
             // Increasing the total amount of the day by `_amount`
             bucket[_from][_dailyLastTradedDayTime] = bucket[_from][_dailyLastTradedDayTime].add(_amount);

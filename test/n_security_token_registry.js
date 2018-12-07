@@ -263,17 +263,6 @@ contract("SecurityTokenRegistry", accounts => {
             });
             I_STRProxied = SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
         });
-
-        describe("Test case for the upgradeFromregistry", async () => {
-            it("Should successfully update the registry contract address -- failed because of bad owner", async () => {
-                await catchRevert(I_STRProxied.updateFromRegistry({ from: account_temp }));
-            });
-
-            it("Should successfully update the registry contract addresses", async () => {
-                await I_STRProxied.updateFromRegistry({ from: account_polymath });
-                assert.equal(await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("polyToken")), I_PolyToken.address);
-            });
-        });
     });
 
     describe(" Test cases of the registerTicker", async () => {

@@ -170,11 +170,6 @@ interface ISecurityTokenRegistry {
    function changeSecurityLaunchFee(uint256 _stLaunchFee) external;
 
     /**
-     * @notice Use to get the latest contract address of the regstries
-     */
-    function updateFromRegistry() external;
-
-    /**
      * @notice Gets the security token launch fee
      * @return Fee amount
      */

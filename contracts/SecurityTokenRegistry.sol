@@ -188,6 +188,12 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         set(POLYMATHREGISTRY, _polymathRegistry);
         _setProtocolVersion(_STFactory, uint8(2), uint8(0), uint8(0));
         set(INITIALIZE, true);
+        _updateFromRegistry();
+    }
+
+    function _updateFromRegistry() internal {
+        address polymathRegistry = getAddress(POLYMATHREGISTRY);
+        set(POLYTOKEN, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"));
     }
 
     /////////////////////////////
@@ -736,14 +742,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function getProtocolVersion() public view returns(uint8[]) {
         return VersionUtils.unpack(uint24(getUint(Encoder.getKey("latestVersion"))));
-    }
-
-    /**
-     * @notice Stores the contract addresses of other key contracts from the PolymathRegistry
-     */
-    function updateFromRegistry() external onlyOwner {
-        address _polymathRegistry = getAddress(Encoder.getKey("polymathRegistry"));
-        set(Encoder.getKey("polyToken"), IPolymathRegistry(_polymathRegistry).getAddress("PolyToken"));
     }
 
     /**

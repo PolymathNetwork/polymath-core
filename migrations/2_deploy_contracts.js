@@ -34,7 +34,6 @@ const Web3 = require('web3')
 module.exports = function (deployer, network, accounts) {
   // Ethereum account address hold by the Polymath (Act as the main account which have ownable permissions)
   let PolymathAccount;
-  let securityTokenRegistry;
   let moduleRegistry;
   let polymathRegistry;
   let web3
@@ -187,15 +186,11 @@ module.exports = function (deployer, network, accounts) {
   }).then(()=> {
     return deployer.deploy(SecurityTokenRegistryProxy, {from: PolymathAccount});
   }).then(() => {
-    securityTokenRegistry = SecurityTokenRegistry.at(SecurityTokenRegistryProxy.address);
     let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolymathAccount]);
     return SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
   }).then(() => {
     // Assign the address into the SecurityTokenRegistry key
    return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistryProxy.address, {from: PolymathAccount});
-  }).then(() => {
-      // Update all addresses into the registry contract by calling the function updateFromregistry
-      return securityTokenRegistry.updateFromRegistry({from: PolymathAccount});
   }).then(() => {
     // Update all addresses into the registry contract by calling the function updateFromregistry
     return moduleRegistry.updateFromRegistry({from: PolymathAccount});

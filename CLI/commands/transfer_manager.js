@@ -25,97 +25,95 @@ let securityTokenRegistry;
 let currentTransferManager;
 
 async function executeApp() {
-  let exit = false;
-  while (!exit) {
-    console.log('\n', chalk.blue('Transfer Manager - Main Menu', '\n'));
+  console.log('\n', chalk.blue('Transfer Manager - Main Menu', '\n'));
 
-    let tmModules = await getAllModulesByType(gbl.constants.MODULES_TYPES.TRANSFER);
-    let nonArchivedModules = tmModules.filter(m => !m.archived);
-    if (nonArchivedModules.length > 0) {
-      console.log(`Transfer Manager modules attached:`);
-      nonArchivedModules.map(m => console.log(`- ${m.name} at ${m.address}`))
-    } else {
-      console.log(`There are no Transfer Manager modules attached`);
-    }
-
-    let options = ['Verify transfer', 'Transfer'];
-    let forcedTransferDisabled = await securityToken.methods.controllerDisabled().call();
-    if (!forcedTransferDisabled) {
-      options.push('Forced transfers');
-    }
-    if (nonArchivedModules.length > 0) {
-      options.push('Config existing modules');
-    }
-    options.push('Add new Transfer Manager module');
-
-    let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Exit' });
-    let optionSelected = index != -1 ? options[index] : 'Exit';
-    console.log('Selected:', optionSelected, '\n');
-    switch (optionSelected) {
-      case 'Verify transfer':
-        let verifyTransferFrom = readlineSync.question(`Enter the sender account (${Issuer.address}): `, {
-          limit: function (input) {
-            return web3.utils.isAddress(input);
-          },
-          limitMessage: "Must be a valid address",
-          defaultInput: Issuer.address
-        });
-        let verifyFromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(verifyTransferFrom).call());
-        console.log(chalk.yellow(`Balance of ${verifyTransferFrom}: ${verifyFromBalance} ${tokenSymbol}`));
-        let verifyTransferTo = readlineSync.question('Enter the receiver account: ', {
-          limit: function (input) {
-            return web3.utils.isAddress(input);
-          },
-          limitMessage: "Must be a valid address",
-        });
-        let verifyToBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(verifyTransferTo).call());
-        console.log(chalk.yellow(`Balance of ${verifyTransferTo}: ${verifyToBalance} ${tokenSymbol}`));
-        let verifyTransferAmount = readlineSync.question('Enter amount of tokens to verify: ');
-        let isVerified = await securityToken.methods.verifyTransfer(verifyTransferFrom, verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
-        if (isVerified) {
-          console.log(chalk.green(`\n${verifyTransferAmount} ${tokenSymbol} can be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
-        } else {
-          console.log(chalk.red(`\n${verifyTransferAmount} ${tokenSymbol} can't be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
-        }
-        break;
-      case 'Transfer':
-        let fromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(Issuer.address).call());
-        console.log(chalk.yellow(`Balance of ${Issuer.address}: ${fromBalance} ${tokenSymbol}`));
-        let transferTo = readlineSync.question('Enter beneficiary of tranfer: ', {
-          limit: function (input) {
-            return web3.utils.isAddress(input);
-          },
-          limitMessage: "Must be a valid address"
-        });
-        let toBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(transferTo).call());
-        console.log(chalk.yellow(`Balance of ${transferTo}: ${toBalance} ${tokenSymbol}`));
-        let transferAmount = readlineSync.question('Enter amount of tokens to transfer: ');
-        let isTranferVerified = await securityToken.methods.verifyTransfer(Issuer.address, transferTo, web3.utils.toWei(transferAmount), web3.utils.fromAscii("")).call();
-        if (isTranferVerified) {
-          let transferAction = securityToken.methods.transfer(transferTo, web3.utils.toWei(transferAmount));
-          let receipt = await common.sendTransaction(transferAction);
-          let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
-          console.log(chalk.green(`${event.from} transferred ${web3.utils.fromWei(event.value)} ${tokenSymbol} to ${event.to} successfully!`));
-          console.log(`Balance of ${Issuer.address} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(Issuer.address).call())} ${tokenSymbol}`);
-          console.log(`Balance of ${transferTo} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(transferTo).call())} ${tokenSymbol}`);
-        } else {
-          console.log(chalk.red(`Transfer failed at verification. Please review the transfer restrictions.`));
-        }
-        break;
-      case 'Forced transfers':
-        await forcedTransfers();
-        break;
-      case 'Config existing modules':
-        await configExistingModules(nonArchivedModules);
-        break;
-      case 'Add new Transfer Manager module':
-        await addTransferManagerModule();
-        break;
-      case 'Exit':
-        exit = true;
-        break
-    }
+  let tmModules = await getAllModulesByType(gbl.constants.MODULES_TYPES.TRANSFER);
+  let nonArchivedModules = tmModules.filter(m => !m.archived);
+  if (nonArchivedModules.length > 0) {
+    console.log(`Transfer Manager modules attached:`);
+    nonArchivedModules.map(m => console.log(`- ${m.name} at ${m.address}`))
+  } else {
+    console.log(`There are no Transfer Manager modules attached`);
   }
+
+  let options = ['Verify transfer', 'Transfer'];
+  let forcedTransferDisabled = await securityToken.methods.controllerDisabled().call();
+  if (!forcedTransferDisabled) {
+    options.push('Forced transfers');
+  }
+  if (nonArchivedModules.length > 0) {
+    options.push('Config existing modules');
+  }
+  options.push('Add new Transfer Manager module');
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'EXIT' });
+  let optionSelected = index !== -1 ? options[index] : 'EXIT';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Verify transfer':
+      let verifyTransferFrom = readlineSync.question(`Enter the sender account (${Issuer.address}): `, {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address",
+        defaultInput: Issuer.address
+      });
+      let verifyFromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(verifyTransferFrom).call());
+      console.log(chalk.yellow(`Balance of ${verifyTransferFrom}: ${verifyFromBalance} ${tokenSymbol}`));
+      let verifyTransferTo = readlineSync.question('Enter the receiver account: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address",
+      });
+      let verifyToBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(verifyTransferTo).call());
+      console.log(chalk.yellow(`Balance of ${verifyTransferTo}: ${verifyToBalance} ${tokenSymbol}`));
+      let verifyTransferAmount = readlineSync.question('Enter amount of tokens to verify: ');
+      let isVerified = await securityToken.methods.verifyTransfer(verifyTransferFrom, verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
+      if (isVerified) {
+        console.log(chalk.green(`\n${verifyTransferAmount} ${tokenSymbol} can be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
+      } else {
+        console.log(chalk.red(`\n${verifyTransferAmount} ${tokenSymbol} can't be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
+      }
+      break;
+    case 'Transfer':
+      let fromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(Issuer.address).call());
+      console.log(chalk.yellow(`Balance of ${Issuer.address}: ${fromBalance} ${tokenSymbol}`));
+      let transferTo = readlineSync.question('Enter beneficiary of tranfer: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      let toBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(transferTo).call());
+      console.log(chalk.yellow(`Balance of ${transferTo}: ${toBalance} ${tokenSymbol}`));
+      let transferAmount = readlineSync.question('Enter amount of tokens to transfer: ');
+      let isTranferVerified = await securityToken.methods.verifyTransfer(Issuer.address, transferTo, web3.utils.toWei(transferAmount), web3.utils.fromAscii("")).call();
+      if (isTranferVerified) {
+        let transferAction = securityToken.methods.transfer(transferTo, web3.utils.toWei(transferAmount));
+        let receipt = await common.sendTransaction(transferAction);
+        let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
+        console.log(chalk.green(`${event.from} transferred ${web3.utils.fromWei(event.value)} ${tokenSymbol} to ${event.to} successfully!`));
+        console.log(`Balance of ${Issuer.address} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(Issuer.address).call())} ${tokenSymbol}`);
+        console.log(`Balance of ${transferTo} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(transferTo).call())} ${tokenSymbol}`);
+      } else {
+        console.log(chalk.red(`Transfer failed at verification. Please review the transfer restrictions.`));
+      }
+      break;
+    case 'Forced transfers':
+      await forcedTransfers();
+      break;
+    case 'Config existing modules':
+      await configExistingModules(nonArchivedModules);
+      break;
+    case 'Add new Transfer Manager module':
+      await addTransferManagerModule();
+      break;
+    case 'EXIT':
+      return;
+  }
+
+  await executeApp();
 }
 
 async function forcedTransfers() {
@@ -124,8 +122,8 @@ async function forcedTransfers() {
   if (controller == Issuer.address) {
     options.push('Force Transfer');
   }
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = index != -1 ? options[index] : 'Return';
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Disable controller':
@@ -184,14 +182,18 @@ async function forcedTransfers() {
       console.log(`Balance of ${from} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(from).call())} ${tokenSymbol}`);
       console.log(`Balance of ${to} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(to).call())} ${tokenSymbol}`);
       break;
+    case 'RETURN':
+      return;
   }
+
+  await forcedTransfers();
 }
 
 async function configExistingModules(tmModules) {
   let options = tmModules.map(m => `${m.name} at ${m.address}`);
-  let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'Return' });
-  console.log('Selected:', index != -1 ? options[index] : 'Return', '\n');
-  let moduleNameSelected = index != -1 ? tmModules[index].name : 'Return';
+  let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'RETURN' });
+  console.log('Selected:', index !== -1 ? options[index] : 'RETURN', '\n');
+  let moduleNameSelected = index !== -1 ? tmModules[index].name : 'RETURN';
 
   switch (moduleNameSelected) {
     case 'GeneralTransferManager':
@@ -251,7 +253,7 @@ async function addTransferManagerModule() {
     //'LookupVolumeRestrictionTM'*/
   ];
 
-  let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'Return' });
+  let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'RETURN' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
     let bytes = web3.utils.fromAscii('', 16);
     switch (options[index]) {
@@ -383,9 +385,9 @@ async function generalTransferManager() {
     options.push('Allow all burn transfers');
   }
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case `Show investors`:
       console.log('***** List of investors on whitelist *****');
@@ -525,7 +527,11 @@ async function generalTransferManager() {
         console.log(chalk.green(`The burning mechanism is deactivated!`));
       }
       break;
+    case 'RETURN':
+      return;
   }
+
+  await generalTransferManager();
 }
 
 function showWhitelistTable(investorsArray, fromTimeArray, toTimeArray, expiryTimeArray, canBuyFromSTOArray) {
@@ -583,9 +589,9 @@ async function manualApprovalTransferManager() {
   let options = ['Check manual approval', 'Add manual approval', 'Revoke manual approval',
     'Check manual blocking', 'Add manual blocking', 'Revoke manual blocking'];
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
   let from;
   let to;
   switch (optionSelected) {
@@ -727,7 +733,10 @@ async function manualApprovalTransferManager() {
         console.log(chalk.red(`Manual blocking from ${from} to ${to} does not exist.`));
       }
       break;
+    case 'RETURN':
+      return;
   }
+  await manualApprovalTransferManager();
 }
 
 async function getManualApproval(_from, _to) {
@@ -761,9 +770,9 @@ async function countTransferManager() {
   console.log(`- Max holder count:        ${displayMaxHolderCount}`);
 
   let options = ['Change max holder count']
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Change max holder count':
       let maxHolderCount = readlineSync.question('Enter the maximum no. of holders the SecurityToken is allowed to have: ');
@@ -772,7 +781,11 @@ async function countTransferManager() {
       let changeHolderCountEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeHolderCountReceipt.logs, 'ModifyHolderCount');
       console.log(chalk.green(`Max holder count has been set to ${changeHolderCountEvent._newHolderCount} sucessfully!`));
       break;
+    case 'RETURN':
+      return;
   }
+
+  await countTransferManager();
 }
 
 async function percentageTransferManager() {
@@ -791,9 +804,9 @@ async function percentageTransferManager() {
   } else {
     options.push('Allow primary issuance');
   }
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Change max holder percentage':
       let maxHolderPercentage = toWeiPercentage(readlineSync.question('Enter the maximum amount of tokens in percentage that an investor can hold: ', {
@@ -876,8 +889,11 @@ async function percentageTransferManager() {
         console.log(chalk.green(`Transactions which are part of the primary issuance will NOT be ignored!`));
       }
       break;
-
+    case 'RETURN':
+      return;
   }
+
+  await percentageTransferManager();
 }
 
 async function blacklistTransferManager() {
@@ -892,8 +908,8 @@ async function blacklistTransferManager() {
   }
   options.push('Delete investors from all blacklists', 'Operate with multiple blacklists');
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: "Return" });
-  let optionSelected = index !== -1 ? options[index] : 'Return';
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: "RETURN" });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Add new blacklist':
@@ -936,8 +952,8 @@ async function blacklistTransferManager() {
       break;
     case 'Manage existing blacklist':
       let options = currentBlacklists.map(b => web3.utils.hexToUtf8(b));
-      let index = readlineSync.keyInSelect(options, 'Which blacklist type do you want to manage? ', { cancel: "Return" });
-      let optionSelected = index !== -1 ? options[index] : 'Return';
+      let index = readlineSync.keyInSelect(options, 'Which blacklist type do you want to manage? ', { cancel: "RETURN" });
+      let optionSelected = index !== -1 ? options[index] : 'RETURN';
       console.log('Selected:', optionSelected, '\n');
       if (index !== -1) {
         await manageExistingBlacklist(currentBlacklists[index]);
@@ -963,7 +979,11 @@ async function blacklistTransferManager() {
     case 'Operate with multiple blacklists':
       await operateWithMultipleBlacklists(currentBlacklists);
       break;
+    case 'RETURN':
+      return;
   }
+
+  await blacklistTransferManager();
 }
 
 async function manageExistingBlacklist(blacklistName) {
@@ -987,8 +1007,8 @@ async function manageExistingBlacklist(blacklistName) {
     "Delete this blacklist type"
   ];
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = index !== -1 ? options[index] : 'Return';
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Modify properties':
@@ -1068,8 +1088,12 @@ async function manageExistingBlacklist(blacklistName) {
         let deleteBlacklistTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, deleteBlacklistTypeReceipt.logs, 'DeleteBlacklistType');
         console.log(chalk.green(`${web3.utils.hexToUtf8(deleteBlacklistTypeEvent._blacklistName)} blacklist type has been deleted successfully!`));
       }
-      break;
+      return;
+    case 'RETURN':
+      return;
   }
+
+  await manageExistingBlacklist(blacklistName);
 }
 
 async function operateWithMultipleBlacklists(currentBlacklists) {
@@ -1083,8 +1107,8 @@ async function operateWithMultipleBlacklists(currentBlacklists) {
     'Remove investors from multiple blacklists'
   );
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = index !== -1 ? options[index] : 'Return';
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Add multiple blacklists':
@@ -1316,9 +1340,9 @@ async function singleTradeVolumeRestrictionTM() {
       'Set tokens transfer limit per account', 'Remove tokens transfer limit per account');
   }
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Allow primary issuance':
     case 'Disallow primary issuance':
@@ -1567,8 +1591,8 @@ async function selectToken() {
   });
   options.push('Enter token symbol manually');
 
-  let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
-  let selected = index != -1 ? options[index] : 'Exit';
+  let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'EXIT' });
+  let selected = index !== -1 ? options[index] : 'EXIT';
   switch (selected) {
     case 'Enter token symbol manually':
       result = readlineSync.question('Enter the token symbol: ');

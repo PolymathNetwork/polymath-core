@@ -429,11 +429,11 @@ async function listModuleOptions() {
 
   let archivedModules = allModules.filter(m => m.archived);
   if (archivedModules.length > 0) {
-    options.push('Unarchive a module');
+    options.push('Unarchive a module', 'Remove a module');
   }
 
   if (allModules.length > 0) {
-    options.push('Remove a module', 'Change module budget');
+    options.push('Change module budget');
   }
 
   let index = readlineSync.keyInSelect(options, chalk.yellow('What do you want to do?'), { cancel: 'Return' });
@@ -456,7 +456,7 @@ async function listModuleOptions() {
       await unarchiveModule(archivedModules);
       break;
     case 'Remove a module':
-      await removeModule(allModules);
+      await removeModule(archivedModules);
       break;
     case 'Change module budget':
       await changeBudget(allModules);
@@ -676,7 +676,8 @@ async function selectToken() {
   options.push('Enter token symbol manually');
 
   let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
-  switch (options[index]) {
+  let selected = index != -1 ? options[index] : 'Exit';
+  switch (selected) {
     case 'Enter token symbol manually':
       result = readlineSync.question('Enter the token symbol: ');
       break;

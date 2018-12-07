@@ -89,7 +89,7 @@ contract("ERC20DividendCheckpoint", accounts => {
         account_investor4 = accounts[9];
         account_temp = accounts[2];
         account_manager = accounts[5];
-        
+
         // Step 1: Deploy the genral PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
@@ -970,7 +970,7 @@ contract("ERC20DividendCheckpoint", accounts => {
             let expiry = latestTime() + duration.days(10);
             let exclusions = [1];
             let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
-            await I_SecurityToken.createCheckpoint({ from: token_owner }); 
+            await I_SecurityToken.createCheckpoint({ from: token_owner });
             await catchRevert(I_ERC20DividendCheckpoint.createDividendWithCheckpointAndExclusions(
                 maturity,
                 expiry,
@@ -1105,7 +1105,7 @@ contract("ERC20DividendCheckpoint", accounts => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_ERC20DividendCheckpointFactory.getSetupCost.call()).toNumber(), 0);
                 assert.equal((await I_ERC20DividendCheckpointFactory.getTypes.call())[0], 4);
-                assert.equal(await I_ERC20DividendCheckpointFactory.version.call(), "1.0.0");
+                assert.equal(await I_ERC20DividendCheckpointFactory.version.call(), "2.1.0");
                 assert.equal(
                     web3.utils.toAscii(await I_ERC20DividendCheckpointFactory.getName.call()).replace(/\u0000/g, ""),
                     "ERC20DividendCheckpoint",

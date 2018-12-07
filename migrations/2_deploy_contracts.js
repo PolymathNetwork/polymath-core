@@ -17,6 +17,7 @@ const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol')
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
 const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol')
 const VolumeRestrictionTMFactory = artifacts.require('./VolumeRestrictionTMFactory.sol')
+const VolumeRestrictionTMLogic = artifacts.require('./VolumeRestrictionTM.sol');
 const FeatureRegistry = artifacts.require('./FeatureRegistry.sol')
 const STFactory = artifacts.require('./tokens/STFactory.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
@@ -162,6 +163,10 @@ module.exports = function (deployer, network, accounts) {
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(EtherDividendCheckpointLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
   }).then(() => {
+    // B) Deploy the VolumeRestrictionTMLogic Contract (Factory used to generate the VolumeRestrictionTM contract and this
+    // manager attach with the securityToken contract at the time of deployment)
+    return deployer.deploy(VolumeRestrictionTMLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+  }).then(() => {
     // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(GeneralTransferManagerFactory, PolyToken, 0, 0, 0, GeneralTransferManagerLogic.address, {from: PolymathAccount});
@@ -188,7 +193,7 @@ module.exports = function (deployer, network, accounts) {
   }).then(() => {
     // D) Deploy the VolumeRestrictionTMFactory Contract (Factory used to generate the VolumeRestrictionTM contract use
     // to provide the functionality of restricting the token volume)
-    return deployer.deploy(VolumeRestrictionTMFactory, PolyToken, 0, 0, 0, {from: PolymathAccount});
+    return deployer.deploy(VolumeRestrictionTMFactory, PolyToken, 0, 0, 0, VolumeRestrictionTMLogic.address, {from: PolymathAccount});
   }).then(() => {
       // D) Deploy the ManualApprovalTransferManagerFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
       // to manual approve the transfer that will overcome the other transfer restrictions)
@@ -348,6 +353,7 @@ module.exports = function (deployer, network, accounts) {
     EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
     VolumeRestrictionTMFactory:           ${VolumeRestrictionTMFactory.address}
+    VolumeRestrictionTMLogic:             ${VolumeRestrictionTMLogic.address}
     ---------------------------------------------------------------------------------
     `);
     console.log('\n');

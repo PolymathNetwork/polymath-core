@@ -33,6 +33,7 @@ const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
 const MockBurnFactory = artifacts.require("./MockBurnFactory.sol");
 const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
 const VolumeRestrictionTMFactory = artifacts.require("./VolumeRestrictionTMFactory.sol");
+const VolumeRestrictionTM = artifacts.require("./VolumeRestrictionTM.sol");
 
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
@@ -57,6 +58,7 @@ let I_GeneralPermissionManagerFactory;
 let I_GeneralTransferManagerLogic;
 let I_GeneralTransferManagerFactory;
 let I_GeneralTransferManager;
+let I_VolumeRestrictionTMLogic;
 let I_ModuleRegistryProxy;
 let I_PreSaleSTOFactory;
 let I_ModuleRegistry;
@@ -227,7 +229,9 @@ export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, pol
 }
 
 export async function deployVRTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
-    I_VolumeRestrictionTMFactory = await VolumeRestrictionTMFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    I_VolumeRestrictionTMLogic = await VolumeRestrictionTM.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    
+    I_VolumeRestrictionTMFactory = await VolumeRestrictionTMFactory.new(polyToken, setupCost, 0, 0, I_VolumeRestrictionTMLogic.address, { from: accountPolymath });
 
     assert.notEqual(
         I_VolumeRestrictionTMFactory.address.valueOf(),

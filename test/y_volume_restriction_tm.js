@@ -613,7 +613,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should succesfully transact the tokens just after the startTime", async() => {
+        it.skip("Should succesfully transact the tokens just after the startTime", async() => {
             // Check the transfer will be valid or not by calling the verifyTransfer() directly by using _isTransfer = false
             let result = await I_VolumeRestrictionTM.verifyTransfer.call(account_investor1, account_investor3, web3.utils.toWei('.3'), "0x0", false);
             assert.equal(result.toNumber(), 1);
@@ -644,7 +644,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             tempArrayGlobal.push(0);
         })
 
-        it("Should successfully add the global restriction", async() => {
+        it.skip("Should successfully add the global restriction", async() => {
             await I_VolumeRestrictionTM.addGlobalRestriction(
                 web3.utils.toWei("15"),
                 latestTime() + duration.seconds(2),
@@ -661,7 +661,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(data[2].toNumber(), 5);
         });
 
-        it("Should successfully transact the tokens after 1 and half days", async() => {
+        it.skip("Should successfully transact the tokens after 1 and half days", async() => {
             await increaseTime(duration.days(1.5));
             let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[1].toNumber();
             let rollingPeriod = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[2].toNumber();
@@ -698,7 +698,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(globalAmt, 2);
         });
 
-        it("Should add the daily restriction successfully", async() => {
+        it.skip("Should add the daily restriction successfully", async() => {
             await I_VolumeRestrictionTM.addDailyGlobalRestriction(
                 web3.utils.toWei("5"),
                 latestTime() + duration.seconds(2),
@@ -714,7 +714,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(data[4].toNumber(), 0);
         });
 
-        it("Should transfer tokens within the daily limit -- falied because of limit failing", async() =>{
+        it.skip("Should transfer tokens within the daily limit -- falied because of limit failing", async() =>{
             // Transfer the 3.1 tokens to check the daily limit
             await increaseTime(5);
             await catchRevert(
@@ -722,7 +722,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should transfer the tokens within the daily limit", async() => {
+        it.skip("Should transfer the tokens within the daily limit", async() => {
             let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[1].toNumber();
             let rollingPeriod = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[2].toNumber();
             let globalStartTime = (await I_VolumeRestrictionTM.globalRestriction.call())[1].toNumber();
@@ -755,14 +755,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(globalAmt, 5);
         });
 
-        it("Should transfer tokens within the daily limit -- falied because of limit failing", async() =>{
+        it.skip("Should transfer tokens within the daily limit -- falied because of limit failing", async() =>{
             // Transfer the 0.1 tokens to check the daily limit
             await catchRevert(
                 I_SecurityToken.transfer(account_investor3, web3.utils.toWei("0.1"), {from: account_investor1})
             );
         });
 
-        it("Should successfully transact tokens on the next day of the rolling period (Fuzz test)", async() => {
+        it.skip("Should successfully transact tokens on the next day of the rolling period (Fuzz test)", async() => {
             // Increase time half day
             await increaseTime(duration.days(.52));
             // Check the balance of the investors 
@@ -810,7 +810,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.closeTo(globalAmt, totalAmountTransacted, 0.01);
         });
 
-        it("Should fail to transact the tokens more than the allowed tokens in a rolling period", async() => {
+        it.skip("Should fail to transact the tokens more than the allowed tokens in a rolling period", async() => {
             // Increase the time by 3/5 of the day
             await increaseTime(duration.days(.6));
             let data = await I_VolumeRestrictionTM.getBucketDetailsToUser.call(account_investor1);
@@ -821,14 +821,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should fail to buy tokens in the new rolling period --failed because amount is more than last 1 timestamps", async() => {
+        it.skip("Should fail to buy tokens in the new rolling period --failed because amount is more than last 1 timestamps", async() => {
             await increaseTime(duration.days(1));
             await catchRevert(
                 I_SecurityToken.transfer(account_investor3, web3.utils.toWei("10"), {from: account_investor1})
             );
         });
 
-        it("Should add the daily restriction again successfully", async() => {
+        it.skip("Should add the daily restriction again successfully", async() => {
             await I_VolumeRestrictionTM.addDailyGlobalRestriction(
                 web3.utils.toWei("7"),
                 latestTime() + duration.seconds(2),

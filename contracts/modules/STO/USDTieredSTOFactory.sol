@@ -21,7 +21,7 @@ contract USDTieredSTOFactory is ModuleFactory {
     {
         require(_logicContract != address(0), "0x address is not allowed");
         logicContract = _logicContract;
-        version = "1.0.0";
+        version = "2.1.0";
         name = "USDTieredSTO";
         title = "USD Tiered STO";
         /*solium-disable-next-line max-len*/

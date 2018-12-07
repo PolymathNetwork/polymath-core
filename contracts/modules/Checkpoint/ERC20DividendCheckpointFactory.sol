@@ -30,8 +30,8 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
      * @return Address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
+        updateFromRegistry(msg.sender);
         if (setupCost > 0) {
-            IERC20 polyToken = getPolyToken(msg.sender);
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "insufficent allowance");
         }
         address erc20DividendCheckpoint = new ERC20DividendCheckpoint(msg.sender);

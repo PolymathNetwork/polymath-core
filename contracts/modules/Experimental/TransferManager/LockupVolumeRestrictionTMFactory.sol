@@ -30,8 +30,8 @@ contract LockupVolumeRestrictionTMFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
+        updateFromRegistry(msg.sender);
         if (setupCost > 0) {
-            IERC20 polyToken = getPolyToken(msg.sender);
             require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         }
         LockupVolumeRestrictionTM lockupVolumeRestrictionTransferManager = new LockupVolumeRestrictionTM(msg.sender);

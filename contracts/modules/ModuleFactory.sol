@@ -12,6 +12,7 @@ import "../libraries/VersionUtils.sol";
  */
 contract ModuleFactory is IModuleFactory, Ownable {
 
+    IERC20 public polyToken;
     uint256 public usageCost;
     uint256 public monthlySubscriptionCost;
 
@@ -163,12 +164,8 @@ contract ModuleFactory is IModuleFactory, Ownable {
         return name;
     }
 
-    /**
-    * @notice Get the PolyToken
-    * @param _securityToken Address of the security token
-    */
-    function getPolyToken(address _securityToken) public view returns (IERC20) {
-        return IERC20(RegistryUpdater(_securityToken).polyToken());
+    function updateFromRegistry(address _securityToken) internal {
+        polyToken = IERC20(RegistryUpdater(_securityToken).polyToken());
     }
 
 }

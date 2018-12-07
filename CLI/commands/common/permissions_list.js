@@ -94,12 +94,28 @@ function getPermissionList() {
             setTransferLimitInPercentageMulti: "ADMIN",
             removeTransferLimitInTokensMulti: "ADMIN",
             removeTransferLimitInPercentageMulti: "ADMIN"
+        },
+        BlacklistTransferManager: {
+            addBlacklistType: "ADMIN",
+            addBlacklistTypeMulti: "ADMIN",
+            modifyBlacklistType: "ADMIN",
+            modifyBlacklistTypeMulti: "ADMIN",
+            deleteBlacklistType: "ADMIN",
+            deleteBlacklistTypeMulti: "ADMIN",
+            addInvestorToBlacklist: "ADMIN",
+            addInvestorToBlacklistMulti: "ADMIN",
+            addMultiInvestorToBlacklistMulti: "ADMIN",
+            addInvestorToNewBlacklist: "ADMIN",
+            deleteInvestorFromAllBlacklist: "ADMIN",
+            deleteInvestorFromAllBlacklistMulti: "ADMIN",
+            deleteInvestorFromBlacklist: "ADMIN",
+            deleteMultiInvestorsFromBlacklistMulti: "ADMIN",
         }
     }
 }
 
 module.exports = {
-    verifyPermission: function(contractName, functionName) {
+    verifyPermission: function (contractName, functionName) {
         let list = getPermissionList();
         try {
             return list[contractName][functionName]

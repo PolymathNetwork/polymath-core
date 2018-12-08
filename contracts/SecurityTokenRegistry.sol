@@ -191,6 +191,13 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         _updateFromRegistry();
     }
 
+    /**
+     * @notice Used to update the polyToken contract address
+     */
+    function updateFromRegistry() external OnlyOwner {
+        _updateFromRegistry();
+    }
+
     function _updateFromRegistry() internal {
         address polymathRegistry = getAddress(POLYMATHREGISTRY);
         set(POLYTOKEN, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"));

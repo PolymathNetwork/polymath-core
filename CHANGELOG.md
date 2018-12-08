@@ -12,11 +12,12 @@ All notable changes to this project will be documented in this file.
 * Fixed `addModule` function to be backwards compatible and call the new `addModuleWithLabel` function with an empty label. 
 * Fixed event `ModuleAdded` to also emit `_label`.    
 * Fixed function `getModule` to also return the respective module label.
+* Replaced `updatePolyTokenAddress()` function with `updateFromRegistry()` in `SecurityTokenRegistry`.  
 
 ## Removed
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.
 * Removed `_polyToken` parameter from `initialize` function in `SecurityTokenRegistry`.
-* Removed  `updatePolyTokenAddress` function in `SecurityTokenRegistry`.   
+ 
 
 # v1.5.0 - Release Candidate
 

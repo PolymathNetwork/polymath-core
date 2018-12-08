@@ -17,6 +17,7 @@ const PERCENTAGE_WHITELIST_DATA_CSV = './CLI/data/Transfer/PercentageTM/whitelis
 let tokenSymbol;
 let securityToken;
 let securityTokenRegistry;
+let moduleRegistry;
 let currentTransferManager;
 
 async function executeApp() {
@@ -232,14 +233,12 @@ async function configExistingModules(tmModules) {
 }
 
 async function addTransferManagerModule() {
-  let options = [
-    'GeneralTransferManager',
-    'ManualApprovalTransferManager',
-    'CountTransferManager',
-    'PercentageTransferManager',
-    //'SingleTradeVolumeRestrictionTM',
-    //'LookupVolumeRestrictionTM'*/
-  ];
+  let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.TRANSFER, securityToken.options.address).call();
+  let options = await Promise.all(availableModules.map(async function (m) {
+    let moduleFactoryABI = abis.moduleFactory();
+    let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
+    return web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+  }));
 
   let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
@@ -1135,6 +1134,11 @@ async function setup() {
     let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
+
+    let moduleRegistryAddress = await contracts.moduleRegistry();
+    let moduleRegistryABI = abis.moduleRegistry();
+    moduleRegistry = new web3.eth.Contract(moduleRegistryABI, moduleRegistryAddress);
+    moduleRegistry.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m', "There was a problem getting the contracts. Make sure they are deployed to the selected network.");

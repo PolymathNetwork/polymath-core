@@ -60,9 +60,7 @@ function getPermissionList() {
         },
         ManualApprovalTransferManager: {
             addManualApproval: "TRANSFER_APPROVAL",
-            addManualBlocking: "TRANSFER_APPROVAL",
             revokeManualApproval: "TRANSFER_APPROVAL",
-            revokeManualBlocking: "TRANSFER_APPROVAL"
         },
         PercentageTransferManager: {
             modifyWhitelist: "WHITELIST",
@@ -99,7 +97,7 @@ function getPermissionList() {
 }
 
 module.exports = {
-    verifyPermission: function(contractName, functionName) {
+    verifyPermission: function (contractName, functionName) {
         let list = getPermissionList();
         try {
             return list[contractName][functionName]

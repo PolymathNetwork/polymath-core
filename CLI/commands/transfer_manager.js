@@ -569,8 +569,11 @@ async function modifyWhitelistInBatch() {
 async function manualApprovalTransferManager() {
   console.log(chalk.blue(`Manual Approval Transfer Manager at ${currentTransferManager.options.address} `), '\n');
 
-  let options = ['Check manual approval', 'Add manual approval', 'Revoke manual approval',
-    'Check manual blocking', 'Add manual blocking', 'Revoke manual blocking'];
+  let options = [
+    'Check manual approval',
+    'Add manual approval',
+    'Revoke manual approval'
+  ];
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
   let optionSelected = options[index];
@@ -648,74 +651,6 @@ async function manualApprovalTransferManager() {
         console.log(chalk.red(`Manual approval from ${from} to ${to} does not exist.`));
       }
       break;
-    case 'Check manual blocking':
-      from = readlineSync.question('Enter the address from which transfers would be blocked: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      to = readlineSync.question('Enter the address to which transfers would be blocked: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      console.log();
-      let manualBlocking = await getManualBlocking(from, to);
-      if (manualBlocking) {
-        console.log(`Manual blocking found!`);
-        console.log(`Expiry time: ${moment.unix(manualBlocking).format('MMMM Do YYYY, HH:mm:ss')}; `)
-      } else {
-        console.log(chalk.yellow(`There are no manual blockings from ${from} to ${to}.`));
-      }
-      break;
-    case 'Add manual blocking':
-      from = readlineSync.question('Enter the address from which transfers will be blocked: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      to = readlineSync.question('Enter the address to which transfers will be blocked: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      if (!await getManualBlocking(from, to)) {
-        let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
-        let expiryTime = readlineSync.questionInt(`Enter the time(Unix Epoch time) until which the transfer is blocked(1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
-        let addManualBlockingAction = currentTransferManager.methods.addManualBlocking(from, to, expiryTime);
-        let addManualBlockingReceipt = await common.sendTransaction(addManualBlockingAction);
-        let addManualBlockingEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addManualBlockingReceipt.logs, 'AddManualBlocking');
-        console.log(chalk.green(`Manual blocking has been added successfully!`));
-      } else {
-        console.log(chalk.red(`A manual blocking already exists from ${from} to ${to}.Revoke it first if you want to add a new one.`));
-      }
-      break;
-    case 'Revoke manual blocking':
-      from = readlineSync.question('Enter the address from which transfers were blocked: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      to = readlineSync.question('Enter the address to which transfers were blocked: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      if (await getManualBlocking(from, to)) {
-        let revokeManualBlockingAction = currentTransferManager.methods.revokeManualBlocking(from, to);
-        let revokeManualBlockingReceipt = await common.sendTransaction(revokeManualBlockingAction);
-        let revokeManualBlockingEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, revokeManualBlockingReceipt.logs, 'RevokeManualBlocking');
-        console.log(chalk.green(`Manual blocking has been revoked successfully!`));
-      } else {
-        console.log(chalk.red(`Manual blocking from ${from} to ${to} does not exist.`));
-      }
-      break;
   }
 }
 
@@ -725,17 +660,6 @@ async function getManualApproval(_from, _to) {
   let manualApproval = await currentTransferManager.methods.manualApprovals(_from, _to).call();
   if (manualApproval.expiryTime !== "0") {
     result = manualApproval;
-  }
-
-  return result;
-}
-
-async function getManualBlocking(_from, _to) {
-  let result = null;
-
-  let manualBlocking = await currentTransferManager.methods.manualBlockings(_from, _to).call();
-  if (manualBlocking !== "0") {
-    result = manualBlocking;
   }
 
   return result;

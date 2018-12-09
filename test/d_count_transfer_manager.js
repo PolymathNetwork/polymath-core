@@ -39,7 +39,9 @@ contract("CountTransferManager", accounts => {
     let I_CountTransferManagerFactory;
     let I_GeneralPermissionManager;
     let I_CountTransferManager;
+    let I_CountTransferManager2;
     let I_GeneralTransferManager;
+    let I_GeneralTransferManager2;
     let I_ExchangeTransferManager;
     let I_ModuleRegistry;
     let I_ModuleRegistryProxy;
@@ -49,12 +51,14 @@ contract("CountTransferManager", accounts => {
     let I_SecurityTokenRegistry;
     let I_STFactory;
     let I_SecurityToken;
+    let I_SecurityToken2;
     let I_PolyToken;
     let I_PolymathRegistry;
 
     // SecurityToken Details
     const name = "Team";
     const symbol = "sap";
+    const symbol2 = "sapp";
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
     const contact = "team@polymath.network";
@@ -81,6 +85,7 @@ contract("CountTransferManager", accounts => {
         account_investor1 = accounts[7];
         account_investor2 = accounts[8];
         account_investor3 = accounts[9];
+        account_investor4 = accounts[6];
 
         // Step 1: Deploy the genral PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
@@ -347,6 +352,108 @@ contract("CountTransferManager", accounts => {
             let perm = await I_CountTransferManager.getPermissions.call();
             assert.equal(perm.length, 1);
         });
+        describe("Test cases for adding and removing acc holder at the same time", async () => {	
+            it("deploy a new token & auto attach modules", async () => {	
+                	
+                //register ticker and deploy token	
+                await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });	
+                let tx = await I_STRProxied.registerTicker(token_owner, symbol2, contact, { from: token_owner });	
+                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });	
+                let _blockNo = latestBlock();	
+                let tx2 = await I_STRProxied.generateSecurityToken(name, symbol2, tokenDetails, false, { from: token_owner });	
+           	
+                I_SecurityToken2 = SecurityToken.at(tx2.logs[1].args._securityTokenAddress);	
+                 let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];	
+                I_GeneralTransferManager2 = GeneralTransferManager.at(moduleData);	
+            });	
+             it("add 3 holders to the token", async () => {	
+                                await I_GeneralTransferManager2.modifyWhitelist(	
+                    account_investor1,	
+                    latestTime(),	
+                    latestTime(),	
+                    latestTime() + duration.days(10),	
+                    true,	
+                    {	
+                        from: account_issuer,	
+                        gas: 500000	
+                    }	
+                );	
+                 await I_GeneralTransferManager2.modifyWhitelist(	
+                    account_investor2,	
+                    latestTime(),	
+                    latestTime(),	
+                    latestTime() + duration.days(10),	
+                    true,	
+                    {	
+                        from: account_issuer,	
+                        gas: 500000	
+                    }	
+                );	
+                 await I_GeneralTransferManager2.modifyWhitelist(	
+                    account_investor3,	
+                    latestTime(),	
+                    latestTime(),	
+                    latestTime() + duration.days(10),	
+                    true,	
+                    {	
+                        from: account_issuer,	
+                        gas: 500000	
+                    }	
+                );	
+         	
+                await I_GeneralTransferManager2.modifyWhitelist(	
+                    account_investor4,	
+                    latestTime(),	
+                    latestTime(),	
+                    latestTime() + duration.days(10),	
+                    true,	
+                    {	
+                        from: account_issuer,	
+                        gas: 500000	
+                    }	
+                );	
+              	
+                // Jump time	
+                await increaseTime(5000);	
+                 // Add 3 holders to the token	
+                await I_SecurityToken2.mint(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });	
+                await I_SecurityToken2.mint(account_investor2, web3.utils.toWei("1", "ether"), { from: token_owner });	
+                await I_SecurityToken2.mint(account_investor3, web3.utils.toWei("1", "ether"), { from: token_owner });	
+                assert.equal((await I_SecurityToken2.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));	
+            });	
+             it("Should intialize the auto attached modules", async () => {	
+                let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];	
+                I_GeneralTransferManager2 = GeneralTransferManager.at(moduleData);	
+            });	
+             it("Should successfully attach the CountTransferManager factory with the security token", async () => {	
+                await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);	
+                await catchRevert(	
+                    I_SecurityToken2.addModule(P_CountTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, {	
+                        from: token_owner	
+                    })	
+                );	
+            });	
+             it("Should successfully attach the CountTransferManager with the security token and set max holder to 2", async () => {	
+                const tx = await I_SecurityToken2.addModule(I_CountTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });	
+                assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");	
+                assert.equal(	
+                    web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),	
+                    "CountTransferManager",	
+                    "CountTransferManager module was not added"	
+                );	
+                I_CountTransferManager2 = CountTransferManager.at(tx.logs[2].args._module);	
+                await I_CountTransferManager2.changeHolderCount(2, {from: token_owner});	
+                console.log('current max holder number is '+ await I_CountTransferManager2.maxHolderCount({from: token_owner}));	
+            });	
+             it("Should allow add a new token holder while transfer all the tokens at one go", async () => {	
+                let amount = (await I_SecurityToken2.balanceOf(account_investor2)).toNumber();	
+                let investorCount =  await  I_SecurityToken2.getInvestorCount({from: account_investor2 });	
+                console.log("current investor count is " + investorCount);	
+                await I_SecurityToken2.transfer(account_investor4, amount, { from: account_investor2 });	
+                assert((await I_SecurityToken2.balanceOf(account_investor4)).toNumber(), amount, {from: account_investor2 });	
+                assert(await I_SecurityToken2.getInvestorCount({from: account_investor2 }), investorCount);	
+            });	
+        });	
 
         describe("Test cases for the factory", async () => {
             it("should get the exact details of the factory", async () => {

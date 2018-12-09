@@ -194,7 +194,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     /**
      * @notice Used to update the polyToken contract address
      */
-    function updateFromRegistry() external OnlyOwner {
+    function updateFromRegistry() external onlyOwner {
         _updateFromRegistry();
     }
 

@@ -934,8 +934,10 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         if (_diffDays >= _rollingPeriodInDays) {
             // If the difference of days is greater than the rollingPeriod then sumOfLastPeriod will always be zero
             sumOfLastPeriod = 0;
+            counter = counter.add(_diffDays);
         } else {
             for (i = 0; i < _diffDays; i++) {
+            counter++;
             // This condition is to check whether the first rolling period is covered or not
             // if not then it continues and adding 0 value into sumOfLastPeriod without subtracting
             // the earlier value at that index
@@ -948,8 +950,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             // Adding the last amount that is transacted on the `_fromTime` not actually doing it but left written to understand
             // the alogrithm
             //_bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.add(uint256(0));
-            // Storing all those timestamps whose total transacted value is 0
-            counter++;
             }
         }
         // calculating the timestamp that will used as an index of the next bucket

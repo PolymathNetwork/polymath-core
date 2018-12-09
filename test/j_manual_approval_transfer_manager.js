@@ -328,6 +328,7 @@ contract("ManualApprovalTransferManager", accounts => {
                     "",
                     web3.utils.toWei("2", "ether"),
                     latestTime() + duration.days(1),
+                    "DESCRIPTION",
                     { from: token_owner }
                 )
             );
@@ -340,20 +341,58 @@ contract("ManualApprovalTransferManager", accounts => {
                     account_investor4,
                     web3.utils.toWei("2", "ether"),
                     99999,
+                    "DESCRIPTION",
                     { from: token_owner }
                 )
             );
         });
 
-        it("Add a manual approval for a 4th investor", async () => {
+        it("Add a manual approval for a 4th investor & return correct length", async () => {
             await I_ManualApprovalTransferManager.addManualApproval(
                 account_investor1,
                 account_investor4,
                 web3.utils.toWei("2", "ether"),
                 latestTime() + duration.days(1),
+                "DESCRIPTION",
+                { from: token_owner }
+            );
+
+            assert(await I_ManualApprovalTransferManager.getActiveApprovalsLength({ from: token_owner }), 1);
+        });
+
+        it("Should update the manual approval expiry time for 4th investor", async () => {
+            await I_ManualApprovalTransferManager.updateManualApproval(
+                account_investor1,
+                account_investor4,
+                latestTime() + duration.days(2),
                 { from: token_owner }
             );
         });
+
+        it("Add multiple manual approvals", async () => {
+            await I_ManualApprovalTransferManager.addManualApprovalMulti(
+                [account_investor2,account_investor3],
+                [account_investor3,account_investor4],
+                [web3.utils.toWei("2", "ether"), web3.utils.toWei("2", "ether")],
+                [latestTime() + duration.days(1),latestTime() + duration.days(1)],
+                ["DESCRIPTION", "DESCRIPTION"],
+                { from: token_owner }
+            );
+
+            assert(await I_ManualApprovalTransferManager.getActiveApprovalsLength({ from: token_owner }), 3);
+        });
+
+        it("Revoke multiple manual approvals", async () => {
+            await I_ManualApprovalTransferManager.revokeManualApprovalMulti(
+                [account_investor2,account_investor3],
+                [account_investor3,account_investor4],
+                { from: token_owner }
+            );
+
+            assert(await I_ManualApprovalTransferManager.getActiveApprovalsLength({ from: token_owner }), 1);
+        });
+
+
 
         it("Add a manual approval for a 5th investor from issuance", async () => {
             await I_ManualApprovalTransferManager.addManualApproval(
@@ -361,6 +400,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 account_investor5,
                 web3.utils.toWei("2", "ether"),
                 latestTime() + duration.days(1),
+                "DESCRIPTION",
                 { from: token_owner }
             );
         });
@@ -372,6 +412,7 @@ contract("ManualApprovalTransferManager", accounts => {
                     account_investor4,
                     web3.utils.toWei("2", "ether"),
                     latestTime() + duration.days(5),
+                    "DESCRIPTION",
                     { from: token_owner }
                 )
             );
@@ -393,6 +434,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 account_investor4,
                 web3.utils.toWei("2", "ether"),
                 latestTime() + duration.days(1),
+                "DESCRIPTION",
                 { from: token_owner }
             );
         });

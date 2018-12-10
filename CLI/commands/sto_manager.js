@@ -295,60 +295,65 @@ function fundingConfigUSDTieredSTO() {
 }
 
 async function addressesConfigUSDTieredSTO(usdTokenRaise) {
-  let addresses = {};
 
-  addresses.wallet = readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer.address + '): ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address",
-    defaultInput: Issuer.address
-  });
-  if (addresses.wallet == "") addresses.wallet = Issuer.address;
+  let addresses, menu;
 
-  addresses.reserveWallet = readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer.address + '): ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address",
-    defaultInput: Issuer.address
-  });
-  if (addresses.reserveWallet == "") addresses.reserveWallet = Issuer.address;
+  do {
 
-  let listOfAddress;
+    addresses = {};
 
-  if (usdTokenRaise) {
-    addresses.usdToken = readlineSync.question('Enter the address (or many addresses that you want separated by comma) of the USD Token or stable coin (' + usdToken.options.address + '): ', {
+    addresses.wallet = readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer.address + '): ', {
       limit: function (input) {
-        listOfAddress = input.split(',');
-        let response = true
-        listOfAddress.forEach((addr) => {
-          if (!web3.utils.isAddress(addr)) {
-            response = false
-          }
-        })
-        return response
+        return web3.utils.isAddress(input);
       },
       limitMessage: "Must be a valid address",
-      defaultInput: usdToken.options.address
+      defaultInput: Issuer.address
     });
-    if (addresses.usdToken == "") {
-      listOfAddress = [usdToken.options.address]
-      addresses.usdToken = [usdToken.options.address];
+    if (addresses.wallet == "") addresses.wallet = Issuer.address;
+  
+    addresses.reserveWallet = readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer.address + '): ', {
+      limit: function (input) {
+        return web3.utils.isAddress(input);
+      },
+      limitMessage: "Must be a valid address",
+      defaultInput: Issuer.address
+    });
+    if (addresses.reserveWallet == "") addresses.reserveWallet = Issuer.address;
+  
+    let listOfAddress;
+  
+    if (usdTokenRaise) {
+      addresses.usdToken = readlineSync.question('Enter the address (or many addresses that you want separated by comma) of the USD Token or stable coin (' + usdToken.options.address + '): ', {
+        limit: function (input) {
+          listOfAddress = input.split(',');
+          return listOfAddress.every((addr) => {
+            return web3.utils.isAddress(addr)
+          })
+        },
+        limitMessage: "Must be a valid address",
+        defaultInput: usdToken.options.address
+      });
+      if (addresses.usdToken == "") {
+        listOfAddress = [usdToken.options.address]
+        addresses.usdToken = [usdToken.options.address];
+      }
+    } else {
+      listOfAddress = ['0x0000000000000000000000000000000000000000']
+      addresses.usdToken = ['0x0000000000000000000000000000000000000000'];
     }
-  } else {
-    listOfAddress = ['0x0000000000000000000000000000000000000000']
-    addresses.usdToken = ['0x0000000000000000000000000000000000000000'];
-  }
+  
+    if (!await processArray(listOfAddress)) {
+      console.log(chalk.yellow(`\nPlease, verify your stable coins addresses to continue with this process.\n`))
+      menu = true;
+    } else {
+      menu = false;
+    }
+  
+    if (typeof addresses.usdToken === 'string') {
+      addresses.usdToken = addresses.usdToken.split(",")
+    }
 
-  if (!await processArray(listOfAddress)) {
-    console.log(`Please, verify your stable coins addresses to continue with this process.`)
-    process.exit(0)
-  }
-
-  if (typeof addresses.usdToken === 'string') {
-    addresses.usdToken = addresses.usdToken.split(",")
-  }
+  } while (menu);
 
   return addresses;
 }

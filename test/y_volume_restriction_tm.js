@@ -1433,7 +1433,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let rollingPeriod = (await I_VolumeRestrictionTM.defaultRestriction.call())[2].toNumber();
             //sell tokens upto the limit
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("2"), {from: account_investor3});
-            tempArray3[tempArray3.length -1] += 2;
+            tempArray3.push(2);
 
             let data = await I_VolumeRestrictionTM.getDefaultBucketDetailsToUser.call(account_investor3);
             await print(data, account_investor3);
@@ -1445,8 +1445,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             // Verify the storage changes
             assert.equal(data[0].toNumber(), startTime + duration.days(data[2].toNumber()));
             assert.equal(data[1].dividedBy(new BigNumber(10).pow(18)).toNumber(), await calculateSum(rollingPeriod, tempArray3));
-            assert.equal(data[2].toNumber(), 5);
-            assert.equal(data[3].toNumber(), startTimedaily);
+            assert.equal(data[2].toNumber(), 6);
+            assert.equal(data[3].toNumber(), startTimedaily + duration.days(1));
             assert.equal(amt, 2);
         });
     })

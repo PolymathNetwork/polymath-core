@@ -90,18 +90,24 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
 
     function _depositTokens(uint256 _numberOfTokens) internal {
         require(_numberOfTokens > 0, "Should be > 0");
-        ISecurityToken(securityToken).transferFrom(msg.sender, address(this), _numberOfTokens);
+        require(
+            ISecurityToken(securityToken).transferFrom(msg.sender, address(this), _numberOfTokens),
+            "Failed transferFrom due to insufficent Allowance provided"
+        );
         unassignedTokens = unassignedTokens.add(_numberOfTokens);
         emit DepositTokens(_numberOfTokens, msg.sender);
     }
 
     /**
      * @notice Sends unassigned tokens to treasury
+     * @param _amount amount of tokens that should be send
      */
-    function sendToTreasury() external withPerm(ADMIN) {
+    function sendToTreasury(uint256 _amount) external withPerm(ADMIN) {
+        require(_amount > 0, "Amount cannot be zero");
+        require(_amount <= unassignedTokens, "Amount is greater than unassigned tokens");
         uint256 amount = unassignedTokens;
         unassignedTokens = 0;
-        ISecurityToken(securityToken).transfer(treasuryWallet, amount);
+        require(ISecurityToken(securityToken).transfer(treasuryWallet, amount), "Transfer failed");
         emit SendToTreasury(amount, msg.sender);
     }
 
@@ -136,7 +142,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
         require(!_isTemplateExists(_name), "Already exists");
         _validateTemplate(_numberOfTokens, _duration, _frequency);
         templateNames.push(_name);
-        templates[_name] = Template(_numberOfTokens, _duration, _frequency);
+        templates[_name] = Template(_numberOfTokens, _duration, _frequency, templateNames.length - 1);
         emit AddTemplate(_name, _numberOfTokens, _duration, _frequency);
     }
 
@@ -147,18 +153,16 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     function removeTemplate(bytes32 _name) external withPerm(ADMIN) {
         require(_isTemplateExists(_name), "Template not found");
         require(templateToUsers[_name].length == 0, "Template is used");
-        // delete template data
-        delete templates[_name];
-        uint256 i;
-        for (i = 0; i < templateNames.length; i++) {
-            if (_name == templateNames[i]) {
-                break;
-            }
-        }
-        if (i != templateNames.length - 1) {
-            templateNames[i] = templateNames[templateNames.length - 1];
+        uint256 index = templates[_name].index;
+        if (index != templateNames.length - 1) {
+            templateNames[index] = templateNames[templateNames.length - 1];
         }
         templateNames.length--;
+        if (index != templateNames.length) {
+            templates[templateNames[index]].index = index;
+        }
+        // delete template data
+        delete templates[_name];
         emit RemoveTemplate(_name);
     }
 
@@ -538,7 +542,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
         uint256 amount = _getAvailableTokens(_beneficiary, _index);
         if (amount > 0) {
             schedules[_beneficiary][_index].claimedTokens = schedules[_beneficiary][_index].claimedTokens.add(amount);
-            ISecurityToken(securityToken).transfer(_beneficiary, amount);
+            require(ISecurityToken(securityToken).transfer(_beneficiary, amount), "Transfer failed");
             emit SendTokens(_beneficiary, amount);
         }
     }

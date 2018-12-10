@@ -21,6 +21,8 @@ contract VestingEscrowWalletStorage {
         uint256 duration;
         // Schedule frequency (It is a cliff time period)
         uint256 frequency;
+        // Index of the template in an array template names
+        uint256 index;
     }
 
     // Number of tokens that are hold by the `this` contract but are unassigned to any schedule

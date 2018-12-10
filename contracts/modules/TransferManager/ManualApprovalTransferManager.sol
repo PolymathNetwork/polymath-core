@@ -320,6 +320,7 @@ contract ManualApprovalTransferManager is ITransferManager {
                 counter ++;
             } 
         }
+        return indexes;
     }
 
     /**

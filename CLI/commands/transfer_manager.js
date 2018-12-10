@@ -17,6 +17,7 @@ const PERCENTAGE_WHITELIST_DATA_CSV = './CLI/data/Transfer/PercentageTM/whitelis
 let tokenSymbol;
 let securityToken;
 let securityTokenRegistry;
+let moduleRegistry;
 let currentTransferManager;
 
 async function executeApp() {
@@ -48,6 +49,8 @@ async function executeApp() {
     console.log('Selected:', optionSelected, '\n');
     switch (optionSelected) {
       case 'Verify transfer':
+        let verifyTotalSupply = web3.utils.fromWei(await securityToken.methods.totalSupply().call());
+        await logTotalInvestors();
         let verifyTransferFrom = readlineSync.question(`Enter the sender account (${Issuer.address}): `, {
           limit: function (input) {
             return web3.utils.isAddress(input);
@@ -55,16 +58,14 @@ async function executeApp() {
           limitMessage: "Must be a valid address",
           defaultInput: Issuer.address
         });
-        let verifyFromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(verifyTransferFrom).call());
-        console.log(chalk.yellow(`Balance of ${verifyTransferFrom}: ${verifyFromBalance} ${tokenSymbol}`));
+        await logBalance(verifyTransferFrom, verifyTotalSupply);
         let verifyTransferTo = readlineSync.question('Enter the receiver account: ', {
           limit: function (input) {
             return web3.utils.isAddress(input);
           },
           limitMessage: "Must be a valid address",
         });
-        let verifyToBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(verifyTransferTo).call());
-        console.log(chalk.yellow(`Balance of ${verifyTransferTo}: ${verifyToBalance} ${tokenSymbol}`));
+        await logBalance(verifyTransferTo, verifyTotalSupply);
         let verifyTransferAmount = readlineSync.question('Enter amount of tokens to verify: ');
         let isVerified = await securityToken.methods.verifyTransfer(verifyTransferFrom, verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
         if (isVerified) {
@@ -74,16 +75,16 @@ async function executeApp() {
         }
         break;
       case 'Transfer':
-        let fromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(Issuer.address).call());
-        console.log(chalk.yellow(`Balance of ${Issuer.address}: ${fromBalance} ${tokenSymbol}`));
+        let totalSupply = web3.utils.fromWei(await securityToken.methods.totalSupply().call());
+        await logTotalInvestors();
+        await logBalance(Issuer.address, totalSupply);
         let transferTo = readlineSync.question('Enter beneficiary of tranfer: ', {
           limit: function (input) {
             return web3.utils.isAddress(input);
           },
           limitMessage: "Must be a valid address"
         });
-        let toBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(transferTo).call());
-        console.log(chalk.yellow(`Balance of ${transferTo}: ${toBalance} ${tokenSymbol}`));
+        await logBalance(transferTo, totalSupply);
         let transferAmount = readlineSync.question('Enter amount of tokens to transfer: ');
         let isTranferVerified = await securityToken.methods.verifyTransfer(Issuer.address, transferTo, web3.utils.toWei(transferAmount), web3.utils.fromAscii("")).call();
         if (isTranferVerified) {
@@ -91,8 +92,9 @@ async function executeApp() {
           let receipt = await common.sendTransaction(transferAction);
           let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
           console.log(chalk.green(`${event.from} transferred ${web3.utils.fromWei(event.value)} ${tokenSymbol} to ${event.to} successfully!`));
-          console.log(`Balance of ${Issuer.address} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(Issuer.address).call())} ${tokenSymbol}`);
-          console.log(`Balance of ${transferTo} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(transferTo).call())} ${tokenSymbol}`);
+          await logTotalInvestors();
+          await logBalance(Issuer.address, totalSupply);
+          await logBalance(transferTo, totalSupply);
         } else {
           console.log(chalk.red(`Transfer failed at verification. Please review the transfer restrictions.`));
         }
@@ -231,14 +233,12 @@ async function configExistingModules(tmModules) {
 }
 
 async function addTransferManagerModule() {
-  let options = [
-    'GeneralTransferManager',
-    'ManualApprovalTransferManager',
-    'CountTransferManager',
-    'PercentageTransferManager',
-    //'SingleTradeVolumeRestrictionTM',
-    //'LookupVolumeRestrictionTM'*/
-  ];
+  let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.TRANSFER, securityToken.options.address).call();
+  let options = await Promise.all(availableModules.map(async function (m) {
+    let moduleFactoryABI = abis.moduleFactory();
+    let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
+    return web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+  }));
 
   let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
@@ -1058,6 +1058,11 @@ async function setup() {
     let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
+
+    let moduleRegistryAddress = await contracts.moduleRegistry();
+    let moduleRegistryABI = abis.moduleRegistry();
+    moduleRegistry = new web3.eth.Contract(moduleRegistryABI, moduleRegistryAddress);
+    moduleRegistry.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m', "There was a problem getting the contracts. Make sure they are deployed to the selected network.");
@@ -1093,6 +1098,17 @@ async function selectToken() {
   }
 
   return result;
+}
+
+async function logTotalInvestors() {
+  let investorsCount = await securityToken.methods.getInvestorCount().call();
+  console.log(chalk.yellow(`Total investors at the moment: ${investorsCount}`));
+}
+
+async function logBalance(from, totalSupply) {
+  let fromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(from).call());
+  let percentage = totalSupply != '0' ? ` - ${parseFloat(fromBalance) / parseFloat(totalSupply) * 100}% of total supply` : '';
+  console.log(chalk.yellow(`Balance of ${from}: ${fromBalance} ${tokenSymbol}${percentage}`));
 }
 
 module.exports = {

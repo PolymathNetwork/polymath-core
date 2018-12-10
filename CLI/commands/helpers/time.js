@@ -76,6 +76,8 @@ async function increaseTimeByDuration(duration) {
     } else {
       console.log(chalk.red(`It is not possible to go back in time. Please try again with a time in the future to travel to`));
     }
+  } else {
+    console.log(chalk.red(`Time traveling is only possible over develpment network`));
   }
 }
 

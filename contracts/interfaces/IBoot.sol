@@ -2,6 +2,9 @@ pragma solidity ^0.4.24;
 
 interface IBoot {
 
-    function getInitFunction() external pure returns (bytes4);
-    
+    /**
+     * @notice This function returns the signature of configure function
+     * @return bytes4 Configure function signature
+     */
+    function getInitFunction() external pure returns(bytes4);
 }

@@ -29,7 +29,7 @@ async function executeApp(_ticker, _transferOwnership, _name, _details, _divisib
   try {
     await step_ticker_registration(_ticker);
     if (!tokenLaunched) {
-      await step_transfer_ticker_ownership(_transferOwnership); 
+      await step_transfer_ticker_ownership(_transferOwnership);
       await step_token_deploy(_name, _details, _divisible);
     }
     await tokenManager.executeApp(tokenSymbol);
@@ -39,7 +39,7 @@ async function executeApp(_ticker, _transferOwnership, _name, _details, _divisib
   }
 };
 
-async function setup(){
+async function setup() {
   try {
     securityTokenRegistryAddress = await contracts.securityTokenRegistry();
     let securityTokenRegistryABI = abis.securityTokenRegistry();
@@ -79,7 +79,7 @@ async function step_ticker_registration(_ticker) {
       available = true;
       await approvePoly(securityTokenRegistryAddress, regFee);
       let registerTickerAction = securityTokenRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "");
-      await common.sendTransaction(registerTickerAction, {factor: 1.5});
+      await common.sendTransaction(registerTickerAction, { factor: 1.5 });
     } else if (details[0] == Issuer.address) {
       // If it has registration date and its owner is Issuer
       available = true;
@@ -107,7 +107,7 @@ async function step_transfer_ticker_ownership(_transferOwnership) {
 
   if (newOwner) {
     let transferTickerOwnershipAction = securityTokenRegistry.methods.transferTickerOwnership(newOwner, tokenSymbol);
-    let receipt = await common.sendTransaction(transferTickerOwnershipAction, {factor: 1.5});
+    let receipt = await common.sendTransaction(transferTickerOwnershipAction, { factor: 1.5 });
     let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'ChangeTickerOwnership');
     console.log(chalk.green(`Ownership trasferred successfully. The new owner is ${event._newOwner}`));
     process.exit(0);
@@ -125,7 +125,7 @@ async function step_token_deploy(_name, _details, _divisible) {
     tokenName = _name;
     console.log(`Token Name: ${tokenName}`);
   } else {
-    tokenName = readlineSync.question('Enter the name for your new token: ', {defaultInput: 'default'});
+    tokenName = readlineSync.question('Enter the name for your new token: ', { defaultInput: 'default' });
   }
 
   let tokenDetails;
@@ -195,16 +195,16 @@ async function approvePoly(spender, fee) {
       await common.sendTransaction(approveAction);
     }
   } else {
-      let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);
-      console.log(chalk.red(`\n*****************************************************************************************************************************************`));
-      console.log(chalk.red(`Not enough balance to Pay the Fee, Require ${(new BigNumber(requiredBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(polyBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
-      console.log(chalk.red(`******************************************************************************************************************************************\n`));
-      process.exit(0);
+    let requiredBalance = parseInt(requiredAmount) - parseInt(polyBalance);
+    console.log(chalk.red(`\n*****************************************************************************************************************************************`));
+    console.log(chalk.red(`Not enough balance to Pay the Fee, Require ${(new BigNumber(requiredBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY but have ${(new BigNumber(polyBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY. Access POLY faucet to get the POLY to complete this txn`));
+    console.log(chalk.red(`******************************************************************************************************************************************\n`));
+    process.exit(0);
   }
 }
 
 module.exports = {
-  executeApp: async function(ticker, transferOwnership, name, details, divisible) {
+  executeApp: async function (ticker, transferOwnership, name, details, divisible) {
     return executeApp(ticker, transferOwnership, name, details, divisible);
   }
 }

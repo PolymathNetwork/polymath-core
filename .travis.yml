@@ -13,7 +13,7 @@ jobs:
     - stage: Tests and Coverage
       after_install: wget -O node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
       before_script: truffle version
-      script: npm run test
+      script: travis_wait 25 npm run test
     - stage: Docs
       env: 'TASK=docs'
       before_install: 

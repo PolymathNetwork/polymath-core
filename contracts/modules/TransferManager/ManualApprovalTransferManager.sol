@@ -316,7 +316,7 @@ contract ManualApprovalTransferManager is ITransferManager {
         counter = 0;
         for (i = 0; i < activeManualApprovals.length; i++) {
             if (activeManualApprovals[i].from == _user || activeManualApprovals[i].to == _user) {
-                indexes[counter];
+                indexes[counter] = i;
                 counter ++;
             } 
         }

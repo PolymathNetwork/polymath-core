@@ -17,7 +17,7 @@ const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.s
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
 const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
-const USDTieredSTOProxyFactory = artifacts.require("./USDTieredSTOProxyFactory");
+const USDTieredSTO = artifacts.require("./USDTieredSTO");
 const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
 const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
 const STFactory = artifacts.require("./STFactory.sol");
@@ -65,6 +65,7 @@ let I_SecurityToken;
 let I_DummySTOFactory;
 let I_PolyToken;
 let I_STFactory;
+let I_USDTieredSTOLogic;
 let I_PolymathRegistry;
 let I_SecurityTokenRegistryProxy;
 let I_STRProxied;
@@ -343,9 +344,9 @@ export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstan
 }
 
 export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
-    I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new({from: accountPolymath});
+    I_USDTieredSTOLogic = await USDTieredSTO.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
 
-    I_USDTieredSTOFactory = await USDTieredSTOFactory.new(polyToken, setupCost, 0, 0, I_USDTieredSTOProxyFactory.address, { from: accountPolymath });
+    I_USDTieredSTOFactory = await USDTieredSTOFactory.new(polyToken, setupCost, 0, 0, I_USDTieredSTOLogic.address, { from: accountPolymath });
 
     assert.notEqual(
         I_USDTieredSTOFactory.address.valueOf(),

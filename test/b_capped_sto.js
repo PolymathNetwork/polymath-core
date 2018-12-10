@@ -462,7 +462,7 @@ contract("CappedSTO", accounts => {
         it("Should fundRaised value equal to the raised value in the funds receiver wallet", async () => {
             const newBalance = await web3.eth.getBalance(account_fundsReceiver);
             //console.log("WWWW",newBalance,await I_CappedSTO.fundsRaised.call(),balanceOfReceiver);
-            let op = BigNumber(newBalance)
+            let op = new BigNumber(newBalance)
                 .minus(balanceOfReceiver)
                 .toNumber();
             assert.equal(

@@ -3,7 +3,7 @@ const constants = require('./constants');
 
 global.web3, global.Issuer, global.defaultGasPrice, global.remoteNetwork;
 
-function getGasPrice (networkId) {
+function getGasPrice(networkId) {
   let gasPrice;
   switch (networkId) {
     case 1: //Mainnet
@@ -36,7 +36,7 @@ async function httpProvider(url, file) {
 }
 
 module.exports = {
-  initialize: async function(network) {
+  initialize: async function (network) {
     remoteNetwork = network;
     if (typeof web3 === 'undefined' || typeof Issuer === 'undefined' || typeof defaultGasPrice === 'undefined') {
       if (typeof remoteNetwork !== 'undefined') {

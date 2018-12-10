@@ -73,12 +73,12 @@ workflows:
     jobs:
       - build
       - test:
-          - requires:
-              - build
+          requires:
+            - build
       - coverage:
-          - requires:
-              - test
+          requires:
+            - test
       - docs:
-          - requires:
-              - coverage
+          requires:
+            - coverage
       

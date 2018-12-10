@@ -7,11 +7,10 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run:
-        - yarn 
-        - node --version
-        - truffle version
-        - npm run test
+      - run: yarn
+      - run: node --version
+      - run: truffle version
+      - run: npm run test
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
@@ -23,9 +22,10 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: 
-        - yarn
-        - npm run docs
+      - run: yarn
+      - run: node --version
+      - run: truffle version
+      - run: npm run docs
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:

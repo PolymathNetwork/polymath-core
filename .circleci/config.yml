@@ -3,7 +3,6 @@ jobs:
   build:
     docker:
       - image: circleci/node:8
-    parallelism: 4
     steps:
       - checkout
       - restore_cache:
@@ -20,7 +19,6 @@ jobs:
   test:
     docker:
       - image: circleci/node:8
-    parallelism: 4
     steps:
       - checkout
       - restore_cache:
@@ -37,7 +35,6 @@ jobs:
   coverage:
     docker:
       - image: circleci/node:8
-    parallelism: 4
     steps:
       - checkout
       - restore_cache:
@@ -72,13 +69,6 @@ workflows:
   build-test-coverage-docs:
     jobs:
       - build
-      - test:
-          requires:
-            - build
-      - coverage:
-          requires:
-            - test
-      - docs:
-          requires:
-            - coverage
-      
+      - test
+      - coverage
+      - docs

@@ -66,6 +66,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // Amount of USD funds raised
     uint256 public fundsRaisedUSD;
 
+    // Amount of native currencies raised. 0x0 address is used for ETH.
+    mapping (address => uint256) public currencyRaised;
+
     // Amount in USD invested by each address
     mapping (address => uint256) public investorInvestedUSD;
 
@@ -447,6 +450,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         // Modify storage
         investorInvested[_beneficiary][uint8(FundRaiseType.ETH)] = investorInvested[_beneficiary][uint8(FundRaiseType.ETH)].add(spentValue);
         fundsRaised[uint8(FundRaiseType.ETH)] = fundsRaised[uint8(FundRaiseType.ETH)].add(spentValue);
+        currencyRaised[address(0)] = currencyRaised[address(0)].add(spentValue);
         // Forward ETH to issuer wallet
         wallet.transfer(spentValue);
         // Refund excess ETH to investor wallet
@@ -486,6 +490,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         // Modify storage
         investorInvested[_beneficiary][uint8(_fundRaiseType)] = investorInvested[_beneficiary][uint8(_fundRaiseType)].add(spentValue);
         fundsRaised[uint8(_fundRaiseType)] = fundsRaised[uint8(_fundRaiseType)].add(spentValue);
+        currencyRaised[address(_token)] = currencyRaised[address(_token)].add(spentValue);
         // Forward coins to issuer wallet
         require(_token.transferFrom(msg.sender, wallet, spentValue), "Transfer failed");
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, _fundRaiseType, _tokenAmount, spentValue, rate);

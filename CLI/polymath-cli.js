@@ -1,19 +1,21 @@
 #!/usr/bin/env node
 
-var faucet = require('./commands/faucet');
-var investor_portal = require('./commands/investor_portal');
-var token_manager = require('./commands/token_manager');
-var st20generator = require('./commands/ST20Generator');
-var sto_manager = require('./commands/sto_manager');
-var transfer = require('./commands/transfer');
-var transfer_ownership = require('./commands/transfer_ownership');
-var dividends_manager = require('./commands/dividends_manager');
-var transfer_manager = require('./commands/transfer_manager');
-var contract_manager = require('./commands/contract_manager');
-var strMigrator = require('./commands/strMigrator');
-var permission_manager = require('./commands/permission_manager');
-var program = require('commander');
-var gbl = require('./commands/common/global');
+const faucet = require('./commands/faucet');
+const investor_portal = require('./commands/investor_portal');
+const token_manager = require('./commands/token_manager');
+const st20generator = require('./commands/ST20Generator');
+const sto_manager = require('./commands/sto_manager');
+const transfer = require('./commands/transfer');
+const transfer_ownership = require('./commands/transfer_ownership');
+const dividends_manager = require('./commands/dividends_manager');
+const transfer_manager = require('./commands/transfer_manager');
+const contract_manager = require('./commands/contract_manager');
+const strMigrator = require('./commands/strMigrator');
+const permission_manager = require('./commands/permission_manager');
+const time = require('./commands/helpers/time')
+const gbl = require('./commands/common/global');
+const program = require('commander');
+const moment = require('moment');
 const yaml = require('js-yaml');
 const fs = require('fs');
 
@@ -149,6 +151,24 @@ program
   .action(async function () {
     await gbl.initialize(program.remoteNode);
     await permission_manager.executeApp();
+  });
+
+program
+  .command('time_travel')
+  .alias('tt')
+  .option('-p, --period <seconds>', 'Period of time in seconds to increase')
+  .option('-d, --toDate <date>', 'Human readable date ("MM/DD/YY [HH:mm:ss]") to travel to')
+  .option('-e, --toEpochTime <epochTime>', 'Unix Epoch time to travel to')
+  .description('Increases time on EVM according to given value.')
+  .action(async function (cmd) {
+    await gbl.initialize(program.remoteNode);
+    if (cmd.period) {
+      await time.increaseTimeByDuration(parseInt(cmd.period));
+    } else if (cmd.toDate) {
+      await time.increaseTimeToDate(cmd.toDate);
+    } else if (cmd.toEpochTime) {
+      await time.increaseTimeToEpochDate(cmd.toEpochTime);
+    }
   });
 
 program.parse(process.argv);

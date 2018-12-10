@@ -16,7 +16,7 @@ contract CountTransferManagerFactory is ModuleFactory {
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-        version = "1.0.0";
+        version = "2.1.0";
         name = "CountTransferManager";
         title = "Count Transfer Manager";
         description = "Restrict the number of investors";

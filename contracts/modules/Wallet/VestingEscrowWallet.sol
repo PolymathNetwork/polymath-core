@@ -156,11 +156,9 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
         uint256 index = templates[_name].index;
         if (index != templateNames.length - 1) {
             templateNames[index] = templateNames[templateNames.length - 1];
-        }
-        templateNames.length--;
-        if (index != templateNames.length) {
             templates[templateNames[index]].index = index;
         }
+        templateNames.length--;
         // delete template data
         delete templates[_name];
         emit RemoveTemplate(_name);

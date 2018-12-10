@@ -36,9 +36,9 @@ contract VolumeRestrictionTMStorage {
     // Storing _from => day's timestamp => total amount transact in a day --individual
     mapping(address => mapping(uint256 => uint256)) internal bucket;
     // Storing the information that used to validate the transaction
-    mapping(address => BucketDetails) internal bucketToUser;
+    mapping(address => BucketDetails) internal userToBucket;
     // Storing the information related to default restriction
-    mapping(address => BucketDetails) internal defaultBucketToUser;
+    mapping(address => BucketDetails) internal defaultUserToBucket;
     // List of wallets that are exempted from all the restrictions applied by the this contract
     mapping(address => bool) public exemptList;
 

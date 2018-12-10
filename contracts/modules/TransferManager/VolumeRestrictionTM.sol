@@ -440,9 +440,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         require(_holder != address(0), "Invalid address");
         require(individualRestriction[_holder].endTime != 0, "Not present");
         individualRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        bucketToUser[_holder].lastTradedDayTime = 0;
-        bucketToUser[_holder].sumOfLastPeriod = 0;
-        bucketToUser[_holder].daysCovered = 0;
+        userToBucket[_holder].lastTradedDayTime = 0;
+        userToBucket[_holder].sumOfLastPeriod = 0;
+        userToBucket[_holder].daysCovered = 0;
         emit IndividualRestrictionRemoved(_holder);
     }
 
@@ -469,7 +469,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         require(_holder != address(0), "Invalid address");
         require(individualDailyRestriction[_holder].endTime != 0, "Not present");
         individualDailyRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        bucketToUser[_holder].dailyLastTradedDayTime = 0;
+        userToBucket[_holder].dailyLastTradedDayTime = 0;
         emit IndividualDailyRestrictionRemoved(_holder);
     }
 
@@ -612,7 +612,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         }
         _checkInputParams(_allowedTokens, startTime, 1, _endTime, _restrictionType);
         // Initializing the value with 0 to allow the trade with new startTime of the restriction
-        bucketToUser[_holder].dailyLastTradedDayTime = 0;
+        userToBucket[_holder].dailyLastTradedDayTime = 0;
         individualDailyRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
             startTime,
@@ -787,7 +787,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     */
     function _defaultRestrictionCheck(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {   
         // using the variable to avoid stack too deep error
-        BucketDetails memory bucketDetails = defaultBucketToUser[_from];
+        BucketDetails memory bucketDetails = defaultUserToBucket[_from];
         uint256 daysCovered = defaultRestriction.rollingPeriodInDays;
         uint256 fromTimestamp = 0;
         uint256 sumOfLastPeriod = 0;
@@ -840,7 +840,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      */
     function _individualRestrictionCheck(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {   
         // using the variable to avoid stack too deep error
-        BucketDetails memory bucketDetails = bucketToUser[_from];
+        BucketDetails memory bucketDetails = userToBucket[_from];
         VolumeRestriction memory dailyRestriction = individualDailyRestriction[_from];
         VolumeRestriction memory restriction = individualRestriction[_from];
         uint256 daysCovered = individualRestriction[_from].rollingPeriodInDays;
@@ -992,9 +992,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     {   
         BucketDetails storage details;
         if (isDefault)
-            details = defaultBucketToUser[_from];
+            details = defaultUserToBucket[_from];
         else
-            details = bucketToUser[_from];
+            details = userToBucket[_from];
         // Cheap storage technique
         if (details.lastTradedDayTime != _lastTradedDayTime) {
             // Assigning the latest transaction timestamp of the day
@@ -1074,10 +1074,10 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      */
     function getIndividualBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256, uint256) {
         return(
-            bucketToUser[_user].lastTradedDayTime,
-            bucketToUser[_user].sumOfLastPeriod,
-            bucketToUser[_user].daysCovered,
-            bucketToUser[_user].dailyLastTradedDayTime
+            userToBucket[_user].lastTradedDayTime,
+            userToBucket[_user].sumOfLastPeriod,
+            userToBucket[_user].daysCovered,
+            userToBucket[_user].dailyLastTradedDayTime
         );
     }
 
@@ -1091,10 +1091,10 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      */
     function getDefaultBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256, uint256) {
         return(
-            defaultBucketToUser[_user].lastTradedDayTime,
-            defaultBucketToUser[_user].sumOfLastPeriod,
-            defaultBucketToUser[_user].daysCovered,
-            defaultBucketToUser[_user].dailyLastTradedDayTime
+            defaultUserToBucket[_user].lastTradedDayTime,
+            defaultUserToBucket[_user].sumOfLastPeriod,
+            defaultUserToBucket[_user].daysCovered,
+            defaultUserToBucket[_user].dailyLastTradedDayTime
         );
     }
 

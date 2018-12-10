@@ -323,7 +323,7 @@ async function addressesConfigUSDTieredSTO(usdTokenRaise) {
     let listOfAddress;
   
     if (usdTokenRaise) {
-      addresses.usdToken = readlineSync.question('Enter the address (or many addresses that you want separated by comma) of the USD Token or stable coin (' + usdToken.options.address + '): ', {
+      addresses.usdToken = readlineSync.question('Enter the address (or multiple addresses separated by commas) of the USD stable coin(s) (' + usdToken.options.address + '): ', {
         limit: function (input) {
           listOfAddress = input.split(',');
           return listOfAddress.every((addr) => {

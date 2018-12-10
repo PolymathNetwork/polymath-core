@@ -1,8 +1,26 @@
 version: 2
 jobs:
+  build:
+    docker:
+      - image: circleci/node:8
+    parallelism: 4
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn
+      - run: sudo npm i truffle -g
+      - run: node --version
+      - run: truffle version
+      - run: truffle compile
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
   test:
     docker:
       - image: circleci/node:8
+    parallelism: 4
     steps:
       - checkout
       - restore_cache:
@@ -12,6 +30,23 @@ jobs:
       - run: node --version
       - run: truffle version
       - run: npm run test
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+  coverage:
+    docker:
+      - image: circleci/node:8
+    parallelism: 4
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn
+      - run: sudo npm i truffle -g
+      - run: node --version
+      - run: truffle version
+      - run: npm run coverage
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
@@ -34,8 +69,16 @@ jobs:
             - node_modules
 workflows:
   version: 2
-  test_and_docs:
+  build-test-coverage-docs:
     jobs:
-      - test
-      - docs
+      - build
+      - test:
+          - requires:
+              - build
+      - coverage:
+          - requires:
+              - test
+      - docs:
+          - requires:
+              - coverage
       

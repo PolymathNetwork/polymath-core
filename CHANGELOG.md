@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 
 ## CappedSTO 2.0.1
 * `rate` is now accepted as multiplied by 10^18 to allow settting higher price than 1ETH/POLY per token.
+* Indivisble tokens are now supported. When trying to buy partial tokens, allowed full units of tokens will be purchased and rest of the funds will be returned.
 
 ## USDTieredSTO 2.0.1
 * Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.

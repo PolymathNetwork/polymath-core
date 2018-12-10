@@ -3,7 +3,7 @@ const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManage
 const GeneralTransferManagerLogic = artifacts.require('./GeneralTransferManager.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
-const USDTieredSTOProxyFactory = artifacts.require('./USDTieredSTOProxyFactory.sol');
+const USDTieredSTOLogic = artifacts.require('./USDTieredSTO.sol');
 const CountTransferManagerFactory = artifacts.require('./CountTransferManagerFactory.sol')
 const EtherDividendCheckpointLogic = artifacts.require('./EtherDividendCheckpoint.sol')
 const ERC20DividendCheckpointLogic = artifacts.require('./ERC20DividendCheckpoint.sol')
@@ -162,6 +162,10 @@ module.exports = function (deployer, network, accounts) {
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(EtherDividendCheckpointLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
   }).then(() => {
+    // B) Deploy the USDTieredSTOLogic Contract (Factory used to generate the USDTieredSTO contract and this
+    // manager attach with the securityToken contract at the time of deployment)
+    return deployer.deploy(USDTieredSTOLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+  }).then(() => {
     // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(GeneralTransferManagerFactory, PolyToken, 0, 0, 0, GeneralTransferManagerLogic.address, {from: PolymathAccount});
@@ -288,11 +292,8 @@ module.exports = function (deployer, network, accounts) {
     // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
   return moduleRegistry.verifyModule(CappedSTOFactory.address, true, {from: PolymathAccount})
   }).then(() => {
-    // Deploy the proxy factory
-    return deployer.deploy(USDTieredSTOProxyFactory, {from: PolymathAccount});
-  }).then(() => {
     // H) Deploy the USDTieredSTOFactory (Use to generate the USDTieredSTOFactory contract which will used to collect the funds ).
-    return deployer.deploy(USDTieredSTOFactory, PolyToken, usdTieredSTOSetupCost, 0, 0, USDTieredSTOProxyFactory.address, {from: PolymathAccount})
+    return deployer.deploy(USDTieredSTOFactory, PolyToken, usdTieredSTOSetupCost, 0, 0, USDTieredSTOLogic.address, {from: PolymathAccount})
   }).then(() => {
     // I) Register the USDTieredSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the USDTieredSTOFactory contract.
@@ -327,7 +328,7 @@ module.exports = function (deployer, network, accounts) {
 
     CappedSTOFactory:                     ${CappedSTOFactory.address}
     USDTieredSTOFactory:                  ${USDTieredSTOFactory.address}
-    USDTieredSTOProxyFactory:             ${USDTieredSTOProxyFactory.address}
+    USDTieredSTOLogic:                    ${USDTieredSTOLogic.address}
 
     CountTransferManagerFactory:          ${CountTransferManagerFactory.address}
     PercentageTransferManagerFactory:     ${PercentageTransferManagerFactory.address}

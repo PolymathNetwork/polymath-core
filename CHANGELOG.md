@@ -8,13 +8,15 @@ All notable changes to this project will be documented in this file.
 ## CappedSTO 2.0.1
 * `rate` is now accepted as multiplied by 10^18 to allow settting higher price than 1ETH/POLY per token.
 
-## USDTieredSTO 2.0.1
+## USDTieredSTO 2.1.0
 * Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.
 * Added `getSTODetails` to USDTSTO.
 * Added an Array of Tiers that will hold data about every tier in USDTSTO.
 * Added `buyWithETHRateLimited`, `buyWithPOLYRateLimited` and `buyWithUSDRateLimited` to USDTSTO.
 * Added `getTokensSoldByTier` to return sold (not minted during finalisation) tokens in each tier to USDTSTO.
 * Removed individual mappings for tier data removed in UDSTSTO.
+* Removed the old Proxy deployment method of USDTieredSTO and adopt the new inherited proxy deployment approach.
+* Bump the version to `2.1.0`
 
 ## GeneralTransferManager
 * `getInvestors`, `getAllInvestorsData`, `getInvestorsData` added to GTM to allow easy data queries.

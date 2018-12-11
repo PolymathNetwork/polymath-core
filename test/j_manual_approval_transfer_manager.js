@@ -366,6 +366,7 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal(data[1], account_investor4);
             assert.equal(data[2], web3.utils.toWei("3"));
             assert.equal(web3.utils.toUtf8(data[4]), "DESCRIPTION");
+            assert.equal((await I_ManualApprovalTransferManager.approvalIndex.call(account_investor1, account_investor4)).toNumber(), 1);
         });
 
         it("Should try to add the same manual approval for the same `_from` & `_to` address", async() => {
@@ -593,7 +594,6 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should revoke the manual Approval b/w investor4 and 1", async() => {
             await I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, account_investor4, {from: token_owner});
-            assert.isFalse(await I_ManualApprovalTransferManager.hasApproval.call(account_investor1, account_investor4));
             assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor1)).length, 0);
             assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor4)).length, 0);
         });

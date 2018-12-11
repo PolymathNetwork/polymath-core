@@ -27,7 +27,6 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     mapping (address => mapping (address => uint256)) public approvalIndex;
-    mapping (address => mapping (address => bool)) public hasApproval;
     // An array to track all approvals
     ManualApproval[] public approvals;
 
@@ -84,8 +83,8 @@ contract ManualApprovalTransferManager is ITransferManager {
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
        
-        if (!paused && hasApproval[_from][_to]) {
-            uint256 index = approvalIndex[_from][_to];
+        if (!paused && approvalIndex[_from][_to] != 0) {
+            uint256 index = approvalIndex[_from][_to] - 1;
             ManualApproval storage approval = approvals[index];
             if ((approval.expiryTime >= now) && (approval.allowance >= _amount)) {
                 if (_isTransfer) {
@@ -122,14 +121,13 @@ contract ManualApprovalTransferManager is ITransferManager {
         require(_to != address(0), "Invalid to address");
         require(_expiryTime > now, "Invalid expiry time");
         require(_allowance > 0, "Invalid allowance");
-        if (hasApproval[_from][_to]) {
-            uint256 index = approvalIndex[_from][_to];
+        if (approvalIndex[_from][_to] != 0) {
+            uint256 index = approvalIndex[_from][_to] - 1;
             require(approvals[index].expiryTime < now || approvals[index].allowance == 0, "Approval already exists");
             _revokeManualApproval(_from, _to);
         }
         approvals.push(ManualApproval(_from, _to, _allowance, _expiryTime, _description));
-        approvalIndex[_from][_to] = approvals.length - 1;
-        hasApproval[_from][_to] = true;
+        approvalIndex[_from][_to] = approvals.length;
         emit AddManualApproval(_from, _to, _allowance, _expiryTime, _description, msg.sender);
     }
 
@@ -194,8 +192,8 @@ contract ManualApprovalTransferManager is ITransferManager {
         require(_to != address(0), "Invalid to address");
         /*solium-disable-next-line security/no-block-members*/
         require(_expiryTime > now, "Invalid expiry time");
-        require(hasApproval[_from][_to], "Approval not present");
-        uint256 index = approvalIndex[_from][_to];
+        require(approvalIndex[_from][_to] != 0, "Approval not present");
+        uint256 index = approvalIndex[_from][_to] - 1;
         ManualApproval storage approval = approvals[index];
         require(approval.allowance != 0 && approval.expiryTime > now, "Not allowed");
         uint256 currentAllowance = approval.allowance;
@@ -265,15 +263,15 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     function _revokeManualApproval(address _from, address _to) internal {
-        require(hasApproval[_from][_to], "Approval not exist"); 
+        require(approvalIndex[_from][_to] != 0, "Approval not exist"); 
 
         // find the record in active approvals array & delete it
-        uint256 index = approvalIndex[_from][_to];
+        uint256 index = approvalIndex[_from][_to] - 1;
         if (index != approvals.length -1) {
             approvals[index] = approvals[approvals.length -1];
-            approvalIndex[approvals[index].from][approvals[index].to] = index; 
+            approvalIndex[approvals[index].from][approvals[index].to] = index + 1; 
         }
-        hasApproval[_from][_to] = false;
+        delete approvalIndex[_from][_to];
         approvals.length--;
         emit RevokeManualApproval(_from, _to, msg.sender);
     }
@@ -342,8 +340,8 @@ contract ManualApprovalTransferManager is ITransferManager {
      * @return uint256 Description provided to the approval
      */
     function getApprovalDetails(address _from, address _to) external view returns(uint256, uint256, bytes32) {
-        if (hasApproval[_from][_to]) {
-            uint256 index = approvalIndex[_from][_to];
+        if (approvalIndex[_from][_to] != 0) {
+            uint256 index = approvalIndex[_from][_to] - 1;
             if (index < approvals.length) {
                 ManualApproval storage approval = approvals[index];
                 return(

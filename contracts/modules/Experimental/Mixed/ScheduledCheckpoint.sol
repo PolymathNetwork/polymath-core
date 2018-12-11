@@ -4,6 +4,7 @@ import "./../../Checkpoint/ICheckpoint.sol";
 import "../../TransferManager/ITransferManager.sol";
 import "../../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../../../libraries/BokkyPooBahsDateTimeLibrary.sol";
 
 /**
  * @title Burn module for burning tokens and keeping track of burnt amounts
@@ -11,11 +12,14 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
     using SafeMath for uint256;
 
+    enum TimeUnit {SECONDS, MONTHS, YEARS}
+
     struct Schedule {
         bytes32 name;
         uint256 startTime;
         uint256 nextTime;
         uint256 interval;
+        TimeUnit timeUnit;
         uint256 index;
         uint256[] checkpointIds;
         uint256[] timestamps;
@@ -26,7 +30,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
 
     mapping (bytes32 => Schedule) public schedules;
 
-    event AddSchedule(bytes32 _name, uint256 _startTime, uint256 _interval, uint256 _timestamp);
+    event AddSchedule(bytes32 _name, uint256 _startTime, uint256 _interval, TimeUnit _timeUint, uint256 _timestamp);
     event RemoveSchedule(bytes32 _name, uint256 _timestamp);
 
     /**
@@ -51,17 +55,19 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
      * @param _name name of the new schedule (must be unused)
      * @param _startTime start time of the schedule (first checkpoint)
      * @param _interval interval at which checkpoints should be created
+     * @param _timeUnit unit of time at which checkpoints should be created
      */
-    function addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval) external onlyOwner {
+    function addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval, TimeUnit _timeUnit) external onlyOwner {
         require(_startTime > now, "Start time must be in the future");
         require(schedules[_name].name == bytes32(0), "Name already in use");
         schedules[_name].name = _name;
         schedules[_name].startTime = _startTime;
         schedules[_name].nextTime = _startTime;
         schedules[_name].interval = _interval;
+        schedules[_name].timeUnit = _timeUnit;
         schedules[_name].index = names.length;
         names.push(_name);
-        emit AddSchedule(_name, _startTime, _interval, now);
+        emit AddSchedule(_name, _startTime, _interval, _timeUnit, now);
     }
 
     /**
@@ -99,15 +105,17 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
      * @notice gets schedule details
      * @param _name name of the schedule
      */
-    function getSchedule(bytes32 _name) view external returns(bytes32, uint256, uint256, uint256, uint256[], uint256[], uint256[]) {
+    function getSchedule(bytes32 _name) view external returns(bytes32, uint256, uint256, uint256, TimeUnit, uint256[], uint256[], uint256[]) {
+        Schedule storage schedule = schedules[_name];
         return (
-            schedules[_name].name,
-            schedules[_name].startTime,
-            schedules[_name].nextTime,
-            schedules[_name].interval,
-            schedules[_name].checkpointIds,
-            schedules[_name].timestamps,
-            schedules[_name].periods
+            schedule.name,
+            schedule.startTime,
+            schedule.nextTime,
+            schedule.interval,
+            schedule.timeUnit,
+            schedule.checkpointIds,
+            schedule.timestamps,
+            schedule.periods
         );
     }
 

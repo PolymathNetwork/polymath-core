@@ -10,6 +10,7 @@ let generalTransferManagerABI;
 let manualApprovalTransferManagerABI;
 let countTransferManagerABI;
 let percentageTransferManagerABI;
+let lockUpTransferManagerABI;
 let generalPermissionManagerABI;
 let polyTokenABI;
 let cappedSTOFactoryABI;
@@ -35,6 +36,7 @@ try {
     manualApprovalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/ManualApprovalTransferManager.json').toString()).abi;
     countTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/CountTransferManager.json').toString()).abi;
     percentageTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/PercentageTransferManager.json').toString()).abi;
+    lockUpTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/LockUpTransferManager.json').toString()).abi;
     generalPermissionManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralPermissionManager.json').toString()).abi;
     polyTokenABI = JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).abi;
     cappedSTOFactoryABI = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).abi;
@@ -87,6 +89,9 @@ module.exports = {
     },
     percentageTransferManager: function () {
         return percentageTransferManagerABI;
+    },
+    lockUpTransferManager: function () {
+        return lockUpTransferManagerABI;
     },
     generalPermissionManager: function () {
         return generalPermissionManagerABI;

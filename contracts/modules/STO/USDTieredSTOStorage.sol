@@ -11,6 +11,7 @@ contract USDTieredSTOStorage {
     // Storage //
     /////////////
     struct Tier {
+        // NB rates mentioned below are actually price and are used like price in the logic.
         // How many token units a buyer gets per USD in this tier (multiplied by 10**18)
         uint256 rate;
 
@@ -33,9 +34,9 @@ contract USDTieredSTOStorage {
         uint256 mintedDiscountPoly;
     }
 
+    string public POLY_ORACLE = "PolyUsdOracle";
+    string public ETH_ORACLE = "EthUsdOracle";
     mapping (bytes32 => mapping (bytes32 => string)) oracleKeys;
-
-    IERC20 public usdToken;
 
     // Determine whether users can invest on behalf of a beneficiary
     bool public allowBeneficialInvestments = false;
@@ -43,17 +44,23 @@ contract USDTieredSTOStorage {
     // Whether or not the STO has been finalized
     bool public isFinalized;
 
-    // Address where ETH, POLY & DAI funds are delivered
+    // Address where ETH, POLY & Stable Coin funds are delivered
     address public wallet;
 
     // Address of issuer reserve wallet for unsold tokens
     address public reserveWallet;
+
+    // List of stable coin addresses
+    address[] public usdTokens;
 
     // Current tier
     uint256 public currentTier;
 
     // Amount of USD funds raised
     uint256 public fundsRaisedUSD;
+
+    // Amount of native currencies raised. 0x0 address is used for ETH.
+    mapping (address => uint256) public currencyRaised;
 
     // Amount in USD invested by each address
     mapping (address => uint256) public investorInvestedUSD;
@@ -63,6 +70,9 @@ contract USDTieredSTOStorage {
 
     // List of accredited investors
     mapping (address => bool) public accredited;
+
+    // List of active stable coin addresses
+    mapping (address => bool) public usdTokenEnabled;
 
     // Default limit in USD for non-accredited investors multiplied by 10**18
     uint256 public nonAccreditedLimitUSD;

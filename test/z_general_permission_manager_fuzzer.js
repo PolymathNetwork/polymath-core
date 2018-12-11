@@ -553,6 +553,7 @@ contract('GeneralPermissionManager', accounts => {
                         account_investor4,
                         web3.utils.toWei("2", "ether"),
                         latestTime() + duration.days(1),
+                        "ABC",
                         { from: accounts[j] }
                     );
                     
@@ -574,6 +575,7 @@ contract('GeneralPermissionManager', accounts => {
                             account_investor4,
                             web3.utils.toWei("2", "ether"),
                             latestTime() + duration.days(1),
+                            "ABC",
                             { from: accounts[j] }
                         )
                     );
@@ -583,6 +585,7 @@ contract('GeneralPermissionManager', accounts => {
                         account_investor4,
                         web3.utils.toWei("2", "ether"),
                         latestTime() + duration.days(1),
+                        "ABC",
                         { from: token_owner }
                     );
 

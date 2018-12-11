@@ -26,18 +26,17 @@ contract ManualApprovalTransferManager is ITransferManager {
         bytes32 description;
     }
 
-    //Store mappings of address => address with ManualApprovals
-    mapping (address => mapping (address => ManualApproval)) public manualApprovals;
-    mapping (address => mapping (address => uint256)) internal approvalsIndex;
-
-    //An array to track all current active approvals
-    ManualApproval[] public activeManualApprovals;
+    mapping (address => mapping (address => uint256)) public approvalIndex;
+    mapping (address => mapping (address => bool)) public hasApproval;
+    // An array to track all approvals
+    ManualApproval[] public approvals;
 
     event AddManualApproval(
         address indexed _from,
         address indexed _to,
         uint256 _allowance,
         uint256 _expiryTime,
+        bytes32 _description,
         address indexed _addedBy
     );
 
@@ -46,6 +45,7 @@ contract ManualApprovalTransferManager is ITransferManager {
         address indexed _to,
         uint256 _expiryTime,
         uint256 _allowance,
+        bytes32 _description,
         address indexed _edittedBy
     );
 
@@ -84,10 +84,12 @@ contract ManualApprovalTransferManager is ITransferManager {
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
        
-        if (!paused) {
-            if ((manualApprovals[_from][_to].expiryTime >= now) && (manualApprovals[_from][_to].allowance >= _amount)) {
+        if (!paused && hasApproval[_from][_to]) {
+            uint256 index = approvalIndex[_from][_to];
+            ManualApproval storage approval = approvals[index];
+            if ((approval.expiryTime >= now) && (approval.allowance >= _amount)) {
                 if (_isTransfer) {
-                    manualApprovals[_from][_to].allowance = manualApprovals[_from][_to].allowance.sub(_amount);
+                    approval.allowance = approval.allowance.sub(_amount);
                 }
                 return Result.VALID;
             }
@@ -120,11 +122,15 @@ contract ManualApprovalTransferManager is ITransferManager {
         require(_to != address(0), "Invalid to address");
         require(_expiryTime > now, "Invalid expiry time");
         require(_allowance > 0, "Invalid allowance");
-        require(manualApprovals[_from][_to].allowance == 0 || manualApprovals[_from][_to].expiryTime < now, "Approval already exists");
-        manualApprovals[_from][_to] = ManualApproval(_from, _to, _allowance, _expiryTime, _description);
-        activeManualApprovals.push(ManualApproval(_from, _to, _allowance, _expiryTime, _description));
-        approvalsIndex[_from][_to] = activeManualApprovals.length - 1;
-        emit AddManualApproval(_from, _to, _allowance, _expiryTime, msg.sender);
+        if (hasApproval[_from][_to]) {
+            uint256 index = approvalIndex[_from][_to];
+            require(approvals[index].expiryTime < now || approvals[index].allowance == 0, "Approval already exists");
+            _revokeManualApproval(_from, _to);
+        }
+        approvals.push(ManualApproval(_from, _to, _allowance, _expiryTime, _description));
+        approvalIndex[_from][_to] = approvals.length - 1;
+        hasApproval[_from][_to] = true;
+        emit AddManualApproval(_from, _to, _allowance, _expiryTime, _description, msg.sender);
     }
 
     /**
@@ -188,34 +194,37 @@ contract ManualApprovalTransferManager is ITransferManager {
         require(_to != address(0), "Invalid to address");
         /*solium-disable-next-line security/no-block-members*/
         require(_expiryTime > now, "Invalid expiry time");
-        require(manualApprovals[_from][_to].allowance != 0, "Approval does not exists");
-        uint256 currentAllowance = manualApprovals[_from][_to].allowance;
+        require(hasApproval[_from][_to], "Approval not present");
+        uint256 index = approvalIndex[_from][_to];
+        ManualApproval storage approval = approvals[index];
+        require(approval.allowance != 0 && approval.expiryTime > now, "Not allowed");
+        uint256 currentAllowance = approval.allowance;
         uint256 newAllowance;
         if (_change == 1) {
             // Allowance get increased
-            manualApprovals[_from][_to].allowance = (
-            manualApprovals[_from][_to].allowance.add(_changedAllowance));
             newAllowance = currentAllowance.add(_changedAllowance);
+            approval.allowance = newAllowance;
         } else if (_change == 0) {
             // Allowance get decreased
             if (_changedAllowance > currentAllowance) {
-                manualApprovals[_from][_to].allowance = 0;
+                newAllowance = 0;
+                approval.allowance = newAllowance;
             } else {
-                manualApprovals[_from][_to].allowance = currentAllowance.sub(_changedAllowance);
+                newAllowance = currentAllowance.sub(_changedAllowance);
+                approval.allowance = newAllowance;
             }
-            newAllowance = currentAllowance.sub(_changedAllowance);
         } else {
             // No change in the Allowance
             newAllowance = currentAllowance;
         }
         // Greedy storage technique
-        if (manualApprovals[_from][_to].expiryTime != _expiryTime) {
-            manualApprovals[_from][_to].expiryTime = _expiryTime;
+        if (approval.expiryTime != _expiryTime) {
+            approval.expiryTime = _expiryTime;
         }
-        if (manualApprovals[_from][_to].description != _description) {
-            manualApprovals[_from][_to].description = _description;
+        if (approval.description != _description) {
+            approval.description = _description;
         }
-        emit ModifyManualApproval(_from, _to, _expiryTime, newAllowance, msg.sender);
+        emit ModifyManualApproval(_from, _to, _expiryTime, newAllowance, _description, msg.sender);
     }
 
     /**
@@ -256,17 +265,16 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     function _revokeManualApproval(address _from, address _to) internal {
-        require(_to != address(0), "Invalid to address");
-        require(manualApprovals[_from][_to].allowance != 0, "Approval not exist");
+        require(hasApproval[_from][_to], "Approval not exist"); 
 
         // find the record in active approvals array & delete it
-        uint256 index = approvalsIndex[_from][_to];
-        if (index != activeManualApprovals.length -1) {
-            activeManualApprovals[index] = activeManualApprovals[activeManualApprovals.length -1];
-            approvalsIndex[activeManualApprovals[index].from][activeManualApprovals[index].to] = index; 
+        uint256 index = approvalIndex[_from][_to];
+        if (index != approvals.length -1) {
+            approvals[index] = approvals[approvals.length -1];
+            approvalIndex[approvals[index].from][approvals[index].to] = index; 
         }
-        delete manualApprovals[_from][_to];
-        activeManualApprovals.length--;
+        hasApproval[_from][_to] = false;
+        approvals.length--;
         emit RevokeManualApproval(_from, _to, msg.sender);
     }
 
@@ -308,14 +316,16 @@ contract ManualApprovalTransferManager is ITransferManager {
      */
     function getActiveApprovalsToUser(address _user) external view returns(uint256[]) {
         uint256 counter = 0;
-        for (uint256 i = 0; i < activeManualApprovals.length; i++) {
-            if (activeManualApprovals[i].from == _user || activeManualApprovals[i].to == _user) 
+        for (uint256 i = 0; i < approvals.length; i++) {
+            if ((approvals[i].from == _user || approvals[i].to == _user)
+                && approvals[i].expiryTime >= now)
                 counter ++;
         }
         uint256[] memory indexes = new uint256[](counter);
         counter = 0;
-        for (i = 0; i < activeManualApprovals.length; i++) {
-            if (activeManualApprovals[i].from == _user || activeManualApprovals[i].to == _user) {
+        for (i = 0; i < approvals.length; i++) {
+            if ((approvals[i].from == _user || approvals[i].to == _user)
+                && approvals[i].expiryTime >= now) {
                 indexes[counter] = i;
                 counter ++;
             } 
@@ -324,10 +334,33 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     /**
+     * @notice Get the details of the approval corresponds to _from & _to addresses
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
+     * @return uint256 expiryTime of the approval
+     * @return uint256 allowance provided to the approval
+     * @return uint256 Description provided to the approval
+     */
+    function getApprovalDetails(address _from, address _to) external view returns(uint256, uint256, bytes32) {
+        if (hasApproval[_from][_to]) {
+            uint256 index = approvalIndex[_from][_to];
+            if (index < approvals.length) {
+                ManualApproval storage approval = approvals[index];
+                return(
+                    approval.expiryTime,
+                    approval.allowance,
+                    approval.description
+                );
+            }
+        }
+        return (uint256(0), uint256(0), bytes32(0));
+    }
+
+    /**
     * @notice Returns the current number of active approvals
     */
-    function getActiveApprovalsLength() external view returns(uint256) {
-        return activeManualApprovals.length;
+    function getTotalApprovalsLength() external view returns(uint256) {
+        return approvals.length;
     }
 
     /**

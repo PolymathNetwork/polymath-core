@@ -1829,6 +1829,11 @@ contract("USDTieredSTO", accounts => {
                 init_WalletDAIBal.add(investment_DAI).toNumber(),
                 "Wallet DAI Balance not changed as expected"
             );
+            assert.equal(
+                (await I_USDTieredSTO_Array[stoId].stableCoinsRaised.call(I_DaiToken.address)).toNumber(),
+                investment_DAI.toNumber(),
+                "DAI Raised not changed as expected"
+            );
         });
 
         it("should successfully buy using fallback at tier 0 for ACCREDITED1", async () => {

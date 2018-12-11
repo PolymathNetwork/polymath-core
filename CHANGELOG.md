@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file.
 * Indivisble tokens are now supported. When trying to buy partial tokens, allowed full units of tokens will be purchased and remaining funds will be returned.
 
 ## USDTieredSTO 2.1.0
-* Added `currencyRaised` function that returns native currency raised. It takes address of fund coin as parameter, use 0x0 for ETH.
+* Added `stableCoinsRaised` function that returns amount of individual stable coin raised when address of that stable coin is passed.
 * Added support for multiple stable coins in USDTSTO.
 * Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.
 * Added `getSTODetails` to USDTSTO.

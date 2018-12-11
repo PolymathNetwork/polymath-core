@@ -34,8 +34,6 @@ contract USDTieredSTOStorage {
         uint256 mintedDiscountPoly;
     }
 
-    string public POLY_ORACLE = "PolyUsdOracle";
-    string public ETH_ORACLE = "EthUsdOracle";
     mapping (bytes32 => mapping (bytes32 => string)) oracleKeys;
 
     // Determine whether users can invest on behalf of a beneficiary
@@ -59,8 +57,8 @@ contract USDTieredSTOStorage {
     // Amount of USD funds raised
     uint256 public fundsRaisedUSD;
 
-    // Amount of native currencies raised. 0x0 address is used for ETH.
-    mapping (address => uint256) public currencyRaised;
+    // Amount of stable coins raised
+    mapping (address => uint256) public stableCoinsRaised;
 
     // Amount in USD invested by each address
     mapping (address => uint256) public investorInvestedUSD;

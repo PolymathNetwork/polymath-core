@@ -373,7 +373,6 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         // Modify storage
         investorInvested[_beneficiary][uint8(FundRaiseType.ETH)] = investorInvested[_beneficiary][uint8(FundRaiseType.ETH)].add(spentValue);
         fundsRaised[uint8(FundRaiseType.ETH)] = fundsRaised[uint8(FundRaiseType.ETH)].add(spentValue);
-        currencyRaised[address(0)] = currencyRaised[address(0)].add(spentValue);
         // Forward ETH to issuer wallet
         wallet.transfer(spentValue);
         // Refund excess ETH to investor wallet
@@ -413,7 +412,8 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         // Modify storage
         investorInvested[_beneficiary][uint8(_fundRaiseType)] = investorInvested[_beneficiary][uint8(_fundRaiseType)].add(spentValue);
         fundsRaised[uint8(_fundRaiseType)] = fundsRaised[uint8(_fundRaiseType)].add(spentValue);
-        currencyRaised[address(_token)] = currencyRaised[address(_token)].add(spentValue);
+        if(address(_token) != address(polyToken))
+            stableCoinsRaised[address(_token)] = stableCoinsRaised[address(_token)].add(spentValue);
         // Forward coins to issuer wallet
         require(_token.transferFrom(msg.sender, wallet, spentValue), "Transfer failed");
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, _fundRaiseType, _tokenAmount, spentValue, rate);

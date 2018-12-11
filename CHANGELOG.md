@@ -6,11 +6,12 @@ All notable changes to this project will be documented in this file.
 [__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
 
 
-## CappedSTO 2.0.1
+## CappedSTO 2.1.0
 * `rate` is now accepted as multiplied by 10^18 to allow settting higher price than 1ETH/POLY per token.
 * Indivisble tokens are now supported. When trying to buy partial tokens, allowed full units of tokens will be purchased and remaining funds will be returned.
 
-## USDTieredSTO 2.0.1
+## USDTieredSTO 2.1.0
+* Added `currencyRaised` function that returns native currency raised. It takes address of fund coin as parameter, use 0x0 for ETH.
 * Added support for multiple stable coins in USDTSTO.
 * Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.
 * Added `getSTODetails` to USDTSTO.

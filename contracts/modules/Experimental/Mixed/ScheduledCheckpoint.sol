@@ -12,6 +12,7 @@ import "../../../libraries/BokkyPooBahsDateTimeLibrary.sol";
 contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
     using SafeMath for uint256;
 
+    //TODO should we add hours, days & weeks for convenience ?
     enum TimeUnit {SECONDS, MONTHS, YEARS}
 
     struct Schedule {
@@ -127,14 +128,26 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
         _update(_name);
     }
 
+    //TODO refactor
     function _update(bytes32 _name) internal {
         Schedule storage schedule = schedules[_name];
         if (schedule.nextTime <= now) {
             uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
-            uint256 periods = now.sub(schedule.nextTime).div(schedule.interval).add(1);
-            schedule.timestamps.push(schedule.nextTime);
-            schedule.nextTime = periods.mul(schedule.interval).add(schedule.nextTime);
             schedule.checkpointIds.push(checkpointId);
+            schedule.timestamps.push(schedule.nextTime);
+            uint256 periods;
+            if (schedule.timeUnit == TimeUnit.SECONDS ) {
+                periods = now.sub(schedule.nextTime).div(schedule.interval).add(1);
+                schedule.nextTime = periods.mul(schedule.interval).add(schedule.nextTime);
+            } else if (schedule.timeUnit == TimeUnit.MONTHS ) {
+                //TODO ? BokkyPooBahsDateTimeLibrary.diffMonths(now, schedule.nextTime) ?
+                periods = BokkyPooBahsDateTimeLibrary.diffMonths(schedule.nextTime, now).div(schedule.interval).add(1);
+                schedule.nextTime = BokkyPooBahsDateTimeLibrary.addMonths(schedule.nextTime, periods.mul(schedule.interval));
+            } else if (schedule.timeUnit == TimeUnit.YEARS ) {
+                //TODO ? BokkyPooBahsDateTimeLibrary.diffYears(now, schedule.nextTime) ?
+                periods = BokkyPooBahsDateTimeLibrary.diffYears(schedule.nextTime, now).div(schedule.interval).add(1);
+                schedule.nextTime = BokkyPooBahsDateTimeLibrary.addYears(schedule.nextTime, periods.mul(schedule.interval));
+            }
             schedule.periods.push(periods);
         }
     }

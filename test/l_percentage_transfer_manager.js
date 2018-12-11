@@ -120,7 +120,7 @@ contract("PercentageTransferManager", accounts => {
 
         // STEP 4(b): Deploy the PercentageTransferManager
         [P_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500", "ether"));
-    
+
         // Printing all the contract addresses
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------

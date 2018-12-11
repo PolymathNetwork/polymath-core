@@ -18,5 +18,7 @@ module.exports = {
      "node":0,
      "spaced-comment":0,
      "node/no-deprecated-api":0
+     "no-tabs": 0,
+     "no-mixed-spaces-and-tabs":0
 	}
 };

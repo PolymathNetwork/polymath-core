@@ -14,7 +14,7 @@ import "./USDTieredSTOStorage.sol";
  */
 contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
     using SafeMath for uint256;
-    
+
     string public constant POLY_ORACLE = "PolyUsdOracle";
     string public constant ETH_ORACLE = "EthUsdOracle";
 

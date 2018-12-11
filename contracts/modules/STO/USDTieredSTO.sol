@@ -7,11 +7,12 @@ import "../../RegistryUpdater.sol";
 import "../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
+import "./USDTieredSTOStorage.sol";
 
 /**
  * @title STO module for standard capped crowdsale
  */
-contract USDTieredSTO is ISTO, ReentrancyGuard {
+contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
     using SafeMath for uint256;
 
     /////////////
@@ -95,6 +96,9 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
 
     // Array of Tiers
     Tier[] public tiers;
+    
+    string public constant POLY_ORACLE = "PolyUsdOracle";
+    string public constant ETH_ORACLE = "EthUsdOracle";
 
     ////////////
     // Events //
@@ -166,11 +170,10 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // STO Configuration //
     ///////////////////////
 
-    constructor (address _securityToken, address _polyAddress, address _factory) public Module(_securityToken, _polyAddress) {
-        require(_factory != address(0), "Invalid factory");
-        oracleKeys[bytes32("ETH")][bytes32("USD")] = ETH_ORACLE;
-        oracleKeys[bytes32("POLY")][bytes32("USD")] = POLY_ORACLE;
-        factory = _factory; //Explicitly setting factory as we are using proxy deployment for this module
+    constructor (address _securityToken, address _polyAddress)
+    public
+    Module(_securityToken, _polyAddress)
+    {
     }
 
     /**
@@ -200,6 +203,8 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
         address _reserveWallet,
         address[] _usdTokens
     ) public onlyFactory {
+        oracleKeys[bytes32("ETH")][bytes32("USD")] = ETH_ORACLE;
+        oracleKeys[bytes32("POLY")][bytes32("USD")] = POLY_ORACLE;
         require(endTime == 0, "Already configured");
         _modifyTimes(_startTime, _endTime);
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);

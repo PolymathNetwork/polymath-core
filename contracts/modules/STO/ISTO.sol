@@ -3,12 +3,13 @@ pragma solidity ^0.4.24;
 import "../../Pausable.sol";
 import "../Module.sol";
 import "../../interfaces/IERC20.sol";
+import "./ISTOStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Interface to be implemented by all STO modules
  */
-contract ISTO is Module, Pausable  {
+contract ISTO is ISTOStorage, Module, Pausable  {
     using SafeMath for uint256;
 
     enum FundRaiseType { ETH, POLY, SC }

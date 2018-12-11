@@ -19,6 +19,7 @@ let tokenSymbol;
 ////////////////////////
 // Artifacts
 let securityTokenRegistry;
+let moduleRegistry;
 let polyToken;
 let usdToken;
 let securityToken;
@@ -119,7 +120,12 @@ async function addSTOModule(stoConfig) {
 
   let optionSelected;
   if (typeof stoConfig === 'undefined') {
-    let options = ['CappedSTO', 'USDTieredSTO'];
+    let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.STO, securityToken.options.address).call();
+    let options = await Promise.all(availableModules.map(async function (m) {
+      let moduleFactoryABI = abis.moduleFactory();
+      let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
+      return web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+    }));
     let index = readlineSync.keyInSelect(options, 'What type of STO do you want?', { cancel: 'Return' });
     optionSelected = index != -1 ? options[index] : 'Return';
   } else {
@@ -989,6 +995,11 @@ async function setup() {
     let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
+
+    let moduleRegistryAddress = await contracts.moduleRegistry();
+    let moduleRegistryABI = abis.moduleRegistry();
+    moduleRegistry = new web3.eth.Contract(moduleRegistryABI, moduleRegistryAddress);
+    moduleRegistry.setProvider(web3.currentProvider);
 
     let polytokenAddress = await contracts.polyToken();
     let polytokenABI = abis.polyToken();

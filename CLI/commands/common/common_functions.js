@@ -34,13 +34,14 @@ function getFinalOptions(options) {
     from: Issuer,
     gasPrice: defaultGasPrice,
     value: undefined,
-    factor: 1.2
+    factor: 1.2,
+    minNonce: 0
   }
   return Object.assign(defaultOptions, options)
 };
 
 async function getGasLimit(options, action) {
-  let block = await web3.eth.getBlock("latest");
+  let block = await web3.eth.getBlock('latest');
   let networkGasLimit = block.gasLimit;
   let gas = Math.round(options.factor * (await action.estimateGas({ from: options.from.address, value: options.value })));
   return (gas > networkGasLimit) ? networkGasLimit : gas;
@@ -98,6 +99,9 @@ module.exports = {
            %%%.                                                                                                                                                
 `);
   },
+  getNonce: async function (from) {
+    return (await web3.eth.getTransactionCount(from.address, "pending"));
+  },
   sendTransaction: async function (action, options) {
     await checkPermissions(action);
 
@@ -107,6 +111,9 @@ module.exports = {
     console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gasLimit} ----`));
 
     let nonce = await web3.eth.getTransactionCount(options.from.address);
+    if (nonce < options.minNonce) {
+      nonce = minNonce;
+    }
     let abi = action.encodeABI();
     let parameter = {
       from: options.from.address,

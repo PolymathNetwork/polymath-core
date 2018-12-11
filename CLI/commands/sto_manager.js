@@ -389,7 +389,7 @@ async function processAddress(array) {
   let list = [];
   for (const address of array) {
     let symbol = await checkSymbol(address);
-    list.push(symbol)
+    list.push({"symbol": symbol, "address": address})
   }
   return list
 }
@@ -628,7 +628,7 @@ async function usdTieredSTO_status(currentSTO) {
       let mintedPerTier = mintedPerTierPerRaiseType[gbl.constants.FUND_RAISE_TYPES[type]];
       if ((type == STABLE) && (stableSymbols.length)) {
         displayMintedPerTierPerType += `
-        Sold for ${stableSymbols.toString()}:\t ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
+        Sold for stable coin(s): ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
       } else {
         displayMintedPerTierPerType += `
         Sold for ${type}:\t\t ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
@@ -655,11 +655,14 @@ async function usdTieredSTO_status(currentSTO) {
   for (const type of raiseTypes) {
     let balance = await getBalance(displayWallet, gbl.constants.FUND_RAISE_TYPES[type]);
     let walletBalance = web3.utils.fromWei(balance);
-    let walletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
     if ((type == STABLE) && (stableSymbols.length)) {
-      displayWalletBalancePerType += `
-      Balance ${stableSymbols.toString()}:\t ${walletBalanceUSD} USD`;
+      stableSymbols.forEach(async (stable) => {
+        let raised = await checkStableBalance(displayWallet, stable.address);
+        displayWalletBalancePerType += `
+      Balance ${stable.symbol}:\t\t ${web3.utils.fromWei(raised)} ${stable.symbol}`;
+      })
     } else {
+      let walletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
       displayWalletBalancePerType += `
       Balance ${type}:\t\t ${walletBalance} ${type} (${walletBalanceUSD} USD)`;
     }
@@ -668,8 +671,11 @@ async function usdTieredSTO_status(currentSTO) {
     let reserveWalletBalance = web3.utils.fromWei(balance);
     let reserveWalletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
     if ((type == STABLE) && (stableSymbols.length)) {
-      displayReserveWalletBalancePerType += `
-      Balance ${stableSymbols.toString()}:\t ${reserveWalletBalanceUSD} USD`;
+      stableSymbols.forEach(async (stable) => {
+        let raised = await checkStableBalance(displayReserveWallet, stable.address);
+        displayReserveWalletBalancePerType += `
+      Balance ${stable.symbol}:\t\t ${web3.utils.fromWei(raised)} ${stable.symbol}`;
+      })
     } else {
       displayReserveWalletBalancePerType += `
       Balance ${type}:\t\t ${reserveWalletBalance} ${type} (${reserveWalletBalanceUSD} USD)`;
@@ -677,8 +683,11 @@ async function usdTieredSTO_status(currentSTO) {
 
     let fundsRaised = web3.utils.fromWei(await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES[type]).call());
     if ((type == STABLE) && (stableSymbols.length)) {
-      displayFundsRaisedPerType += `
-      ${stableSymbols.toString()}:\t\t ${fundsRaised} USD`;
+      stableSymbols.forEach(async (stable) => {
+        let raised = await getStableCoinsRaised(currentSTO, stable.address);
+        displayFundsRaisedPerType += `
+      ${stable.symbol}:\t\t\t ${web3.utils.fromWei(raised)} ${stable.symbol}`;
+      })
     } else {
       displayFundsRaisedPerType += `
       ${type}:\t\t\t ${fundsRaised} ${type}`;
@@ -689,7 +698,7 @@ async function usdTieredSTO_status(currentSTO) {
       let tokensSoldPerType = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(gbl.constants.FUND_RAISE_TYPES[type]).call());
       if ((type == STABLE) && (stableSymbols.length)) {
         displayTokensSoldPerType += `
-        Sold for ${stableSymbols.toString()}:\t ${tokensSoldPerType} ${displayTokenSymbol}`;
+        Sold for stable coin(s): ${tokensSoldPerType} ${displayTokenSymbol}`;
       } else {
         displayTokensSoldPerType += `
         Sold for ${type}:\t\t ${tokensSoldPerType} ${displayTokenSymbol}`;
@@ -700,7 +709,7 @@ async function usdTieredSTO_status(currentSTO) {
   let displayRaiseType = raiseTypes.join(' - ');
   //If STO has stable coins, we list them one by one
   if (stableSymbols.length) {
-    displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.toString().replace(`,`,` - `)}`
+    displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.map((obj) => {return obj.symbol}).toString().replace(`,`,` - `)}`
   }
 
   let now = Math.floor(Date.now() / 1000);
@@ -741,10 +750,23 @@ async function usdTieredSTO_status(currentSTO) {
   - Investor count:              ${displayInvestorCount}
   - Funds Raised`
     + displayFundsRaisedPerType + `
-      USD:                       ${displayFundsRaisedUSD} USD
+      Total USD:                 ${displayFundsRaisedUSD} USD
   `);
 
   console.log(chalk.green(`\n${(web3.utils.fromWei(await getBalance(Issuer.address, gbl.constants.FUND_RAISE_TYPES.POLY)))} POLY balance remaining at issuer address ${Issuer.address}`));
+}
+
+async function checkStableBalance(walletAddress, stableAddress) {
+  let stableCoin = common.connect(abis.erc20(), stableAddress);
+  try {
+      return await stableCoin.methods.balanceOf(walletAddress).call();
+  } catch (e) {
+      return ""
+  }
+}
+
+async function getStableCoinsRaised(currentSTO, address) {
+  return await currentSTO.methods.stableCoinsRaised(address).call()
 }
 
 async function usdTieredSTO_configure(currentSTO) {

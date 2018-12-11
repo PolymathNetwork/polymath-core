@@ -9,7 +9,6 @@ var gbl = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
-const STO_KEY = 3;
 const ETH = 'ETH';
 const POLY = 'POLY';
 const STABLE = 'STABLE';
@@ -255,7 +254,7 @@ async function processAddress(array) {
     let list = [];
     for (const address of array) {
         let symbol = await checkSymbol(address);
-        list.push(symbol)
+        list.push({"symbol": symbol, "address": address})
     }
     return list
 }
@@ -290,7 +289,7 @@ async function showUserInfoForUSDTieredSTO()
             }
             let displayInvestorInvested = web3.utils.fromWei(await currentSTO.methods.investorInvested(User.address, gbl.constants.FUND_RAISE_TYPES[fundType]).call());
             if ((fundType == STABLE) && (stableSymbols.length)) {
-                console.log(`    - Invested in ${stableSymbols.toString()}:\t     ${displayInvestorInvested} USD`);
+                console.log(`    - Invested in stable coin(s):    ${displayInvestorInvested} USD`);
             } else {
                 console.log(`    - Invested in ${fundType}:\t     ${displayInvestorInvested} ${fundType}`);
             }
@@ -298,7 +297,7 @@ async function showUserInfoForUSDTieredSTO()
     }
 
     let displayInvestorInvestedUSD = web3.utils.fromWei(await currentSTO.methods.investorInvestedUSD(User.address).call());
-    console.log(`    - Invested in USD:       ${displayInvestorInvestedUSD} USD`);
+    console.log(`    - Total invested in USD:       ${displayInvestorInvestedUSD} USD`);
 
     await generalTransferManager.methods.whitelist(User.address).call({}, function (error, result) {
         displayCanBuy = result.canBuyFromSTO;
@@ -371,7 +370,7 @@ async function showUSDTieredSTOInfo() {
             let mintedPerTier = mintedPerTierPerRaiseType[gbl.constants.FUND_RAISE_TYPES[type]];
             if ((type == STABLE) && (stableSymbols.length)) {
                 displayMintedPerTierPerType += `
-        Sold for ${stableSymbols.toString()}:\t   ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
+        Sold for stable coin(s):   ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
             } else {
                 displayMintedPerTierPerType += `
         Sold for ${type}:\t\t   ${web3.utils.fromWei(mintedPerTier)} ${displayTokenSymbol} ${displayDiscountMinted}`;
@@ -396,8 +395,11 @@ async function showUSDTieredSTOInfo() {
     for (const type of raiseTypes) {
         let fundsRaised = web3.utils.fromWei(await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES[type]).call());
         if ((type == STABLE) && (stableSymbols.length)) {
-            displayFundsRaisedPerType += `
-        ${stableSymbols.toString()}:\t\t   ${fundsRaised} USD`;    
+            stableSymbols.forEach(async (stable) => {
+                let raised = await getStableCoinsRaised(currentSTO, stable.address);
+                displayFundsRaisedPerType += `
+        ${stable.symbol}:\t\t\t   ${web3.utils.fromWei(raised)} ${stable.symbol}`;
+            })
         } else {
             displayFundsRaisedPerType += `
         ${type}:\t\t\t   ${fundsRaised} ${type}`;    
@@ -407,7 +409,7 @@ async function showUSDTieredSTOInfo() {
             let tokensSoldPerType = web3.utils.fromWei(await currentSTO.methods.getTokensSoldFor(gbl.constants.FUND_RAISE_TYPES[type]).call());
             if ((type == STABLE) && (stableSymbols.length)) {
                 displayTokensSoldPerType += `
-        Sold for ${stableSymbols.toString()}:\t   ${tokensSoldPerType} ${displayTokenSymbol}`;
+        Sold for stable coin(s):   ${tokensSoldPerType} ${displayTokenSymbol}`;
             } else {
                 displayTokensSoldPerType += `
         Sold for ${type}:\t\t   ${tokensSoldPerType} ${displayTokenSymbol}`;
@@ -418,7 +420,7 @@ async function showUSDTieredSTOInfo() {
     let displayRaiseType = raiseTypes.join(' - ');
     //If STO has stable coins, we list them one by one
     if (stableSymbols.length) {
-        displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.toString().replace(`,`,` - `)}`
+        displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.map((obj) => {return obj.symbol}).toString().replace(`,`,` - `)}`
     }
 
     let now = Math.floor(Date.now() / 1000);
@@ -452,7 +454,7 @@ async function showUSDTieredSTOInfo() {
     - Investor count:              ${displayInvestorCount}
     - Funds Raised`
         + displayFundsRaisedPerType + `
-        USD:                       ${displayFundsRaisedUSD} USD
+        Total USD:                 ${displayFundsRaisedUSD} USD
     `);
 
     if (!displayCanBuy) {
@@ -468,6 +470,10 @@ async function showUSDTieredSTOInfo() {
         console.log(chalk.red(`The token sale has ended.\n`));
         process.exit(0);
     }
+}
+
+async function getStableCoinsRaised(currentSTO, address) {
+    return await currentSTO.methods.stableCoinsRaised(address).call()
 }
 
 // Allow investor to buy tokens.
@@ -531,9 +537,7 @@ async function investUsdTieredSTO(currency, amount) {
     } else {
         for (const type of raiseTypes) {
             let displayPrice = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], web3.utils.toWei("1")).call());
-            if ((type == STABLE) && (stableSymbols.length)) {
-                console.log(chalk.green(`   Current ${stableSymbols.toString()} price:\t\t   ${displayPrice} USD`));
-            } else {
+            if (!((type == STABLE) && (stableSymbols.length))) {
                 console.log(chalk.green(`   Current ${type} price:\t\t   ${displayPrice} USD`));
             }
         }
@@ -541,8 +545,8 @@ async function investUsdTieredSTO(currency, amount) {
             const stableIndex = raiseTypes.indexOf(STABLE);
             if (stableIndex > -1) {
                 raiseTypes.splice(stableIndex, 1)
-                stableSymbols.forEach((symbol) => {
-                    raiseTypes.push(symbol)
+                stableSymbols.forEach((stable) => {
+                    raiseTypes.push(stable.symbol)
                 })
             }
             let index = readlineSync.keyInSelect(raiseTypes, 'Choose one of the allowed raise types: ', { cancel: false });

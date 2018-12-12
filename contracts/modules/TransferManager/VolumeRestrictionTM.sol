@@ -1002,11 +1002,29 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     )
         internal 
     {   
-        BucketDetails storage details;
-        if (isDefault)
-            details = defaultUserToBucket[_from];
-        else
-            details = userToBucket[_from];
+        
+        if (isDefault){
+            BucketDetails storage defaultUserToBucketDetails = defaultUserToBucket[_from];
+            _updateStorageActual(_from, _amount, _lastTradedDayTime, _sumOfLastPeriod, _daysCovered, _dailyLastTradedDayTime, _endTime, defaultUserToBucketDetails);
+        }
+        else {
+            BucketDetails storage userToBucketDetails = userToBucket[_from];
+            _updateStorageActual(_from, _amount, _lastTradedDayTime, _sumOfLastPeriod, _daysCovered, _dailyLastTradedDayTime, _endTime, userToBucketDetails);
+        }
+    }
+
+    function _updateStorageActual(
+        address _from,
+        uint256 _amount,
+        uint256 _lastTradedDayTime,
+        uint256 _sumOfLastPeriod,
+        uint256 _daysCovered, 
+        uint256 _dailyLastTradedDayTime,
+        uint256 _endTime,
+        BucketDetails storage details
+    )
+        internal 
+    {   
         // Cheap storage technique
         if (details.lastTradedDayTime != _lastTradedDayTime) {
             // Assigning the latest transaction timestamp of the day

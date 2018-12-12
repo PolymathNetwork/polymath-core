@@ -316,7 +316,7 @@ async function addressesConfigUSDTieredSTO(usdTokenRaise) {
       defaultInput: Issuer.address
     });
     if (addresses.wallet == "") addresses.wallet = Issuer.address;
-  
+
     addresses.reserveWallet = readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer.address + '): ', {
       limit: function (input) {
         return web3.utils.isAddress(input);
@@ -325,9 +325,9 @@ async function addressesConfigUSDTieredSTO(usdTokenRaise) {
       defaultInput: Issuer.address
     });
     if (addresses.reserveWallet == "") addresses.reserveWallet = Issuer.address;
-  
+
     let listOfAddress;
-  
+
     if (usdTokenRaise) {
       addresses.usdToken = readlineSync.question('Enter the address (or multiple addresses separated by commas) of the USD stable coin(s) (' + usdToken.options.address + '): ', {
         limit: function (input) {
@@ -344,17 +344,17 @@ async function addressesConfigUSDTieredSTO(usdTokenRaise) {
         addresses.usdToken = [usdToken.options.address];
       }
     } else {
-      listOfAddress = ['0x0000000000000000000000000000000000000000']
-      addresses.usdToken = ['0x0000000000000000000000000000000000000000'];
+      listOfAddress = []
+      addresses.usdToken = [];
     }
-  
+
     if ((usdTokenRaise) && (!await processArray(listOfAddress))) {
       console.log(chalk.yellow(`\nPlease, verify your stable coins addresses to continue with this process.\n`))
       menu = true;
     } else {
       menu = false;
     }
-  
+
     if (typeof addresses.usdToken === 'string') {
       addresses.usdToken = addresses.usdToken.split(",")
     }
@@ -389,7 +389,7 @@ async function processAddress(array) {
   let list = [];
   for (const address of array) {
     let symbol = await checkSymbol(address);
-    list.push({"symbol": symbol, "address": address})
+    list.push({ "symbol": symbol, "address": address })
   }
   return list
 }
@@ -666,7 +666,7 @@ async function usdTieredSTO_status(currentSTO) {
       displayWalletBalancePerType += `
       Balance ${type}:\t\t ${walletBalance} ${type} (${walletBalanceUSD} USD)`;
     }
-    
+
     balance = await getBalance(displayReserveWallet, gbl.constants.FUND_RAISE_TYPES[type]);
     let reserveWalletBalance = web3.utils.fromWei(balance);
     let reserveWalletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
@@ -709,7 +709,7 @@ async function usdTieredSTO_status(currentSTO) {
   let displayRaiseType = raiseTypes.join(' - ');
   //If STO has stable coins, we list them one by one
   if (stableSymbols.length) {
-    displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.map((obj) => {return obj.symbol}).toString().replace(`,`,` - `)}`
+    displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.map((obj) => { return obj.symbol }).toString().replace(`,`, ` - `)}`
   }
 
   let now = Math.floor(Date.now() / 1000);
@@ -759,9 +759,9 @@ async function usdTieredSTO_status(currentSTO) {
 async function checkStableBalance(walletAddress, stableAddress) {
   let stableCoin = common.connect(abis.erc20(), stableAddress);
   try {
-      return await stableCoin.methods.balanceOf(walletAddress).call();
+    return await stableCoin.methods.balanceOf(walletAddress).call();
   } catch (e) {
-      return ""
+    return ""
   }
 }
 

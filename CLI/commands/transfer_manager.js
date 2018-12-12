@@ -906,14 +906,14 @@ async function lockUpTransferManager() {
         );
         let addNewLockUpToUserReceipt = await common.sendTransaction(addNewLockUpToUserAction);
         let addNewLockUpToUserEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addNewLockUpToUserReceipt.logs, 'AddNewLockUpType');
-        console.log(chalk.green(`${web3.utils.hexToUtf8(addNewLockUpToUserEvent.lockupName)} lockup type has been added successfully!`));
-        let addLockUpToUserEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addNewLockUpToUserReceipt.logs, 'AddNewLockUpToUser');
-        console.log(chalk.green(`${addLockUpToUserEvent.userAddress} has been added to ${web3.utils.hexToUtf8(addLockUpToUserEvent.lockupName)} successfully!`));
+        console.log(chalk.green(`${web3.utils.hexToUtf8(addNewLockUpToUserEvent._lockupName)} lockup type has been added successfully!`));
+        let addLockUpToUserEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addNewLockUpToUserReceipt.logs, 'AddLockUpToUser');
+        console.log(chalk.green(`${addLockUpToUserEvent._userAddress} has been added to ${web3.utils.hexToUtf8(addLockUpToUserEvent._lockupName)} successfully!`));
       } else {
         let addLockupTypeAction = currentTransferManager.methods.addNewLockUpType(web3.utils.toWei(lockupAmount.toString()), startTime, lockUpPeriodSeconds, releaseFrequencySeconds, web3.utils.toHex(name));
         let addLockupTypeReceipt = await common.sendTransaction(addLockupTypeAction);
         let addLockupTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addLockupTypeReceipt.logs, 'AddNewLockUpType');
-        console.log(chalk.green(`${web3.utils.hexToUtf8(addLockupTypeEvent.lockupName)} lockup type has been added successfully!`));
+        console.log(chalk.green(`${web3.utils.hexToUtf8(addLockupTypeEvent._lockupName)} lockup type has been added successfully!`));
       }
       break;
     case 'Manage existing lockups':
@@ -955,13 +955,15 @@ async function manageExistingLockups(lockupName) {
   console.log('\n', chalk.blue(`Lockup ${web3.utils.hexToUtf8(lockupName)}`), '\n');
 
   // Show current data
-  let currentLockup = await currentTransferManager.methods.lockups(lockupName).call();
+  let currentLockup = await currentTransferManager.methods.getLockUp(lockupName).call();
   let investors = await currentTransferManager.methods.getListOfAddresses(lockupName).call();
 
-  console.log(`- Amount:               ${web3.utils.fromWei(currentLockup.lockupAmount)} ${tokenSymbol}`)
+
+  console.log(`- Amount:               ${web3.utils.fromWei(currentLockup.lockupAmount)} ${tokenSymbol}`);
+  console.log(`- Currently unlocked:   ${web3.utils.fromWei(currentLockup.unlockedAmount)}  ${tokenSymbol}`);
   console.log(`- Start time:           ${moment.unix(currentLockup.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
   console.log(`- Lockup period:        ${currentLockup.lockUpPeriodSeconds} seconds`);
-  console.log(`- End time:             ${moment.unix(currentLockup.startTime).add(parseInt(currentLockup.lockUpPeriodSeconds)).format('MMMM Do YYYY, HH:mm:ss')}`);
+  console.log(`- End time:             ${moment.unix(currentLockup.endTime).add(parseInt(currentLockup.lockUpPeriodSeconds)).format('MMMM Do YYYY, HH:mm:ss')}`);
   console.log(`- Release frequency:    ${currentLockup.releaseFrequencySeconds} senconds`);
   console.log(`- Investors:            ${investors.length}`);
   // ------------------
@@ -987,7 +989,7 @@ async function manageExistingLockups(lockupName) {
       let modifyLockUpTypeAction = currentTransferManager.methods.modifyLockUpType(lockupAmount, startTime, lockUpPeriodSeconds, releaseFrequencySeconds, lockupName);
       let modifyLockUpTypeReceipt = await common.sendTransaction(modifyLockUpTypeAction);
       let modifyLockUpTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyLockUpTypeReceipt.logs, 'ModifyLockUpType');
-      console.log(chalk.green(`${web3.utils.hexToUtf8(modifyLockUpTypeEvent.lockupName)} lockup type has been modified successfully!`));
+      console.log(chalk.green(`${web3.utils.hexToUtf8(modifyLockUpTypeEvent._lockupName)} lockup type has been modified successfully!`));
       break;
     case 'Show investors':
       if (investors.length > 0) {
@@ -1011,8 +1013,8 @@ async function manageExistingLockups(lockupName) {
         addInvestorToLockupAction = currentTransferManager.methods.addLockUpByNameMulti(investorsToAdd, investorsToAdd.map(i => lockupName));
       }
       let addInvestorToLockupReceipt = await common.sendTransaction(addInvestorToLockupAction);
-      let addInvestorToLockupEvents = common.getMultipleEventsFromLogs(currentTransferManager._jsonInterface, addInvestorToLockupReceipt.logs, 'AddNewLockUpToUser');
-      addInvestorToLockupEvents.map(e => console.log(chalk.green(`${e.userAddress} has been added to ${web3.utils.hexToUtf8(e.lockupName)} successfully!`)));
+      let addInvestorToLockupEvents = common.getMultipleEventsFromLogs(currentTransferManager._jsonInterface, addInvestorToLockupReceipt.logs, 'AddLockUpToUser');
+      addInvestorToLockupEvents.map(e => console.log(chalk.green(`${e._userAddress} has been added to ${web3.utils.hexToUtf8(e._lockupName)} successfully!`)));
       break;
     case 'Remove this lockup from investors':
       let investorsToRemove = readlineSync.question(`Enter the addresses of the investors separated by comma (i.e.addr1, addr2, addr3): `, {
@@ -1029,7 +1031,7 @@ async function manageExistingLockups(lockupName) {
       }
       let removeLockUpFromUserReceipt = await common.sendTransaction(removeLockupFromInvestorAction);
       let removeLockUpFromUserEvents = common.getMultipleEventsFromLogs(currentTransferManager._jsonInterface, removeLockUpFromUserReceipt.logs, 'RemoveLockUpFromUser');
-      removeLockUpFromUserEvents.map(e => console.log(chalk.green(`${e.userAddress} has been removed to ${web3.utils.hexToUtf8(e.lockupName)} successfully!`)));
+      removeLockUpFromUserEvents.map(e => console.log(chalk.green(`${e._userAddress} has been removed to ${web3.utils.hexToUtf8(e._lockupName)} successfully!`)));
       break;
     case 'Delete this lockup type':
       let isEmpty = investors.length === 0;
@@ -1053,7 +1055,7 @@ async function manageExistingLockups(lockupName) {
         let removeLockupTypeAction = currentTransferManager.methods.removeLockupType(lockupName);
         let removeLockupTypeReceipt = await common.sendTransaction(removeLockupTypeAction);
         let removeLockupTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeLockupTypeReceipt.logs, 'RemoveLockUpType');
-        console.log(chalk.green(`${web3.utils.hexToUtf8(removeLockupTypeEvent.lockupName)} lockup type has been deleted successfully!`));
+        console.log(chalk.green(`${web3.utils.hexToUtf8(removeLockupTypeEvent._lockupName)} lockup type has been deleted successfully!`));
       }
       return;
     case 'RETURN':

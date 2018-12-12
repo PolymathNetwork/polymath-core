@@ -1278,7 +1278,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should transfer the tokens freely after ending the default daily restriction", async() => {
-            await increaseTime(duration.days(3));
+            await increaseTime(duration.days(3) + 10);
             //sell tokens upto the limit
             let tx = await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("5"), {from: account_investor4});
             assert.equal((tx.logs[0].args.value).toNumber(), web3.utils.toWei("5"));
@@ -1313,6 +1313,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should transfer tokens on by investor 3 (comes under the Default restriction)", async() => {
+            await increaseTime(10);
             tempArray3.length = 0;
             let startTime = (await I_VolumeRestrictionTM.defaultRestriction.call())[1].toNumber();
             let startTimedaily = (await I_VolumeRestrictionTM.defaultDailyRestriction.call())[1].toNumber();
@@ -1336,7 +1337,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(amt, 5);
 
             // Transfer tokens on another day
-
             await increaseTime(duration.days(1));
             //sell tokens upto the limit
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("3"), {from: account_investor3});
@@ -1365,7 +1365,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should able to transfer tokens in the next rolling period", async() => {
             await increaseTime(duration.days(4.1));
-            console.log(`Diff days: ${(latestTime() - ((await I_VolumeRestrictionTM.getDefaultBucketDetailsToUser.call(account_investor3))[0]).toNumber()) / 86400}`)
+            console.log(`*** Diff days: ${(latestTime() - ((await I_VolumeRestrictionTM.getDefaultBucketDetailsToUser.call(account_investor3))[0]).toNumber()) / 86400}`)
             for (let i = 0; i < 3; i++) {
                 tempArray3.push(0);
             }

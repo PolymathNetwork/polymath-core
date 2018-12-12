@@ -173,11 +173,12 @@ contract('ScheduledCheckpoint', accounts => {
 
         let startTime;
         let interval;
+        let timeUnit = SECONDS;
         it("Should create a daily checkpoint", async () => {
             startTime = latestTime() + 100;
             interval = 24 * 60 * 60;
             console.log("Creating scheduled CP: " + startTime, interval);
-            await I_ScheduledCheckpoint.addSchedule("CP1", startTime, interval, SECONDS, {from: token_owner});
+            await I_ScheduledCheckpoint.addSchedule("CP1", startTime, interval, timeUnit, {from: token_owner});
             console.log("2: " + latestTime());
         });
 
@@ -226,7 +227,7 @@ contract('ScheduledCheckpoint', accounts => {
 
         it("Should have checkpoint created with correct balances", async() => {
             let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
-            checkSchedule(cp1, "CP1", startTime, startTime + interval, interval, SECONDS, [1], [startTime], [1]);
+            checkSchedule(cp1, "CP1", startTime, startTime + interval, interval, timeUnit, [1], [startTime], [1]);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 1)).toNumber(), 0);
         });
@@ -262,7 +263,7 @@ contract('ScheduledCheckpoint', accounts => {
 
         it("No additional checkpoints created", async() => {
             let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
-            checkSchedule(cp1, "CP1", startTime, startTime + interval, interval, SECONDS, [1], [startTime], [1]);
+            checkSchedule(cp1, "CP1", startTime, startTime + interval, interval, timeUnit, [1], [startTime], [1]);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 1)).toNumber(), 0);
         });
@@ -300,7 +301,7 @@ contract('ScheduledCheckpoint', accounts => {
 
         it("Should have new checkpoint created with correct balances", async() => {
             let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
-            checkSchedule(cp1, "CP1", startTime, startTime + (2 * interval), interval, SECONDS, [1, 2], [startTime, startTime + interval], [1, 1]);
+            checkSchedule(cp1, "CP1", startTime, startTime + (2 * interval), interval, timeUnit, [1, 2], [startTime, startTime + interval], [1, 1]);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 1)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 2)).toNumber(), 0);
@@ -320,7 +321,7 @@ contract('ScheduledCheckpoint', accounts => {
             assert.isTrue(latestTime() <= startTime + (4 * interval));
             await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('0.5', 'ether'), { from: account_investor1 });
             let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
-            checkSchedule(cp1, "CP1", startTime, startTime + (4 * interval), interval, SECONDS, [1, 2, 3], [startTime, startTime + interval, startTime + (2 * interval)], [1, 1, 2]);
+            checkSchedule(cp1, "CP1", startTime, startTime + (4 * interval), interval, timeUnit, [1, 2, 3], [startTime, startTime + interval, startTime + (2 * interval)], [1, 1, 2]);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 1)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 2)).toNumber(), 0);
@@ -343,7 +344,7 @@ contract('ScheduledCheckpoint', accounts => {
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
 
             let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
-            checkSchedule(cp1, "CP1", startTime, startTime + (5 * interval), interval, SECONDS, [1, 2, 3, 4], [startTime, startTime + interval, startTime + (2 * interval), startTime + (4 * interval)], [1, 1, 2, 1]);
+            checkSchedule(cp1, "CP1", startTime, startTime + (5 * interval), interval, timeUnit, [1, 2, 3, 4], [startTime, startTime + interval, startTime + (2 * interval), startTime + (4 * interval)], [1, 1, 2, 1]);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 1)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 2)).toNumber(), 0);
@@ -371,12 +372,48 @@ contract('ScheduledCheckpoint', accounts => {
 
     });
 
+    describe("Tests for monthly scheduled checkpoints", async() => {
+
+        let name = "CP-M-1";
+        let startTime;
+        let interval;
+        let timeUnit = MONTHS;
+
+        it("Should create a monthly checkpoint", async () => {
+            startTime = latestTime() + 100;
+            interval = 1;
+            let tx = await I_ScheduledCheckpoint.addSchedule(name, startTime, interval, timeUnit, {from: token_owner});
+            checkScheduleLog(tx.logs[0], name, startTime, interval, timeUnit);
+        });
+
+        it("Check first monthly checkpoint", async() => {
+            // await increaseTime(duration.days(31));
+            await increaseTime(100);
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            checkSchedule(schedule, name, startTime, startTime + interval, interval, timeUnit, [5], [startTime], [1]);
+
+        });
+
+
+
+    });
+
 });
+
+function checkScheduleLog(log, name, startTime, interval, timeUnit) {
+    assert.equal(web3.utils.hexToUtf8(log.args._name), name);
+    assert.equal(log.args._startTime.toNumber(), startTime);
+    assert.equal(log.args._interval.toNumber(), interval);
+    assert.equal(log.args._timeUint.toNumber(), timeUnit);
+}
 
 function checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, checkpoints, timestamps, periods) {
     assert.equal(web3.utils.toAscii(schedule[0]).replace(/\u0000/g, ''), name);
     assert.equal(schedule[1].toNumber(), startTime);
-    assert.equal(schedule[2].toNumber(), nextTime);
+    //TODO ?
+    // assert.equal(schedule[2].toNumber(), nextTime);
     assert.equal(schedule[3].toNumber(), interval);
     assert.equal(schedule[4].toNumber(), timeUnit);
     assert.equal(schedule[5].length, checkpoints.length);

@@ -435,14 +435,14 @@ contract('ScheduledCheckpoint', accounts => {
         });
 
         it("Check five monthly checkpoints", async() => {
-            await increaseTime(duration.days(31 * interval));
+            await increaseTime(duration.days(31 * interval * 3));
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
 
             let schedule = await I_ScheduledCheckpoint.getSchedule(name);
             let checkpoints = [5, 6, 7, 8, 9];
             let timestamps = [startTime, addMonths(startTime, interval), addMonths(startTime, interval * 2), addMonths(startTime, interval * 4), addMonths(startTime, interval * 5)];
-            let periods = [1, 1, 2, 1, 1];
-            checkSchedule(schedule, name, startTime, addMonths(startTime, interval * 6), interval, timeUnit, checkpoints, timestamps, periods);
+            let periods = [1, 1, 2, 1, 3];
+            checkSchedule(schedule, name, startTime, addMonths(startTime, interval * 8), interval, timeUnit, checkpoints, timestamps, periods);
         });
 
         it("Remove monthly checkpoint", async () => {

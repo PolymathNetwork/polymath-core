@@ -370,6 +370,10 @@ contract('ScheduledCheckpoint', accounts => {
             assert.equal(perm.length, 0);
         });
 
+        it("Remove daily checkpoint", async () => {
+            await I_ScheduledCheckpoint.removeSchedule("CP1", {from: token_owner});
+        });
+
     });
 
     describe("Tests for monthly scheduled checkpoints", async() => {
@@ -386,21 +390,63 @@ contract('ScheduledCheckpoint', accounts => {
             checkScheduleLog(tx.logs[0], name, startTime, interval, timeUnit);
         });
 
-        it("Check first monthly checkpoint", async() => {
-            // await increaseTime(duration.days(31));
+        it("Check one monthly checkpoint", async() => {
             await increaseTime(100);
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
 
             let schedule = await I_ScheduledCheckpoint.getSchedule(name);
-            checkSchedule(schedule, name, startTime, startTime + interval, interval, timeUnit, [5], [startTime], [1]);
-
+            let checkpoints = [5];
+            let timestamps = [startTime];
+            let periods = [1];
+            checkSchedule(schedule, name, startTime, addMonths(startTime, interval), interval, timeUnit, checkpoints, timestamps, periods);
         });
 
+        it("Check two monthly checkpoints", async() => {
+            await increaseTime(duration.days(31 * interval));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
 
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [5, 6];
+            let timestamps = [startTime, addMonths(startTime, interval)];
+            let periods = [1, 1];
+            checkSchedule(schedule, name, startTime, addMonths(startTime, interval * 2), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Check three monthly checkpoints", async() => {
+            await increaseTime(duration.days(31 * interval * 2));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [5, 6, 7];
+            let timestamps = [startTime, addMonths(startTime, interval), addMonths(startTime, interval * 2)];
+            let periods = [1, 1, 2];
+            checkSchedule(schedule, name, startTime, addMonths(startTime, interval * 4), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Check four monthly checkpoints", async() => {
+            await increaseTime(duration.days(31 * interval));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [5, 6, 7, 8];
+            let timestamps = [startTime, addMonths(startTime, interval), addMonths(startTime, interval * 2), addMonths(startTime, interval * 4)];
+            let periods = [1, 1, 2, 1];
+            checkSchedule(schedule, name, startTime, addMonths(startTime, interval * 5), interval, timeUnit, checkpoints, timestamps, periods);
+        });
 
     });
 
 });
+
+function addMonths(timestamp, months) {
+    let time = new Date(timestamp * 1000);
+    return time.setMonth(time.getMonth() + months) / 1000;
+}
+
+function addYears(timestamp, years) {
+    let time = new Date(timestamp * 1000);
+    return time.setFullYear(time.getFullYear() + years) / 1000;
+}
 
 function checkScheduleLog(log, name, startTime, interval, timeUnit) {
     assert.equal(web3.utils.hexToUtf8(log.args._name), name);
@@ -412,8 +458,7 @@ function checkScheduleLog(log, name, startTime, interval, timeUnit) {
 function checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, checkpoints, timestamps, periods) {
     assert.equal(web3.utils.toAscii(schedule[0]).replace(/\u0000/g, ''), name);
     assert.equal(schedule[1].toNumber(), startTime);
-    //TODO ?
-    // assert.equal(schedule[2].toNumber(), nextTime);
+    assert.equal(schedule[2].toNumber(), nextTime);
     assert.equal(schedule[3].toNumber(), interval);
     assert.equal(schedule[4].toNumber(), timeUnit);
     assert.equal(schedule[5].length, checkpoints.length);

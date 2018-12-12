@@ -12,7 +12,6 @@ import "../../../libraries/BokkyPooBahsDateTimeLibrary.sol";
 contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
     using SafeMath for uint256;
 
-    //TODO should we add hours, days & weeks for convenience ?
     enum TimeUnit {SECONDS, MONTHS, YEARS}
 
     struct Schedule {
@@ -128,7 +127,6 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
         _update(_name);
     }
 
-    //TODO refactor
     function _update(bytes32 _name) internal {
         Schedule storage schedule = schedules[_name];
         if (schedule.nextTime <= now) {

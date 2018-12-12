@@ -385,7 +385,7 @@ contract('ScheduledCheckpoint', accounts => {
 
         it("Should create a monthly checkpoint", async () => {
             startTime = latestTime() + 100;
-            interval = 1;
+            interval = 5;
             let tx = await I_ScheduledCheckpoint.addSchedule(name, startTime, interval, timeUnit, {from: token_owner});
             checkScheduleLog(tx.logs[0], name, startTime, interval, timeUnit);
         });
@@ -434,18 +434,33 @@ contract('ScheduledCheckpoint', accounts => {
             checkSchedule(schedule, name, startTime, addMonths(startTime, interval * 5), interval, timeUnit, checkpoints, timestamps, periods);
         });
 
+        it("Check five monthly checkpoints", async() => {
+            await increaseTime(duration.days(31 * interval));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [5, 6, 7, 8, 9];
+            let timestamps = [startTime, addMonths(startTime, interval), addMonths(startTime, interval * 2), addMonths(startTime, interval * 4), addMonths(startTime, interval * 5)];
+            let periods = [1, 1, 2, 1, 1];
+            checkSchedule(schedule, name, startTime, addMonths(startTime, interval * 6), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Remove monthly checkpoint", async () => {
+            await I_ScheduledCheckpoint.removeSchedule(name, {from: token_owner});
+        });
+
     });
 
 });
 
 function addMonths(timestamp, months) {
     let time = new Date(timestamp * 1000);
-    return time.setMonth(time.getMonth() + months) / 1000;
+    return time.setUTCMonth(time.getUTCMonth() + months) / 1000;
 }
 
 function addYears(timestamp, years) {
     let time = new Date(timestamp * 1000);
-    return time.setFullYear(time.getFullYear() + years) / 1000;
+    return time.setUTCFullYear(time.getUTCFullYear() + years) / 1000;
 }
 
 function checkScheduleLog(log, name, startTime, interval, timeUnit) {

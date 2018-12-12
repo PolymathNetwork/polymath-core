@@ -31,33 +31,33 @@ contract LockUpTransferManager is ITransferManager {
 
     bytes32[] lockupArray;
 
-    event AddNewLockUpToUser(
-        address indexed userAddress,
-        bytes32 indexed lockupName
+    event AddLockUpToUser(
+        address indexed _userAddress,
+        bytes32 indexed _lockupName
     );
 
     event RemoveLockUpFromUser(
-        address indexed userAddress,
-        bytes32 indexed lockupName
+        address indexed _userAddress,
+        bytes32 indexed _lockupName
     );
 
     event ModifyLockUpType(
-        uint256 lockupAmount,
-        uint256 startTime,
-        uint256 lockUpPeriodSeconds,
-        uint256 releaseFrequencySeconds,
-        bytes32 indexed lockupName
+        uint256 _lockupAmount,
+        uint256 _startTime,
+        uint256 _lockUpPeriodSeconds,
+        uint256 _releaseFrequencySeconds,
+        bytes32 indexed _lockupName
     );
 
     event AddNewLockUpType(
-        bytes32 indexed lockupName,
-        uint256 lockupAmount,
-        uint256 startTime,
-        uint256 lockUpPeriodSeconds,
-        uint256 releaseFrequencySeconds
+        bytes32 indexed _lockupName,
+        uint256 _lockupAmount,
+        uint256 _startTime,
+        uint256 _lockUpPeriodSeconds,
+        uint256 _releaseFrequencySeconds
     );
 
-    event RemoveLockUpType(bytes32 indexed lockupName);
+    event RemoveLockUpType(bytes32 indexed _lockupName);
 
     /**
      * @notice Constructor
@@ -345,36 +345,26 @@ contract LockUpTransferManager is ITransferManager {
     }
 
     /**
-     * @notice Get the length of the lockups array for a specific user address
-     * @param _userAddress Address of the user whose tokens should be locked up
-     */
-    function getLockUpsLength(address _userAddress) public view returns (uint256) {
-        return userToLockups[_userAddress].length;
-    }
-
-    /**
      * @notice Get a specific element in a user's lockups array given the user's address and the element index
-     * @param _userAddress Address of the user whose tokens should be locked up
      * @param _lockupName The name of the lockup
      */
-    function getLockUp(address _userAddress, bytes32 _lockupName) public view returns (
+    function getLockUp(bytes32 _lockupName) external view returns (
         uint256 lockupAmount,
         uint256 startTime,
         uint256 lockUpPeriodSeconds,
         uint256 releaseFrequencySeconds,
         uint256 unlockedAmount
     ) {
-        require(
-            userToLockups[_userAddress][userToLockupIndex[_userAddress][_lockupName]] == _lockupName,
-            "User not assosicated with given lockup"
-        );
-        return (
-            lockups[_lockupName].lockupAmount,
-            lockups[_lockupName].startTime,
-            lockups[_lockupName].lockUpPeriodSeconds,
-            lockups[_lockupName].releaseFrequencySeconds,
-            _getUnlockedAmountForLockup(_lockupName)
-        );
+        if (lockups[_lockupName].lockupAmount != 0) {
+            return (
+                lockups[_lockupName].lockupAmount,
+                lockups[_lockupName].startTime,
+                lockups[_lockupName].lockUpPeriodSeconds,
+                lockups[_lockupName].releaseFrequencySeconds,
+                _getUnlockedAmountForLockup(_lockupName)
+            );
+        }
+        return (uint256(0), uint256(0), uint256(0), uint256(0), uint256(0));
     }
 
    /**
@@ -582,7 +572,7 @@ contract LockUpTransferManager is ITransferManager {
         lockupToUserIndex[_lockupName][_userAddress] = lockupToUsers[_lockupName].length;
         userToLockups[_userAddress].push(_lockupName);
         lockupToUsers[_lockupName].push(_userAddress);
-        emit AddNewLockUpToUser(_userAddress, _lockupName);
+        emit AddLockUpToUser(_userAddress, _lockupName);
     }
 
     function _addNewLockUpType(

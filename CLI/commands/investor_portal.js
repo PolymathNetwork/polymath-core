@@ -549,11 +549,18 @@ async function investUsdTieredSTO(currency, amount) {
                     raiseTypes.push(stable.symbol)
                 })
             }
-            let index = readlineSync.keyInSelect(raiseTypes, 'Choose one of the allowed raise types: ', { cancel: false });
-            raiseType = raiseTypes[index];
+            raiseType = raiseTypes[selectToken('Choose one of the allowed raise types: ')];
         } else {
-            raiseType = raiseTypes[0];
-            console.log('');
+            if (raiseTypes[0] == STABLE) {
+                raiseTypes.splice(raiseTypes.indexOf(STABLE), 1)
+                stableSymbols.forEach((stable) => {
+                    raiseTypes.push(stable.symbol)
+                })
+                raiseType = raiseTypes[selectToken('Choose one of the allowed stable coin(s): ')];
+            } else {
+                raiseType = raiseTypes[0];
+                console.log('');
+            }
         }
     }
 
@@ -643,6 +650,10 @@ async function investUsdTieredSTO(currency, amount) {
 
     await showTokenInfo();
     await showUserInfoForUSDTieredSTO();
+}
+
+function selectToken(msg) {
+    return readlineSync.keyInSelect(raiseTypes, msg, { cancel: false });
 }
 
 async function polyBalance(_user) {

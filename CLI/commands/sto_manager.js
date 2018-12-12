@@ -348,7 +348,7 @@ async function addressesConfigUSDTieredSTO(usdTokenRaise) {
       addresses.usdToken = ['0x0000000000000000000000000000000000000000'];
     }
   
-    if (!await processArray(listOfAddress)) {
+    if ((usdTokenRaise) && (!await processArray(listOfAddress))) {
       console.log(chalk.yellow(`\nPlease, verify your stable coins addresses to continue with this process.\n`))
       menu = true;
     } else {

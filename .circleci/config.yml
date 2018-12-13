@@ -50,9 +50,6 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
-      - store_test_results:
-          path: test-results
-
   docs:
     docker:
       - image: circleci/node:8
@@ -73,9 +70,9 @@ workflows:
   version: 2
   commit:
     jobs:
-      - build
       - test
-  daily-coverage:
+      - coverage
+  daily-builds:
     triggers:
       - schedule:
           cron: "0 0 * * *"
@@ -86,6 +83,7 @@ workflows:
                 - development-2.1.0
                 - development-3.0.0
     jobs:
+      - test
       - coverage
   docs:
     jobs:

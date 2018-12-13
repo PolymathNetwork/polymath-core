@@ -95,6 +95,12 @@ if [ "$COVERAGE" = true ]; then
     cat coverage/lcov.info | node_modules/.bin/coveralls
   fi
 else
+  if [ "$CI" = true ]; then
+    mkdir test-results
+    mkdir test-results/mocha
+    rm truffle-config.js
+    mv truffle-ci.js truffle-config.js
+  fi
   # Do not run a_poly_oracle,js tests unless it is a cron job
   if [ "$CIRCLE_CI_CRON" = true ]; then
     node_modules/.bin/truffle test `ls test/*.js`

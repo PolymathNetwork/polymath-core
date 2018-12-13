@@ -74,6 +74,12 @@ workflows:
     triggers:
       - schedule:
           cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+                - development-2.1.0
+                - development-3.0.0
     jobs:
       - coverage
   docs:

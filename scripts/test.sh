@@ -95,7 +95,7 @@ if [ "$COVERAGE" = true ]; then
     cat coverage/lcov.info | node_modules/.bin/coveralls
   fi
 else
-  if [ "$CIRCLECI" = true ]; then
+  if [ "$CIRCLECI" = true ]; then # using mocha junit reporter for parallelism in CircleCI 
     mkdir test-results
     mkdir test-results/mocha
     rm truffle-config.js

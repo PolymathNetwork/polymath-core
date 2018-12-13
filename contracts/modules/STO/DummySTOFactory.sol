@@ -31,10 +31,7 @@ contract DummySTOFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        updateFromRegistry(msg.sender);
-        if (setupCost > 0) {
-            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Sufficent Allowance is not provided");
-        }
+        _takeFee();
         //Check valid bytes - can only call module init function
         DummySTO dummySTO = new DummySTO(msg.sender);
         //Checks that _data is valid (not calling anything it shouldn't)

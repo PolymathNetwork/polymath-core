@@ -30,10 +30,7 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
-        updateFromRegistry(msg.sender);
-        if (setupCost > 0) {
-            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Insufficent allowance or balance");
-        }
+        _takeFee();
         address ethDividendCheckpoint = new EtherDividendCheckpoint(msg.sender);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(ethDividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);

@@ -12,7 +12,6 @@ import "../libraries/VersionUtils.sol";
  */
 contract ModuleFactory is IModuleFactory, Ownable {
 
-    IERC20 public polyToken;
     uint256 public usageCost;
     uint256 public monthlySubscriptionCost;
 
@@ -23,9 +22,9 @@ contract ModuleFactory is IModuleFactory, Ownable {
     string public title;
 
     // @notice Allow only two variables to be stored
-    // 1. lowerBound 
+    // 1. lowerBound
     // 2. upperBound
-    // @dev (0.0.0 will act as the wildcard) 
+    // @dev (0.0.0 will act as the wildcard)
     // @dev uint24 consists packed value of uint8 _major, uint8 _minor, uint8 _patch
     mapping(string => uint24) compatibleSTVersionRange;
 
@@ -126,7 +125,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
             "Must be a valid bound type"
         );
         require(_newVersion.length == 3);
-        if (compatibleSTVersionRange[_boundType] != uint24(0)) { 
+        if (compatibleSTVersionRange[_boundType] != uint24(0)) {
             uint8[] memory _currentVersion = VersionUtils.unpack(compatibleSTVersionRange[_boundType]);
             require(VersionUtils.isValidVersion(_currentVersion, _newVersion), "Failed because of in-valid version");
         }
@@ -160,12 +159,15 @@ contract ModuleFactory is IModuleFactory, Ownable {
    /**
     * @notice Get the name of the Module
     */
-    function getName() public view returns(bytes32) {
+    function getName() public view returns (bytes32) {
         return name;
     }
 
-    function updateFromRegistry(address _securityToken) internal {
-        polyToken = IERC20(RegistryUpdater(_securityToken).polyToken());
+    function _takeFee() internal {
+        if (setupCost > 0) {
+            require(IERC20(RegistryUpdater(msg.sender).polyToken()).transferFrom(msg.sender, owner(), setupCost),
+                "Insufficient allowance for module fee");
+        }
     }
 
 }

@@ -32,10 +32,7 @@ contract PercentageTransferManagerFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        updateFromRegistry(msg.sender);
-        if (setupCost > 0) {
-            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        }
+        _takeFee();
         PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender);
         require(Util.getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
         /*solium-disable-next-line security/no-low-level-calls*/

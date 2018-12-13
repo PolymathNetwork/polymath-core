@@ -30,10 +30,7 @@ contract LockupVolumeRestrictionTMFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
-        updateFromRegistry(msg.sender);
-        if (setupCost > 0) {
-            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        }
+        _takeFee();
         LockupVolumeRestrictionTM lockupVolumeRestrictionTransferManager = new LockupVolumeRestrictionTM(msg.sender);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(lockupVolumeRestrictionTransferManager), getName(), address(this), msg.sender, now);
@@ -49,7 +46,7 @@ contract LockupVolumeRestrictionTMFactory is ModuleFactory {
         res[0] = 2;
         return res;
     }
-   
+
     /**
      * @notice Returns the instructions associated with the module
      */

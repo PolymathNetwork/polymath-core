@@ -75,7 +75,6 @@ workflows:
     jobs:
       - build
       - test
-      - coverage
   daily-coverage:
     triggers:
       - schedule:

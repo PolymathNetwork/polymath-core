@@ -66,6 +66,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     public
     onlyFactory
     {
+        require(endTime == 0, "Already configured");
         require(_rate > 0, "Rate of token should be greater than 0");
         require(_fundsReceiver != address(0), "Zero address is not permitted");
         /*solium-disable-next-line security/no-block-members*/
@@ -110,9 +111,10 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "Mode of investment is not ETH");
 
         uint256 weiAmount = msg.value;
-        _processTx(_beneficiary, weiAmount);
+        uint256 refund = _processTx(_beneficiary, weiAmount);
+        weiAmount = weiAmount.sub(refund);
 
-        _forwardFunds();
+        _forwardFunds(refund);
         _postValidatePurchase(_beneficiary, weiAmount);
     }
 
@@ -123,9 +125,9 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant{
         require(!paused, "Should not be paused");
         require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "Mode of investment is not POLY");
-        _processTx(msg.sender, _investedPOLY);
-        _forwardPoly(msg.sender, wallet, _investedPOLY);
-        _postValidatePurchase(msg.sender, _investedPOLY);
+        uint256 refund = _processTx(msg.sender, _investedPOLY);
+        _forwardPoly(msg.sender, wallet, _investedPOLY.sub(refund));
+        _postValidatePurchase(msg.sender, _investedPOLY.sub(refund));
     }
 
     /**
@@ -183,11 +185,13 @@ contract CappedSTO is ISTO, ReentrancyGuard {
       * @param _beneficiary Address performing the token purchase
       * @param _investedAmount Value in wei involved in the purchase
     */
-    function _processTx(address _beneficiary, uint256 _investedAmount) internal {
+    function _processTx(address _beneficiary, uint256 _investedAmount) internal returns(uint256 refund) {
 
         _preValidatePurchase(_beneficiary, _investedAmount);
         // calculate token amount to be created
-        uint256 tokens = _getTokenAmount(_investedAmount);
+        uint256 tokens;
+        (tokens, refund) = _getTokenAmount(_investedAmount);
+        _investedAmount = _investedAmount.sub(refund);
 
         // update state
         if (fundRaiseTypes[uint8(FundRaiseType.POLY)]) {
@@ -212,7 +216,9 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal view {
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
         require(_investedAmount != 0, "Amount invested should not be equal to 0");
-        require(totalTokensSold.add(_getTokenAmount(_investedAmount)) <= cap, "Investment more than cap is not allowed");
+        uint256 tokens;
+        (tokens, ) = _getTokenAmount(_investedAmount);
+        require(totalTokensSold.add(tokens) <= cap, "Investment more than cap is not allowed");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= startTime && now <= endTime, "Offering is closed/Not yet started");
     }
@@ -261,18 +267,23 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     * @notice Overrides to extend the way in which ether is converted to tokens.
     * @param _investedAmount Value in wei to be converted into tokens
     * @return Number of tokens that can be purchased with the specified _investedAmount
+    * @return Remaining amount that should be refunded to the investor
     */
-    function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256 tokenAmount) {
-        tokenAmount = _investedAmount.mul(rate);
-        tokenAmount = tokenAmount.div(uint256(10) ** 18);
-        return tokenAmount;
+    function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256 _tokens, uint256 _refund) {
+        _tokens = _investedAmount.mul(rate);
+        _tokens = _tokens.div(uint256(10) ** 18);
+        uint256 granularity = ISecurityToken(securityToken).granularity();
+        _tokens = _tokens.div(granularity);
+        _tokens = _tokens.mul(granularity);
+        _refund = _investedAmount.sub((_tokens.mul(uint256(10) ** 18)).div(rate));
     }
 
     /**
     * @notice Determines how ETH is stored/forwarded on purchases.
     */
-    function _forwardFunds() internal {
-        wallet.transfer(msg.value);
+    function _forwardFunds(uint256 _refund) internal {
+        wallet.transfer(msg.value.sub(_refund));
+        msg.sender.transfer(_refund);
     }
 
     /**

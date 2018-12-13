@@ -380,12 +380,11 @@ contract('ScheduledCheckpoint', accounts => {
 
         let name = "CP-M-1";
         let startTime;
-        let interval;
+        let interval = 5;
         let timeUnit = MONTHS;
 
         it("Should create a monthly checkpoint", async () => {
             startTime = latestTime() + 100;
-            interval = 5;
             let tx = await I_ScheduledCheckpoint.addSchedule(name, startTime, interval, timeUnit, {from: token_owner});
             checkScheduleLog(tx.logs[0], name, startTime, interval, timeUnit);
         });
@@ -455,13 +454,12 @@ contract('ScheduledCheckpoint', accounts => {
 
         let name = "CP-Y-1";
         let startTime;
-        let interval;
+        let interval = 3;
         let timeUnit = YEARS;
 
         it("Should create a yearly checkpoint", async () => {
             startTime = latestTime() + 100;
 
-            interval = 3;
             let tx = await I_ScheduledCheckpoint.addSchedule(name, startTime, interval, timeUnit, {from: token_owner});
             checkScheduleLog(tx.logs[0], name, startTime, interval, timeUnit);
         });
@@ -523,6 +521,62 @@ contract('ScheduledCheckpoint', accounts => {
 
         it("Remove monthly checkpoint", async () => {
             await I_ScheduledCheckpoint.removeSchedule(name, {from: token_owner});
+        });
+
+    });
+
+    describe("Tests for monthly (last day of month) scheduled checkpoints", async() => {
+        let name = "CP-M-2";
+        let previousTime;
+        let startTime;
+        let interval = 1;
+        let timeUnit = MONTHS;
+
+        it("Should create a monthly (last day of month) checkpoint", async () => {
+            previousTime = latestTime();
+
+            let startDate = new Date(previousTime * 1000);
+            startDate.setUTCMonth(11, 31);
+            startTime = startDate.getTime() / 1000;
+            console.log("previousTime:" + previousTime);
+            console.log("startTime:" + startTime);
+            console.log("startDate:" + startDate.toDateString());
+
+            let tx = await I_ScheduledCheckpoint.addSchedule(name, startTime, interval, timeUnit, {from: token_owner});
+            checkScheduleLog(tx.logs[0], name, startTime, interval, timeUnit);
+        });
+
+        it("Check one monthly (last day of month) checkpoint", async() => {
+            await increaseTime(startTime - previousTime + 100);
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [15];
+            let timestamps = [startTime];
+            let periods = [1];
+            checkSchedule(schedule, name, startTime, addMonths(startTime, interval), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Check two monthly checkpoints", async() => {
+            await increaseTime(duration.days(31 * interval));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [15, 16];
+            let timestamps = [startTime, addMonths(startTime, interval)];
+            let periods = [1, 1];
+            checkSchedule(schedule, name, startTime, addMonths(startTime, interval * 2), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Check three monthly checkpoints", async() => {
+            await increaseTime(duration.days(31 * interval));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [15, 16, 17];
+            let timestamps = [startTime, addMonths(startTime, interval), addMonths(startTime, interval * 2)];
+            let periods = [1, 1, 1];
+            checkSchedule(schedule, name, startTime, addMonths(startTime, interval * 3), interval, timeUnit, checkpoints, timestamps, periods);
         });
 
     });

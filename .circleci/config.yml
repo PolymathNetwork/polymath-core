@@ -76,7 +76,8 @@ workflows:
   commit:
     jobs:
       - test
-      - coverage
+      - coverage:
+          type: approval
   daily-builds:
     triggers:
       - schedule:

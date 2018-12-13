@@ -12,6 +12,12 @@ const { table } = require('table')
 // Constants
 const WHITELIST_DATA_CSV = './CLI/data/Transfer/GTM/whitelist_data.csv';
 const PERCENTAGE_WHITELIST_DATA_CSV = './CLI/data/Transfer/PercentageTM/whitelist_data.csv';
+const ADD_DAILY_RESTRICTIONS_DATA_CSV = './CLI/data/Transfer/VRTM/add_daily_restriction_data.csv';
+const MODIFY_DAILY_RESTRICTIONS_DATA_CSV = './CLI/data/Transfer/VRTM/modify_daily_restriction_data.csv';
+const REMOVE_DAILY_RESTRICTIONS_DATA_CSV = './CLI/data/Transfer/VRTM/remove_daily_restriction_data.csv';
+const ADD_RESTRICTIONS_DATA_CSV = './CLI/data/Transfer/VRTM/add_restriction_data.csv';
+const MODIFY_RESTRICTIONS_DATA_CSV = './CLI/data/Transfer/VRTM/modify_restriction_data.csv';
+const REMOVE_RESTRICTIONS_DATA_CSV = './CLI/data/Transfer/VRTM/remove_restriction_data.csv';
 
 const RESTRICTION_TYPES = ['Fixed', 'Percentage'];
 
@@ -1100,6 +1106,239 @@ async function changeIndividualRestrictions() {
       break;
     case 'RETURN':
       return;
+  }
+}
+
+async function operateWithMultipleRestrictions() {
+  let options = [
+    'Add multiple individual daily restrictions',
+    'Modify multiple individual daily restrictions',
+    'Remove multiple individual daily restrictions',
+    'Add multiple individual restrictions',
+    'Modify multiple individual restrictions',
+    'Remove multiple individual restrictions'
+  ];
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Add multiple individual daily restrictions':
+      await addDailyRestrictionsInBatch();
+      break;
+    case 'Modify multiple individual daily restrictions':
+      await modifyDailyRestrictionsInBatch();
+      break;
+    case 'Remove multiple individual daily restrictions':
+      await removeDailyRestrictionsInBatch();
+      break;
+    case 'Add multiple individual restrictions':
+      await addRestrictionsInBatch();
+      break;
+    case 'Modify multiple individual restrictions':
+      await modifyRestrictionsInBatch();
+      break;
+    case 'Remove multiple individual restrictions':
+      await removeRestrictionsInBatch();
+      break;
+  }
+}
+
+async function addDailyRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_DAILY_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: ADD_DAILY_RESTRICTIONS_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      !isNaN(row[1]) &&
+      moment.unix(row[2]).isValid() &&
+      moment.unix(row[3]).isValid() &&
+      typeof row[4] === 'string' && RESTRICTION_TYPES.includes(row[4]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray, allowanceArray, startTimeArray, endTimeArray, restrictionTypeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add daily restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    allowanceArray[batch] = allowanceArray[batch].map(n => web3.utils.toWei(n.toString()));
+    restrictionTypeArray[batch] = restrictionTypeArray[batch].map(n => RESTRICTION_TYPES.indexOf(n));
+    let action = currentTransferManager.methods.addIndividualDailyRestrictionMulti(holderArray[batch], allowanceArray[batch], startTimeArray[batch], endTimeArray[batch], restrictionTypeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add multiple daily restrictions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function modifyDailyRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${MODIFY_DAILY_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: MODIFY_DAILY_RESTRICTIONS_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      !isNaN(row[1]) &&
+      moment.unix(row[2]).isValid() &&
+      moment.unix(row[3]).isValid() &&
+      typeof row[4] === 'string' && RESTRICTION_TYPES.includes(row[4]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray, allowanceArray, startTimeArray, endTimeArray, restrictionTypeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to modify daily restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    allowanceArray[batch] = allowanceArray[batch].map(n => web3.utils.toWei(n.toString()));
+    restrictionTypeArray[batch] = restrictionTypeArray[batch].map(n => RESTRICTION_TYPES.indexOf(n));
+    let action = currentTransferManager.methods.modifyIndividualDailyRestrictionMulti(holderArray[batch], allowanceArray[batch], startTimeArray[batch], endTimeArray[batch], restrictionTypeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Modify multiple daily restrictions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function removeDailyRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${REMOVE_DAILY_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: REMOVE_DAILY_RESTRICTIONS_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row => web3.utils.isAddress(row[0]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to remove daily restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    let action = currentTransferManager.methods.removeIndividualDailyRestrictionMulti(holderArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Remove multiple daily restrictions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function addRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: ADD_RESTRICTIONS_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      !isNaN(row[1]) &&
+      moment.unix(row[2]).isValid() &&
+      (!isNaN(row[3]) && (parseFloat(row[3]) % 1 === 0)) &&
+      moment.unix(row[4]).isValid() &&
+      typeof row[5] === 'string' && RESTRICTION_TYPES.includes(row[5]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray, allowanceArray, startTimeArray, rollingPeriodArray, endTimeArray, restrictionTypeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    allowanceArray[batch] = allowanceArray[batch].map(n => web3.utils.toWei(n.toString()));
+    restrictionTypeArray[batch] = restrictionTypeArray[batch].map(n => RESTRICTION_TYPES.indexOf(n));
+    let action = currentTransferManager.methods.addIndividualRestrictionMulti(holderArray[batch], allowanceArray[batch], startTimeArray[batch], rollingPeriodArray[batch], endTimeArray[batch], restrictionTypeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add multiple restrictions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function modifyRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${MODIFY_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: MODIFY_RESTRICTIONS_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      !isNaN(row[1]) &&
+      moment.unix(row[2]).isValid() &&
+      (!isNaN(row[3]) && (parseFloat(row[3]) % 1 === 0)) &&
+      moment.unix(row[4]).isValid() &&
+      typeof row[5] === 'string' && RESTRICTION_TYPES.includes(row[5]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray, allowanceArray, startTimeArray, rollingPeriodArray, endTimeArray, restrictionTypeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to modify restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    allowanceArray[batch] = allowanceArray[batch].map(n => web3.utils.toWei(n.toString()));
+    restrictionTypeArray[batch] = restrictionTypeArray[batch].map(n => RESTRICTION_TYPES.indexOf(n));
+    let action = currentTransferManager.methods.modifyIndividualRestrictionMulti(holderArray[batch], allowanceArray[batch], startTimeArray[batch], rollingPeriodArray[batch], endTimeArray[batch], restrictionTypeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Modify multiple restrictions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function removeRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${REMOVE_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: REMOVE_RESTRICTIONS_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row => web3.utils.isAddress(row[0]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to remove restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    let action = currentTransferManager.methods.removeIndividualRestrictionMulti(holderArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Remove multiple restrictions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
 

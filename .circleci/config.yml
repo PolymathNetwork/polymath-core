@@ -32,6 +32,8 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
+      - store_test_results:
+          path: test-results
   coverage:
     docker:
       - image: circleci/node:8
@@ -48,6 +50,9 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
+      - store_test_results:
+          path: test-results
+
   docs:
     docker:
       - image: circleci/node:8

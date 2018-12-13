@@ -7,7 +7,7 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: yarn
+      - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
@@ -23,7 +23,7 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: yarn
+      - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
@@ -39,7 +39,7 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: yarn
+      - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
@@ -55,7 +55,7 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: yarn
+      - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
@@ -68,7 +68,5 @@ workflows:
   version: 2
   build-test-coverage-docs:
     jobs:
-      - build
       - test
       - coverage
-      - docs

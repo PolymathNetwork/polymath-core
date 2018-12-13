@@ -15,7 +15,16 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     // Emit when the token holder is added/removed from the exemption list
     event ChangedExemptWalletList(address indexed _wallet, bool _change);
     // Emit when the new individual restriction is added corresponds to new token holders
-    event AddNewIndividualRestriction(
+    event AddIndividualRestriction(
+        address indexed _holder,
+        uint256 _allowedTokens,
+        uint256 _startTime,
+        uint256 _rollingPeriodInDays,
+        uint256 _endTime,
+        uint256 _typeOfRestriction
+    );
+    // Emit when the new daily (Individual) restriction is added
+    event AddIndividualDailyRestriction(
         address indexed _holder,
         uint256 _allowedTokens,
         uint256 _startTime,
@@ -25,6 +34,15 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     );
     // Emit when the individual restriction is modified for a given address
     event ModifyIndividualRestriction(
+        address indexed _holder,
+        uint256 _allowedTokens,
+        uint256 _startTime,
+        uint256 _rollingPeriodInDays,
+        uint256 _endTime,
+        uint256 _typeOfRestriction
+    );
+    // Emit when individual daily restriction get modified
+    event ModifyIndividualDailyRestriction(
         address indexed _holder,
         uint256 _allowedTokens,
         uint256 _startTime,
@@ -48,15 +66,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256 _endTime,
         uint256 _typeOfRestriction
     );
-    // Emit when the new daily (Individual) restriction is added
-    event AddIndividualDailyRestriction(
-        address _holder,
-        uint256 _allowedTokens,
-        uint256 _startTime,
-        uint256 _rollingPeriodInDays,
-        uint256 _endTime,
-        uint256 _typeOfRestriction
-    );
     // Emit when default restriction get modified
     event ModifyDefaultRestriction(
         uint256 _allowedTokens,
@@ -74,9 +83,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256 _typeOfRestriction
     );
     // Emit when the individual restriction gets removed
-    event IndividualRestrictionRemoved(address _holder);
+    event IndividualRestrictionRemoved(address indexed _holder);
     // Emit when individual daily restriction removed
-    event IndividualDailyRestrictionRemoved(address _holder);
+    event IndividualDailyRestrictionRemoved(address indexed _holder);
     // Emit when the default restriction gets removed
     event DefaultRestrictionRemoved();
     // Emit when the daily default restriction gets removed
@@ -196,7 +205,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             _endTime,
             RestrictionType(_restrictionType)
         );
-        emit AddNewIndividualRestriction(
+        emit AddIndividualRestriction(
             _holder,
             _allowedTokens,
             startTime,
@@ -568,8 +577,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
 
     /**
      * @notice Use to modify the existing individual daily restriction for a given token holder
-     * @dev It is possible to intialize the dailyLatestTradedTime by 0 for the given holder then 
-     * changing of startTime will affect the 24 hrs span. i.e if in earlier restriction days start with
+     * @dev Changing of startTime will affect the 24 hrs span. i.e if in earlier restriction days start with
      * morning and end on midnight while after the change day may start with afternoon and end with other day afternoon
      * @param _holder Address of the token holder, whom restriction will be implied
      * @param _allowedTokens Amount of tokens allowed to be trade for a given address.
@@ -611,8 +619,12 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             startTime = now;
         }
         _checkInputParams(_allowedTokens, startTime, 1, _endTime, _restrictionType);
-        // Initializing the value with 0 to allow the trade with new startTime of the restriction
-        userToBucket[_holder].dailyLastTradedDayTime = 0;
+        // If old startTime is already passed then new startTime should be greater than or equal to the 
+        // old startTime otherwise any past startTime can be allowed in compare to earlier startTime.
+        if (individualDailyRestriction[_holder].startTime <= now) 
+            require(startTime >= individualDailyRestriction[_holder].startTime, "Invalid StartTime");
+        else 
+            require(startTime >= now);
         individualDailyRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
             startTime,
@@ -620,7 +632,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             _endTime,
             RestrictionType(_restrictionType)
         );
-        emit ModifyDefaultDailyRestriction(
+        emit ModifyIndividualDailyRestriction(
+            _holder,
             _allowedTokens,
             startTime,
             1,
@@ -743,9 +756,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
 
     /**
      * @notice Use to modify the daily default restriction for all token holder
-     * @dev If the start time is modified then it only affect the startTime of the restriction
-     * while it may carries the earlier dailyLatestStartDayTime value. Not possible to initialize the value
-     * of dailyLatestStartDayTime for every holder to 0.
+     * @dev Changing of startTime will affect the 24 hrs span. i.e if in earlier restriction days start with
+     * morning and end on midnight while after the change day may start with afternoon and end with other day afternoon.
      * @param _allowedTokens Amount of tokens allowed to be traded for all token holder.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _endTime Unix timestamp at which restriction effects will gets end.
@@ -763,8 +775,14 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256 startTime = _startTime;
         if (_startTime == 0) {
             startTime = now;
-        } 
+        }
         _checkInputParams(_allowedTokens, startTime, 1, _endTime, _restrictionType);
+        // If old startTime is already passed then new startTime should be greater than or equal to the 
+        // old startTime otherwise any past startTime can be allowed in compare to earlier startTime.
+        if (defaultDailyRestriction.startTime <= now) 
+            require(startTime >= defaultDailyRestriction.startTime, "Invalid StartTime");
+        else 
+            require(startTime >= now); 
         defaultDailyRestriction = VolumeRestriction(
             _allowedTokens,
             startTime,
@@ -904,7 +922,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         // the total amount get traded on a particular day (~ _fromTime)
         if ( now <= restriction.endTime && now >= restriction.startTime) {   
             uint256 txSumOfDay = 0;
-            if (dailyLastTradedDayTime == 0)
+            if (dailyLastTradedDayTime == 0 || dailyLastTradedDayTime < restriction.startTime)
                 // This if condition will be executed when the individual daily restriction executed first time
                 dailyLastTradedDayTime = restriction.startTime.add(BokkyPooBahsDateTimeLibrary.diffDays(restriction.startTime, now).mul(1 days));
             else if (now.sub(dailyLastTradedDayTime) >= 1 days)
@@ -1133,7 +1151,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _user Address of the token holder
      * @param _at Timestamp 
      */
-    function getTotalTradeByuser(address _user, uint256 _at) external view returns(uint256) {
+    function getTotalTradedByUser(address _user, uint256 _at) external view returns(uint256) {
         return bucket[_user][_at];
     }
 

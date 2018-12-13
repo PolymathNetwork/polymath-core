@@ -82,9 +82,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
             SumOfLastPeriod: ${data[1].dividedBy(new BigNumber(10).pow(18)).toNumber()}
             Days Covered: ${data[2].toNumber()}
             Latest timestamp daily: ${data[3].toNumber()}
-            Individual Total Trade on latestTimestamp : ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account, data[0]))
+            Individual Total Trade on latestTimestamp : ${(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account, data[0]))
             .dividedBy(new BigNumber(10).pow(18)).toNumber()}
-            Individual Total Trade on daily latestTimestamp : ${(await I_VolumeRestrictionTM.getTotalTradeByuser.call(account, data[3]))
+            Individual Total Trade on daily latestTimestamp : ${(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account, data[3]))
                 .dividedBy(new BigNumber(10).pow(18)).toNumber()}
         `)
     }
@@ -630,7 +630,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor1);
             
             assert.equal(
-                (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0]))
+                (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor1, data[0]))
                 .dividedBy(new BigNumber(10).pow(18)).toNumber(),
                 0.3
             );
@@ -751,7 +751,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             assert.equal(newData[3].toNumber(), data[3].toNumber());
             assert.equal(data[3].toNumber(), startTime);
-            assert.equal((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[3]))
+            assert.equal((await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[3]))
             .dividedBy(new BigNumber(10).pow(18)).toNumber(), 6);
         });
 
@@ -774,7 +774,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             assert.equal(data[3].toNumber(), startTime + duration.days(1));
-            assert.equal((await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[3]))
+            assert.equal((await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[3]))
             .dividedBy(new BigNumber(10).pow(18)).toNumber(), 2);
         });
 
@@ -823,7 +823,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor1);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor1, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor1, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -881,7 +881,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -920,7 +920,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -970,7 +970,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -1036,7 +1036,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -1061,7 +1061,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -1093,7 +1093,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -1132,7 +1132,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -1161,7 +1161,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
  
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -1192,7 +1192,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
  
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -1266,7 +1266,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
  
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor4, data[3].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor4, data[3].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -1326,7 +1326,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
  
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -1346,7 +1346,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -1382,7 +1382,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
  
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes
@@ -1439,7 +1439,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
  
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradeByuser.call(account_investor3, data[0].toNumber()))
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
 
             // Verify the storage changes

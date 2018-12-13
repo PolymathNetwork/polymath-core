@@ -695,33 +695,42 @@ async function manualApprovalTransferManager() {
     case 'Modify the existing manual approvals':
       let options = [];
       (await getApprovals()).forEach((a) => {
-        options.push(`From ${a.from} to ${a.to} - Allowance: ${web3.utils.fromWei(a.allowance)} - Expiry time: ${moment.unix(a.expiryTime).format('MMMM Do YYYY')} - Description: ${web3.utils.toAscii(a.description)}\n\n`);
+        options.push(`${a.from},${a.to},${web3.utils.fromWei(a.allowance)},${a.expiryTime},${web3.utils.toAscii(a.description)}`);
       })
       let rowIndex = readlineSync.keyInSelect(options, 'Select a row to modify', { cancel: 'Return' });
-      let optionSelected = options[rowIndex];
-      console.log('Selected:', rowIndex != -1 ? optionSelected.description : 'Return', '\n');
+      if (rowIndex == -1) {
+        return
+      }
+      let optionSelected = options[rowIndex].split(",");
+      let actualExpiryTime = optionSelected[3];
+      let actualDescription = optionSelected[4];
 
-      let actualAllowance = optionSelected.allowance;
-      let actualExpiryTime = optionSelected.expiryTime;
-      let actualDescription = optionSelected.description;
-
-      let newAllowance = readlineSync.question(`Enter the new amount of tokens which will be approved (${actualAllowance}): `, {
-        limit: function (input) {
-          if (input == "") {
-            return true
-          }
-          return parseFloat(input) > 0
-        },
-        limitMessage: "Amount must be bigger than 0"
-      });
-      let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
-      let expiryTime = readlineSync.questionInt(`Enter the time(Unix Epoch time) until which the transfer is allowed(1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
-      let description = readlineSync.question('Enter the description about the manual approval: ', {
+      let changeAllowance = readlineSync.question(`Enter (1) to increased, (0) to decreased or leave empty to no change in allowances: `, { defaultInput: 2 });
+      let newAllowance;
+      if (parseInt(changeAllowance) != 2) {
+        let minWord = parseInt(changeAllowance) == 1 ? "incresed" : "decreased";
+        newAllowance = readlineSync.question(`Enter the amount of tokens to ${minWord}: `, {
+          limit: function (input) {
+            return parseFloat(input) > 0
+          },
+          limitMessage: "Amount must be bigger than 0"
+        });
+      } else {
+        newAllowance = "0";
+      }
+      let newExpiryTime = readlineSync.questionInt(`Enter the new time(Unix Epoch time) until which the transfer is allowed (${actualExpiryTime}): `, { defaultInput: actualExpiryTime });
+      let newDescription = readlineSync.question(`Enter the new description about the manual approval (${actualDescription}): `, {
         limit: function (input) {
           return input != "" && getBinarySize(input) < 33
         },
-        limitMessage: "Description is required"
+        limitMessage: "Description is required",
+        defaultInput: actualDescription
       });
+
+      let modifyManualApprovalAction = currentTransferManager.methods.modifyManualApproval(optionSelected[0], optionSelected[1], parseInt(newExpiryTime), web3.utils.toWei(newAllowance), web3.utils.fromAscii(newDescription), parseInt(changeAllowance));
+      let modifyManualApprovalReceipt = await common.sendTransaction(modifyManualApprovalAction);
+      console.log(chalk.green(`The row has been modify successfully!`));
+
       break;
   }
 }

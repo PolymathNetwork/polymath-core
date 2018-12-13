@@ -66,7 +66,20 @@ jobs:
             - node_modules
 workflows:
   version: 2
-  build-test-coverage-docs:
+  commit:
     jobs:
+      - build
       - test
+  daily-coverage:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+    jobs:
       - coverage
+  docs:
+    filters:
+      branches:
+        only:
+          - master
+    jobs:
+      - docs

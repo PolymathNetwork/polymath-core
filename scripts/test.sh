@@ -91,11 +91,11 @@ fi
 if [ "$COVERAGE" = true ]; then
   curl -o node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
   node_modules/.bin/solidity-coverage
-  if [ "$CI" = true ]; then
+  if [ "$CIRCLECI" = true ]; then
     cat coverage/lcov.info | node_modules/.bin/coveralls
   fi
 else
-  if [ "$CI" = true ]; then
+  if [ "$CIRCLECI" = true ]; then
     mkdir test-results
     mkdir test-results/mocha
     rm truffle-config.js

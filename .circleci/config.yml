@@ -34,6 +34,8 @@ jobs:
             - node_modules
       - store_test_results:
           path: test-results
+      - store_artifacts:
+          path: ./test-results/mocha/results.xml
   coverage:
     docker:
       - image: circleci/node:8
@@ -50,6 +52,8 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
+      - store_artifacts:
+          path: ./coverage/lcov.info
   docs:
     docker:
       - image: circleci/node:8

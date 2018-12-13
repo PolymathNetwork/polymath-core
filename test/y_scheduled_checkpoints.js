@@ -525,63 +525,81 @@ contract('ScheduledCheckpoint', accounts => {
 
     });
 
-    describe("Tests for monthly (last day of month) scheduled checkpoints", async() => {
+    describe("Tests for monthly scheduled checkpoints (last day of month)", async() => {
         let name = "CP-M-2";
         let previousTime;
+        let startDate;
         let startTime;
         let interval = 1;
         let timeUnit = MONTHS;
 
-        it("Should create a monthly (last day of month) checkpoint", async () => {
+        it("Should create a monthly checkpoint -- December 31", async () => {
             previousTime = latestTime();
 
-            let startDate = new Date(previousTime * 1000);
+            startDate = new Date(previousTime * 1000);
             startDate.setUTCMonth(11, 31);
             startTime = startDate.getTime() / 1000;
             console.log("previousTime:" + previousTime);
             console.log("startTime:" + startTime);
-            console.log("startDate:" + startDate.toDateString());
+            console.log("startDate:" + startDate.toUTCString());
 
             let tx = await I_ScheduledCheckpoint.addSchedule(name, startTime, interval, timeUnit, {from: token_owner});
             checkScheduleLog(tx.logs[0], name, startTime, interval, timeUnit);
         });
 
-        it("Check one monthly (last day of month) checkpoint", async() => {
+        it("Check monthly checkpoint -- January 31", async() => {
             await increaseTime(startTime - previousTime + 100);
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
 
             let schedule = await I_ScheduledCheckpoint.getSchedule(name);
             let checkpoints = [15];
+            let nextTime = addMonths(startTime, interval);
             let timestamps = [startTime];
             let periods = [1];
-            checkSchedule(schedule, name, startTime, addMonths(startTime, interval), interval, timeUnit, checkpoints, timestamps, periods);
+            checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, checkpoints, timestamps, periods);
         });
 
-        it("Check two monthly checkpoints", async() => {
+        it("Check monthly checkpoints -- February 28/29", async() => {
             await increaseTime(duration.days(31 * interval));
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
 
             let schedule = await I_ScheduledCheckpoint.getSchedule(name);
             let checkpoints = [15, 16];
+            let nextTime = addYears(startTime, 1);
+            let day = 28;
+            if ((startDate.getUTCFullYear() + 1) % 4 === 0) {
+                day = 29;
+            }
+            nextTime = setDate(nextTime, 1, day); //addMonths(startTime, interval * 2)
             let timestamps = [startTime, addMonths(startTime, interval)];
             let periods = [1, 1];
-            checkSchedule(schedule, name, startTime, addMonths(startTime, interval * 2), interval, timeUnit, checkpoints, timestamps, periods);
+            checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, checkpoints, timestamps, periods);
         });
 
-        it("Check three monthly checkpoints", async() => {
+        it("Check monthly checkpoints -- March 31", async() => {
             await increaseTime(duration.days(31 * interval));
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
 
             let schedule = await I_ScheduledCheckpoint.getSchedule(name);
             let checkpoints = [15, 16, 17];
+            let nextTime = addMonths(startTime, interval * 3);
             let timestamps = [startTime, addMonths(startTime, interval), addMonths(startTime, interval * 2)];
             let periods = [1, 1, 1];
-            checkSchedule(schedule, name, startTime, addMonths(startTime, interval * 3), interval, timeUnit, checkpoints, timestamps, periods);
+
+            console.log("expected:" + new Date(nextTime * 1000).toUTCString());
+            console.log("actual:" + new Date(schedule[2].toNumber() * 1000).toUTCString());
+            checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, checkpoints, timestamps, periods);
         });
 
     });
 
 });
+
+function setDate(time, month, day) {
+    let startDate = new Date(time * 1000);
+    startDate.setUTCMonth(month, day);
+    return startDate.getTime() / 1000;
+}
 
 function addMonths(timestamp, months) {
     let time = new Date(timestamp * 1000);

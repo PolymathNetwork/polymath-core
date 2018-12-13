@@ -19,7 +19,7 @@ jobs:
   test:
     docker:
       - image: circleci/node:8
-    parallelism: 4
+    parallelism: 3
     steps:
       - checkout
       - restore_cache:
@@ -76,8 +76,7 @@ workflows:
   commit:
     jobs:
       - test
-      - coverage:
-          type: approval
+      - coverage
   daily-builds:
     triggers:
       - schedule:

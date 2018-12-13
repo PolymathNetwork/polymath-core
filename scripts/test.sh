@@ -100,10 +100,11 @@ else
     mkdir test-results/mocha
     rm truffle-config.js
     mv truffle-ci.js truffle-config.js
-  fi
-  # Do not run a_poly_oracle,js tests unless it is a cron job
-  if [ "$CIRCLE_CI_CRON" = true ]; then
-    node_modules/.bin/truffle test `ls test/*.js`
+    if [ "$CIRCLE_CI_CRON" = true ]; then
+      node_modules/.bin/truffle test `ls test/*.js | circleci tests split --split-by=timings`
+    else
+      node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js -and ! -name s_v130_to_v140_upgrade.js | circleci tests split --split-by=timings`
+    fi
   else
     node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js -and ! -name s_v130_to_v140_upgrade.js`
   fi

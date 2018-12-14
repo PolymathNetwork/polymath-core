@@ -12,21 +12,21 @@ const { table } = require('table')
 // Constants
 const WHITELIST_DATA_CSV = './CLI/data/Transfer/GTM/whitelist_data.csv';
 const PERCENTAGE_WHITELIST_DATA_CSV = './CLI/data/Transfer/PercentageTM/whitelist_data.csv';
-const ADD_MANUAL_APPROVAL_DATA_CSV = './CLI/data/Transfer/MATM/manualapproval_data.csv';
+const ADD_MANUAL_APPROVAL_DATA_CSV = './CLI/data/Transfer/MATM/add_manualapproval_data.csv';
 const MODIFY_MANUAL_APPROVAL_DATA_CSV = './CLI/data/Transfer/MATM/modify_manualapproval_data.csv';
 const REVOKE_MANUAL_APPROVAL_DATA_CSV = './CLI/data/Transfer/MATM/revoke_manualapproval_data.csv';
-const ZERO = '0x0000000000000000000000000000000000000000';
-const MATM_ADD = 'Add new manual approval';
-const MATM_MANAGE = 'Manage existing approvals';
-const MATM_EXPLORE = 'Explore account';
-const MATM_OPERATE = 'Operate with multiple approvals';
-const MATM_MANAGE_INCRESE = 'Increase allowance';
-const MATM_MANAGE_DECREASE = 'Decrease allowance';
-const MATM_MANAGE_TIME = 'Modify expiry time';
-const MATM_MANAGE_REVOKE = 'Revoke this approval';
-const MATM_OPERATE_ADD = 'Add multiple approvals in batch';
-const MATM_OPERATE_MODIFY = 'Modify multiple approvals in batch';
-const MATM_OPERATE_REVOKE = 'Revoke multiple approvals in batch';
+
+const MATM_MENU_ADD = 'Add new manual approval';
+const MATM_MENU_MANAGE = 'Manage existing approvals';
+const MATM_MENU_EXPLORE = 'Explore account';
+const MATM_MENU_OPERATE = 'Operate with multiple approvals';
+const MATM_MENU_MANAGE_INCRESE = 'Increase allowance';
+const MATM_MENU_MANAGE_DECREASE = 'Decrease allowance';
+const MATM_MENU_MANAGE_TIME = 'Modify expiry time';
+const MATM_MENU_MANAGE_REVOKE = 'Revoke this approval';
+const MATM_MENU_OPERATE_ADD = 'Add multiple approvals in batch';
+const MATM_MENU_OPERATE_MODIFY = 'Modify multiple approvals in batch';
+const MATM_MENU_OPERATE_REVOKE = 'Revoke multiple approvals in batch';
 
 
 // App flow
@@ -585,11 +585,14 @@ async function modifyWhitelistInBatch() {
 async function manualApprovalTransferManager() {
   console.log(chalk.blue(`Manual Approval Transfer Manager at ${currentTransferManager.options.address} `), '\n');
 
+  let totalApprovals = await currentTransferManager.methods.getTotalApprovalsLength().call();
+  console.log(`- Current active approvals:      ${totalApprovals}`);
+
   let matmOptions = [
-    MATM_ADD,
-    MATM_MANAGE,
-    MATM_EXPLORE,
-    MATM_OPERATE
+    MATM_MENU_ADD,
+    MATM_MENU_MANAGE,
+    MATM_MENU_EXPLORE,
+    MATM_MENU_OPERATE
   ];
 
   let index = readlineSync.keyInSelect(matmOptions, 'What do you want to do?', {
@@ -599,16 +602,16 @@ async function manualApprovalTransferManager() {
   console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
 
   switch (optionSelected) {
-    case MATM_ADD:
+    case MATM_MENU_ADD:
       await matmAdd();
       break;
-    case MATM_MANAGE:
+    case MATM_MENU_MANAGE:
       await matmManage();
       break;
-    case MATM_EXPLORE:
+    case MATM_MENU_EXPLORE:
       await matmExplore();
       break;
-    case MATM_OPERATE:
+    case MATM_MENU_OPERATE:
       await matmOperate();
       break;
   }
@@ -627,68 +630,78 @@ async function matmAdd() {
     },
     limitMessage: "Must be a valid address"
   });
-  let description = readlineSync.question('Enter the description about the manual approval: ', {
-    limit: function (input) {
-      return input != "" && getBinarySize(input) < 33
-    },
-    limitMessage: "Description is required"
-  });
   if (!await getManualApproval(from, to)) {
+    let description = readlineSync.question('Enter the description for the manual approval: ', {
+      limit: function (input) {
+        return input != "" && getBinarySize(input) < 33
+      },
+      limitMessage: "Description is required"
+    });
     let allowance = readlineSync.question('Enter the amount of tokens which will be approved: ');
     let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
-    let expiryTime = readlineSync.questionInt(`Enter the time(Unix Epoch time) until which the transfer is allowed(1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
+    let expiryTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) until which the transfer is allowed (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
     let addManualApprovalAction = currentTransferManager.methods.addManualApproval(from, to, web3.utils.toWei(allowance), expiryTime, web3.utils.fromAscii(description));
     let addManualApprovalReceipt = await common.sendTransaction(addManualApprovalAction);
     let addManualApprovalEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addManualApprovalReceipt.logs, 'AddManualApproval');
     console.log(chalk.green(`Manual approval has been added successfully!`));
   } else {
-    console.log(chalk.red(`A manual approval already exists from ${from} to ${to}. Revoke it first if you want to add a new one.`));
+    console.log(chalk.red(`A manual approval already exists from ${from} to ${to}. Revoke it first if you want to add a new one or modify the existing one.`));
   }
 }
 
 async function matmManage() {
 
   let manageOptions = [
-    MATM_MANAGE_INCRESE,
-    MATM_MANAGE_DECREASE,
-    MATM_MANAGE_TIME,
-    MATM_MANAGE_REVOKE
+    MATM_MENU_MANAGE_INCRESE,
+    MATM_MENU_MANAGE_DECREASE,
+    MATM_MENU_MANAGE_TIME,
+    MATM_MENU_MANAGE_REVOKE
   ];
 
   let getApprovals = await getApprovalsArray();
 
-  let options = []
-  getApprovals.forEach((item) => {
-    options.push(`From ${item.from} to ${item.to}`)
-  })
+  if (getApprovals.length > 0) {
+    let options = []
+    getApprovals.forEach((item) => {
+      options.push(`From ${item.from} to ${item.to}`)
+    })
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', {
-    cancel: 'Return'
-  });
-  let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+    let index = readlineSync.keyInSelect(options, 'Select an existing approval: ', {
+      cancel: 'RETURN'
+    });
+    let optionSelected = index != -1 ? options[index] : 'RETURN';
+    console.log('Selected:', optionSelected, '\n');
 
-  let index2 = readlineSync.keyInSelect(manageOptions, 'What do you want to do?', {
-    cancel: 'Return'
-  });
-  let optionSelected2 = manageOptions[index2];
-  console.log('Selected:', index2 != -1 ? optionSelected2 : 'Return', '\n');
+    if (optionSelected !== 'RETURN') {
+      let selectedApproval = getApprovals[index];
 
-  const addrs = optionSelected.replace("From ", "").replace(" to ", ",").split(',');
+      let index2 = readlineSync.keyInSelect(manageOptions, 'What do you want to do?', {
+        cancel: 'RETURN'
+      });
+      let optionSelected2 = index2 != -1 ? manageOptions[index2] : 'RETURN';
+      console.log('Selected:', optionSelected2, '\n');
 
-  switch (optionSelected2) {
-    case MATM_MANAGE_INCRESE:
-      await matmManageIncrese(addrs[0], addrs[1]);
-      break;
-    case MATM_MANAGE_DECREASE:
-      await matmManageDecrease(addrs[0], addrs[1]);
-      break;
-    case MATM_MANAGE_TIME:
-      await matmManageTime(addrs[0], addrs[1]);
-      break;
-    case MATM_MANAGE_REVOKE:
-      await matmManageRevoke(addrs[0], addrs[1]);
-      break;
+      if (optionSelected2 !== 'RETURN') {
+
+
+        switch (optionSelected2) {
+          case MATM_MENU_MANAGE_INCRESE:
+            await matmManageIncrese(selectedApproval);
+            break;
+          case MATM_MENU_MANAGE_DECREASE:
+            await matmManageDecrease(selectedApproval);
+            break;
+          case MATM_MENU_MANAGE_TIME:
+            await matmManageTime(selectedApproval);
+            break;
+          case MATM_MENU_MANAGE_REVOKE:
+            await matmManageRevoke(selectedApproval);
+            break;
+        }
+      }
+    }
+  } else {
+    console.log(chalk.yellow(`There are no existing approvals to show`));
   }
 }
 
@@ -701,96 +714,84 @@ async function matmExplore() {
 
 async function matmOperate() {
   let operateOptions = [
-    MATM_OPERATE_ADD,
-    MATM_OPERATE_MODIFY,
-    MATM_OPERATE_REVOKE
+    MATM_MENU_OPERATE_ADD,
+    MATM_MENU_OPERATE_MODIFY,
+    MATM_MENU_OPERATE_REVOKE
   ];
 
   let index = readlineSync.keyInSelect(operateOptions, 'What do you want to do?', {
-    cancel: 'Return'
+    cancel: 'RETURN'
   });
-  let optionSelected = operateOptions[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  let optionSelected = index != -1 ? operateOptions[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
 
   switch (optionSelected) {
-    case MATM_OPERATE_ADD:
+    case MATM_MENU_OPERATE_ADD:
       await addManualApproveInBatch();
       break;
-    case MATM_OPERATE_MODIFY:
+    case MATM_MENU_OPERATE_MODIFY:
       await modifyManualApproveInBatch();
       break;
-    case MATM_OPERATE_REVOKE:
+    case MATM_MENU_OPERATE_REVOKE:
       await revokeManualApproveInBatch();
       break;
   }
 }
 
-async function getApprovalDetail(from, to) {
-  let detail = await currentTransferManager.methods.getApprovalDetails(from, to).call();
-  return {
-    "expiryTime": detail[0],
-    "allowance": detail[1],
-    "description": detail[2]
-  }
-}
-
-async function matmManageIncrese(from, to) {
-  let detail = await getApprovalDetail(from, to)
-  let allowance = readlineSync.question(`Enter a value to increased allowance: `, {
+async function matmManageIncrese(selectedApproval) {
+  let allowance = readlineSync.question(`Enter a value to increase allowance (current allowance = ${web3.utils.fromWei(selectedApproval.allowance)}): `, {
     limit: function (input) {
       return parseFloat(input) > 0
     },
     limitMessage: "Amount must be bigger than 0"
   });
 
-  let modifyManualApprovalAction = currentTransferManager.methods.modifyManualApproval(from, to, parseInt(detail.expiryTime), web3.utils.toWei(allowance), detail.description, 1);
+  let modifyManualApprovalAction = currentTransferManager.methods.modifyManualApproval(selectedApproval.from, selectedApproval.to, parseInt(selectedApproval.expiryTime), web3.utils.toWei(allowance), selectedApproval.description, 1);
   await common.sendTransaction(modifyManualApprovalAction);
-  console.log(chalk.green(`The row has been modify successfully!`));
+  console.log(chalk.green(`The approval allowance has been increased successfully!`));
 }
 
-async function matmManageDecrease(from, to) {
-  let detail = await getApprovalDetail(from, to);
-  let allowance = readlineSync.question(`Enter a value to decrease allowance: `, {
+async function matmManageDecrease(selectedApproval) {
+  let allowance = readlineSync.question(`Enter a value to decrease allowance (current allowance = ${web3.utils.fromWei(selectedApproval.allowance)}): `, {
     limit: function (input) {
       return parseFloat(input) > 0
     },
     limitMessage: "Amount must be bigger than 0"
   });
 
-  let modifyManualApprovalAction = currentTransferManager.methods.modifyManualApproval(from, to, parseInt(detail.expiryTime), web3.utils.toWei(allowance), detail.description, 0);
+  let modifyManualApprovalAction = currentTransferManager.methods.modifyManualApproval(selectedApproval.from, selectedApproval.to, parseInt(selectedApproval.expiryTime), web3.utils.toWei(allowance), selectedApproval.description, 0);
   await common.sendTransaction(modifyManualApprovalAction);
-  console.log(chalk.green(`The row has been modify successfully!`));
+  console.log(chalk.green(`The approval allowance has been decreased successfully!`));
 }
 
-async function matmManageTime(from, to) {
-  let detail = await getApprovalDetail(from, to);
-  let expiryTime = readlineSync.questionInt(`Enter the new time(Unix Epoch time) until which the transfer is allowed: `, {
+async function matmManageTime(selectedApproval) {
+  let expiryTime = readlineSync.questionInt(`Enter the new expiry time (Unix Epoch time) until which the transfer is allowed (current expiry time = ${selectedApproval.expiryTime}): `, {
     limit: function (input) {
       return parseFloat(input) > 0
     },
     limitMessage: "Enter Unix Epoch time"
   });
 
-  let modifyManualApprovalAction = currentTransferManager.methods.modifyManualApproval(from, to, parseInt(expiryTime), detail.allowance, detail.description, 2);
+  let modifyManualApprovalAction = currentTransferManager.methods.modifyManualApproval(selectedApproval.from, selectedApproval.to, parseInt(expiryTime), selectedApproval.allowance, selectedApproval.description, 2);
   await common.sendTransaction(modifyManualApprovalAction);
-  console.log(chalk.green(`The row has been modify successfully!`));
+  console.log(chalk.green(`The approval expiry time has been modified successfully!`));
 }
 
-async function matmManageRevoke(from, to) {
-  let modifyManualApprovalAction = currentTransferManager.methods.revokeManualApproval(from, to);
+async function matmManageRevoke(selectedApproval) {
+  let modifyManualApprovalAction = currentTransferManager.methods.revokeManualApproval(selectedApproval.from, selectedApproval.to);
   await common.sendTransaction(modifyManualApprovalAction);
-  console.log(chalk.green(`The row has been revoke successfully!`));
+  console.log(chalk.green(`The approval has been revoked successfully!`));
 }
 
 async function getApprovalsArray() {
-  let address = readlineSync.question('Enter an address to filter or leave empty to get all the rows: ', {
+  let address = readlineSync.question('Enter an address to filter or leave empty to get all the approvals: ', {
     limit: function (input) {
       return web3.utils.isAddress(input);
     },
     limitMessage: "Must be a valid address",
-    defaultInput: ZERO
+    defaultInput: gbl.constants.ADDRESS_ZERO
   });
-  if (address == ZERO) {
+  if (address == gbl.constants.ADDRESS_ZERO) {
     return await getApprovals();
   } else {
     let approvalsIndex = await getApprovalsToAnAddress(address);
@@ -811,13 +812,13 @@ async function processApprovalsArray(array) {
 }
 
 function printMatmRow(from, to, allowance, time, description) {
-  console.log(`\nFrom ${from} to ${to}\nAllowance: ${web3.utils.fromWei(allowance)}\nExpiry time: ${moment.unix(time).format('MMMM Do YYYY')}\nDescription: ${web3.utils.toAscii(description)}\n\n`);
+  console.log(`\nDescription: ${web3.utils.toAscii(description)}\nFrom ${from} to ${to}\nAllowance: ${web3.utils.fromWei(allowance)}\nExpiry time: ${moment.unix(time).format('MMMM Do YYYY HH:mm')}\n`);
 }
 
 async function getApprovals() {
   let totalApprovals = await currentTransferManager.methods.getTotalApprovalsLength().call();
   let results = [];
-  for (let i = 0; i < totalApprovals; i++) { 
+  for (let i = 0; i < totalApprovals; i++) {
     results.push(await currentTransferManager.methods.approvals(i).call());
   }
   return results;
@@ -861,11 +862,11 @@ async function addManualApproveInBatch() {
 
   var f = (row) => {
     return (web3.utils.isAddress(row[0]) &&
-    web3.utils.isAddress(row[1]) &&
-    parseFloat(row[2]) > 0 &&
-    moment.unix(row[3]).isValid() &&
-    typeof row[4] === 'string' &&
-    getBinarySize(row[4]) < 33)
+      web3.utils.isAddress(row[1]) &&
+      parseFloat(row[2]) > 0 &&
+      moment.unix(row[3]).isValid() &&
+      typeof row[4] === 'string' &&
+      getBinarySize(row[4]) < 33)
   }
 
   let batches = await matmGenericCsv(ADD_MANUAL_APPROVAL_DATA_CSV, f)
@@ -877,7 +878,7 @@ async function addManualApproveInBatch() {
     allowanceArray[batch] = allowanceArray[batch].map(a => web3.utils.toWei(new web3.utils.BN(a)));
     let action = await currentTransferManager.methods.addManualApprovalMulti(fromArray[batch], toArray[batch], allowanceArray[batch], expiryArray[batch], descriptionArray[batch]);
     let receipt = await common.sendTransaction(action);
-    console.log(chalk.green('Add manual approval transaction was successful.'));
+    console.log(chalk.green('Add multiple manual approvals transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
@@ -886,7 +887,7 @@ async function revokeManualApproveInBatch() {
 
   var f = (row) => {
     return (web3.utils.isAddress(row[0]) &&
-    web3.utils.isAddress(row[1]))
+      web3.utils.isAddress(row[1]))
   }
 
   let batches = await matmGenericCsv(REVOKE_MANUAL_APPROVAL_DATA_CSV, f)
@@ -896,7 +897,7 @@ async function revokeManualApproveInBatch() {
     console.log(`Batch ${batch + 1} - Attempting to revoke manual approvals`, '\n');
     let action = await currentTransferManager.methods.revokeManualApprovalMulti(fromArray[batch], toArray[batch]);
     let receipt = await common.sendTransaction(action);
-    console.log(chalk.green('Revoke manual approval transaction was successful.'));
+    console.log(chalk.green('Revoke multip;e manual approvals transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
@@ -905,12 +906,12 @@ async function modifyManualApproveInBatch() {
 
   var f = (row) => {
     return (web3.utils.isAddress(row[0]) &&
-    web3.utils.isAddress(row[1]) &&
-    moment.unix(row[3]).isValid() &&
-    parseFloat(row[2]) > 0 &&
-    typeof row[4] === 'string' &&
-    getBinarySize(row[4]) < 33 &&
-    parseInt(row[5]))
+      web3.utils.isAddress(row[1]) &&
+      moment.unix(row[3]).isValid() &&
+      parseFloat(row[2]) > 0 &&
+      typeof row[4] === 'string' &&
+      getBinarySize(row[4]) < 33 &&
+      parseInt(row[5]))
   }
 
   let batches = await matmGenericCsv(MODIFY_MANUAL_APPROVAL_DATA_CSV, f)
@@ -923,7 +924,7 @@ async function modifyManualApproveInBatch() {
     changesArray[batch] = changesArray[batch].map(c => parseInt(c));
     let action = await currentTransferManager.methods.modifyManualApprovalMulti(fromArray[batch], toArray[batch], expiryArray[batch], allowanceArray[batch], descriptionArray[batch], changesArray[batch]);
     let receipt = await common.sendTransaction(action);
-    console.log(chalk.green('Modify manual approval transaction was successful.'));
+    console.log(chalk.green('Modify multiple manual approvals transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }

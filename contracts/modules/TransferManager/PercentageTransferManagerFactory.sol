@@ -32,8 +32,8 @@ contract PercentageTransferManagerFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        _takeFee();
-        PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender);
+        address polyToken = _takeFee();
+        PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender, polyToken);
         require(Util.getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
         /*solium-disable-next-line security/no-low-level-calls*/
         require(address(percentageTransferManager).call(_data), "Unsuccessful call");

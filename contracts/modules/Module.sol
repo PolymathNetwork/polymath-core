@@ -4,30 +4,22 @@ import "../RegistryUpdater.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "./ModuleStorage.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /**
  * @title Interface that any module contract should implement
  * @notice Contract is abstract
  */
-contract Module is IModule {
-
-    address public factory;
-
-    address public securityToken;
-
-    bytes32 public constant FEE_ADMIN = "FEE_ADMIN";
-
-    IERC20 public polyToken;
+contract Module is IModule, ModuleStorage {
 
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken) public {
-        securityToken = _securityToken;
-        factory = msg.sender;
-        polyToken = IERC20(RegistryUpdater(_securityToken).polyToken());
+    constructor (address _securityToken, address _polyToken) public
+    ModuleStorage(_securityToken, _polyToken)
+    {
     }
 
     //Allows owner, factory or permissioned delegate

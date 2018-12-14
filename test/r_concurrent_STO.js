@@ -2,7 +2,7 @@ import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
-import { 
+import {
     setUpPolymathNetwork,
     deployDummySTOAndVerifyed,
     deployCappedSTOAndVerifyed,
@@ -94,7 +94,7 @@ contract("Concurrent STO", accounts => {
            I_SecurityTokenRegistryProxy,
            I_STRProxied
        ] = instances;
-      
+
         // STEP 2: Deploy the STO Factories
 
         [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, STOSetupCost);
@@ -176,7 +176,7 @@ contract("Concurrent STO", accounts => {
             const startTime = latestTime() + duration.days(1);
             const endTime = latestTime() + duration.days(90);
             const cap = web3.utils.toWei("10000");
-            const rate = 1000;
+            const rate = web3.utils.toWei("1000");
             const fundRaiseType = [0];
             const budget = 0;
             const maxCost = STOSetupCost;

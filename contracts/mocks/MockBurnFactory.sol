@@ -25,9 +25,9 @@ contract MockBurnFactory is TrackedRedemptionFactory {
      * @return Address Contract address of the Module
      */
     function deploy(bytes /*_data*/) external returns(address) {
-        _takeFee();
+        address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
-        MockRedemptionManager mockRedemptionManager = new MockRedemptionManager(msg.sender);
+        MockRedemptionManager mockRedemptionManager = new MockRedemptionManager(msg.sender, polyToken);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(mockRedemptionManager), getName(), address(this), msg.sender, setupCost, now);
         return address(mockRedemptionManager);

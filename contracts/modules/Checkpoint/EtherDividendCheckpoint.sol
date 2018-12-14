@@ -8,7 +8,7 @@ import "../../interfaces/IOwnable.sol";
  */
 contract EtherDividendCheckpoint is DividendCheckpoint {
     using SafeMath for uint256;
-    
+
     event EtherDividendDeposited(
         address indexed _depositor,
         uint256 _checkpointId,
@@ -147,6 +147,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
             false,
             0,
             0,
+            _excluded,
             _name
           )
         );

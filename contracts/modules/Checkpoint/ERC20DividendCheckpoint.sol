@@ -192,6 +192,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
             false,
             0,
             0,
+            _excluded,
             _name
           )
         );

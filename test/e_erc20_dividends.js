@@ -412,7 +412,10 @@ contract("ERC20DividendCheckpoint", accounts => {
                 dividendName,
                 { from: token_owner }
             );
+            console.log("Gas used w/ no exclusions: " + tx.receipt.gasUsed);
+            let excluded = await I_ERC20DividendCheckpoint.getExcluded.call(tx.logs[0].args._dividendIndex);
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 2, "Dividend should be created at checkpoint 1");
+            assert.equal(excluded.length, 0, "Dividend has no exclusions");
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint - fails past expiry", async () => {
@@ -493,6 +496,17 @@ contract("ERC20DividendCheckpoint", accounts => {
             await catchRevert(I_ERC20DividendCheckpoint.setDefaultExcluded(addresses, { from: token_owner }));
         });
 
+        it("Set EXCLUDED_ADDRESS_LIMIT number of addresses to excluded", async () => {
+            let limit = await I_ERC20DividendCheckpoint.EXCLUDED_ADDRESS_LIMIT();
+            limit = limit.toNumber();
+            let addresses = [];
+            addresses.push(account_temp);
+            while (--limit) addresses.push(limit);
+            await I_ERC20DividendCheckpoint.setDefaultExcluded(addresses, { from: token_owner });
+            let excluded = await I_ERC20DividendCheckpoint.getDefaultExcluded();
+            assert.equal(excluded[0], account_temp);
+        });
+
         it("Create another new dividend", async () => {
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
@@ -506,7 +520,10 @@ contract("ERC20DividendCheckpoint", accounts => {
                 dividendName,
                 { from: token_owner }
             );
+            console.log("Gas used w/ 50 exclusions - default: " + tx.receipt.gasUsed);
+            let excluded = await I_ERC20DividendCheckpoint.getExcluded.call(tx.logs[0].args._dividendIndex);
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 3, "Dividend should be created at checkpoint 2");
+            assert.equal(excluded.length, 50, "Dividend ");
         });
 
         it("should investor 3 claims dividend - fail bad index", async () => {
@@ -1062,7 +1079,13 @@ contract("ERC20DividendCheckpoint", accounts => {
         it("should allow manager with permission to create dividend with exclusion", async () => {
             let maturity = latestTime() + duration.days(1);
             let expiry = latestTime() + duration.days(10);
-            let exclusions = [1];
+
+            let limit = await I_ERC20DividendCheckpoint.EXCLUDED_ADDRESS_LIMIT();
+            limit = limit.toNumber();
+            let exclusions = [];
+            exclusions.push(account_temp);
+            while (--limit) exclusions.push(limit);
+
             let tx = await I_ERC20DividendCheckpoint.createDividendWithExclusions(
                 maturity,
                 expiry,
@@ -1073,6 +1096,9 @@ contract("ERC20DividendCheckpoint", accounts => {
                 { from: account_manager }
             );
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 9);
+            console.log("Gas used w/ 50 exclusions - non-default: " + tx.receipt.gasUsed);
+            let excluded = await I_ERC20DividendCheckpoint.getExcluded.call(tx.logs[0].args._dividendIndex);
+            assert.equal(excluded.length, 50, "Dividend exclusions should match");
         });
 
         it("should allow manager with permission to create dividend with checkpoint and exclusion", async () => {

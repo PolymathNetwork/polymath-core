@@ -227,6 +227,15 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     function withdrawWithholding(uint256 _dividendIndex) external;
 
     /**
+     * @notice Retrieves list of excluded addresses for a dividend
+     * @param _dividendIndex Dividend to withdraw from
+     */
+    function getExcluded(uint256 _dividendIndex) external view returns (address[]) {
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        return dividends[_dividendIndex].excluded;
+    }
+
+    /**
      * @notice Return the permissions flag that are associated with this module
      * @return bytes32 array
      */

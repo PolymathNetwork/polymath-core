@@ -12,7 +12,7 @@ import "../../../libraries/BokkyPooBahsDateTimeLibrary.sol";
 contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
     using SafeMath for uint256;
 
-    enum TimeUnit {SECONDS, MONTHS, YEARS}
+    enum TimeUnit {SECONDS, DAYS, WEEKS, MONTHS, YEARS}
 
     struct Schedule {
         bytes32 name;
@@ -106,7 +106,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
      * @notice gets schedule details
      * @param _name name of the schedule
      */
-    function getSchedule(bytes32 _name) view external returns(bytes32, uint256, uint256, uint256, TimeUnit, uint256[], uint256[], uint256[]) {
+    function getSchedule(bytes32 _name) view external returns(bytes32, uint256, uint256, uint256, TimeUnit, uint256[], uint256[], uint256[], uint256) {
         Schedule storage schedule = schedules[_name];
         return (
             schedule.name,
@@ -116,7 +116,8 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
             schedule.timeUnit,
             schedule.checkpointIds,
             schedule.timestamps,
-            schedule.periods
+            schedule.periods,
+            schedule.totalPeriods
         );
     }
 
@@ -138,6 +139,12 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
             if (schedule.timeUnit == TimeUnit.SECONDS ) {
                 periods = now.sub(schedule.nextTime).div(schedule.interval).add(1);
                 schedule.nextTime = periods.mul(schedule.interval).add(schedule.nextTime);
+            } else if (schedule.timeUnit == TimeUnit.DAYS ) {
+                periods = BokkyPooBahsDateTimeLibrary.diffDays(schedule.nextTime, now).div(schedule.interval).add(1);
+                schedule.nextTime = BokkyPooBahsDateTimeLibrary.addDays(schedule.nextTime, periods.mul(schedule.interval));
+            } else if (schedule.timeUnit == TimeUnit.WEEKS ) {
+                periods = BokkyPooBahsDateTimeLibrary.diffDays(schedule.nextTime, now).div(7).div(schedule.interval).add(1);
+                schedule.nextTime = BokkyPooBahsDateTimeLibrary.addDays(schedule.nextTime, periods.mul(schedule.interval).mul(7));
             } else if (schedule.timeUnit == TimeUnit.MONTHS ) {
                 periods = BokkyPooBahsDateTimeLibrary.diffMonths(schedule.nextTime, now).div(schedule.interval).add(1);
                 uint256 totalPeriods = schedule.totalPeriods.add(periods);

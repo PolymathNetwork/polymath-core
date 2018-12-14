@@ -16,8 +16,10 @@ const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) 
 contract('ScheduledCheckpoint', accounts => {
 
     const SECONDS = 0;
-    const MONTHS = 1;
-    const YEARS = 2;
+    const DAYS = 1;
+    const WEEKS = 2;
+    const MONTHS = 3;
+    const YEARS = 4;
 
     // Accounts Variable declaration
     let account_polymath;
@@ -385,7 +387,6 @@ contract('ScheduledCheckpoint', accounts => {
 
         it("Should create a monthly checkpoint", async () => {
             startTime = latestTime() + 100;
-            console.log("startTime:" + startTime);
 
             let tx = await I_ScheduledCheckpoint.addSchedule(name, startTime, interval, timeUnit, {from: token_owner});
             checkScheduleLog(tx.logs[0], name, startTime, interval, timeUnit);
@@ -527,7 +528,7 @@ contract('ScheduledCheckpoint', accounts => {
 
     });
 
-    describe("Tests for monthly scheduled checkpoints (last day of month)", async() => {
+    describe("Tests for monthly scheduled checkpoints -- end of month", async() => {
         let name = "CP-M-2";
         let previousTime;
         let startDate;
@@ -608,6 +609,161 @@ contract('ScheduledCheckpoint', accounts => {
             checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, checkpoints, timestamps, periods);
         });
 
+        it("Remove monthly checkpoint", async () => {
+            await I_ScheduledCheckpoint.removeSchedule(name, {from: token_owner});
+        });
+
+    });
+
+    describe("Tests for daily scheduled checkpoints", async() => {
+
+        let name = "CP-D-1";
+        let startTime;
+        let interval = 13;
+        let timeUnit = DAYS;
+
+        it("Should create a daily checkpoint", async () => {
+            startTime = latestTime() + 100;
+
+            let tx = await I_ScheduledCheckpoint.addSchedule(name, startTime, interval, timeUnit, {from: token_owner});
+            checkScheduleLog(tx.logs[0], name, startTime, interval, timeUnit);
+        });
+
+        it("Check one daily checkpoint", async() => {
+            await increaseTime(100);
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [18];
+            let timestamps = [startTime];
+            let periods = [1];
+            checkSchedule(schedule, name, startTime, addDays(startTime, interval), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Check two daily checkpoints", async() => {
+            await increaseTime(duration.days(interval));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [18, 19];
+            let timestamps = [startTime, addDays(startTime, interval)];
+            let periods = [1, 1];
+            checkSchedule(schedule, name, startTime, addDays(startTime, interval * 2), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Check three daily checkpoints", async() => {
+            await increaseTime(duration.days(interval * 2));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [18, 19, 20];
+            let timestamps = [startTime, addDays(startTime, interval), addDays(startTime, interval * 2)];
+            let periods = [1, 1, 2];
+            checkSchedule(schedule, name, startTime, addDays(startTime, interval * 4), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Check four daily checkpoints", async() => {
+            await increaseTime(duration.days(interval));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [18, 19, 20, 21];
+            let timestamps = [startTime, addDays(startTime, interval), addDays(startTime, interval * 2), addDays(startTime, interval * 4)];
+            let periods = [1, 1, 2, 1];
+            checkSchedule(schedule, name, startTime, addDays(startTime, interval * 5), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Check five daily checkpoints", async() => {
+            await increaseTime(duration.days(interval * 3));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [18, 19, 20, 21, 22];
+            let timestamps = [startTime, addDays(startTime, interval), addDays(startTime, interval * 2), addDays(startTime, interval * 4), addDays(startTime, interval * 5)];
+            let periods = [1, 1, 2, 1, 3];
+            checkSchedule(schedule, name, startTime, addDays(startTime, interval * 8), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Remove daily checkpoint", async () => {
+            await I_ScheduledCheckpoint.removeSchedule(name, {from: token_owner});
+        });
+
+    });
+
+    describe("Tests for weekly scheduled checkpoints", async() => {
+
+        let name = "CP-M-1";
+        let startTime;
+        let interval = 9;
+        let timeUnit = WEEKS;
+
+        it("Should create a weekly checkpoint", async () => {
+            startTime = latestTime() + 100;
+
+            let tx = await I_ScheduledCheckpoint.addSchedule(name, startTime, interval, timeUnit, {from: token_owner});
+            checkScheduleLog(tx.logs[0], name, startTime, interval, timeUnit);
+        });
+
+        it("Check one weekly checkpoint", async() => {
+            await increaseTime(100);
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [23];
+            let timestamps = [startTime];
+            let periods = [1];
+
+            checkSchedule(schedule, name, startTime, addWeeks(startTime, interval), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Check two weekly checkpoints", async() => {
+            await increaseTime(duration.days(7 * interval));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [23, 24];
+            let timestamps = [startTime, addWeeks(startTime, interval)];
+            let periods = [1, 1];
+            checkSchedule(schedule, name, startTime, addWeeks(startTime, interval * 2), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Check three weekly checkpoints", async() => {
+            await increaseTime(duration.days(7 * interval * 2));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [23, 24, 25];
+            let timestamps = [startTime, addWeeks(startTime, interval), addWeeks(startTime, interval * 2)];
+            let periods = [1, 1, 2];
+            checkSchedule(schedule, name, startTime, addWeeks(startTime, interval * 4), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Check four weekly checkpoints", async() => {
+            await increaseTime(duration.days(7 * interval));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [23, 24, 25, 26];
+            let timestamps = [startTime, addWeeks(startTime, interval), addWeeks(startTime, interval * 2), addWeeks(startTime, interval * 4)];
+            let periods = [1, 1, 2, 1];
+            checkSchedule(schedule, name, startTime, addWeeks(startTime, interval * 5), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Check five weekly checkpoints", async() => {
+            await increaseTime(duration.days(7 * interval * 3));
+            await I_ScheduledCheckpoint.updateAll({from: token_owner});
+
+            let schedule = await I_ScheduledCheckpoint.getSchedule(name);
+            let checkpoints = [23, 24, 25, 26, 27];
+            let timestamps = [startTime, addWeeks(startTime, interval), addWeeks(startTime, interval * 2), addWeeks(startTime, interval * 4), addWeeks(startTime, interval * 5)];
+            let periods = [1, 1, 2, 1, 3];
+            checkSchedule(schedule, name, startTime, addWeeks(startTime, interval * 8), interval, timeUnit, checkpoints, timestamps, periods);
+        });
+
+        it("Remove weekly checkpoint", async () => {
+            await I_ScheduledCheckpoint.removeSchedule(name, {from: token_owner});
+        });
+
     });
 
 });
@@ -616,6 +772,15 @@ function setDate(time, month, day) {
     let startDate = new Date(time * 1000);
     startDate.setUTCMonth(month, day);
     return startDate.getTime() / 1000;
+}
+
+function addDays(timestamp, days) {
+    let time = new Date(timestamp * 1000);
+    return time.setUTCDate(time.getUTCDate() + days) / 1000;
+}
+
+function addWeeks(timestamp, weeks) {
+    return addDays(timestamp, weeks * 7);
 }
 
 function addMonths(timestamp, months) {
@@ -650,7 +815,10 @@ function checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, 
         assert.equal(schedule[6][i].toNumber(), timestamps[i]);
     }
     assert.equal(schedule[7].length, periods.length);
+    let totalPeriods = 0;
     for (let i = 0; i < periods.length; i++) {
         assert.equal(schedule[7][i].toNumber(), periods[i]);
+        totalPeriods += periods[i];
     }
+    assert.equal(schedule[8].toNumber(), totalPeriods);
 }

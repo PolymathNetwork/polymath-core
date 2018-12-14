@@ -385,6 +385,8 @@ contract('ScheduledCheckpoint', accounts => {
 
         it("Should create a monthly checkpoint", async () => {
             startTime = latestTime() + 100;
+            console.log("startTime:" + startTime);
+
             let tx = await I_ScheduledCheckpoint.addSchedule(name, startTime, interval, timeUnit, {from: token_owner});
             checkScheduleLog(tx.logs[0], name, startTime, interval, timeUnit);
         });
@@ -559,38 +561,53 @@ contract('ScheduledCheckpoint', accounts => {
             checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, checkpoints, timestamps, periods);
         });
 
+        function getDaysInFebruary() {
+            let days;
+            if ((startDate.getUTCFullYear() + 1) % 4 === 0) {
+                days = 29;
+            } else {
+                days = 28;
+            }
+            return days;
+        }
+
+        function getEndOfFebruary(startTime, days) {
+            return setDate(addYears(startTime, 1), 1, days); //addMonths(startTime, interval * 2)
+        }
+
         it("Check monthly checkpoints -- February 28/29", async() => {
             await increaseTime(duration.days(31 * interval));
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
 
             let schedule = await I_ScheduledCheckpoint.getSchedule(name);
             let checkpoints = [15, 16];
-            let nextTime = addYears(startTime, 1);
-            let day = 28;
-            if ((startDate.getUTCFullYear() + 1) % 4 === 0) {
-                day = 29;
-            }
-            nextTime = setDate(nextTime, 1, day); //addMonths(startTime, interval * 2)
+            let days = getDaysInFebruary();
+            let nextTime = getEndOfFebruary(startTime, days);
             let timestamps = [startTime, addMonths(startTime, interval)];
             let periods = [1, 1];
             checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, checkpoints, timestamps, periods);
         });
-/*
+
         it("Check monthly checkpoints -- March 31", async() => {
-            await increaseTime(duration.days(31 * interval));
+            let days = getDaysInFebruary();
+            await increaseTime(duration.days(days * interval));
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
 
             let schedule = await I_ScheduledCheckpoint.getSchedule(name);
             let checkpoints = [15, 16, 17];
             let nextTime = addMonths(startTime, interval * 3);
-            let timestamps = [startTime, addMonths(startTime, interval), addMonths(startTime, interval * 2)];
+            let timestamps = [startTime, addMonths(startTime, interval), getEndOfFebruary(startTime, days)];
             let periods = [1, 1, 1];
 
             console.log("expected:" + new Date(nextTime * 1000).toUTCString());
             console.log("actual:" + new Date(schedule[2].toNumber() * 1000).toUTCString());
+            for (let i = 0; i < timestamps.length; i++) {
+                assert.equal(schedule[6][i].toNumber(), timestamps[i]);
+                console.log(new Date(schedule[6][i].toNumber() * 1000).toUTCString());
+            }
             checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, checkpoints, timestamps, periods);
         });
-*/
+
     });
 
 });

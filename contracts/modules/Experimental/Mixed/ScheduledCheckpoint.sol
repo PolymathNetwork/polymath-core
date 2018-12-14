@@ -139,13 +139,22 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
                 schedule.nextTime = periods.mul(schedule.interval).add(schedule.nextTime);
             } else if (schedule.timeUnit == TimeUnit.MONTHS ) {
                 periods = BokkyPooBahsDateTimeLibrary.diffMonths(schedule.nextTime, now).div(schedule.interval).add(1);
-                schedule.nextTime = BokkyPooBahsDateTimeLibrary.addMonths(schedule.nextTime, periods.mul(schedule.interval));
+                uint256 totalPeriods = _getTotalPeriods(schedule).add(periods);
+                schedule.nextTime = BokkyPooBahsDateTimeLibrary.addMonths(schedule.startTime, totalPeriods.mul(schedule.interval));
             } else if (schedule.timeUnit == TimeUnit.YEARS ) {
                 periods = BokkyPooBahsDateTimeLibrary.diffYears(schedule.nextTime, now).div(schedule.interval).add(1);
                 schedule.nextTime = BokkyPooBahsDateTimeLibrary.addYears(schedule.nextTime, periods.mul(schedule.interval));
             }
             schedule.periods.push(periods);
         }
+    }
+
+    function _getTotalPeriods(Schedule storage schedule) internal view returns(uint256) {
+        uint256 totalPeriods = 0;
+        for (uint256 i = 0; i < schedule.periods.length; i++) {
+            totalPeriods = totalPeriods.add(schedule.periods[i]);
+        }
+        return totalPeriods;
     }
 
     /**

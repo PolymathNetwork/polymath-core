@@ -108,24 +108,20 @@ contract('GeneralPermissionManager', accounts => {
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
 
-    // CountTransferManager details
-	const holderCount = 2; // Maximum number of token holders
-	let bytesSTO = encodeModuleCall(["uint256"], [holderCount]);
-
 	let _details = "details holding for test";
     let testRepeat = 20;
 
-	// permission manager fuzz test
-	// let modules = ['CountTransferManager', 'SingleTradeVolumeRestrictionManager', 'ManualApprovalTransferManager', 'I_VolumeRestrictionTransferManager', 'PercentageTransferManager'];
+	// define factories and modules for fuzz test
     var factoriesAndModules = [
         { factory: 'I_CountTransferManagerFactory', module: 'CountTransferManager'},
-        //{ factory: 'I_SingleTradeVolumeRestrictionManagerFactory', module: 'SingleTradeVolumeRestrictionManager'},
+        { factory: 'I_SingleTradeVolumeRestrictionManagerFactory', module: 'SingleTradeVolumeRestrictionManager'},
         { factory: 'I_ManualApprovalTransferManagerFactory', module: 'ManualApprovalTransferManager'},
         { factory: 'I_VolumeRestrictionTransferManagerFactory', module: 'VolumeRestrictionTransferManager'},
-        //{ factory: 'I_PercentageTransferManagerFactory', module: 'PercentageTransferManager'},
+        { factory: 'I_PercentageTransferManagerFactory', module: 'PercentageTransferManager'},
     ];
 
     let totalModules = factoriesAndModules.length;
+    let bytesSTO;
 
 
     before(async () => {
@@ -270,26 +266,53 @@ contract('GeneralPermissionManager', accounts => {
         it("should pass test for randomly adding and removing modules ", async () => {
 
             console.log("1");
-            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
+            // fuzz test loop over total times of testRepeat
             for (var i = 0; i < testRepeat; i++) {
                 
-                var j = Math.floor(Math.random() * 10);
-
                 console.log("1.2");
-                // choose a random module
+
+                // choose a random module with in the totalMoudules available
                 let random = factoriesAndModules[Math.floor(Math.random() * Math.floor(totalModules))];
                 let randomFactory = eval(random.factory);
                 let randomModule = eval(random.module);
                 console.log("choosen factory "+ random.factory);
                 console.log("choosen module "+ random.module);
+
+                //calculate the data needed for different modules
+                if (random.module == 'CountTransferManager' ||  random.module == 'ManualApprovalTransferManager' || random.module == 'VolumeRestrictionTransferManager' ){
+                    const holderCount = 2; // Maximum number of token holders
+                    bytesSTO = encodeModuleCall(["uint256"], [holderCount]);
+                } else if(random.module == 'SingleTradeVolumeRestrictionManager'){
+                    bytesSTO = encodeModuleCall(STVRParameters, [false, (7 * Math.pow(10, 16)).toString(), false])
+                } else if (random.module == 'PercentageTransferManager'){
+                    console.log("PTM 01");
+                    const holderPercentage = 70 * 10**16;    
+                    bytesSTO = web3.eth.abi.encodeFunctionCall({
+                        name: 'configure',
+                        type: 'function',
+                        inputs: [{
+                            type: 'uint256',
+                            name: '_maxHolderPercentage'
+                        },{
+                            type: 'bool',
+                            name: '_allowPrimaryIssuance'
+                        }
+                        ]
+                    }, [holderPercentage, false]);
+                    console.log("encoded.");
+                } else {
+                    console.log("no data defined for choosen module "+random.module);
+                }
             
                 // attach it to the ST
                 let tx = await I_SecurityToken.addModule(randomFactory.address, bytesSTO, 0, 0, { from: token_owner });
+                console.log("1.3");
                 let randomModuleInstance = randomModule.at(tx.logs[2].args._module);
                 console.log("successfully attached module " + randomModuleInstance.address);
                 
                 // remove it from the ST
                 tx = await I_SecurityToken.archiveModule(randomModuleInstance.address, { from: token_owner });
+                console.log("1.4");
                 tx = await I_SecurityToken.removeModule(randomModuleInstance.address, { from: token_owner });
                 console.log("successfully removed module " + randomModuleInstance.address);
 

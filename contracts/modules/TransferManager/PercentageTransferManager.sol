@@ -1,7 +1,7 @@
 /**
- * DISCLAIMER: Under certain conditions, the limit could be bypassed if a large token holder 
- * redeems a huge portion of their tokens. It will cause the total supply to drop 
- * which can result in some other token holders having a percentage of tokens 
+ * DISCLAIMER: Under certain conditions, the limit could be bypassed if a large token holder
+ * redeems a huge portion of their tokens. It will cause the total supply to drop
+ * which can result in some other token holders having a percentage of tokens
  * higher than the intended limit.
  */
 
@@ -42,9 +42,9 @@ contract PercentageTransferManager is ITransferManager {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken)
+    constructor (address _securityToken, address _polyToken)
     public
-    Module(_securityToken)
+    Module(_securityToken, _polyToken)
     {
     }
 

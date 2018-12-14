@@ -18,19 +18,21 @@ contract CountTransferManager is ITransferManager {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken)
+    constructor (address _securityToken, address _polyToken)
     public
-    Module(_securityToken)
+    Module(_securityToken, _polyToken)
     {
     }
 
     /** @notice Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
+     * @param _from Address of the sender
      * @param _to Address of the receiver
+     * @param _amount Amount to send
      */
     function verifyTransfer(
-        address /* _from */,
+        address _from,
         address _to,
-        uint256 /* _amount */,
+        uint256 _amount,
         bytes /* _data */,
         bool /* _isTransfer */
     )
@@ -40,7 +42,7 @@ contract CountTransferManager is ITransferManager {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
                 // Allow transfers to existing maxHolders
-                if (ISecurityToken(securityToken).balanceOf(_to) != 0) {
+                if (ISecurityToken(securityToken).balanceOf(_to) != 0 || ISecurityToken(securityToken).balanceOf(_from) == _amount) {
                     return Result.NA;
                 }
                 return Result.INVALID;

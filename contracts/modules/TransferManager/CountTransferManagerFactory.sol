@@ -18,7 +18,7 @@ contract CountTransferManagerFactory is ModuleFactory {
     constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
-        version = "1.0.0";
+        version = "2.1.0";
         name = "CountTransferManager";
         title = "Count Transfer Manager";
         description = "Restrict the number of investors";
@@ -32,8 +32,8 @@ contract CountTransferManagerFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        _takeFee();
-        CountTransferManager countTransferManager = new CountTransferManager(msg.sender);
+        address polyToken = _takeFee();
+        CountTransferManager countTransferManager = new CountTransferManager(msg.sender, polyToken);
         require(Util.getSig(_data) == countTransferManager.getInitFunction(), "Provided data is not valid");
         /*solium-disable-next-line security/no-low-level-calls*/
         require(address(countTransferManager).call(_data), "Unsuccessful call");

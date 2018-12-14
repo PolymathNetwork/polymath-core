@@ -15,8 +15,8 @@ contract MockRedemptionManager is TrackedRedemption {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken) public
-    TrackedRedemption(_securityToken)
+    constructor (address _securityToken, address _polyToken) public
+    TrackedRedemption(_securityToken, _polyToken)
     {
     }
 

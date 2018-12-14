@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./EtherDividendCheckpoint.sol";
+import "../../proxy/EtherDividendCheckpointProxy.sol";
 import "../ModuleFactory.sol";
 
 /**
@@ -8,21 +8,26 @@ import "../ModuleFactory.sol";
  */
 contract EtherDividendCheckpointFactory is ModuleFactory {
 
+    address public logicContract;
+
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
+     * @param _logicContract Contract address that contains the logic related to `description`
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
-        version = "1.0.0";
+        require(_logicContract != address(0), "Invalid logic contract");
+        version = "2.1.0";
         name = "EtherDividendCheckpoint";
         title = "Ether Dividend Checkpoint";
         description = "Create ETH dividends for token holders at a specific checkpoint";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        logicContract = _logicContract;
     }
 
     /**
@@ -30,8 +35,8 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
-        _takeFee();
-        address ethDividendCheckpoint = new EtherDividendCheckpoint(msg.sender);
+        address polyToken = _takeFee();
+        address ethDividendCheckpoint = new EtherDividendCheckpointProxy(msg.sender, polyToken, logicContract);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(ethDividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return ethDividendCheckpoint;

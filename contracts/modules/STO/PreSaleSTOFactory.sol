@@ -32,9 +32,9 @@ contract PreSaleSTOFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        _takeFee();
+        address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
-        PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender);
+        PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender, polyToken);
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == preSaleSTO.getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/

@@ -906,11 +906,11 @@ async function modifyManualApproveInBatch() {
   var f = (row) => {
     return (web3.utils.isAddress(row[0]) &&
     web3.utils.isAddress(row[1]) &&
-    moment.unix(row[3]).isValid() &&
-    parseFloat(row[2]) > 0 &&
+    moment.unix(row[2]).isValid() &&
+    parseFloat(row[3]) > 0 &&
     typeof row[4] === 'string' &&
     getBinarySize(row[4]) < 33 &&
-    parseInt(row[5]))
+    typeof parseInt(row[5])) === 'number'
   }
 
   let batches = await matmGenericCsv(MODIFY_MANUAL_APPROVAL_DATA_CSV, f)

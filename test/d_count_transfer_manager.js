@@ -355,7 +355,7 @@ contract("CountTransferManager", accounts => {
 
         describe("Test cases for adding and removing acc holder at the same time", async () => {
             it("deploy a new token & auto attach modules", async () => {
-                
+
                 //register ticker and deploy token
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
                 let tx = await I_STRProxied.registerTicker(token_owner, symbol2, contact, { from: token_owner });
@@ -363,8 +363,8 @@ contract("CountTransferManager", accounts => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
                 let _blockNo = latestBlock();
                 let tx2 = await I_STRProxied.generateSecurityToken(name, symbol2, tokenDetails, false, { from: token_owner });
-           
-                I_SecurityToken2 = SecurityToken.at(tx2.logs[1].args._securityTokenAddress);
+
+                I_SecurityToken2 = SecurityToken.at(tx2.logs[2].args._securityTokenAddress);
 
                 let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];
                 I_GeneralTransferManager2 = GeneralTransferManager.at(moduleData);
@@ -406,7 +406,7 @@ contract("CountTransferManager", accounts => {
                         gas: 500000
                     }
                 );
-         
+
                 await I_GeneralTransferManager2.modifyWhitelist(
                     account_investor4,
                     latestTime(),
@@ -418,7 +418,7 @@ contract("CountTransferManager", accounts => {
                         gas: 500000
                     }
                 );
-              
+
                 // Jump time
                 await increaseTime(5000);
 

@@ -4,12 +4,12 @@ import { pk }  from './helpers/testprivateKey';
 import { duration, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 import { catchRevert } from "./helpers/exceptions";
-import { setUpPolymathNetwork, 
-         deployGPMAndVerifyed, 
-         deployCountTMAndVerifyed, 
-         deployLockupVolumeRTMAndVerified, 
+import { setUpPolymathNetwork,
+         deployGPMAndVerifyed,
+         deployCountTMAndVerifyed,
+         deployLockupVolumeRTMAndVerified,
          deployPercentageTMAndVerified,
-         deployManualApprovalTMAndVerifyed 
+         deployManualApprovalTMAndVerifyed
 } from "./helpers/createInstances";
 import { encodeModuleCall } from "./helpers/encodeCall";
 
@@ -186,7 +186,7 @@ contract('GeneralPermissionManager', accounts => {
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
@@ -249,7 +249,7 @@ contract('GeneralPermissionManager', accounts => {
             for (var i = 2; i < testRepeat; i++) {
                 var j = Math.floor(Math.random() * 10);
                 if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
-                
+
                 // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
@@ -257,7 +257,7 @@ contract('GeneralPermissionManager', accounts => {
 
                 // target permission should alaways be false for each test before assigning
                 if (await I_GeneralPermissionManager.checkPermission(accounts[j], I_GeneralTransferManager.address, 'FLAGS') === true) {
-                    await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, 'FLAGS', false, { from: token_owner }); 
+                    await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, 'FLAGS', false, { from: token_owner });
                 } else if (await I_GeneralPermissionManager.checkPermission(accounts[j], I_GeneralTransferManager.address, 'WHITELIST') === true) {
                     await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, 'WHITELIST', false, { from: token_owner });
                 }
@@ -268,7 +268,7 @@ contract('GeneralPermissionManager', accounts => {
                 let toTime = latestTime() + duration.days(20);
                 let expiryTime = toTime + duration.days(10);
 
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, randomPerms, true, { from: token_owner }); 
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, randomPerms, true, { from: token_owner });
 
                 let currentAllowAllTransferStats =  await I_GeneralTransferManager.allowAllTransfers();
                 let currentAllowAllWhitelistTransfersStats =  await I_GeneralTransferManager.allowAllWhitelistTransfers();
@@ -309,7 +309,7 @@ contract('GeneralPermissionManager', accounts => {
 
                 console.log("3");
                 if (randomPerms === 'WHITELIST') {
-                    let tx = await I_GeneralTransferManager.modifyWhitelist(accounts[j], fromTime, toTime, expiryTime, 1, { from: accounts[j] });                  
+                    let tx = await I_GeneralTransferManager.modifyWhitelist(accounts[j], fromTime, toTime, expiryTime, 1, { from: accounts[j] });
                     assert.equal(tx.logs[0].args._investor, accounts[j]);
                     console.log("3.1");
                     let tx2 = await I_GeneralTransferManager.modifyWhitelistMulti([accounts[3], accounts[4]], [fromTime, fromTime], [toTime, toTime], [expiryTime, expiryTime], [1, 1], { from: accounts[j] });
@@ -320,7 +320,7 @@ contract('GeneralPermissionManager', accounts => {
                     console.log("3.3");
                     await catchRevert(I_GeneralTransferManager.modifyWhitelist(accounts[j], fromTime, toTime, expiryTime, 1, { from: accounts[j] }));
                     console.log("3.4");
-                    await catchRevert(I_GeneralTransferManager.modifyWhitelistMulti([accounts[3], accounts[4]], [fromTime, fromTime], [toTime, toTime], [expiryTime, expiryTime], [1, 1], { from: accounts[j] })); 
+                    await catchRevert(I_GeneralTransferManager.modifyWhitelistMulti([accounts[3], accounts[4]], [fromTime, fromTime], [toTime, toTime], [expiryTime, expiryTime], [1, 1], { from: accounts[j] }));
                     console.log("3.5");
                 }
             }
@@ -347,7 +347,7 @@ contract('GeneralPermissionManager', accounts => {
 	        for (var i = 2; i < testRepeat; i++) {
 	        	var j = Math.floor(Math.random() * 10);
 	        	if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
-	        	
+
                 // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
 	        		await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
@@ -355,12 +355,12 @@ contract('GeneralPermissionManager', accounts => {
 
                 // target permission should alaways be false for each test before assigning
                 if (await I_GeneralPermissionManager.checkPermission(accounts[j], I_CountTransferManager.address, 'ADMIN') === true) {
-                    await I_GeneralPermissionManager.changePermission(accounts[j], I_CountTransferManager.address, 'ADMIN', false, { from: token_owner }); 
+                    await I_GeneralPermissionManager.changePermission(accounts[j], I_CountTransferManager.address, 'ADMIN', false, { from: token_owner });
                 }
 
 	        	// assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-	        	await I_GeneralPermissionManager.changePermission(accounts[j], I_CountTransferManager.address, randomPerms, true, { from: token_owner });          		
+	        	await I_GeneralPermissionManager.changePermission(accounts[j], I_CountTransferManager.address, randomPerms, true, { from: token_owner });
                 if (randomPerms === 'ADMIN') {
                     // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should pass");
          			await I_CountTransferManager.changeHolderCount(i + 1, { from: accounts[j] });
@@ -405,7 +405,7 @@ contract('GeneralPermissionManager', accounts => {
             for (var i = 2; i < testRepeat; i++) {
                 var j = Math.floor(Math.random() * 10);
                 if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
-                
+
                 // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
@@ -418,7 +418,7 @@ contract('GeneralPermissionManager', accounts => {
 
                 // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, randomPerms, true, { from: token_owner });  
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, randomPerms, true, { from: token_owner });
 
                 //try add multi lock ups
                 if (randomPerms === 'WHITELIST') {
@@ -438,7 +438,7 @@ contract('GeneralPermissionManager', accounts => {
            for (var i = 2; i < testRepeat; i++) {
                 var j = Math.floor(Math.random() * 10);
                 if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
-                
+
                 // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
@@ -451,8 +451,8 @@ contract('GeneralPermissionManager', accounts => {
 
                 // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, randomPerms, true, { from: token_owner });  
- 
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, randomPerms, true, { from: token_owner });
+
                 if (randomPerms === 'WHITELIST') {
                     // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should pass");
                    await I_PercentageTransferManager.modifyWhitelistMulti([account_investor3, account_investor4], [0, 1], { from: accounts[j] });
@@ -474,7 +474,7 @@ contract('GeneralPermissionManager', accounts => {
 
                 var j = Math.floor(Math.random() * 10);
                 if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
-                
+
                 // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
@@ -487,10 +487,10 @@ contract('GeneralPermissionManager', accounts => {
 
                 // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, randomPerms, true, { from: token_owner });  
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, randomPerms, true, { from: token_owner });
 
                 let primaryIssuanceStat = await I_PercentageTransferManager.allowPrimaryIssuance({ from: token_owner });
-               
+
                 if (randomPerms === 'ADMIN') {
                    console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should pass");
                    await I_PercentageTransferManager.setAllowPrimaryIssuance(!primaryIssuanceStat, { from: accounts[j] });
@@ -521,17 +521,17 @@ contract('GeneralPermissionManager', accounts => {
         });
 
         it("should pass fuzz test for addManualApproval & revokeManualApproval with perm TRANSFER_APPROVAL", async () => {
-            
+
             let tx;
             // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
             for (var i = 2; i < testRepeat; i++) {
 
                 let snapId = await takeSnapshot();
 
-               
+
                 var j = Math.floor(Math.random() * 10);
                 if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
-                
+
                 // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
@@ -544,8 +544,8 @@ contract('GeneralPermissionManager', accounts => {
 
                 // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, randomPerms, true, { from: token_owner });  
-            
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, randomPerms, true, { from: token_owner });
+
                 if (randomPerms === "TRANSFER_APPROVAL" ) {
                     console.log("Test number " + i + " with account " + j + " and perm TRANSFER_APPROVAL " + " should pass");
                     await I_ManualApprovalTransferManager.addManualApproval(
@@ -555,7 +555,7 @@ contract('GeneralPermissionManager', accounts => {
                         latestTime() + duration.days(1),
                         { from: accounts[j] }
                     );
-                    
+
                     console.log("2");
                     tx = await I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, account_investor4, {
                         from: accounts[j]
@@ -563,7 +563,7 @@ contract('GeneralPermissionManager', accounts => {
                     assert.equal(tx.logs[0].args._from, account_investor1);
                     assert.equal(tx.logs[0].args._to, account_investor4);
                     assert.equal(tx.logs[0].args._addedBy, accounts[j]);
-                 
+
                     console.log("3");
                     console.log("Test number " + i + " with account " + j + " and perm TRANSFER_APPROVAL passed as expected");
                 } else {
@@ -614,10 +614,10 @@ contract('GeneralPermissionManager', accounts => {
             for (var i = 2; i < testRepeat; i++) {
 
                 let snapId = await takeSnapshot();
-         
+
                 var j = Math.floor(Math.random() * 10);
                 if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
-                
+
                 // add account as a Delegate if it is not
                 if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
                     await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
@@ -630,14 +630,14 @@ contract('GeneralPermissionManager', accounts => {
 
                 // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, randomPerms, true, { from: token_owner });  
-            
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, randomPerms, true, { from: token_owner });
+
                 if (randomPerms === "TRANSFER_APPROVAL") {
                     console.log("Test number " + i + " with account " + j + " and perm TRANSFER_APPROVAL " + " should pass");
                     await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(1), {
                         from: accounts[j]
                     });
-                    
+
                     console.log("2");
                     await I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, account_investor2, { from: accounts[j] });
 
@@ -663,7 +663,7 @@ contract('GeneralPermissionManager', accounts => {
 
                 await revertToSnapshot(snapId);
             };
-        }); 
+        });
     });
 
 });

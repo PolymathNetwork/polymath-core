@@ -455,7 +455,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
             fundsRaisedUSD = fundsRaisedUSD.add(spentUSD);
         }
 
-        spentValue = DecimalMath.div(DecimalMath.mul(spentUSD, _investmentValue), originalUSD);
+        spentValue = DecimalMath.div(spentUSD, _rate);
     }
 
     /**
@@ -494,7 +494,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
             }
         }
 
-        spentValue = DecimalMath.div(DecimalMath.mul(spentUSD, _investmentValue), originalUSD);
+        spentValue = DecimalMath.div(spentUSD, rate);
     }
 
     function _buyTokensChecks(

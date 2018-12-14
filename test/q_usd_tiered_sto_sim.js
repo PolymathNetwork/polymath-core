@@ -17,7 +17,7 @@ const Web3 = require("web3");
 const BigNumber = require("bignumber.js");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-const TOLERANCE = 10; // Allow balances to be off by 10 WEI for rounding purposes
+const TOLERANCE = 0; // Allow balances to be off by 10 WEI for rounding purposes
 
 contract("USDTieredSTO Sim", accounts => {
     // Accounts Variable declaration
@@ -589,13 +589,13 @@ contract("USDTieredSTO Sim", accounts => {
                 let investment_DAI = new BigNumber(10 * 10 ** 18); // 10 USD = DAI DAI
 
                 if (isPoly) {
-                    await I_PolyToken.getTokens(investment_POLY.add(TOLERANCE), _investor);
+                    await I_PolyToken.getTokens(investment_POLY, _investor);
                     await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: _investor });
                     await catchRevert(
                         I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, { from: _investor, gasPrice: GAS_PRICE })
                     );
                 } else if (isDAI) {
-                    await I_DaiToken.getTokens(investment_DAI.add(TOLERANCE), _investor);
+                    await I_DaiToken.getTokens(investment_DAI, _investor);
                     await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: _investor });
                     await catchRevert(
                         I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE })
@@ -641,10 +641,10 @@ contract("USDTieredSTO Sim", accounts => {
                 `);
 
                 if (isPoly) {
-                    await I_PolyToken.getTokens(investment_POLY.add(TOLERANCE), _investor);
+                    await I_PolyToken.getTokens(investment_POLY, _investor);
                     await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: _investor });
                 } else if (isDai) {
-                    await I_DaiToken.getTokens(investment_DAI.add(TOLERANCE), _investor);
+                    await I_DaiToken.getTokens(investment_DAI, _investor);
                     await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: _investor });
                 }
 

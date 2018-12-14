@@ -48,7 +48,9 @@ jobs:
       - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
-      - run: npm run coverage
+      - run: 
+          command: npm run coverage
+          no_output_timeout: 1h
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:

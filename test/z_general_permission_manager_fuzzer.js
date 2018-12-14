@@ -25,7 +25,7 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
-contract('GeneralPermissionManager', accounts => {
+contract('GeneralPermissionManager Fuzz', accounts => {
 
     // Accounts Variable declaration
     let account_polymath;
@@ -184,7 +184,7 @@ contract('GeneralPermissionManager', accounts => {
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 

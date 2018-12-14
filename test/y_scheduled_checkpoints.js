@@ -599,12 +599,12 @@ contract('ScheduledCheckpoint', accounts => {
             let timestamps = [startTime, addMonths(startTime, interval), getEndOfFebruary(startTime, days)];
             let periods = [1, 1, 1];
 
-            console.log("expected:" + new Date(nextTime * 1000).toUTCString());
-            console.log("actual:" + new Date(schedule[2].toNumber() * 1000).toUTCString());
             for (let i = 0; i < timestamps.length; i++) {
                 assert.equal(schedule[6][i].toNumber(), timestamps[i]);
                 console.log(new Date(schedule[6][i].toNumber() * 1000).toUTCString());
             }
+            console.log("expected:" + new Date(nextTime * 1000).toUTCString());
+            console.log("actual:" + new Date(schedule[2].toNumber() * 1000).toUTCString());
             checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, checkpoints, timestamps, periods);
         });
 

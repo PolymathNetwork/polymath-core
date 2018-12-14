@@ -24,6 +24,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
         uint256[] checkpointIds;
         uint256[] timestamps;
         uint256[] periods;
+        uint256 totalPeriods;
     }
 
     bytes32[] public names;
@@ -139,22 +140,15 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
                 schedule.nextTime = periods.mul(schedule.interval).add(schedule.nextTime);
             } else if (schedule.timeUnit == TimeUnit.MONTHS ) {
                 periods = BokkyPooBahsDateTimeLibrary.diffMonths(schedule.nextTime, now).div(schedule.interval).add(1);
-                uint256 totalPeriods = _getTotalPeriods(schedule).add(periods);
+                uint256 totalPeriods = schedule.totalPeriods.add(periods);
                 schedule.nextTime = BokkyPooBahsDateTimeLibrary.addMonths(schedule.startTime, totalPeriods.mul(schedule.interval));
             } else if (schedule.timeUnit == TimeUnit.YEARS ) {
                 periods = BokkyPooBahsDateTimeLibrary.diffYears(schedule.nextTime, now).div(schedule.interval).add(1);
                 schedule.nextTime = BokkyPooBahsDateTimeLibrary.addYears(schedule.nextTime, periods.mul(schedule.interval));
             }
+            schedule.totalPeriods = schedule.totalPeriods.add(periods);
             schedule.periods.push(periods);
         }
-    }
-
-    function _getTotalPeriods(Schedule storage schedule) internal view returns(uint256) {
-        uint256 totalPeriods = 0;
-        for (uint256 i = 0; i < schedule.periods.length; i++) {
-            totalPeriods = totalPeriods.add(schedule.periods[i]);
-        }
-        return totalPeriods;
     }
 
     /**

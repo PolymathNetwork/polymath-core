@@ -663,7 +663,7 @@ async function matmManage() {
   if (getApprovals.length > 0) {
     let options = []
     getApprovals.forEach((item) => {
-      options.push(`From ${item.from} to ${item.to}`)
+      options.push(`${web3.utils.toAscii(item.description)}\nFrom: ${item.from}\nTo: ${item.to}\nAmount: ${web3.utils.fromWei(item.allowance)}\nExpiry date: ${moment.unix(item.expiryTime).format('MM/DD/YYYY HH:mm')}\n`)
     })
 
     let index = readlineSync.keyInSelect(options, 'Select an existing approval: ', {

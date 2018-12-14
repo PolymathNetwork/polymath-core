@@ -163,7 +163,7 @@ contract USDTieredSTO is ISTO, ReentrancyGuard {
     // STO Configuration //
     ///////////////////////
 
-    constructor (address _securityToken, address _polyAddress, address _factory) public Module(_securityToken, _polyAddress) {
+    constructor (address _securityToken, address _factory) public Module(_securityToken) {
         oracleKeys[bytes32("ETH")][bytes32("USD")] = ETH_ORACLE;
         oracleKeys[bytes32("POLY")][bytes32("USD")] = POLY_ORACLE;
         require(_factory != address(0), "In-valid address");

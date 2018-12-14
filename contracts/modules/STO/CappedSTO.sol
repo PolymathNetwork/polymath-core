@@ -31,8 +31,8 @@ contract CappedSTO is ISTO, ReentrancyGuard {
 
     event SetAllowBeneficialInvestments(bool _allowed);
 
-    constructor (address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
+    constructor (address _securityToken) public
+    Module(_securityToken)
     {
     }
 

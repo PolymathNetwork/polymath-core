@@ -1,5 +1,6 @@
 pragma solidity ^0.4.24;
 
+import "../RegistryUpdater.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
@@ -22,12 +23,11 @@ contract Module is IModule {
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _securityToken, address _polyAddress) public {
+    constructor (address _securityToken) public {
         securityToken = _securityToken;
         factory = msg.sender;
-        polyToken = IERC20(_polyAddress);
+        polyToken = IERC20(RegistryUpdater(_securityToken).polyToken());
     }
 
     //Allows owner, factory or permissioned delegate

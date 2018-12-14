@@ -11,10 +11,12 @@ contract CountTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
+     * @param _setupCost Setup cost of the module
+     * @param _usageCost Usage cost of the module
+     * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
         name = "CountTransferManager";
@@ -30,9 +32,8 @@ contract CountTransferManagerFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Failed transferFrom due to insufficent Allowance provided");
-        CountTransferManager countTransferManager = new CountTransferManager(msg.sender, address(polyToken));
+        _takeFee();
+        CountTransferManager countTransferManager = new CountTransferManager(msg.sender);
         require(Util.getSig(_data) == countTransferManager.getInitFunction(), "Provided data is not valid");
         /*solium-disable-next-line security/no-low-level-calls*/
         require(address(countTransferManager).call(_data), "Unsuccessful call");

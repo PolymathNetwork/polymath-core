@@ -11,10 +11,12 @@ contract CappedSTOFactory is ModuleFactory {
 
     /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
+     * @param _setupCost Setup cost of the module
+     * @param _usageCost Usage cost of the module
+     * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
         name = "CappedSTO";
@@ -29,10 +31,9 @@ contract CappedSTOFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Sufficent Allowance is not provided");
+        _takeFee();
         //Check valid bytes - can only call module init function
-        CappedSTO cappedSTO = new CappedSTO(msg.sender, address(polyToken));
+        CappedSTO cappedSTO = new CappedSTO(msg.sender);
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == cappedSTO.getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/

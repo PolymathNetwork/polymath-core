@@ -105,8 +105,8 @@ contract('SingleTradeVolumeRestrictionManager', accounts => {
     ] = instances;
 
     // STEP 4: Deploy the SingleTradeVolumeRestrictionManagerFactory
-    [I_SingleTradeVolumeRestrictionManagerFactory] = await deploySingleTradeVolumeRMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-    [P_SingleTradeVolumeRestrictionManagerFactory] = await deploySingleTradeVolumeRMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
+    [I_SingleTradeVolumeRestrictionManagerFactory] = await deploySingleTradeVolumeRMAndVerified(account_polymath, I_MRProxied, 0);
+    [P_SingleTradeVolumeRestrictionManagerFactory] = await deploySingleTradeVolumeRMAndVerified(account_polymath, I_MRProxied, web3.utils.toWei("500"));
   
   });
 

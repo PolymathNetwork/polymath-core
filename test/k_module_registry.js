@@ -260,13 +260,13 @@ contract("ModuleRegistry", accounts => {
             });
 
             it("Should fail in registering the module-- type = 0", async () => {
-                I_MockFactory = await MockFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
+                I_MockFactory = await MockFactory.new(0, 0, 0, { from: account_polymath });
 
                 catchRevert(I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath }));
             });
 
             it("Should fail to register the new module because msg.sender is not the owner of the module", async() => {
-                I_CappedSTOFactory3 = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_temp });
+                I_CappedSTOFactory3 = await CappedSTOFactory.new(0, 0, 0, { from: account_temp });
                 catchRevert(
                     I_MRProxied.registerModule(I_CappedSTOFactory3.address, { from: token_owner })
                 );
@@ -292,7 +292,7 @@ contract("ModuleRegistry", accounts => {
             });
 
             it("Should successfully verify the module -- false", async () => {
-                I_CappedSTOFactory1 = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
+                I_CappedSTOFactory1 = await CappedSTOFactory.new(0, 0, 0, { from: account_polymath });
                 await I_MRProxied.registerModule(I_CappedSTOFactory1.address, { from: account_polymath });
                 let tx = await I_MRProxied.verifyModule(I_CappedSTOFactory1.address, false, { from: account_polymath });
                 assert.equal(tx.logs[0].args._moduleFactory, I_CappedSTOFactory1.address, "Failed in verifying the module");
@@ -323,7 +323,7 @@ contract("ModuleRegistry", accounts => {
             });
 
             it("Should fail to register module because custom modules not allowed", async () => {
-                I_CappedSTOFactory2 = await CappedSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: token_owner });
+                I_CappedSTOFactory2 = await CappedSTOFactory.new(0, 0, 0, { from: token_owner });
 
                 assert.notEqual(
                     I_CappedSTOFactory2.address.valueOf(),
@@ -376,7 +376,7 @@ contract("ModuleRegistry", accounts => {
             })
 
             it("Should successfully add verified module", async () => {
-                I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {
+                I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(0, 0, 0, {
                     from: account_polymath
                 });
                 await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
@@ -386,7 +386,7 @@ contract("ModuleRegistry", accounts => {
             });
 
             it("Should failed in adding the TestSTOFactory module because not compatible with the current protocol version --lower", async () => {
-                I_TestSTOFactory = await TestSTOFactory.new(I_PolyToken.address, 0, 0, 0, { from: account_polymath });
+                I_TestSTOFactory = await TestSTOFactory.new(0, 0, 0, { from: account_polymath });
                 await I_MRProxied.registerModule(I_TestSTOFactory.address, { from: account_polymath });
                 await I_MRProxied.verifyModule(I_TestSTOFactory.address, true, { from: account_polymath });
                 // Taking the snapshot the revert the changes from here

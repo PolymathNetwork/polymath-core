@@ -114,10 +114,10 @@ contract("GeneralTransferManager", accounts => {
             I_STRProxied
         ] = instances;
 
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-        [P_GeneralTransferManagerFactory] = await deployGTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
-        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-        [P_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [P_GeneralTransferManagerFactory] = await deployGTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"));
+        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, 0);
+        [P_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"));
 
         // Printing all the contract addresses
         console.log(`

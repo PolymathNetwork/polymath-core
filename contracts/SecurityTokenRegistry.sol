@@ -5,6 +5,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IOwnable.sol";
 import "./interfaces/ISTFactory.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
+import "./interfaces/IPolymathRegistry.sol";
 import "./storage/EternalStorage.sol";
 import "./libraries/Util.sol";
 import "./libraries/Encoder.sol";
@@ -161,7 +162,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _STFactory is the address of the Proxy contract for Security Tokens
      * @param _stLaunchFee is the fee in POLY required to launch a token
      * @param _tickerRegFee is the fee in POLY required to register a ticker
-     * @param _polyToken is the address of the POLY ERC20 token
      * @param _owner is the owner of the STR
      */
     function initialize(
@@ -169,7 +169,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         address _STFactory,
         uint256 _stLaunchFee,
         uint256 _tickerRegFee,
-        address _polyToken,
         address _owner
     )
         external
@@ -177,11 +176,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     {
         require(!getBool(INITIALIZE),"already initialized");
         require(
-            _STFactory != address(0) && _polyToken != address(0) && _owner != address(0) && _polymathRegistry != address(0),
+            _STFactory != address(0) && _owner != address(0) && _polymathRegistry != address(0),
             "Invalid address"
         );
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Fees should not be 0");
-        set(POLYTOKEN, _polyToken);
         set(STLAUNCHFEE, _stLaunchFee);
         set(TICKERREGFEE, _tickerRegFee);
         set(EXPIRYLIMIT, uint256(60 * 1 days));
@@ -190,6 +188,19 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         set(POLYMATHREGISTRY, _polymathRegistry);
         _setProtocolVersion(_STFactory, uint8(2), uint8(0), uint8(0));
         set(INITIALIZE, true);
+        _updateFromRegistry();
+    }
+
+    /**
+     * @notice Used to update the polyToken contract address
+     */
+    function updateFromRegistry() external onlyOwner {
+        _updateFromRegistry();
+    }
+
+    function _updateFromRegistry() internal {
+        address polymathRegistry = getAddress(POLYMATHREGISTRY);
+        set(POLYTOKEN, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"));
     }
 
     /////////////////////////////
@@ -738,15 +749,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      */
     function getProtocolVersion() public view returns(uint8[]) {
         return VersionUtils.unpack(uint24(getUint(Encoder.getKey("latestVersion"))));
-    }
-
-    /**
-     * @notice Changes the PolyToken address. Only Polymath.
-     * @param _newAddress is the address of the polytoken.
-     */
-    function updatePolyTokenAddress(address _newAddress) external onlyOwner {
-        require(_newAddress != address(0), "Invalid address");
-        set(POLYTOKEN, _newAddress);
     }
 
     /**

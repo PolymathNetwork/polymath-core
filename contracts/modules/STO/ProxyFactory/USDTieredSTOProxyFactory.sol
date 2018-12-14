@@ -12,12 +12,11 @@ contract USDTieredSTOProxyFactory is IUSDTieredSTOProxy {
     /**
      * @notice Deploys the STO.
      * @param _securityToken Contract address of the securityToken
-     * @param _polyAddress Contract address of the PolyToken.
      * @param _factoryAddress Contract address of the factory
      * @return address Address of the deployed STO
      */
-    function deploySTO(address _securityToken, address _polyAddress, address _factoryAddress) external returns (address) {
-        address newSecurityTokenAddress = new USDTieredSTO(_securityToken, _polyAddress, _factoryAddress);
+    function deploySTO(address _securityToken, address _factoryAddress) external returns (address) {
+        address newSecurityTokenAddress = new USDTieredSTO(_securityToken, _factoryAddress);
         return newSecurityTokenAddress;
     }
 

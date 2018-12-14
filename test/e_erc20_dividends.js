@@ -107,8 +107,8 @@ contract("ERC20DividendCheckpoint", accounts => {
             I_STRProxied
         ] = instances;
 
-        [P_ERC20DividendCheckpointFactory] = await deployERC20DividendAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500", "ether"));
-        [I_ERC20DividendCheckpointFactory] = await deployERC20DividendAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [P_ERC20DividendCheckpointFactory] = await deployERC20DividendAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));
+        [I_ERC20DividendCheckpointFactory] = await deployERC20DividendAndVerifyed(account_polymath, I_MRProxied, 0);
 
         // Printing all the contract addresses
         console.log(`
@@ -878,7 +878,7 @@ contract("ERC20DividendCheckpoint", accounts => {
         });
 
         it("should registr a delegate", async () => {
-            [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+            [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
             let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(

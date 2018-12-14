@@ -117,8 +117,15 @@ contract('GeneralPermissionManager', accounts => {
 
 	// permission manager fuzz test
 	// let modules = ['CountTransferManager', 'SingleTradeVolumeRestrictionManager', 'ManualApprovalTransferManager', 'I_VolumeRestrictionTransferManager', 'PercentageTransferManager'];
-    let modules = ['I_CountTransferManagerFactory'];
-    let totalModules = modules.length;
+    var factoriesAndModules = [
+        { factory: 'I_CountTransferManagerFactory', module: 'CountTransferManager'},
+        //{ factory: 'I_SingleTradeVolumeRestrictionManagerFactory', module: 'SingleTradeVolumeRestrictionManager'},
+        { factory: 'I_ManualApprovalTransferManagerFactory', module: 'ManualApprovalTransferManager'},
+        { factory: 'I_VolumeRestrictionTransferManagerFactory', module: 'VolumeRestrictionTransferManager'},
+        //{ factory: 'I_PercentageTransferManagerFactory', module: 'PercentageTransferManager'},
+    ];
+
+    let totalModules = factoriesAndModules.length;
 
 
     before(async () => {
@@ -270,22 +277,21 @@ contract('GeneralPermissionManager', accounts => {
 
                 console.log("1.2");
                 // choose a random module
-                let randomModuleFactory = modules[Math.floor(Math.random() * Math.floor(totalModules))];
-                console.log("choosen module "+ randomModuleFactory.address);
-
+                let random = factoriesAndModules[Math.floor(Math.random() * Math.floor(totalModules))];
+                let randomFactory = eval(random.factory);
+                let randomModule = eval(random.module);
+                console.log("choosen factory "+ random.factory);
+                console.log("choosen module "+ random.module);
+            
                 // attach it to the ST
-                let tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
-                 console.log("1.3");
-                let randomModule = CountTransferManager.at(tx.logs[2].args._module);
-                 console.log("1.4");
-                console.log("successfully attached module " + randomModule);
-                 console.log("1.5");
-                 console.log(randomModule.address);
-
-
+                let tx = await I_SecurityToken.addModule(randomFactory.address, bytesSTO, 0, 0, { from: token_owner });
+                let randomModuleInstance = randomModule.at(tx.logs[2].args._module);
+                console.log("successfully attached module " + randomModuleInstance.address);
+                
                 // remove it from the ST
-                tx = await I_SecurityToken.removeModule(randomModule.address, { from: token_owner });
-                console.log("successfully removed module " + randomModule);
+                tx = await I_SecurityToken.archiveModule(randomModuleInstance.address, { from: token_owner });
+                tx = await I_SecurityToken.removeModule(randomModuleInstance.address, { from: token_owner });
+                console.log("successfully removed module " + randomModuleInstance.address);
 
             }
         })

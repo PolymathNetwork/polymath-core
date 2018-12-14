@@ -93,7 +93,7 @@ contract("SecurityToken", accounts => {
     let startTime;
     let endTime;
     const cap = web3.utils.toWei("10000");
-    const rate = 1000;
+    const rate = web3.utils.toWei("1000");
     const fundRaiseType = [0];
     const cappedSTOSetupCost = web3.utils.toWei("20000", "ether");
     const maxCost = cappedSTOSetupCost;

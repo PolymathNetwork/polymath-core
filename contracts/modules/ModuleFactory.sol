@@ -163,11 +163,14 @@ contract ModuleFactory is IModuleFactory, Ownable {
         return name;
     }
 
-    function _takeFee() internal {
+    function _takeFee() internal returns (address) {
+        address polyToken = RegistryUpdater(msg.sender).polyToken();
+        require(polyToken != address(0), "Invalid POLY token");
         if (setupCost > 0) {
-            require(IERC20(RegistryUpdater(msg.sender).polyToken()).transferFrom(msg.sender, owner(), setupCost),
+            require(IERC20(polyToken).transferFrom(msg.sender, owner(), setupCost),
                 "Insufficient allowance for module fee");
         }
+        return polyToken;
     }
 
 }

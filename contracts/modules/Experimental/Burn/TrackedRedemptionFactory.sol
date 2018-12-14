@@ -30,8 +30,8 @@ contract TrackedRedemptionFactory is ModuleFactory {
      * @return Address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
-        _takeFee();
-        address trackedRedemption = new TrackedRedemption(msg.sender);
+        address polyToken = _takeFee();
+        address trackedRedemption = new TrackedRedemption(msg.sender, polyToken);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(trackedRedemption), getName(), address(this), msg.sender, setupCost, now);
         return address(trackedRedemption);

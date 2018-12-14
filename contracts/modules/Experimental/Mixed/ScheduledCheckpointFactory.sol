@@ -30,8 +30,8 @@ contract ScheduledCheckpointFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes /* _data */) external returns(address) {
-        _takeFee();
-        address scheduledCheckpoint = new ScheduledCheckpoint(msg.sender);
+        address polyToken = _takeFee();
+        address scheduledCheckpoint = new ScheduledCheckpoint(msg.sender, polyToken);
         emit GenerateModuleFromFactory(scheduledCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return scheduledCheckpoint;
     }

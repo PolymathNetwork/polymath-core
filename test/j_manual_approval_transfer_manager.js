@@ -321,18 +321,6 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("5", "ether"));
         });
 
-        it("Should fail to add a manual approval because invalid _from address", async () => {
-            await catchRevert(
-                I_ManualApprovalTransferManager.addManualApproval(
-                    "",
-                    account_investor4,
-                    web3.utils.toWei("2", "ether"),
-                    latestTime() + duration.days(1),
-                    { from: token_owner }
-                )
-            );
-        });
-
         it("Should fail to add a manual approval because invalid _to address", async () => {
             await catchRevert(
                 I_ManualApprovalTransferManager.addManualApproval(
@@ -367,6 +355,16 @@ contract("ManualApprovalTransferManager", accounts => {
             );
         });
 
+        it("Add a manual approval for a 5th investor from issuance", async () => {
+            await I_ManualApprovalTransferManager.addManualApproval(
+                "",
+                account_investor5,
+                web3.utils.toWei("2", "ether"),
+                latestTime() + duration.days(1),
+                { from: token_owner }
+            );
+        });
+
         it("Should fail to add a manual approval because allowance is laready exists", async () => {
             await catchRevert(
                 I_ManualApprovalTransferManager.addManualApproval(
@@ -377,10 +375,6 @@ contract("ManualApprovalTransferManager", accounts => {
                     { from: token_owner }
                 )
             );
-        });
-
-        it("Should fail to revoke manual approval because invalid _from address", async () => {
-            await catchRevert(I_ManualApprovalTransferManager.revokeManualApproval("", account_investor4, { from: token_owner }));
         });
 
         it("Should fail to revoke manual approval because invalid _to address", async () => {
@@ -407,6 +401,15 @@ contract("ManualApprovalTransferManager", accounts => {
             await I_SecurityToken.transfer(account_investor4, web3.utils.toWei("1", "ether"), { from: account_investor1 });
 
             assert.equal((await I_SecurityToken.balanceOf(account_investor4)).toNumber(), web3.utils.toWei("1", "ether"));
+        });
+
+        it("Approval fails with wrong from to address", async () => {
+          await catchRevert(I_SecurityToken.transfer(account_investor5, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
+        });
+
+        it("Use 100% of issuance approval", async () => {
+            await I_SecurityToken.mint(account_investor5, web3.utils.toWei("2", "ether"), { from: token_owner });
+            assert.equal((await I_SecurityToken.balanceOf(account_investor5)).toNumber(), web3.utils.toWei("2", "ether"));
         });
 
         it("Check verifyTransfer without actually transferring", async () => {
@@ -439,14 +442,6 @@ contract("ManualApprovalTransferManager", accounts => {
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 });
         });
 
-        it("Should fail to add a manual block because invalid _from address", async () => {
-            await catchRevert(
-                I_ManualApprovalTransferManager.addManualBlocking("", account_investor2, latestTime() + duration.days(1), {
-                    from: token_owner
-                })
-            );
-        });
-
         it("Should fail to add a manual block because invalid _to address", async () => {
             await catchRevert(
                 I_ManualApprovalTransferManager.addManualBlocking(account_investor1, "", latestTime() + duration.days(1), {
@@ -475,10 +470,6 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Check manual block causes failure", async () => {
             await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
-        });
-
-        it("Should fail to revoke manual block because invalid _from address", async () => {
-            await catchRevert(I_ManualApprovalTransferManager.revokeManualBlocking("0x0", account_investor2, { from: token_owner }));
         });
 
         it("Should fail to revoke manual block because invalid _to address", async () => {
@@ -550,7 +541,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 "Allows an issuer to set manual approvals or blocks for specific pairs of addresses and amounts. Init function takes no parameters.",
                 "Wrong Module added"
             );
-            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "1.0.0");
+            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "2.0.1");
         });
 
         it("Should get the tags of the factory", async () => {

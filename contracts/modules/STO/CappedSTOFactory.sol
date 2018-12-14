@@ -21,7 +21,7 @@ contract CappedSTOFactory is ModuleFactory {
         version = "1.0.0";
         name = "CappedSTO";
         title = "Capped STO";
-        description = "Use to collects the funds and once the cap is reached then investment will be no longer entertained";
+        description = "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (ETH or POLY), and any security tokens left upon termination of the offering will not be minted.";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -31,9 +31,9 @@ contract CappedSTOFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
-        _takeFee();
+        address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
-        CappedSTO cappedSTO = new CappedSTO(msg.sender);
+        CappedSTO cappedSTO = new CappedSTO(msg.sender, polyToken);
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == cappedSTO.getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/

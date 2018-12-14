@@ -438,9 +438,17 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         uint counter = 0;
         // accessing the data structure userTotickers[_owner].length
         bytes32[] memory tickers = getArrayBytes32(Encoder.getKey("userToTickers", _owner));
-        bytes32[] memory tempList = new bytes32[](tickers.length);
         for (uint i = 0; i < tickers.length; i++) {
             string memory ticker = Util.bytes32ToString(tickers[i]);
+            /*solium-disable-next-line security/no-block-members*/
+            if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
+                counter ++;
+            }
+        }
+        bytes32[] memory tempList = new bytes32[](counter);
+        counter = 0;
+        for (i = 0; i < tickers.length; i++) {
+            ticker = Util.bytes32ToString(tickers[i]);
             /*solium-disable-next-line security/no-block-members*/
             if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
                 tempList[counter] = tickers[i];

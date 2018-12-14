@@ -7,7 +7,7 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: yarn
+      - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
@@ -19,11 +19,12 @@ jobs:
   test:
     docker:
       - image: circleci/node:8
+    parallelism: 2
     steps:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: yarn
+      - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
@@ -32,6 +33,10 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: ./test-results/mocha/results.xml
   coverage:
     docker:
       - image: circleci/node:8
@@ -39,7 +44,7 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: yarn
+      - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
@@ -48,6 +53,8 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
+      - store_artifacts:
+          path: ./coverage/lcov.info
   docs:
     docker:
       - image: circleci/node:8
@@ -55,7 +62,7 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: yarn
+      - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
@@ -66,9 +73,26 @@ jobs:
             - node_modules
 workflows:
   version: 2
-  build-test-coverage-docs:
+  commit:
     jobs:
-      - build
-      - test
       - coverage
-      - docs
+  daily-builds:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+                - dev-2.1.0
+                - dev-2.2.0
+                - dev-3.0.0
+    jobs:
+      - coverage
+  docs:
+    jobs:
+      - docs:
+          filters:
+            branches:
+              only:
+                - master

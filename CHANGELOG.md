@@ -5,11 +5,19 @@ All notable changes to this project will be documented in this file.
 
 [__3.0.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __10-11-18__
 
-## SecurityToken
-* Added new function `addModuleWithLabel()` which takes an extra param `_label` that used for giving the customize label to the module for display purpose. #428   
-* Fixed `addModule` function to be backwards compatible and call the new `addModuleWithLabel` function with an empty label.  
+## Added
+* Added new function `addModuleWithLabel()` which takes an extra param `_label` that used for giving the customize label to the module for display purpose. #428
+
+## Fixed
+* Fixed `addModule` function to be backwards compatible and call the new `addModuleWithLabel` function with an empty label. 
 * Fixed event `ModuleAdded` to also emit `_label`.    
-* Fixed function `getModule` to also return the respective module label.   
+* Fixed function `getModule` to also return the respective module label.
+* Replaced `updatePolyTokenAddress()` function with `updateFromRegistry()` in `SecurityTokenRegistry`.  
+
+## Removed
+* Removed `_polyAddress` parameter from constructors of all modules and module factories.
+* Removed `_polyToken` parameter from `initialize` function in `SecurityTokenRegistry`.
+ 
 
 # v1.5.0 - Release Candidate
 

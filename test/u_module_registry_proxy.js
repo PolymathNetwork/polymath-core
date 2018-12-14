@@ -122,7 +122,7 @@ contract("ModuleRegistryProxy", accounts => {
             await I_MRProxied.updateFromRegistry({ from: account_polymath });
             // STEP 4: Deploy the GeneralTransferManagerFactory
 
-            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {
+            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(0, 0, 0, {
                 from: account_polymath
             });
 
@@ -160,7 +160,7 @@ contract("ModuleRegistryProxy", accounts => {
 
     describe("Feed some data in storage", async () => {
         it("Register and verify the new module", async () => {
-            I_GeneralPermissionManagerfactory = await GeneralPermissionManagerFactory.new(I_PolyToken.address, 0, 0, 0, {
+            I_GeneralPermissionManagerfactory = await GeneralPermissionManagerFactory.new(0, 0, 0, {
                 from: account_polymath
             });
 

@@ -22,10 +22,9 @@ contract DummySTO is ISTO {
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
+    constructor (address _securityToken) public
+    Module(_securityToken)
     {
     }
 

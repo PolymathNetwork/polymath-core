@@ -133,9 +133,9 @@ contract("SecurityToken", accounts => {
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
         // STEP 3: Deploy the CappedSTOFactory
-        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, cappedSTOSetupCost);
+        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, cappedSTOSetupCost);
 
         // Printing all the contract addresses
         console.log(`
@@ -420,9 +420,9 @@ contract("SecurityToken", accounts => {
             let FactoryInstances;
             let GPMAddress = new Array();
 
-            [D_GPM] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-            [D_GPM_1] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-            [D_GPM_2] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+            [D_GPM] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+            [D_GPM_1] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+            [D_GPM_2] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
             FactoryInstances = [D_GPM, D_GPM_1, D_GPM_2];
             // Adding module in the ST
             for (let i = 0; i < FactoryInstances.length; i++) {
@@ -950,7 +950,7 @@ contract("SecurityToken", accounts => {
     describe("Test cases for the Mock TrackedRedeemption", async() => {
 
         it("Should add the tracked redeemption module successfully", async() => {
-            [I_MockRedemptionManagerFactory] = await deployMockRedemptionAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+            [I_MockRedemptionManagerFactory] = await deployMockRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
             let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "", 0, 0, {from: token_owner });
             assert.equal(tx.logs[2].args._types[0], burnKey, "fail in adding the burn manager");
             I_MockRedemptionManager = MockRedemptionManager.at(tx.logs[2].args._module);
@@ -993,7 +993,7 @@ contract("SecurityToken", accounts => {
         })
 
         it("Should successfully fail in calling the burn functions", async() => {
-            [I_MockRedemptionManagerFactory] = await deployMockWrongTypeRedemptionAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+            [I_MockRedemptionManagerFactory] = await deployMockWrongTypeRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
             let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "", 0, 0, {from: token_owner });
             I_MockRedemptionManager = MockRedemptionManager.at(tx.logs[2].args._module);
 

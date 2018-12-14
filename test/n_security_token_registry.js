@@ -82,7 +82,7 @@ contract("SecurityTokenRegistry", accounts => {
     const initRegFee = web3.utils.toWei("250");
     const newRegFee = web3.utils.toWei("300");
 
-    const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
+    const STRProxyParameters = ["address", "address", "uint256", "uint256", "address"];
     const STOParameters = ["uint256", "uint256", "uint256", "string"];
 
     // Capped STO details
@@ -119,7 +119,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         // STEP 8: Deploy the CappedSTOFactory
 
-        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, 0);
         // Step 9: Deploy the SecurityTokenRegistry
 
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({ from: account_polymath });
@@ -160,7 +160,6 @@ contract("SecurityTokenRegistry", accounts => {
                 I_STFactory.address,
                 initRegFee,
                 initRegFee,
-                I_PolyToken.address,
                 account_polymath
             ]);
             catchRevert(
@@ -177,7 +176,6 @@ contract("SecurityTokenRegistry", accounts => {
                 address_zero,
                 initRegFee,
                 initRegFee,
-                I_PolyToken.address,
                 account_polymath
             ]);
             catchRevert(
@@ -194,7 +192,6 @@ contract("SecurityTokenRegistry", accounts => {
                 I_STFactory.address,
                 0,
                 initRegFee,
-                I_PolyToken.address,
                 account_polymath
             ]);
             catchRevert(
@@ -211,7 +208,6 @@ contract("SecurityTokenRegistry", accounts => {
                 I_STFactory.address,
                 initRegFee,
                 0,
-                I_PolyToken.address,
                 account_polymath
             ]);
             catchRevert(
@@ -222,30 +218,12 @@ contract("SecurityTokenRegistry", accounts => {
             );
         });
 
-        it("Should successfully update the implementation address -- fail because PolyToken address is 0x", async () => {
-            let bytesProxy = encodeProxyCall(STRProxyParameters, [
-                I_PolymathRegistry.address,
-                I_STFactory.address,
-                initRegFee,
-                initRegFee,
-                address_zero,
-                account_polymath
-            ]);
-            catchRevert(
-                I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
-                    from: account_polymath
-                }),
-                "tx-> revert because PolyToken address is 0x"
-            );
-        });
-
         it("Should successfully update the implementation address -- fail because owner address is 0x", async () => {
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
                 I_PolymathRegistry.address,
                 I_STFactory.address,
                 initRegFee,
                 initRegFee,
-                I_PolyToken.address,
                 address_zero
             ]);
             catchRevert(
@@ -262,7 +240,6 @@ contract("SecurityTokenRegistry", accounts => {
                 address_zero,
                 0,
                 0,
-                address_zero,
                 address_zero
             ]);
             catchRevert(
@@ -279,7 +256,6 @@ contract("SecurityTokenRegistry", accounts => {
                 I_STFactory.address,
                 initRegFee,
                 initRegFee,
-                I_PolyToken.address,
                 account_polymath
             ]);
             await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
@@ -320,7 +296,6 @@ contract("SecurityTokenRegistry", accounts => {
                     I_STFactory.address,
                     initRegFee,
                     initRegFee,
-                    I_PolyToken.address,
                     account_polymath
                 ),
                 "tx revert -> Can't call the intialize function again"
@@ -953,29 +928,6 @@ contract("SecurityTokenRegistry", accounts => {
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, "POLY", "SecurityToken doesn't get deployed");
-        });
-    });
-
-    describe("Test case for the update poly token", async () => {
-        it("Should change the polytoken address -- failed because of bad owner", async () => {
-            catchRevert(
-                I_STRProxied.updatePolyTokenAddress(dummy_token, { from: account_temp }),
-                "tx revert -> failed because of bad owner"
-            );
-        });
-
-        it("Should change the polytoken address -- failed because of 0x address", async () => {
-            catchRevert(
-                I_STRProxied.updatePolyTokenAddress("0x0000000000000000000000000000000000000000000", { from: account_polymath }),
-                "tx revert -> failed because 0x address"
-            );
-        });
-
-        it("Should successfully change the polytoken address", async () => {
-            let _id = await takeSnapshot();
-            await I_STRProxied.updatePolyTokenAddress(dummy_token, { from: account_polymath });
-            assert.equal(await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("polyToken")), dummy_token);
-            await revertToSnapshot(_id);
         });
     });
 

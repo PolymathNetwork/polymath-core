@@ -17,7 +17,7 @@ const Web3 = require("web3");
 const BigNumber = require("bignumber.js");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-const TOLERANCE = 0; // Allow balances to be off by X WEI for rounding purposes. Currently set to 0 as js rounding and solidity rounding are in sync.
+const TOLERANCE = 2; // Allow balances to be off by 2 WEI for rounding purposes
 
 contract("USDTieredSTO Sim", accounts => {
     // Accounts Variable declaration

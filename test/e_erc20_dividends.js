@@ -1077,7 +1077,7 @@ contract("ERC20DividendCheckpoint", accounts => {
             let exclusions = [];
             exclusions.push(account_temp);
             while (--limit) exclusions.push(limit);
-
+            console.log(exclusions.length);
             let tx = await I_ERC20DividendCheckpoint.createDividendWithExclusions(
                 maturity,
                 expiry,

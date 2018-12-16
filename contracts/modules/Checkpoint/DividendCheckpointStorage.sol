@@ -6,7 +6,7 @@ pragma solidity ^0.4.24;
  */
 contract DividendCheckpointStorage {
 
-    uint256 public EXCLUDED_ADDRESS_LIMIT = 50;
+    uint256 public EXCLUDED_ADDRESS_LIMIT = 150;
     bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
     bytes32 public constant MANAGE = "MANAGE";
     bytes32 public constant CHECKPOINT = "CHECKPOINT";

@@ -248,6 +248,26 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     }
 
     /**
+     * @notice Checks whether an address is excluded from claiming a dividend
+     * @param _dividendIndex Dividend to withdraw from
+     * @return bool whether the address is excluded
+     */
+    function isExcluded(address _investor, uint256 _dividendIndex) external view returns (bool) {
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        return dividends[_dividendIndex].dividendExcluded[_investor];
+    }
+
+    /**
+     * @notice Checks whether an address has claimed a dividend
+     * @param _dividendIndex Dividend to withdraw from
+     * @return bool whether the address has claimed
+     */
+    function isClaimed(address _investor, uint256 _dividendIndex) external view returns (bool) {
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        return dividends[_dividendIndex].claimed[_investor];
+    }
+
+    /**
      * @notice Return the permissions flag that are associated with this module
      * @return bytes32 array
      */

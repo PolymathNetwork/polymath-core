@@ -25,7 +25,6 @@ contract DividendCheckpointStorage {
         uint256 dividendWithheldReclaimed;
         mapping (address => bool) claimed; // List of addresses which have claimed dividend
         mapping (address => bool) dividendExcluded; // List of addresses which cannot claim dividends
-        address[] excluded;
         bytes32 name; // Name/title - used for identification
     }
 

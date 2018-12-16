@@ -227,12 +227,24 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     function withdrawWithholding(uint256 _dividendIndex) external;
 
     /**
-     * @notice Retrieves list of excluded addresses for a dividend
+     * @notice Retrieves list of investors, their claim status and whether they are excluded
      * @param _dividendIndex Dividend to withdraw from
+     * @return address[] list of investors
+     * @return bool[] whether investor has claimed
+     * @return bool[] whether investor is excluded
      */
-    function getExcluded(uint256 _dividendIndex) external view returns (address[]) {
+    function getDividendInfo(uint256 _dividendIndex) external view returns (address[], bool[], bool[]) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
-        return dividends[_dividendIndex].excluded;
+        //Get list of Investors
+        uint256 checkpointId = dividends[_dividendIndex].checkpointId;
+        address[] memory investors = ISecurityToken(securityToken).getInvestorsAt(checkpointId);
+        bool[] memory resultClaimed = new bool[](investors.length);
+        bool[] memory resultExcluded = new bool[](investors.length);
+        for (uint256 i; i < investors.length; i++) {
+            resultClaimed[i] = dividends[_dividendIndex].claimed[investors[i]];
+            resultExcluded[i] = dividends[_dividendIndex].dividendExcluded[investors[i]];
+        }
+        return (investors, resultClaimed, resultExcluded);
     }
 
     /**

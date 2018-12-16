@@ -147,7 +147,6 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
             false,
             0,
             0,
-            _excluded,
             _name
           )
         );

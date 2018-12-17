@@ -34,7 +34,7 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
         bytes calldata /* _data */
     ) external returns(address) {
         address polyToken = _takeFee();
-        address manualTransferManager = new ManualApprovalTransferManager(msg.sender, polyToken);
+        ManualApprovalTransferManager manualTransferManager = new ManualApprovalTransferManager(msg.sender, polyToken);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(manualTransferManager);

@@ -34,7 +34,7 @@ contract ScheduledCheckpointFactory is ModuleFactory {
         bytes calldata /* _data */
     ) external returns(address) {
         address polyToken = _takeFee();
-        address scheduledCheckpoint = new ScheduledCheckpoint(msg.sender, polyToken);
+        address scheduledCheckpoint = address(new ScheduledCheckpoint(msg.sender, polyToken));
         emit GenerateModuleFromFactory(scheduledCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return scheduledCheckpoint;
     }

@@ -74,7 +74,7 @@ library Util {
     function getSig(bytes memory _data) internal pure returns(bytes4 sig) {
         uint len = _data.length < 4 ? _data.length : 4;
         for (uint i = 0; i < len; i++) {
-            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
+            sig = bytes4(bytes32(uint(bytes32(sig)) + uint(bytes32(_data[i])) * (2 ** (8 * (len - 1 - i)))));
         }
     }
 

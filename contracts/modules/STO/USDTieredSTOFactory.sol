@@ -40,7 +40,7 @@ contract USDTieredSTOFactory is ModuleFactory {
      */
     function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
-        address usdTieredSTO = new USDTieredSTOProxy(msg.sender, polyToken, logicContract);
+        address usdTieredSTO = address(new USDTieredSTOProxy(msg.sender, polyToken, logicContract));
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == IBoot(usdTieredSTO).getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/

@@ -40,7 +40,7 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
         bytes calldata /* _data */
     ) external returns(address) {
         address polyToken = _takeFee();
-        address ethDividendCheckpoint = new EtherDividendCheckpointProxy(msg.sender, polyToken, logicContract);
+        address ethDividendCheckpoint = address(new EtherDividendCheckpointProxy(msg.sender, polyToken, logicContract));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(ethDividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return ethDividendCheckpoint;

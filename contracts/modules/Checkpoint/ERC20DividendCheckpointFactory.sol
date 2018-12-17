@@ -40,7 +40,7 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
         bytes calldata /* _data */
     ) external returns(address) {
         address polyToken = _takeFee();
-        address erc20DividendCheckpoint = new ERC20DividendCheckpointProxy(msg.sender, polyToken, logicContract);
+        address erc20DividendCheckpoint = address(new ERC20DividendCheckpointProxy(msg.sender, polyToken, logicContract));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(erc20DividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return erc20DividendCheckpoint;

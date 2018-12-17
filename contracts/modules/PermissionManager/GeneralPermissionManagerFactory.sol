@@ -34,7 +34,7 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
         bytes calldata /* _data */
     ) external returns(address) {
         address polyToken = _takeFee();
-        address permissionManager = new GeneralPermissionManager(msg.sender, polyToken);
+        address permissionManager = address(new GeneralPermissionManager(msg.sender, polyToken));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(permissionManager), getName(), address(this), msg.sender, setupCost, now);
         return permissionManager;

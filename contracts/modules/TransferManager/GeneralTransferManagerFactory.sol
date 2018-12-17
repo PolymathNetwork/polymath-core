@@ -40,7 +40,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
         bytes calldata /* _data */
     ) external returns(address) {
         address polyToken = _takeFee();
-        address generalTransferManager = new GeneralTransferManagerProxy(msg.sender, polyToken, logicContract);
+        GeneralTransferManagerProxy generalTransferManager = new GeneralTransferManagerProxy(msg.sender, polyToken, logicContract);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(generalTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(generalTransferManager);

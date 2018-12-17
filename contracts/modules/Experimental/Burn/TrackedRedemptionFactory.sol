@@ -34,7 +34,7 @@ contract TrackedRedemptionFactory is ModuleFactory {
         bytes calldata /* _data */
     ) external returns(address) {
         address polyToken = _takeFee();
-        address trackedRedemption = new TrackedRedemption(msg.sender, polyToken);
+        address trackedRedemption = address(new TrackedRedemption(msg.sender, polyToken));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(trackedRedemption), getName(), address(this), msg.sender, setupCost, now);
         return address(trackedRedemption);

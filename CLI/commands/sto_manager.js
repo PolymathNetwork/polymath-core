@@ -9,8 +9,8 @@ const STABLE = 'STABLE';
 
 ///////////////////
 // Constants
-const ACCREDIT_DATA_CSV = './CLI/data/STO/USDTieredSTO/accredited_data.csv';
-const NON_ACCREDIT_LIMIT_DATA_CSV = './CLI/data/STO/USDTieredSTO/nonAccreditedLimits_data.csv'
+const ACCREDIT_DATA_CSV = `${__dirname}/../data/STO/USDTieredSTO/accredited_data.csv`;
+const NON_ACCREDIT_LIMIT_DATA_CSV = `${__dirname}/../data/STO/USDTieredSTO/nonAccreditedLimits_data.csv`;
 
 ///////////////////
 // Crowdsale params
@@ -974,7 +974,7 @@ async function getAllModulesByType(type) {
     let nameTemp = web3.utils.hexToUtf8(details[0]);
     let pausedTemp = null;
     if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER) {
-      let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
+      let abiTemp = JSON.parse(require('fs').readFileSync(`${__dirname}/../../build/contracts/${nameTemp}.json`).toString()).abi;
       let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
       pausedTemp = await contractTemp.methods.paused().call();
     }

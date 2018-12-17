@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./ISTO.sol";
 import "../../interfaces/ISecurityToken.sol";
@@ -20,7 +20,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     // 1 full token = 10^decimals_of_token base units
     uint256 public cap;
 
-    mapping (address => uint256) public investors;
+    mapping(address => uint256) public investors;
 
     /**
     * Event for token purchase logging
@@ -33,16 +33,15 @@ contract CappedSTO is ISTO, ReentrancyGuard {
 
     event SetAllowBeneficialInvestments(bool _allowed);
 
-    constructor (address _securityToken, address _polyToken) public
-    Module(_securityToken, _polyToken)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     //////////////////////////////////
     /**
     * @notice fallback function ***DO NOT OVERRIDE***
     */
-    function () external payable {
+    function() external payable {
         buyTokens(msg.sender);
     }
 
@@ -60,12 +59,9 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         uint256 _endTime,
         uint256 _cap,
         uint256 _rate,
-        FundRaiseType[] _fundRaiseTypes,
+        FundRaiseType[] memory _fundRaiseTypes,
         address _fundsReceiver
-    )
-    public
-    onlyFactory
-    {
+    ) public onlyFactory {
         require(endTime == 0, "Already configured");
         require(_rate > 0, "Rate of token should be greater than 0");
         require(_fundsReceiver != address(0), "Zero address is not permitted");
@@ -84,7 +80,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8[],address)"));
     }
 
@@ -122,7 +118,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
       * @notice low level token purchase
       * @param _investedPOLY Amount of POLY invested
       */
-    function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant{
+    function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant {
         require(!paused, "Should not be paused");
         require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "Mode of investment is not POLY");
         uint256 refund = _processTx(msg.sender, _investedPOLY);
@@ -134,14 +130,14 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     * @notice Checks whether the cap has been reached.
     * @return bool Whether the cap was reached
     */
-    function capReached() public view returns (bool) {
+    function capReached() public view returns(bool) {
         return totalTokensSold >= cap;
     }
 
     /**
      * @notice Return the total no. of tokens sold
      */
-    function getTokensSold() public view returns (uint256) {
+    function getTokensSold() public view returns(uint256) {
         return totalTokensSold;
     }
 
@@ -165,16 +161,9 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @return Boolean value to justify whether the fund raise type is POLY or not, i.e true for POLY.
      */
     function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
-        return (
-            startTime,
-            endTime,
-            cap,
-            rate,
-            (fundRaiseTypes[uint8(FundRaiseType.POLY)]) ? fundsRaised[uint8(FundRaiseType.POLY)]: fundsRaised[uint8(FundRaiseType.ETH)],
-            investorCount,
-            totalTokensSold,
-            (fundRaiseTypes[uint8(FundRaiseType.POLY)])
-        );
+        return (startTime, endTime, cap, rate, (fundRaiseTypes[uint8(FundRaiseType.POLY)]) ? fundsRaised[uint8(
+            FundRaiseType.POLY
+        )] : fundsRaised[uint8(FundRaiseType.ETH)], investorCount, totalTokensSold, (fundRaiseTypes[uint8(FundRaiseType.POLY)]));
     }
 
     // -----------------------------------------
@@ -186,7 +175,6 @@ contract CappedSTO is ISTO, ReentrancyGuard {
       * @param _investedAmount Value in wei involved in the purchase
     */
     function _processTx(address _beneficiary, uint256 _investedAmount) internal returns(uint256 refund) {
-
         _preValidatePurchase(_beneficiary, _investedAmount);
         // calculate token amount to be created
         uint256 tokens;
@@ -217,7 +205,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
         require(_investedAmount != 0, "Amount invested should not be equal to 0");
         uint256 tokens;
-        (tokens, ) = _getTokenAmount(_investedAmount);
+        (tokens) = _getTokenAmount(_investedAmount);
         require(totalTokensSold.add(tokens) <= cap, "Investment more than cap is not allowed");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= startTime && now <= endTime, "Offering is closed/Not yet started");
@@ -227,8 +215,11 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     * @notice Validation of an executed purchase.
       Observe state and use revert statements to undo rollback when valid conditions are not met.
     */
-    function _postValidatePurchase(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
-      // optional override
+    function _postValidatePurchase(
+        address, /*_beneficiary*/
+        uint256 /*_investedAmount*/
+    ) internal pure {
+        // optional override
     }
 
     /**
@@ -259,8 +250,11 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     * @notice Overrides for extensions that require an internal state to check for validity
       (current user contributions, etc.)
     */
-    function _updatePurchasingState(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
-      // optional override
+    function _updatePurchasingState(
+        address, /*_beneficiary*/
+        uint256 /*_investedAmount*/
+    ) internal pure {
+        // optional override
     }
 
     /**
@@ -269,7 +263,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     * @return Number of tokens that can be purchased with the specified _investedAmount
     * @return Remaining amount that should be refunded to the investor
     */
-    function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256 _tokens, uint256 _refund) {
+    function _getTokenAmount(uint256 _investedAmount) internal view returns(uint256 _tokens, uint256 _refund) {
         _tokens = _investedAmount.mul(rate);
         _tokens = _tokens.div(uint256(10) ** 18);
         uint256 granularity = ISecurityToken(securityToken).granularity();

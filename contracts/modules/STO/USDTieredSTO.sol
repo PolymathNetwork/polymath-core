@@ -473,12 +473,10 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         }
     }
 
-    function _calculateTier(
-        address _beneficiary,
-        uint256 _tier,
-        uint256 _investedUSD,
-        FundRaiseType _fundRaiseType
-    ) internal returns(uint256 spentUSD, bool gotoNextTier) {
+    function _calculateTier(address _beneficiary, uint256 _tier, uint256 _investedUSD, FundRaiseType _fundRaiseType) internal returns(
+        uint256 spentUSD,
+        bool gotoNextTier
+    ) {
         // First purchase any discounted tokens if POLY investment
         uint256 tierSpentUSD;
         uint256 tierPurchasedTokens;
